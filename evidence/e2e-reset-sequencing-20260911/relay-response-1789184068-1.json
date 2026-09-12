@@ -1,0 +1,29 @@
+{
+  "id": "chatcmpl-1g8wepptym6pd9w5z5xtds",
+  "object": "chat.completion",
+  "created": 1789184066,
+  "model": "qwen/qwen3.6-35b-a3b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "{\n  \"summary\": \"The provided text is an introductory fragment identifying Javier Mal\u00e9 as the president of Argentina and characterizing him as a libertarian; it contains no substantive discussion, arguments, or data.\",\n  \"topics\": [],\n  \"details\": [],\n  \"speaker_background\": [\n    \"S01: Narrator/Interviewer introducing the guest.\"\n  ],\n  \"data_references\": []\n}",
+        "reasoning_content": "",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 1820,
+    "completion_tokens": 90,
+    "total_tokens": 1910,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "stats": {},
+  "system_fingerprint": "qwen/qwen3.6-35b-a3b"
+}

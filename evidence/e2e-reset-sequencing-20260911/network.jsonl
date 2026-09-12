@@ -1,0 +1,1459 @@
+{"t": 1789184006.7647, "row": 0, "method": "GET", "path": "/", "status": 200}
+{"t": 1789184006.781421, "row": 0, "method": "GET", "path": "/api/auth/session", "status": 401}
+{"t": 1789184006.7827158, "row": 0, "method": "POST", "path": "/api/workspace/bootstrap", "status": 200}
+{"t": 1789184006.783656, "row": 0, "method": "GET", "path": "/api/auth/session", "status": 200}
+{"t": 1789184006.786328, "row": 0, "method": "GET", "path": "/", "status": 200}
+{"t": 1789184006.793513, "row": 0, "method": "GET", "path": "/static/styles.css", "status": 200}
+{"t": 1789184006.8629062, "row": 0, "method": "GET", "path": "/static/app.js", "status": 200}
+{"t": 1789184006.886647, "row": 0, "method": "GET", "path": "/static/fonts/Inter-400.woff2", "status": 200}
+{"t": 1789184006.88697, "row": 0, "method": "GET", "path": "/static/fonts/Inter-700.woff2", "status": 200}
+{"t": 1789184006.8872588, "row": 0, "method": "GET", "path": "/static/fonts/Fraunces-600.woff2", "status": 200}
+{"t": 1789184006.8874612, "row": 0, "method": "GET", "path": "/static/fonts/Inter-600.woff2", "status": 200}
+{"t": 1789184006.89986, "row": 0, "method": "GET", "path": "/static/fonts/IBMPlexMono-400.woff2", "status": 200}
+{"t": 1789184006.9001322, "row": 0, "method": "GET", "path": "/static/fonts/SourceSerif4-400.woff2", "status": 200}
+{"t": 1789184006.901202, "row": 0, "method": "GET", "path": "/static/fonts/Inter-500.woff2", "status": 200}
+{"t": 1789184006.905917, "row": 0, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789184006.906752, "row": 0, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184006.918078, "row": 13, "page_closed": true}
+{"t": 1789184006.9458518, "row": 13, "method": "GET", "path": "/", "status": 200}
+{"t": 1789184006.949759, "row": 13, "method": "GET", "path": "/static/styles.css", "status": 200}
+{"t": 1789184006.9772, "row": 13, "method": "GET", "path": "/static/app.js", "status": 200}
+{"t": 1789184006.997094, "row": 13, "method": "GET", "path": "/static/fonts/Inter-400.woff2", "status": 200}
+{"t": 1789184006.997422, "row": 13, "method": "GET", "path": "/static/fonts/Fraunces-600.woff2", "status": 200}
+{"t": 1789184006.9975948, "row": 13, "method": "GET", "path": "/static/fonts/Inter-600.woff2", "status": 200}
+{"t": 1789184006.997748, "row": 13, "method": "GET", "path": "/static/fonts/Inter-700.woff2", "status": 200}
+{"t": 1789184007.012759, "row": 13, "method": "GET", "path": "/static/fonts/IBMPlexMono-400.woff2", "status": 200}
+{"t": 1789184007.0130692, "row": 13, "method": "GET", "path": "/static/fonts/Inter-500.woff2", "status": 200}
+{"t": 1789184007.013319, "row": 13, "method": "GET", "path": "/static/fonts/SourceSerif4-400.woff2", "status": 200}
+{"t": 1789184007.016722, "row": 13, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789184007.016991, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184007.1419148, "row": 13, "method": "GET", "path": "/api/live/descriptor", "status": 200}
+{"t": 1789184007.243558, "row": 13, "source_audio": {"paused": false, "currentTime": 0.071009, "volume": 1, "muted": false, "readyState": 4}}
+{"t": 1789184008.038528, "row": 13, "capture_meters": ["Microphone level 19%", "Shared audio level 18%"]}
+{"t": 1789184008.043681, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184008.075878, "row": 13, "method": "POST", "path": "/api/live/sessions", "status": 201}
+{"t": 1789184008.076422, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184008.0805912, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184008.0832489, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184008.083839, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184008.085069, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184008.085422, "row": 13, "method": "GET", "path": "/api/meetings/vgsD4Am4Z_541rj6_n4WI3tj", "status": 200}
+{"t": 1789184008.177757, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184008.179667, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184008.191472, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184008.1923819, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184008.2630882, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184008.296899, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184008.2973409, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184008.4041018, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184008.404778, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184008.509591, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184008.5102248, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184008.6148732, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184008.615556, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184008.6819782, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184008.685759, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184008.720635, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184008.72117, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184008.763208, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184008.825954, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184008.8265119, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184008.928844, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184008.9294012, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184009.0324962, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184009.033042, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184009.142485, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184009.142984, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184009.178466, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184009.183176, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184009.2663958, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184009.2669609, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184009.274569, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184009.3745532, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184009.375029, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184009.478465, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184009.478969, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184009.58943, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184009.591386, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184009.6827, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184009.6868129, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184009.695979, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184009.697341, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184009.773961, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184009.802123, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184009.802597, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184009.908176, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184009.9086258, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184010.0125499, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184010.013055, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184010.104626, "row": 13, "method": "GET", "path": "/api/meetings/vgsD4Am4Z_541rj6_n4WI3tj", "status": 200}
+{"t": 1789184010.117213, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184010.1177979, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184010.1778612, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184010.182049, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184010.222958, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184010.223989, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184010.258176, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184010.330325, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184010.330945, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184010.435931, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184010.4375098, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184010.541265, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184010.542022, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184010.648201, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184010.648938, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184010.683512, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184010.6888661, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184010.766912, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184010.7676952, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184010.76823, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184010.87375, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184010.874262, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184010.9764302, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184010.9768488, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184011.080155, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184011.0806139, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184011.1763022, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184011.1787908, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184011.1836538, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184011.1841202, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184011.254375, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184011.2907531, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184011.291191, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184011.396189, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184011.396938, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184011.50211, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184011.502817, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184011.6081212, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184011.6088572, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184011.6826088, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184011.6880481, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184011.7137458, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184011.714452, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184011.759105, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184011.821004, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184011.8215702, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184011.9419148, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184011.943458, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184012.053845, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184012.054592, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184012.114196, "row": 13, "method": "GET", "path": "/api/meetings/vgsD4Am4Z_541rj6_n4WI3tj", "status": 200}
+{"t": 1789184012.159165, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184012.1601, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184012.176908, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184012.1825159, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184012.248221, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184012.261118, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184012.263892, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184012.264035, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184012.6814458, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184012.68171, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184012.7556942, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184012.7714188, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184012.771661, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184013.17948, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184013.1797628, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184013.2487218, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184013.6801941, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184013.680541, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184013.753454, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184013.774598, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184013.774864, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184014.118491, "row": 13, "path": "/api/meetings/vgsD4Am4Z_541rj6_n4WI3tj", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184014.178347, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184014.178611, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184014.247854, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184014.685717, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184014.685977, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184014.753255, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184015.181922, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184015.1827881, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184015.248959, "row": 13, "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184015.689332, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184015.697516, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.701015, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.714528, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.726455, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.7374349, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.747367, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.756205, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.757824, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.7593532, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.7612119, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.762856, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.768735, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.7787452, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.781523, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184015.7822669, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184015.790008, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184015.8885682, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184015.8892732, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184015.994338, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184015.995997, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184016.101687, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184016.102276, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184016.1760828, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184016.178581, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184016.2082071, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184016.2086852, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184016.255189, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184016.311668, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184016.31215, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184016.417075, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184016.4174368, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184016.524632, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184016.524996, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184016.6283891, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184016.628937, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184016.680309, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184016.683866, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184016.734405, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184016.734988, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184016.764419, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184016.8442361, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184016.845037, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184016.9486148, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184016.949195, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184017.0552478, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184017.055704, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184017.1603148, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184017.1608572, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184017.175484, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184017.178059, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184017.254206, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184017.264141, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184017.264648, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184017.3718379, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184017.372305, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184017.4765902, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184017.477291, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184017.580726, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184017.581441, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184017.681288, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184017.6861582, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184017.688407, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184017.689423, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184017.761138, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184017.792143, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184017.792541, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184017.903167, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184017.9037719, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184018.010206, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184018.010915, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184018.114502, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184018.1151118, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184018.1779368, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184018.18314, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184018.222767, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184018.22438, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184018.2553668, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184018.328316, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184018.3290749, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184018.434956, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184018.4356322, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184018.5448031, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184018.545629, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184018.650673, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184018.6516118, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184018.68171, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184018.68765, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184018.7678158, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184018.768628, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184018.7697458, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184018.8773592, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184018.8780758, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184018.982327, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184018.9828532, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184019.0853498, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184019.085779, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184019.1756759, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184019.17824, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184019.190939, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184019.191356, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184019.2542698, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/frames", "status": 200}
+{"t": 1789184019.294828, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184019.295176, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184019.3237062, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/heartbeat", "status": 200}
+{"t": 1789184019.324159, "row": 13, "method": "GET", "path": "/api/meetings/vgsD4Am4Z_541rj6_n4WI3tj", "status": 200}
+{"t": 1789184019.399227, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184019.399761, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184019.506969, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184019.507424, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184019.614005, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184019.615734, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184019.719981, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184019.720557, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184019.824137, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184019.824831, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184019.9288452, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184019.929437, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184020.289323, "row": 13, "method": "POST", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/stop", "status": 200}
+{"t": 1789184020.329602, "row": 13, "method": "GET", "path": "/api/meetings/vgsD4Am4Z_541rj6_n4WI3tj", "status": 200}
+{"t": 1789184020.332363, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184020.374974, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184020.421878, "row": 13, "method": "GET", "path": "/api/meetings/vgsD4Am4Z_541rj6_n4WI3tj/audio/download", "status": 200}
+{"t": 1789184020.4220989, "row": 13, "path": "/api/meetings/vgsD4Am4Z_541rj6_n4WI3tj/audio/download", "failure": "net::ERR_ABORTED"}
+{"t": 1789184021.945418, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/snapshot", "status": 200}
+{"t": 1789184021.946178, "row": 13, "method": "GET", "path": "/api/live/sessions/vgsD4Am4Z_541rj6_n4WI3tj/events", "status": 200}
+{"t": 1789184021.950264, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184022.4574232, "row": 13, "page_closed": true}
+{"t": 1789184022.487883, "row": 13, "method": "GET", "path": "/", "status": 200}
+{"t": 1789184022.492341, "row": 13, "method": "GET", "path": "/static/styles.css", "status": 200}
+{"t": 1789184022.5192058, "row": 13, "method": "GET", "path": "/static/app.js", "status": 200}
+{"t": 1789184022.5411599, "row": 13, "method": "GET", "path": "/static/fonts/Inter-400.woff2", "status": 200}
+{"t": 1789184022.541745, "row": 13, "method": "GET", "path": "/static/fonts/Fraunces-600.woff2", "status": 200}
+{"t": 1789184022.541928, "row": 13, "method": "GET", "path": "/static/fonts/Inter-700.woff2", "status": 200}
+{"t": 1789184022.54207, "row": 13, "method": "GET", "path": "/static/fonts/Inter-600.woff2", "status": 200}
+{"t": 1789184022.557819, "row": 13, "method": "GET", "path": "/static/fonts/IBMPlexMono-400.woff2", "status": 200}
+{"t": 1789184022.5581079, "row": 13, "method": "GET", "path": "/static/fonts/Inter-500.woff2", "status": 200}
+{"t": 1789184022.558344, "row": 13, "method": "GET", "path": "/static/fonts/SourceSerif4-400.woff2", "status": 200}
+{"t": 1789184022.5620632, "row": 13, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789184022.56222, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184022.670069, "row": 13, "method": "GET", "path": "/api/live/descriptor", "status": 200}
+{"t": 1789184022.76893, "row": 13, "source_audio": {"paused": false, "currentTime": 0.119527, "volume": 1, "muted": false, "readyState": 4}}
+{"t": 1789184023.5614982, "row": 13, "capture_meters": ["Microphone level 18%", "Shared audio level 18%"]}
+{"t": 1789184023.566536, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184023.60773, "row": 13, "method": "POST", "path": "/api/live/sessions", "status": 201}
+{"t": 1789184023.608049, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184023.611063, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184023.613573, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184023.6141949, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184023.6153338, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184023.6160362, "row": 13, "method": "GET", "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w", "status": 200}
+{"t": 1789184023.6822028, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184023.683465, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184023.722251, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184023.723039, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184023.7798889, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184023.8262851, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184023.827069, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184023.9320471, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184023.932584, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184024.040673, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184024.0413408, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184024.1454642, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184024.146079, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184024.185792, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184024.19027, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184024.2507038, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184024.25139, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184024.280977, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184024.35939, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184024.3603258, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184024.4640121, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184024.4645839, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184024.5697558, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184024.570304, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184024.674894, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184024.6752892, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184024.679389, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184024.682941, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184024.774924, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184024.778251, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184024.778721, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184024.883623, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184024.884243, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184024.992219, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184024.993004, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184025.095662, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184025.096523, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184025.1864572, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184025.191303, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184025.2018938, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184025.20268, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184025.281068, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184025.307658, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184025.308199, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184025.413558, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184025.4142048, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184025.5203788, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184025.520969, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184025.627079, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184025.628169, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184025.628476, "row": 13, "method": "GET", "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w", "status": 200}
+{"t": 1789184025.6819, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184025.686621, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184025.733401, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184025.734099, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184025.779208, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184025.841342, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184025.842008, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184025.946302, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184025.9469, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184026.054528, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184026.055299, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184026.158785, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184026.15929, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184026.183774, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184026.1870458, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184026.2634292, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184026.2640378, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184026.278697, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184026.369899, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184026.370481, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184026.474682, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184026.4752052, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184026.578485, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184026.5789099, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184026.679949, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184026.682962, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184026.684386, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184026.684919, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184026.776618, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184026.790064, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184026.790601, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184026.896595, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184026.897207, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184027.002329, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184027.002802, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184027.008956, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184027.108209, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184027.108587, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184027.18519, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184027.185437, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184027.273661, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184027.613327, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184027.613496, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184027.633301, "row": 13, "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184027.681354, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184027.6815848, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184027.7693691, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184028.1850848, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184028.185427, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184028.272419, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184028.621247, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184028.621516, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184028.6814878, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184028.681877, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184028.7699242, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184029.184757, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184029.185032, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184029.274519, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184029.682519, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184029.6830459, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184029.771531, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184030.18731, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184030.187488, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184030.274513, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184030.625022, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184030.6252449, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184030.6816928, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184030.681955, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184030.769705, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184031.1864781, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184031.1870148, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184031.274441, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184031.682521, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184031.682674, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184031.770057, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184032.183837, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184032.184055, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184032.272753, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184032.6819022, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184032.6824908, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184032.770317, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184033.183003, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184033.1833332, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184033.2715259, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184033.679425, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184033.679551, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184033.767232, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184034.1840441, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184034.184574, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184034.2717068, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184034.680535, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184034.6809301, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184034.770015, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184035.185478, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184035.185756, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184035.271536, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184035.628455, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184035.628736, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184035.6814778, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184035.6820412, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184035.7696052, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184036.185559, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184036.186327, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184036.274049, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184036.6823611, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184036.682827, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184036.7702742, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184037.1854231, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184037.185981, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184037.271921, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184037.681775, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184037.682464, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184037.7700632, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184038.186669, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184038.187114, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184038.274287, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184038.6821811, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184038.682621, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184038.770184, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184039.185746, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184039.1860611, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184039.2739441, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184039.6812742, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184039.681615, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184039.769981, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184040.187777, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184040.188118, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184040.274273, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184040.631938, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184040.632283, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184040.6836889, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184040.684212, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184040.769242, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184041.1854248, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184041.1857972, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184041.274029, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184041.688736, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184041.6890821, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184041.7678368, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184042.184099, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184042.184536, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184042.275109, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184042.681908, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184042.682466, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184042.770668, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184043.183437, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184043.183648, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184043.2724202, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184043.6812758, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184043.6814919, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184043.7705479, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184044.185073, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184044.185557, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184044.2758, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184044.6820228, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184044.6827588, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184044.7694569, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184045.186752, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184045.187094, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184045.27466, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184045.636269, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184045.63664, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184045.680334, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184045.680647, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184045.767467, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184046.183593, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184046.183834, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184046.271977, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184046.6793442, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184046.679709, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184046.768317, "row": 13, "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "failure": "net::ERR_INTERNET_DISCONNECTED"}
+{"t": 1789184047.192648, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184047.1988401, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.2018719, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.214852, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.22705, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.2380118, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.24849, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.258355, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.26736, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.2768939, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.278023, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.286287, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.287018, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.296575, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.2974231, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.305237, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.306577, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.314441, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.3152268, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.32321, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.323852, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.332277, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.3339899, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.341818, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.3429189, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.3510048, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.351731, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.360899, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.361454, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.377439, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.377901, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.379724, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.380507, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.38849, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.3891132, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.3978539, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.398397, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.406406, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.407108, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.4157581, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.416407, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.424317, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.4251819, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.433337, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.43402, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.441891, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.4426181, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.451668, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.452269, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.460156, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.461498, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.469724, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.470408, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.478134, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.478699, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.4841542, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.484947, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.4929721, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.493699, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.502584, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.5033479, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.511341, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.5121138, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.520146, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.520801, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.529197, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.5300832, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.537659, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.538626, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.547148, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.54778, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.555678, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.556607, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.5642061, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.5657768, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.573111, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.573653, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.573994, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.574371, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.5751522, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.581472, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.59131, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.599067, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.680091, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184047.682924, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184047.77498, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184048.183743, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184048.186473, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184048.279979, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184048.681553, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184048.685162, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184048.775368, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184049.184088, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184049.186945, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184049.277973, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184049.680783, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184049.6846058, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184049.7748601, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184050.1836832, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184050.189554, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184050.279608, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184050.64226, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184050.6439161, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184050.6804218, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184050.683498, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184050.749342, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184050.749938, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184050.774623, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/frames", "status": 200}
+{"t": 1789184050.855982, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184050.856629, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184050.959924, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184050.960473, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184051.065213, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184051.0659351, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184051.086884, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/heartbeat", "status": 200}
+{"t": 1789184051.0873542, "row": 13, "method": "GET", "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w", "status": 200}
+{"t": 1789184051.170041, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184051.171235, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184051.275487, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184051.275882, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184051.37965, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184051.380243, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184051.48646, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184051.4868438, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184051.589955, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184051.590397, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184051.694284, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184051.6946728, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184051.798303, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184051.798917, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184051.9069738, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184051.90749, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184052.0115619, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184052.0119958, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184052.093492, "row": 13, "method": "GET", "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w", "status": 200}
+{"t": 1789184052.116885, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184052.1175501, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184052.223722, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184052.2242718, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184052.326878, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184052.327254, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184052.43408, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184052.434626, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184052.542621, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184052.5431879, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184052.648192, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184052.6499012, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184052.754318, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184052.754904, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184052.858041, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184052.858473, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184052.963439, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184052.963893, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184053.069996, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184053.070553, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184053.098371, "row": 13, "method": "GET", "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w", "status": 200}
+{"t": 1789184053.1755059, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184053.1763258, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184053.280988, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184053.281634, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184053.390908, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184053.391514, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184053.504761, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184053.505314, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184054.108764, "row": 13, "method": "GET", "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w", "status": 200}
+{"t": 1789184054.539155, "row": 13, "method": "POST", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/stop", "status": 200}
+{"t": 1789184055.120267, "row": 13, "method": "GET", "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w", "status": 200}
+{"t": 1789184055.12936, "row": 13, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184055.173436, "row": 13, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184055.220364, "row": 13, "method": "GET", "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w/audio/download", "status": 200}
+{"t": 1789184055.220635, "row": 13, "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w/audio/download", "failure": "net::ERR_ABORTED"}
+{"t": 1789184055.52321, "row": 14, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184055.523482, "row": 14, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/events", "status": 200}
+{"t": 1789184055.5241148, "row": 14, "method": "GET", "path": "/api/live/sessions/gpeqe_XRpszQBmzrvHyXUa9w/snapshot", "status": 200}
+{"t": 1789184055.525621, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184055.527573, "row": 14, "method": "GET", "path": "/api/meetings/gpeqe_XRpszQBmzrvHyXUa9w", "status": 200}
+{"t": 1789184055.529023, "row": 14, "before_reset": {"meeting": "gpeqe_XRpszQBmzrvHyXUa9w", "phase": "terminal", "timeout_seconds": 30, "snapshot_status": "closed", "finalization_status": "final", "history_status": "completed", "ready": true}}
+{"t": 1789184055.6042922, "row": 14, "method": "GET", "path": "/api/live/descriptor", "status": 200}
+{"t": 1789184055.70007, "row": 14, "source_audio": {"paused": false, "currentTime": 0.112467, "volume": 1, "muted": false, "readyState": 4}}
+{"t": 1789184056.4908512, "row": 14, "capture_meters": ["Microphone level 18%", "Shared audio level 18%"]}
+{"t": 1789184056.495397, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184056.5233018, "row": 14, "method": "POST", "path": "/api/live/sessions", "status": 201}
+{"t": 1789184056.523526, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184056.525451, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184056.527824, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184056.529166, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184056.52978, "row": 14, "method": "GET", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB", "status": 200}
+{"t": 1789184056.5304341, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184056.6160681, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184056.616527, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184056.636835, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184056.6371589, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184056.713841, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184056.741979, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184056.742301, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184056.847649, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184056.8479092, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184056.958667, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184056.9589849, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184057.064285, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184057.064536, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184057.120227, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184057.124588, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184057.171395, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184057.1716878, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184057.219015, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184057.2753, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184057.2757518, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184057.380445, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184057.3807418, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184057.48624, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184057.48657, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184057.592524, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184057.592813, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184057.615828, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184057.620623, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184057.696852, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184057.6971478, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184057.715157, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184057.804505, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184057.804995, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184057.907765, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184057.908055, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184058.012152, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184058.0127518, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184058.116847, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184058.11833, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184058.119006, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184058.1223428, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184058.215355, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184058.2219892, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184058.222413, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184058.3262012, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184058.326436, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184058.4296262, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184058.429865, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184058.53488, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184058.535715, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184058.5366359, "row": 14, "method": "GET", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB", "status": 200}
+{"t": 1789184058.615675, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184058.62003, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184058.6414201, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184058.641672, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184058.7124438, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184058.745594, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184058.745815, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184058.854729, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184058.855488, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184058.9614148, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184058.96167, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184059.065751, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184059.065922, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184059.119274, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184059.122848, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184059.169824, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184059.17002, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184059.214412, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184059.2748008, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184059.27507, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184059.379013, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184059.3793988, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184059.4854279, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184059.485628, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184059.587866, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184059.588057, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184059.615309, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184059.618686, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184059.691607, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184059.6918669, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184059.7116768, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184059.795579, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184059.795862, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184059.9005172, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184059.9009302, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184060.007752, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184060.0079381, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184060.119594, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184060.119809, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184060.120707, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184060.123971, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184060.214338, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184060.224712, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184060.224926, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184060.332829, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184060.333468, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184060.445941, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184060.446548, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184060.5459452, "row": 14, "method": "GET", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB", "status": 200}
+{"t": 1789184060.553329, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184060.554817, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184060.615446, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184060.619246, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184060.657411, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184060.657623, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184060.712427, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184060.761565, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184060.761906, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184060.868497, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184060.868876, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184060.9788349, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184060.979518, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184061.084813, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184061.085354, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184061.122265, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184061.125314, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184061.189465, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184061.18964, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184061.214272, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184061.293111, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184061.29337, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184061.400384, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184061.400685, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184061.507286, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184061.508683, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184061.6162748, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184061.616727, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184061.6175702, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184061.620953, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184061.7197351, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184061.721214, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184061.721676, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184061.82631, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184061.8267221, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184061.932432, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184061.932876, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184062.0389419, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184062.039209, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184062.119562, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184062.122852, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184062.143409, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184062.1436312, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184062.2147079, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184062.2500758, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184062.250308, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184062.3574898, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184062.3577302, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184062.4625669, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184062.4629362, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184062.552705, "row": 14, "method": "GET", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB", "status": 200}
+{"t": 1789184062.566835, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184062.567208, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184062.615541, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184062.618876, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184062.675282, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184062.6758149, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184062.71094, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184062.78118, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184062.7814631, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184062.8887749, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184062.889128, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184062.995713, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184062.996447, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184063.103227, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184063.103924, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184063.121829, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184063.128361, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184063.209333, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184063.209773, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184063.220295, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184063.3157692, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184063.315978, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184063.427479, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184063.428203, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184063.535393, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184063.535906, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184063.616761, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184063.622644, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184063.64254, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184063.642941, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184063.716322, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184063.748926, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184063.749286, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184063.854762, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184063.855306, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184063.9615219, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184063.9617841, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184064.070037, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184064.070775, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184064.1207922, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184064.126354, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184064.175474, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184064.1758358, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184064.222265, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/frames", "status": 200}
+{"t": 1789184064.2793422, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184064.279713, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184064.383856, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184064.384305, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184064.493901, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184064.4942222, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184064.5401258, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/heartbeat", "status": 200}
+{"t": 1789184064.5403352, "row": 14, "method": "GET", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB", "status": 200}
+{"t": 1789184064.557817, "row": 14, "method": "GET", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB", "status": 200}
+{"t": 1789184064.599162, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184064.6001642, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184064.703785, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184064.704077, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184064.807335, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184064.807553, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184064.913362, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184064.9135518, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184065.0203142, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184065.020603, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184065.124039, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184065.124319, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184065.2285619, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184065.2288918, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184065.547424, "row": 14, "method": "GET", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB", "status": 200}
+{"t": 1789184065.680136, "row": 14, "method": "POST", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/stop", "status": 200}
+{"t": 1789184066.55683, "row": 14, "method": "GET", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB", "status": 200}
+{"t": 1789184066.562285, "row": 14, "method": "GET", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB", "status": 200}
+{"t": 1789184066.565266, "row": 14, "method": "POST", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB/summary", "status": 200}
+{"t": 1789184066.566966, "row": 14, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789184066.569107, "row": 14, "method": "PUT", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB/summary/PoV0NtDpQtHpple5-hN38MQu", "status": 200}
+{"t": 1789184067.2391639, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184067.239875, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184067.2437692, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184067.348276, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184067.353848, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/events", "status": 200}
+{"t": 1789184067.410636, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184067.486065, "row": 14, "download": "row-14-cycle-1.json", "suggested_filename": "transcript-UPF5lZB8LNtDw0nlYI08gGHB-2026-09-12T03_34_27.457Z.json", "bytes": 1266}
+{"t": 1789184067.6277828, "row": 14, "method": "GET", "path": "/api/live/sessions/UPF5lZB8LNtDw0nlYI08gGHB/snapshot", "status": 200}
+{"t": 1789184067.631809, "row": 14, "method": "GET", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB", "status": 200}
+{"t": 1789184067.633548, "row": 14, "before_reset": {"meeting": "UPF5lZB8LNtDw0nlYI08gGHB", "phase": "terminal", "timeout_seconds": 30, "snapshot_status": "closed", "finalization_status": "final", "history_status": "completed", "ready": true}}
+{"t": 1789184067.7012758, "row": 14, "method": "GET", "path": "/api/live/descriptor", "status": 200}
+{"t": 1789184067.802016, "row": 14, "source_audio": {"paused": false, "currentTime": 0.118434, "volume": 1, "muted": false, "readyState": 4}}
+{"t": 1789184068.3152158, "row": 14, "method": "POST", "path": "/api/llm/chat/completions", "status": 200, "model": "qwen/qwen3.6-35b-a3b", "response_artifact": "relay-response-1789184068-1.json"}
+{"t": 1789184068.3170052, "row": 14, "method": "PUT", "path": "/api/meetings/UPF5lZB8LNtDw0nlYI08gGHB/summary/PoV0NtDpQtHpple5-hN38MQu", "status": 200}
+{"t": 1789184068.3190331, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184068.596902, "row": 14, "capture_meters": ["Microphone level 19%", "Shared audio level 18%"]}
+{"t": 1789184068.600269, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184068.64026, "row": 14, "method": "POST", "path": "/api/live/sessions", "status": 201}
+{"t": 1789184068.640453, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184068.642496, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184068.644535, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184068.64554, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184068.646605, "row": 14, "method": "GET", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1", "status": 200}
+{"t": 1789184068.647187, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184068.720394, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184068.721065, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184068.753748, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184068.753941, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184068.815094, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184068.85778, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184068.85804, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184068.9620118, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184068.962562, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184069.0676491, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184069.067969, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184069.173223, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184069.173449, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184069.22369, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184069.2272441, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184069.278594, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184069.278978, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184069.318609, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184069.38641, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184069.386621, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184069.490772, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184069.491235, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184069.595256, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184069.5955331, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184069.7005801, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184069.700968, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184069.72096, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184069.7247941, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184069.804439, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184069.805896, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184069.8142478, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184069.909864, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184069.910054, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184070.015093, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184070.015583, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184070.1278138, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184070.1280022, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184070.224994, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184070.226274, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184070.228553, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184070.228755, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184070.318451, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184070.33553, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184070.33584, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184070.44122, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184070.441576, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184070.5449321, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184070.545106, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184070.651045, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184070.651317, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184070.651814, "row": 14, "method": "GET", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1", "status": 200}
+{"t": 1789184070.72432, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184070.727645, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184070.759375, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184070.759608, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184070.8175519, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184070.865031, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184070.865249, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184070.969453, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184070.9697878, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184071.0758002, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184071.076295, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184071.18242, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184071.1828249, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184071.226419, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184071.230716, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184071.285717, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184071.286019, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184071.318491, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184071.390221, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184071.3904488, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184071.494538, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184071.494761, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184071.600153, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184071.600328, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184071.705974, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184071.706233, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184071.7194922, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184071.7227678, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184071.8147452, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184071.81624, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184071.816502, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184071.921152, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184071.921365, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184072.025429, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184072.025661, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184072.132515, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184072.1329348, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184072.2259488, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184072.2324622, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184072.236446, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184072.2368371, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184072.321707, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184072.341229, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184072.341585, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184072.457021, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184072.4576352, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184072.569879, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184072.570622, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184072.659072, "row": 14, "method": "GET", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1", "status": 200}
+{"t": 1789184072.6764212, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184072.676715, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184072.721716, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184072.725204, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184072.7807739, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184072.781016, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184072.816968, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184072.886112, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184072.8863518, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184073.0012438, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184073.0018501, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184073.110219, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184073.1109629, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184073.21677, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184073.2170188, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184073.223001, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184073.226423, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184073.318296, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184073.3204439, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184073.320822, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184073.4240582, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184073.4243069, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184073.528523, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184073.5287628, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184073.6319659, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184073.632173, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184073.721635, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184073.7261388, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184073.736765, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184073.7372642, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184073.8198369, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184073.842015, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184073.842324, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184073.947092, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184073.947446, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184074.054282, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184074.054475, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184074.157147, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184074.157376, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184074.2230809, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184074.225624, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184074.2607942, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184074.260969, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184074.318037, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184074.364821, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184074.365205, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184074.469245, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184074.4695628, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184074.575108, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184074.5763001, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184074.664957, "row": 14, "method": "GET", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1", "status": 200}
+{"t": 1789184074.6805272, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184074.6815639, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184074.720238, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184074.724633, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184074.789089, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184074.78973, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184074.819169, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184074.893394, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184074.893625, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184075.0015612, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184075.00207, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184075.106119, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184075.106453, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184075.212416, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184075.212808, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184075.223628, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184075.228503, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184075.324173, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184075.325109, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184075.3253639, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184075.429673, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184075.4300108, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184075.5356312, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184075.535851, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184075.639314, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184075.639554, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184075.722862, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184075.728999, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184075.7444742, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184075.744791, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184075.8206878, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184075.847863, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184075.848063, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184075.955883, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184075.9562938, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184076.060116, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184076.06039, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184076.1694772, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184076.1700952, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184076.224776, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184076.228252, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184076.275579, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184076.275785, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184076.317914, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/frames", "status": 200}
+{"t": 1789184076.3807302, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184076.381221, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184076.4927108, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184076.4931562, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184076.600503, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184076.600906, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184076.660002, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/heartbeat", "status": 200}
+{"t": 1789184076.660198, "row": 14, "method": "GET", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1", "status": 200}
+{"t": 1789184076.6712341, "row": 14, "method": "GET", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1", "status": 200}
+{"t": 1789184076.705076, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184076.705451, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184076.809336, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184076.809699, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184076.91445, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184076.914815, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184077.019912, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184077.020117, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184077.124424, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184077.1246169, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184077.240227, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184077.240437, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184077.59296, "row": 14, "method": "POST", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/stop", "status": 200}
+{"t": 1789184077.666611, "row": 14, "method": "GET", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1", "status": 200}
+{"t": 1789184078.685687, "row": 14, "method": "GET", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1", "status": 200}
+{"t": 1789184078.690439, "row": 14, "method": "POST", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1/summary", "status": 200}
+{"t": 1789184078.693315, "row": 14, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789184078.696327, "row": 14, "method": "PUT", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1/summary/CggbFhrw_BDeH916Yn_KQaFU", "status": 200}
+{"t": 1789184079.2555509, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184079.2565079, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184079.260042, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184079.4646761, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184079.470998, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/events", "status": 200}
+{"t": 1789184079.5084622, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184079.584129, "row": 14, "download": "row-14-cycle-2.json", "suggested_filename": "transcript-rTqq8Y6EcO8LU9AvOolrd7m1-2026-09-12T03_34_39.557Z.json", "bytes": 1312}
+{"t": 1789184079.740531, "row": 14, "method": "GET", "path": "/api/live/sessions/rTqq8Y6EcO8LU9AvOolrd7m1/snapshot", "status": 200}
+{"t": 1789184079.744695, "row": 14, "method": "GET", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1", "status": 200}
+{"t": 1789184079.7466528, "row": 14, "before_reset": {"meeting": "rTqq8Y6EcO8LU9AvOolrd7m1", "phase": "terminal", "timeout_seconds": 30, "snapshot_status": "closed", "finalization_status": "final", "history_status": "completed", "ready": true}}
+{"t": 1789184079.817078, "row": 14, "method": "GET", "path": "/api/live/descriptor", "status": 200}
+{"t": 1789184079.924165, "row": 14, "source_audio": {"paused": false, "currentTime": 0.123371, "volume": 1, "muted": false, "readyState": 4}}
+{"t": 1789184080.365383, "row": 14, "method": "POST", "path": "/api/llm/chat/completions", "status": 200, "model": "qwen/qwen3.6-35b-a3b", "response_artifact": "relay-response-1789184080-2.json"}
+{"t": 1789184080.368293, "row": 14, "method": "PUT", "path": "/api/meetings/rTqq8Y6EcO8LU9AvOolrd7m1/summary/CggbFhrw_BDeH916Yn_KQaFU", "status": 200}
+{"t": 1789184080.369397, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184080.729198, "row": 14, "capture_meters": ["Microphone level 18%", "Shared audio level 18%"]}
+{"t": 1789184080.733025, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184080.7730749, "row": 14, "method": "POST", "path": "/api/live/sessions", "status": 201}
+{"t": 1789184080.773283, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184080.775348, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184080.777088, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184080.777335, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184080.778234, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184080.778731, "row": 14, "method": "GET", "path": "/api/meetings/xxV2Aob91WxTqrXtBU-84ASw", "status": 200}
+{"t": 1789184080.842006, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184080.842607, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184080.881543, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184080.8817458, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184080.9260092, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184080.991751, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184080.99195, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184081.095505, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184081.095747, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184081.199177, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184081.1994188, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184081.305166, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184081.305413, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184081.343713, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184081.346756, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184081.41017, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184081.410367, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184081.429378, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184081.513952, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184081.514563, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184081.618011, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184081.618318, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184081.723298, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184081.7239099, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184081.827126, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184081.827463, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184081.8400252, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184081.8431098, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184081.926489, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184081.931253, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184081.93149, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184082.035127, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184082.0353239, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184082.13952, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184082.139808, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184082.2433221, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184082.24369, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184082.343168, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184082.34608, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184082.347414, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184082.347768, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184082.429868, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184082.452586, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184082.4528792, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184082.557397, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184082.557627, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184082.6615942, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184082.6617799, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184082.768199, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184082.768845, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184082.786644, "row": 14, "method": "GET", "path": "/api/meetings/xxV2Aob91WxTqrXtBU-84ASw", "status": 200}
+{"t": 1789184082.842311, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184082.8459651, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184082.872654, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184082.8729331, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184082.926424, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184082.9758441, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184082.976762, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184083.081158, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184083.081341, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184083.186475, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184083.1867478, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184083.290134, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184083.290554, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184083.343159, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184083.346358, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184083.394488, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184083.395072, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184083.43021, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184083.5000489, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184083.500395, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184083.607705, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184083.607958, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184083.711367, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184083.7115788, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184083.818314, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184083.818642, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184083.839197, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184083.841873, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184083.925876, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184083.9269462, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184083.927258, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184084.032209, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184084.032644, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184084.1384802, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184084.138992, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184084.2437341, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184084.2442932, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184084.3436081, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184084.348675, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184084.349976, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184084.3502872, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184084.429195, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184084.4572291, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184084.457505, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184084.564847, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184084.565144, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184084.6788359, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184084.679133, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184084.783013, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184084.7833579, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184084.790275, "row": 14, "method": "GET", "path": "/api/meetings/xxV2Aob91WxTqrXtBU-84ASw", "status": 200}
+{"t": 1789184084.840787, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184084.846509, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184084.888803, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184084.889302, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184084.930235, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184084.99406, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184084.9943402, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184085.1037388, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184085.103984, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184085.209995, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184085.210739, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184085.315576, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184085.3159318, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184085.343804, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184085.347075, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184085.420953, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184085.421695, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184085.430217, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184085.525737, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184085.52614, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184085.63132, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184085.631568, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184085.7415, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184085.742188, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184085.8419771, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184085.850281, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184085.852229, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184085.852947, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184085.932319, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184085.95887, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184085.959446, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184086.064665, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184086.064906, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184086.168842, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184086.1692002, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184086.274497, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184086.2746859, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184086.342915, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184086.345686, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184086.377367, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184086.377577, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184086.429604, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184086.484449, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184086.4847832, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184086.590421, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184086.590786, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184086.693943, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184086.6943, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184086.797559, "row": 14, "method": "GET", "path": "/api/meetings/xxV2Aob91WxTqrXtBU-84ASw", "status": 200}
+{"t": 1789184086.8012748, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184086.80202, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184086.8393111, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184086.842732, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184086.90785, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184086.908162, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184086.925728, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184087.0124109, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184087.012597, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184087.1198459, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184087.120165, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184087.224416, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184087.2246542, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184087.3284218, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184087.328771, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184087.342865, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184087.345983, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184087.437845, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184087.43932, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184087.439648, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184087.545287, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184087.545564, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184087.6497338, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184087.649973, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184087.7564201, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184087.756995, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184087.8421981, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184087.849119, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184087.858618, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184087.859072, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184087.933847, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184087.963881, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184087.9644759, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184088.070519, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184088.070747, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184088.177644, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184088.178164, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184088.285172, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184088.2861881, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184088.34549, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184088.348855, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184088.391225, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184088.391464, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184088.437258, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/frames", "status": 200}
+{"t": 1789184088.49534, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184088.495641, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184088.605131, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184088.605535, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184088.709911, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184088.710142, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184088.7896802, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/heartbeat", "status": 200}
+{"t": 1789184088.7899818, "row": 14, "method": "GET", "path": "/api/meetings/xxV2Aob91WxTqrXtBU-84ASw", "status": 200}
+{"t": 1789184088.8031712, "row": 14, "method": "GET", "path": "/api/meetings/xxV2Aob91WxTqrXtBU-84ASw", "status": 200}
+{"t": 1789184088.815455, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184088.815745, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184088.922273, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184088.922486, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184089.0266528, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184089.026897, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184089.131416, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184089.131613, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184089.239514, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184089.239726, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184089.343193, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184089.3435361, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184089.449878, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184089.450208, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184089.7745721, "row": 14, "method": "POST", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/stop", "status": 200}
+{"t": 1789184089.796266, "row": 14, "method": "GET", "path": "/api/meetings/xxV2Aob91WxTqrXtBU-84ASw", "status": 200}
+{"t": 1789184090.809293, "row": 14, "method": "GET", "path": "/api/meetings/xxV2Aob91WxTqrXtBU-84ASw", "status": 200}
+{"t": 1789184090.813152, "row": 14, "method": "POST", "path": "/api/meetings/xxV2Aob91WxTqrXtBU-84ASw/summary", "status": 200}
+{"t": 1789184090.815326, "row": 14, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789184090.8175418, "row": 14, "method": "PUT", "path": "/api/meetings/xxV2Aob91WxTqrXtBU-84ASw/summary/DAp6gAAILbRElurO7QPVJCs1", "status": 200}
+{"t": 1789184091.465389, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184091.4667032, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184091.471979, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184091.594172, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/snapshot", "status": 200}
+{"t": 1789184091.600071, "row": 14, "method": "GET", "path": "/api/live/sessions/xxV2Aob91WxTqrXtBU-84ASw/events", "status": 200}
+{"t": 1789184091.641034, "row": 14, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789184091.6950421, "row": 14, "download": "row-14-cycle-3.json", "suggested_filename": "transcript-xxV2Aob91WxTqrXtBU-84ASw-2026-09-12T03_34_51.688Z.json", "bytes": 1325}
+{"t": 1789184091.8823838, "row": 0, "page_closed": true}

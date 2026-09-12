@@ -168,10 +168,44 @@ class Harness:
                 'meeting':ident,'status_received':meeting['status'],'segments':len(segments),'speaker_count':len(labels),**metric,
                 'artifact':f'meeting-{ident}.json'}
 
+    async def wait_before_reset(self, timeout=30):
+        """Server completion can precede UI terminal; require both before Reset.
+
+        Thirty seconds is the existing row-14 UI terminal budget. Do not start a
+        new meeting on timeout, even if the previous meeting appears in history.
+        """
+        phase=await self.page.locator('[data-capture-phase]').get_attribute('data-capture-phase')
+        if phase not in ('stopping','terminal'): return
+        ident=getattr(self,'last_live_meeting',None)
+        evidence={'meeting':ident,'phase':phase,'timeout_seconds':timeout}
+        path=self.out/f'row-{self.row:02d}-before-reset.json'
+        async def ready():
+            while True:
+                snapshot=(await self.api(f'/api/live/sessions/{ident}/snapshot'))['body'].get('snapshot') or {}
+                session=snapshot.get('session') or {}
+                meeting=(await self.api(f'/api/meetings/{ident}'))['body']
+                evidence.update(snapshot_status=session.get('status'),finalization_status=session.get('finalization_status'),
+                                history_status=meeting.get('status'),
+                                phase=await self.page.locator('[data-capture-phase]').get_attribute('data-capture-phase'))
+                durable=(session.get('status')=='closed' and session.get('finalization_status')=='final') or meeting.get('status')=='completed'
+                if durable and evidence['phase']=='terminal': return
+                await asyncio.sleep(.25)
+        try:
+            assert ident, 'Previous live meeting ID unavailable before Reset capture'
+            await asyncio.wait_for(ready(),timeout=timeout)
+            evidence['ready']=True
+        except Exception as exc:
+            evidence.update(ready=False,reason=f'{type(exc).__name__}: previous meeting did not reach durable completion and UI terminal before Reset')
+            raise AssertionError(json.dumps(evidence)) from exc
+        finally:
+            write(path,evidence)
+            self.event({"before_reset":evidence})
+
     async def setup_live(self, *, foreground=True):
         if foreground:
             await self.page.bring_to_front()
         await self.page.get_by_role('link',name='Live / Transcript & export',exact=True).click()
+        await self.wait_before_reset()
         reset=self.page.get_by_role('button',name='Reset capture',exact=True)
         if await reset.count(): await reset.click()
         await self.source.evaluate('document.querySelector("audio").currentTime=0')
@@ -194,7 +228,7 @@ class Harness:
             rows=(await self.api('/api/meetings'))['body']['meetings']
             found=[m for m in rows if m['id'] not in ids and m['mode']=='live']
             if found:
-                ident=found[0]['id']; self.state['meetings'][key]=ident; write(self.out/'results.json',self.state); return ident
+                ident=found[0]['id']; self.last_live_meeting=ident; self.state['meetings'][key]=ident; write(self.out/'results.json',self.state); return ident
             await asyncio.sleep(.2)
         raise AssertionError('No live meeting admitted within 6 seconds')
 

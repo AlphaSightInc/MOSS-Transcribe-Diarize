@@ -1,0 +1,9 @@
+{
+  "meeting": "rTqq8Y6EcO8LU9AvOolrd7m1",
+  "phase": "terminal",
+  "timeout_seconds": 30,
+  "snapshot_status": "closed",
+  "finalization_status": "final",
+  "history_status": "completed",
+  "ready": true
+}
