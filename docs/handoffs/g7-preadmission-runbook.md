@@ -149,14 +149,146 @@ No VcXsrv, X410, Xming, MobaXterm or PulseAudio matched the top-level Program Fi
 Program Files (x86), local Programs, current-user Store-package or process checks.
 Extended recursive/registry/listener queries stalled; portable or nested installations
 are not excluded. Option A is not verified available.
-**Recommend B on this host.** Prefer A if an existing X server is subsequently located,
-provided its real microphone path works; an X server alone supplies no audio.
+**Recommend C on this host** — it needs no host display and no host microphone, and this server
+has neither. Options A and B remain documented for a host-local canary; both additionally require
+a capture device the Alienware does not currently have (see C for the enumeration). Between them,
+prefer B unless an X server is subsequently located whose real microphone path works; an X server
+alone supplies no audio.
 
-`query user` shows `gyauo` in disconnected session 2 (Explorer still running); the console
-has no signed-in user. This does not establish usual habits. Log into/unlock the local
-Windows desktop as `gyauo` before either option and keep it connected throughout G7.
+**Options A and B only:** `query user` shows `gyauo` in disconnected session 2 (Explorer still
+running); the console has no signed-in user. This does not establish usual habits. Log into/unlock
+the local Windows desktop as `gyauo` before either option and keep it connected throughout G7.
 **What you will see:** your usable Windows desktop; `query user` should show an active
-session, not `Disc`. SSH access is not a substitute.
+session, not `Disc`. SSH access is not a substitute. Option C needs no Windows desktop session:
+its browser is on your machine and its terminal is your SSH session.
+
+### C. Attend from your own machine — recommended, no host display or host microphone
+
+The attended browser is the **client** role and does not have to run on the server. The candidate
+supplies an optional `measurements.pre_admission.chrome_cdp_endpoint`; when it is set the canary
+attaches to a Chrome you already run, instead of launching one on the host. The cutover, its
+qualification and the four Enter prompts stay on the Alienware over your SSH terminal; the
+microphone, the Chrome share picker and both display surfaces are the ones in front of you.
+
+This removes options A and B entirely when it applies: no WSLg, no `wsl --shutdown`, no X server,
+no PulseAudio bridge, and **no change to the vLLM PID**. Read-only host finding, 2026-09-12: the
+Alienware has no usable capture device — every physical jack (`Microphone`, `Jack Mic`, `Headset`)
+reports UNPLUGGED, and the only ACTIVE capture endpoints are `Stereo Mix` (Realtek loopback, not a
+microphone) plus virtual endpoints belonging to Virtual Desktop and Oculus. A host-local canary
+therefore needs hardware added to the server first.
+
+**1 — start a dedicated Chrome on your machine.** Use its own `--user-data-dir`, and treat that as a
+gate requirement rather than a convenience. The host-local canary launched a throwaway profile for
+every run; attaching to a browser instead means the profile is whatever you point it at. Your everyday
+profile carries extensions that can interfere with `getDisplayMedia`, plus service workers and cached
+state that could mask a first-run defect. A dedicated profile restores the isolation the host-local
+path had. It is also mechanically necessary: Chrome silently ignores `--remote-debugging-port` when it
+hands the command line to an already-running instance of the same profile.
+
+```sh
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.moss-attended-chrome" \
+  --enable-automation \
+  --no-first-run --no-default-browser-check
+```
+
+`--enable-automation` is **required**, and not for convenience: Chrome returns its own command line
+over DevTools only when it is set, and the canary reads that command line back to prove the browser
+cannot manufacture this gate's evidence (next paragraph). Without it the canary refuses, because a
+command line it cannot read is one it cannot clear. Expect Chrome's "controlled by automated test
+software" infobar; that is the flag doing its job.
+
+**Why the canary audits it.** A browser the canary launches is configured by the canary. Yours is not,
+so it is checked rather than assumed. The canary refuses any attended browser started with
+`--use-fake-device-for-media-stream`, `--use-file-for-fake-audio-capture`,
+`--use-file-for-fake-video-capture`, `--use-fake-ui-for-media-stream`,
+`--auto-select-desktop-capture-source`, `--auto-accept-this-tab-capture`,
+`--auto-accept-camera-and-microphone-capture` or `--auto-grant-captured-surface-control` — synthetic
+capture devices, and automatic answers to the very permission and surface choices you are there to
+make. Verified against real Chrome on 2026-09-12: an honest browser is accepted, each of those
+switches is refused by name, and a browser without `--enable-automation` is refused as unauditable.
+The cleared switch list is recorded in the evidence as `audited_absent_switches`.
+
+**What you will see:** a separate Chrome window, and `curl -s http://127.0.0.1:9222/json/version`
+returning that browser's version locally. DevTools binds loopback only; do not publish it.
+
+**2 — sign into MOSS in that window now**, at
+`https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861`. The canary waits for
+`[data-auth-state="signed-in"]` with Playwright's default 30-second selector timeout and gives no
+Enter pause there, so signing in beforehand removes that scramble. Leave the tab open.
+
+**3 — forward the endpoint to the host** so DevTools control never crosses the network. From your
+machine, in the terminal you will also run the cutover from:
+
+```sh
+ssh -R 127.0.0.1:9222:127.0.0.1:9222 gyauo@ga0-alienware-rtx4070ti.tailnet.aisight.us
+```
+
+That binds loopback on the Windows side. This host uses WSL2 mirrored networking, which carries the
+forward into the distribution as well. **Verified end to end on 2026-09-12** from a Mac: a trivial
+loopback server behind `ssh -R 127.0.0.1:PORT:127.0.0.1:PORT` answered both from Windows
+(`curl.exe`) and from inside Ubuntu (`wsl.exe -d Ubuntu -- curl`), and stopped answering once the
+forward was torn down. Still **re-verify before booking each attempt** — the forward is per-session —
+in the Ubuntu terminal that will run the cutover:
+
+```bash
+curl --fail --silent --show-error --max-time 5 http://127.0.0.1:9222/json/version
+```
+
+**What you will see:** the same Chrome version JSON you saw locally. If Ubuntu cannot reach it,
+mirrored networking is not carrying the forward; stop and tell the engineer rather than exposing
+the port on an interface. No attempt has been created at this point, so stopping costs nothing.
+
+**4 — declare the endpoint in the host profile.** Add the key to the persistent acceptance profile
+the canary reads (the cutover passes its configured `acceptance_profile`, not the per-attempt copy).
+Staging preserves keys it does not manage, so this survives a restage.
+
+```bash
+python3 - <<'DECLARE'
+import json, pathlib
+p = pathlib.Path.home() / '.config/moss-transcribe-diarize/phase2-acceptance.json'
+payload = json.loads(p.read_text())
+payload['measurements']['pre_admission']['chrome_cdp_endpoint'] = 'http://127.0.0.1:9222'
+p.write_text(json.dumps(payload, indent=2, sort_keys=True) + '\n')
+print('declared', payload['measurements']['pre_admission']['chrome_cdp_endpoint'])
+DECLARE
+```
+
+The canary refuses any endpoint that is not loopback `http`/`ws`, so the forward is the only
+supported path. To go back to a host-local Chrome, delete the key; `chrome_binary` is then required
+again and the behaviour is unchanged.
+
+**What you will see during the run:** the canary opens two tabs in *your* Chrome; each scenario's
+share picker is your own, and "Entire screen" means your screen. The Enter prompts appear in the
+SSH terminal running the cutover. Owner API reads (Live descriptor, Meeting, MP3) are issued from
+the host using session cookies synced from your browser, so they observe the same workspace you
+attended. When the canary finishes it disconnects without closing your browser: both meeting tabs
+stay open for the rehearsal.
+
+**Limits:** this changes where the browser runs, not what the gate checks. Both scenarios, both
+meters, the frame-sequence checks, two distinct speakers, the finalized Meeting and the playable
+owner MP3 are all still required, and the evidence records `attended_browser` so the record states
+which machine attended. Your machine must reach the production origin over the tailnet with normal
+certificate verification — the origin serves a **self-signed** certificate, so the attending machine
+must already trust it; a machine that does not will fail TLS rather than report a host fault.
+
+The canary now also binds its observations to the production origin: it refuses if the page is not on
+that origin after navigation or leaves it during capture, and it ignores frame posts from any other
+origin. Both scenarios' surfaces, meters, frame sequences, speakers, Meeting and MP3 are unchanged.
+
+Two properties the host-local path gave for free, which you now supply by following step 1: a clean
+browser profile (see above), and a browser that nothing else drives. The loopback check constrains
+where *the canary* connects; it cannot stop a Chrome you started with `--remote-debugging-address`
+pointed at a non-loopback interface. Do not do that. Note also that DevTools discovery resolves the
+websocket target from the endpoint's own `/json/version` response, so the loopback guarantee extends
+only as far as trusting the browser you started.
+
+**Residual, stated plainly:** the switch audit closes command-line faking, but the gate measures audio
+*signal*, not the physical provenance of a device. An operator who routes a virtual audio device as the
+system microphone can still feed recorded speech to either path — this host's `Stereo Mix` endpoint
+would do it — and that was equally true of the host-local canary. G7 is an attended gate resting on an
+honest attester; it is not a control against the operator.
 
 ### A. Windows X server plus Windows audio — preserve running WSL services
 
@@ -279,7 +411,7 @@ printf 'Preserve this vLLM PID: %s\n' "$VLLM_PID"
 "$CUTOVER" run --help
 "$CUTOVER" restore --help
 python3 - "$SHA" <<'PY'
-import json, pathlib, sys
+import json, pathlib, sys, urllib.parse
 home = pathlib.Path.home()
 p = home / '.config/moss-transcribe-diarize/moss-cutover.json'
 c = json.loads(p.read_text())
@@ -295,9 +427,13 @@ layers = json.loads(a.read_text())['measurements']
 assert all(layers[k]['candidate_manifest'] == str(m) for k in ('deployed', 'pre_admission'))
 g7 = layers['pre_admission']
 assert g7['https_origin'] == 'https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861'
-assert pathlib.Path(g7['chrome_binary']).is_file()
+endpoint = g7.get('chrome_cdp_endpoint')
+if endpoint:
+    assert urllib.parse.urlsplit(endpoint).hostname in ('127.0.0.1', 'localhost', '::1')
+else:
+    assert pathlib.Path(g7['chrome_binary']).is_file()
 print('Profiles and SHA match:', v['git_sha'])
-print('Chrome:', g7['chrome_binary'])
+print('Attended browser:', endpoint or g7['chrome_binary'])
 print('Staged env:', c['candidate']['account_profile_source'])
 PY
 if test -L "$ROOT/account-current"; then readlink -e "$ROOT/account-current"; else echo 'No Account activation symlink'; fi

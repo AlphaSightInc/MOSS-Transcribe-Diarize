@@ -18,13 +18,28 @@ anything that goes wrong without weakening a gate or changing policy.
   strict). 48/48 sessions finalized, both load gates passed, backpressure proven. Full record and every
   earlier round: issue #10 (https://github.com/aiSight-us/MOSS-Transcribe-Diarize/issues/10), latest
   comments first.
-- **Round 17 is running** (started ~21:10 EDT, ~2 h 15 min) purely to produce a clean cutover record: the host
-  profile's `cutover_rehearsal.candidate_manifest` still pointed at a deleted runtime and the rehearsal check
-  failed the record even though all product predicates passed; `5d21f59c` makes staging repoint every manifest
-  field and refuse stale ones. **First action for the next agent:** read `tmux capture-pane -t MOSS:2.1 -p -S -400`
-  for the "Round 17" report (or `/tmp/moss-round17-stage/result/report.md` on this MacStudio). Expected:
-  restored, no rehearsal error, only the three quality exceptions → "handoff condition met". If anything else
-  fails, follow the triage rules below before guiding the operator.
+- **Round 17 FAILED on a host incident — not a product regression** (2026-09-12). vLLM died mid-round at
+  21:52:41 EDT with `torch.AcceleratorError: CUDA error: unknown error` → `EngineDeadError` → exit. The cutover
+  detected the broken invariant and terminated `SAFE_STOPPED` / `CutoverUnsafe` ("vLLM process changed during
+  cutover or restore"), `g7: UNCLAIMED`, `admitted: false`; it quarantined candidate `5d21f59c` and restored
+  Phase-1. The one product failure in that round (`ServiceReplayIdentityCommitFailure`, deployed quality session
+  10) landed the same minute the decoder died — collateral. **Round 16 (`e47ab229`) therefore remains the last
+  good product evidence** and the rehearsal/manifest fix is still unconfirmed by a clean record.
+  Cause NOT established: zero nvlddmkm/TDR/WHEA events, GPU cold and idle afterwards. Windows logged "low
+  virtual memory" 30 s prior, but that warning fires chronically (14+ times Sep 11–12, including 21:29:40 in this
+  same round with no crash). Host has 31.7 GB RAM with WSL capped at 22 GB — a standing demo risk.
+- **Host recovered 2026-09-12 ~22:55 EDT.** Operator rebooted (boot 22:20:43); new vLLM baseline **PID 369**,
+  moss-web 1534, moss-live-web 378, model endpoint 200, canonical `/etc/hosts` loopback restored automatically,
+  693 G free. **Trap:** `SAFE_STOPPED` deliberately verifies the Phase-1 quiesce marker is PRESENT and the web
+  units STOPPED (`phase2_cutover.py:1496-1505`). The reboot restarted the units but left the marker, so Phase-1
+  served while `quiesced` — refusing all new work. Lifted with the supported CLI on the Phase-1 checkout
+  `/mnt/d/Coding/MOSS-Transcribe-Diarize`; note the module has **no `__main__` guard**, so `python -m ...` prints
+  nothing and exits 0 — call `main()` directly:
+  `venv/bin/python -c "import sys;sys.argv=['q','disable'];from moss_transcribe_diarize.app.phase1_quiesce_cli import main;main()"`.
+  Marker state is read live per request (`os.stat`), so no restart is needed. Both views now `open`, zero work.
+- **TLS trap:** the production origin serves a **self-signed** certificate (subject == issuer, valid to
+  2028-10-20). The MacBook trusts it; MacStudio does not (`curl` exit 60). A `000` from MacStudio is **not**
+  evidence the host is down — use `-k` from MacStudio, never from the operator machine.
 - **Host (Alienware, WSL Ubuntu):** healthy. Phase-1 serving at https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861;
   vLLM PID 324, zero restarts; vhdx moved to `D:\wsl\Ubuntu` (C: ≈613 GB free); durable `/etc/hosts` prerequisite
   unit installed; pre-flight disk guards active; both MinerU scheduled tasks enabled.
@@ -54,17 +69,31 @@ not depend on GitHub anyway.
 
 ## The walkthrough to run with the operator (one step at a time; confirm each before the next)
 
-1. **Confirm round 17** (above). Tell the operator the qualified SHA to stage (`e47ab229` unless round 17
-   qualified a later head — use the SHA in round 17's report).
-2. **Display for the canary.** The attended G7 canary needs a headed Chrome on the host. WSLg is disabled
-   (`guiApplications=false`). Options and consequences are in the runbook: an X server on Windows (none was found
-   installed) or enabling WSLg followed by `wsl --shutdown` — which restarts vLLM/Phase-1 and **must happen before
-   an attempt, never during**, with both MinerU tasks disabled for the shutdown (the maintenance script does this).
-3. **Attended preadmission** from an interactive WSL terminal on the Alienware (not detached): the runbook's
-   exact `mtd-phase2-cutover run --profile … --attempt … --terminal preadmission` command; ~60–75 min of
-   re-qualification, then Chrome opens; share a **tab with audio**, enable the microphone, speak until both
-   lane meters move and two speakers appear, Enter; then **entire screen**; four Enter confirmations total. On
-   PASS the candidate keeps serving on :7861 (that is the demo state). Any failure auto-restores Phase-1.
+1. **Re-qualify first.** The attended browser is now separable from the server (below), which changes the
+   candidate SHA, so `e47ab229` is superseded. Stage the new head and run one unattended `--terminal restored`
+   round (~2 h 15 min, no attention) before spending the operator's attended hour — it also re-proves the host is
+   stable for 2+ hours after the CUDA incident. `--terminal preadmission` does repeat all qualification itself, so
+   this round is insurance, not a prerequisite.
+2. **Display for the canary — solved; use Option C.** The server has **no usable microphone**: every physical jack
+   reports UNPLUGGED and the only ACTIVE capture endpoints are `Stereo Mix` (Realtek loopback) plus Virtual Desktop
+   and Oculus virtuals. macOS RDP supplies no microphone redirection either, so a host-local canary was a dead end.
+   The candidate now accepts an optional `measurements.pre_admission.chrome_cdp_endpoint`: when set, the canary
+   attaches over DevTools to a Chrome **on the operator's own MacBook** (real mic, real share picker, real screen)
+   instead of launching one on the host. The cutover, its qualification and the four Enter prompts stay on the
+   Alienware over an SSH TTY. Loopback-only, reached through `ssh -R`; **the transport was verified end to end on
+   2026-09-12** (a forwarded loopback port answered from Windows *and* from inside WSL). No WSLg, no
+   `wsl --shutdown`, no vLLM PID change. Full procedure: runbook "Option C". Options A and B remain documented but
+   both need capture hardware the server does not have.
+3. **Attended preadmission.** With Option C, first do the runbook's four setup steps on the MacBook (dedicated
+   Chrome with `--remote-debugging-port` and its own `--user-data-dir`, sign into MOSS in it, `ssh -R` the port,
+   declare `chrome_cdp_endpoint` in the host profile — and re-verify the forward from inside Ubuntu). Then run the
+   runbook's exact `mtd-phase2-cutover run --profile … --attempt … --terminal preadmission` command from an
+   interactive WSL terminal (an SSH TTY satisfies the attendance check; do **not** detach or pipe stdin). Budget
+   an hour or more of re-qualification, then two tabs open **in your own Chrome**: share a **tab with audio**,
+   enable the microphone, speak until both lane meters move and two speakers appear, Enter; then **entire
+   screen**; four Enter confirmations total, all answered in the SSH terminal. On PASS the candidate keeps serving
+   on :7861 (that is the demo state). Any failure auto-restores Phase-1; `SAFE_STOPPED` needs the engineer — and
+   note it intends the web units to stay stopped, so do not "fix" it with a reboot (see the quiesce trap above).
 4. **Smoke + pre-check:** `scripts/demo-precheck.sh <FULL_SHA>` from the MacBook; then the operator smoke rows
    per `e2e-smoke-for-operator.md`.
 5. **Demo prep:** open the workspace from the MacBook, enrol the presenter in the private voice bank (≥3 s of

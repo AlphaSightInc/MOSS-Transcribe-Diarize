@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 from collections.abc import Callable, Mapping
+from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
@@ -28,6 +29,19 @@ G7_SCENARIOS = {
     "microphone_meeting_tab": "browser",
     "microphone_entire_screen": "monitor",
 }
+ATTENDED_CDP_LOOPBACK = frozenset({"127.0.0.1", "localhost", "::1"})
+# Switches that would let a browser manufacture attendance: synthetic capture devices, or
+# automatic answers to the very permission and surface choices the operator is here to make.
+FORBIDDEN_ATTENDED_SWITCHES = (
+    "use-fake-device-for-media-stream",
+    "use-file-for-fake-audio-capture",
+    "use-file-for-fake-video-capture",
+    "use-fake-ui-for-media-stream",
+    "auto-select-desktop-capture-source",
+    "auto-accept-this-tab-capture",
+    "auto-accept-camera-and-microphone-capture",
+    "auto-grant-captured-surface-control",
+)
 FRAME_KEYS = {
     "lane",
     "sequence",
@@ -76,6 +90,27 @@ def _load_pre_admission_profile(path: Path) -> Mapping[str, object]:
     if not isinstance(config, dict):
         raise AttendedCanaryError("pre-admission browser prerequisites are absent")
     return config
+
+
+def _attended_cdp_endpoint(config: Mapping[str, object]) -> str | None:
+    """Return the operator's loopback DevTools endpoint, or None for a host-local Chrome.
+
+    The attended client is not the server: the operator may attend from their own machine,
+    whose real microphone and display surfaces the canary still observes through this
+    browser.  The endpoint stays on loopback so DevTools control of that browser is reachable
+    only through the operator's own forwarded channel, never from the network.
+    """
+
+    value = config.get("chrome_cdp_endpoint")
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise AttendedCanaryError("attended Chrome DevTools endpoint is malformed")
+    endpoint = value.strip()
+    parts = urlsplit(endpoint)
+    if parts.scheme not in ("http", "ws") or parts.hostname not in ATTENDED_CDP_LOOPBACK:
+        raise AttendedCanaryError("attended Chrome DevTools endpoint must be a loopback address")
+    return endpoint
 
 
 def _frame_summary(frames: list[Mapping[str, object]], descriptor: Mapping[str, object]) -> dict[str, object]:
@@ -145,6 +180,55 @@ def _probe_mp3(payload: bytes) -> dict[str, object]:
         }
     except (KeyError, IndexError, TypeError, ValueError, json.JSONDecodeError) as exc:
         raise AttendedCanaryError("owner audio probe is incomplete") from exc
+
+
+def _origin_of(url: str) -> str:
+    parts = urlsplit(url)
+    return f"{parts.scheme}://{parts.netloc}"
+
+
+def _audit_attended_switches(browser: Any) -> list[str]:
+    """Refuse a browser whose own command line can manufacture this gate's evidence.
+
+    A browser the canary launches is configured by the canary.  An attached browser is not, so
+    its command line is read back here rather than assumed.  Chrome only returns it when started
+    with --enable-automation, and a command line that cannot be read cannot be cleared.
+    """
+
+    try:
+        session = browser.new_browser_cdp_session()
+    except Exception as exc:
+        raise AttendedCanaryError(
+            "attended browser does not expose a command line to audit"
+        ) from exc
+    try:
+        reported = session.send("Browser.getBrowserCommandLine")
+    except Exception as exc:
+        raise AttendedCanaryError(
+            "attended browser must be started with --enable-automation so its command line "
+            "can be audited for synthetic capture"
+        ) from exc
+    finally:
+        try:
+            session.detach()
+        except Exception:
+            pass
+    arguments = reported.get("arguments")
+    if not isinstance(arguments, list):
+        raise AttendedCanaryError("attended browser command line is unreadable")
+    observed = []
+    for argument in arguments:
+        if not isinstance(argument, str):
+            continue
+        switch = argument.lstrip("-").split("=", 1)[0]
+        if switch in FORBIDDEN_ATTENDED_SWITCHES:
+            observed.append(switch)
+    if observed:
+        raise AttendedCanaryError(
+            "attended browser was started with synthetic-capture or auto-accept switches: "
+            + ", ".join(sorted(set(observed)))
+        )
+    return sorted(FORBIDDEN_ATTENDED_SWITCHES)
 
 
 def _meeting_id_from_url(url: str) -> str | None:
@@ -227,6 +311,8 @@ def _run_scenario(
     meeting_ids: set[str] = set()
 
     def observe(response: Any) -> None:
+        if _origin_of(response.request.url) != origin:
+            return
         meeting_id = _meeting_id_from_url(response.request.url)
         if meeting_id is None or response.status != 200:
             return
@@ -241,6 +327,9 @@ def _run_scenario(
     page.on("response", observe)
     try:
         page.goto(origin, wait_until="networkidle")
+        # The browser may be the operator's own; observe where it actually landed.
+        if _origin_of(page.url) != origin:
+            raise AttendedCanaryError(f"{scenario} browser is not on the production origin")
         page.wait_for_selector('[data-auth-state="signed-in"]')
         page.wait_for_selector('[data-boot="ready"]')
         descriptor_response = context.request.get(f"{origin}/api/live/descriptor")
@@ -276,6 +365,8 @@ def _run_scenario(
         )
         if page.locator('[data-capture-phase="active"]').count() != 1:
             raise AttendedCanaryError(f"{scenario} capture ended before attended confirmation")
+        if _origin_of(page.url) != origin:
+            raise AttendedCanaryError(f"{scenario} browser left the production origin during capture")
         page.get_by_role("button", name="Stop and finalize").click()
         page.wait_for_selector('[data-capture-phase="terminal"]', timeout=600_000)
         if len(meeting_ids) != 1:
@@ -405,35 +496,48 @@ def run_attended_g7_canary(
     origin = _required_text(config, "https_origin").rstrip("/")
     if origin != G7_PRODUCTION_ORIGIN:
         raise AttendedCanaryError("attended G7 requires the exact production HTTPS origin")
-    chrome = Path(_required_text(config, "chrome_binary")).expanduser().resolve()
-    if not chrome.is_file():
-        raise AttendedCanaryError("attended Chrome prerequisites are unavailable")
+    endpoint = _attended_cdp_endpoint(config)
+    chrome: Path | None = None
+    if endpoint is None:
+        chrome = Path(_required_text(config, "chrome_binary")).expanduser().resolve()
+        if not chrome.is_file():
+            raise AttendedCanaryError("attended Chrome prerequisites are unavailable")
 
     scenarios: list[dict[str, object]] = []
-    with tempfile.TemporaryDirectory(prefix="moss-attended-browser-") as profile, _playwright_manager() as playwright:
-        context = playwright.chromium.launch_persistent_context(
-            str(profile), executable_path=str(chrome), headless=False
-        )
-        try:
-            _install_display_observer(context)
-            for scenario, surface in G7_SCENARIOS.items():
-                print(
-                    f"G7 attended canary: choose Chrome display surface {surface!r} for {scenario}; "
-                    "enable shared audio.",
-                    flush=True,
+    audited_switches: list[str] = []
+    with ExitStack() as stack:
+        playwright = stack.enter_context(_playwright_manager())
+        if endpoint is None:
+            profile = stack.enter_context(
+                tempfile.TemporaryDirectory(prefix="moss-attended-browser-")
+            )
+            context = playwright.chromium.launch_persistent_context(
+                str(profile), executable_path=str(chrome), headless=False
+            )
+            stack.callback(context.close)
+            browser = context.browser
+        else:
+            browser = playwright.chromium.connect_over_cdp(endpoint)
+            stack.callback(browser.close)
+            audited_switches = _audit_attended_switches(browser)
+            context = browser.contexts[0] if browser.contexts else browser.new_context()
+        _install_display_observer(context)
+        for scenario, surface in G7_SCENARIOS.items():
+            print(
+                f"G7 attended canary: choose Chrome display surface {surface!r} for {scenario}; "
+                "enable shared audio.",
+                flush=True,
+            )
+            scenarios.append(
+                _run_scenario(
+                    context,
+                    origin=origin,
+                    scenario=scenario,
+                    expected_surface=surface,
+                    confirm=confirm,
                 )
-                scenarios.append(
-                    _run_scenario(
-                        context,
-                        origin=origin,
-                        scenario=scenario,
-                        expected_surface=surface,
-                        confirm=confirm,
-                    )
-                )
-            chrome_version = context.browser.version if context.browser is not None else ""
-        finally:
-            context.close()
+            )
+        chrome_version = browser.version if browser is not None else ""
     evidence = {
         "schema": G7_EVIDENCE_SCHEMA,
         "source": G7_EVIDENCE_SOURCE,
@@ -445,6 +549,8 @@ def run_attended_g7_canary(
             key: candidate.get(key) for key in ("git_sha", "git_tree", "uv_lock_sha256")
         },
         "chrome_version": chrome_version,
+        "attended_browser": "operator_devtools" if endpoint else "host_chrome",
+        "audited_absent_switches": audited_switches,
         "scenarios": scenarios,
     }
     validate_attended_g7(evidence, candidate=candidate)
