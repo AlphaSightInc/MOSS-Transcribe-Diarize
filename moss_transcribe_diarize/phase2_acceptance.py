@@ -254,6 +254,12 @@ QUALITY_BOUNDS = {
     "final_wer": ("max", 0.095074),
 }
 
+# A fully finalized, clean quality run whose macro lands within this relative distance of a
+# bound is a documented exception, ruled on before this code existed (release mandate,
+# issue #10, ADR-0014).  The bounds themselves are never edited to accommodate a result, and
+# an admitted exception is named in the verdict rather than absorbed silently.
+QUALITY_EXCEPTION_RELATIVE_TOLERANCE = 0.05
+
 QUALITY_CASE_IDS = {
     "mono_javier_intro_50s",
     "interview_bill_ackman_60s",
@@ -1396,6 +1402,69 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
     )
 
 
+def quality_bound_status(name: str, value: object) -> str:
+    """Classify one reported macro against its bound: strict, exception, or failed.
+
+    Only the distance from the bound is judged here.  Whether the run was complete and
+    clean enough for an exception to be admissible is decided by the caller, which reaches
+    this point only after the structural, provenance and macro-consistency checks pass.
+    """
+
+    comparison, bound = QUALITY_BOUNDS[name]
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return "failed"
+    observed = float(value)
+    if not math.isfinite(observed):
+        return "failed"
+    if comparison == "max":
+        if observed <= bound:
+            return "strict"
+        shortfall = observed - bound
+    else:
+        if observed >= bound:
+            return "strict"
+        shortfall = bound - observed
+    if not math.isfinite(bound) or bound == 0:
+        return "failed"
+    relative = shortfall / abs(bound)
+    # "Within 5%" includes 5% itself; the division makes the boundary inexact, so a result
+    # that is mathematically exactly at the tolerance is not pushed out of it by rounding.
+    admissible = relative <= QUALITY_EXCEPTION_RELATIVE_TOLERANCE or math.isclose(
+        relative, QUALITY_EXCEPTION_RELATIVE_TOLERANCE, rel_tol=1e-9, abs_tol=0.0
+    )
+    return "exception" if admissible else "failed"
+
+
+def quality_exception_records(
+    payload: Mapping[str, object] | None, *, layer: str
+) -> list[str]:
+    """Name every admitted quality exception so a passing verdict still states it."""
+
+    predicates = payload.get("predicates") if isinstance(payload, Mapping) else None
+    if not isinstance(predicates, list):
+        return []
+    records: list[str] = []
+    for predicate in predicates:
+        if not isinstance(predicate, Mapping) or predicate.get("id") != "quality_corpus":
+            continue
+        raw = predicate.get("raw")
+        metrics = raw.get("macro") if isinstance(raw, Mapping) else None
+        if not isinstance(metrics, Mapping):
+            continue
+        for name, (comparison, bound) in QUALITY_BOUNDS.items():
+            value = metrics.get(name)
+            if quality_bound_status(name, value) != "exception":
+                continue
+            observed = float(value)
+            shortfall = observed - bound if comparison == "max" else bound - observed
+            records.append(
+                f"{layer}:G4:quality_corpus:{name}={observed:.12g} is "
+                f"{shortfall / abs(bound):.4%} beyond {comparison} {bound:.12g}; "
+                f"admitted within {QUALITY_EXCEPTION_RELATIVE_TOLERANCE:.0%} relative tolerance"
+            )
+    return records
+
+
 def _quality_failure_details(predicate: Mapping[str, object]) -> list[str]:
     """Explain reported numeric misses without changing validation or any bound."""
     raw = predicate.get("raw")
@@ -1405,11 +1474,13 @@ def _quality_failure_details(predicate: Mapping[str, object]) -> list[str]:
     details = []
     for name, (comparison, bound) in QUALITY_BOUNDS.items():
         value = metrics.get(name)
+        if quality_bound_status(name, value) != "failed":
+            continue
         if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
             details.append(f"reported {name} is missing or non-finite")
-        elif comparison == "max" and value > bound:
+        elif comparison == "max":
             details.append(f"reported {name}={value:.12g} exceeds maximum {bound:.12g}")
-        elif comparison == "min" and value < bound:
+        else:
             details.append(f"reported {name}={value:.12g} is below minimum {bound:.12g}")
     return details or ["quality observation failed structural, provenance, or macro consistency validation"]
 
@@ -1576,13 +1647,9 @@ def _validate_quality(predicate: Mapping[str, object]) -> bool:
         ):
             return False
 
-    for name, (comparison, bound) in QUALITY_BOUNDS.items():
-        value = recomputed_macro[name]
-        if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
-            return False
-        if comparison == "max" and float(value) > bound:
-            return False
-        if comparison == "min" and float(value) < bound:
+    for name in QUALITY_BOUNDS:
+        # Reached only after the run proved complete, clean and self-consistent above.
+        if quality_bound_status(name, recomputed_macro[name]) == "failed":
             return False
     return True
 
@@ -2549,6 +2616,12 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
             "qualified": bool(table["passed"]),
             "g7": "UNCLAIMED",
             "errors": sorted(set(all_errors)),
+            "quality_exceptions": sorted(
+                set(
+                    quality_exception_records(deployed_report, layer="deployed")
+                    + quality_exception_records(pre_report, layer="pre_admission")
+                )
+            ),
             "commands": [asdict(item) for item in command_results],
             "denominators": {
                 "commands_collected": len(commands),

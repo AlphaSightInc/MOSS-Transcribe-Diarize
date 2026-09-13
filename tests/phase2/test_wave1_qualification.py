@@ -3508,15 +3508,73 @@ def test_control_diagnostic_names_operation_and_socket(monkeypatch, tmp_path):
     assert str(failure.value) == f"Control status at {socket_path}: Phase-2 product control is unavailable."
 
 
-def test_quality_numeric_failures_are_reported_without_weakening_bounds():
+# macro name -> (surface, per-case metric field) it is recomputed from.
+_QUALITY_MACRO_SOURCES = {
+    "immediate_wer": ("immediate", "wer"),
+    "settled_wer": ("settled", "wer"),
+    "recall": ("settled", "content_recall"),
+    "time_speaker_attribution": ("settled", "tbsa"),
+    "diarization_error_rate": ("settled", "der"),
+    "matched_speaker_accuracy": ("settled", "matched_word_speaker_accuracy"),
+    "reference_speech_der": ("settled", "reference_speech_der"),
+    "final_wer": ("final", "wer"),
+}
+
+
+def _quality_report_offset_from_bounds(relative: float):
+    """Build a SELF-CONSISTENT report whose macros sit `relative` off every bound.
+
+    The evaluator recomputes each macro from `per_case` and cross-checks the duration-weighted
+    and per-category projections, so moving `macro` alone would fail consistency long before
+    any bound is judged. Giving every case the same value per field keeps all three
+    derivations equal to it, which isolates the bound decision as the only thing under test.
+    """
+
     report = _report("deployed", "a" * 40, "b" * 64)
     quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
+    raw = quality["raw"]
+    targets = {}
     for name, (comparison, bound) in acceptance.QUALITY_BOUNDS.items():
-        quality["raw"]["macro"][name] = bound + (0.01 if comparison == "max" else -0.01)
-    outcomes, errors = acceptance.evaluate_external_report(
+        direction = 1 if comparison == "max" else -1
+        targets[name] = bound * (1 + direction * relative)
+
+    per_field = {
+        source: targets[name] for name, source in _QUALITY_MACRO_SOURCES.items()
+    }
+    for item in raw["per_case"]:
+        for (surface, field), value in per_field.items():
+            item["metrics"][surface][field] = value
+
+    raw["macro"] = dict(targets)
+    settled = {
+        field: value for (surface, field), value in per_field.items() if surface == "settled"
+    }
+    raw["duration_weighted"] = {
+        field: settled.get(field, raw["duration_weighted"][field])
+        for field in raw["duration_weighted"]
+    }
+    for category in raw["per_category"]:
+        raw["per_category"][category] = {
+            field: settled.get(field, raw["per_category"][category][field])
+            for field in raw["per_category"][category]
+        }
+    return acceptance.evaluate_external_report(
         report, layer="deployed", candidate_sha="a" * 40, candidate_tree="c" * 40,
         uv_lock_sha256="d" * 64, fixtures=FIXTURES,
         wheel_record_projection_sha256="f" * 64, dependency_projection_sha256="e" * 64,
+    ), report
+
+
+def test_quality_numeric_failures_are_reported_without_weakening_bounds():
+    """Misses beyond the documented tolerance are still rejected, and each one is named.
+
+    The offset is relative, not absolute: the bounds differ by two orders of magnitude in how
+    much absolute room they have, so a fixed 0.01 is a large miss for an error rate and a
+    rounding error for an accuracy near 1.0.
+    """
+
+    (outcomes, errors), _ = _quality_report_offset_from_bounds(
+        acceptance.QUALITY_EXCEPTION_RELATIVE_TOLERANCE * 4
     )
     assert outcomes["G4"] is False
     assert "deployed:G4:quality_corpus:failed" in errors
@@ -3526,6 +3584,20 @@ def test_quality_numeric_failures_are_reported_without_weakening_bounds():
         assert any(f"reported {name}=" in detail and f"{bound:.12g}" in detail for detail in details)
     assert "exceeds maximum" in " ".join(details)
     assert "below minimum" in " ".join(details)
+
+
+def test_quality_misses_inside_the_documented_tolerance_are_admitted_and_named():
+    """The mandate's 5 % exception, applied to a run that is otherwise complete and clean."""
+
+    (outcomes, errors), report = _quality_report_offset_from_bounds(
+        acceptance.QUALITY_EXCEPTION_RELATIVE_TOLERANCE / 5
+    )
+    assert outcomes["G4"] is True
+    assert not [error for error in errors if "quality_corpus" in error]
+
+    records = acceptance.quality_exception_records(report, layer="deployed")
+    assert len(records) == len(acceptance.QUALITY_BOUNDS)
+    assert all("relative tolerance" in record for record in records)
 
 
 def test_quality_surface_diagnostics_preserve_failed_finalization_without_transcript():
