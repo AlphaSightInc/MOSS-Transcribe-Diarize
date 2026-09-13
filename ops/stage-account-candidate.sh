@@ -285,6 +285,11 @@ artifacts = validated_candidate_artifacts(payload)
 assert artifacts.release == pathlib.Path(sys.argv[3]).resolve()
 PY
 
+# Publish all profile consumers only after the complete installed candidate validates.
+LD_LIBRARY_PATH="${SQLITE_PREFIX}/lib" "${RELEASE}/bin/python" -I \
+  "${CHECKOUT}/ops/stage-account-provider-manifest.py" "${CANDIDATE_SHA}" \
+  "${LINUX_USER_DIR}/.config/moss-transcribe-diarize/moss-cutover.json" "${MANIFEST}"
+
 # Count the newly constructed runtime in the final retention selection too.
 python3 "${PROJECT_DIR}/moss_transcribe_diarize/candidate_storage.py" --prune --lock-fd 9 \
   --home "${LINUX_USER_DIR}" --protect "${PROJECT_DIR}" --protect "${RELEASE}" --protect "${CHECKOUT}"

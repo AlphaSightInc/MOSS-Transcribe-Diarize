@@ -73,8 +73,52 @@ def stage_provider_manifest(candidate_sha: str, cutover_profile: Path) -> Path:
     return destination
 
 
+def stage_candidate_profiles(candidate_sha: str, cutover_profile: Path, manifest: Path) -> None:
+    """Publish one candidate consistently to every consumer, including rehearsal."""
+    manifest = manifest.expanduser().resolve()
+    cutover = json.loads(cutover_profile.read_text())
+    acceptance_path = Path(cutover["candidate"]["acceptance_profile"]).expanduser()
+    acceptance = json.loads(acceptance_path.read_text())
+    # Required consumers must exist; do not silently publish an incomplete profile.
+    cutover["candidate_manifest"]
+    for layer in ("deployed", "pre_admission"):
+        acceptance["measurements"][layer]["candidate_manifest"]
+    acceptance["cutover_rehearsal"]["candidate_manifest"]
+
+    def references(value):
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key == "candidate_manifest":
+                    yield value, key
+                else:
+                    yield from references(child)
+        elif isinstance(value, list):
+            for child in value:
+                yield from references(child)
+
+    profiles = ((cutover_profile, cutover), (acceptance_path, acceptance))
+    for _, payload in profiles:
+        for parent, key in references(payload):
+            parent[key] = str(manifest)
+    # Validate all proposed references before either profile changes. Old references
+    # may be gone after retention pruning; they are replaced, never retained.
+    for reference in {parent[key] for _, payload in profiles
+                      for parent, key in references(payload)}:
+        value = json.loads(Path(reference).read_text())
+        if value["git_sha"] != candidate_sha:
+            raise ValueError("candidate manifest revision differs from staged SHA")
+        if not Path(value["release"]).is_dir():
+            raise ValueError("referenced candidate runtime does not exist")
+    for path, payload in profiles:
+        _atomic_private_file(path, (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode())
+    print("evidence: all_candidate_manifest_references_staged=true")
+
+
 if __name__ == "__main__":
     try:
-        stage_provider_manifest(sys.argv[1], Path(sys.argv[2]))
+        if len(sys.argv) == 4:
+            stage_candidate_profiles(sys.argv[1], Path(sys.argv[2]), Path(sys.argv[3]))
+        else:
+            stage_provider_manifest(sys.argv[1], Path(sys.argv[2]))
     except (OSError, ValueError, KeyError) as exc:
         raise SystemExit(f"refused: {type(exc).__name__}") from None

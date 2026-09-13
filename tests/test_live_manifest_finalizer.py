@@ -788,3 +788,49 @@ def test_candidate_stage_error_does_not_log_operator_path(tmp_path):
     assert result.returncode != 0
     assert result.stderr.strip() == "refused: FileNotFoundError"
     assert "PRIVATE_OPERATOR" not in result.stdout + result.stderr
+
+
+def _candidate_profiles(tree):
+    home, release, _, _, _, profile, _, tool = tree
+    acceptance = profile.with_name("phase2-acceptance.json")
+    acceptance.write_text(json.dumps({
+        "measurements": {layer: {"candidate_manifest": "gone.json"}
+                         for layer in ("deployed", "pre_admission")},
+        "cutover_rehearsal": {"candidate_manifest": "gone.json"},
+        "additional": [{"candidate_manifest": "also-stale.json"}],
+        "unchanged": "keep",
+    }))
+    value = json.loads(profile.read_text())
+    value["candidate"]["acceptance_profile"] = str(acceptance)
+    profile.write_text(json.dumps(value))
+    manifest = home / "candidate.json"
+    manifest.write_text(json.dumps({"git_sha": DEPLOYED_REVISION, "release": str(release)}))
+    return tool, profile, acceptance, manifest, release
+
+
+def test_stage_profiles_repoints_all_consumers_including_extra_stale_reference(candidate_provider_tree):
+    tool, profile, acceptance, manifest, _ = _candidate_profiles(candidate_provider_tree)
+    tool.stage_candidate_profiles(DEPLOYED_REVISION, profile, manifest)
+    assert json.loads(profile.read_text())["candidate_manifest"] == str(manifest)
+    value = json.loads(acceptance.read_text())
+    for layer in ("deployed", "pre_admission"):
+        assert value["measurements"][layer]["candidate_manifest"] == str(manifest)
+    assert value["cutover_rehearsal"]["candidate_manifest"] == str(manifest)
+    assert value["additional"][0]["candidate_manifest"] == str(manifest)
+    assert value["unchanged"] == "keep"
+    assert all(path.stat().st_mode & 0o777 == 0o600 for path in (profile, acceptance))
+
+
+@pytest.mark.parametrize("missing", ["manifest", "runtime", "revision"])
+def test_stage_profiles_refuses_missing_candidate_before_writing(candidate_provider_tree, missing):
+    tool, profile, acceptance, manifest, release = _candidate_profiles(candidate_provider_tree)
+    before = {p: p.read_bytes() for p in (profile, acceptance)}
+    if missing == "manifest":
+        manifest.unlink()
+    elif missing == "runtime":
+        shutil.rmtree(release)
+    else:
+        manifest.write_text(json.dumps({"git_sha": "wrong", "release": str(release)}))
+    with pytest.raises((ValueError, FileNotFoundError)):
+        tool.stage_candidate_profiles(DEPLOYED_REVISION, profile, manifest)
+    assert {p: p.read_bytes() for p in before} == before
