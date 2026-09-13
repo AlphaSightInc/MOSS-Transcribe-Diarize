@@ -29,13 +29,16 @@ anything that goes wrong without weakening a gate or changing policy.
   vLLM PID 324, zero restarts; vhdx moved to `D:\wsl\Ubuntu` (C: ≈613 GB free); durable `/etc/hosts` prerequisite
   unit installed; pre-flight disk guards active; both MinerU scheduled tasks enabled.
 
-## ⚠ GitHub access blocker (found 21:20 EDT 2026-09-12)
+## GitHub identity (confirmed by the operator 21:35 EDT 2026-09-12)
 
-`gh api repos/aiSight-us/MOSS-Transcribe-Diarize` returns 404 for account `AlphaSightInc` (worked at 21:13 EDT — last
-fetch of `private/auto-mvp-0911` succeeded). Pushes, PR #32 and issue #10 are unreachable until the operator restores
-access (repo permissions, or a token refresh with `gh auth login`). Unpushed on the branch: this document's commit.
-**Never** push to `origin` (`AlphaSightInc/MOSS-Transcribe-Diarize`) — it is a public fork; the deliverable is the
-`private` remote only. The host already holds the round-17 staged runtime, so preadmission does not depend on GitHub.
+The deliverable repo is **https://github.com/aiSight-us/MOSS-Transcribe-Diarize** (private; branches:
+https://github.com/aiSight-us/MOSS-Transcribe-Diarize/branches/active), remote name `private`. It is reachable only as the
+GitHub account **`yugao-aisight`**, not `AlphaSightInc` (a second login on this Mac that owns the public fork `origin`).
+The git credential helper is `gh`, so whichever account is *active* in `gh` is what `git push` uses. If a push or `gh api`
+returns 404 "Repository not found", run `gh auth switch --user yugao-aisight` and retry — that is exactly what happened at
+21:20 EDT (active account had flipped to AlphaSightInc; switched back, push succeeded). **Never** push to `origin`
+(`AlphaSightInc/MOSS-Transcribe-Diarize`, a public fork). The host holds the staged round-17 runtime, so preadmission does
+not depend on GitHub anyway.
 
 ## Operator documents (all on the branch — read them before guiding)
 
