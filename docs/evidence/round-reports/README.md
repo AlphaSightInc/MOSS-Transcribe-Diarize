@@ -56,3 +56,7 @@ no host operation was performed.
 ## Round 15 — sanitized copy
 
 [Round 15](round-15.md) preserves numbers and verdicts. Corpus IDs replaced with neutral case numbers; remaining fields reviewed as statuses, metrics, opaque identifiers, technical paths and token-free origins. No transcript/prompt text, credentials, audio or screenshots copied. Companion artifacts remain explicitly MacStudio-local.
+
+## Round 16
+
+[Round 16, sanitized report](round-16.md): content reviewed; name-bearing corpus IDs replaced consistently by six neutral case numbers, with scores/counts/verdicts unchanged. Original and uncopied companion artifacts remain MacStudio-local (not in repo). All product predicates pass under the three approved quality exceptions in both layers; the stale rehearsal manifest prevented a clean cutover record. Round 17 is the confirmation run, not yet claimed here.
