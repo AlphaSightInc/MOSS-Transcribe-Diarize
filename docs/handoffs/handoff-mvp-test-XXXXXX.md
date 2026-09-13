@@ -7,9 +7,11 @@ anything that goes wrong without weakening a gate or changing policy.
 
 ## Where things stand (verify, do not assume)
 
-- **Branch / deliverable:** `private/auto-mvp-0911` (never `dev`/`main`, never force-push). Head at writing:
-  `5d21f59c` (staging fix) on top of qualified candidate **`e47ab229`**; differences since `e47ab229` are
-  tests, docs and the staging script only. Draft PR (unmerged, on purpose):
+- **Branch / deliverable:** `private/auto-mvp-0911` (never `dev`/`main`, never force-push). **Attend against
+  `b9aedebd6de27e289530856c14af49c9b160467f`**, staged inert on the host and independently verified
+  (manifest SHA matches, all three `candidate_manifest` refs repoint, profiles `0600`, vLLM untouched at
+  PID 369, `account-current` absent). `e47ab229` and `13c780e8` are both **superseded**; do not attend
+  against either. Draft PR (unmerged, on purpose):
   https://github.com/aiSight-us/MOSS-Transcribe-Diarize/pull/32 — do not merge; the operator decides on a
   history squash first (see the PR's "History note").
 - **Round 16 (`e47ab229`) passed every product predicate**: deterministic 18/18, deployed 18/19,
@@ -69,11 +71,18 @@ not depend on GitHub anyway.
 
 ## The walkthrough to run with the operator (one step at a time; confirm each before the next)
 
-1. **Re-qualify first.** The attended browser is now separable from the server (below), which changes the
-   candidate SHA, so `e47ab229` is superseded. Stage the new head and run one unattended `--terminal restored`
-   round (~2 h 15 min, no attention) before spending the operator's attended hour — it also re-proves the host is
-   stable for 2+ hours after the CUDA incident. `--terminal preadmission` does repeat all qualification itself, so
-   this round is insurance, not a prerequisite.
+1. **Staging and insurance are already done — do not repeat them.** `b9aedebd` is staged inert and verified,
+   and the deterministic tests covering the changed boundary ran from that staged runtime: **128 passed**. The
+   operator decided against another full `--terminal restored` round. That decision is well founded: 1.2 measured
+   round 16 at **130.1 min of recorded commands**, dominated by two ~63.9 min collectors (quality is 24 serial
+   sessions ≈43 min; capacity ≈22.9 min; overload ≈7.2 min; G9 runs a second capacity campaign), and the
+   acceptance CLI has **no predicate selector** — waves are cumulative and `measure_layer` enumerates every
+   requirement. So the round cannot be shortened without editing the runner or shrinking measurement windows, and
+   shrinking a window that still runs would weaken the gate. `--terminal preadmission` performs the full
+   qualification itself before G7, so that coverage is not lost — it is deferred into the attended run.
+   **Not covered, state it aloud:** GPU stability under sustained 4/8-session load is not re-proven, and round
+   17's crash shows that risk is real. If load insurance is wanted, the only honest form is the full round at
+   full cost.
 2. **Display for the canary — solved; use Option C.** The server has **no usable microphone**: every physical jack
    reports UNPLUGGED and the only ACTIVE capture endpoints are `Stereo Mix` (Realtek loopback) plus Virtual Desktop
    and Oculus virtuals. macOS RDP supplies no microphone redirection either, so a host-local canary was a dead end.
