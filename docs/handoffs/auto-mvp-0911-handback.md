@@ -2,7 +2,7 @@
 
 Pull request (draft, unmerged, do not merge before deciding on history squash): https://github.com/aiSight-us/MOSS-Transcribe-Diarize/pull/32
 
-Branch: **`private/auto-mvp-0911`**. Read this as an implementation/evidence handback, not an admission certificate. Source reviewed at `09539ad7`; all change-table commits are verified ancestors. Section 2 records round 15; round 16 is the pending confirmation run. Do not infer a PR, merge or admission from this handback.
+Branch: **`private/auto-mvp-0911`**. Read this as an implementation/evidence handback, not an admission certificate. Source reviewed at `09539ad7`; all change-table commits are verified ancestors. Section 2 records round 16, the last round whose product predicates all passed. Round 17 was attempted as its clean-record confirmation and FAILED on a host incident, not on the product; see section 2. The candidate to attend against is now `b9aedebd`, not `e47ab229`. Do not infer a PR, merge or admission from this handback.
 
 ## 1. What you need to do (in order)
 
@@ -61,9 +61,13 @@ Failed predicates: `quality_corpus` (deployed), `quality_corpus` (pre_admission)
 
 Approved exception set: **DER, reference-speech DER, matched-speaker accuracy**, within 5% relative tolerance, **both layers**. Deployed matched-speaker accuracy **0.911502000** is below the strict **0.911512000** bound but inside the approved band. QUALITY_BOUNDS and identity policy remain unchanged.
 
-All product predicates passed in round 16; a stale rehearsal manifest reference in the host profile prevented the cutover record from reading qualified — staging now repoints every manifest field; round 17 is the clean-record confirmation.
+All product predicates passed in round 16; a stale rehearsal manifest reference in the host profile prevented the cutover record from reading qualified — staging now repoints every manifest field.
 
-Qualified candidate e47ab229; branch head adds tests/docs and the staging fix only; the attended preadmission re-qualifies whatever is staged.
+**Round 17 (2026-09-12, candidate `5d21f59c`) did not produce that clean record.** vLLM died mid-round at 21:52:41 EDT with `torch.AcceleratorError: CUDA error: unknown error` → `EngineDeadError` → process exit. The cutover detected the broken invariant and terminated `SAFE_STOPPED` / `CutoverUnsafe` ("vLLM process changed during cutover or restore"), `g7: UNCLAIMED`, `admitted: false`, quarantining the candidate and restoring Phase-1. Its single product failure (`ServiceReplayIdentityCommitFailure`, deployed quality session 10) landed in the same minute the decoder died and is collateral. Cause not established: no nvlddmkm/TDR/WHEA events, GPU idle and cool afterwards; Windows logged "low virtual memory" 30 s prior, but that warning recurs chronically (14+ times over 2026-09-11/12, including 21:29:40 in this same round without a crash). **GPU stability under sustained load is therefore not re-proven.**
+
+The staging fix was instead confirmed directly: staging `13c780e8` and then `b9aedebd` repointed `measurements.deployed`, `measurements.pre_admission` **and** `cutover_rehearsal` to the new manifest with none stale, verified read-only on the host.
+
+**Candidate to attend against: `b9aedebd6de27e289530856c14af49c9b160467f`**, staged inert and verified. `e47ab229` and `13c780e8` are superseded. Round 16's numbers above were measured on `e47ab229`; the only runtime module changed since is `phase2_g7_canary.py`, the attended-G7 client boundary, which a `--terminal restored` round never exercises. By operator decision no further restored round was run: a full round measures ~130 minutes of recorded commands and the acceptance CLI has no predicate selector, so it cannot be shortened without weakening a gate. Change-focused insurance ran instead — the G7-canary, atomic-cutover, manifest-finalizer, acceptance-setup and legacy-surface suites from the staged runtime, **128 passed** — and the attended preadmission re-qualifies whatever is staged before G7.
 
 Source: [round-16 report, sanitized copy](../evidence/round-reports/round-16.md). Product-predicate condition met under the approved exceptions; full qualification/handoff remains blocked by the rehearsal record. Terminal **restored**, admitted=false, G7 UNCLAIMED. All 48 main sessions finalized.
 
