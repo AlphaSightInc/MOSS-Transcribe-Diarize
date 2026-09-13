@@ -33,10 +33,13 @@ the mandate had already ruled acceptable.
 
 ## Decision
 
-`quality_bound_status` classifies each reported macro as **strict**, **exception**, or **failed**.
+`quality_bound_status` classifies each macro as **strict**, **exception**, or **failed**.
 `_validate_quality` rejects only `failed`. `QUALITY_EXCEPTION_RELATIVE_TOLERANCE = 0.05` expresses
 the ruled band; the boundary is inclusive, and the division that computes it is protected against
-rounding pushing an exactly-5 % result out of the band.
+rounding pushing an exactly-5 % result out of the band. That guard is a relative comparison at
+`rel_tol=1e-9`, so the admitted band is 5 % plus roughly 5e-11 relative rather than 5 % exactly —
+stated here because "exactly 5 %" would be false. The slack is eleven orders of magnitude below the
+smallest margin any real run has produced.
 
 **`QUALITY_BOUNDS` is not edited.** The bounds keep their meaning: a macro outside one is a miss.
 What changes is only whether a miss of ruled size rejects the candidate.
@@ -47,12 +50,27 @@ carrying the value, the bound, the relative distance and the tolerance, and the 
 exception is never silent, and `_quality_failure_details` no longer reports an admitted macro as a
 failure reason when a run fails for some other cause.
 
-The exception is reachable only after the run proves itself: six cases, two passes, twelve
-sessions, 122 windows, ≥ 1239.987 s of audio, twelve per-case rows, six input identities with every
-check true and matching source audio and reference, a macro that recomputes from the per-case rows,
-and duration-weighted and per-category projections that agree. Those checks run first and are
+The exception is reachable only after the run proves itself **structurally**: six cases, two passes,
+twelve sessions, 122 windows, ≥ 1239.987 s of audio, twelve per-case rows, six input identities with
+every check true and matching source audio and reference, a macro that recomputes from the per-case
+rows, and duration-weighted and per-category projections that agree. Those checks run first and are
 unchanged. The tolerance excuses distance from a bound; it excuses nothing about completeness,
 provenance or consistency.
+
+**What the evaluator does not itself prove.** "Fully finalized and clean" is enforced by the
+*producer*, not by this function. `_quality_validation` never reads `surface_observations`, so a
+self-consistent report whose surfaces are absent, or which records a failed finalization, would
+satisfy it. The normal path is protected upstream — `measure_three_surfaces.py` refuses a non-final
+final capture and raises on settle timeout, and the external measurement requires all three surfaces
+— but that is a property of the producer, not of the gate. This gap predates this decision and is
+unchanged by it; it is recorded here because the tolerance now rests on that precondition and the
+precondition deserves to be stated honestly rather than assumed.
+
+Admission and recording judge the **same recomputed macro**, and records are emitted only for an
+observation that validated. Reported and recomputed macros are required to agree only to 1e-12, so
+reading the reported value could have named a different number than the one admitted, or stayed
+silent about an admission; and classifying distance alone would have attached "admitted" records to
+runs the gate rejected. Both are regression-tested.
 
 ## Consequences
 
@@ -64,9 +82,13 @@ in both directions, for all eight macros.
 by ±0.01 **absolute**. That is 6–10 % for the error rates but ~1 % for the accuracies, whose bounds
 sit near 1.0, so three of its eight perturbations now fall inside the admitted band. It was rewritten
 to perturb **relatively**, which restores its intent — every macro moved decisively past the
-tolerance — and made the asymmetry it had been hiding explicit. A companion test asserts the
-admitted case: a self-consistent report offset 1 % from every bound passes G4 and produces eight
-named exception records.
+tolerance — and made the asymmetry it had been hiding explicit. Companion tests assert the admitted
+case (a self-consistent report offset 1 % from every bound passes G4 and produces eight named
+exception records), that **each bound rejects on its own** when moved past the band while the other
+seven stay clean, and that an admission is recorded from the recomputed macro even when the reported
+one sits exactly on the bound. These exercise `evaluate_external_report`; they do not exercise
+`run_acceptance` or a persisted `verdict.json`, so the recording guarantee is proven at the
+evaluator, not at the file.
 
 The risk this accepts is drift: a candidate may now be admitted while three macros sit just outside
 their bounds, and successive candidates could each sit just inside the band. The mitigation is that

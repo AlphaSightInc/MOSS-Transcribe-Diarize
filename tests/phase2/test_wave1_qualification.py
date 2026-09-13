@@ -3600,6 +3600,64 @@ def test_quality_misses_inside_the_documented_tolerance_are_admitted_and_named()
     assert all("relative tolerance" in record for record in records)
 
 
+@pytest.mark.parametrize("target", sorted(acceptance.QUALITY_BOUNDS))
+def test_each_bound_rejects_on_its_own_beyond_the_tolerance(target):
+    """One macro past the band is enough; the other seven staying clean cannot rescue it."""
+
+    report = _report("deployed", "a" * 40, "b" * 64)
+    quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
+    raw = quality["raw"]
+    comparison, bound = acceptance.QUALITY_BOUNDS[target]
+    direction = 1 if comparison == "max" else -1
+    value = bound * (1 + direction * acceptance.QUALITY_EXCEPTION_RELATIVE_TOLERANCE * 4)
+    surface, field = _QUALITY_MACRO_SOURCES[target]
+    for item in raw["per_case"]:
+        item["metrics"][surface][field] = value
+    raw["macro"][target] = value
+    if surface == "settled":
+        raw["duration_weighted"][field] = value
+        for category in raw["per_category"]:
+            raw["per_category"][category][field] = value
+    outcomes, errors = acceptance.evaluate_external_report(
+        report, layer="deployed", candidate_sha="a" * 40, candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64, fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64, dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G4"] is False
+    assert any(f"reported {target}=" in error for error in errors)
+    assert acceptance.quality_exception_records(report, layer="deployed") == []
+
+
+def test_an_admitted_exception_is_recorded_from_the_recomputed_macro_not_the_reported_one():
+    """Admission and recording must judge identical numbers.
+
+    Consistency between the reported macro and the recomputed one is only enforced to 1e-12,
+    so a reported value sitting exactly on the bound can coexist with per-case rows whose mean
+    is fractionally past it. The gate admits on the recomputed value; the record must say so.
+    """
+
+    report = _report("deployed", "a" * 40, "b" * 64)
+    quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
+    raw = quality["raw"]
+    _, bound = acceptance.QUALITY_BOUNDS["diarization_error_rate"]
+    for item in raw["per_case"]:
+        item["metrics"]["settled"]["der"] = bound + 5e-13
+    raw["macro"]["diarization_error_rate"] = bound  # exactly strict, within 1e-12 of the rows
+    raw["duration_weighted"]["der"] = bound
+    for category in raw["per_category"]:
+        raw["per_category"][category]["der"] = bound
+
+    outcomes, _ = acceptance.evaluate_external_report(
+        report, layer="deployed", candidate_sha="a" * 40, candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64, fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64, dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G4"] is True
+    records = acceptance.quality_exception_records(report, layer="deployed")
+    assert len(records) == 1
+    assert "diarization_error_rate" in records[0]
+
+
 def test_quality_surface_diagnostics_preserve_failed_finalization_without_transcript():
     snapshots = {name: {"snapshot": {"pending_work_items": 0, "session": {
         "finalization_status": "failed", "pending_span_ids": [2],

@@ -50,13 +50,18 @@ def test_the_ruled_exceptions_are_admitted(name, value):
 
 
 @pytest.mark.parametrize(("name", "value"), OBSERVED_2026_09_13)
-def test_the_ruled_exceptions_are_named_in_the_record(name, value):
+def test_a_run_that_does_not_validate_never_reports_an_admitted_exception(name, value):
+    """Nothing is "admitted" by a run the gate rejected.
+
+    The record exists to say what a PASSING verdict rests on. A bare macro cannot validate,
+    so claiming an admission from one would put a reassuring sentence in the evidence of a
+    rejected run. Records naming real admissions are asserted against a complete,
+    self-consistent report in test_wave1_qualification.py.
+    """
+
     macro = _macro_within_bounds()
     macro[name] = value
-    records = quality_exception_records(_payload(macro), layer="deployed")
-    assert len(records) == 1
-    assert records[0].startswith(f"deployed:G4:quality_corpus:{name}=")
-    assert "relative tolerance" in records[0]
+    assert quality_exception_records(_payload(macro), layer="deployed") == []
 
 
 def test_a_clean_run_inside_every_bound_records_no_exception():

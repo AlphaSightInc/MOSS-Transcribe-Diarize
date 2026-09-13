@@ -1447,12 +1447,13 @@ def quality_exception_records(
     for predicate in predicates:
         if not isinstance(predicate, Mapping) or predicate.get("id") != "quality_corpus":
             continue
-        raw = predicate.get("raw")
-        metrics = raw.get("macro") if isinstance(raw, Mapping) else None
-        if not isinstance(metrics, Mapping):
+        # Nothing was admitted unless the observation validated, and what was admitted is the
+        # recomputed macro, not the reported one.  A rejected run has no exceptions to name.
+        validated, recomputed = _quality_validation(predicate)
+        if not validated or recomputed is None:
             continue
         for name, (comparison, bound) in QUALITY_BOUNDS.items():
-            value = metrics.get(name)
+            value = recomputed.get(name)
             if quality_bound_status(name, value) != "exception":
                 continue
             observed = float(value)
@@ -1485,13 +1486,22 @@ def _quality_failure_details(predicate: Mapping[str, object]) -> list[str]:
     return details or ["quality observation failed structural, provenance, or macro consistency validation"]
 
 
-def _validate_quality(predicate: Mapping[str, object]) -> bool:
+def _quality_validation(
+    predicate: Mapping[str, object],
+) -> tuple[bool, dict[str, float] | None]:
+    """Validate the quality observation and return the macro it recomputed itself.
+
+    Admission and recording must judge the same numbers. Returning the recomputed macro is
+    what lets the verdict name exactly the values the gate accepted, rather than the reported
+    ones, which are only required to agree to within 1e-12.
+    """
+
     raw = predicate.get("raw")
     if not isinstance(raw, dict):
-        return False
+        return False, None
     metrics = raw.get("macro")
     if not isinstance(metrics, dict):
-        return False
+        return False, None
     per_case = raw.get("per_case")
     input_identities = raw.get("input_identities")
     if not (
@@ -1507,25 +1517,25 @@ def _validate_quality(predicate: Mapping[str, object]) -> bool:
         and isinstance(input_identities, list)
         and len(input_identities) == 6
     ):
-        return False
+        return False, None
     indexed_inputs = {
         item.get("case_id"): item
         for item in input_identities
         if isinstance(item, dict)
     }
     if set(indexed_inputs) != QUALITY_CASE_IDS:
-        return False
+        return False, None
     for item in indexed_inputs.values():
         checks = item.get("checks")
         if not isinstance(checks, dict) or not checks or not all(
             value is True for value in checks.values()
         ):
-            return False
+            return False, None
         if item.get("source_present") is True and not (
             item.get("source_audio_match") is True
             and item.get("source_reference_match") is True
         ):
-            return False
+            return False, None
     case_passes: set[tuple[str, int]] = set()
     session_ids: set[str] = set()
     total_case_seconds = 0.0
@@ -1541,37 +1551,37 @@ def _validate_quality(predicate: Mapping[str, object]) -> bool:
     )
     for item in per_case:
         if not isinstance(item, dict):
-            return False
+            return False, None
         case_id = item.get("case_id")
         pass_number = item.get("pass")
         if not isinstance(case_id, str) or pass_number not in (1, 2):
-            return False
+            return False, None
         case_passes.add((case_id, pass_number))
         session_id = item.get("session_id")
         if not isinstance(session_id, str) or not session_id or session_id in session_ids:
-            return False
+            return False, None
         session_ids.add(session_id)
         try:
             duration_seconds = float(item["duration_seconds"])
             windows = int(item["windows"])
         except (KeyError, TypeError, ValueError):
-            return False
+            return False, None
         if not math.isfinite(duration_seconds) or duration_seconds <= 0 or windows <= 0:
-            return False
+            return False, None
         total_case_seconds += duration_seconds
         total_case_windows += windows
         category = item.get("category")
         item_metrics = item.get("metrics")
         if not isinstance(category, str) or not category or not isinstance(item_metrics, dict):
-            return False
+            return False, None
         for surface in ("immediate", "settled", "final"):
             values = item_metrics.get(surface)
             if not isinstance(values, dict):
-                return False
+                return False, None
             for field in metric_fields:
                 value = values.get(field)
                 if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
-                    return False
+                    return False, None
         rows.append(item)
     expected_case_passes = {(case_id, pass_number) for case_id in QUALITY_CASE_IDS for pass_number in (1, 2)}
     if (
@@ -1581,7 +1591,7 @@ def _validate_quality(predicate: Mapping[str, object]) -> bool:
         or total_case_windows != 122
         or total_case_seconds < 1239.987
     ):
-        return False
+        return False, None
     def mean(surface: str, field: str, selected: Sequence[dict[str, object]] = rows) -> float:
         return sum(float(item["metrics"][surface][field]) for item in selected) / len(selected)  # type: ignore[index]
 
@@ -1602,7 +1612,7 @@ def _validate_quality(predicate: Mapping[str, object]) -> bool:
         for name, value in recomputed_macro.items()
         if isinstance(metrics.get(name), (int, float))
     ) or any(not isinstance(metrics.get(name), (int, float)) for name in recomputed_macro):
-        return False
+        return False, None
 
     expected_weighted = {
         field: sum(
@@ -1622,7 +1632,7 @@ def _validate_quality(predicate: Mapping[str, object]) -> bool:
         )
         for field, value in expected_weighted.items()
     ):
-        return False
+        return False, None
 
     expected_categories: dict[str, dict[str, float]] = {}
     for category in {str(item["category"]) for item in rows}:
@@ -1632,11 +1642,11 @@ def _validate_quality(predicate: Mapping[str, object]) -> bool:
         }
     categories = raw.get("per_category")
     if not isinstance(categories, dict) or set(categories) != set(expected_categories):
-        return False
+        return False, None
     for category, expected in expected_categories.items():
         observed = categories.get(category)
         if not isinstance(observed, dict) or set(observed) != set(expected):
-            return False
+            return False, None
         if any(
             not isinstance(observed.get(field), (int, float))
             or not math.isfinite(float(observed[field]))
@@ -1645,13 +1655,17 @@ def _validate_quality(predicate: Mapping[str, object]) -> bool:
             )
             for field, value in expected.items()
         ):
-            return False
+            return False, None
 
     for name in QUALITY_BOUNDS:
         # Reached only after the run proved complete, clean and self-consistent above.
         if quality_bound_status(name, recomputed_macro[name]) == "failed":
-            return False
-    return True
+            return False, None
+    return True, recomputed_macro
+
+
+def _validate_quality(predicate: Mapping[str, object]) -> bool:
+    return _quality_validation(predicate)[0]
 
 
 def external_denominator_projection(
