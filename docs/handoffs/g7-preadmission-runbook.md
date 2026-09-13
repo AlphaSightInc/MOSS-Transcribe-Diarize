@@ -462,9 +462,24 @@ Do not point it at the candidate manually. The staged env should remain
 
 ## 3. Start in the foreground
 
-Keep the microphone and a spoken-audio source ready. Be ready to sign into MOSS in the new
-Chrome window: its temporary browser profile starts logged out, and the installed canary
-waits for sign-in with Playwright's default 30-second selector timeout, without an Enter pause.
+Keep the microphone and a spoken-audio source ready.
+
+**Option A/B (host-local Chrome):** be ready to sign into MOSS in the new Chrome window. Its
+temporary profile starts logged out and the canary waits for sign-in with Playwright's default
+30-second selector timeout, with no Enter pause — a real race.
+
+**Option C (your own browser):** that race does not exist, because you signed in during step 2 of
+Option C and your profile is persistent. Do confirm that tab is still signed in before you start,
+and that the `ssh -R` forward is up — the canary contacts the endpoint only when G7 begins, but if
+it is down at that moment the attempt is lost.
+
+**Run it where a dropped connection cannot kill it.** The host has `tmux`; start the cutover inside
+a session on the host rather than a bare SSH shell. It is still a real PTY, so attendance holds, and
+it survives a laptop sleeping or a network blip during the two-hour qualification:
+
+```bash
+tmux new -s g7        # then run the command below inside it; reattach later with: tmux attach -t g7
+```
 
 ```bash
 ATTEMPT="$HOME/.local/state/moss-transcribe-diarize/cutover-attempts/preadmission-$(date -u +%Y%m%dT%H%M%SZ)"
