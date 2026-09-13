@@ -477,6 +477,43 @@ Do not create the attempt directory: the CLI requires a new path and creates it 
 Keep it under this Linux state directory, on the candidate-state filesystem, not `/mnt/c`.
 Do not detach, pipe stdin, or use `systemd-run`. Allow roughly an hour or more; no fixed ETA.
 
+## 3b. What you can walk away from, and what you cannot
+
+The single command runs two very different phases back to back.
+
+**Phase A — automated qualification, budget about two hours, no input needed.** It repeats the whole
+acceptance measurement across both layers. Measured on round 16: roughly 130 minutes of recorded
+commands, about 63.9 minutes per collector — 24 serial quality sessions (~43 min per layer), a
+four-session 600-second capacity campaign, an eight-session overload, and a second capacity campaign
+inside G9. That time is measurement windows, not overhead, which is why it cannot be shortened.
+
+You may leave, subject to three hazards:
+
+1. **Your machine must not sleep and the session must not drop.** The cutover holds your terminal; a
+   dropped SSH session sends SIGHUP mid-attempt and leaves an interrupted attempt needing section 7's
+   restore. Use `caffeinate` on a Mac, and prefer running the cutover **inside `tmux` on the host** —
+   still a real PTY, so the attendance check is satisfied, but it survives a dropped connection.
+   Do not use `systemd-run`, a pipe, or `nohup`; those remove attendance rather than protect it.
+2. **Be back before Phase B starts.** The first hard window opens the moment the canary clicks, and
+   nobody there means `AttendedCanaryError`, automatic restoration, and the whole run again from the
+   top. Watch section 4's journal for `attended_g7_started`; start checking around 90 minutes.
+3. **Option C only:** the `ssh -R` forward must be alive when Phase B begins. It is contacted only
+   then, so a drop during Phase A is harmless provided you re-establish it before returning.
+
+**Phase B — attended G7, roughly 15 to 25 minutes, hands-on throughout.** The four Enter prompts are
+plain `input()` with no timeout, so you set the pace between them, but these windows are fixed:
+
+| window | limit | what must happen inside it |
+|---|---|---|
+| display selection | **300 s** | complete Chrome's share picker with audio enabled |
+| both meters non-zero | **10 s** | both sources already audible when you press the first Enter |
+| capture ready | **120 s** | after that first Enter |
+| capture active | **120 s** | after the canary clicks Start capture |
+| finalize | **600 s** | after Stop and finalize |
+
+The 10-second meter check is the one that surprises people: make the microphone and the shared source
+audible *before* pressing Enter, not after.
+
 ## 4. Watch progress in a second Ubuntu terminal
 
 Paste the exact printed path; variables do not carry into another terminal.
