@@ -12,6 +12,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import urllib.request
 from collections.abc import Callable, Mapping
 from contextlib import ExitStack
 from pathlib import Path
@@ -38,6 +39,8 @@ FORBIDDEN_ATTENDED_SWITCHES = (
     "use-file-for-fake-video-capture",
     "use-fake-ui-for-media-stream",
     "auto-select-desktop-capture-source",
+    "auto-select-screen-capture-source",
+    "auto-select-tab-capture-source-by-title",
     "auto-accept-this-tab-capture",
     "auto-accept-camera-and-microphone-capture",
     "auto-grant-captured-surface-control",
@@ -92,6 +95,42 @@ def _load_pre_admission_profile(path: Path) -> Mapping[str, object]:
     return config
 
 
+class _NoDevToolsRedirect(urllib.request.HTTPRedirectHandler):
+    """DevTools discovery must answer for itself rather than forward the canary elsewhere."""
+
+    def redirect_request(self, *_args: object, **_kwargs: object) -> None:
+        return None
+
+
+def _validated_devtools_url(value: object, *, field: str) -> str:
+    """Accept only a URL that every URL parser must read the same way.
+
+    Python's urlsplit and the WHATWG parser Playwright uses disagree about backslashes and
+    userinfo, so a string both accept can still name two different hosts.  Anything those
+    parsers could read differently is refused here rather than resolved by one of them.
+    """
+
+    if not isinstance(value, str) or not value.strip():
+        raise AttendedCanaryError(f"attended Chrome {field} is malformed")
+    url = value.strip()
+    if any(character in url for character in "\\ \t\r\n"):
+        raise AttendedCanaryError(f"attended Chrome {field} contains a URL delimiter parsers disagree about")
+    if any(ord(character) < 0x20 or ord(character) == 0x7F for character in url):
+        raise AttendedCanaryError(f"attended Chrome {field} contains control characters")
+    parts = urlsplit(url)
+    if parts.scheme not in ("http", "ws"):
+        raise AttendedCanaryError(f"attended Chrome {field} must be an http or ws URL")
+    if "@" in parts.netloc:
+        raise AttendedCanaryError(f"attended Chrome {field} must not carry userinfo")
+    try:
+        parts.port
+    except ValueError as exc:
+        raise AttendedCanaryError(f"attended Chrome {field} has an invalid port") from exc
+    if parts.hostname not in ATTENDED_CDP_LOOPBACK:
+        raise AttendedCanaryError(f"attended Chrome {field} must be a loopback address")
+    return url
+
+
 def _attended_cdp_endpoint(config: Mapping[str, object]) -> str | None:
     """Return the operator's loopback DevTools endpoint, or None for a host-local Chrome.
 
@@ -104,13 +143,31 @@ def _attended_cdp_endpoint(config: Mapping[str, object]) -> str | None:
     value = config.get("chrome_cdp_endpoint")
     if value is None:
         return None
-    if not isinstance(value, str) or not value.strip():
-        raise AttendedCanaryError("attended Chrome DevTools endpoint is malformed")
-    endpoint = value.strip()
-    parts = urlsplit(endpoint)
-    if parts.scheme not in ("http", "ws") or parts.hostname not in ATTENDED_CDP_LOOPBACK:
-        raise AttendedCanaryError("attended Chrome DevTools endpoint must be a loopback address")
-    return endpoint
+    return _validated_devtools_url(value, field="DevTools endpoint")
+
+
+def _attended_devtools_target(endpoint: str) -> str:
+    """Resolve DevTools discovery here, so the connection cannot be steered off the forward.
+
+    Handing an http endpoint to the driver would let whatever answers it nominate the
+    websocket actually connected to.  That nomination is read and bounded here instead.
+    """
+
+    if urlsplit(endpoint).scheme == "ws":
+        return endpoint
+    opener = urllib.request.build_opener(_NoDevToolsRedirect)
+    try:
+        with opener.open(endpoint.rstrip("/") + "/json/version", timeout=30) as response:
+            payload = json.load(response)
+    except AttendedCanaryError:
+        raise
+    except Exception as exc:
+        raise AttendedCanaryError(
+            "attended browser DevTools endpoint did not answer discovery on the forward"
+        ) from exc
+    if not isinstance(payload, Mapping):
+        raise AttendedCanaryError("attended browser DevTools discovery is malformed")
+    return _validated_devtools_url(payload.get("webSocketDebuggerUrl"), field="DevTools target")
 
 
 def _frame_summary(frames: list[Mapping[str, object]], descriptor: Mapping[str, object]) -> dict[str, object]:
@@ -369,6 +426,8 @@ def _run_scenario(
             raise AttendedCanaryError(f"{scenario} browser left the production origin during capture")
         page.get_by_role("button", name="Stop and finalize").click()
         page.wait_for_selector('[data-capture-phase="terminal"]', timeout=600_000)
+        if _origin_of(page.url) != origin:
+            raise AttendedCanaryError(f"{scenario} browser left the production origin before finalizing")
         if len(meeting_ids) != 1:
             raise AttendedCanaryError(f"{scenario} did not bind exactly one Live Meeting")
         meeting_id = next(iter(meeting_ids))
@@ -517,7 +576,7 @@ def run_attended_g7_canary(
             stack.callback(context.close)
             browser = context.browser
         else:
-            browser = playwright.chromium.connect_over_cdp(endpoint)
+            browser = playwright.chromium.connect_over_cdp(_attended_devtools_target(endpoint))
             stack.callback(browser.close)
             audited_switches = _audit_attended_switches(browser)
             context = browser.contexts[0] if browser.contexts else browser.new_context()

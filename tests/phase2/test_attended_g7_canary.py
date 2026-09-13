@@ -187,7 +187,9 @@ def _profile_with(tmp_path, **prerequisites):
 def test_attended_runner_attaches_to_the_operator_loopback_browser(monkeypatch, tmp_path):
     """The attended client may run on the operator's machine, not the server."""
 
-    profile = _profile_with(tmp_path, chrome_cdp_endpoint="http://127.0.0.1:9222")
+    profile = _profile_with(
+        tmp_path, chrome_cdp_endpoint="ws://127.0.0.1:9222/devtools/browser/abc"
+    )
     observed: dict[str, object] = {}
 
     class Context:
@@ -241,7 +243,7 @@ def test_attended_runner_attaches_to_the_operator_loopback_browser(monkeypatch, 
         candidate=_candidate(),
         confirm=lambda _prompt: "",
     )
-    assert observed["endpoint"] == "http://127.0.0.1:9222"
+    assert observed["endpoint"] == "ws://127.0.0.1:9222/devtools/browser/abc"
     assert observed["context"] is attached
     assert observed["init_script"] is True
     assert observed["disconnected"] is True
@@ -269,7 +271,9 @@ class _CommandLineSession:
 
 
 def _attach_runner(monkeypatch, tmp_path, session, *, contexts=None):
-    profile = _profile_with(tmp_path, chrome_cdp_endpoint="http://127.0.0.1:9222")
+    profile = _profile_with(
+        tmp_path, chrome_cdp_endpoint="ws://127.0.0.1:9222/devtools/browser/abc"
+    )
 
     class Context:
         def add_init_script(self, _script):
@@ -366,6 +370,21 @@ def test_attended_runner_records_the_switches_it_cleared(monkeypatch, tmp_path):
         "file:///tmp/devtools",
         "   ",
         "",
+        # Two URL parsers must not be able to read one string as two different hosts.
+        # Python's urlsplit reads the host below as 127.0.0.1; the WHATWG parser the
+        # driver uses reads evil.example, because it treats the backslash as a slash.
+        "http://evil.example\\@127.0.0.1:9222",
+        "ws://evil.example\\@127.0.0.1:9222/devtools/browser/abc",
+        "http://evil.example@127.0.0.1:9222",
+        "http://127.0.0.1@evil.example:9222",
+        "http://0.0.0.0:9222",
+        "http://127.0.0.2:9222",
+        "http://2130706433:9222",
+        "http://0177.0.0.1:9222",
+        "http://localhost.:9222",
+        "http://localhost:bad",
+        "http://local\nhost:9222",
+        "\x01http://localhost:9222",
     ),
 )
 def test_attended_runner_refuses_a_devtools_endpoint_off_loopback(endpoint, monkeypatch, tmp_path):
@@ -381,6 +400,71 @@ def test_attended_runner_refuses_a_devtools_endpoint_off_loopback(endpoint, monk
             candidate=_candidate(),
             confirm=lambda _prompt: "",
         )
+
+
+def test_devtools_discovery_is_resolved_here_and_bounded_to_the_forward(monkeypatch):
+    """Whatever answers the endpoint must not get to nominate an off-loopback websocket."""
+
+    class Response:
+        def __init__(self, payload):
+            self._payload = json.dumps(payload).encode()
+
+        def read(self, *_args):
+            return self._payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    nominated = {}
+
+    def opener_for(payload):
+        class Opener:
+            def open(self, url, timeout=None):
+                nominated["url"] = url
+                return Response(payload)
+
+        return Opener()
+
+    monkeypatch.setattr(
+        g7.urllib.request,
+        "build_opener",
+        lambda *_a: opener_for({"webSocketDebuggerUrl": "ws://127.0.0.1:9222/devtools/browser/ok"}),
+    )
+    assert (
+        g7._attended_devtools_target("http://127.0.0.1:9222")
+        == "ws://127.0.0.1:9222/devtools/browser/ok"
+    )
+    assert nominated["url"] == "http://127.0.0.1:9222/json/version"
+
+    monkeypatch.setattr(
+        g7.urllib.request,
+        "build_opener",
+        lambda *_a: opener_for({"webSocketDebuggerUrl": "ws://evil.example:9222/devtools/browser/x"}),
+    )
+    with pytest.raises(g7.AttendedCanaryError, match="DevTools target"):
+        g7._attended_devtools_target("http://127.0.0.1:9222")
+
+
+def test_a_websocket_endpoint_needs_no_discovery():
+    target = "ws://127.0.0.1:9222/devtools/browser/abc"
+    assert g7._attended_devtools_target(target) == target
+
+
+def test_every_automatic_capture_selection_switch_is_refused():
+    """The audit list must cover Chromium's auto-selection switches, not a subset."""
+
+    for switch in (
+        "auto-select-desktop-capture-source",
+        "auto-select-screen-capture-source",
+        "auto-select-tab-capture-source-by-title",
+        "auto-accept-this-tab-capture",
+        "auto-accept-camera-and-microphone-capture",
+        "auto-grant-captured-surface-control",
+    ):
+        assert switch in g7.FORBIDDEN_ATTENDED_SWITCHES
 
 
 def test_attended_runner_refuses_noninteractive_or_incomplete_prerequisites(monkeypatch, tmp_path):

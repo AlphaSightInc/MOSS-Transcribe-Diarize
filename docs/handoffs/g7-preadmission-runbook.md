@@ -203,7 +203,8 @@ software" infobar; that is the flag doing its job.
 so it is checked rather than assumed. The canary refuses any attended browser started with
 `--use-fake-device-for-media-stream`, `--use-file-for-fake-audio-capture`,
 `--use-file-for-fake-video-capture`, `--use-fake-ui-for-media-stream`,
-`--auto-select-desktop-capture-source`, `--auto-accept-this-tab-capture`,
+`--auto-select-desktop-capture-source`, `--auto-select-screen-capture-source`,
+`--auto-select-tab-capture-source-by-title`, `--auto-accept-this-tab-capture`,
 `--auto-accept-camera-and-microphone-capture` or `--auto-grant-captured-surface-control` — synthetic
 capture devices, and automatic answers to the very permission and surface choices you are there to
 make. Verified against real Chrome on 2026-09-12: an honest browser is accepted, each of those
@@ -262,8 +263,12 @@ again and the behaviour is unchanged.
 **What you will see during the run:** the canary opens two tabs in *your* Chrome; each scenario's
 share picker is your own, and "Entire screen" means your screen. The Enter prompts appear in the
 SSH terminal running the cutover. Owner API reads (Live descriptor, Meeting, MP3) are issued from
-the host using session cookies synced from your browser, so they observe the same workspace you
-attended. When the canary finishes it disconnects without closing your browser: both meeting tabs
+the host using session cookies synced from your browser, so they read **the same meeting you
+attended, by its id**. Read that precisely: those reads travel the host's own network, TLS trust and
+DNS, not your laptop's. A 200 on the owner MP3 therefore proves the server can produce the file, not
+that the presenter's machine can fetch it — that is what the operator smoke test and
+`scripts/demo-precheck.sh` establish, and both run from your machine. Run them; the canary does not
+replace them. When the canary finishes it disconnects without closing your browser: both meeting tabs
 stay open for the rehearsal.
 
 **Limits:** this changes where the browser runs, not what the gate checks. Both scenarios, both
@@ -274,8 +279,17 @@ certificate verification — the origin serves a **self-signed** certificate, so
 must already trust it; a machine that does not will fail TLS rather than report a host fault.
 
 The canary now also binds its observations to the production origin: it refuses if the page is not on
-that origin after navigation or leaves it during capture, and it ignores frame posts from any other
-origin. Both scenarios' surfaces, meters, frame sequences, speakers, Meeting and MP3 are unchanged.
+that origin after navigation, before Stop, or at the terminal phase, and it ignores frame posts from
+any other origin. Both scenarios' surfaces, meters, frame sequences, speakers, Meeting and MP3 are
+unchanged. The binding is checkpointed rather than continuous — a page that left and returned between
+two checkpoints would not be caught — but every accepted frame is origin-filtered and the Meeting is
+pinned to the single id those frames carry.
+
+DevTools discovery is resolved by the canary itself rather than delegated: it reads
+`/json/version` over the forward with redirects disabled and re-validates the websocket that response
+nominates, so whatever answers the endpoint cannot steer the connection off loopback. Endpoint strings
+that two URL parsers could read as two different hosts — backslashes, userinfo, control characters,
+non-numeric ports — are refused outright rather than resolved by one parser's rules.
 
 Two properties the host-local path gave for free, which you now supply by following step 1: a clean
 browser profile (see above), and a browser that nothing else drives. The loopback check constrains
