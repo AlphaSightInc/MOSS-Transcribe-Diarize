@@ -394,6 +394,30 @@ def _install_display_observer(context: BrowserContext) -> None:
     )
 
 
+def _wait_for_capture_phase(page: Page, phase: str, *, scenario: str) -> None:
+    from playwright.sync_api import TimeoutError as PlaywrightTimeout
+
+    try:
+        page.wait_for_selector(f'[data-capture-phase="{phase}"]', timeout=120_000)
+    except PlaywrightTimeout as exc:
+        # Read only capture UI status, never the transcript or the whole page.
+        # Readiness is absent in the error phase; keep the lane/code message there.
+        status = page.evaluate(
+            """() => {
+              const panel = document.querySelector('[data-capture-phase]');
+              return {
+                phase: panel?.getAttribute('data-capture-phase') ?? null,
+                readiness: panel?.querySelector('[data-capture-readiness]')?.textContent ?? null,
+                message: panel?.querySelector('.capture-status[role="status"]')?.textContent ?? null,
+              };
+            }"""
+        )
+        raise AttendedCanaryError(
+            f"{scenario} timed out waiting for capture phase {phase}: "
+            f"{json.dumps(status, ensure_ascii=False)}"
+        ) from exc
+
+
 def _run_scenario(
     context: BrowserContext,
     *,
@@ -436,6 +460,7 @@ def _run_scenario(
         if not isinstance(descriptor, dict):
             raise AttendedCanaryError("Live descriptor is malformed")
 
+        page.get_by_role("combobox", name="Listening setup").select_option("headphones")
         page.get_by_role("button", name="Enable microphone").click()
         page.get_by_role("button", name="Share audio").click()
         page.wait_for_function(
@@ -451,10 +476,10 @@ def _run_scenario(
             "Enter so MOSS can observe both lane meters before capture. "
         )
         meter_samples = _observe_nonzero_meters(page)
-        page.wait_for_selector('[data-capture-phase="ready"]', timeout=120_000)
+        _wait_for_capture_phase(page, "ready", scenario=scenario)
 
         page.get_by_role("button", name="Start capture").click()
-        page.wait_for_selector('[data-capture-phase="active"]', timeout=120_000)
+        _wait_for_capture_phase(page, "active", scenario=scenario)
         confirm(
             f"{scenario}: keep both sources audible, speak distinctly, and press Enter only "
             "after the transcript visibly contains both speakers. "

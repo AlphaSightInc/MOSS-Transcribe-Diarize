@@ -570,3 +570,97 @@ def test_attended_evidence_rejects_every_wrong_production_host_or_port(
         g7.run_attended_g7_canary(
             acceptance_profile=profile, candidate=_candidate()
         )
+
+
+@pytest.mark.parametrize(
+    "target,phase,readiness,message",
+    [
+        ("ready", "configuring", "Next: speak into your microphone. Shared audio is receiving sound.",
+         "Microphone connected. Share a browser tab, window, or screen with audio."),
+        ("ready", "error", None, "microphone: microphone_track_ended"),
+        ("active", "error", None, "system: display_track_ended"),
+    ],
+)
+def test_scenario_timeout_reports_only_capture_status_and_selects_headphones(
+    monkeypatch, target, phase, readiness, message
+):
+    from types import SimpleNamespace
+    from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
+    from tests.phase2.browser_support import require_browser
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(executable_path=str(require_browser(playwright)))
+        try:
+            raw = browser.new_page()
+            raw.route("https://fixture.test/", lambda route: route.fulfill(
+                content_type="text/html", body='''
+                <main data-auth-state="signed-in" data-boot="ready">
+                  <section data-capture-phase="ready">
+                    <select aria-label="Listening setup">
+                      <option value="speakers">Speakers</option>
+                      <option value="headphones">Headphones</option>
+                    </select>
+                    <button onclick="window.routeAtMicrophone = document.querySelector('select').value">Enable microphone</button>
+                    <button>Share audio</button><button>Start capture</button>
+                    <p data-capture-readiness></p>
+                    <p class="capture-status" role="status"></p>
+                  </section>
+                  <p role="status">PRIVATE TRANSCRIPT STATUS</p>
+                  <article>PRIVATE TRANSCRIPT</article>
+                  <input value="PRIVATE SECRET">
+                </main>
+                <script>window.__mossAttendedDisplay = {surface: 'browser', audio_tracks: 1};</script>
+                '''))
+            closed = []
+            original_timeout = []
+
+            class Page:
+                def __getattr__(self, name):
+                    return getattr(raw, name)
+
+                def wait_for_selector(self, selector, **kwargs):
+                    if selector == f'[data-capture-phase="{target}"]':
+                        assert kwargs == {"timeout": 120_000}
+                        raw.evaluate('''({phase, readiness, message}) => {
+                            document.querySelector('[data-capture-phase]').setAttribute('data-capture-phase', phase);
+                            const hint = document.querySelector('[data-capture-readiness]');
+                            if (readiness === null) hint.remove(); else hint.textContent = readiness;
+                            document.querySelector('.capture-status').textContent = message;
+                        }''', dict(phase=phase, readiness=readiness, message=message))
+                        try:
+                            return raw.wait_for_selector(selector, timeout=100)
+                        except PlaywrightTimeout as exc:
+                            original_timeout.append(exc)
+                            raise
+                    return raw.wait_for_selector(selector, **kwargs)
+
+                def close(self):
+                    closed.append(True)  # Keep fixture readable for post-scenario assertions.
+
+            context = SimpleNamespace(
+                new_page=lambda: Page(),
+                request=SimpleNamespace(get=lambda _: SimpleNamespace(
+                    status=200, json=lambda: {"descriptor": {}}
+                )),
+            )
+            monkeypatch.setattr(g7, "_observe_nonzero_meters", lambda _: {
+                "microphone": 1, "system": 1,
+            })
+            with pytest.raises(g7.AttendedCanaryError) as caught:
+                g7._run_scenario(context, origin="https://fixture.test",
+                                 scenario="microphone_meeting_tab", expected_surface="browser",
+                                 confirm=lambda _: "")
+            detail = str(caught.value)
+            assert target in detail and "microphone_meeting_tab" in detail
+            assert f'"phase": "{phase}"' in detail
+            assert message in detail
+            if readiness is None:
+                assert '"readiness": null' in detail
+            else:
+                assert readiness in detail
+            assert "PRIVATE" not in detail
+            assert caught.value.__cause__ is original_timeout[0]
+            assert raw.evaluate("window.routeAtMicrophone") == "headphones"
+            assert closed == [True]
+        finally:
+            browser.close()
