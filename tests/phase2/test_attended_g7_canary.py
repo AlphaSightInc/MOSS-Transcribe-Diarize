@@ -196,6 +196,9 @@ def test_attended_runner_attaches_to_the_operator_loopback_browser(monkeypatch, 
         def add_init_script(self, _script):
             observed["init_script"] = True
 
+        def clear_cookies(self, **filters):
+            observed["cleared"] = filters
+
     attached = Context()
 
     class Browser:
@@ -247,6 +250,8 @@ def test_attended_runner_attaches_to_the_operator_loopback_browser(monkeypatch, 
     assert observed["context"] is attached
     assert observed["init_script"] is True
     assert observed["disconnected"] is True
+    # Only the production origin's session is reset, never the whole profile.
+    assert observed["cleared"] == {"domain": "ga0-alienware-rtx4070ti.tailnet.aisight.us"}
     assert evidence["attended_browser"] == "operator_devtools"
     assert evidence["chrome_version"] == "Chrome/operator"
     g7.validate_attended_g7(evidence, candidate=_candidate())
@@ -277,6 +282,9 @@ def _attach_runner(monkeypatch, tmp_path, session, *, contexts=None):
 
     class Context:
         def add_init_script(self, _script):
+            pass
+
+        def clear_cookies(self, **_filters):
             pass
 
     open_contexts = [Context()] if contexts is None else contexts
@@ -465,6 +473,22 @@ def test_every_automatic_capture_selection_switch_is_refused():
         "auto-grant-captured-surface-control",
     ):
         assert switch in g7.FORBIDDEN_ATTENDED_SWITCHES
+
+
+def test_attended_runner_refuses_a_browser_whose_session_cannot_be_reset(monkeypatch, tmp_path):
+    """A stale session silently defeats the gate, so failing to clear it must stop the run."""
+
+    class Context:
+        def add_init_script(self, _script):
+            pass
+
+        def clear_cookies(self, **_filters):
+            raise RuntimeError("CDP refused")
+
+    session = _CommandLineSession(["--enable-automation"])
+    run = _attach_runner(monkeypatch, tmp_path, session, contexts=[Context()])
+    with pytest.raises(g7.AttendedCanaryError, match="could not be reset"):
+        run()
 
 
 def test_attended_runner_refuses_noninteractive_or_incomplete_prerequisites(monkeypatch, tmp_path):

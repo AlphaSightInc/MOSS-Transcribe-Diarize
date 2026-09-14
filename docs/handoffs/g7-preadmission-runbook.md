@@ -214,10 +214,21 @@ The cleared switch list is recorded in the evidence as `audited_absent_switches`
 **What you will see:** a separate Chrome window, and `curl -s http://127.0.0.1:9222/json/version`
 returning that browser's version locally. DevTools binds loopback only; do not publish it.
 
-**2 — sign into MOSS in that window now**, at
-`https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861`. The canary waits for
-`[data-auth-state="signed-in"]` with Playwright's default 30-second selector timeout and gives no
-Enter pause there, so signing in beforehand removes that scramble. Leave the tab open.
+**2 — open MOSS once in that window**, at
+`https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861`, and accept the certificate if Chrome
+warns. There is no login: the page bootstraps a workspace by itself. What you are really doing here
+is teaching *this profile* to trust the self-signed certificate, because a browser context without
+that exception cannot load the origin at all.
+
+**The session must not carry across cutovers.** Every cutover quarantines the candidate's database,
+so a `__Host-moss_session` cookie minted against an earlier instance names a workspace the serving
+one has never seen. The product then refuses to bootstrap over it — deliberately, since it will not
+silently abandon work that may exist — and renders *"Workspace unavailable… Contact the operator."*
+with **no bootstrap script**, so the page never reaches `signed-in` and the canary times out after
+30 seconds. A launched throwaway profile never carried such a cookie; a persistent one does. The
+canary therefore clears cookies for this origin only, in the attached context, before it navigates —
+your other sites and the profile's certificate trust are untouched. Nothing is required of you, but
+if you ever see that message, this is why.
 
 **3 — forward the endpoint to the host** so DevTools control never crosses the network. From your
 machine, in the terminal you will also run the cutover from:

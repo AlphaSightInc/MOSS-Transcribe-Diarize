@@ -334,6 +334,29 @@ def _speaker_count(meeting: Mapping[str, object]) -> int:
     return len(speakers)
 
 
+def _clear_attended_origin_session(context: BrowserContext, origin: str) -> None:
+    """Begin with no session for this origin, as a freshly launched profile would.
+
+    Every cutover quarantines the candidate's database, so a session cookie minted against an
+    earlier instance names a workspace the serving one has never seen.  The product then
+    refuses to bootstrap over it -- correctly, because it will not silently abandon work that
+    may exist -- and the page never reaches signed-in.  A launched throwaway profile never
+    carried such a cookie; an attached browser does, and carries it across runs.  Only this
+    origin is cleared: the operator's other sites, and the profile's certificate trust, are
+    left alone.
+    """
+
+    host = urlsplit(origin).hostname
+    if not host:
+        raise AttendedCanaryError("attended origin has no host whose session could be reset")
+    try:
+        context.clear_cookies(domain=host)
+    except Exception as exc:
+        raise AttendedCanaryError(
+            "attended browser session for the production origin could not be reset"
+        ) from exc
+
+
 def _install_display_observer(context: BrowserContext) -> None:
     context.add_init_script(
         """
@@ -580,6 +603,9 @@ def run_attended_g7_canary(
             stack.callback(browser.close)
             audited_switches = _audit_attended_switches(browser)
             context = browser.contexts[0] if browser.contexts else browser.new_context()
+            # A new context would start sessionless but would also lose the profile's
+            # certificate trust for a self-signed origin, so the session is reset instead.
+            _clear_attended_origin_session(context, origin)
         _install_display_observer(context)
         for scenario, surface in G7_SCENARIOS.items():
             print(
