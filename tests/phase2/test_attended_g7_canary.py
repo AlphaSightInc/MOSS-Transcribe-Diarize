@@ -104,6 +104,35 @@ def test_attended_meter_checkpoint_accepts_delayed_signal_and_refuses_all_zero(m
         g7._observe_nonzero_meters(Page())
 
 
+def test_a_silent_lane_is_named_with_what_the_other_lane_reached(monkeypatch):
+    """A bare "both meters" failure costs an entire attempt to diagnose."""
+
+    class Page:
+        def wait_for_timeout(self, _ms):
+            pass
+
+    levels = {"Microphone": 0, "Shared audio": 62}
+    monkeypatch.setattr(g7, "_meter_level", lambda _page, label: levels[label])
+    with pytest.raises(g7.AttendedCanaryError) as caught:
+        g7._observe_nonzero_meters(Page())
+    message = str(caught.value)
+    assert "Microphone stayed silent" in message
+    assert "Shared audio peaked at 62%" in message
+    assert "Microphone peaked at 0%" in message
+    assert "BEFORE pressing Enter" in message
+
+
+def test_both_lanes_silent_are_both_named(monkeypatch):
+    class Page:
+        def wait_for_timeout(self, _ms):
+            pass
+
+    monkeypatch.setattr(g7, "_meter_level", lambda _page, _label: 0)
+    with pytest.raises(g7.AttendedCanaryError) as caught:
+        g7._observe_nonzero_meters(Page())
+    assert "Microphone and Shared audio stayed silent" in str(caught.value)
+
+
 def test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_evidence(
     monkeypatch, tmp_path
 ):

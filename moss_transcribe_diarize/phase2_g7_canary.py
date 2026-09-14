@@ -306,16 +306,32 @@ def _meter_level(page: Page, label: str) -> int:
 
 
 def _observe_nonzero_meters(page: Page) -> dict[str, int]:
-    """Observe, rather than infer, one nonzero sample from each independent lane."""
+    """Observe, rather than infer, one nonzero sample from each independent lane.
 
-    counts = {"microphone": 0, "system": 0}
+    On failure the operator is told which lane stayed silent and how loud the other was.
+    Both lanes are attended by hand, so "one of them was quiet" is the whole diagnosis, and
+    leaving the operator to guess which costs a full attempt to find out.
+    """
+
+    labels = {"microphone": "Microphone", "system": "Shared audio"}
+    counts = {lane: 0 for lane in labels}
+    peaks = {lane: 0 for lane in labels}
     for _sample in range(40):
-        counts["microphone"] += int(_meter_level(page, "Microphone") > 0)
-        counts["system"] += int(_meter_level(page, "Shared audio") > 0)
+        for lane, label in labels.items():
+            level = _meter_level(page, label)
+            counts[lane] += int(level > 0)
+            peaks[lane] = max(peaks[lane], level)
         if all(value > 0 for value in counts.values()):
             return counts
         page.wait_for_timeout(250)
-    raise AttendedCanaryError("attended checkpoint did not observe both audio meters")
+    silent = sorted(lane for lane, seen in counts.items() if not seen)
+    observed = ", ".join(f"{labels[lane]} peaked at {peaks[lane]}%" for lane in sorted(labels))
+    raise AttendedCanaryError(
+        "attended checkpoint did not observe both audio meters: "
+        f"{' and '.join(labels[lane] for lane in silent)} stayed silent for ten seconds "
+        f"({observed}). Make both sources audible BEFORE pressing Enter; the sample starts "
+        "at the keypress."
+    )
 
 
 def _speaker_count(meeting: Mapping[str, object]) -> int:
