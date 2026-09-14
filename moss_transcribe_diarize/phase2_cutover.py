@@ -834,6 +834,7 @@ class CutoverRun:
         state_paths: Mapping[str, Path],
         ops: CutoverOps,
         target_terminal: str | None,
+        requalify: bool = True,
     ) -> None:
         self.profile = profile
         self.attempt = attempt.resolve()
@@ -843,6 +844,7 @@ class CutoverRun:
         self.state_paths = state_paths
         self.ops = ops
         self.target_terminal = target_terminal
+        self.requalify = requalify
         self.journal = CutoverJournal(self.attempt / "journal.jsonl")
         home = Path.home()
         self.lock_file = (
@@ -898,10 +900,14 @@ class CutoverRun:
         profile_path: Path,
         attempt: Path,
         terminal: str,
+        requalify: bool = True,
         ops: CutoverOps | None = None,
     ) -> "CutoverRun":
         if terminal not in {"restored", "preadmission"}:
             raise CutoverRefused("cutover terminal must be restored or preadmission")
+        if not requalify and terminal == "restored":
+            # A restored run exists only to produce a qualification record.
+            raise CutoverRefused("a restored cutover without qualification records nothing")
         profile = load_cutover_profile(profile_path)
         candidate = _load_private_json(
             profile.candidate_manifest, schema="moss-account-candidate.v1"
@@ -964,6 +970,7 @@ class CutoverRun:
             state_paths=state_paths,
             ops=adapter,
             target_terminal=terminal,
+            requalify=requalify,
         )
 
     @classmethod
@@ -1273,19 +1280,28 @@ class CutoverRun:
                 self.journal.append("units_profiles_swapped", vllm_unchanged=True)
                 self.ops.start_candidate(self.artifacts)
                 self.journal.append("candidate_started", admitted=False)
-                self.journal.append("qualification_started")
-                output = self.ops.run_qualification(
-                    artifacts=self.artifacts,
-                    candidate_sha=self.candidate_sha,
-                    attempt=self.attempt,
-                )
-                self._validate_qualification(output)
-                if not self.ops.verify_vllm_unchanged(original):
-                    raise RuntimeError("vLLM process changed during qualification")
+                if self.requalify:
+                    self.journal.append("qualification_started")
+                    output = self.ops.run_qualification(
+                        artifacts=self.artifacts,
+                        candidate_sha=self.candidate_sha,
+                        attempt=self.attempt,
+                    )
+                    self._validate_qualification(output)
+                    if not self.ops.verify_vllm_unchanged(original):
+                        raise RuntimeError("vLLM process changed during qualification")
+                else:
+                    # The operator qualified this candidate already and is not paying for it
+                    # twice.  The record must not imply otherwise: nothing here measured
+                    # quality, capacity, overload or isolation on this attempt.
+                    output = None
+                    self.journal.append("qualification_skipped", qualified_here=False)
                 if self.target_terminal == "restored":
                     self.journal.append(
                         "planned_restore",
-                        qualification_bundle=str(output.relative_to(self.attempt)),
+                        qualification_bundle=(
+                            str(output.relative_to(self.attempt)) if output is not None else None
+                        ),
                         g7="UNCLAIMED",
                         admitted=False,
                     )

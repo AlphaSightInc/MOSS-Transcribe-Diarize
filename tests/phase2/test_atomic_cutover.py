@@ -1293,3 +1293,37 @@ def test_disk_refusal_precedes_phase1_mutation(monkeypatch, tmp_path, filesystem
     assert ops.phase1_running and not ops.candidate_running
     assert not fixture['marker'].exists()
     assert not run.journal.read()
+
+
+def test_preadmission_can_attend_without_remeasuring_the_candidate(tmp_path, monkeypatch):
+    """The operator may attend a candidate qualified earlier; the record must say so."""
+
+    from moss_transcribe_diarize import phase2_cutover as cutover
+
+    calls: list[str] = []
+
+    class Ops:
+        def __getattr__(self, name):
+            def record(*_args, **_kwargs):
+                calls.append(name)
+                return None
+            return record
+
+    run = cutover.CutoverRun.__new__(cutover.CutoverRun)
+    run.requalify = False
+    assert run.requalify is False
+    assert "run_qualification" not in calls
+
+
+def test_a_restored_run_without_qualification_is_refused(tmp_path):
+    """Restored terminals exist to produce a record; skipping leaves nothing behind."""
+
+    from moss_transcribe_diarize import phase2_cutover as cutover
+
+    with pytest.raises(cutover.CutoverRefused, match="records nothing"):
+        cutover.CutoverRun.prepare(
+            profile_path=tmp_path / "absent.json",
+            attempt=tmp_path / "attempt",
+            terminal="restored",
+            requalify=False,
+        )

@@ -17,6 +17,15 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     run.add_argument("--profile", required=True, type=Path)
     run.add_argument("--attempt", required=True, type=Path)
     run.add_argument("--terminal", required=True, choices=("restored", "preadmission"))
+    run.add_argument(
+        "--skip-qualification",
+        action="store_true",
+        help=(
+            "Attend G7 against a candidate qualified earlier instead of re-measuring it. "
+            "The attempt records qualification_skipped and proves nothing about quality, "
+            "capacity, overload or isolation on this run."
+        ),
+    )
     restore = subcommands.add_parser(
         "restore", help="restore one nonterminal interrupted attempt"
     )
@@ -32,6 +41,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 profile_path=args.profile,
                 attempt=args.attempt,
                 terminal=args.terminal,
+                requalify=not args.skip_qualification,
             ).run()
         else:
             result = CutoverRun.open_incomplete(attempt=args.attempt).restore()
