@@ -99,8 +99,9 @@ printf 'Attempt: %s\n' "$ATTEMPT"
   rotate it after the demo.
 - Go/no-go: `MOSS_DEMO_OPENROUTER_API_KEY=<key> scripts/demo-precheck.sh 566024287cdd02204f26ac6a83e2c22ef1c90a7c`.
   rtx4090 is probed only when `MOSS_DEMO_RTX4090_BASE` is set.
-- Summaries regression: `OPENROUTER_API_KEY=<key> .venv/bin/python tests/e2e/verify_summaries.py`, with `MOSS_BASE` set
-  to the demo origin.
+- Summaries regression for the demo provider: `MOSS_SUMMARY_PROVIDERS=external OPENROUTER_API_KEY=<key>
+  .venv/bin/python tests/e2e/verify_summaries.py`, with `MOSS_BASE` set to the demo origin. Do not switch the demo to
+  the relay: qwen still fails about a third of 180 s summaries on timestamp format (see that file's docstring).
 
 ## 2. G7 status — one behaviour away from passing
 
