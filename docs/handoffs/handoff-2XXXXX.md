@@ -6,6 +6,53 @@ Written 2026-09-14 23:40 EDT. The operator is AFK. Two jobs for the next session
 2. **Stress-test every aspect of the product** in a browser (see §6). This has never been done; every
    browser exercise so far has been the acceptance harness, not adversarial human-style use.
 
+> ## UPDATE 2026-09-15 11:45 EDT — read this first
+>
+> **The product is green; the demo is blocked on three operator actions.** Since this doc was written:
+> the candidate advanced to **`628341fad9399c897e26fe3e5f11f0e087eeafe0`** (staged inert and verified),
+> the full e2e suite ran **six times clean** (13/14 then 13/13 ×5 incl. a 3-run soak), both UI defects plus
+> a third (unversioned audio worklet) are fixed and verified live, and the **non-overlapping demo path is
+> proven end to end** (two distinct voices → `speaker-0001` tab / `speaker-0002` mic).
+>
+> **Measured on the staged build** (local stack, 50 s corpus): first text **0.34 s**, segment latency p50
+> **2.95 s**, label delay p50 **2.99 s**, final **WER 0.0708** (bound 0.0951). Caveat: measured over an SSH
+> tunnel to the host vLLM and without the host profile's `draft_lane_seconds=1.0`, so the demo host should
+> be no worse.
+>
+> **Microphone root cause CORRECTED — it is LEVEL IMBALANCE, not the mixer architecture.** At lane parity
+> both voices transcribe; at the operator's real ~3 % mic level the mic voice vanishes. The earlier
+> "gain cannot fix it" finding was unsound (it amplified an already-mixed recording). Fix on branch
+> `fix/lane-level-balance` (`6a181eb2`, private only, **not staged**) recovers the voice, leaves the
+> non-overlap case identical, and raises admitted identities on parity-overlap from 1 to 2. Its effect on the
+> gated macros is being measured locally; **do not stage it for the demo**.
+>
+> **BLOCKERS, all operator-side:**
+> 1. **G7** — attended; needs a human at the Chrome picker with a live mic. Cannot be automated: the canary
+>    refuses the fake-media/auto-accept switches by design.
+> 2. **`ga0-rtx4090:1235` LLM server is DOWN** (host pings, nothing listening). Sole cause of e2e row 9
+>    failing and required by `demo-script.md`'s two-model check. That box is read-only per the mandate.
+> 3. **`m4mbp.local` was offline at 11:46** — laptop asleep, so the `ssh -R` CDP tunnel is gone too.
+>
+> ### G7 when the operator returns — four attempts failed on PROCEDURE, not product
+> 1. Chrome must have **≥1 window open** — a zero-window Chrome still answers `/json/version` 200 but has no
+>    browser context, and `connect_over_cdp` fails "Browser context management is not supported". Check
+>    `/json/list` for a real page, not `/json/version`.
+> 2. **Do not leave a MOSS tab open** in that profile. Leave only the podcast tab. A second MOSS tab shares
+>    the cookie jar and re-bootstraps the workspace out from under the canary.
+> 3. **The operator must not click anything in the MOSS UI.** The canary opens its own tab and clicks
+>    Listening setup, Enable microphone, Share audio, Start capture and Stop itself. The operator's only jobs
+>    are the Chrome picker, making noise, and four Enters.
+> 4. **At prompt 2, wait until TWO speaker labels are visible** before pressing Enter. The last attempt died
+>    here: Enter at 23 s with only one podcast host having spoken → `distinct_speakers == 1`.
+> 5. **Never Ctrl-C.** It stranded the host once and needed a manual restore of the 6 `mutation_*` roles.
+> 6. Both meters must be non-zero **simultaneously** to reach `capture-phase=ready`; overlap the sources
+>    rather than alternating, and have sound flowing *before* the first Enter (the sample starts at the
+>    keypress).
+> 7. Note the gate weakness: `distinct_speakers >= 2` can be satisfied by the two-host podcast alone, so G7
+>    can pass without the operator's voice ever transcribing. That is fine for the gate, not for the demo.
+>
+> Launch is unchanged apart from the SHA — use `628341fa…` with `--skip-qualification` (§1).
+
 Read this file, then `~/.claude/projects/-Users-gao-Desktop-AI-Projects-Github-Projects-MOSS-Transcribe-Diarize/memory/auto-mvp-0911-progress.md`
 (round-by-round state, last entries current) and `auto-mvp-0911-mandate.md` (authorities, gate tolerances,
 GitHub identity, the audio ruling).
