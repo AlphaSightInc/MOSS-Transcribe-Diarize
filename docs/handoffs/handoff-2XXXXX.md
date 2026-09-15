@@ -59,13 +59,22 @@ GitHub identity, the audio ruling).
 
 ## 1. Ready to launch right now
 
-**SUPERSEDED — use `628341fad9399c897e26fe3e5f11f0e087eeafe0`, see the UPDATE block above.** Note the branch
-head is `a46b05a8`, which differs from the staged SHA by **docs only**; do not restage for that.
+`566024287cdd02204f26ac6a83e2c22ef1c90a7c` is **staged inert and verified** on the host (2026-09-15 17:58 EDT, codex
+2.1): manifest SHA exact with `activation_state=staged_inert`; all three `candidate_manifest` refs repointed, none stale;
+`chrome_cdp_endpoint` preserved (`http://127.0.0.1:9222`); vLLM **PID 369**, `NRestarts=0`, untouched; Phase-1 serving;
+both disk guards pass. The `628341fa` runtime is kept for rollback. Retention pruned `501c55ca`; restage its pushed SHA if
+it is ever needed.
 
-`628341fad9399c897e26fe3e5f11f0e087eeafe0` is **staged inert and verified** on the host: manifest SHA matches,
-all three `candidate_manifest` refs repointed with none stale, `chrome_cdp_endpoint` preserved, vLLM **PID 369**
-untouched, Phase-1 serving, 672 G free. The operator's Chrome and `ssh -R` tunnel are alive with **exactly one
-page** (the podcast tab — do not leave a second MOSS tab open, see §4).
+It supersedes `628341fa`, whose Final Summary failed realistic-length meetings: models misconverted float-second
+timestamps (59.64 s -> `00:59:64`), and Gemini also wrapped its JSON in markdown fences. The fixes are `d53ecd99`
+(timestamps sent as HH:MM:SS; `response_format` for external providers) and `56602428` (precheck probes made optional).
+In a real browser: Gemini 2.5 Flash via OpenRouter was current on 50 s and 180 s transcripts every time.
+
+**The client side is NOT ready: `m4mbp` is offline.** When it wakes, re-verify before launching:
+- Chrome has at least one window — check `/json/list`, because a zero-window Chrome still answers `/json/version`.
+- The `ssh -R` tunnel reaches WSL.
+- Exactly one page is open, and it is not a MOSS tab (§4).
+- Clear Chrome's HTTP cache over CDP (`Network.clearBrowserCache`).
 
 ```bash
 ssh gyauo@ga0-alienware-rtx4070ti.tailnet.aisight.us
@@ -73,7 +82,7 @@ wsl.exe -d Ubuntu -u devcontainers
 tmux new -s live
 ```
 ```bash
-SHA=628341fad9399c897e26fe3e5f11f0e087eeafe0
+SHA=566024287cdd02204f26ac6a83e2c22ef1c90a7c
 CUTOVER="$HOME/.local/share/moss-transcribe-diarize/account-runtimes/$SHA/bin/mtd-phase2-cutover"
 export PYTHONDONTWRITEBYTECODE=1
 ATTEMPT="$HOME/.local/state/moss-transcribe-diarize/cutover-attempts/preadmission-$(date -u +%Y%m%dT%H%M%SZ)"
@@ -81,12 +90,17 @@ printf 'Attempt: %s\n' "$ATTEMPT"
 "$CUTOVER" run --profile "$HOME/.config/moss-transcribe-diarize/moss-cutover.json" --attempt "$ATTEMPT" --terminal preadmission --skip-qualification
 ```
 
-`--skip-qualification` (`aaf10d02`) skips re-measurement and goes straight to the attended canary: **~2.5 min to
-the picker** instead of ~2 h. The operator has ordered that re-qualification is never proposed again.
+`--skip-qualification` goes straight to the attended canary: about 2.5 min to the Chrome picker.
 
-**Before launching, clear the operator's Chrome HTTP cache over CDP** (`Network.clearBrowserCache`). Their
-profile still holds Phase-1's assets; `628341fa` makes that harmless, but the demo run should not
-be the first live test of that fix.
+**After PASS, before the demo:**
+- In the presenter's browser, open *Optional AI summaries* and set Provider to **External HTTPS provider**, URL
+  `https://openrouter.ai/api/v1`, Model `google/gemini-2.5-flash`, and the operator's OpenRouter API key. Then *Save on
+  this browser*. The key lives only in that browser profile, never on the server. It was pasted into a chat session, so
+  rotate it after the demo.
+- Go/no-go: `MOSS_DEMO_OPENROUTER_API_KEY=<key> scripts/demo-precheck.sh 566024287cdd02204f26ac6a83e2c22ef1c90a7c`.
+  rtx4090 is probed only when `MOSS_DEMO_RTX4090_BASE` is set.
+- Summaries regression: `OPENROUTER_API_KEY=<key> .venv/bin/python tests/e2e/verify_summaries.py`, with `MOSS_BASE` set
+  to the demo origin.
 
 ## 2. G7 status — one behaviour away from passing
 
