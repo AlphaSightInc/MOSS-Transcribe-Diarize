@@ -464,6 +464,19 @@ def attach_live_routes(
             authority = await adapter.authorize(request, "frame", session_id)
             payload = await request.json()
             frame = _frame_from_payload(payload)
+            if (
+                frame.v2_frame is not None
+                and frame.v2_frame.sample_rate != runtime.descriptor.sample_rate
+            ):
+                # lane, sequence, sample_count and pcm length are all validated, but the
+                # declared rate was only checked for positivity. A version-skewed or
+                # hand-rolled client could therefore ship PCM that is then interpreted at
+                # the wrong rate -- garbled audio and wrong timestamps, returned as 200 with
+                # no signal that anything is wrong. The contract layer cannot know the
+                # service rate, so it is checked here against the live descriptor.
+                raise ValueError(
+                    f"frame sample_rate must be {runtime.descriptor.sample_rate}."
+                )
             adapter.validate_mutation(authority)
             if frame.v2_frame is None:
                 accepted = runtime.accept_frame(session_id, frame.audio_frame)

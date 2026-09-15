@@ -3789,3 +3789,4 @@ def test_measurement_directories_use_attempt_owned_root(monkeypatch, tmp_path):
         monkeypatch, tmp_path, wave=1, expected=14, refused=True)
     assert len(created) == 2
     assert all(path.parent == root and not path.exists() for path in created)
+
