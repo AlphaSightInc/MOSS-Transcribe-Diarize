@@ -8,7 +8,7 @@
  * handler that authorised it, and the server session must not exist until both lanes
  * have proved they carry signal.
  *
- *   const client = new CaptureClient({ helperVersion, onMeter, ... });
+ *   const client = new CaptureClient({ helperVersion, workletUrl, onMeter, ... });
  *   await client.prepare();                      // descriptor + AudioContext + worklet
  *   await client.startMicrophone(useEchoCancel); // speakers -> true, headphones -> false
  *   // ... in the display button's own click handler, with no await before it:
@@ -129,6 +129,7 @@ type LaneHealthState = "capturing" | "degraded" | "failed";
 
 export type CaptureClientOptions = Readonly<{
   helperVersion: string;
+  workletUrl: string;
   onMeter?: (lane: CaptureLane, rms: number) => void;
   onPreflightStatus?: (statusLine: string) => void;
   onTransportError?: (route: "frame" | "heartbeat", error: Error) => void;
@@ -656,7 +657,7 @@ export class CaptureClient {
       if (!response.ok) throw new Error(`descriptor request failed: HTTP ${response.status}`);
       this.descriptor = parseCaptureDescriptor(await response.json());
       const context = new AudioContext({ sampleRate: this.descriptor.sampleRate });
-      await context.audioWorklet.addModule("/static/worklets/lane-framer.js");
+      await context.audioWorklet.addModule(this.options.workletUrl);
       context.addEventListener("statechange", this.onContextStateChange);
       this.context = context;
       return context;

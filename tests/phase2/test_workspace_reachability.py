@@ -1,12 +1,15 @@
 """Required workspace reachability API contract, independent of browser binaries.
 Real desktop/mobile rendering remains in test_workspace_reachability_browser.py.
 """
+import hashlib
+import os
 import re
 import time
 from pathlib import Path
 from fastapi.testclient import TestClient
 from moss_transcribe_diarize.app.phase2 import (
     Account,
+    FRONTEND_ASSET_DIR,
     _asset_content_version,
     _workspace_html,
     create_phase2_app,
@@ -14,12 +17,31 @@ from moss_transcribe_diarize.app.phase2 import (
 from tests.phase2.workspace_reachability_fixtures import _runtime, _heartbeat, _v2_frame
 
 
-def test_frontend_asset_version_changes_with_content(tmp_path: Path):
+def test_frontend_asset_version_is_cached_and_changes_after_deployment_swap(
+    tmp_path: Path, monkeypatch
+):
     asset = tmp_path / 'app.js'
     asset.write_bytes(b'first build')
+    os.utime(asset, ns=(1_000_000_000, 1_000_000_000))
+    read_count = 0
+    read_bytes = Path.read_bytes
+
+    def counted_read_bytes(path: Path) -> bytes:
+        nonlocal read_count
+        read_count += 1
+        return read_bytes(path)
+
+    monkeypatch.setattr(Path, "read_bytes", counted_read_bytes)
     first = _asset_content_version(asset)
-    asset.write_bytes(b'second build')
+    assert _asset_content_version(asset) == first
+    assert read_count == 1
+
+    replacement = tmp_path / 'replacement.js'
+    replacement.write_bytes(b'other build')
+    os.utime(replacement, ns=(2_000_000_000, 2_000_000_000))
+    replacement.replace(asset)
     assert _asset_content_version(asset) != first
+    assert read_count == 2
     workspace = _workspace_html(Account('account', 'This browser', 0), [], live_enabled=True)
     assert '<p data-history="empty">No meetings yet.</p>' in workspace
 
@@ -53,9 +75,13 @@ def test_same_workspace_reads_converge_without_acquiring_capture(tmp_path):
                 assert f'id="workspace-{section}"' in html
                 assert f'href="#workspace-{section}"' in html
             assert 'data-auth-state="signed-in"' in html
-            for asset in ('app.js', 'styles.css'):
+            for asset in ('app.js', 'styles.css', 'worklets/lane-framer.js'):
                 match = re.search(rf'(/static/{re.escape(asset)}\?v=[0-9a-f]{{64}})', html)
                 assert match is not None
+                expected_version = hashlib.sha256(
+                    (FRONTEND_ASSET_DIR / asset).read_bytes()
+                ).hexdigest()
+                assert match.group(1) == f'/static/{asset}?v={expected_version}'
                 assert reader.get(match.group(1)).status_code == 200
             assert reader.get('/api/meetings/'+ident).json()['id'] == ident
             assert reader.get(prefix+'/snapshot').json()['snapshot']['session']['effective_transcript'] == before['snapshot']['session']['effective_transcript']

@@ -24,6 +24,7 @@ const mocks = vi.hoisted(() => {
     replaceLane: vi.fn().mockResolvedValue(undefined),
     createSession: vi.fn().mockResolvedValue({ id: "account-live-meeting" }),
     captureOptions: null as {
+      workletUrl?: string;
       onTransportError?: (route: "frame" | "heartbeat", error: Error) => void;
       onTransportRecovered?: () => void;
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
@@ -39,6 +40,7 @@ vi.mock("../api/mossPoller", () => ({
 vi.mock("../capture/captureClient", () => ({
   CaptureClient: class {
     options: {
+      workletUrl?: string;
       onTransportError?: (route: "frame" | "heartbeat", error: Error) => void;
       onTransportRecovered?: () => void;
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
@@ -46,6 +48,7 @@ vi.mock("../capture/captureClient", () => ({
     };
 
     constructor(options: {
+      workletUrl?: string;
       onTransportError?: (route: "frame" | "heartbeat", error: Error) => void;
       onTransportRecovered?: () => void;
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
@@ -70,8 +73,13 @@ import { ControlPanel, LIVE_MEETING_OBSERVE_EVENT } from "./ControlPanel";
 
 describe("ControlPanel reattach", () => {
   let root: HTMLDivElement;
+  let workletMeta: HTMLMetaElement;
 
   beforeEach(() => {
+    workletMeta = document.createElement("meta");
+    workletMeta.name = "moss-worklet-url";
+    workletMeta.content = "/static/worklets/lane-framer.js?v=" + "a".repeat(64);
+    document.head.append(workletMeta);
     root = document.createElement("div");
     document.body.append(root);
     window.sessionStorage.clear();
@@ -83,6 +91,7 @@ describe("ControlPanel reattach", () => {
   afterEach(() => {
     act(() => render(null, root));
     root.remove();
+    workletMeta.remove();
   });
 
   it("reattaches read-only with only the Account Meeting ID", async () => {
@@ -167,7 +176,7 @@ describe("ControlPanel reattach", () => {
     );
     expect(enableMicrophone?.disabled).toBe(false);
     await act(async () => enableMicrophone?.click());
-    expect(mocks.captureOptions).not.toBeNull();
+    expect(mocks.captureOptions).toMatchObject({ workletUrl: workletMeta.content });
   });
 
   it("opens an active history Meeting as an ephemeral Account observer", async () => {

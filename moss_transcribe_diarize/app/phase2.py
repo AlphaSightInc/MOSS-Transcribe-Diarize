@@ -27,10 +27,18 @@ DEFAULT_PHASE2_DATABASE_PATH = (
     Path.home() / ".local" / "share" / "moss-transcribe-diarize" / "phase2.sqlite3"
 )
 FRONTEND_ASSET_DIR = Path(__file__).resolve().parent / "frontend_assets"
+_ASSET_VERSION_CACHE: dict[Path, tuple[tuple[int, int], str]] = {}
 
 
 def _asset_content_version(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    stat = path.stat()
+    identity = (stat.st_mtime_ns, stat.st_size)
+    cached = _ASSET_VERSION_CACHE.get(path)
+    if cached is not None and cached[0] == identity:
+        return cached[1]
+    version = hashlib.sha256(path.read_bytes()).hexdigest()
+    _ASSET_VERSION_CACHE[path] = (identity, version)
+    return version
 
 
 def _frontend_asset_url(asset_path: str) -> str:
@@ -2178,8 +2186,14 @@ def _workspace_html(
     empty = "<p data-history=\"empty\">No meetings yet.</p>" if not meetings else ""
     styles_url = _frontend_asset_url("styles.css")
     app_url = _frontend_asset_url("app.js")
+    worklet_head = (
+        f'<meta name="moss-worklet-url" content="{_frontend_asset_url("worklets/lane-framer.js")}">'
+        if live_enabled
+        else ""
+    )
     live_head = (
         '<meta name="moss-authority" content="account">'
+        f'{worklet_head}'
         f'<link rel="stylesheet" href="{styles_url}">'
     )
     live_body = (

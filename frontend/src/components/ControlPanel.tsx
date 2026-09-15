@@ -34,6 +34,14 @@ const EMPTY_METERS: LaneMeters = { microphone: 0, system: 0 };
 const HELPER_VERSION = "moss-web/1";
 export { LIVE_MEETING_OBSERVE_EVENT } from "../lib/meetingEvents";
 
+function workletUrl(): string {
+  const url = document.querySelector<HTMLMetaElement>(
+    'meta[name="moss-worklet-url"]'
+  )?.content;
+  if (!url) throw new Error("Missing live-capture worklet URL");
+  return url;
+}
+
 export function ControlPanel() {
   const recovering = useRef(new Set<"capture" | "transcript">());
   const [audioRoute, setAudioRoute] = useState<AudioRoute>("speakers");
@@ -106,6 +114,7 @@ export function ControlPanel() {
     setMessage("Requesting microphone access...");
     const client = new CaptureClient({
       helperVersion: HELPER_VERSION,
+      workletUrl: workletUrl(),
       onMeter: updateMeter,
       onPreflightStatus: setMessage,
       onPreSessionFailure: reportPreSessionFailure,

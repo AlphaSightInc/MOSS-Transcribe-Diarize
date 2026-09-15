@@ -13,6 +13,8 @@ import {
   stopCaptureSession,
 } from "./captureClient";
 
+const WORKLET_URL = "/static/worklets/lane-framer.js?v=" + "a".repeat(64);
+
 type TestLaneState = {
   clippedFrameRun: number;
   silentFrameRun: number;
@@ -74,6 +76,7 @@ function activeFrameClient(
 ): { client: ActiveClient; lane: TestLaneState } {
   const client = new CaptureClient({
     helperVersion: "test",
+    workletUrl: WORKLET_URL,
     onTransportError,
     onTransportRecovered,
   });
@@ -112,6 +115,7 @@ function preSessionClient(onPreSessionFailure: (failure: PreSessionCaptureFailur
   });
   const client = new CaptureClient({
     helperVersion: "test",
+    workletUrl: WORKLET_URL,
     onPreSessionFailure,
   });
   const active = client as unknown as PreSessionClient;
@@ -174,7 +178,7 @@ async function eventLaneClient(): Promise<{ client: EventLaneClient; microphone:
     createMediaStreamSource: () => source,
     createGain: () => mute,
   }) as unknown as AudioContext;
-  const client = new CaptureClient({ helperVersion: "test" });
+  const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
   const active = client as unknown as EventLaneClient;
   active.context = context;
   active.descriptor = { sampleRate: 4, frameSamples: 2 };
@@ -352,7 +356,7 @@ describe("browser capture frame contract", () => {
   it("stops through the authenticated server route before local capture teardown", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ helperVersion: "test" });
+    const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
     const clientState = client as unknown as {
       session: { id: string } | null;
     };
@@ -387,7 +391,7 @@ describe("browser capture frame contract", () => {
       }),
     });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ helperVersion: "test" });
+    const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
     const active = client as unknown as ActiveClient;
     active.context = { sampleRate: 4 } as AudioContext;
     active.descriptor = {
@@ -422,7 +426,7 @@ describe("browser capture frame contract", () => {
   it("posts a final stopped heartbeat without a recurring timer loop", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ helperVersion: "test" });
+    const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
     const active = client as unknown as ActiveClient;
     active.session = { id: "session/with space" };
 
@@ -562,10 +566,10 @@ describe("browser capture frame contract", () => {
       }),
     });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ helperVersion: "test" });
+    const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
     const active = client as unknown as { session: { id: string } | null };
     const context = (await client.prepare()) as unknown as FakeAudioContext;
-    expect(context.audioWorklet.addModule).toHaveBeenCalledWith("/static/worklets/lane-framer.js");
+    expect(context.audioWorklet.addModule).toHaveBeenCalledWith(WORKLET_URL);
     active.session = { id: "session" };
 
     context.state = "suspended";
@@ -772,7 +776,7 @@ describe("browser capture frame contract", () => {
       return Promise.resolve({ ok: true, status: 200 });
     });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ helperVersion: "test" });
+    const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
     const active = client as unknown as {
       session: { id: string } | null;
       scheduleHeartbeat: (state: string) => Promise<void>;
@@ -1002,7 +1006,7 @@ describe("browser capture frame contract", () => {
     for (let turns = 0; turns < 6; turns += 1) {
       const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
       vi.stubGlobal("fetch", fetchSpy);
-      const client = new CaptureClient({ helperVersion: "test" });
+      const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
       const active = client as unknown as {
         session: { id: string } | null;
         scheduleHeartbeat: (state: string) => Promise<void>;
@@ -1025,7 +1029,7 @@ describe("browser capture frame contract", () => {
   it("still posts the final stopped heartbeat when stop() lands in that window", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);
-    const client = new CaptureClient({ helperVersion: "test" });
+    const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
     const active = client as unknown as {
       session: { id: string } | null;
       scheduleHeartbeat: (state: string) => Promise<void>;
@@ -1111,6 +1115,7 @@ describe("browser capture frame contract", () => {
     const onPreflightStatus = vi.fn<(statusLine: string) => void>();
     const client = new CaptureClient({
       helperVersion: "test",
+      workletUrl: WORKLET_URL,
       onPreflightStatus,
     });
     const active = client as unknown as ActiveClient;
@@ -1158,6 +1163,7 @@ describe("browser capture frame contract", () => {
     vi.stubGlobal("fetch", fetchSpy);
     const client = new CaptureClient({
       helperVersion: "test",
+      workletUrl: WORKLET_URL,
       onPreflightStatus,
     });
     const active = client as unknown as ActiveClient;
