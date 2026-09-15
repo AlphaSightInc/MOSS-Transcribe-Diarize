@@ -38,6 +38,37 @@ The browser sends the transcript through authenticated same-origin `/api/llm/cha
 
 Keep diagnostic output metadata-only. The [2026-09-12 content-boundary audit](../audits/content-boundary-20260912.md) removed **402 committed evidence files and 16 embedding caches** from transcript, audio, screenshot, relay-body and related content categories, retained **223 content-free evidence files**, tightened the diagnostic writers, and verified that the relay’s production error paths already return fixed codes without retaining upstream bodies. The removals affect the branch tip; the removed files **remain in git history**. No force-push is permitted under this mandate. **Before any PR to `dev`, let the operator decide whether to squash or rewrite `private/auto-mvp-0911`**; this handback authorizes neither operation. Older audits describe historical measurements; removed raw artifacts are not restored or advertised as current evidence below.
 
+## 1b. Current state, 2026-09-15 (supersedes the candidate named in §2)
+
+**Candidate to attend against: `628341fad9399c897e26fe3e5f11f0e087eeafe0`**, staged inert and verified.
+`e47ab229`, `13c780e8`, `b9aedebd`, `1bfd16ba`, `2df8ea38`, `aaf10d02`, `1d583842`, `d8e04a9b` and `501c55ca`
+are all superseded. The branch head carries docs-only commits beyond the staged SHA.
+
+**Attended G7 has still never passed**, but scenario 1 (`microphone_meeting_tab`) completed end to end and was
+accepted by `validate_attended_g7`; scenario 2 failed on `distinct_speakers == 1` alone. `--skip-qualification`
+(ADR-less CLI change, `aaf10d02`) takes preadmission straight to the canary in ~2.5 min.
+
+**Product verification without a cutover.** A local Phase-2 stack on the candidate ran the full 14-row e2e
+suite **six times**: 13/14 once, then 13/13 five times including a three-run soak. Row 9 is the only failure
+and is infrastructure — it requires both relay upstreams and `ga0-rtx4090:1235` is down. Coverage includes
+file, URL, live, enrolment with rename propagation, all five export formats, audio download, interrupted
+meetings, voice bank, history, phone width, network outages and consecutive meetings.
+
+**Measured on the staged build** (50 s corpus, local stack over an SSH tunnel to the host vLLM, without the
+host profile's `draft_lane_seconds=1.0`): first text **0.34 s**, segment latency p50 **2.95 s**, label delay
+p50 **2.99 s**, final **WER 0.0708** against a 0.095074 bound.
+
+**Microphone loss — root cause corrected.** It is **level imbalance at the mono sum**, not the mix
+architecture. Lanes at parity transcribe both voices and separate them correctly; the operator's real ~3 %
+microphone level loses the voice entirely. The earlier "gain cannot fix it" conclusion was unsound: it
+amplified an already-mixed recording in which the microphone was already buried. Fix on branch
+`fix/lane-level-balance` (`6a181eb2`), **not staged** — it recovers the voice, leaves the non-overlapping case
+identical, and raises admitted identities on parity overlap from 1 to 2, but its effect on the gated macros is
+still being measured. The demo runs the non-overlapping flow, which is unaffected and now proven.
+
+**Known gate weakness, recorded not fixed:** G7's `distinct_speakers >= 2` can be satisfied entirely by
+two-host shared audio, so it does not verify that the microphone lane contributes speech.
+
 ## 2. State of the gates (round 16, candidate `e47ab229`)
 
 | layer | collected | passed | failed | unmeasured |
