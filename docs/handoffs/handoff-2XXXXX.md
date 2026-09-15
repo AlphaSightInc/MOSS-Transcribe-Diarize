@@ -166,6 +166,38 @@ see the audio ruling in the mandate memory.
    pre-existing `test_finalization_failure_stop_boundary[decode_failed]` (fails on a clean tree; host status unknown);
    no Let's Encrypt renewal automation (cert expires **2026-12-09**).
 
+## 5b. Branch rulings — settled 2026-09-15, do not relitigate
+
+A controlled A/B on the local stack (worktree `-wt-auto-mvp-0911`'s sibling `-wt-localstack-0911` checked out per
+branch, stack restarted between arms, one probe, one corpus) settled the four parked fix branches. Evidence is in
+memory `auto-mvp-0911-progress.md` under the 2026-09-15 12:55 entry.
+
+**The demo path is safe on the staged build — no fix required.** Non-overlapping lanes with the microphone at 3 %
+of full scale (the level the 2026-09-14 attended run measured from the MacBook built-in microphone) yields two
+speakers, both fully transcribed, on `628341fa` itself. This had only ever been proven at full microphone level
+before, and it was the last real doubt about the presenter being heard. Re-runnable any time:
+
+```
+.venv/bin/python tests/e2e/verify_demo_lanes.py --allow-local-self-signed    # exit 0 = demo path intact
+```
+
+| branch | ruling |
+|---|---|
+| `fix/lane-preserving-asr` (`7e5a2ad2`) | **Do not land.** Under overlap + quiet microphone it moves `identities_born_count` 1→2 but the committed transcript is **byte-identical to baseline** — 8 segments, 79 words, all `speaker-0001`, zero microphone words. It buys identity accounting, not recovered speech, across 494 lines in four runtime modules. And `identities_born_count` reads 2 even when the microphone lane is pure silence, so even that one effect is not a real signal. |
+| `fix/lane-level-balance` (`6a181eb2`) | **Do not land.** Already measured: the gain amplifies the noise floor. |
+| `fix/prestart-error-consolidation` (`bc4950c4`) | Post-demo. Genuine fixes (first error wins, no silent restart, chooser kept inside the user gesture) but it would **not** have changed the failed attended run — in that hang there is no error at all, one lane simply delivers digital silence. Older base (`d8e04a9b`), needs a frontend asset rebuild. |
+| `fix/frame-sample-rate-validation` (`3d831f36`) | Post-demo hardening. 14 lines, verified against a running service, low risk. |
+
+**Operator defect (1) — "no popup, no indication, ran on for 120 s" — is already fixed; do not rebuild it.** The
+per-lane hint (`data-capture-readiness`, `ControlPanel.tsx:366`) names the silent lane, and it was present even in
+the failed candidate `1d583842` (introduced by `24b48395`). The operator could not *see* it because of the
+stale-CSS corruption, which `628341fa` fixes by versioning assets. Regression coverage already exists at
+`frontend/src/components/ControlPanel.test.tsx:152-163`. The readiness gate is `rms > 0` on both lanes
+(`ControlPanel.tsx:68`, `:317`) — exactly `0.0` only for a paused tab or a muted microphone. That strictness is
+deliberate: leave it alone.
+
+Frontend suite on `628341fa`: 24 files / 205 tests, all pass.
+
 ## 6. Stress testing — the operator's second ask
 
 Nothing has adversarially exercised the product in a browser. Do this **against the candidate once G7 passes**,
