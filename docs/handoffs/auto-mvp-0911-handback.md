@@ -16,21 +16,30 @@ tailnet origin HTTP **200**. Durable `/etc/hosts` prerequisite
 controlled WSL shutdown/restart. Follow [Host hygiene](g7-preadmission-runbook.md#host-hygiene--canonical-origin-after-wsl-restart);
 never shut down WSL during an attempt. These recovery facts do not authorize round 14.
 
-1. **Wait for the owner’s go and exact qualified, staged SHA.** Then arrange a working host display **and microphone/audio path** for the attended canary. The recorded host inspection found WSLg disabled; it is not a current live check. Follow the [G7 preadmission runbook](g7-preadmission-runbook.md). An X server alone supplies no audio. If enabling WSLg requires `wsl --shutdown`, arrange downtime **before** an attempt: it stops WSL services, including vLLM and Phase-1; allow model reload and verify recovery. Do not restart them during an attempt.
-2. **Run attended preadmission from the interactive WSL terminal**, exactly as the runbook specifies. Budget roughly an hour or more for qualification, not a fixed 60–75 minutes. When Chrome opens, handle sign-in/permissions and share tab audio, then entire-screen audio; make both voices audible and answer four Enter prompts. Success leaves the candidate serving `:7861` in **preadmission, `admitted=false`**. A failure normally restores Phase-1; `SAFE_STOPPED` requires the engineer. Verify the durable result; a missing result is not success.
+1. **Wait for the owner’s go and the exact staged SHA** (`566024287cdd02204f26ac6a83e2c22ef1c90a7c`, §1b). Then arrange a working host display **and microphone/audio path** for the attended canary. The recorded host inspection found WSLg disabled; it is not a current live check. Follow the [G7 preadmission runbook](g7-preadmission-runbook.md). An X server alone supplies no audio. If enabling WSLg requires `wsl --shutdown`, arrange downtime **before** an attempt: it stops WSL services, including vLLM and Phase-1; allow model reload and verify recovery. Do not restart them during an attempt.
+2. **Run attended preadmission from the interactive WSL terminal**, exactly as the runbook specifies. Launch with `--skip-qualification` exactly as `handoff-2XXXXX.md` §1 shows; the canary opens Chrome in about 2.5 minutes. When Chrome opens, handle sign-in/permissions and share tab audio, then entire-screen audio; make both voices audible and answer four Enter prompts. Success leaves the candidate serving `:7861` in **preadmission, `admitted=false`**. A failure normally restores Phase-1; `SAFE_STOPPED` requires the engineer. Verify the durable result; a missing result is not success.
 3. **Run the operator smoke from the MacBook**, using [the exact system-trust command](e2e-smoke-for-operator.md). Rows 1,6,11,12 need no decoder or relay; 6/11 check empty-workspace behavior in that selection. Use the populated command there to exercise exports/audio/summaries. Every invocation creates its own workspace; use your separate rehearsed browser profile for the demo.
-4. **Prepare the demo, then follow the [10-minute presenter script](demo-script.md).** Verify your name is in **Voiceprints**. If enrolment is pending, provide more sustained speech; a three-second utterance is not a guarantee. Name the confirmed speaker with **Save voiceprint** checked and confirm the bank entry. Have the MP3, YouTube speech tab, headphones and both summary servers ready.
+4. **Prepare the demo, then follow the [10-minute presenter script](demo-script.md).** Verify your name is in **Voiceprints**. If enrolment is pending, provide more sustained speech; a three-second utterance is not a guarantee. Name the confirmed speaker with **Save voiceprint** checked and confirm the bank entry. Have the MP3, YouTube speech tab, headphones and the Gemini summary settings (below) ready.
 
 ### LLM configuration to verify before the demo
 
-Use the existing staged profile and ask the release owner to verify it; this handback did not read or change current host configuration. The branch’s [relay configuration](../llm-relay.md) is:
+**Use Gemini 2.5 Flash through OpenRouter for demo summaries**; it was measured reliable on realistic-length transcripts. In
+**Optional AI summaries**, set Provider to **External HTTPS provider**, Provider HTTPS URL `https://openrouter.ai/api/v1`,
+Model `google/gemini-2.5-flash`, and the operator's OpenRouter API key, then choose **Save on this browser**. The key lives
+only in that browser profile's site data, never on the MOSS server. The browser calls OpenRouter directly: CORS was
+verified and the page sets no CSP. That key was pasted into a chat session, so rotate it after the demo. Go/no-go:
+`MOSS_DEMO_OPENROUTER_API_KEY=<key> scripts/demo-precheck.sh <FULL_SHA>`.
+
+The server relay stays configured as a fallback:
 
 ```sh
 MOSS_LLM_UPSTREAMS='[{"name":"macstudio","base_url":"http://macstudio.tailnet.aisight.us:1234/v1","models":["qwen/qwen3.6-35b-a3b"]},{"name":"rtx4090","base_url":"http://ga0-rtx4090.tailnet.aisight.us:1235/v1","models":["qwen38-27b-mtp"]}]'
 MOSS_LIVE_DRAFT_LANE_SECONDS=1.0
 ```
 
-Keep both configured MacStudio and RTX4090 upstream servers available; their URLs/models are verified configuration, not a current process-health check. In **Optional AI summaries**, select **Provider → Server relay (tailnet models)**, choose **Relay model**, then **Save on this browser**. Fresh settings choose the first model; saved external settings are preserved. Test each model on a completed rehearsal meeting and read the actual successful model beside **Summary ready.** A model listing is configuration, not a health test.
+Two caveats apply to the relay. qwen still fails about a third of 180 s summaries on its own timestamp formatting.
+`ga0-rtx4090:1235` has been unreachable, so its model is listed but returns 502. The precheck probes rtx4090 only when
+`MOSS_DEMO_RTX4090_BASE` is set. A model listing is configuration, not a health test.
 
 The browser sends the transcript through authenticated same-origin `/api/llm/chat/completions`; no API key is needed. The frontend requests 2048 tokens; relay budgets floor/default to 2048 and cap at 4096. Both configured upstreams accepted `chat_template_kwargs.enable_thinking=false` in the [real-model replay](../audits/relay-thinking-models-20260911.md). A reasoning-only answer gets one bounded retry, never reasoning substituted as an answer. The browser may then try the next listed model once for relay errors. Keep the generating tab open; the successful-model status is transient, not persisted provenance. For an old saved prompt, choose **Restore default prompt**, then **Save on this browser**. Direct **External HTTPS provider** remains supported and browser-owned.
 
@@ -38,36 +47,49 @@ The browser sends the transcript through authenticated same-origin `/api/llm/cha
 
 Keep diagnostic output metadata-only. The [2026-09-12 content-boundary audit](../audits/content-boundary-20260912.md) removed **402 committed evidence files and 16 embedding caches** from transcript, audio, screenshot, relay-body and related content categories, retained **223 content-free evidence files**, tightened the diagnostic writers, and verified that the relay’s production error paths already return fixed codes without retaining upstream bodies. The removals affect the branch tip; the removed files **remain in git history**. No force-push is permitted under this mandate. **Before any PR to `dev`, let the operator decide whether to squash or rewrite `private/auto-mvp-0911`**; this handback authorizes neither operation. Older audits describe historical measurements; removed raw artifacts are not restored or advertised as current evidence below.
 
-## 1b. Current state, 2026-09-15 (supersedes the candidate named in §2)
+## 1b. Current state, 2026-09-15 evening (supersedes the candidate named in §2)
 
-**Candidate to attend against: `628341fad9399c897e26fe3e5f11f0e087eeafe0`**, staged inert and verified.
-`e47ab229`, `13c780e8`, `b9aedebd`, `1bfd16ba`, `2df8ea38`, `aaf10d02`, `1d583842`, `d8e04a9b` and `501c55ca`
-are all superseded. The branch head carries docs-only commits beyond the staged SHA.
+**Candidate to attend against: `566024287cdd02204f26ac6a83e2c22ef1c90a7c`**, staged inert and verified on the host by its
+owner. The manifest SHA is exact, all three manifest refs are repointed, the CDP endpoint is preserved, vLLM PID 369 is
+untouched, and Phase-1 is serving. `628341fa` is kept on the host for rollback and is superseded, as are `e47ab229`,
+`13c780e8`, `b9aedebd`, `1bfd16ba`, `2df8ea38`, `aaf10d02`, `1d583842`, `d8e04a9b` and `501c55ca`. The branch head
+carries only tests and docs beyond the staged SHA. The exact launch command is in `handoff-2XXXXX.md` §1.
 
-**Attended G7 has still never passed**, but scenario 1 (`microphone_meeting_tab`) completed end to end and was
-accepted by `validate_attended_g7`; scenario 2 failed on `distinct_speakers == 1` alone. `--skip-qualification`
-(ADR-less CLI change, `aaf10d02`) takes preadmission straight to the canary in ~2.5 min.
+**Why it replaced `628341fa`: Final Summary failed realistic-length meetings.** The browser sent segment times as float
+seconds while the prompt requires `HH:MM:SS`. Models misconverted them (59.64 s became `00:59:64`), and both the browser
+and the server rejected the summary as `invalid_output`. The default macstudio relay failed a 180 s transcript this way.
+Gemini 2.5 Flash failed at every length, because it also wrapped its JSON in markdown fences. Row 9 had only ever
+summarized a 50 s clip, which is why this went unnoticed. `d53ecd99` sends `HH:MM:SS` and asks external providers for a
+JSON object; `56602428` makes the precheck's rtx4090 probe optional and adds an optional OpenRouter probe.
 
-**Product verification without a cutover.** A local Phase-2 stack on the candidate ran the full 14-row e2e
-suite **six times**: 13/14 once, then 13/13 five times including a three-run soak. Row 9 is the only failure
-and is infrastructure — it requires both relay upstreams and `ga0-rtx4090:1235` is down. Coverage includes
-file, URL, live, enrolment with rename propagation, all five export formats, audio download, interrupted
-meetings, voice bank, history, phone width, network outages and consecutive meetings.
+**Verified on the staged SHA, without a cutover** (local stack over an SSH tunnel to the host vLLM, suites run
+sequentially):
+- 14-row e2e: **13/14**. Row 9 was re-attributed from that run's own network log: the qwen attempt returned 200 and
+  rendered, and only rtx4090 returned 502.
+- Lifecycle stress 7/7 and mid-session reshare 6/6.
+- Demo lanes PASS at the operator's measured 3 % microphone level.
+- UI stress 7/7: history at 25 meetings and after reload, versioned assets, tab hide/show.
+- Summaries through Gemini 2.5 Flash 2/2. Across all real-browser runs, every 50 s and 180 s Gemini attempt was current.
 
-**Measured on the staged build** (50 s corpus, local stack over an SSH tunnel to the host vLLM, without the
-host profile's `draft_lane_seconds=1.0`): first text **0.34 s**, segment latency p50 **2.95 s**, label delay
-p50 **2.99 s**, final **WER 0.0708** against a 0.095074 bound.
+**Known summary limitation:** the relay model `qwen/qwen3.6-35b-a3b` still fails about a third of 180 s summaries (5
+of 16) on its own timestamp formatting — `01:32`, or 59 s written as `00:59:00`. Use Gemini for the demo. A robust relay
+would need grammar-constrained output through the relay, which is a server change and has not been made.
 
-**Microphone loss — root cause corrected.** It is **level imbalance at the mono sum**, not the mix
-architecture. Lanes at parity transcribe both voices and separate them correctly; the operator's real ~3 %
-microphone level loses the voice entirely. The earlier "gain cannot fix it" conclusion was unsound: it
-amplified an already-mixed recording in which the microphone was already buried. Fix on branch
-`fix/lane-level-balance` (`6a181eb2`), **not staged** — it recovers the voice, leaves the non-overlapping case
-identical, and raises admitted identities on parity overlap from 1 to 2, but its effect on the gated macros is
-still being measured. The demo runs the non-overlapping flow, which is unaffected and now proven.
+**Attended G7 has still never passed.** Scenario 1 was accepted; scenario 2 failed on `distinct_speakers == 1` alone, so
+at prompt 2 wait until two speaker labels are showing.
 
-**Known gate weakness, recorded not fixed:** G7's `distinct_speakers >= 2` can be satisfied entirely by
-two-host shared audio, so it does not verify that the microphone lane contributes speech.
+**Latency, measured on `628341fa`** (the live path is unchanged since): first text 0.34 s, segment p50 2.95 s, label p50
+2.99 s, final WER 0.0708 against a 0.095074 bound.
+
+**Microphone:** the demo's non-overlapping flow is proven at that ~3 % built-in-microphone level
+(`tests/e2e/verify_demo_lanes.py`). Simultaneous speech still loses the quiet microphone. Both candidate fixes were
+rejected on measured evidence: gain amplifies the noise floor (`fix/lane-level-balance`), and preserving lanes changed
+identity counts without recovering a single word (`fix/lane-preserving-asr`); see `handoff-2XXXXX.md` §5b. An earlier
+version of this section called the loss a level imbalance fixable by gain; that is withdrawn. Per the operator's ruling,
+demo without overlapping audio.
+
+**Known gate weakness, recorded not fixed:** G7's `distinct_speakers >= 2` can be satisfied entirely by two-host shared
+audio, so it does not verify that the microphone lane contributes speech.
 
 ## 2. State of the gates (round 16, candidate `e47ab229`)
 
