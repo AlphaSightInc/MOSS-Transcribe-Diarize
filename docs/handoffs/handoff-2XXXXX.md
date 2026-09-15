@@ -59,7 +59,10 @@ GitHub identity, the audio ruling).
 
 ## 1. Ready to launch right now
 
-`501c55ca62fd77161f62aaff9e208b0921eb166a` is **staged inert and verified** on the host: manifest SHA matches,
+**SUPERSEDED — use `628341fad9399c897e26fe3e5f11f0e087eeafe0`, see the UPDATE block above.** Note the branch
+head is `a46b05a8`, which differs from the staged SHA by **docs only**; do not restage for that.
+
+`628341fad9399c897e26fe3e5f11f0e087eeafe0` is **staged inert and verified** on the host: manifest SHA matches,
 all three `candidate_manifest` refs repointed with none stale, `chrome_cdp_endpoint` preserved, vLLM **PID 369**
 untouched, Phase-1 serving, 672 G free. The operator's Chrome and `ssh -R` tunnel are alive with **exactly one
 page** (the podcast tab — do not leave a second MOSS tab open, see §4).
@@ -70,7 +73,7 @@ wsl.exe -d Ubuntu -u devcontainers
 tmux new -s live
 ```
 ```bash
-SHA=501c55ca62fd77161f62aaff9e208b0921eb166a
+SHA=628341fad9399c897e26fe3e5f11f0e087eeafe0
 CUTOVER="$HOME/.local/share/moss-transcribe-diarize/account-runtimes/$SHA/bin/mtd-phase2-cutover"
 export PYTHONDONTWRITEBYTECODE=1
 ATTEMPT="$HOME/.local/state/moss-transcribe-diarize/cutover-attempts/preadmission-$(date -u +%Y%m%dT%H%M%SZ)"
@@ -82,7 +85,7 @@ printf 'Attempt: %s\n' "$ATTEMPT"
 the picker** instead of ~2 h. The operator has ordered that re-qualification is never proposed again.
 
 **Before launching, clear the operator's Chrome HTTP cache over CDP** (`Network.clearBrowserCache`). Their
-profile still holds Phase-1's assets from tonight; `501c55ca` makes that harmless, but the demo run should not
+profile still holds Phase-1's assets; `628341fa` makes that harmless, but the demo run should not
 be the first live test of that fix.
 
 ## 2. G7 status — one behaviour away from passing
@@ -106,7 +109,15 @@ The operator pressed at 23 s when only one podcast host had spoken. Allow 40–6
 G7 does not verify the microphone lane contributes speech. Tightening it would make a blocked gate harder to
 pass; raise it with the operator after the demo.
 
-## 3. The product blocker (diagnosed, NOT fixed)
+## 3. The product blocker — **THIS SECTION IS SUPERSEDED, see the UPDATE block above**
+
+> The conclusion below ("gain cannot fix it") was **disproved on 2026-09-15**. The +6/+12/+18 dB arms
+> amplified an *already-mixed* recording, in which the microphone was already buried — amplifying a mix
+> cannot unbury it. Boosting the **mic lane before the sum** was never tested, and direct measurement shows
+> lanes at parity transcribe both voices while a 3 % mic lane loses one. The real cause is **level
+> imbalance**, and the fix is `fix/lane-level-balance` (`6a181eb2`). The text below is retained for the
+> file:line map of the mix path, which remains accurate.
+
 
 **The v2 mixer collapses both lanes into one mono ASR input.** Mic and system each get −6 dB and are summed into
 a single PCM buffer (`app/live_mixer.py:267`); the decoder only ever sees that mix
