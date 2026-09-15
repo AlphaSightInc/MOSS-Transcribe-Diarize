@@ -60,10 +60,27 @@ it("keeps settings local, blank disables, rejects own-origin/provider URL creden
 
 it("sends only projected final transcript and browser parameters, never meeting IDs/history/audio", () => {
   const body = providerBody(meeting(), settings());
-  expect(JSON.parse(body).max_tokens).toBe(2048);
+  expect(JSON.parse(body)).toMatchObject({ max_tokens: 2048, stream: false, response_format: { type: "json_object" } });
   expect(body).toContain("ONLY A TRANSCRIPT"); expect(body).toContain("MY MODEL"); expect(body).toContain("MY PROMPT");
   for (const forbidden of ["MY SECRET", "private-meeting", "private-segment", "private-canonical", "PRIVATE TITLE", "audio", "ONLY B TRANSCRIPT"]) expect(body).not.toContain(forbidden);
   expect(() => providerBody({ ...meeting(), status: "active" }, settings())).toThrow();
+});
+
+it("formats every provider segment timestamp as floored HH:MM:SS, including hours", () => {
+  const source = meeting();
+  const segment = source.transcript!.segments[0];
+  const timed = { ...source, transcript: { segments: [
+    { ...segment, start: 3.87, end: 59.64 },
+    { ...segment, start: 98.16, end: 3661.99 },
+  ] } };
+  for (const endpoint of [settings().endpoint, RELAY_ENDPOINT]) {
+    const body = JSON.parse(providerBody(timed, { ...settings(), endpoint }));
+    const payload = JSON.parse(body.messages[1].content);
+    expect(payload.segments.map(({ start, end }: { start: string; end: string }) => [start, end])).toEqual([
+      ["00:00:03", "00:00:59"],
+      ["00:01:38", "01:01:01"],
+    ]);
+  }
 });
 
 it("validates exact raw shape and timestamp bounds without repair or digit coverage", () => {
@@ -175,6 +192,7 @@ it("allows only the exact same-origin relay endpoint and never stores a relay ke
   const body = JSON.parse(providerBody(meeting(), { ...settings(), endpoint: RELAY_ENDPOINT }));
   expect(Object.keys(body).sort()).toEqual(["max_tokens", "messages", "model"]);
   expect(body.max_tokens).toBe(2048);
+  expect(body.response_format).toBeUndefined();
 });
 
 it("defaults fresh settings to the first relay model but preserves explicit external settings", async () => {
