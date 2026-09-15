@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from urllib.parse import urlsplit
 
 import pytest
-from playwright.sync_api import Error, sync_playwright, expect
+from playwright.sync_api import sync_playwright, expect
 
 from moss_transcribe_diarize.app.phase2 import Meeting, _workspace_html
 from moss_transcribe_diarize.phase2_acceptance_browser import _meeting_opener
@@ -13,7 +13,7 @@ from moss_transcribe_diarize.phase2_acceptance_external import FixedAccountCampa
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def test_meeting_locator_ignores_server_fallback_and_nav():
+def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
     with sync_playwright() as p:
         from tests.phase2.browser_support import require_browser
         browser = p.chromium.launch(executable_path=str(require_browser(p)))
@@ -38,9 +38,7 @@ def test_meeting_locator_ignores_server_fallback_and_nav():
             page.locator('[data-history-boot="ready"]').wait_for()
             opener = _meeting_opener(page, meeting.meeting_id)
             assert page.get_by_text('Meeting history', exact=True).count() == 2
-            assert page.locator('[data-open-meeting="audit-meeting"]').count() == 2
-            with pytest.raises(Error, match="strict mode violation"):
-                page.locator('[data-open-meeting="audit-meeting"]').click(timeout=500)
+            assert page.locator('[data-open-meeting="audit-meeting"]').count() == 1
             assert opener.count() == 1
             opener.click()
             page.get_by_role('region', name='Final summary', exact=True).wait_for()

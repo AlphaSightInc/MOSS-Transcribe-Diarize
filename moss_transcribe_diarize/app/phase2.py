@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import html
 import json
 import secrets
@@ -25,6 +26,15 @@ SESSION_COOKIE_MAX_AGE = 400 * 24 * 60 * 60
 DEFAULT_PHASE2_DATABASE_PATH = (
     Path.home() / ".local" / "share" / "moss-transcribe-diarize" / "phase2.sqlite3"
 )
+FRONTEND_ASSET_DIR = Path(__file__).resolve().parent / "frontend_assets"
+
+
+def _asset_content_version(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _frontend_asset_url(asset_path: str) -> str:
+    return f"/static/{asset_path}?v={_asset_content_version(FRONTEND_ASSET_DIR / asset_path)}"
 
 
 class SchemaVersionError(RuntimeError):
@@ -1765,7 +1775,7 @@ def create_phase2_app(
         if request.url.path == "/" or request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
         return response
-    frontend_dir = Path(__file__).resolve().parent / "frontend_assets"
+    frontend_dir = FRONTEND_ASSET_DIR
     required_live_assets = ("app.js", "styles.css", "worklets/lane-framer.js")
     invalid_live_assets = (
         tuple(
@@ -2166,9 +2176,11 @@ def _workspace_html(
 ) -> str:
     history = "".join(_meeting_history_card(meeting) for meeting in meetings)
     empty = "<p data-history=\"empty\">No meetings yet.</p>" if not meetings else ""
+    styles_url = _frontend_asset_url("styles.css")
+    app_url = _frontend_asset_url("app.js")
     live_head = (
         '<meta name="moss-authority" content="account">'
-        '<link rel="stylesheet" href="/static/styles.css">'
+        f'<link rel="stylesheet" href="{styles_url}">'
     )
     live_body = (
         '<section id="workspace-live" data-workspace-section="live" data-live-capture="account">'
@@ -2195,7 +2207,7 @@ def _workspace_html(
 <div id=\"meeting-history-app\" data-history-root>{empty}{history}</div></section>
 <section id="workspace-voiceprints" data-workspace-section="voiceprints"><h2 class="phase2-workspace-heading">Private voice bank</h2><div id="voiceprint-bank-app"></div></section>
 </section></main>
-<script type="module" src="/static/app.js"></script>
+<script type="module" src="{app_url}"></script>
 </body></html>"""
 
 

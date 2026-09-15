@@ -21,6 +21,7 @@ if (root) {
 
 const historyRoot = document.getElementById("meeting-history-app");
 if (historyRoot) {
+  historyRoot.replaceChildren();
   render(<MeetingHistory />, historyRoot);
   historyRoot.setAttribute("data-history-boot", "ready");
 }
