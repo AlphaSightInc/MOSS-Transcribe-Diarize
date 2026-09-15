@@ -1,7 +1,8 @@
 #!/bin/bash
 # Run on the presenter's MacBook: scripts/demo-precheck.sh EXPECTED_FULL_SHA
-# Local verification only: MOSS_DEMO_ORIGIN, MOSS_DEMO_MACSTUDIO_BASE and
-# MOSS_DEMO_RTX4090_BASE may override the printed targets. TLS is never bypassed.
+# Local verification only: MOSS_DEMO_ORIGIN and MOSS_DEMO_MACSTUDIO_BASE may
+# override targets. MOSS_DEMO_RTX4090_BASE and MOSS_DEMO_OPENROUTER_API_KEY
+# opt into fallback and external-provider probes. TLS is never bypassed.
 if ! command -v python3 >/dev/null 2>&1; then
   printf '%s\n' 'NO-GO: python3 is missing'
   exit 1
@@ -29,10 +30,14 @@ def main():
         print('NO-GO: curl is missing')
         return 1
     origin = os.environ.get('MOSS_DEMO_ORIGIN', 'https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7861').rstrip('/')
-    models = [
-        ('macstudio', 'qwen/qwen3.6-35b-a3b', os.environ.get('MOSS_DEMO_MACSTUDIO_BASE', 'http://macstudio.tailnet.aisight.us:1234/v1').rstrip('/')),
-        ('rtx4090', 'qwen38-27b-mtp', os.environ.get('MOSS_DEMO_RTX4090_BASE', 'http://ga0-rtx4090.tailnet.aisight.us:1235/v1').rstrip('/')),
-    ]
+    models = [('macstudio', 'qwen/qwen3.6-35b-a3b', os.environ.get(
+        'MOSS_DEMO_MACSTUDIO_BASE', 'http://macstudio.tailnet.aisight.us:1234/v1').rstrip('/'))]
+    fallback_base = os.environ.get('MOSS_DEMO_RTX4090_BASE', '').strip().rstrip('/')
+    if fallback_base:
+        models.append(('rtx4090', 'qwen38-27b-mtp', fallback_base))
+    openrouter_key = os.environ.get('MOSS_DEMO_OPENROUTER_API_KEY', '').strip()
+    openrouter_base = 'https://openrouter.ai/api/v1'
+    openrouter_model = 'google/gemini-2.5-flash'
     if urlsplit(origin).scheme != 'https':
         print('NO-GO: workspace origin must use trusted HTTPS')
         return 1
@@ -52,7 +57,7 @@ def main():
         cookies = root / 'cookies'
         sequence = 0
 
-        def request(url, *, method='GET', payload=None, workspace=False):
+        def request(url, *, method='GET', payload=None, workspace=False, bearer_key=None):
             nonlocal sequence
             sequence += 1
             body, headers = root / f'{sequence}.json', root / f'{sequence}.headers'
@@ -66,6 +71,8 @@ def main():
             if payload is not None:
                 command += ['--header', 'Content-Type: application/json', '--data-binary', '@-']
                 data = json.dumps(payload)
+            if bearer_key:
+                command += ['--header', 'Authorization: Bearer ' + bearer_key]
             command.append(url)
             started = time.monotonic()
             try:
@@ -105,7 +112,7 @@ def main():
                 listed = {(row.get('upstream'), row.get('id')) for row in data if isinstance(row, dict)} if isinstance(data, list) else set()
                 missing = [model for name, model, _ in models if (name, model) not in listed]
                 report('relay models', status == 200 and not missing,
-                       ('both expected models listed, ' + elapsed) if status == 200 and not missing
+                       (f'{len(models)} expected relay model(s) listed, ' + elapsed) if status == 200 and not missing
                        else f'HTTP {status}; missing: {", ".join(missing) or "invalid model response"}; {elapsed}')
             else:
                 report('relay models', False, 'not checked: bootstrap failed')
@@ -128,6 +135,20 @@ def main():
                 nonempty = False
             okay = status == 200 and nonempty
             report(name, okay, f'HTTP {status}, {elapsed}' + ('' if nonempty else '; no answer content') if status else elapsed)
+        if openrouter_key:
+            print(f'Probe openrouter: {openrouter_base} / {openrouter_model}', flush=True)
+            status, _, document, elapsed = request(openrouter_base + '/chat/completions', method='POST', bearer_key=openrouter_key, payload={
+                'model': openrouter_model, 'messages': [{'role': 'user', 'content': 'Reply with JSON: {"ready": true}'}],
+                'max_tokens': 16, 'stream': False, 'temperature': 0,
+                'response_format': {'type': 'json_object'},
+            })
+            try:
+                content = document['choices'][0]['message']['content']
+                nonempty = isinstance(content, str) and bool(content.strip())
+            except (KeyError, IndexError, TypeError):
+                nonempty = False
+            okay = status == 200 and nonempty
+            report('openrouter', okay, f'HTTP {status}, {elapsed}' + ('' if nonempty else '; no answer content') if status else elapsed)
     print('GO' if not failures else 'NO-GO: ' + '; '.join(failures), flush=True)
     return int(bool(failures))
 

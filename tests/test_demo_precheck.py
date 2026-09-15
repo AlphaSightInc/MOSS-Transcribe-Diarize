@@ -12,7 +12,8 @@ SHA = 'a' * 40
 
 
 @pytest.mark.parametrize('case,failed', [
-    ('okay', None), ('tls', 'trusted host'), ('identity', 'candidate identity'),
+    ('okay', None), ('primary_only', None), ('openrouter', None),
+    ('tls', 'trusted host'), ('identity', 'candidate identity'),
     ('models', 'relay models'), ('bootstrap', 'bootstrap'),
     ('empty', 'rtx4090'), ('timeout', 'macstudio'), ('malformed', 'rtx4090'),
 ])
@@ -35,11 +36,16 @@ if url.endswith('/bootstrap'):
 elif url.endswith('/models'):
     assert Path(args[args.index('--cookie')+1]).read_text()=='test cookie'
     result={'data':[{'upstream':'macstudio','id':'qwen/qwen3.6-35b-a3b'}, {'upstream':'rtx4090','id':'qwen38-27b-mtp'}]}
+    if case=='primary_only': result={'data':[{'upstream':'macstudio','id':'qwen/qwen3.6-35b-a3b'}]}
     if case=='models': result={'data':[]}
 elif url.endswith('/chat/completions'):
     request=json.loads(sys.stdin.read())
     assert request['max_tokens']==16 and request['stream'] is False
-    assert request['chat_template_kwargs']=={'enable_thinking':False}
+    if 'openrouter.ai' in url:
+        assert 'Authorization: Bearer test-openrouter-key' in args
+        assert request['response_format']=={'type':'json_object'}
+    else:
+        assert request['chat_template_kwargs']=={'enable_thinking':False}
     if case=='timeout' and 'macstudio.' in url: sys.exit(28)
     result={'choices':[{'message':{'content':'' if case=='empty' and 'rtx4090.' in url else 'ready'}}]}
     if case=='malformed' and 'rtx4090.' in url:
@@ -51,14 +57,19 @@ print(str(status)+'\n0.012')
     curl.chmod(0o700)
     log=tmp_path/'requests.txt'
     result=subprocess.run(['bash',str(SCRIPT),SHA],env={**os.environ,'PATH':str(tmp_path)+os.pathsep+os.environ['PATH'],
-        'PRECHECK_CASE':case,'PRECHECK_LOG':str(log)},text=True,capture_output=True)
+        'PRECHECK_CASE':case,'PRECHECK_LOG':str(log),
+        'MOSS_DEMO_RTX4090_BASE':'' if case=='primary_only' else 'http://ga0-rtx4090.tailnet.aisight.us:1235/v1',
+        'MOSS_DEMO_OPENROUTER_API_KEY':'test-openrouter-key' if case=='openrouter' else ''},text=True,capture_output=True)
     final=result.stdout.splitlines()[-1]
     assert result.stderr==''
     assert result.returncode==(0 if failed is None else 1)
     assert final=='GO' if failed is None else final.startswith('NO-GO:') and failed in final
     urls=log.read_text().splitlines()
-    assert 'macstudio.' in urls[-2] and 'rtx4090.' in urls[-1]
-    assert '/chat/completions' in urls[-1]
+    assert any('macstudio.' in url and url.endswith('/chat/completions') for url in urls)
+    assert any('rtx4090.' in url for url in urls)==(case!='primary_only')
+    assert any('openrouter.ai' in url for url in urls)==(case=='openrouter')
+    assert 'test-openrouter-key' not in result.stdout + result.stderr
+    assert urls[-1].endswith('/chat/completions')
     assert ' s' in result.stdout
 
 
