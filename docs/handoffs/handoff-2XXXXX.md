@@ -170,16 +170,36 @@ see the audio ruling in the mandate memory.
 
 ## 5. Outstanding work, in priority order
 
-1. **Launch and pass G7** (§1, §2). On PASS the candidate keeps serving `:7861` — that is the demo state.
-2. **After G7 passes:** presenter voiceprint enrolment, `scripts/demo-precheck.sh <FULL_SHA>`, operator smoke
-   rows (`docs/handoffs/e2e-smoke-for-operator.md`), then rehearse `docs/handoffs/demo-script.md`. All require the
-   candidate serving.
-3. **Bring records current** — `docs/handoffs/auto-mvp-0911-handback.md` and PR #32 predate ADR-0014 and several
-   SHAs. PR #32 stays **draft/unmerged**.
-4. **Deferred, not for the demo:** mixer fix O1; AEC for the speaker-output target; the G7 two-speaker weakness;
-   `fix/prestart-error-consolidation` (`bc4950c4`, on `private`, unstaged — apply only if diagnostics point there);
-   pre-existing `test_finalization_failure_stop_boundary[decode_failed]` (fails on a clean tree; host status unknown);
-   no Let's Encrypt renewal automation (cert expires **2026-12-09**).
+1. **Launch and pass G7** with `566024287cdd02204f26ac6a83e2c22ef1c90a7c` (§1, §2). It is staged inert and verified;
+   `628341fa` stays on the host for rollback. On PASS the candidate keeps serving `:7861` — that is the demo state.
+   Blocked only on `m4mbp`, which was unreachable by every route all evening.
+2. **After G7 passes:** set the presenter browser to **External HTTPS provider** with `google/gemini-2.5-flash`
+   (§1); enrol the presenter voiceprint; run
+   `MOSS_DEMO_OPENROUTER_API_KEY=<key> scripts/demo-precheck.sh 566024287cdd02204f26ac6a83e2c22ef1c90a7c`; run the
+   operator smoke rows (`e2e-smoke-for-operator.md`, which now omits row 9 and adds the summaries check); then
+   rehearse `demo-script.md` once. All require the candidate serving.
+3. **Records are current** as of 2026-09-15 evening: handback §1b, PR #32's status block, `demo-script.md` and
+   `e2e-smoke-for-operator.md` all name the staged SHA and the Gemini provider. PR #32 stays draft/unmerged.
+4. **Operator decision:** make the relay fallback reliable. `qwen/qwen3.6-35b-a3b` still fails about a third of
+   180 s summaries on its own timestamp formatting (5 of 16 measured). A robust fix needs grammar-constrained output
+   through the relay, which means widening the `phase2_llm` body whitelist — a server change, deliberately not made
+   before the demo. Gemini is unaffected and is what the demo uses.
+5. **Post-demo, each pushed to `private` and not staged:**
+   - `fix/url-process-group-recycle` (`56db5aaa`) — verified independently: no descendant leak, no raise, full suite
+     green. Supersedes `23be8328`, which leaked descendants; do not land that one.
+   - `fix/frame-sample-rate-validation` (`3d831f36`) and `fix/prestart-error-consolidation` (`bc4950c4`).
+   - Overlapping speech: 2.3's design note exists as an untracked file in the `-wt-auto-mvp-0911` worktree; both lane
+     fixes were rejected on measured evidence (§5b). AEC for the built-in-speaker target is still unsolved.
+   - The generic URL fetch sends **no `User-Agent`**, so hosts that gate on it refuse MOSS: Wikimedia answers 403 to
+     httpx's default UA and to no UA, but 200 to a browser UA. YouTube and ordinary media hosts are unaffected.
+   - A failed file/URL meeting surfaces **no reason at all**, and nothing is logged:
+     `phase2_file.py::FileTasks._complete` awaits the runner inside a blanket `except Exception` that calls
+     `_mark_failed`, so acquisition, transcode and decode failures are indistinguishable. Speechless media (music
+     with no speech) fails this way rather than completing with an empty transcript.
+   - `/favicon.ico` returns 404 — cosmetic, but it is the console error that recurs on every page load.
+   - No Let's Encrypt renewal automation; the certificate expires **2026-12-09**.
+   `test_finalization_failure_stop_boundary[decode_failed]`, previously listed here as failing, **passed** in the full
+   backend run on this branch (1696 passed, 2 skipped).
 
 ## 5b. Branch rulings — settled 2026-09-15, do not relitigate
 
