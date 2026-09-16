@@ -59,8 +59,21 @@ GitHub identity, the audio ruling).
 
 ## 1. Ready to launch right now
 
-`566024287cdd02204f26ac6a83e2c22ef1c90a7c` is **staged inert and verified** on the host (2026-09-15 17:58 EDT, codex
-2.1): manifest SHA exact with `activation_state=staged_inert`; all three `candidate_manifest` refs repointed, none stale;
+> **Internal testing is LIVE (2026-09-15 20:30 EDT), separate from G7.**
+> **https://ga0-alienware-rtx4070ti.tailnet.aisight.us:7862** — `moss-internal.service`, running the
+> `18e8a035` runtime with `MOSS_OPEN_WORKSPACE=1`. Any LAN or tailnet client just opens the URL: the
+> Let's Encrypt certificate is publicly trusted (nothing to install) and there is **no key and no sign-in** —
+> every client shares one workspace (`__moss_open_workspace__`). Verified 5/5 independently: trusted cert,
+> cold client admitted, two clients share a workspace, and a client that never bootstrapped still sees the
+> others' meetings. It has its own database, control socket and work roots, so it cannot collide with the
+> account instance a future cutover creates. Phase-1 keeps serving `:7861`; vLLM was untouched (PID 369).
+> To disable sharing, remove `MOSS_OPEN_WORKSPACE=1` from the unit and restart it; with the flag unset the
+> product behaves exactly as before.
+
+
+`18e8a035e3335c3a50283e0ab3f6476660e9ef2b` is **staged inert** on the host and is the SHA to launch G7 with. It
+supersedes `566024287cdd`, which is retained on disk for rollback; `18e8a035` is that candidate plus one commit, the
+opt-in shared workspace (default OFF). The earlier verification of `566024287cdd` (2026-09-15 17:58 EDT, codex 2.1) read: manifest SHA exact with `activation_state=staged_inert`; all three `candidate_manifest` refs repointed, none stale;
 `chrome_cdp_endpoint` preserved (`http://127.0.0.1:9222`); vLLM **PID 369**, `NRestarts=0`, untouched; Phase-1 serving;
 both disk guards pass. The `628341fa` runtime is kept for rollback. Retention pruned `501c55ca`; restage its pushed SHA if
 it is ever needed.
@@ -82,7 +95,7 @@ wsl.exe -d Ubuntu -u devcontainers
 tmux new -s live
 ```
 ```bash
-SHA=566024287cdd02204f26ac6a83e2c22ef1c90a7c
+SHA=18e8a035e3335c3a50283e0ab3f6476660e9ef2b
 CUTOVER="$HOME/.local/share/moss-transcribe-diarize/account-runtimes/$SHA/bin/mtd-phase2-cutover"
 export PYTHONDONTWRITEBYTECODE=1
 ATTEMPT="$HOME/.local/state/moss-transcribe-diarize/cutover-attempts/preadmission-$(date -u +%Y%m%dT%H%M%SZ)"
