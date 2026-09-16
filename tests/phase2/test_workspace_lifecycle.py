@@ -427,6 +427,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         return app
 
     monkeypatch.setattr(phase2_web_cli, "create_phase2_app", fake_create_app)
+    monkeypatch.setenv("MOSS_OPEN_WORKSPACE", "1")
 
     class FakeConfig(dict):
         def get_loop_factory(self):
@@ -489,6 +490,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         "live_runtime_factory": live_runtime_factory,
         "live_helper_lease_seconds": 30.0,
         "control_socket_path": DEFAULT_PHASE2_CONTROL_SOCKET_PATH,
+        "open_workspace": True,
     }
     assert seen["uvicorn"] == {
         "app": app,

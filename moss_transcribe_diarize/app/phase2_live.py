@@ -1103,7 +1103,11 @@ class _Phase2LiveTransportAdapter:
     ) -> object:
         from fastapi import HTTPException
 
-        sign_in_session = request.cookies.get(SESSION_COOKIE)
+        sign_in_session = getattr(
+            request.state,
+            "phase2_session_id",
+            None,
+        ) or request.cookies.get(SESSION_COOKIE)
         if operation == "create":
             if not sign_in_session:
                 raise HTTPException(status_code=401, detail="Sign in required.")

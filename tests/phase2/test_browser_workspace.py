@@ -84,6 +84,42 @@ def test_browser_http_bootstrap_is_explicit_private_and_same_origin(tmp_path: Pa
         assert "Workspace unavailable" in client.get("/").text
 
 
+def test_open_workspace_binds_independent_clients_to_shared_history(tmp_path: Path):
+    database = tmp_path / "open.sqlite3"
+    first_app = create_phase2_app(database_path=database, open_workspace=True)
+    with TestClient(first_app, base_url="https://moss.test") as first:
+        initial = first.get("/api/meetings")
+        assert initial.status_code == 200
+        assert initial.json() == {"meetings": []}
+        first_session = first.cookies[SESSION_COOKIE]
+        first_workspace = first.get("/api/auth/session").json()["workspace_id"]
+
+        async def seed_meeting():
+            account = await first_app.state.phase2_store.account_for_session(first_session)
+            assert account is not None
+            meeting = await first_app.state.phase2_store.workspace(account).create_meeting("file")
+            await meeting.commit_transcript({"segments": [{"text": "shared content"}]})
+            await meeting.finish("completed")
+            return meeting.meeting_id
+
+        meeting_id = first.portal.call(seed_meeting)
+
+    second_app = create_phase2_app(database_path=database, open_workspace=True)
+    with TestClient(second_app, base_url="https://moss.test") as second:
+        shared = second.get("/api/meetings")
+        assert shared.status_code == 200
+        assert [meeting["id"] for meeting in shared.json()["meetings"]] == [meeting_id]
+        assert second.get("/api/auth/session").json()["workspace_id"] == first_workspace
+        assert second.cookies[SESSION_COOKIE] == first_session
+
+        second.cookies.clear()
+        second.cookies.set(SESSION_COOKIE, "unknown", domain="moss.test", path="/")
+        rebound = second.get("/api/meetings")
+        assert rebound.status_code == 200
+        assert [meeting["id"] for meeting in rebound.json()["meetings"]] == [meeting_id]
+        assert second.cookies[SESSION_COOKIE] == first_session
+
+
 def test_old_schema_is_refused_without_changing_bytes_or_creating_sidecars(tmp_path: Path):
     database = tmp_path / "previous.sqlite3"
     with sqlite3.connect(database) as connection:

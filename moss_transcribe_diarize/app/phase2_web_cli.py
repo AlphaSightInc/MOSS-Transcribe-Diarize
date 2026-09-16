@@ -158,6 +158,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         live_helper_lease_seconds=args.live_helper_lease_seconds,
         control_socket_path=Path(args.control_socket).expanduser(),
         llm_upstreams=args.llm_upstreams,
+        open_workspace=os.environ.get("MOSS_OPEN_WORKSPACE") == "1",
     )
     from .tls_reload import serve_with_certificate_reload
 

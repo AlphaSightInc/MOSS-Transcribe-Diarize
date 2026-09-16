@@ -23,6 +23,8 @@ SCHEMA_VERSION = 2
 REQUIRED_SQLITE_RUNTIME = "3.53.4"
 SESSION_COOKIE = "__Host-moss_session"
 SESSION_COOKIE_MAX_AGE = 400 * 24 * 60 * 60
+OPEN_WORKSPACE_ACCOUNT_ID = "__moss_open_workspace__"
+OPEN_WORKSPACE_SESSION_ID = "__moss_open_workspace_session__"
 DEFAULT_PHASE2_DATABASE_PATH = (
     Path.home() / ".local" / "share" / "moss-transcribe-diarize" / "phase2.sqlite3"
 )
@@ -768,13 +770,42 @@ class Phase2Store:
             )
             return cursor.rowcount == 1
 
-    async def bootstrap_browser(self, session_id: str | None) -> tuple[Account, str]:
+    async def bootstrap_browser(
+        self,
+        session_id: str | None,
+        *,
+        open_workspace: bool = False,
+    ) -> tuple[Account, str]:
         """Open this browser's workspace, or atomically create its first owner/credential.
 
-        Only explicit bootstrap calls this method. In-flight work never creates an owner
-        when its credential disappears. Invalid existing credentials do not revive ownership.
+        Private mode is called only by explicit bootstrap. In-flight private work never
+        creates an owner when its credential disappears. Invalid private credentials do
+        not revive ownership.
         """
 
+        if open_workspace:
+            account = await self.account_for_session(OPEN_WORKSPACE_SESSION_ID)
+            if account is not None:
+                return account, OPEN_WORKSPACE_SESSION_ID
+            now = _now_ms()
+            async with self._mutation():
+                await self._connection.execute(
+                    """INSERT OR IGNORE INTO accounts(
+                        account_id, display_name, enabled, authority_generation,
+                        created_at_ms, updated_at_ms
+                    ) VALUES (?, ?, 1, 0, ?, ?)""",
+                    (OPEN_WORKSPACE_ACCOUNT_ID, "Open workspace", now, now),
+                )
+                await self._connection.execute(
+                    """INSERT OR IGNORE INTO sign_in_sessions(
+                        session_id, account_id, created_at_ms
+                    ) VALUES (?, ?, ?)""",
+                    (OPEN_WORKSPACE_SESSION_ID, OPEN_WORKSPACE_ACCOUNT_ID, now),
+                )
+            account = await self.account_for_session(OPEN_WORKSPACE_SESSION_ID)
+            if account is None:
+                raise AccountRevoked("Open workspace is no longer available.")
+            return account, OPEN_WORKSPACE_SESSION_ID
         if session_id:
             account = await self.account_for_session(session_id)
             if account is None:
@@ -1596,6 +1627,7 @@ def create_phase2_app(
     file_audio_archive: Any | None = None,
     control_socket_path: str | Path | None = None,
     llm_upstreams: str | None = None,
+    open_workspace: bool = False,
 ):
     """Create the sole Phase-2 product surface: `/`, auth, and Account-owned meetings."""
 
@@ -1779,9 +1811,18 @@ def create_phase2_app(
         expected_origin = f"{request.url.scheme}://{request.url.netloc}"
         if request.method not in {"GET", "HEAD", "OPTIONS"} and origin is not None and origin != expected_origin:
             return JSONResponse({"detail": "Same-origin request required."}, status_code=403)
+        if open_workspace:
+            account, session_id = await request.app.state.phase2_store.bootstrap_browser(
+                request.cookies.get(SESSION_COOKIE),
+                open_workspace=True,
+            )
+            request.state.phase2_account = account
+            request.state.phase2_session_id = session_id
         response = await call_next(request)
         if request.url.path == "/" or request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
+        if open_workspace:
+            set_session_cookie(response, request.state.phase2_session_id)
         return response
     frontend_dir = FRONTEND_ASSET_DIR
     required_live_assets = ("app.js", "styles.css", "worklets/lane-framer.js")
@@ -1839,9 +1880,11 @@ def create_phase2_app(
         return JSONResponse({"detail": "Account lifecycle is changing."}, status_code=409)
 
     async def require_account(request: Request) -> Account:
-        account = await request.app.state.phase2_store.account_for_session(
-            request.cookies.get(SESSION_COOKIE)
-        )
+        account = getattr(request.state, "phase2_account", None)
+        if account is None:
+            account = await request.app.state.phase2_store.account_for_session(
+                request.cookies.get(SESSION_COOKIE)
+            )
         if account is None:
             raise HTTPException(status_code=401, detail="Workspace credential is unavailable.")
         return account
@@ -1857,6 +1900,11 @@ def create_phase2_app(
             samesite="lax",
         )
         return response
+
+    def request_session_id(request: Request) -> str | None:
+        return getattr(request.state, "phase2_session_id", None) or request.cookies.get(
+            SESSION_COOKIE
+        )
 
     from .phase2_summary import attach_summary_routes
     attach_summary_routes(app, require_account)
@@ -1875,9 +1923,11 @@ def create_phase2_app(
 
     @app.get("/", response_class=HTMLResponse)
     async def root(request: Request):
-        account = await request.app.state.phase2_store.account_for_session(
-            request.cookies.get(SESSION_COOKIE)
-        )
+        account = getattr(request.state, "phase2_account", None)
+        if account is None:
+            account = await request.app.state.phase2_store.account_for_session(
+                request.cookies.get(SESSION_COOKIE)
+            )
         if account is None:
             return HTMLResponse(
                 _bootstrap_html(unavailable=bool(request.cookies.get(SESSION_COOKIE))),
@@ -1889,22 +1939,29 @@ def create_phase2_app(
             _workspace_html(account, meetings, live_enabled=live_frontend_available),
             headers={"Cache-Control": "no-store"},
         )
+        if open_workspace:
+            return response
         return set_session_cookie(response, request.cookies[SESSION_COOKIE])
 
     @app.post("/api/workspace/bootstrap")
     async def bootstrap_workspace(request: Request):
         account, session_id = await request.app.state.phase2_store.bootstrap_browser(
-            request.cookies.get(SESSION_COOKIE)
+            request.cookies.get(SESSION_COOKIE),
+            open_workspace=open_workspace,
         )
-        return set_session_cookie(
-            JSONResponse({"workspace_id": account.account_id, "display_name": account.display_name}),
-            session_id,
+        response = JSONResponse(
+            {"workspace_id": account.account_id, "display_name": account.display_name}
         )
+        if open_workspace:
+            return response
+        return set_session_cookie(response, session_id)
 
     @app.get("/api/auth/session")
     async def auth_session(request: Request):
         account = await require_account(request)
         response = JSONResponse({"workspace_id": account.account_id, "display_name": account.display_name})
+        if open_workspace:
+            return response
         return set_session_cookie(response, request.cookies[SESSION_COOKIE])
 
     @app.get("/api/meetings")
@@ -1919,7 +1976,7 @@ def create_phase2_app(
         if request.app.state.phase2_file_tasks is None:
             raise HTTPException(status_code=503, detail="File transcription is unavailable.")
         try:
-            session_id = request.cookies.get(SESSION_COOKIE)
+            session_id = request_session_id(request)
             async with request.app.state.phase2_lifecycle.admit_creation(
                 session_id or "",
             ) as account:
@@ -1952,7 +2009,7 @@ def create_phase2_app(
         if request.app.state.phase2_file_tasks is None:
             raise HTTPException(status_code=503, detail="File transcription is unavailable.")
         try:
-            session_id = request.cookies.get(SESSION_COOKIE)
+            session_id = request_session_id(request)
             async with request.app.state.phase2_lifecycle.admit_creation(
                 session_id or "",
             ) as account:
