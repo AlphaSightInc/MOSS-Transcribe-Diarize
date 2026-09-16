@@ -92,11 +92,32 @@ timestamps (59.64 s -> `00:59:64`), and Gemini also wrapped its JSON in markdown
 (timestamps sent as HH:MM:SS; `response_format` for external providers) and `56602428` (precheck probes made optional).
 In a real browser: Gemini 2.5 Flash via OpenRouter was current on 50 s and 180 s transcripts every time.
 
-**The client side is NOT ready: `m4mbp` is offline.** When it wakes, re-verify before launching:
-- Chrome has at least one window — check `/json/list`, because a zero-window Chrome still answers `/json/version`.
-- The `ssh -R` tunnel reaches WSL.
-- Exactly one page is open, and it is not a MOSS tab (§4).
-- Clear Chrome's HTTP cache over CDP (`Network.clearBrowserCache`).
+**The client is MacStudio, and its path is already up and verified** (2026-09-15 21:10). `m4mbp` is travelling, so
+the earlier instructions to wait for it no longer apply. What is running:
+- Chrome 153 with `--remote-debugging-port=9222 --enable-automation`, profile `/tmp/moss-g7-chrome-profile`.
+- `ssh -N -R 9222:127.0.0.1:9222 gyauo@ga0-alienware-rtx4070ti.tailnet.aisight.us`, so the host's WSL sees the
+  browser on `127.0.0.1:9222` — the endpoint the profile already names.
+- Verified with the canary's OWN code from the host, not with curl: `_attended_devtools_target` returned a real
+  `ws://.../devtools/browser/...` and `playwright.chromium.connect_over_cdp` attached (1 context, 1 page). That is the
+  step that has killed attempts before, because a zero-window Chrome still answers `/json/version` while refusing to
+  attach — so check `/json/list` for a page, never `/json/version` alone.
+- `MOSS_DEMO_OPENROUTER_API_KEY=<key> scripts/demo-precheck.sh 18e8a035…` returned **GO**.
+
+Two things to decide before you run it:
+- **MacStudio has no microphone.** Its mic lane is fed from a corpus WAV via `--use-file-for-fake-audio-capture`.
+  The share picker was deliberately left MANUAL, because choosing the surface and confirming that the transcript shows
+  both speakers is exactly what the four prompts attest to.
+- **Do not pre-trust Phase-1's self-signed certificate on that profile.** Today the profile loads the internal
+  instance (Let's Encrypt) cleanly and refuses `:7861` with `ERR_CERT_AUTHORITY_INVALID`, which is correct: at cutover
+  the candidate serves `:7861` with that same trusted certificate. Leaving the profile untrusting means a failed
+  certificate swap surfaces instead of being masked.
+
+Chrome and the tunnel are plain processes and die silently on sleep. Re-check both immediately before launching:
+```bash
+pgrep -f "remote-debugging-port=9222" >/dev/null && echo chrome-ok
+pgrep -f "ssh -N -R 9222" >/dev/null && echo tunnel-ok
+curl -s http://127.0.0.1:9222/json/list | python3 -c "import json,sys;print(len(json.load(sys.stdin)),'targets')"
+```
 
 ```bash
 ssh gyauo@ga0-alienware-rtx4070ti.tailnet.aisight.us
