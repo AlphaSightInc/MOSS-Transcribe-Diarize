@@ -69,6 +69,15 @@ GitHub identity, the audio ruling).
 > account instance a future cutover creates. Phase-1 keeps serving `:7861`; vLLM was untouched (PID 369).
 > To disable sharing, remove `MOSS_OPEN_WORKSPACE=1` from the unit and restart it; with the flag unset the
 > product behaves exactly as before.
+>
+> **Summaries need no key either.** The relay was disabled on that instance; it is now enabled through a systemd
+> drop-in, `~/.config/systemd/user/moss-internal.service.d/relay.conf`, set deliberately there rather than in
+> `moss-account.env`, which the account instance a future cutover creates also reads. It lists **macstudio only** —
+> `ga0-rtx4090:1235` is down, and listing a dead model makes the UI offer a fallback that returns 502 after ~8 s.
+> Proven with no API key anywhere: 2/2 summaries current (50 s in 5.4 s, 180 s in 13.4 s). Caveat for testers: qwen
+> still fails about a third of 180 s summaries on its own timestamp formatting, so keyless summaries are dependable on
+> short meetings; for long ones use an External HTTPS provider with `google/gemini-2.5-flash`, which needs a key but
+> was reliable in every measured run.
 
 
 `18e8a035e3335c3a50283e0ab3f6476660e9ef2b` is **staged inert** on the host and is the SHA to launch G7 with. It

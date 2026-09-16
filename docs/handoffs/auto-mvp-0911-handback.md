@@ -77,6 +77,10 @@ JSON object; `56602428` makes the precheck's rtx4090 probe optional and adds an 
   Row 4 failed once at first-visible 4.0606 s against its hard 4.000 s bound and then passed 3/3 on repeat at
   3.367 / 3.365 / 3.358 s (loopback 3.330 s), i.e. first-capture warmup on a freshly started instance. That bound is
   a product gate and was not relaxed.
+  Real URL ingestion was verified separately there (a YouTube link completed in 6.1 s), since row 3 binds its fixture
+  to 127.0.0.1 and can never reach a remote origin. Multi-tester concurrency on the shared workspace passed 5/5: two
+  simultaneous live captures produced distinct meetings with no cross-talk, a cold third client saw both, and
+  concurrent file ingests both completed. Summaries work with **no API key** through the relay (macstudio only).
 
 **Verified on the staged SHA, without a cutover** (local stack over an SSH tunnel to the host vLLM, suites run
 sequentially):
