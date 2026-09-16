@@ -70,8 +70,13 @@ JSON object; `56602428` makes the precheck's rtx4090 probe optional and adds an 
   publish p50 **1.32-1.68 s**, label p50 **1.34-1.96 s**, stop→final **3.0-7.9 s**.
 - *Concurrency:* 8 concurrent 180 s files all completed at 3.3x slowdown; 4 concurrent 1.8x; 2 concurrent 1.0x.
 - *YouTube:* five short clips and three long-form videos (11m45s-19m25s) all completed at 17.6-24.9x real time.
-- *Against the internal instance on :7862:* e2e rows 2,3,4,5,6,7,10,11,12 ran 8/9, the single failure being row 3,
-  which serves a local URL fixture the host cannot reach by design.
+- *Against the internal instance on :7862:* rows 1,2,4,5,6,7,8,10,11,12,13,14 all pass, together with lifecycle
+  stress 7/7, mid-session reshare 6/6, UI stress 7/7, demo lanes at 3 % microphone level, and summaries 2/2 through
+  Gemini. Row 3 is excluded by construction rather than skipped: it binds its URL fixture to `127.0.0.1` and hands
+  the server that address, which from the host means the host itself, so it can never pass against a remote origin.
+  Row 4 failed once at first-visible 4.0606 s against its hard 4.000 s bound and then passed 3/3 on repeat at
+  3.367 / 3.365 / 3.358 s (loopback 3.330 s), i.e. first-capture warmup on a freshly started instance. That bound is
+  a product gate and was not relaxed.
 
 **Verified on the staged SHA, without a cutover** (local stack over an SSH tunnel to the host vLLM, suites run
 sequentially):
