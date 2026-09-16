@@ -110,7 +110,7 @@ printf 'Attempt: %s\n' "$ATTEMPT"
   `https://openrouter.ai/api/v1`, Model `google/gemini-2.5-flash`, and the operator's OpenRouter API key. Then *Save on
   this browser*. The key lives only in that browser profile, never on the server. It was pasted into a chat session, so
   rotate it after the demo.
-- Go/no-go: `MOSS_DEMO_OPENROUTER_API_KEY=<key> scripts/demo-precheck.sh 566024287cdd02204f26ac6a83e2c22ef1c90a7c`.
+- Go/no-go: `MOSS_DEMO_OPENROUTER_API_KEY=<key> scripts/demo-precheck.sh 18e8a035e3335c3a50283e0ab3f6476660e9ef2b`.
   rtx4090 is probed only when `MOSS_DEMO_RTX4090_BASE` is set.
 - Summaries regression for the demo provider: `MOSS_SUMMARY_PROVIDERS=external OPENROUTER_API_KEY=<key>
   .venv/bin/python tests/e2e/verify_summaries.py`, with `MOSS_BASE` set to the demo origin. Do not switch the demo to
@@ -183,12 +183,12 @@ see the audio ruling in the mandate memory.
 
 ## 5. Outstanding work, in priority order
 
-1. **Launch and pass G7** with `566024287cdd02204f26ac6a83e2c22ef1c90a7c` (§1, §2). It is staged inert and verified;
+1. **Launch and pass G7** with `18e8a035e3335c3a50283e0ab3f6476660e9ef2b` (§1, §2). It is staged inert and verified;
    `628341fa` stays on the host for rollback. On PASS the candidate keeps serving `:7861` — that is the demo state.
    Blocked only on `m4mbp`, which was unreachable by every route all evening.
 2. **After G7 passes:** set the presenter browser to **External HTTPS provider** with `google/gemini-2.5-flash`
    (§1); enrol the presenter voiceprint; run
-   `MOSS_DEMO_OPENROUTER_API_KEY=<key> scripts/demo-precheck.sh 566024287cdd02204f26ac6a83e2c22ef1c90a7c`; run the
+   `MOSS_DEMO_OPENROUTER_API_KEY=<key> scripts/demo-precheck.sh 18e8a035e3335c3a50283e0ab3f6476660e9ef2b`; run the
    operator smoke rows (`e2e-smoke-for-operator.md`, which now omits row 9 and adds the summaries check); then
    rehearse `demo-script.md` once. All require the candidate serving.
 3. **Records are current** as of 2026-09-15 evening: handback §1b, PR #32's status block, `demo-script.md` and

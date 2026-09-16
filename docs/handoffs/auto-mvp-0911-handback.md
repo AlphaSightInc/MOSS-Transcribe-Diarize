@@ -62,6 +62,17 @@ Gemini 2.5 Flash failed at every length, because it also wrapped its JSON in mar
 summarized a 50 s clip, which is why this went unnoticed. `d53ecd99` sends `HH:MM:SS` and asks external providers for a
 JSON object; `56602428` makes the precheck's rtx4090 probe optional and adds an optional OpenRouter probe.
 
+**Measured performance, 2026-09-15 evening** (local stack, vLLM over an SSH tunnel to the host):
+- *File mode, six reference corpora:* mean WER **0.0935**, median 0.0957, worst 0.1649, best 0.0457; speaker count
+  exact on 5/6; throughput **~22x real time**.
+- *Live mode, full length:* WER **0.0870** (50 s), **0.0457** (90 s), **0.1241** (180 s) against file mode's 0.0957 /
+  0.0457 / 0.1241 — **live accuracy now matches file accuracy** on the same audio. First text **0.84-3.71 s**, segment
+  publish p50 **1.32-1.68 s**, label p50 **1.34-1.96 s**, stop→final **3.0-7.9 s**.
+- *Concurrency:* 8 concurrent 180 s files all completed at 3.3x slowdown; 4 concurrent 1.8x; 2 concurrent 1.0x.
+- *YouTube:* five short clips and three long-form videos (11m45s-19m25s) all completed at 17.6-24.9x real time.
+- *Against the internal instance on :7862:* e2e rows 2,3,4,5,6,7,10,11,12 ran 8/9, the single failure being row 3,
+  which serves a local URL fixture the host cannot reach by design.
+
 **Verified on the staged SHA, without a cutover** (local stack over an SSH tunnel to the host vLLM, suites run
 sequentially):
 - 14-row e2e: **13/14**. Row 9 was re-attributed from that run's own network log: the qwen attempt returned 200 and
