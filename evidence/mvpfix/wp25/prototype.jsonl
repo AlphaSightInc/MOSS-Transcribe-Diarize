@@ -1,0 +1,7 @@
+{"action": "browser_state", "found": true, "replacement": "explicit runtime argument; case body unchanged"}
+{"action": "browser_restart", "found": true, "replacement": "explicit runtime argument; case body unchanged"}
+{"action": "file_metrics", "found": true, "replacement": "explicit runtime argument; case body unchanged"}
+{"action": "capacity_tunnel", "found": true, "replacement": "explicit runtime argument; case body unchanged"}
+{"action": "real_input", "clip": "interview_bill_ackman_60s", "frames": 960000, "rate": 16000, "channels": 1}
+{"action": "real_input", "clip": "interview_keyu_jin_60s", "frames": 960000, "rate": 16000, "channels": 1}
+{"verdict": "SUPPORTED: runtime dependencies separable; live outcomes unmeasured"}

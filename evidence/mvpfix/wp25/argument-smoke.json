@@ -1,0 +1,26 @@
+[
+  {
+    "script": "prototypes/browser-stress/run.py",
+    "exit": 0
+  },
+  {
+    "script": "prototypes/capacity-campaign/run.py",
+    "exit": 0
+  },
+  {
+    "script": "prototypes/identity-stress/run.py",
+    "exit": 0
+  },
+  {
+    "script": "prototypes/streaming-diarization/wp16-file-url-long/probe.py",
+    "exit": 0
+  },
+  {
+    "script": "prototypes/streaming-diarization/wp16-file-url-long/prepare.py",
+    "exit": 0
+  },
+  {
+    "script": "prototypes/streaming-diarization/wp16-file-url-long/sources.py",
+    "exit": 0
+  }
+]

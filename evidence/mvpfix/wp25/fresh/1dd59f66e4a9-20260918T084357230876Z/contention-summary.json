@@ -1,0 +1,9 @@
+{
+  "samples": 812,
+  "valid": 812,
+  "errors": 0,
+  "max_running": 2.0,
+  "max_waiting": 0.0,
+  "shared_exceeds_own_samples": 1,
+  "caveat": "Shared and own reads are not atomic; excess samples are observations, not proof of foreign request attribution"
+}

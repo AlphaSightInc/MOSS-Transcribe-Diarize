@@ -1,0 +1,35 @@
+{
+  "variants": [
+    {
+      "variant": "unreachable",
+      "statuses": [
+        "failed"
+      ],
+      "visible_reason": false,
+      "ui_message": "URL media could not be acquired.",
+      "ok": false
+    },
+    {
+      "variant": "404",
+      "statuses": [
+        "failed"
+      ],
+      "visible_reason": true,
+      "ui_message": "The media was not found (404).",
+      "ok": true
+    },
+    {
+      "variant": "non-media",
+      "statuses": [
+        "failed"
+      ],
+      "visible_reason": false,
+      "ui_message": "The URL returned a web page instead of direct media.",
+      "ok": false
+    }
+  ],
+  "ok": false,
+  "status": "FAIL",
+  "seconds": 9.372,
+  "predicate": "Unreachable, 404, non-media URLs visibly explain failure."
+}

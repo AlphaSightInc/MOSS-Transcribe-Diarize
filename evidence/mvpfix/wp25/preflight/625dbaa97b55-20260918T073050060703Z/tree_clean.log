@@ -1,0 +1,32 @@
+{
+  "name": "tree_clean",
+  "status": "FAIL",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0,
+  "artifacts": [
+    "tree_clean.log"
+  ],
+  "measurements": {
+    "dirty_files": [
+      " M .gitignore",
+      " M prototypes/browser-stress/run.py",
+      " M prototypes/capacity-campaign/run.py",
+      " M prototypes/identity-stress/run.py",
+      " M prototypes/streaming-diarization/wp16-file-url-long/prepare.py",
+      " M prototypes/streaming-diarization/wp16-file-url-long/probe.py",
+      " M prototypes/streaming-diarization/wp16-file-url-long/sources.py",
+      " M tools/qualify/run.py",
+      " M tools/qualify/test_bundle.py",
+      "?? evidence/mvpfix/wp25/prototype.jsonl",
+      "?? tools/qualify/NOTES-WP25.md"
+    ]
+  }
+}

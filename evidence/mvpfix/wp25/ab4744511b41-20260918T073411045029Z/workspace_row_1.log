@@ -1,0 +1,29 @@
+{
+  "name": "workspace_row_1",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0.178,
+  "artifacts": [
+    "workspace_row_1.log"
+  ],
+  "decoder_requests_at_record": 180,
+  "decoder_budget_exhausted_at_record": false,
+  "measurements": {
+    "signed_in": true,
+    "boot_ready": true,
+    "fresh_profile": true,
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 0.178,
+    "network": null,
+    "row": 1
+  }
+}

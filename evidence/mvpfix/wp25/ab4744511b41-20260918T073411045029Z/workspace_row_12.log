@@ -1,0 +1,31 @@
+{
+  "name": "workspace_row_12",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0.194,
+  "artifacts": [
+    "workspace_row_12.log"
+  ],
+  "decoder_requests_at_record": 180,
+  "decoder_budget_exhausted_at_record": false,
+  "measurements": {
+    "width": 400,
+    "scroll": 400,
+    "historyY": 69.8125,
+    "file_y": 70.1875,
+    "ok": true,
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 0.194,
+    "network": null,
+    "row": 12
+  }
+}

@@ -1,0 +1,3635 @@
+{
+  "name": "browser_stress_all",
+  "status": "FAIL",
+  "exit_code": 1,
+  "denominators": {
+    "expected": 16,
+    "executed": 14,
+    "passed": 13,
+    "failed": 1,
+    "skipped": 0,
+    "unrunnable": 2
+  },
+  "duration_seconds": 757.265,
+  "artifacts": [
+    "browser_stress_all.log"
+  ],
+  "decoder_requests_at_record": 721,
+  "decoder_budget_exhausted_at_record": false,
+  "reason": "Native hidden-tab cases are UNRUNNABLE if Chromium never becomes hidden; missing rows mean bench could not execute",
+  "measurements": {
+    "1": {
+      "status": "PASS",
+      "predicate": "Two Stop events within 200ms yield one terminal meeting, no UI error.",
+      "observation": {
+        "meeting": "sQYhUSVmjjtOJzCKKicSgVWz",
+        "click_gap_ms": 0.20000000298023224,
+        "terminal_status": null,
+        "ok": true,
+        "status": "PASS",
+        "seconds": 14.962,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "2": {
+      "status": "PASS",
+      "predicate": "Stop at 1s before text yields terminal truth and permits a new capture.",
+      "observation": {
+        "meeting": "gBp8QPvi4kpfoAyjH5ZCgCGY",
+        "stop_at_seconds": 1.0020627089979826,
+        "words_before_stop": 0,
+        "terminal_status": null,
+        "recovery_status": null,
+        "ok": true,
+        "status": "PASS",
+        "seconds": 7.222,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "3": {
+      "status": "UNRUNNABLE",
+      "predicate": "Actual hidden tab for 60s keeps accepted frames and text advancing.",
+      "observation": {
+        "meeting": "DBrNys61wZ3ZO5pF7KLe8dhK",
+        "hidden": false,
+        "blocked": null,
+        "seconds": 74.746,
+        "frames": 240,
+        "max_gap": 0.429580416996032,
+        "word_delta": 186,
+        "ok": false,
+        "status": null,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "4": {
+      "status": "PASS",
+      "predicate": "3s and 20s live-route outages recover or visibly fail; lease closes abandoned work.",
+      "observation": {
+        "variants": [
+          {
+            "seconds": 3,
+            "recovered_frames": true,
+            "phase": "active",
+            "visible_status": null,
+            "terminal": null,
+            "ok": true
+          },
+          {
+            "seconds": 20,
+            "recovered_frames": true,
+            "phase": "active",
+            "visible_status": null,
+            "terminal": null,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "status": "PASS",
+        "seconds": 129.053,
+        "predicate": null,
+        "console_errors": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "network_failures": [
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/x32ZIctvsEr2Wo_WoON96ehk/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/UdMbhmk0cA4N0rw1iiji2jgs/frames",
+            "failure": null
+          }
+        ],
+        "screenshot": null
+      }
+    },
+    "5": {
+      "status": "PASS",
+      "predicate": "Reshare replaces track, frames continue, exactly one meeting.",
+      "observation": {
+        "meeting": "HlC8xQoKIhTZgp2vQtdDoB4Q",
+        "frames_after_reshare": 33,
+        "ok": true,
+        "status": "PASS",
+        "seconds": 79.143,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "6": {
+      "status": "PASS",
+      "predicate": "Reload leaves same history row terminal after 30s lease; no active orphan.",
+      "observation": {
+        "meeting": "odOdt5UkcHIlKRNY2qHQCdVC",
+        "terminal_status": null,
+        "ok": true,
+        "status": "PASS",
+        "seconds": 40.044,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "7": {
+      "status": "PASS",
+      "predicate": "Same-profile tabs converge to unique identical meeting IDs.",
+      "observation": {
+        "rows": 8,
+        "ok": true,
+        "status": "PASS",
+        "seconds": 0.238,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "8": {
+      "status": "PASS",
+      "predicate": "MP3 and long name succeed; invalid/empty files visibly fail; two uploads complete.",
+      "observation": {
+        "variants": [
+          {
+            "variant": null,
+            "statuses": [
+              null
+            ],
+            "visible_reason": false,
+            "ui_message": null,
+            "ok": true
+          },
+          {
+            "variant": null,
+            "statuses": [
+              null
+            ],
+            "visible_reason": true,
+            "ui_message": null,
+            "ok": true
+          },
+          {
+            "variant": null,
+            "statuses": [
+              null
+            ],
+            "visible_reason": true,
+            "ui_message": null,
+            "ok": true
+          },
+          {
+            "variant": null,
+            "statuses": [
+              null
+            ],
+            "visible_reason": false,
+            "ui_message": null,
+            "ok": true
+          },
+          {
+            "variant": null,
+            "statuses": [
+              null,
+              null
+            ],
+            "visible_reason": false,
+            "ui_message": null,
+            "ok": true
+          }
+        ],
+        "concurrent_start_gap_ms": 0.3089579986408353,
+        "ok": true,
+        "status": "PASS",
+        "seconds": 16.009,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [
+          {
+            "path": null,
+            "failure": null
+          },
+          {
+            "path": null,
+            "failure": null
+          },
+          {
+            "path": null,
+            "failure": null
+          },
+          {
+            "path": null,
+            "failure": null
+          },
+          {
+            "path": null,
+            "failure": null
+          },
+          {
+            "path": null,
+            "failure": null
+          }
+        ],
+        "screenshot": null
+      }
+    },
+    "9": {
+      "status": "FAIL",
+      "predicate": "Unreachable, 404, non-media URLs visibly explain failure.",
+      "observation": {
+        "variants": [
+          {
+            "variant": null,
+            "statuses": [
+              null
+            ],
+            "visible_reason": false,
+            "ui_message": null,
+            "ok": false
+          },
+          {
+            "variant": null,
+            "statuses": [
+              null
+            ],
+            "visible_reason": true,
+            "ui_message": null,
+            "ok": true
+          },
+          {
+            "variant": null,
+            "statuses": [
+              null
+            ],
+            "visible_reason": false,
+            "ui_message": null,
+            "ok": false
+          }
+        ],
+        "ok": false,
+        "status": "FAIL",
+        "seconds": 9.372,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "10": {
+      "status": "PASS",
+      "predicate": "Five oracle-equal exports from live and file; audio decodes; interrupted download retries.",
+      "observation": {
+        "checks": [
+          {
+            "mode": "live",
+            "format": null,
+            "bytes": 335,
+            "lanes": [
+              null
+            ],
+            "ok": true,
+            "expected_turns": 1,
+            "downloaded_turns": 1,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          {
+            "mode": "live",
+            "format": null,
+            "bytes": 332,
+            "lanes": [
+              null
+            ],
+            "ok": true,
+            "expected_turns": 1,
+            "downloaded_turns": 1,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          {
+            "mode": "live",
+            "format": null,
+            "bytes": 906,
+            "lanes": [
+              null
+            ],
+            "ok": true,
+            "expected_turns": 1,
+            "downloaded_turns": 1,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true,
+            "lane": true
+          },
+          {
+            "mode": "live",
+            "format": null,
+            "bytes": 354,
+            "lanes": [
+              null
+            ],
+            "ok": true,
+            "expected_turns": 1,
+            "downloaded_turns": 1,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          {
+            "mode": "live",
+            "format": null,
+            "bytes": 362,
+            "lanes": [
+              null
+            ],
+            "ok": true,
+            "expected_turns": 1,
+            "downloaded_turns": 1,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          {
+            "mode": "live",
+            "audio_bytes": 99405,
+            "expected_bytes": 99405,
+            "cancelled_after": 1500,
+            "retry_failure": null,
+            "ok": true
+          },
+          {
+            "mode": "file",
+            "format": null,
+            "bytes": 229,
+            "lanes": [],
+            "ok": true,
+            "expected_turns": 1,
+            "downloaded_turns": 1,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          {
+            "mode": "file",
+            "format": null,
+            "bytes": 226,
+            "lanes": [],
+            "ok": true,
+            "expected_turns": 1,
+            "downloaded_turns": 1,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          {
+            "mode": "file",
+            "format": null,
+            "bytes": 754,
+            "lanes": [],
+            "ok": true,
+            "expected_turns": 1,
+            "downloaded_turns": 1,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true,
+            "lane": true
+          },
+          {
+            "mode": "file",
+            "format": null,
+            "bytes": 248,
+            "lanes": [],
+            "ok": true,
+            "expected_turns": 1,
+            "downloaded_turns": 1,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          {
+            "mode": "file",
+            "format": null,
+            "bytes": 256,
+            "lanes": [],
+            "ok": true,
+            "expected_turns": 1,
+            "downloaded_turns": 1,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          {
+            "mode": "file",
+            "audio_bytes": 72837,
+            "expected_bytes": 72837,
+            "cancelled_after": 1500,
+            "retry_failure": null,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "status": "PASS",
+        "seconds": 1.929,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [
+          {
+            "path": null,
+            "failure": null
+          },
+          {
+            "path": null,
+            "failure": null
+          },
+          {
+            "path": null,
+            "failure": null
+          },
+          {
+            "path": null,
+            "failure": null
+          }
+        ],
+        "screenshot": null
+      }
+    },
+    "11": {
+      "status": "PASS",
+      "predicate": "Rename updates all selected-speaker labels, enrolls voiceprint, persists through reload/export.",
+      "observation": {
+        "export_checks": {
+          "md": {
+            "ok": true,
+            "expected_turns": 8,
+            "downloaded_turns": 8,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "txt": {
+            "ok": true,
+            "expected_turns": 8,
+            "downloaded_turns": 8,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "json": {
+            "ok": true,
+            "expected_turns": 8,
+            "downloaded_turns": 8,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true,
+            "lane": true
+          },
+          "srt": {
+            "ok": true,
+            "expected_turns": 8,
+            "downloaded_turns": 8,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "vtt": {
+            "ok": true,
+            "expected_turns": 8,
+            "downloaded_turns": 8,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          }
+        },
+        "voiceprints_after_reload": 1,
+        "http": 200,
+        "enrollment": null,
+        "matched_turns": 4,
+        "labels_persisted": true,
+        "ok": true,
+        "status": "PASS",
+        "seconds": 72.424,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [
+          {
+            "path": "/api/live/sessions/maDX6vtrqYpsBVxIaU6Hmy1z/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/maDX6vtrqYpsBVxIaU6Hmy1z/events",
+            "failure": null
+          }
+        ],
+        "screenshot": null
+      }
+    },
+    "12": {
+      "status": "PASS",
+      "predicate": "60 history fixtures render after reload at 400px, two Refresh controls, no overflow.",
+      "observation": {
+        "rendered": 60,
+        "refresh": 2,
+        "sessions_refresh_including_hidden": 1,
+        "width": 400,
+        "scroll": 400,
+        "ok": true,
+        "status": "PASS",
+        "seconds": 0.334,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "13": {
+      "status": "PASS",
+      "predicate": "No-provider summary is disabled or explains setup, with zero provider POSTs.",
+      "observation": {
+        "explained": true,
+        "provider_posts": 0,
+        "ok": true,
+        "status": "PASS",
+        "seconds": 0.717,
+        "predicate": null,
+        "console_errors": [],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "14": {
+      "status": "PASS",
+      "predicate": "Own idle server restart preserves credential, history and transcripts.",
+      "observation": {
+        "before": 60,
+        "after": 60,
+        "cookies_equal": true,
+        "transcripts_equal": true,
+        "ok": true,
+        "status": "PASS",
+        "seconds": 34.694,
+        "predicate": null,
+        "console_errors": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "15": {
+      "status": "UNRUNNABLE",
+      "predicate": "Actual headed hidden tab for 60s advances frames and words, restores, completes.",
+      "observation": {
+        "attempts": [
+          {
+            "method": null,
+            "hidden": false
+          },
+          {
+            "method": null,
+            "hidden": false
+          }
+        ],
+        "visibility_samples": [],
+        "hidden_seconds": 1.66997779160738e-07,
+        "cadence": {
+          "system": {
+            "frames": 0,
+            "max_gap_seconds": 1.66997779160738e-07
+          },
+          "microphone": {
+            "frames": 0,
+            "max_gap_seconds": 1.66997779160738e-07
+          }
+        },
+        "word_delta": 10,
+        "recovery_frames": {
+          "system": 6,
+          "microphone": 6
+        },
+        "restored_visible": true,
+        "terminal": null,
+        "blocked": null,
+        "ok": false,
+        "status": null,
+        "seconds": 78.499,
+        "predicate": null,
+        "console_errors": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "network_failures": [],
+        "screenshot": null
+      }
+    },
+    "16": {
+      "status": "PASS",
+      "predicate": "25s outage recovers without losing acknowledged content; 35s expires truthfully and permits new capture.",
+      "observation": {
+        "variants": [
+          {
+            "seconds": 25,
+            "actual_seconds": 25.002294624995557,
+            "meeting": "Qxn32LYres-QNbP132q0b9A8",
+            "blocked_requests": 166,
+            "blocked_routes": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "phase_after_restore": null,
+            "ui_status": null,
+            "resumed_frames": {
+              "system": true,
+              "microphone": true
+            },
+            "terminal": null,
+            "failure_reason": null,
+            "accepted_samples_before": 158976,
+            "accepted_samples_after": 728000,
+            "published_words_before": 28,
+            "stop_seconds": 71.99341087500216,
+            "acknowledged_commits_before": 3,
+            "acknowledged_commits_preserved": true,
+            "saved_words_after": 249,
+            "ordered_words_retained": 26,
+            "words_removed_or_revised": 2,
+            "ok": true
+          },
+          {
+            "seconds": 35,
+            "actual_seconds": 35.003533750001225,
+            "meeting": "ls22qqnAYJTgCX91Nvp04MS_",
+            "blocked_requests": 230,
+            "blocked_routes": [
+              null,
+              null,
+              null,
+              null
+            ],
+            "phase_after_restore": null,
+            "ui_status": null,
+            "resumed_frames": {
+              "system": false,
+              "microphone": false
+            },
+            "terminal": null,
+            "failure_reason": null,
+            "accepted_samples_before": 160000,
+            "accepted_samples_after": 160000,
+            "published_words_before": 27,
+            "stop_seconds": 0.07898691699665505,
+            "acknowledged_commits_before": 3,
+            "acknowledged_commits_preserved": true,
+            "saved_words_after": 32,
+            "ordered_words_retained": 25,
+            "words_removed_or_revised": 2,
+            "truthful_failure": true,
+            "new_capture_status": null,
+            "ok": true
+          }
+        ],
+        "ok": true,
+        "status": "PASS",
+        "seconds": 189.478,
+        "predicate": null,
+        "console_errors": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "network_failures": [
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/Qxn32LYres-QNbP132q0b9A8/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/snapshot",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/events",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/heartbeat",
+            "failure": null
+          },
+          {
+            "path": "/api/live/sessions/ls22qqnAYJTgCX91Nvp04MS_/frames",
+            "failure": null
+          }
+        ],
+        "screenshot": null
+      }
+    }
+  }
+}

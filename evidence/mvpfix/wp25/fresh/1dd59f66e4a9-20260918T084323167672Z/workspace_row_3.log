@@ -1,0 +1,18 @@
+{
+  "name": "workspace_row_3",
+  "status": "UNRUNNABLE",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 1
+  },
+  "duration_seconds": 0,
+  "artifacts": [
+    "workspace_row_3.log"
+  ],
+  "reason": "Prerequisite failed or runner interrupted; no observation"
+}

@@ -1,0 +1,228 @@
+{
+  "schema": "moss-local-qualification.v1",
+  "scope": "local measurement; not deployment or attended acceptance",
+  "identity": {
+    "git_sha": "625dbaa97b55fb5be66e06db9bfe4d8c985fd935",
+    "tree_clean": false,
+    "dirty_files": [
+      " M .gitignore",
+      " M prototypes/browser-stress/run.py",
+      " M prototypes/capacity-campaign/run.py",
+      " M prototypes/identity-stress/run.py",
+      " M prototypes/streaming-diarization/wp16-file-url-long/prepare.py",
+      " M prototypes/streaming-diarization/wp16-file-url-long/probe.py",
+      " M prototypes/streaming-diarization/wp16-file-url-long/sources.py",
+      " M tools/qualify/run.py",
+      " M tools/qualify/test_bundle.py",
+      "?? evidence/mvpfix/wp25/prototype.jsonl",
+      "?? tools/qualify/NOTES-WP25.md"
+    ],
+    "python": "3.12.12",
+    "node": "v25.9.0",
+    "decoder_tunnel_url": "http://127.0.0.1:18125",
+    "decoder_base_url": "http://127.0.0.1:19125/v1"
+  },
+  "gates": [
+    {
+      "name": "tree_clean",
+      "status": "FAIL",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "tree_clean.log"
+      ],
+      "measurements": {
+        "dirty_files": [
+          " M .gitignore",
+          " M prototypes/browser-stress/run.py",
+          " M prototypes/capacity-campaign/run.py",
+          " M prototypes/identity-stress/run.py",
+          " M prototypes/streaming-diarization/wp16-file-url-long/prepare.py",
+          " M prototypes/streaming-diarization/wp16-file-url-long/probe.py",
+          " M prototypes/streaming-diarization/wp16-file-url-long/sources.py",
+          " M tools/qualify/run.py",
+          " M tools/qualify/test_bundle.py",
+          "?? evidence/mvpfix/wp25/prototype.jsonl",
+          "?? tools/qualify/NOTES-WP25.md"
+        ]
+      }
+    },
+    {
+      "name": "python_import",
+      "status": "PASS",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "python_import.log"
+      ],
+      "measurements": {
+        "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp25-qualify-run/moss_transcribe_diarize/__init__.py"
+      }
+    },
+    {
+      "name": "asset_parity",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "expected": 17,
+        "compared": 17,
+        "different": 0
+      },
+      "duration_seconds": 0.751,
+      "artifacts": [
+        "asset_parity.log"
+      ],
+      "measurements": {
+        "different_files": []
+      }
+    },
+    {
+      "name": "pytest",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "collected": 1912,
+        "executed": 1910,
+        "passed": 1910,
+        "failed": 0,
+        "skipped": 2,
+        "errors": 0,
+        "deselected": 0,
+        "failure_names": [],
+        "subtests": 37,
+        "reported": 1912,
+        "exit_code": 0
+      },
+      "duration_seconds": 152.229,
+      "artifacts": [
+        "pytest.log"
+      ]
+    },
+    {
+      "name": "frontend",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "collected": 249,
+        "executed": 249,
+        "passed": 249,
+        "failed": 0,
+        "skipped": 0,
+        "failure_names": []
+      },
+      "duration_seconds": 3.049,
+      "artifacts": [
+        "frontend.log"
+      ]
+    },
+    {
+      "name": "bundle_helpers",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "collected": 9,
+        "executed": 9,
+        "passed": 9,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "deselected": 0,
+        "failure_names": [],
+        "subtests": 0,
+        "reported": 9,
+        "exit_code": 0
+      },
+      "duration_seconds": 1.736,
+      "artifacts": [
+        "bundle_helpers.log"
+      ]
+    },
+    {
+      "name": "typecheck",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 1.228,
+      "artifacts": [
+        "typecheck.log"
+      ]
+    },
+    {
+      "name": "verify_layout",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0.045,
+      "artifacts": [
+        "verify_layout.log"
+      ]
+    },
+    {
+      "name": "teardown",
+      "status": "PASS",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "teardown.log"
+      ],
+      "measurements": {
+        "owned_process_groups_remaining": []
+      }
+    }
+  ],
+  "request_budget": 2000,
+  "long": true,
+  "integrated_candidate": "625dbaa97b55fb5be66e06db9bfe4d8c985fd935",
+  "duration_seconds": 159.217,
+  "decoder": {
+    "requests": 0,
+    "peak_in_flight": 0,
+    "rejected_by_budget": 0,
+    "active_at_teardown": 0,
+    "budget_exhausted": false,
+    "shared_metrics": "sampled every 2 seconds; not own request attribution"
+  },
+  "gate_counts": {
+    "FAIL": 1,
+    "PASS": 8
+  },
+  "qualified": false
+}

@@ -1,0 +1,17 @@
+{
+  "name": "asset_parity",
+  "status": "PASS",
+  "exit_code": 0,
+  "denominators": {
+    "expected": 17,
+    "compared": 17,
+    "different": 0
+  },
+  "duration_seconds": 0.994,
+  "artifacts": [
+    "asset_parity.log"
+  ],
+  "measurements": {
+    "different_files": []
+  }
+}

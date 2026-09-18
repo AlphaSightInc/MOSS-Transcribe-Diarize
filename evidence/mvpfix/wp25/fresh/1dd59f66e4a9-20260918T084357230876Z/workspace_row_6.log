@@ -1,0 +1,85 @@
+{
+  "name": "workspace_row_6",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0.404,
+  "artifacts": [
+    "workspace_row_6.log"
+  ],
+  "decoder_requests_at_record": 180,
+  "decoder_budget_exhausted_at_record": false,
+  "measurements": {
+    "ok": true,
+    "formats": {
+      "md": {
+        "ok": true,
+        "expected_turns": 6,
+        "downloaded_turns": 6,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true,
+        "bytes": 639,
+        "artifact": null
+      },
+      "txt": {
+        "ok": true,
+        "expected_turns": 6,
+        "downloaded_turns": 6,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true,
+        "bytes": 621,
+        "artifact": null
+      },
+      "json": {
+        "ok": true,
+        "expected_turns": 6,
+        "downloaded_turns": 6,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true,
+        "lane": true,
+        "bytes": 3227,
+        "artifact": null
+      },
+      "srt": {
+        "ok": true,
+        "expected_turns": 6,
+        "downloaded_turns": 6,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true,
+        "bytes": 748,
+        "artifact": null
+      },
+      "vtt": {
+        "ok": true,
+        "expected_turns": 6,
+        "downloaded_turns": 6,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true,
+        "bytes": 756,
+        "artifact": null
+      }
+    },
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 0.404,
+    "network": null,
+    "row": 6
+  }
+}

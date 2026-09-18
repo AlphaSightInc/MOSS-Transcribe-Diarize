@@ -101,3 +101,25 @@ def test_identity_cannot_pass_by_omitting_one_reference_voice():
              score=dict(ids_by_truth={'A':{'one':8}},id_switches={'A':0},unresolved_segments=0))
     assert identity_passed(row,expected_voices=1)
     assert not identity_passed(row,expected_voices=2)
+
+
+def test_file_gate_preserves_failure_and_export_bars():
+    from tools.qualify.run import file_passed
+    row=dict(foreign_read_status=404,history_reason=True,header_reason=True,reason_content_free=True,
+             status='failed',reload_status='failed',failure_code='acquisition_http_404')
+    assert file_passed(row,'missing')
+    row['failure_code']='acquisition_failed'
+    assert not file_passed(row,'missing')
+    row.update(status='completed',reload_status='completed',mp3_link=True,mp3_bytes=10,
+               exports={fmt:{'ok':True} for fmt in ('md','txt','json','srt','vtt')})
+    assert file_passed(row,'six.wav')
+    row['exports'].pop('vtt')
+    assert not file_passed(row,'six.wav')
+
+
+def test_unrunnable_bench_is_never_green_or_invented_failure():
+    from tools.qualify.run import aggregate
+    assert aggregate(['UNRUNNABLE']*16,1)=='UNRUNNABLE'
+    assert aggregate(['PASS','UNRUNNABLE'],1)=='UNRUNNABLE'
+    assert aggregate(['PASS','FAIL'],1)=='FAIL'
+    assert aggregate(['PASS']*16,0)=='PASS'

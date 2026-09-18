@@ -1,0 +1,687 @@
+{
+  "name": "workspace",
+  "status": "FAIL",
+  "exit_code": 1,
+  "denominators": {
+    "expected": 14,
+    "executed": 13,
+    "passed": 11,
+    "failed": 2,
+    "skipped": 1,
+    "unrunnable": 0
+  },
+  "duration_seconds": 255.908,
+  "artifacts": [
+    "workspace.log"
+  ],
+  "decoder_requests_at_record": 180,
+  "decoder_budget_exhausted_at_record": false,
+  "measurements": {
+    "1": {
+      "signed_in": true,
+      "boot_ready": true,
+      "fresh_profile": true,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 0.11,
+      "network": null,
+      "row": 1
+    },
+    "2": {
+      "ok": true,
+      "meeting": "Uz2r-ASFkqgfoDRNnkN9EtDC",
+      "status_received": "completed",
+      "speaker_count": 1,
+      "reference_words": 115,
+      "hypothesis_words": 111,
+      "edits": 10,
+      "wer": 0.08695652173913043,
+      "artifact": null,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 3.248,
+      "network": null,
+      "row": 2
+    },
+    "3": {
+      "ok": true,
+      "meeting": "pCnRZoUG49F_cXj711pL6qYj",
+      "status_received": "completed",
+      "speaker_count": 1,
+      "reference_words": 115,
+      "hypothesis_words": 111,
+      "edits": 10,
+      "wer": 0.08695652173913043,
+      "artifact": null,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 2.17,
+      "network": null,
+      "row": 3
+    },
+    "5": {
+      "ok": false,
+      "renames": [
+        {
+          "name": null,
+          "http": 200,
+          "speaker_id": "speaker-0002",
+          "enrollment": null,
+          "rows_legend_updated": true,
+          "history_updated": true,
+          "export_updated": null
+        },
+        {
+          "name": null,
+          "http": 200,
+          "speaker_id": "speaker-0002",
+          "enrollment": null,
+          "rows_legend_updated": false,
+          "history_updated": true,
+          "export_updated": true
+        }
+      ],
+      "meeting": "LyIjjWE5s-JeFEpoYoIU1G-G",
+      "export_after_stop_without_reload": true,
+      "export": null,
+      "screenshot": null,
+      "status": "FAIL",
+      "seconds": 0.06,
+      "network": null,
+      "row": 5
+    },
+    "4": {
+      "ok": false,
+      "controlled_lane_cases": [
+        {
+          "case": null,
+          "meeting": "3Qhc28i0xAulccj-X9qcn0Es",
+          "passed": false,
+          "expected_failure": false,
+          "status": "completed",
+          "finalization_status": "final",
+          "seconds": 56.281,
+          "stop_seconds": 2.271,
+          "frames_per_lane": 108,
+          "microphone_gain": 0.03,
+          "surfaces": {
+            "pre_terminal": {
+              "lanes": {
+                "system": {
+                  "reference_words": 106,
+                  "observed_words": 107,
+                  "substitutions": 2,
+                  "omissions": 6,
+                  "additions": 7,
+                  "wer": 0.14150943396226415,
+                  "unique_reference_words": 60,
+                  "unique_retained": 57,
+                  "unique_retention": 0.95
+                },
+                "microphone": {
+                  "reference_words": 53,
+                  "observed_words": 55,
+                  "substitutions": 1,
+                  "omissions": 4,
+                  "additions": 6,
+                  "wer": 0.20754716981132076,
+                  "unique_reference_words": 45,
+                  "unique_retained": 41,
+                  "unique_retention": 0.9111111111111111
+                }
+              },
+              "attribution_errors": 0,
+              "speaker_lane_conflicts": 0,
+              "boundary_attribution_words": 0,
+              "boundary_duplication_words": 0,
+              "attribution_segments": [],
+              "max_wer": 0.166655,
+              "ownership": null,
+              "duplication_count": 0,
+              "unresolved_words": 0,
+              "passed": false
+            },
+            "final": {
+              "lanes": {
+                "system": {
+                  "reference_words": 106,
+                  "observed_words": 104,
+                  "substitutions": 1,
+                  "omissions": 5,
+                  "additions": 3,
+                  "wer": 0.08490566037735849,
+                  "unique_reference_words": 60,
+                  "unique_retained": 57,
+                  "unique_retention": 0.95
+                },
+                "microphone": {
+                  "reference_words": 53,
+                  "observed_words": 58,
+                  "substitutions": 0,
+                  "omissions": 0,
+                  "additions": 5,
+                  "wer": 0.09433962264150944,
+                  "unique_reference_words": 45,
+                  "unique_retained": 45,
+                  "unique_retention": 1.0
+                }
+              },
+              "attribution_errors": 0,
+              "speaker_lane_conflicts": 0,
+              "boundary_attribution_words": 0,
+              "boundary_duplication_words": 0,
+              "attribution_segments": [],
+              "max_wer": 0.095074,
+              "ownership": null,
+              "duplication_count": 0,
+              "unresolved_words": 0,
+              "passed": true
+            },
+            "reopened": {
+              "lanes": {
+                "system": {
+                  "reference_words": 106,
+                  "observed_words": 104,
+                  "substitutions": 1,
+                  "omissions": 5,
+                  "additions": 3,
+                  "wer": 0.08490566037735849,
+                  "unique_reference_words": 60,
+                  "unique_retained": 57,
+                  "unique_retention": 0.95
+                },
+                "microphone": {
+                  "reference_words": 53,
+                  "observed_words": 58,
+                  "substitutions": 0,
+                  "omissions": 0,
+                  "additions": 5,
+                  "wer": 0.09433962264150944,
+                  "unique_reference_words": 45,
+                  "unique_retained": 45,
+                  "unique_retention": 1.0
+                }
+              },
+              "attribution_errors": 0,
+              "speaker_lane_conflicts": 0,
+              "boundary_attribution_words": 0,
+              "boundary_duplication_words": 0,
+              "attribution_segments": [],
+              "max_wer": 0.095074,
+              "ownership": null,
+              "duplication_count": 0,
+              "unresolved_words": 0,
+              "passed": true
+            }
+          },
+          "file_url_wer_bar": 0.15,
+          "file_url_wer_pass": {
+            "pre_terminal": false,
+            "final": true,
+            "reopened": true
+          }
+        },
+        {
+          "case": null,
+          "meeting": "K-T5zOTuz1UWH2VEINMNcNNk",
+          "passed": false,
+          "expected_failure": false,
+          "status": "completed",
+          "finalization_status": "final",
+          "seconds": 30.964,
+          "stop_seconds": 1.956,
+          "frames_per_lane": 58,
+          "microphone_gain": 0.03,
+          "surfaces": {
+            "pre_terminal": {
+              "lanes": {
+                "system": {
+                  "reference_words": 106,
+                  "observed_words": 99,
+                  "substitutions": 2,
+                  "omissions": 14,
+                  "additions": 7,
+                  "wer": 0.2169811320754717,
+                  "unique_reference_words": 60,
+                  "unique_retained": 55,
+                  "unique_retention": 0.9166666666666666
+                },
+                "microphone": {
+                  "reference_words": 53,
+                  "observed_words": 59,
+                  "substitutions": 0,
+                  "omissions": 0,
+                  "additions": 6,
+                  "wer": 0.11320754716981132,
+                  "unique_reference_words": 45,
+                  "unique_retained": 45,
+                  "unique_retention": 1.0
+                }
+              },
+              "attribution_errors": 0,
+              "speaker_lane_conflicts": 0,
+              "boundary_attribution_words": 0,
+              "boundary_duplication_words": 0,
+              "attribution_segments": [],
+              "max_wer": 0.166655,
+              "ownership": null,
+              "duplication_count": 0,
+              "unresolved_words": 0,
+              "passed": false
+            },
+            "final": {
+              "lanes": {
+                "system": {
+                  "reference_words": 106,
+                  "observed_words": 105,
+                  "substitutions": 2,
+                  "omissions": 6,
+                  "additions": 5,
+                  "wer": 0.12264150943396226,
+                  "unique_reference_words": 60,
+                  "unique_retained": 56,
+                  "unique_retention": 0.9333333333333333
+                },
+                "microphone": {
+                  "reference_words": 53,
+                  "observed_words": 58,
+                  "substitutions": 0,
+                  "omissions": 0,
+                  "additions": 5,
+                  "wer": 0.09433962264150944,
+                  "unique_reference_words": 45,
+                  "unique_retained": 45,
+                  "unique_retention": 1.0
+                }
+              },
+              "attribution_errors": 0,
+              "speaker_lane_conflicts": 0,
+              "boundary_attribution_words": 0,
+              "boundary_duplication_words": 0,
+              "attribution_segments": [],
+              "max_wer": 0.095074,
+              "ownership": null,
+              "duplication_count": 0,
+              "unresolved_words": 0,
+              "passed": false
+            },
+            "reopened": {
+              "lanes": {
+                "system": {
+                  "reference_words": 106,
+                  "observed_words": 105,
+                  "substitutions": 2,
+                  "omissions": 6,
+                  "additions": 5,
+                  "wer": 0.12264150943396226,
+                  "unique_reference_words": 60,
+                  "unique_retained": 56,
+                  "unique_retention": 0.9333333333333333
+                },
+                "microphone": {
+                  "reference_words": 53,
+                  "observed_words": 58,
+                  "substitutions": 0,
+                  "omissions": 0,
+                  "additions": 5,
+                  "wer": 0.09433962264150944,
+                  "unique_reference_words": 45,
+                  "unique_retained": 45,
+                  "unique_retention": 1.0
+                }
+              },
+              "attribution_errors": 0,
+              "speaker_lane_conflicts": 0,
+              "boundary_attribution_words": 0,
+              "boundary_duplication_words": 0,
+              "attribution_segments": [],
+              "max_wer": 0.095074,
+              "ownership": null,
+              "duplication_count": 0,
+              "unresolved_words": 0,
+              "passed": false
+            }
+          },
+          "file_url_wer_bar": 0.15,
+          "file_url_wer_pass": {
+            "pre_terminal": false,
+            "final": true,
+            "reopened": true
+          }
+        }
+      ],
+      "first_visible_seconds": 3.330544958007522,
+      "stop_to_terminal_seconds": 2.0508274169988,
+      "meeting": "LyIjjWE5s-JeFEpoYoIU1G-G",
+      "status_received": "completed",
+      "meters": [
+        null,
+        null
+      ],
+      "artifact": null,
+      "screenshot": null,
+      "status": "FAIL",
+      "seconds": 108.554,
+      "network": null,
+      "row": 4
+    },
+    "6": {
+      "ok": true,
+      "formats": {
+        "md": {
+          "ok": true,
+          "expected_turns": 6,
+          "downloaded_turns": 6,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "bytes": 639,
+          "artifact": null
+        },
+        "txt": {
+          "ok": true,
+          "expected_turns": 6,
+          "downloaded_turns": 6,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "bytes": 621,
+          "artifact": null
+        },
+        "json": {
+          "ok": true,
+          "expected_turns": 6,
+          "downloaded_turns": 6,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "lane": true,
+          "bytes": 3227,
+          "artifact": null
+        },
+        "srt": {
+          "ok": true,
+          "expected_turns": 6,
+          "downloaded_turns": 6,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "bytes": 748,
+          "artifact": null
+        },
+        "vtt": {
+          "ok": true,
+          "expected_turns": 6,
+          "downloaded_turns": 6,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "bytes": 756,
+          "artifact": null
+        }
+      },
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 0.404,
+      "network": null,
+      "row": 6
+    },
+    "7": {
+      "ok": true,
+      "filename": null,
+      "duration": 50.0,
+      "source_duration": 50.0,
+      "artifact": null,
+      "decodable": true,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 0.165,
+      "network": null,
+      "row": 7
+    },
+    "9": {
+      "skip": true,
+      "reason_code": "no_configured_relay_models",
+      "configured_models": 0,
+      "screenshot": null,
+      "status": "SKIP",
+      "seconds": 0.003,
+      "network": null,
+      "row": 9
+    },
+    "11": {
+      "header_visible": true,
+      "header_box": {
+        "x": 527.375,
+        "y": 104,
+        "width": 187.6875,
+        "height": 33.5
+      },
+      "ok": true,
+      "title_matches": true,
+      "mode": null,
+      "panel_box": {
+        "x": 310,
+        "y": 97.5,
+        "width": 820,
+        "height": 984.5
+      },
+      "selected": null,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 0.081,
+      "network": null,
+      "row": 11
+    },
+    "12": {
+      "width": 400,
+      "scroll": 400,
+      "historyY": 69.8125,
+      "file_y": 70.1875,
+      "ok": true,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 0.196,
+      "network": null,
+      "row": 12
+    },
+    "10": {
+      "ok": true,
+      "bound_seconds": 4.0,
+      "decoder_trace": null,
+      "expected_name": null,
+      "bank_contains_name": true,
+      "recognition_seconds": 3.9289000000059606,
+      "measurement": null,
+      "meeting": "Cf8JR7mo59bVOahhEc8LTo4Y",
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 5.344,
+      "network": null,
+      "row": 10
+    },
+    "8": {
+      "ok": true,
+      "filename": null,
+      "duration": 11.912,
+      "source_duration": 50.0,
+      "artifact": null,
+      "decodable": true,
+      "meeting": "Cf8JR7mo59bVOahhEc8LTo4Y",
+      "status_received": "interrupted",
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 38.529,
+      "network": null,
+      "row": 8
+    },
+    "13": {
+      "ok": true,
+      "variants": [
+        {
+          "outage_seconds": 3,
+          "meeting": "XVtstqIHgmxA2TOz3HaO8vXZ",
+          "before": {
+            "status": "active",
+            "version": 23,
+            "accepted_samples": 86976,
+            "committed_samples": 40000
+          },
+          "phase_during_outage": null,
+          "restored_monotonic": 105917.394693875,
+          "actual_outage_seconds": 3.0030150420061545,
+          "blocked_requests": 24,
+          "origin_outage_verified": true,
+          "blocked_routes": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "phase_after_restore": null,
+          "ui_status": null,
+          "text_changes_after_restore": 7,
+          "frames_resumed": true,
+          "first_frame_recovery_seconds": {
+            "microphone": 0.3206810410047183,
+            "system": 0.3808210830029566
+          },
+          "first_snapshot_recovery_seconds": 0.5929495409945957,
+          "heartbeat_resumed": true,
+          "maximum_heartbeat_gap_seconds": 3.5043751250050263,
+          "polling_resumed": true,
+          "sequence_continuity": {
+            "microphone": true,
+            "system": true
+          },
+          "frame_errors": [],
+          "status_received": "completed",
+          "finalization_status": "final",
+          "failure_reason": null,
+          "history_preserved": true,
+          "audio_seconds": 12.5,
+          "audio_preserved": true,
+          "partial_audio": false,
+          "recovery_feedback_clear": true,
+          "ok": true,
+          "outcome": null
+        },
+        {
+          "outage_seconds": 20,
+          "meeting": "a4orTcrAjHbIfn8Ebkp3ao3p",
+          "before": {
+            "status": "active",
+            "version": 23,
+            "accepted_samples": 87104,
+            "committed_samples": 40000
+          },
+          "phase_during_outage": null,
+          "restored_monotonic": 105951.893617875,
+          "actual_outage_seconds": 20.002832375001162,
+          "blocked_requests": 134,
+          "origin_outage_verified": true,
+          "blocked_routes": [
+            null,
+            null,
+            null,
+            null
+          ],
+          "phase_after_restore": null,
+          "ui_status": null,
+          "text_changes_after_restore": 4,
+          "frames_resumed": true,
+          "first_frame_recovery_seconds": {
+            "microphone": 0.443976249996922,
+            "system": 0.497683749999851
+          },
+          "first_snapshot_recovery_seconds": 3.530688957995153,
+          "heartbeat_resumed": true,
+          "maximum_heartbeat_gap_seconds": 20.510045499991975,
+          "polling_resumed": true,
+          "sequence_continuity": {
+            "microphone": true,
+            "system": true
+          },
+          "frame_errors": [],
+          "status_received": "completed",
+          "finalization_status": "final",
+          "failure_reason": null,
+          "history_preserved": true,
+          "audio_seconds": 29.5,
+          "audio_preserved": true,
+          "partial_audio": false,
+          "recovery_feedback_clear": true,
+          "ok": true,
+          "outcome": null
+        }
+      ],
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 57.221,
+      "network": null,
+      "row": 13
+    },
+    "14": {
+      "ok": true,
+      "same_document": true,
+      "all_in_history": true,
+      "cycles": [
+        {
+          "cycle": 1,
+          "pane_empty_before_start": true,
+          "meeting": "ARxp38vk6_y8sJY1qC00T1RB",
+          "active_phase": null,
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": null,
+          "export_filename": null,
+          "terminal_phase": null,
+          "screenshot": null,
+          "ok": true
+        },
+        {
+          "cycle": 2,
+          "pane_empty_before_start": true,
+          "meeting": "He4mgHKhTIxjvguy6V_7Rbxn",
+          "active_phase": null,
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": null,
+          "export_filename": null,
+          "terminal_phase": null,
+          "screenshot": null,
+          "ok": true
+        },
+        {
+          "cycle": 3,
+          "pane_empty_before_start": true,
+          "meeting": "KXhA-g3zgPIGNXd7eQ9LckSz",
+          "active_phase": null,
+          "first_frame_sequence": 0,
+          "status_received": "completed",
+          "finalization_status": "final",
+          "history_present": true,
+          "export": null,
+          "export_filename": null,
+          "terminal_phase": null,
+          "screenshot": null,
+          "ok": true
+        }
+      ],
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 38.071,
+      "network": null,
+      "row": 14
+    }
+  }
+}

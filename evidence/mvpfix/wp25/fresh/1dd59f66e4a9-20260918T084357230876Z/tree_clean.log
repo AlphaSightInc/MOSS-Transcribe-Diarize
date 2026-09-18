@@ -1,0 +1,59 @@
+{
+  "name": "tree_clean",
+  "status": "FAIL",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0,
+  "artifacts": [
+    "tree_clean.log"
+  ],
+  "measurements": {
+    "dirty_files": [
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/asset_parity.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/browser_stress_all.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/bundle_helpers.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/capacity_4x600.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/demo_lanes.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/file_30min.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/file_6min.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/file_failures.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/frontend.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/identity_stress.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/level_ladder.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/lifecycle.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/pytest.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/python_import.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/reshare.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/runner.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/stack.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/summary.json",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/summary.md",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/teardown.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/tree_clean.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/typecheck.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/verify_layout.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_1.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_10.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_11.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_12.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_13.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_14.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_2.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_3.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_4.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_5.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_6.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_7.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_8.log",
+      "?? evidence/mvpfix/wp25/fresh/1dd59f66e4a9-20260918T084323167672Z/workspace_row_9.log"
+    ]
+  }
+}

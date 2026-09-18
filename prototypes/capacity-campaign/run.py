@@ -66,8 +66,10 @@ def inputs(n):
     return result
 
 
+METRICS_URL='http://127.0.0.1:18106/metrics'
+
 def metrics():
-    with urllib.request.urlopen('http://127.0.0.1:18106/metrics', timeout=5) as response:
+    with urllib.request.urlopen(METRICS_URL, timeout=5) as response:
         body = response.read().decode()
     values = {}
     for name in ('num_requests_running', 'num_requests_waiting', 'kv_cache_usage_perc', 'gpu_cache_usage_perc', 'request_success_total'):
@@ -79,14 +81,20 @@ def metrics():
 
 
 def main():
+    global METRICS_URL
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--sessions', type=int, choices=(1, 2, 4, 8), required=True)
     parser.add_argument('--seconds', type=int, required=True)
     parser.add_argument('--prepare-only', action='store_true')
-    parser.add_argument('--port', type=int, default=17866)
+    parser.add_argument('--port','--stack-port',dest='port', type=int, default=17866)
     parser.add_argument('--four-session-result', type=Path)
     parser.add_argument('--manifest', type=Path)
+    parser.add_argument('--decoder-url',help='Existing owned decoder proxy; suppresses tunnel creation')
+    parser.add_argument('--out',type=Path)
+    parser.add_argument('--scratch',type=Path)
+    parser.add_argument('--allow-contention',action='store_true')
     args = parser.parse_args()
+    if args.decoder_url:METRICS_URL=args.decoder_url.removesuffix('/v1').rstrip('/')+'/metrics'
     if args.seconds <= 0 or args.port in (7861, 7862):
         parser.error('positive duration and private app port required')
     clips = inputs(args.sessions)
@@ -101,10 +109,10 @@ def main():
         if (prior.get('sessions'), prior.get('seconds'), prior.get('clean')) != (4, 600, True):
             parser.error('4x600 did not pass cleanly')
     stamp = time.strftime('%Y%m%d-%H%M%S')
-    out = ROOT / 'evidence/mvpfix/wp6' / f'{stamp}-{args.sessions}x{args.seconds}'
-    out.mkdir()
+    out = args.out or ROOT / 'evidence/mvpfix/wp6' / f'{stamp}-{args.sessions}x{args.seconds}'
+    out.mkdir(parents=True)
     # Relative path keeps the Unix control socket below the macOS path limit.
-    scratch = Path('.wp6-tmp') / stamp
+    scratch = args.scratch or Path('.wp6-tmp') / stamp
     scratch.mkdir(parents=True)
     os.environ.update(TMPDIR=str(ROOT / scratch), PYTHONDONTWRITEBYTECODE='1', PYTHONPATH=str(ROOT))
     processes = []
@@ -159,7 +167,7 @@ def main():
         foreign_streak = foreign_streak + 1 if foreign else 0
         if foreign:
             contaminated.set()
-        if foreign_streak > 1 and not paused.is_set():
+        if not args.allow_contention and foreign_streak > 1 and not paused.is_set():
             paused.set()
             (state / 'PAUSE').touch()
             emit(dict(kind='pause', time=time.monotonic(), foreign_streak=foreign_streak))
@@ -167,7 +175,7 @@ def main():
             (state / 'PAUSE').unlink(missing_ok=True)
             paused.clear()
             emit(dict(kind='resume', time=time.monotonic()))
-        gpu = subprocess.run(['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', HOST,
+        gpu = subprocess.run(['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', '-o', 'ControlMaster=no', '-o', 'ControlPath=none', '-o', 'UpdateHostKeys=no', '-o', 'StrictHostKeyChecking=yes', HOST,
                               'nvidia-smi --query-gpu=memory.used,memory.total --format=csv,noheader,nounits'],
                              capture_output=True, text=True, timeout=10)
         rss = subprocess.check_output(['ps', '-o', 'rss=', '-p', str(pid)], text=True).strip()
@@ -188,12 +196,14 @@ def main():
                 emit(dict(kind='resource_failure', error=type(exc).__name__))
 
     try:
-        tunnel = subprocess.Popen(['ssh', '-N', '-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes',
-                                   '-L', '127.0.0.1:18106:127.0.0.1:8000', HOST], stdout=subprocess.DEVNULL,
-                                  stderr=(scratch / 'ssh.log').open('w'))
-        processes.append(tunnel)
+        tunnel = None
+        if not args.decoder_url:
+            tunnel = subprocess.Popen(['ssh', '-N', '-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes',
+                                       '-L', '127.0.0.1:18106:127.0.0.1:8000', HOST], stdout=subprocess.DEVNULL,
+                                      stderr=(scratch / 'ssh.log').open('w'))
+            processes.append(tunnel)
         for _ in range(30):
-            if tunnel.poll() is not None:
+            if tunnel is not None and tunnel.poll() is not None:
                 raise RuntimeError('private_tunnel_failed')
             try:
                 initial = metrics()
@@ -203,17 +213,17 @@ def main():
         else:
             raise RuntimeError('metrics_unavailable')
         emit(dict(kind='preflight', metrics=initial))
-        while initial['num_requests_running'] + initial['num_requests_waiting']:
+        while not args.allow_contention and initial['num_requests_running'] + initial['num_requests_waiting']:
             emit(dict(kind='preflight_wait', time=time.monotonic(), metrics=initial))
             time.sleep(30)
             initial = metrics()
-        emit(dict(kind='preflight_clear', time=time.monotonic(), metrics=initial))
+        emit(dict(kind='preflight_observed', time=time.monotonic(), metrics=initial, allow_contention=args.allow_contention))
         subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', str(scratch/'key.pem'),
                         '-out', str(scratch/'cert.pem'), '-days', '2', '-subj', '/CN=127.0.0.1',
                         '-addext', 'subjectAltName=IP:127.0.0.1'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         manifest_args = ['--manifest', str(args.manifest.resolve())] if args.manifest else []
         app = subprocess.Popen([sys.executable, 'prototypes/capacity-campaign/stack.py', '--state', str(state),
-                                '--cert', str(scratch/'cert.pem'), '--key', str(scratch/'key.pem'), '--port', str(args.port), *manifest_args],
+                                '--cert', str(scratch/'cert.pem'), '--key', str(scratch/'key.pem'), '--port', str(args.port), *manifest_args, *(['--vllm-base-url',args.decoder_url] if args.decoder_url else [])],
                                stdout=(scratch/'app.log').open('w'), stderr=subprocess.STDOUT)
         processes.append(app)
         context = ssl.create_default_context(cafile=str(scratch/'cert.pem'))

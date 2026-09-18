@@ -104,3 +104,6 @@ evidence/mvpfix/*/raw/
 
 # WP31 private copied stores, audio and runtime.
 .wp31/
+.wp25runtime/
+!evidence/mvpfix/wp25/*.log
+!evidence/mvpfix/wp25/**/*.log

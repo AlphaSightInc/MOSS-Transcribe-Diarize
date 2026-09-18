@@ -1,0 +1,196 @@
+{
+  "name": "identity_stress",
+  "status": "PASS",
+  "exit_code": 0,
+  "denominators": {
+    "expected": 3,
+    "executed": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 194.906,
+  "artifacts": [
+    "identity_stress.log"
+  ],
+  "decoder_requests_at_record": 359,
+  "decoder_budget_exhausted_at_record": false,
+  "reason": "One saved identity per reference voice, distinct across voices, zero within-voice switches/unresolved segments; unused births reported separately",
+  "measurements": [
+    {
+      "case": "single",
+      "status": "PASS",
+      "exit_code": 0,
+      "seconds": 64.93311137499404,
+      "measurements": {
+        "kind": null,
+        "case": null,
+        "meeting": "gKv572A0tark74Sb0t0tnXdx",
+        "status": "completed",
+        "failure": null,
+        "finalization": null,
+        "seconds": 64.791,
+        "stop_seconds": 4.778,
+        "identity": {
+          "version": 24,
+          "canonical_speakers": [
+            null
+          ],
+          "diagnostics": [
+            [
+              null,
+              null
+            ],
+            [
+              null,
+              null
+            ],
+            [
+              null,
+              null
+            ]
+          ]
+        },
+        "saved_speakers": [
+          null
+        ],
+        "score": {
+          "ids_by_truth": {
+            "Adam": {
+              "speaker-0001": 16
+            }
+          },
+          "id_switches": {
+            "Adam": 0
+          },
+          "switch_straddling_segments": 0,
+          "unresolved_segments": 0
+        },
+        "recognition_seconds": null,
+        "recognition_bar_seconds": 4.0,
+        "actions": [],
+        "bank": [],
+        "admissions": null
+      }
+    },
+    {
+      "case": "gap",
+      "status": "PASS",
+      "exit_code": 0,
+      "seconds": 65.05373570798838,
+      "measurements": {
+        "kind": null,
+        "case": null,
+        "meeting": "7nT0bg98c-AlyeegRrwH1WLn",
+        "status": "completed",
+        "failure": null,
+        "finalization": null,
+        "seconds": 64.944,
+        "stop_seconds": 4.93,
+        "identity": {
+          "version": 21,
+          "canonical_speakers": [
+            null
+          ],
+          "diagnostics": [
+            [
+              null,
+              null
+            ],
+            [
+              null,
+              null
+            ],
+            [
+              null,
+              null
+            ]
+          ]
+        },
+        "saved_speakers": [
+          null
+        ],
+        "score": {
+          "ids_by_truth": {
+            "Adam": {
+              "speaker-0001": 15
+            }
+          },
+          "id_switches": {
+            "Adam": 0
+          },
+          "switch_straddling_segments": 0,
+          "unresolved_segments": 0
+        },
+        "recognition_seconds": null,
+        "recognition_bar_seconds": 4.0,
+        "actions": [],
+        "bank": [],
+        "admissions": null
+      }
+    },
+    {
+      "case": "alternating",
+      "status": "PASS",
+      "exit_code": 0,
+      "seconds": 64.91808316699462,
+      "measurements": {
+        "kind": null,
+        "case": null,
+        "meeting": "pgx_nAH6KO1mc94K0az45DVt",
+        "status": "completed",
+        "failure": null,
+        "finalization": null,
+        "seconds": 64.779,
+        "stop_seconds": 4.765,
+        "identity": {
+          "version": 24,
+          "canonical_speakers": [
+            null,
+            null
+          ],
+          "diagnostics": [
+            [
+              null,
+              null
+            ],
+            [
+              null,
+              null
+            ],
+            [
+              null,
+              null
+            ]
+          ]
+        },
+        "saved_speakers": [
+          null,
+          null
+        ],
+        "score": {
+          "ids_by_truth": {
+            "Bill": {
+              "speaker-0001": 12
+            },
+            "Keyu": {
+              "speaker-0002": 5
+            }
+          },
+          "id_switches": {
+            "Bill": 0,
+            "Keyu": 0
+          },
+          "switch_straddling_segments": 1,
+          "unresolved_segments": 0
+        },
+        "recognition_seconds": null,
+        "recognition_bar_seconds": 4.0,
+        "actions": [],
+        "bank": [],
+        "admissions": null
+      }
+    }
+  ]
+}
