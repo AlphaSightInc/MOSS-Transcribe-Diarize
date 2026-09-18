@@ -1,0 +1,124 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__________ test_overlap_lane_badges_keep_chronology_and_fit_pane[390] __________
+
+width = 390
+
+    @pytest.mark.parametrize('width', [390, 400, 1280])
+    def test_overlap_lane_badges_keep_chronology_and_fit_pane(width):
+        meeting = dict(id='lanes', mode='live', title='Overlapping corpus', title_source='manual',
+                       status='completed', created_at_ms=1, transcript=FIXTURE, transcript_version=1, audio=None)
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=str(require_browser(p)))
+            try:
+                page = browser.new_page(viewport={'width': width, 'height': 844})
+                def route(r):
+                    path = urlsplit(r.request.url).path
+                    if path == '/':
+                        r.fulfill(body=_workspace_html(SimpleNamespace(display_name='Lane check'), [], live_enabled=True), content_type='text/html')
+                    elif path.startswith('/static/'):
+                        asset = ROOT/'moss_transcribe_diarize/app/frontend_assets'/path.removeprefix('/static/')
+                        r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+                    elif path == '/api/meetings/lanes': r.fulfill(json=meeting)
+                    else: r.fulfill(json={'meetings': [meeting], 'voiceprints': [], 'summary': None})
+                page.route('**/*', route)
+                page.goto('http://lane.test')
+                page.locator('[data-history-boot="ready"]').wait_for()
+                page.get_by_role('region', name='Meeting history', exact=True).locator('[data-open-meeting="lanes"]').click()
+                expect(page.locator('#tr-body .utt')).to_have_count(9)
+                assert page.locator('#tr-body .utt').evaluate_all('(rows)=>rows.map(r=>r.dataset.sourceLane)') == [s['source_lane'] for s in FIXTURE['segments']]
+                assert page.locator('#tr-body .utt-lane').all_text_contents() == ['System' if s['source_lane']=='system' else 'Microphone' for s in FIXTURE['segments']]
+                expect(page.locator('.legend-chip')).to_have_count(4)
+>               expect(page.get_by_role('button', name='Refresh', exact=True)).to_have_count(2)
+E               AssertionError: Locator expected to have count '2'
+E               Actual value: 1 
+E               Call log:
+E                 - Expect "to_have_count" with timeout 5000ms
+E                 - waiting for get_by_role("button", name="Refresh", exact=True)
+E                   14 × locator resolved to 1 element
+E                      - unexpected value "1"
+
+tests/phase2/test_lane_consumer_geometry.py:39: AssertionError
+__________ test_overlap_lane_badges_keep_chronology_and_fit_pane[400] __________
+
+width = 400
+
+    @pytest.mark.parametrize('width', [390, 400, 1280])
+    def test_overlap_lane_badges_keep_chronology_and_fit_pane(width):
+        meeting = dict(id='lanes', mode='live', title='Overlapping corpus', title_source='manual',
+                       status='completed', created_at_ms=1, transcript=FIXTURE, transcript_version=1, audio=None)
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=str(require_browser(p)))
+            try:
+                page = browser.new_page(viewport={'width': width, 'height': 844})
+                def route(r):
+                    path = urlsplit(r.request.url).path
+                    if path == '/':
+                        r.fulfill(body=_workspace_html(SimpleNamespace(display_name='Lane check'), [], live_enabled=True), content_type='text/html')
+                    elif path.startswith('/static/'):
+                        asset = ROOT/'moss_transcribe_diarize/app/frontend_assets'/path.removeprefix('/static/')
+                        r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+                    elif path == '/api/meetings/lanes': r.fulfill(json=meeting)
+                    else: r.fulfill(json={'meetings': [meeting], 'voiceprints': [], 'summary': None})
+                page.route('**/*', route)
+                page.goto('http://lane.test')
+                page.locator('[data-history-boot="ready"]').wait_for()
+                page.get_by_role('region', name='Meeting history', exact=True).locator('[data-open-meeting="lanes"]').click()
+                expect(page.locator('#tr-body .utt')).to_have_count(9)
+                assert page.locator('#tr-body .utt').evaluate_all('(rows)=>rows.map(r=>r.dataset.sourceLane)') == [s['source_lane'] for s in FIXTURE['segments']]
+                assert page.locator('#tr-body .utt-lane').all_text_contents() == ['System' if s['source_lane']=='system' else 'Microphone' for s in FIXTURE['segments']]
+                expect(page.locator('.legend-chip')).to_have_count(4)
+>               expect(page.get_by_role('button', name='Refresh', exact=True)).to_have_count(2)
+E               AssertionError: Locator expected to have count '2'
+E               Actual value: 1 
+E               Call log:
+E                 - Expect "to_have_count" with timeout 5000ms
+E                 - waiting for get_by_role("button", name="Refresh", exact=True)
+E                   14 × locator resolved to 1 element
+E                      - unexpected value "1"
+
+tests/phase2/test_lane_consumer_geometry.py:39: AssertionError
+_________ test_overlap_lane_badges_keep_chronology_and_fit_pane[1280] __________
+
+width = 1280
+
+    @pytest.mark.parametrize('width', [390, 400, 1280])
+    def test_overlap_lane_badges_keep_chronology_and_fit_pane(width):
+        meeting = dict(id='lanes', mode='live', title='Overlapping corpus', title_source='manual',
+                       status='completed', created_at_ms=1, transcript=FIXTURE, transcript_version=1, audio=None)
+        with sync_playwright() as p:
+            browser = p.chromium.launch(executable_path=str(require_browser(p)))
+            try:
+                page = browser.new_page(viewport={'width': width, 'height': 844})
+                def route(r):
+                    path = urlsplit(r.request.url).path
+                    if path == '/':
+                        r.fulfill(body=_workspace_html(SimpleNamespace(display_name='Lane check'), [], live_enabled=True), content_type='text/html')
+                    elif path.startswith('/static/'):
+                        asset = ROOT/'moss_transcribe_diarize/app/frontend_assets'/path.removeprefix('/static/')
+                        r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+                    elif path == '/api/meetings/lanes': r.fulfill(json=meeting)
+                    else: r.fulfill(json={'meetings': [meeting], 'voiceprints': [], 'summary': None})
+                page.route('**/*', route)
+                page.goto('http://lane.test')
+                page.locator('[data-history-boot="ready"]').wait_for()
+                page.get_by_role('region', name='Meeting history', exact=True).locator('[data-open-meeting="lanes"]').click()
+                expect(page.locator('#tr-body .utt')).to_have_count(9)
+                assert page.locator('#tr-body .utt').evaluate_all('(rows)=>rows.map(r=>r.dataset.sourceLane)') == [s['source_lane'] for s in FIXTURE['segments']]
+                assert page.locator('#tr-body .utt-lane').all_text_contents() == ['System' if s['source_lane']=='system' else 'Microphone' for s in FIXTURE['segments']]
+                expect(page.locator('.legend-chip')).to_have_count(4)
+>               expect(page.get_by_role('button', name='Refresh', exact=True)).to_have_count(2)
+E               AssertionError: Locator expected to have count '2'
+E               Actual value: 1 
+E               Call log:
+E                 - Expect "to_have_count" with timeout 5000ms
+E                 - waiting for get_by_role("button", name="Refresh", exact=True)
+E                   14 × locator resolved to 1 element
+E                      - unexpected value "1"
+
+tests/phase2/test_lane_consumer_geometry.py:39: AssertionError
+=========================== short test summary info ============================
+FAILED tests/phase2/test_lane_consumer_geometry.py::test_overlap_lane_badges_keep_chronology_and_fit_pane[390]
+FAILED tests/phase2/test_lane_consumer_geometry.py::test_overlap_lane_badges_keep_chronology_and_fit_pane[400]
+FAILED tests/phase2/test_lane_consumer_geometry.py::test_overlap_lane_badges_keep_chronology_and_fit_pane[1280]
+3 failed in 18.04s

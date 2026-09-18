@@ -1,2 +1,3 @@
 tmp/
 .vite/
+!*.log
