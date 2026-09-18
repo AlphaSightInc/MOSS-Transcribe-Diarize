@@ -68,16 +68,19 @@ evidence/mvpfix/wp4/.npm-cache/
 !evidence/mvpfix/wp9/*.log
 # WP6 private measurement state, audio, TLS material, and test scratch.
 .wp6-tmp/
-=======
 
 # WP13 local test state and raw output; retained summaries live in evidence/mvpfix/wp13.
 .wp13runtime/
 frontend/.vite/
 # Large disposable WP test logs belong here, never in committed evidence.
 evidence/mvpfix/*/raw/
->>>>>>> mvpfix/wp13-tls-hygiene
 
 # WP16 private media, browser profiles, TLS, and raw logs.
 .wp16runtime/
 
 .wp18runtime/
+=======
+
+# WP15 private scratch; no audio or credentials in evidence.
+.wp15/
+>>>>>>> mvpfix/wp15-stop-lease-longrun

@@ -244,6 +244,11 @@ class LiveTransportControl:
                     )
                     raise LiveTransportStopRefused("v2_terminal_failure", v2_snapshot)
                 release_on_error = True
+            # Capture has closed successfully: Stop now belongs to the server.
+            # The caller may leave (or its wait expire) while raw work drains.
+            # Keep the other capture owners until their existing teardown, but
+            # never let an old helper lease interrupt this accepted Stop.
+            self._helper_failures.release(session_id)
             remaining = max(0.0, end_time - loop.time())
             stopped = await self._adapter.stop(authority, session_id, remaining, intent)
             self.release(session_id)

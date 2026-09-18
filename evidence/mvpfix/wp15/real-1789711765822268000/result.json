@@ -1,0 +1,522 @@
+{
+  "seconds_requested": 600,
+  "source_revision": "826af986e498a183cffacdf35a8ddedba2d38d23",
+  "total_budget": 1500,
+  "prior_requests": 922,
+  "remaining_budget": 578,
+  "resources": [
+    {
+      "elapsed": 0.020674041006714106,
+      "rss_bytes": 662077440,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 32594.0
+      },
+      "own_sent": 0,
+      "own_active": 0,
+      "foreign_completion_lower_bound": 17.0,
+      "foreign_load_detected": true,
+      "accepted": 0,
+      "accounted": 0,
+      "pending": 0
+    },
+    {
+      "elapsed": 30.06457837500784,
+      "rss_bytes": 942555136,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 32713.0
+      },
+      "own_sent": 27,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 92.0,
+      "foreign_load_detected": true,
+      "accepted": 480000,
+      "accounted": 440000,
+      "pending": 1
+    },
+    {
+      "elapsed": 60.05347729100322,
+      "rss_bytes": 952516608,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 32743.0
+      },
+      "own_sent": 57,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 960000,
+      "accounted": 920000,
+      "pending": 1
+    },
+    {
+      "elapsed": 90.10593075001088,
+      "rss_bytes": 1073135616,
+      "metrics": {
+        "num_requests_running": 1.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 32773.0
+      },
+      "own_sent": 87,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 1440000,
+      "accounted": 1400000,
+      "pending": 1
+    },
+    {
+      "elapsed": 120.04675687500276,
+      "rss_bytes": 1080033280,
+      "metrics": {
+        "num_requests_running": 2.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 32805.0
+      },
+      "own_sent": 117,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 1.0,
+      "foreign_load_detected": true,
+      "accepted": 1920000,
+      "accounted": 1880000,
+      "pending": 1
+    },
+    {
+      "elapsed": 150.10580008300894,
+      "rss_bytes": 1085620224,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 32840.0
+      },
+      "own_sent": 147,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 4.0,
+      "foreign_load_detected": true,
+      "accepted": 2400000,
+      "accounted": 2360000,
+      "pending": 1
+    },
+    {
+      "elapsed": 180.05440837499918,
+      "rss_bytes": 1089388544,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 32870.0
+      },
+      "own_sent": 177,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 2880000,
+      "accounted": 2840000,
+      "pending": 1
+    },
+    {
+      "elapsed": 210.04788491599902,
+      "rss_bytes": 1095581696,
+      "metrics": {
+        "num_requests_running": 1.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 32902.0
+      },
+      "own_sent": 207,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 1.0,
+      "foreign_load_detected": true,
+      "accepted": 3360000,
+      "accounted": 3320000,
+      "pending": 1
+    },
+    {
+      "elapsed": 240.05157450000115,
+      "rss_bytes": 1100759040,
+      "metrics": {
+        "num_requests_running": 1.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 32938.0
+      },
+      "own_sent": 237,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 5.0,
+      "foreign_load_detected": true,
+      "accepted": 3840000,
+      "accounted": 3800000,
+      "pending": 1
+    },
+    {
+      "elapsed": 270.0496881660074,
+      "rss_bytes": 1104314368,
+      "metrics": {
+        "num_requests_running": 1.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 32973.0
+      },
+      "own_sent": 267,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 4.0,
+      "foreign_load_detected": true,
+      "accepted": 4320000,
+      "accounted": 4280000,
+      "pending": 1
+    },
+    {
+      "elapsed": 300.15183524999884,
+      "rss_bytes": 1086717952,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33005.0
+      },
+      "own_sent": 297,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 1.0,
+      "foreign_load_detected": true,
+      "accepted": 4800000,
+      "accounted": 4760000,
+      "pending": 1
+    },
+    {
+      "elapsed": 330.0463623329997,
+      "rss_bytes": 1091174400,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33022.0
+      },
+      "own_sent": 314,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 5280000,
+      "accounted": 5240000,
+      "pending": 1
+    },
+    {
+      "elapsed": 360.0424885829998,
+      "rss_bytes": 1094123520,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33037.0
+      },
+      "own_sent": 329,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 5760000,
+      "accounted": 5720000,
+      "pending": 1
+    },
+    {
+      "elapsed": 390.05452137500106,
+      "rss_bytes": 1097302016,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33052.0
+      },
+      "own_sent": 344,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 6240000,
+      "accounted": 6200000,
+      "pending": 1
+    },
+    {
+      "elapsed": 420.05544850000297,
+      "rss_bytes": 1100529664,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33067.0
+      },
+      "own_sent": 359,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 6720000,
+      "accounted": 6680000,
+      "pending": 1
+    },
+    {
+      "elapsed": 450.0509298750112,
+      "rss_bytes": 1103872000,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33082.0
+      },
+      "own_sent": 374,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 7200000,
+      "accounted": 7160000,
+      "pending": 1
+    },
+    {
+      "elapsed": 480.0610071250121,
+      "rss_bytes": 1113931776,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33097.0
+      },
+      "own_sent": 389,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 7680000,
+      "accounted": 7640000,
+      "pending": 1
+    },
+    {
+      "elapsed": 510.0552932499995,
+      "rss_bytes": 1117552640,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33112.0
+      },
+      "own_sent": 404,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 8160000,
+      "accounted": 8120000,
+      "pending": 1
+    },
+    {
+      "elapsed": 540.0635439580074,
+      "rss_bytes": 1103642624,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33127.0
+      },
+      "own_sent": 419,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 8640000,
+      "accounted": 8600000,
+      "pending": 1
+    },
+    {
+      "elapsed": 570.055622083004,
+      "rss_bytes": 1108934656,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33142.0
+      },
+      "own_sent": 434,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 9120000,
+      "accounted": 9080000,
+      "pending": 1
+    },
+    {
+      "elapsed": 630.0408250000037,
+      "rss_bytes": 1181777920,
+      "metrics": {
+        "num_requests_running": 1.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33163.0
+      },
+      "own_sent": 455,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 9600000,
+      "accounted": 9600000,
+      "pending": 0
+    },
+    {
+      "elapsed": 630.57895908301,
+      "rss_bytes": 1181777920,
+      "metrics": {
+        "num_requests_running": 1.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33163.0
+      },
+      "own_sent": 455,
+      "own_active": 1,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 9600000,
+      "accounted": 9600000,
+      "pending": 0
+    },
+    {
+      "elapsed": 660.4622699580068,
+      "rss_bytes": 1242398720,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33164.0
+      },
+      "own_sent": 455,
+      "own_active": 0,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 9600000,
+      "accounted": 9600000,
+      "pending": 0
+    },
+    {
+      "elapsed": 690.3044417080091,
+      "rss_bytes": 1253441536,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33164.0
+      },
+      "own_sent": 455,
+      "own_active": 0,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 9600000,
+      "accounted": 9600000,
+      "pending": 0
+    },
+    {
+      "elapsed": 720.2401900830009,
+      "rss_bytes": 1259388928,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33164.0
+      },
+      "own_sent": 455,
+      "own_active": 0,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 9600000,
+      "accounted": 9600000,
+      "pending": 0
+    },
+    {
+      "elapsed": 750.1212077910022,
+      "rss_bytes": 1258536960,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33169.0
+      },
+      "own_sent": 460,
+      "own_active": 0,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 9600000,
+      "accounted": 9600000,
+      "pending": 0
+    },
+    {
+      "elapsed": 779.4700432500103,
+      "rss_bytes": 1258831872,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 33169.0
+      },
+      "own_sent": 460,
+      "own_active": 0,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "accepted": 9600000,
+      "accounted": 9600000,
+      "pending": 0
+    }
+  ],
+  "events": [
+    {
+      "seq": 2576,
+      "session_id": "M479GrkVZ8pj9944rHU1xoWn",
+      "kind": "stop_requested",
+      "snapshot_version": 1737,
+      "payload": {
+        "runtime_monotonic_ns": 96914402741500
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 2583,
+      "session_id": "M479GrkVZ8pj9944rHU1xoWn",
+      "kind": "session_closed",
+      "snapshot_version": 1742,
+      "payload": {
+        "runtime_monotonic_ns": 96917148106958,
+        "accepted_samples": 9600000
+      },
+      "schema_version": 1
+    },
+    {
+      "seq": 2584,
+      "session_id": "M479GrkVZ8pj9944rHU1xoWn",
+      "kind": "terminal_finalization_started",
+      "snapshot_version": 1743,
+      "payload": {
+        "runtime_monotonic_ns": 96917148493833,
+        "epoch": 0,
+        "end_sample": 9600000,
+        "rolling_through_sample": 9600000,
+        "rolling_status": "rolling",
+        "rolling_windows_completed": 60,
+        "rolling_windows_failed": 0,
+        "finalization_status": "running"
+      },
+      "schema_version": 1
+    }
+  ],
+  "outcome": "final",
+  "contention_policy": "record_only_no_pause",
+  "foreign_load_detected": true,
+  "acknowledged_frames": 2400,
+  "capture_elapsed_seconds": 600.0052734160126,
+  "capture_paused_seconds": 0.0,
+  "stop_requested_monotonic": 96914.387284375,
+  "saved_status": "completed",
+  "stop_to_outcome_seconds": 179.40810674999375,
+  "stop_to_final_seconds": 179.40810674999375,
+  "saved_words": 2589,
+  "accepted_samples": 9600000,
+  "accounted_samples": 9600000,
+  "audio": {
+    "state": "available",
+    "relative_path": "LxPyz8ci4bsPy3VOd8WIHcyJYWYyKits/M479GrkVZ8pj9944rHU1xoWn/audio.mp3",
+    "byte_count": 3600765,
+    "duration_ms": 600000,
+    "format": "mp3",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bit_rate_bps": 48000
+  },
+  "mp3_probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "mp3",
+        "sample_rate": "16000",
+        "channels": 1
+      }
+    ],
+    "format": {
+      "duration": "600.000000",
+      "size": "3600765"
+    }
+  },
+  "snapshot_saved_words_equal": true,
+  "decoder_requests": 460,
+  "restart_sqlite_status": "completed"
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "time": 1789708242.6760042,
+    "own_decoder_requests": 0,
+    "num_requests_running": 0.0,
+    "num_requests_waiting": 0.0,
+    "request_success_total": 30111.0
+  },
+  {
+    "time": 1789708247.701312,
+    "own_decoder_requests": 0,
+    "num_requests_running": 1.0,
+    "num_requests_waiting": 0.0,
+    "request_success_total": 30122.0
+  },
+  {
+    "time": 1789708252.72261,
+    "own_decoder_requests": 0,
+    "num_requests_running": 0.0,
+    "num_requests_waiting": 0.0,
+    "request_success_total": 30127.0
+  }
+]

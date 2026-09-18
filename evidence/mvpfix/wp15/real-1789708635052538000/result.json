@@ -1,0 +1,100 @@
+{
+  "seconds_requested": 600,
+  "source_revision": "826af986e498a183cffacdf35a8ddedba2d38d23",
+  "total_budget": 1500,
+  "prior_requests": 0,
+  "remaining_budget": 1500,
+  "resources": [
+    {
+      "elapsed": 0.0296114169905195,
+      "rss_bytes": 665665536,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 30308.0
+      },
+      "accepted": 0,
+      "accounted": 0,
+      "pending": 0
+    },
+    {
+      "elapsed": 30.04710220899142,
+      "rss_bytes": 943980544,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 30334.0
+      },
+      "accepted": 480000,
+      "accounted": 440000,
+      "pending": 1
+    },
+    {
+      "elapsed": 60.043569499990554,
+      "rss_bytes": 956022784,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 30364.0
+      },
+      "accepted": 960000,
+      "accounted": 920000,
+      "pending": 1
+    },
+    {
+      "elapsed": 90.04444587499893,
+      "rss_bytes": 1076477952,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 30401.0
+      },
+      "accepted": 1440000,
+      "accounted": 1400000,
+      "pending": 1
+    },
+    {
+      "elapsed": 120.0489784169913,
+      "rss_bytes": 1082523648,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 30455.0
+      },
+      "accepted": 1920000,
+      "accounted": 1880000,
+      "pending": 1
+    },
+    {
+      "elapsed": 150.04565554199507,
+      "rss_bytes": 1086423040,
+      "metrics": {
+        "num_requests_running": 1.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 30514.0
+      },
+      "accepted": 2400000,
+      "accounted": 2360000,
+      "pending": 1
+    },
+    {
+      "elapsed": 180.03995687499992,
+      "rss_bytes": 1090797568,
+      "metrics": {
+        "num_requests_running": 2.0,
+        "num_requests_waiting": 0.0,
+        "request_success_total": 30571.0
+      },
+      "accepted": 2880000,
+      "accounted": 2840000,
+      "pending": 1
+    }
+  ],
+  "events": [],
+  "outcome": "unfinished",
+  "acknowledged_frames": 788,
+  "decoder_requests": 194,
+  "restart_sqlite_status": "interrupted",
+  "termination_reason": "Operator SIGINT: foreign completions confirmed; prepared runner only guarded nonzero queue. Owned app and tunnel terminated by finally.",
+  "foreign_load_detected": true
+}
