@@ -1,5 +1,5 @@
-"""WP22 Part C runner, prepared only until the user confirms WP12 is merged.
-One command after confirmation: COMMON Python <this-file> --seconds 1800
+"""WP22 Part C runner; run only under explicit WP12/budget authorization.
+Recorded 30-minute run: a28eecd9, 1080/2600 calls. Reproduction command: COMMON Python <this-file> --seconds 1800
 Own 18122 tunnel / 17882 stack; at most 2 simultaneous, 2600 cumulative requests.
 System looped speech; microphone -10 dB first 300 seconds, then digital zero.
 """

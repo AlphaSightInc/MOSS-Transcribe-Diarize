@@ -129,3 +129,43 @@ Before Part C: full Python 1,911 passed, 2 skipped, 37 subtests (149.16 s); fron
 249 tests / 28 files, typecheck and build pass. No generated asset change. The imported
 WP12 historical failure logs contain whitespace; left upstream evidence unchanged.
 WP22's production diff versus integration remains only the four encoder lines.
+
+## Part C — accepted WP12 tree, real 30 minutes
+
+Source a28eecd9 merges integration 1745b96f. One real session, own tunnel 18122 and
+stack 17882; no pause for siblings; system corpus looped, mic -10 dB for 300 s then
+zero. Capture 1800.001202 s, 7,200 acknowledged frames; all 28,800,000 samples
+accepted and accounted. Outcome final, SQLite meeting completed after shutdown.
+Stop-to-final 101.697916 s. Saved 6,269 words exactly equal the terminal snapshot;
+MP3 1,800.000000 s, 16 kHz mono, 10,800,693 bytes. This is save agreement, not
+human transcription/identity accuracy. 1,080/2,600 requests, peak two in flight.
+Foreign traffic detected in 36/65 resource samples; maximum shared running two,
+waiting zero. Timings are contended observations, not isolated capacity qualification.
+
+All three tapes reached exactly 57,600,000 bytes, complete, no gaps/refusal; total
+172,800,000 bytes before release and ZERO afterward. Stack/tunnel both exited.
+Independent current-RSS samples nearest 5/15/30 min: 932.438 / 981.000 / 973.250 MiB
+at 296.093 / 896.373 / 1796.800 s. Late capture is approximately flat on this run.
+Sampled peak 1,277.484 MiB; immediately after final 1,148.953 MiB, versus 616 MiB
+at capture start and 901.641 MiB after first 30 s. R2: full return near startup is
+NOT demonstrated; native/runtime residency remains even though tapes release.
+The memory-pattern fix reduces measured native retention; it does not prove all
+native allocations are released, repeated-session safety, or four-session capacity.
+The terminal RSS increase is not attributed to a Python leak without allocation
+evidence. No policy values or lifecycle checks changed to force a lower number.
+
+Evidence: `real-1789715856876413000/{result,audit}.json`, requests/decoder/tape-release
+logs, 64 independent RSS samples and 65 primary resource samples. `audit_real.py`
+reopens checkout-local SQLite, compares exact words, independently probes saved MP3,
+and checks request accounting/concurrency and each tape's release. No GPU calls.
+
+Final content inventory: system 569 segments / 5,521 words, last end 1799.94 s;
+mic 55 segments / 748 words, last end 299.88 s (no transcript in the silent tail).
+56 system segments remain unattributed; mic zero. No human accuracy adjudication
+was requested/performed for this durability run; saved-word equality does not
+certify speaker or word correctness. WP12's accepted one-to-one mapping limits
+remain relevant; this memory package does not tune identity to alter that count.
+
+Post-real full gates: Python 1,911 passed / 2 skipped / 37 subtests, 158.29 s;
+frontend 249 tests / 28 files, typecheck/build exit zero, assets unchanged. Fresh
+verification instructions rewritten only after those complete suites passed.

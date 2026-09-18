@@ -34,3 +34,9 @@ baseline. Count-only replay computes 60 unique embeddings and reuses 1,440 ident
 inputs; its final 1,440-segment transcript equals the uncached before run. Its RSS
 and byte estimates are excluded. Exact entries: system 15/20/20, mic 20/20/20 at
 5/15/30 minutes. R1 (missing terminal-refusal `gaps`) is pre-existing and remains open.
+
+Part C ran on a28eecd9 (merge parent 1745b96f) after the full merged-tree gates.
+Actual decoder budget 1,080/2,600, peak two simultaneous; one 1,800-second capture,
+zero load-based pauses. Own 18122/17882 processes exited. Real-run evidence is
+`real-1789715856876413000/`; draft identity mode remained off. Local stack uses the
+prescribed SQLite-version bypass; this is measurement, not deployment qualification.
