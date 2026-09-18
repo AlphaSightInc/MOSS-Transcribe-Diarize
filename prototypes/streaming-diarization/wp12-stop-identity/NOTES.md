@@ -1,4 +1,121 @@
-# WP12 prototype — in progress
+# WP12 prototype — measured improvement; latency acceptance not established
+
+## Fresh-context continuation, 2026-09-18 (supersedes old budget/status below)
+
+User explicitly authorized 1200 total decoder calls, at most two in flight,
+checking vLLM waiting before each batch. Starting tree clean at a02a8491.
+Concurrency 33be55ec accepted as a bounded improvement; no further concurrency
+change authorized before explaining the Stop and embedding costs. Identity
+premise explicitly adjudicated FALSE: the mic fixture includes Lex Fridman at
+25–35 s. No identity-policy change.
+
+Structural question: is terminal latency an avoidable repeat of existing acoustic
+evidence, or the cost of producing different evidence? Minimum primitives:
+pending work (owns the pre-terminal wait), terminal local-speaker partition
+(owns the new speech intervals), lane reference album (owns known voices), and
+one final publication (owns completion). Removing any conflates scheduling,
+probe/reference evidence, or completed output. Invariants: full final text,
+lane ownership, existing acoustic sampling/thresholds, max two decoder requests.
+Unknown before measurement: wait owner and exact repeated embedding inputs.
+Falsifier for equivalent reuse: different interval sets/averaging or changed
+speaker attribution. Tools: phase timestamps identify the wait owner; real encoder
+calls identify computation and samples; retained saved dictionaries check output.
+No synthetic identity score or new production algorithm was introduced.
+
+One command per matched arm (same public 24 s parity input and pacing):
+`WP12_ARM=mono-traced bash prototypes/streaming-diarization/wp12-stop-identity/experiment.sh 24 parity`
+Repeat with `serial-traced` and `concurrent-traced`. Source paths recorded in trace:
+mono archive 37979e53, serial archive b31683a6, current production a02a8491.
+All three admission checks: vLLM running=0, waiting=0. Owned tunnel 18112 only.
+Read-only analysis: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <WP12_PY> prototypes/streaming-diarization/wp12-stop-identity/analyze_embeddings.py`.
+
+### F1 — the roughly three-second wait is useful queued work, not a timer
+
+| Measured 24 s arm | Stop to terminal | Terminal to publication | Stop to observed final | Decoder calls |
+| --- | ---: | ---: | ---: | ---: |
+| Mono | 0.383135 s | 1.389896 s | 1.880702 s | 13 |
+| Serial lanes | 2.733792 s | 8.488729 s | 11.327668 s | 26 |
+| Accepted concurrent lanes | 2.326931 s | 4.402630 s | 6.839325 s | 26 |
+
+Serial Stop arrives during the second rolling refinement (10–20 s): remaining
+0.897933 s; then queued causal span 20–22.5 s takes 1.108433 s, tail 22.5–24 s
+takes 0.722543 s, final identity sweep takes 0.002924 s. Event/dispatch overhead
+accounts for the remaining milliseconds. Mono already completed rolling work:
+only the tail is dispatched, taking 0.369481 s, then a 0.001617 s sweep.
+`_wait_for_drain` waits on completion notifications; no fixed sleep or lease delay.
+The API observer polls at 0.1 s; that explains approximately 0.11 s between
+publication and observed final, not the 2.7 s pre-terminal wait. Queue snapshots
+alone omit the already-running refinement; phase entry/exit resolves it.
+
+### F2 — reference reuse exists; terminal probes use different intervals
+
+Calls below mean `_OnnxWeSpeakerEmbedder.embed`, one per decoder-local speaker.
+Each interval runs the encoder once, then the returned normalized interval
+vectors are averaged equally and normalized. Audio-seconds sum intervals, not
+unique tape duration; mixed mono can contain overlapping local-speaker intervals.
+
+| 24 s arm / phase | Embedding calls | Encoder intervals | Audio-seconds embedded |
+| --- | ---: | ---: | ---: |
+| Mono causal, including tail | 18 | 19 | 28.27 |
+| Mono rolling / terminal | 0 / 0 | 0 / 0 | 0 / 0 |
+| Serial lanes causal, including tail | 20 | 20 | 44.00 |
+| Serial lanes rolling | 4 | 9 | 36.25 |
+| Serial lanes terminal | 2 | 12 | 43.53 |
+
+Terminal system: one local speaker, eight intervals, 21.33 audio-seconds,
+3.287698 s embedding. Microphone: one local speaker, four intervals, 22.20
+audio-seconds, 3.416678 s embedding. Total 6.704376 s, reproducing the earlier
+roughly 6.79 s voice-preparation finding. The rest of terminal is predominantly
+the two decoder jobs. Each terminal speaker is embedded over its speech across
+the full 24 s tape; not one full-tape embedding per canonical album member.
+Canonical album vectors are read, never re-embedded at terminal.
+
+The lane reader already uses the causal owner's `_canonical_vector` as its
+reference. What gets re-embedded is terminal decoder-local speech, to decide
+which known voice owns the new label. Mono does something different:
+`terminal_speaker_mapping` assigns by overlap with the existing transcript,
+without acoustic probes. Mono's timing is not a cheaper instance of the same
+voice-matching computation, nor a demonstration of equivalent acoustic reuse.
+
+Of 43.53 terminal audio-seconds, 40.29 overlap causal evidence. But **0/12 terminal
+intervals exactly equal causal intervals, and 0/2 complete embedding calls equal
+any prior call**. One 5.28 s mic interval equals part of a rolling call. Its
+individual vector is not retained: rolling returned the mean of two intervals.
+Replacing terminal probes with a lane album would discard the probe needed to
+identify new local labels; substituting averages of overlapping causal units would
+change the encoder inputs and averaging. Neither is equivalent recomputation
+removal. The representation is nonlinear; slicing/combining album means cannot
+recover arbitrary new-interval vectors. No claim that every possible reuse design
+is impossible: such a design changes the acoustic evidence and needs separate
+identity validation. The measured dominant cost is inherent to the current
+whole-speech acoustic-matching algorithm, not an inherent requirement of all
+possible diarization designs. Per user's stop condition, stop optimization here.
+
+### F3 — accepted concurrency confirmed; no new production change
+
+Concurrent rerun embeds the same 43.53 terminal audio-seconds over 12 intervals;
+it overlaps the two jobs. All 12 saved segment dictionaries equal the new serial
+run exactly; 86 system and 56 microphone words, one identity per lane. All three
+new runs finish `final` and equal their saved text/identity. This is preservation
+and latency evidence, not human-adjudicated transcript accuracy.
+
+65 additional calls: 339/1200 cumulative. Peak concurrency and all 11 saved/final
+agreements are checked by `audit.py`. No policy, thresholds, sampling, production
+code, or tests changed in this continuation. New files extend the standing
+measurement bench and contain no transcripts/audio. 60 s concurrent remains the
+previous measured 16.174951 s prototype; 180 s remains unmeasured. These are not
+budget-blocked now: further optimization/matrix work stopped under the explicit
+inherent-cost clause. Do not claim full WP12 latency acceptance.
+
+Fresh full suites and read-only audit are recorded in root `VERIFY-RESULT.md`.
+Minor failed inspection attempts: VERIFY.md first sought beside NOTES (it is at
+root); two source files first sought outside app/; a trace query assumed startup
+embeddings had a span reason and raised KeyError. Corrected without decoder calls.
+An initial documentation patch failed a README context match and was reapplied.
+The saved-dictionary audit corrected an initial prose count of 13 to 12 for the
+new matched pair; 13 remains the correct historical pair's count.
+
+## Earlier retained evidence (historical budget/status)
 
 Exact base b31683a6; mono baseline archive 37979e53. Source package resolution
 verified within this worktree. Prototype instrumentation changes no policy.

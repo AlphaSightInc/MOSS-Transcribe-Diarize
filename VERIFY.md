@@ -2,10 +2,11 @@
 
 Start only in a fresh `/new` session. Worktree:
 `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity`
-Branch: `mvpfix/wp12-stop-latency-identity`. Modify NOTHING outside it. No provider
-calls, push, merge, deploy, GitHub, other worktrees or shared-service changes.
-The WP request budget remains 300; 274 already used. An increase to 1200 was asked
-but not approved. Do not treat elapsed time or this handoff as authorization.
+Branch: `mvpfix/wp12-stop-latency-identity`. Modify NOTHING outside it. No push,
+merge, deploy, GitHub, other worktrees or shared-service changes. The fresh-session
+user explicitly raised the total budget to 1200 (max two in flight, own port 18112,
+check vLLM running/waiting before each batch). Matched instrumentation now used
+339 calls total. The verification commands below make no provider calls.
 
 Implementation: 33be55ec overlaps only the two independent terminal lane jobs;
 9d10e0d8 fixes stale test inputs after reproducing all 19 failures on untouched
@@ -35,10 +36,13 @@ bash prototypes/streaming-diarization/wp12-stop-identity/check-frontend.sh > evi
 "$WP12_PY" prototypes/streaming-diarization/wp12-stop-identity/audit.py > evidence/mvpfix/wp12/fresh-audit.json
 ```
 
-Expected: clean starting tree, named branch, import inside this worktree; Python
+Expected: clean starting tree at a02a8491 before new instrumentation, named branch,
+import inside this worktree; only bench/evidence/docs changed afterward. Python
 1802 passed / 2 skipped / 37 subtests; frontend 230 tests / 26 files; typecheck and
-build succeed. Audit: 274/300 completed calls, max 2 in flight, eight final/saved
-agreements, exact fixed-24 saved segments, 24/60 per-speaker ordered words equal.
+build succeed. Audit: 339/1200 completed calls, max 2 in flight, 11 final/saved
+agreements, exact fixed-24 and new matched-24 saved segments, 24/60 historical
+per-speaker ordered words equal. Regenerate matched phase/embedding accounting:
+`"$WP12_PY" prototypes/streaming-diarization/wp12-stop-identity/analyze_embeddings.py > evidence/mvpfix/wp12/matched-embedding-audit.json`.
 Audit uses existing private scratch SQLite READ ONLY; never commit those databases,
 audio, credentials or transcripts. Verify no listeners on 18112/17872 (`lsof -nP
 -iTCP:18112 -iTCP:17872 -sTCP:LISTEN`; empty result/exit 1 means none).
@@ -52,9 +56,14 @@ Write VERIFY-RESULT.md: actual fresh-session status, checked SHA, exact counts,
 commands/log paths, audit result and limitations. Commit it plus fresh evidence
 locally. Then report in this pane in <=60 lines: branch/final SHA, prototype verdict,
 changed files, tests, timings, remaining work and deviations. DO NOT claim WP12
-fully accepted: 60 s is 16.175 s (prototype), exceeding 10 s; 180 s and required
-matched alternation arms are unmeasured because the fixed 300-call cap cannot cover
-them. Fixed production 24 s is 7.315 s; original 11.803 s; mono 1.970 s. 60 s mono
+fully accepted: 60 s is 16.175 s (prototype), exceeding 10 s; 180 s and additional
+matched alternation arms remain unmeasured. The new budget permits more calls,
+but the user instructed stopping optimization if the cost is inherent. The new
+matched 24 s arms show 11.328 s serial, 6.839 s concurrent, 1.881 s mono. Terminal
+embedding is 43.53 audio-seconds / 2 calls / 12 intervals for lanes and zero for
+mono; no complete terminal call duplicates a prior embedding input. Causal album
+references already reused. See NOTES.md F1–F3 for the wait/embedding adjudication.
+Earlier fixed production 24 s was 7.315 s; original 11.803 s; mono 1.970 s. 60 s mono
 4.424 s / serial 26.636 s. Identity premise is false: supplied mic fixture has two
 voices; second birth score 0.084412 vs 0.35 with first album retained. No policy fix.
 

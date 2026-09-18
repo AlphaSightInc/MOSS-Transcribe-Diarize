@@ -611,3 +611,26 @@ repair is supported. A real-album regression separately verifies one returning
 voice keeps its ID across silent lane gaps. Evidence and limits:
 `prototypes/streaming-diarization/wp12-stop-identity/NOTES.md` and
 `evidence/mvpfix/wp12/`.
+
+Fresh-context matched instrumentation on the same 24 s parity input explains the
+remaining difference (2026-09-18): mono Stop→final 1.880702 s, serial lanes
+11.327668 s, accepted concurrent lanes 6.839325 s. Serial terminal begins
+2.733792 s after Stop: 0.897933 s remaining rolling work, 1.108433 s queued causal
+work, 0.722543 s tail work, and 0.002924 s final identity sweep. Mono has only a
+0.369481 s tail job plus 0.001617 s sweep. No fixed sleep or lease delay.
+
+Serial terminal voice preparation makes two speaker embedding calls containing
+12 intervals / 43.53 audio-seconds, taking 6.704376 s. System contributes
+8 intervals / 21.33 s; microphone 4 / 22.20 s. Mono embeds zero terminal seconds:
+it maps labels by overlap with the existing transcript. Lane preparation already
+reuses causal album vectors as references; it computes new probes from terminal
+speaker intervals. Although 40.29 terminal audio-seconds overlap causal evidence,
+none of the 12 intervals exactly equals a causal interval; neither whole embedding
+call repeats any prior call. One 5.28 s interval repeats part of a rolling call,
+whose individual interval vector was not retained. Album means cannot reconstruct
+different interval encodings/averaging. Thus dominant cost is inherent to the
+current acoustic-probe design; removing it requires a different evidence-mapping
+design, not equivalent reuse of an existing probe. No such policy change made.
+All 12 saved serial/concurrent segment dictionaries equal exactly in this pair.
+Budget now authorized at 1200; 339 calls used. Optimization stopped per user's
+inherent-cost instruction; 180 s remains unmeasured, not budget-blocked.

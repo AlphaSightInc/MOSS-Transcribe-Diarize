@@ -1,0 +1,283 @@
+[
+  {
+    "file": "concurrent-traced-parity-24.json",
+    "stop_to_final": 6.839324624990695,
+    "requests": 26,
+    "saved_equal": true,
+    "stop_to_terminal": 2.3269309159950353,
+    "terminal_to_publication": 4.402629916992737,
+    "stop_queues": {
+      "batch": 0,
+      "live_canonical": 1,
+      "live_refinement": 0,
+      "live_provisional": 0,
+      "worker_busy": true
+    },
+    "drain_jobs": [
+      {
+        "phase": "_process_refinement_item",
+        "start_after_stop": -2.9153249590017367,
+        "end_after_stop": 0.6071613329986576,
+        "elapsed_seconds": 3.5223935839894693
+      },
+      {
+        "phase": "_process_in_flight_item",
+        "start_after_stop": 0.6076696249947418,
+        "end_after_stop": 1.6073292079963721,
+        "elapsed_seconds": 0.9994632080051815
+      },
+      {
+        "phase": "_process_in_flight_item",
+        "start_after_stop": 1.6076881659973878,
+        "end_after_stop": 2.3235578749881824,
+        "elapsed_seconds": 0.7157892499963054
+      },
+      {
+        "phase": "_finalize_identity_locked",
+        "start_after_stop": 2.3237561659916537,
+        "end_after_stop": 2.326638082988211,
+        "elapsed_seconds": 0.0028393749962560833
+      }
+    ],
+    "embedding": [
+      {
+        "phase": "hard_cap",
+        "lane": "microphone",
+        "embedding_calls": 9,
+        "encoder_intervals": 9,
+        "audio_seconds": 21.0,
+        "elapsed_seconds": 3.2398698779725237
+      },
+      {
+        "phase": "hard_cap",
+        "lane": "system",
+        "embedding_calls": 9,
+        "encoder_intervals": 9,
+        "audio_seconds": 20.38,
+        "elapsed_seconds": 3.1444552909815684
+      },
+      {
+        "phase": "rolling_window",
+        "lane": "microphone",
+        "embedding_calls": 2,
+        "encoder_intervals": 4,
+        "audio_seconds": 18.72,
+        "elapsed_seconds": 2.8909400420234306
+      },
+      {
+        "phase": "rolling_window",
+        "lane": "system",
+        "embedding_calls": 2,
+        "encoder_intervals": 5,
+        "audio_seconds": 17.53,
+        "elapsed_seconds": 2.7159532079967903
+      },
+      {
+        "phase": "stop_flush",
+        "lane": "microphone",
+        "embedding_calls": 1,
+        "encoder_intervals": 1,
+        "audio_seconds": 1.48,
+        "elapsed_seconds": 0.23245154100004584
+      },
+      {
+        "phase": "stop_flush",
+        "lane": "system",
+        "embedding_calls": 1,
+        "encoder_intervals": 1,
+        "audio_seconds": 1.2200000000000002,
+        "elapsed_seconds": 0.18842270800087135
+      },
+      {
+        "phase": "terminal",
+        "lane": "microphone",
+        "embedding_calls": 1,
+        "encoder_intervals": 4,
+        "audio_seconds": 22.200000000000003,
+        "elapsed_seconds": 3.4245077919913456,
+        "exact_prior_embedding_calls": 0,
+        "exact_prior_intervals": 1,
+        "exact_causal_intervals": 0,
+        "prior_audio_overlap_seconds": 22.16,
+        "causal_audio_overlap_seconds": 20.81
+      },
+      {
+        "phase": "terminal",
+        "lane": "system",
+        "embedding_calls": 1,
+        "encoder_intervals": 8,
+        "audio_seconds": 21.330000000000002,
+        "elapsed_seconds": 3.31269366700144,
+        "exact_prior_embedding_calls": 0,
+        "exact_prior_intervals": 0,
+        "exact_causal_intervals": 0,
+        "prior_audio_overlap_seconds": 20.74,
+        "causal_audio_overlap_seconds": 19.56
+      }
+    ]
+  },
+  {
+    "file": "mono-traced-parity-24.json",
+    "stop_to_final": 1.8807020410022233,
+    "requests": 13,
+    "saved_equal": true,
+    "stop_to_terminal": 0.38313500001095235,
+    "terminal_to_publication": 1.3898962499952177,
+    "stop_queues": {
+      "batch": 0,
+      "live_canonical": 0,
+      "live_refinement": 0,
+      "live_provisional": 0,
+      "worker_busy": false
+    },
+    "drain_jobs": [
+      {
+        "phase": "_process_in_flight_item",
+        "start_after_stop": 0.011500375010655262,
+        "end_after_stop": 0.38106004100700375,
+        "elapsed_seconds": 0.36948133299301844
+      },
+      {
+        "phase": "_finalize_identity_locked",
+        "start_after_stop": 0.3812580830126535,
+        "end_after_stop": 0.3829061249998631,
+        "elapsed_seconds": 0.001617166999494657
+      }
+    ],
+    "embedding": [
+      {
+        "phase": "hard_cap",
+        "lane": "mono",
+        "embedding_calls": 17,
+        "encoder_intervals": 18,
+        "audio_seconds": 26.93,
+        "elapsed_seconds": 4.19424371002242
+      },
+      {
+        "phase": "stop_flush",
+        "lane": "mono",
+        "embedding_calls": 1,
+        "encoder_intervals": 1,
+        "audio_seconds": 1.3399999999999999,
+        "elapsed_seconds": 0.2116073340002913
+      }
+    ]
+  },
+  {
+    "file": "serial-traced-parity-24.json",
+    "stop_to_final": 11.327667582998401,
+    "requests": 26,
+    "saved_equal": true,
+    "stop_to_terminal": 2.7337923329905607,
+    "terminal_to_publication": 8.4887292090134,
+    "stop_queues": {
+      "batch": 0,
+      "live_canonical": 1,
+      "live_refinement": 0,
+      "live_provisional": 0,
+      "worker_busy": true
+    },
+    "drain_jobs": [
+      {
+        "phase": "_process_refinement_item",
+        "start_after_stop": -2.671850833008648,
+        "end_after_stop": 0.8979330000001937,
+        "elapsed_seconds": 3.569684750007582
+      },
+      {
+        "phase": "_process_in_flight_item",
+        "start_after_stop": 0.8984460420033429,
+        "end_after_stop": 2.0069523749989457,
+        "elapsed_seconds": 1.1084331659949385
+      },
+      {
+        "phase": "_process_in_flight_item",
+        "start_after_stop": 2.0076864169968758,
+        "end_after_stop": 2.7303230830002576,
+        "elapsed_seconds": 0.7225434160063742
+      },
+      {
+        "phase": "_finalize_identity_locked",
+        "start_after_stop": 2.730555499991169,
+        "end_after_stop": 2.733511999991606,
+        "elapsed_seconds": 0.0029243750032037497
+      }
+    ],
+    "embedding": [
+      {
+        "phase": "hard_cap",
+        "lane": "microphone",
+        "embedding_calls": 9,
+        "encoder_intervals": 9,
+        "audio_seconds": 20.92,
+        "elapsed_seconds": 3.2427886670047883
+      },
+      {
+        "phase": "hard_cap",
+        "lane": "system",
+        "embedding_calls": 9,
+        "encoder_intervals": 9,
+        "audio_seconds": 20.38,
+        "elapsed_seconds": 3.1470637090387754
+      },
+      {
+        "phase": "rolling_window",
+        "lane": "microphone",
+        "embedding_calls": 2,
+        "encoder_intervals": 4,
+        "audio_seconds": 18.72,
+        "elapsed_seconds": 2.879486083984375
+      },
+      {
+        "phase": "rolling_window",
+        "lane": "system",
+        "embedding_calls": 2,
+        "encoder_intervals": 5,
+        "audio_seconds": 17.53,
+        "elapsed_seconds": 2.694473374998779
+      },
+      {
+        "phase": "stop_flush",
+        "lane": "microphone",
+        "embedding_calls": 1,
+        "encoder_intervals": 1,
+        "audio_seconds": 1.48,
+        "elapsed_seconds": 0.22991224999714177
+      },
+      {
+        "phase": "stop_flush",
+        "lane": "system",
+        "embedding_calls": 1,
+        "encoder_intervals": 1,
+        "audio_seconds": 1.2200000000000002,
+        "elapsed_seconds": 0.18917558300017845
+      },
+      {
+        "phase": "terminal",
+        "lane": "microphone",
+        "embedding_calls": 1,
+        "encoder_intervals": 4,
+        "audio_seconds": 22.200000000000003,
+        "elapsed_seconds": 3.4166781670064665,
+        "exact_prior_embedding_calls": 0,
+        "exact_prior_intervals": 1,
+        "exact_causal_intervals": 0,
+        "prior_audio_overlap_seconds": 22.16,
+        "causal_audio_overlap_seconds": 20.73
+      },
+      {
+        "phase": "terminal",
+        "lane": "system",
+        "embedding_calls": 1,
+        "encoder_intervals": 8,
+        "audio_seconds": 21.330000000000002,
+        "elapsed_seconds": 3.28769816600834,
+        "exact_prior_embedding_calls": 0,
+        "exact_prior_intervals": 0,
+        "exact_causal_intervals": 0,
+        "prior_audio_overlap_seconds": 20.74,
+        "causal_audio_overlap_seconds": 19.56
+      }
+    ]
+  }
+]

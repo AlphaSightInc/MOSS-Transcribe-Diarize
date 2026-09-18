@@ -4,7 +4,7 @@ from pathlib import Path
 ROOT=Path.cwd();OUT=ROOT/'evidence/mvpfix/wp12'
 rows=[json.loads(s) for s in (OUT/'trace.jsonl').read_text().splitlines()]
 requests=[json.loads(s) for s in (OUT/'requests.jsonl').read_text().splitlines()]
-assert len(requests)<=300
+assert len(requests)<=1200
 assert [r['request'] for r in requests]==list(range(1,len(requests)+1))
 intervals=[]
 for r in rows:
@@ -13,7 +13,7 @@ active=peak=0
 for _,delta in sorted(intervals):active+=delta;peak=max(peak,active)
 assert peak<=2 and active==0
 assert len(intervals)//2 == len(requests)
-result={'requests':len(requests),'request_cap':300,'peak_decoder_concurrency':peak,'runs':[]}
+result={'requests':len(requests),'request_cap':1200,'peak_decoder_concurrency':peak,'runs':[]}
 for path in sorted(OUT.glob('*-parity-*.json'))+sorted(OUT.glob('*-alternation-*.json')):
     r=json.loads(path.read_text());assert r['status']=='final' and r['saved_equal']
     subset=[x for x in rows if x['arm']==r['arm'] and r['stop']<=x['time']<=r['stop']+r['stop_to_final']+.1]
@@ -44,4 +44,13 @@ b=json.loads(c.execute('SELECT document_json FROM meeting_transcripts ORDER BY u
 c.close()
 assert a==b
 result['fixed_24_exact_saved_segments_equal']=True
+# Current matched instrumentation arms: compare retained dictionaries, not counts.
+matched={}
+for arm in ('serial-traced','concurrent-traced'):
+    c=sqlite3.connect(f'file:{ROOT}/.wp12/state-{arm}/phase2.sqlite?mode=ro',uri=True)
+    matched[arm]=json.loads(c.execute('SELECT document_json FROM meeting_transcripts ORDER BY updated_at_ms DESC LIMIT 1').fetchone()[0])['segments']
+    c.close()
+assert matched['serial-traced']==matched['concurrent-traced']
+result['matched_24_exact_saved_segments_equal']=True
+result['matched_24_saved_segment_count']=len(matched['serial-traced'])
 print(json.dumps(result,indent=2))
