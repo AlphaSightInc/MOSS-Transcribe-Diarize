@@ -23,6 +23,8 @@ def execute_submission_script(workspace_html: str) -> dict[str, object]:
                 elif path.startswith('/static/'):
                     asset = root / 'moss_transcribe_diarize/app/frontend_assets' / path.removeprefix('/static/')
                     r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+                elif path == '/api/meetings/file/admission':
+                    r.fulfill(status=204)
                 elif r.request.method == 'POST' and path in ('/api/meetings/file', '/api/meetings/url'):
                     calls.append(path)
                     if len(calls) == 2: r.abort()

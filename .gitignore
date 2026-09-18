@@ -76,3 +76,6 @@ frontend/.vite/
 # Large disposable WP test logs belong here, never in committed evidence.
 evidence/mvpfix/*/raw/
 >>>>>>> mvpfix/wp13-tls-hygiene
+
+# WP16 private media, browser profiles, TLS, and raw logs.
+.wp16runtime/

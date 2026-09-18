@@ -6,12 +6,15 @@ import asyncio
 import logging
 import secrets
 import shutil
+import wave
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from moss_transcribe_diarize.subtitle import subtitle_segments_from_transcript
 
+from .live_silence import is_digital_silence
+from .model_runner import TranscriptionResult
 from .phase2 import AccountRevoked
 from .phase2_url import UrlAcquisitionRejected, validate_http_url
 from .windowed_transcription import _accepted_speechless
@@ -52,10 +55,7 @@ def admit_file_upload(request: Any, work_root: Path) -> int:
     if raw_length is None or not raw_length.isdecimal():
         raise FileUploadRejected(411, "Content-Length is required.")
     content_length = int(raw_length)
-    required_free = 2 * content_length + UPLOAD_CAPACITY_RESERVE_BYTES
-    work_root.mkdir(parents=True, exist_ok=True)
-    if shutil.disk_usage(work_root).free < required_free:
-        raise FileUploadRejected(507, "Insufficient storage for upload.")
+    require_upload_capacity(content_length, work_root)
     receive = request._receive
 
     async def receive_with_idle_timeout():
@@ -68,6 +68,14 @@ def admit_file_upload(request: Any, work_root: Path) -> int:
 
     request._receive = receive_with_idle_timeout
     return content_length
+
+
+def require_upload_capacity(content_length: int, work_root: Path) -> None:
+    """Shared size-only preflight and authoritative body admission policy."""
+    required_free = 2 * content_length + UPLOAD_CAPACITY_RESERVE_BYTES
+    work_root.mkdir(parents=True, exist_ok=True)
+    if shutil.disk_usage(work_root).free < required_free:
+        raise FileUploadRejected(507, "Insufficient storage for upload.")
 
 
 async def _read_upload_chunk(upload: Any) -> bytes:
@@ -389,6 +397,17 @@ class FileMeetingTasks:
                 mix_failed = True
                 candidate.unlink(missing_ok=True)
                 LOGGER.warning("File Meeting audio: transcode_failed; trying runner input")
+        # Decide whether to dispatch from the normalized File PCM, before asking
+        # a decoder that may invent speech for digital zeros. Any signal still decodes.
+        if mix_path is not None and _is_silent_mix(mix_path):
+            return TranscriptionResult(
+                text="", prompt_len=0, generated_tokens=0, elapsed_sec=0.0,
+                model=str(getattr(self._runner, "model_path", "")), audio=str(mix_path),
+                decoding=str(options.get("decoding") or "greedy"), temperature=None,
+                window_diagnostics=[{
+                    "condition": "speechless_window_empty", "detector": "digital_zero",
+                }],
+            ), mix_path
         try:
             result = self._runner.transcribe(mix_path or input_path, **options)
         except Exception as exc:
@@ -491,3 +510,19 @@ class FileMeetingTasks:
             handle.owner_key in self._fenced_owner_keys
             or handle.meeting_id in self._fenced_meeting_ids
         )
+
+
+def _is_silent_mix(path: Path) -> bool:
+    """Only nonempty normalized PCM16 zeros justify File speechless completion."""
+    try:
+        with wave.open(str(path), "rb") as audio:
+            if (audio.getnchannels(), audio.getsampwidth(), audio.getframerate()) != (1, 2, 16000):
+                return False
+            if not audio.getnframes():
+                return False
+            while pcm := audio.readframes(UPLOAD_CHUNK_BYTES // 2):
+                if not is_digital_silence(pcm):
+                    return False
+            return True
+    except (OSError, EOFError, wave.Error):
+        return False

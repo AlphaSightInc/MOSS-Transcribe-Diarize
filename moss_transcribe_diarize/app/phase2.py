@@ -1679,6 +1679,7 @@ def create_phase2_app(
         FileUploadRejected,
         FileUploadTimeout,
         admit_file_upload,
+        require_upload_capacity,
     )
     from .phase2_lifecycle import AccountLifecycleUnavailable
     from .phase2_speaker_identity import AccountSpeakerIdentity, SpeakerIdentityNotFound
@@ -2000,6 +2001,27 @@ def create_phase2_app(
         workspace = request.app.state.phase2_store.workspace(account)
         meetings = await workspace.list_meetings()
         return {"meetings": [meeting.to_dict() for meeting in meetings]}
+
+    @app.post("/api/meetings/file/admission", status_code=204)
+    async def preflight_file_meeting(request: Request):
+        await require_account(request)
+        tasks = request.app.state.phase2_file_tasks
+        if tasks is None:
+            raise HTTPException(status_code=503, detail="File transcription is unavailable.")
+        try:
+            payload = await request.json()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="File size must be a nonnegative integer.") from None
+        size = payload.get("file_bytes") if isinstance(payload, dict) else None
+        if type(size) is not int or size < 0:
+            raise HTTPException(status_code=400, detail="File size must be a nonnegative integer.")
+        try:
+            # File.size is a lower bound: multipart overhead is checked by actual
+            # upload admission again. This does not reserve storage or create work.
+            require_upload_capacity(size, tasks.work_root)
+        except FileUploadRejected as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+        return Response(status_code=204)
 
     @app.post("/api/meetings/file", status_code=201)
     async def create_file_meeting(request: Request):

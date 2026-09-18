@@ -113,7 +113,9 @@ def stereo_wav() -> bytes:
         writer.setnchannels(2)
         writer.setsampwidth(2)
         writer.setframerate(48_000)
-        writer.writeframes(b"\0\0\0\0" * 48_000)
+        # These tests assert a decoder transcript and publication lifecycle. Give
+        # dispatch a signal; exact-zero files now correctly complete speechless.
+        writer.writeframes(b"\1\0\1\0" * 48_000)
     return output.getvalue()
 
 
