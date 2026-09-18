@@ -15,7 +15,11 @@ from typing import Any, Callable, Mapping, Sequence
 
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
-from .live_adapters import RunnerBoundedWavInference
+from .live_adapters import (
+    BoundedWavInference,
+    DigitalSilenceGuardedInference,
+    RunnerBoundedWavInference,
+)
 from .live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
 from .live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig, LiveSpeakerEvidence
 from .live_identity_album import (
@@ -265,6 +269,30 @@ class LiveProviderBundleConfig:
         )
 
 
+def bounded_live_inference(
+    runner: Any, *, max_samples: int, **transcribe_kwargs: Any
+) -> BoundedWavInference:
+    """The one place a deployed live decoder is built, for all three lanes.
+
+    Canonical spans, the rolling witness and the draft lane hold three differently-bounded
+    decoders over the same runner, and anything true of "the decoder this deployment sends
+    audio to" has to be true of all three or it is not true at all. Stated as one function so
+    that a policy which belongs to *dispatch* -- rather than to the seam that reads a runner's
+    answer -- has a single seat, and so that a lane added later cannot quietly opt out of it.
+
+    The policy is the digital-silence guard (WP3's measurement, WP10's placement): a span of
+    exact zeros is answered here, from the audio, and no request reaches the model. It wraps
+    rather than being folded into `RunnerBoundedWavInference` because that class is the seam
+    which reports what a runner *said*, and a seam that answers before asking can report
+    nothing -- see `DigitalSilenceGuardedInference` for the nineteen contracts that depend on
+    it. WP1's per-lane producer builds its decoders through this function for the same reason.
+    """
+
+    return DigitalSilenceGuardedInference(
+        RunnerBoundedWavInference(runner, max_samples=max_samples, **transcribe_kwargs)
+    )
+
+
 def build_live_runtime_factory(
     config: LiveProviderBundleConfig,
     runner: Any,
@@ -306,7 +334,7 @@ def build_live_runtime_factory(
             descriptor=descriptor,
             endpoint_policy_factory=lambda: EndpointPolicy(_endpoint_config(config.endpoint_config)),
             speech_provider_factory=lambda: _speech_provider(config),
-            decoder_factory=lambda: RunnerBoundedWavInference(
+            decoder_factory=lambda: bounded_live_inference(
                 runner,
                 max_samples=_positive_int(config.decoder_config.get("max_samples"), "decoder_config.max_samples"),
             ),
@@ -316,7 +344,7 @@ def build_live_runtime_factory(
             # taken from the module that owns the measured arm rather than from the manifest
             # for the same reason: widening the window is a new grid run, not a config edit,
             # and the deployed manifest's hashes describe the base path, which is unchanged.
-            rolling_decoder_factory=lambda: RunnerBoundedWavInference(
+            rolling_decoder_factory=lambda: bounded_live_inference(
                 runner,
                 max_samples=DEFAULT_ROLLING_GEOMETRY.window_samples,
             ),
@@ -327,7 +355,7 @@ def build_live_runtime_factory(
             # No finalizer, no terminal pass, and every meeting reads `not_started`.
             terminal_finalizer=terminal_finalizer,
             draft_lane_seconds=draft_lane_seconds,
-            draft_decoder_factory=(lambda: RunnerBoundedWavInference(
+            draft_decoder_factory=(lambda: bounded_live_inference(
                 runner, max_samples=min(40000, int(config.decoder_config["max_samples"])),
                 max_new_tokens=286,
             )) if draft_lane_seconds is not None else None,

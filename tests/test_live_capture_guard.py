@@ -1,8 +1,18 @@
-"""WP3: no decoder calls for zero/silent spans; nonzero quiet speech stays eligible."""
+"""WP3: no decoder calls for zero/silent spans; nonzero quiet speech stays eligible.
+
+WP10 moved where that is decided without changing what is decided. The subject of every
+decode assertion below is now `bounded_live_inference` -- the one function every deployed lane
+(canonical, rolling witness, draft) builds its decoder through -- rather than the decode seam
+`RunnerBoundedWavInference`, which reports what a runner said and cannot report anything if it
+answers first. Asserting on the production decoder is also the stronger statement: it fails if
+a lane is ever wired around the guard, which asserting on the seam could not see.
+"""
 from types import SimpleNamespace
 import numpy as np
 import pytest
 from moss_transcribe_diarize.app.live_adapters import RunnerBoundedWavInference, LiveProviderError
+from moss_transcribe_diarize.app.live_provider_bundle import bounded_live_inference
+from moss_transcribe_diarize.app.transcription_outcome import EmptyTranscriptCause
 from moss_transcribe_diarize.app.live_capture_guard import observe_capture_span
 from moss_transcribe_diarize.app.live_session import FrozenSpan
 from moss_transcribe_diarize.app.live_mixer import LiveCompatibilityMixer
@@ -27,10 +37,14 @@ def test_ingest_zero_and_silent_spans_emit_no_words_or_speakers(tmp_path, silent
     mixed=mixer.admit_available('s',source,runtime,final=True)
     assert mixed is not None and mixed.frame.sample_count==8000
     assert not any(mixed.frame.pcm)
-    adapter=RunnerBoundedWavInference(MustNotDecode(),max_samples=8000,scratch_dir=tmp_path)
+    adapter=bounded_live_inference(MustNotDecode(),max_samples=8000,scratch_dir=tmp_path)
     result=adapter.transcribe_pcm(span=FrozenSpan(id=1,epoch=0,start_sample=0,end_sample=8000,reason='end_silence'),pcm=mixed.frame.pcm)
     assert parse_transcript(result.transcript)==[]  # zero words and zero speaker labels
     assert result.generated_tokens==0 and result.elapsed_sec==0
+    # Named, not merely empty: a muted lane and a model with nothing to say are different
+    # meetings, and a span that never reached a decoder spent no token budget.
+    assert result.empty_cause is EmptyTranscriptCause.DIGITAL_SILENCE
+    assert result.token_cap is None and result.capped is False
     assert source.retained_frames(LiveLane.MICROPHONE)==()
     assert mixed.diagnostics.capture_guard['microphone']['decision']=='skip-zero'
     assert mixer.last_capture_guard is None
@@ -43,7 +57,7 @@ def test_terminal_zero_tape_never_calls_decoder(tmp_path):
 
 @pytest.mark.parametrize('value',[b'\x01\0',b'\xff\xff'])
 def test_one_lsb_quiet_audio_still_reaches_decoder(tmp_path,value):
-    adapter=RunnerBoundedWavInference(MustNotDecode(),max_samples=8000,scratch_dir=tmp_path)
+    adapter=bounded_live_inference(MustNotDecode(),max_samples=8000,scratch_dir=tmp_path)
     with pytest.raises(LiveProviderError,match='decoder invoked'):
         adapter.transcribe_pcm(span=FrozenSpan(id=1,epoch=0,start_sample=0,end_sample=8000,reason='end_silence'),pcm=value*8000)
 
@@ -65,7 +79,7 @@ def test_no_reference_or_mic_reports_unknown_not_leak(system,mic):
 
 @pytest.mark.parametrize('value',[b'\x01\0',b'\xff\xff'])
 def test_single_nonzero_sample_still_reaches_decoder(tmp_path, value):
-    adapter = RunnerBoundedWavInference(MustNotDecode(), max_samples=8000, scratch_dir=tmp_path)
+    adapter = bounded_live_inference(MustNotDecode(), max_samples=8000, scratch_dir=tmp_path)
     pcm = b'\0\0' * 3999 + value + b'\0\0' * 4000
     with pytest.raises(LiveProviderError, match='decoder invoked'):
         adapter.transcribe_pcm(span=FrozenSpan(id=1, epoch=0, start_sample=0, end_sample=8000, reason='end_silence'), pcm=pcm)

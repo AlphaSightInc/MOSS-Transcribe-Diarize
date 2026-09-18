@@ -16,6 +16,7 @@ from typing import Mapping, Protocol, Sequence
 
 from .live_lane_contract import LiveV2Frame
 from .live_session import LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE
+from .live_silence import is_digital_silence
 
 _TAPE_LOG = logging.getLogger("moss_transcribe_diarize.live.tape")
 
@@ -174,8 +175,25 @@ class CompleteMixedTape:
         self._digest = hashlib.sha256()
         self._degradation: LiveTapeDegradation | None = None
         self._released = False
+        self._has_signal = False
 
     # -- state -------------------------------------------------------------------
+
+    @property
+    def has_signal(self) -> bool:
+        """Did any sample this tape ever accepted differ from an exact digital zero?
+
+        The tape is the only object that sees every byte of the meeting exactly once, so it is
+        the only one that can answer this for free; a reader would have to materialise the
+        whole meeting again to ask. It survives `release`, because "this meeting was silence"
+        is an accounting fact about audio that is gone, exactly like the digest beside it.
+
+        It is an observation, never a policy: the terminal pass decides what to do about a
+        meeting with no signal (it refuses by name rather than decoding zeros, plan §5.2), and
+        nothing else here is entitled to that decision.
+        """
+
+        return self._has_signal
 
     @property
     def taping(self) -> bool:
@@ -282,6 +300,11 @@ class CompleteMixedTape:
                 )
             self._buffer.extend(pcm)
             self._digest.update(pcm)
+            # Established while the audio is in hand and never recomputed. The alternative is
+            # scanning tens of megabytes on the stop path of a meeting that is being polled,
+            # and -- worse -- scanning audio that has already been released, which would make
+            # the answer depend on when it was asked.
+            self._has_signal = self._has_signal or not is_digital_silence(pcm)
             self._covered = _merge(self._covered, self._sample_count, self._sample_count + samples)
             self._sample_count += samples
             self._peak_retained_bytes = max(self._peak_retained_bytes, len(self._buffer))

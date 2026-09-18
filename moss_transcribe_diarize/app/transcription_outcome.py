@@ -10,15 +10,21 @@ from enum import Enum
 
 
 class EmptyTranscriptCause(str, Enum):
-    """Which of the three endings produced nothing transcribable.
+    """Which ending produced nothing transcribable.
 
-    "Nothing transcribable" is one answer to the batch caller and three different facts to a
+    "Nothing transcribable" is one answer to the batch caller and several different facts to a
     reader of a live meeting: a decoder that emitted no tokens at all was not asked the same
     question as one that emitted a sentence in the wrong grammar. Collapsing them is what made
     every empty live span report `decoder_returned_no_transcript`, including the spans where
     the model said words that simply did not parse.
 
-    The cause names the *observation* -- what came back -- not the policy that follows from it.
+    Three of the causes are answers a decoder gave; the fourth is the live path recording that
+    it never asked. Both belong in one vocabulary because both are what a reader is shown for
+    a span with no words, and a reader who cannot tell a muted lane from a silent model has
+    the same problem this enum was created to fix.
+
+    The cause names the *observation* -- what came back, or what was in the audio -- not the
+    policy that follows from it.
     Deciding what to publish for an unparseable answer is a separate question with a separate
     home (`live_span_bounds`), and that decision must be free to change without renaming what
     was seen.
@@ -27,6 +33,14 @@ class EmptyTranscriptCause(str, Enum):
     NO_GENERATED_TOKENS = "no_generated_tokens"
     EMPTY_TEXT = "empty_text"
     UNPARSEABLE_TEXT = "unparseable_text"
+    #: Nothing was asked. The audio was exact digital zeros, so there was no question to put
+    #: to a decoder and no answer of its to report. It is a cause of an empty transcript like
+    #: the three above -- a reader of a live meeting needs to tell "the microphone was muted"
+    #: apart from "the model said nothing" -- but it is the only one that names the *audio*
+    #: rather than the answer, which is exactly why it can be established before dispatch and
+    #: why the three above cannot. A decode seam never produces it; only the dispatch guard
+    #: (`live_silence.is_digital_silence`) does.
+    DIGITAL_SILENCE = "digital_silence"
 
 
 class EmptyTranscriptionError(RuntimeError):

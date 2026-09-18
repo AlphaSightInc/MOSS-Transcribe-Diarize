@@ -1,0 +1,41 @@
+[1mPROTOTYPE[0m [2m-- WP10 zero-guard placement, requirement half[0m
+
+[1m[1] canonical lane: four all-zero frames -> one hard-capped span[0m
+  [32mPASS[0m [1mR1 no model request for an all-zero canonical span[0m  [2m(a) no model request is made for digital silence[0m
+        [2mmodel_requests[0m = []
+  [32mPASS[0m [1mR2 no identity birth from an all-zero span[0m  [2m(d) the identity path births no speaker from it[0m
+        [2midentity_prepare_calls[0m = []
+        [2midentity_version[0m = 0
+        [2mcanonical_speakers[0m = ()
+  [32mPASS[0m [1mR6 the span is still accounted for, and says why it is empty[0m  [2m(c) accounting/timeline/sequence continue[0m
+        [2mcommitted_samples[0m = 4000
+        [2mcommitted_spans[0m = 1
+        [2mtranscripts[0m = ['']
+        [2mempty_reasons[0m = ['decoder_returned_no_transcript']
+
+[1m[2] one nonzero least-significant bit among the zeros[0m
+  [32mPASS[0m [1mR7 quiet speech still reaches the decoder[0m  [2mWP3's kept contract: one nonzero sample among zeros still decodes[0m
+        [2mmodel_requests[0m = 1
+        [2mtranscript[0m = '[0][S01]stable[0.25]'
+
+[1m[3] draft lane tick over all-zero audio[0m
+  [32mPASS[0m [1mR4 no model request for an all-zero draft window[0m  [2m(a) holds for every lane that dispatches a decode, not only the canonical one[0m
+        [2mmodel_requests[0m = []
+        [2mdraft_stats[0m = {'lane_seconds': 0.0625, 'ticks': 1, 'started': 1, 'skipped': 0, 'published': 1, 'stale': 0, 'errors': 0}
+
+[1m[4] terminal pass over a whole meeting of zeros, then over one with signal[0m
+  [32mPASS[0m [1mR5 no model request for an all-zero terminal tape[0m  [2m(a) the last listener decodes minutes of audio; zeros there are the worst case[0m
+        [2mmodel_requests[0m = 0
+        [2moutcome[0m = 'no_transcript'
+        [2mfinalization_status[0m = 'failed'
+        [2mreason[0m = 'all_zero_pcm'
+        [2mproposal[0m = False
+  [32mPASS[0m [1mR8 a meeting with signal still reaches a terminal surface[0m  [2m(b) the terminal contract ('failed' != 'final') survives the guard[0m
+        [2mmodel_requests[0m = 1
+        [2moutcome[0m = 'finalized'
+        [2mfinalization_status[0m = 'running'
+        [2mreason[0m = None
+        [2mproposal[0m = True
+
+[1mverdict[0m 7/7 requirements met
+[2mwrote /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp10-zero-guard-seams/prototypes/zero-guard-seams/falsify-result.json[0m

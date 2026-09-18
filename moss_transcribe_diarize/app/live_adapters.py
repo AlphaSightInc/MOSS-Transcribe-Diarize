@@ -14,6 +14,7 @@ from typing import Any, Mapping, Protocol
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
 from .live_session import CanonicalResult, FrozenSpan, LIVE_SAMPLE_RATE, PCM16_BYTES_PER_SAMPLE
+from .live_silence import is_digital_silence
 from .live_span_bounds import LiveTranscriptDisposition, classify_live_transcript, span_segments
 from .transcription_outcome import (
     EmptyTranscriptCause,
@@ -292,6 +293,58 @@ class FakeBoundedWavInference:
         return InferenceTranscript(self.transcript)
 
 
+class DigitalSilenceGuardedInference:
+    """Answer for digital silence instead of dispatching it, and delegate everything else.
+
+    This is the seam WP10 moved the guard *to*, and the reason it is a wrapper rather than a
+    branch inside `RunnerBoundedWavInference` is the nineteen contracts WP3 voided by putting
+    it there. `RunnerBoundedWavInference.transcribe_pcm` is the seam that turns a runner's
+    answer into a fact: which of the empty causes it was, what the salvage gate did with an
+    unparseable answer, the duration-derived token cap the decode actually spent, and the line
+    between a decoder that failed and a span with nothing to say. None of those can be
+    reported by a seam that returns before consulting its runner, so every test of them hands
+    the seam PCM and asserts on what the runner said -- and PCM in a fixture is written as
+    zeros. A guard inside the seam does not merely fail those tests; it makes them untestable.
+
+    Here it costs nothing, because dispatch is a strictly earlier question than interpretation:
+    *may this audio be sent at all* is answerable from the audio alone (`is_digital_silence`),
+    and once the answer is yes this object is not in the path. The decode it skips is reported
+    as `DIGITAL_SILENCE`, which the coordinator already routes through the same no-speech path
+    every other empty cause takes -- the span commits empty, the timeline advances, and the
+    identity stack is never offered evidence, so no speaker can be born from zeros.
+
+    `token_cap` stays `None` and `elapsed_sec` is `0.0`: no cap was spent, because nothing was
+    asked. A span that reported a cap it never used would put invented numbers into the RTF
+    and truncation accounting that the live path uses to decide the meeting is healthy.
+
+    It is deliberately thin and deliberately unconditional. Every deployed lane -- canonical,
+    rolling witness, draft -- is built through `live_provider_bundle.bounded_live_inference`,
+    which wraps here; a lane that is not built there is a lane that opted out of the guard, and
+    that is the one thing this class asks a reader to check.
+    """
+
+    def __init__(self, inference: BoundedWavInference):
+        self.inference = inference
+
+    @property
+    def max_samples(self) -> int:
+        return self.inference.max_samples
+
+    def preflight(self) -> AdapterPreflight:
+        return self.inference.preflight()
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        _validate_pcm_length(pcm, span.sample_count)
+        if is_digital_silence(pcm):
+            return InferenceTranscript(
+                transcript="",
+                generated_tokens=0,
+                elapsed_sec=0.0,
+                empty_cause=EmptyTranscriptCause.DIGITAL_SILENCE,
+            )
+        return self.inference.transcribe_pcm(span=span, pcm=pcm)
+
+
 class RunnerBoundedWavInference:
     def __init__(self, runner, *, max_samples: int, scratch_dir: str | Path | None = None, **transcribe_kwargs):
         self.runner = runner
@@ -310,10 +363,6 @@ class RunnerBoundedWavInference:
         _validate_pcm_length(pcm, span.sample_count)
         if span.sample_count > self.max_samples:
             raise LiveProviderError("canonical span exceeds bounded inference capacity.")
-        # Keep span/timeline accounting, but never ask a model to invent words for
-        # digital zeros. The mixer already renders explicitly silent frames to zero.
-        if not any(pcm):
-            return InferenceTranscript(transcript="", generated_tokens=0, elapsed_sec=0.0)
         token_cap = self._token_cap(span)
         with tempfile.TemporaryDirectory(prefix="mtd-live-", dir=self.scratch_dir) as scratch:
             wav_path = Path(scratch) / f"span-{span.id:04d}.wav"

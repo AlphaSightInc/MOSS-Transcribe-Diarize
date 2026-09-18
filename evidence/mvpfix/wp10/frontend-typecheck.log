@@ -1,0 +1,5 @@
+npm:1: command not found: _nvm_lazy_load
+
+> livetranscribe-frontend@0.0.0 typecheck
+> tsc --noEmit
+
