@@ -140,9 +140,9 @@ export function ControlPanel() {
   const shareAudio = async () => {
     const client = clientRef.current;
     if (!client || phase === "stopping") return;
-    const displayRequest = client.requestDisplayMedia();
     setMessage(connected.system ? "Choose a replacement audio surface." : "Choose a surface and enable share audio.");
     try {
+      const displayRequest = client.requestDisplayMedia();
       const stream = await displayRequest;
       if (connected.system) {
         metersRef.current = { ...metersRef.current, system: 0 };

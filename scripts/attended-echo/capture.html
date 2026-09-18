@@ -1,0 +1,50 @@
+<!doctype html><meta charset="utf-8"><title>MOSS attended echo measurement — UNMEASURED</title>
+<h1>Attended echo measurement</h1><p>UNMEASURED until a human records these conditions on physical speakers. No automatic microphone operation.</p>
+<p>Read exactly: <strong>The quiet blue river passes seven old bridges while the morning train carries fresh oranges into town.</strong></p>
+<label>Condition <select id="condition"><option>playback-only</option><option>operator-only</option><option>both</option></select></label>
+<label><input id="aec" type="checkbox" checked> Browser echo cancellation</label>
+<button id="start">Choose tab and microphone, then record</button><button id="stop" disabled>Stop and save recording</button>
+<pre id="status">Ready. Use physical speakers. Repeat all three conditions with AEC on and off.</pre>
+<script type="module">
+const $=id=>document.getElementById(id);let context,streams=[],nodes=[],blocks={},meters={},settings;
+const processor=`class Recorder extends AudioWorkletProcessor { process(inputs) { const x=inputs[0]?.[0]; if(x) this.port.postMessage({start:currentFrame,samples:x.slice()}); return true; } } registerProcessor('recorder',Recorder);`;
+function cleanup(){streams.forEach(s=>s.getTracks().forEach(t=>t.stop()));nodes.forEach(n=>n.disconnect());if(context)context.close();streams=[];nodes=[];}
+$('start').onclick=async()=>{
+ $('start').disabled=true; blocks={system:[],microphone:[]};meters={system:[],microphone:[]};
+ try {
+  // Picker is called synchronously in the click gesture.
+  const displayPromise=navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
+  const display=await displayPromise;streams.push(display);
+  if(!display.getAudioTracks().length)throw Error('Choose a tab with shared audio enabled.');
+  const mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:$('aec').checked,noiseSuppression:false,autoGainControl:false}});streams.push(mic);
+  settings={condition:$('condition').value,aec_requested:$('aec').checked,microphone:mic.getAudioTracks()[0].getSettings(),system:display.getAudioTracks()[0].getSettings(),physical_attended:true};
+  context=new AudioContext({sampleRate:16000});await context.resume();
+  const url=URL.createObjectURL(new Blob([processor],{type:'text/javascript'}));await context.audioWorklet.addModule(url);URL.revokeObjectURL(url);
+  for(const [lane,stream] of [['system',display],['microphone',mic]]) {
+   const source=context.createMediaStreamSource(new MediaStream(stream.getAudioTracks()));
+   const node=new AudioWorkletNode(context,'recorder');const mute=context.createGain();mute.gain.value=0;
+   nodes.push(source,node,mute);source.connect(node).connect(mute).connect(context.destination);
+   node.port.onmessage=({data})=>{blocks[lane].push(data);const rms=Math.sqrt(data.samples.reduce((s,x)=>s+x*x,0)/data.samples.length);meters[lane].push({start_sample:data.start,rms});$('status').textContent=`Recording ${settings.condition}, AEC requested=${settings.aec_requested}\n${lane}: RMS ${rms.toFixed(6)}`;};
+  }
+  $('stop').disabled=false;
+ } catch(e){cleanup();$('status').textContent=String(e);$('start').disabled=false;}
+};
+$('stop').onclick=async()=>{
+ $('stop').disabled=true;await context.suspend();
+ // Let already-dispatched audio messages drain before packing the shared sample clock.
+ await new Promise(r=>setTimeout(r,0));
+ const rows=Object.values(blocks).flat();
+ if(!rows.length){cleanup();$('status').textContent='No samples captured.';$('start').disabled=false;return;}
+ const first=Math.min(...rows.map(r=>r.start));const last=Math.max(...rows.map(r=>r.start+r.samples.length));
+ const recording={schema:'moss-attended-echo-v1',settings,sample_rate:context.sampleRate,start_sample:first,sample_count:last-first,lanes:{},meters};
+ for(const lane of ['system','microphone']){
+  const pcm=new Int16Array(last-first);
+  for(const b of blocks[lane]) for(let i=0;i<b.samples.length;i++)pcm[b.start-first+i]=Math.max(-32768,Math.min(32767,Math.round(b.samples[i]*32768)));
+  const bytes=new Uint8Array(pcm.buffer);let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
+  recording.lanes[lane]={pcm16_base64:btoa(binary),blocks:blocks[lane].map(b=>({start_sample:b.start,sample_count:b.samples.length}))};
+ }
+ cleanup();const url=URL.createObjectURL(new Blob([JSON.stringify(recording)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`echo-${settings.condition}-aec-${settings.aec_requested}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ $('status').textContent='Saved aligned per-lane PCM, block clock and RMS meters. Keep recording private.';$('start').disabled=false;
+};
+window.addEventListener('pagehide',cleanup);
+</script>

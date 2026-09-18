@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import binascii
+import os
 from dataclasses import dataclass
 from typing import Any, Mapping, Protocol
 
@@ -312,7 +313,8 @@ def attach_live_routes(
     capture_observations = LiveCaptureObservationRegistry()
     v2_sessions = _ObservedLiveV2SessionRegistry(raw_v2_sessions, capture_observations)
     v2_mixers = LiveCompatibilityMixerRegistry(
-        max_output_samples=runtime.descriptor.bounds.max_frame_samples
+        max_output_samples=runtime.descriptor.bounds.max_frame_samples,
+        capture_correlation=os.environ.get("MOSS_CAPTURE_CORRELATION") == "1",
     )
     # The tape's lifecycle is the mixed track's lifecycle, so it is released wherever the
     # mixer is: once the mixer is gone no further mixed audio can exist for that session,
@@ -464,6 +466,19 @@ def attach_live_routes(
             authority = await adapter.authorize(request, "frame", session_id)
             payload = await request.json()
             frame = _frame_from_payload(payload)
+            if (
+                frame.v2_frame is not None
+                and frame.v2_frame.sample_rate != runtime.descriptor.sample_rate
+            ):
+                # lane, sequence, sample_count and pcm length are all validated, but the
+                # declared rate was only checked for positivity. A version-skewed or
+                # hand-rolled client could therefore ship PCM that is then interpreted at
+                # the wrong rate -- garbled audio and wrong timestamps, returned as 200 with
+                # no signal that anything is wrong. The contract layer cannot know the
+                # service rate, so it is checked here against the live descriptor.
+                raise ValueError(
+                    f"frame sample_rate must be {runtime.descriptor.sample_rate}."
+                )
             adapter.validate_mutation(authority)
             if frame.v2_frame is None:
                 accepted = runtime.accept_frame(session_id, frame.audio_frame)
@@ -592,6 +607,7 @@ def attach_live_routes(
             return _transport_snapshot_response(
                 runtime=runtime,
                 view=view,
+                v2_mixers=v2_mixers,
                 v2_sessions=v2_sessions,
                 capture_observations=capture_observations,
                 helper_presence=helper_presence,
@@ -915,6 +931,7 @@ def _transport_snapshot_response(
     *,
     runtime: LiveServiceRuntime,
     view: LiveTransportSnapshotView,
+    v2_mixers: LiveCompatibilityMixerRegistry,
     v2_sessions: "_ObservedLiveV2SessionRegistry",
     capture_observations: LiveCaptureObservationRegistry,
     helper_presence: HelperPresenceRegistry,
@@ -931,9 +948,14 @@ def _transport_snapshot_response(
     presence = helper_presence.snapshot(session_id)
     v2_session = _v2_snapshot(v2_sessions, session_id)
     observations = _capture_observation_snapshot(capture_observations, session_id)
+    try:
+        capture_guard = v2_mixers.get(session_id).last_capture_guard
+    except KeyError:
+        capture_guard = None
     return {
         "snapshot": None if view.visible is None else view.visible.to_dict(),
         "unchanged": view.visible is None,
+        "capture_guard": capture_guard,
         "v2_session": None if v2_session is None else v2_session.to_dict(),
         "helper_presence": None if presence is None else presence.to_dict(),
         **view.fields,

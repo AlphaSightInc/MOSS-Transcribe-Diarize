@@ -293,7 +293,7 @@ def test_runner_bounded_wav_inference_writes_complete_16khz_pcm_wav(tmp_path):
     adapter = RunnerBoundedWavInference(runner, max_samples=4000, scratch_dir=tmp_path)
     frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
 
-    result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
+    result = adapter.transcribe_pcm(span=frozen, pcm=b"\x01\x00" * 4000)
 
     assert result.transcript == "[0][S01]ok[0.25]"
     # The adapter's own monotonic measurement, not the 0.01 the runner reported.
@@ -329,7 +329,7 @@ def test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_re
     adapter = RunnerBoundedWavInference(TimingRunner(), max_samples=4000, scratch_dir=tmp_path)
     frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
 
-    result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
+    result = adapter.transcribe_pcm(span=frozen, pcm=b"\x01\x00" * 4000)
 
     assert result.transcript == "[0][S01]ok[0.25]"
     assert result.elapsed_sec is not None and result.elapsed_sec >= 0.0

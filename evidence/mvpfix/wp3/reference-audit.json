@@ -1,0 +1,136 @@
+{
+  "corpora": [
+    {
+      "corpus": "interview_bill_ackman_60s",
+      "audio": {
+        "samples": 960000,
+        "sample_rate": 16000,
+        "seconds": 60.0
+      },
+      "reference_ranges": [
+        {
+          "speaker": "Bill Ackman",
+          "start": 0.0,
+          "end": 29.0,
+          "matched": true,
+          "match_score": 100.0
+        },
+        {
+          "speaker": "Lex Fridman",
+          "start": 29.0,
+          "end": 33.0,
+          "matched": true,
+          "match_score": 100.0
+        },
+        {
+          "speaker": "Bill Ackman",
+          "start": 33.0,
+          "end": 40.0,
+          "matched": true,
+          "match_score": 100.0
+        },
+        {
+          "speaker": "Lex Fridman",
+          "start": 40.0,
+          "end": 42.0,
+          "matched": true,
+          "match_score": 100.0
+        },
+        {
+          "speaker": "Bill Ackman",
+          "start": 42.0,
+          "end": 60.0,
+          "matched": true,
+          "match_score": 100.0
+        }
+      ],
+      "reference_words": 188
+    },
+    {
+      "corpus": "interview_keyu_jin_60s",
+      "audio": {
+        "samples": 960000,
+        "sample_rate": 16000,
+        "seconds": 60.0
+      },
+      "reference_ranges": [
+        {
+          "speaker": "Keyu Jin",
+          "start": 0.0,
+          "end": 25.0,
+          "matched": true,
+          "match_score": 100.0
+        },
+        {
+          "speaker": "Lex Fridman",
+          "start": 25.0,
+          "end": 35.0,
+          "matched": true,
+          "match_score": 100.0
+        },
+        {
+          "speaker": "Keyu Jin",
+          "start": 35.0,
+          "end": 55.0,
+          "matched": true,
+          "match_score": 100.0
+        },
+        {
+          "speaker": "Lex Fridman",
+          "start": 55.0,
+          "end": 60.0,
+          "matched": true,
+          "match_score": 100.0
+        }
+      ],
+      "reference_words": 145
+    }
+  ],
+  "scoring_source": "prototype.py: read requests SR*60, FrozenSpan end_sample=len(x); full reference text",
+  "request_duration_status": "60 seconds derived from source and current retained corpus; request WAVs not retained",
+  "baselines": [
+    {
+      "name": "baseline-10",
+      "vs_reference": {
+        "reference_words": 145,
+        "emitted_words": 154,
+        "edit_distance": 9,
+        "wer": 0.06206896551724138,
+        "unique_retained": 83,
+        "unique_reference": 83
+      }
+    },
+    {
+      "name": "baseline-15",
+      "vs_reference": {
+        "reference_words": 145,
+        "emitted_words": 154,
+        "edit_distance": 9,
+        "wer": 0.06206896551724138,
+        "unique_retained": 83,
+        "unique_reference": 83
+      }
+    },
+    {
+      "name": "baseline-20",
+      "vs_reference": {
+        "reference_words": 145,
+        "emitted_words": 154,
+        "edit_distance": 9,
+        "wer": 0.06206896551724138,
+        "unique_retained": 83,
+        "unique_reference": 83
+      }
+    }
+  ],
+  "mixed": {
+    "cases": 27,
+    "reference_word_denominators": [
+      145
+    ],
+    "edit_distance_min": 91,
+    "edit_distance_max": 227,
+    "wer_min": 0.6275862068965518,
+    "wer_max": 1.5655172413793104
+  }
+}

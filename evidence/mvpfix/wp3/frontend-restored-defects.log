@@ -1,0 +1,138 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run src/components/ControlPanel.captureFailure.test.tsx
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:7:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/frontend
+
+ ❯ src/components/ControlPanel.captureFailure.test.tsx (9 tests | 7 failed) 91ms
+   × F4/4 cleans acquired display and existing microphone after source failure and Reset 30ms
+   × F4/4 cleans acquired display and existing microphone after worklet failure and Reset 9ms
+   × F4/5 cleans acquired microphone after source failure and Reset 6ms
+   × F4/5 cleans acquired microphone after worklet failure and Reset 5ms
+   × F4/6 catches synchronous chooser errors in the user gesture 6ms
+   × F4/9 cleans replacement microphone and both old lanes after source failure and Reset 9ms
+   × F4/9 cleans replacement microphone and both old lanes after worklet failure and Reset 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/ControlPanel.captureFailure.test.tsx > F4/4 cleans acquired display and existing microphone after source failure and Reset
+ FAIL  src/components/ControlPanel.captureFailure.test.tsx > F4/4 cleans acquired display and existing microphone after worklet failure and Reset
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ resetAfterFailure src/components/ControlPanel.captureFailure.test.tsx:119:104
+    117|   expect(phase()).toBe("idle");
+    118|   expect(contexts.every(context => context.state === "closed")).toBe(t…
+    119|   expect(streams.every(stream => stream.getTracks().every(track => tra…
+       |                                                                                                        ^
+    120|   expect([...nodes.values()].filter(node => node.port.onmessage)).toHa…
+    121| }
+ ❯ src/components/ControlPanel.captureFailure.test.tsx:126:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  src/components/ControlPanel.captureFailure.test.tsx > F4/5 cleans acquired microphone after source failure and Reset
+ FAIL  src/components/ControlPanel.captureFailure.test.tsx > F4/5 cleans acquired microphone after worklet failure and Reset
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ resetAfterFailure src/components/ControlPanel.captureFailure.test.tsx:119:104
+    117|   expect(phase()).toBe("idle");
+    118|   expect(contexts.every(context => context.state === "closed")).toBe(t…
+    119|   expect(streams.every(stream => stream.getTracks().every(track => tra…
+       |                                                                                                        ^
+    120|   expect([...nodes.values()].filter(node => node.port.onmessage)).toHa…
+    121| }
+ ❯ src/components/ControlPanel.captureFailure.test.tsx:131:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  src/components/ControlPanel.captureFailure.test.tsx > F4/6 catches synchronous chooser errors in the user gesture
+AssertionError: expected 'configuring' to be 'error' // Object.is equality
+
+Expected: "error"
+Received: "configuring"
+
+ ❯ resetAfterFailure src/components/ControlPanel.captureFailure.test.tsx:113:19
+    111|
+    112| async function resetAfterFailure(message: string) {
+    113|   expect(phase()).toBe("error");
+       |                   ^
+    114|   expect(status()).toBe(message);
+    115|   expect(button("Reset capture")).toBeTruthy();
+ ❯ src/components/ControlPanel.captureFailure.test.tsx:143:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  src/components/ControlPanel.captureFailure.test.tsx > F4/9 cleans replacement microphone and both old lanes after source failure and Reset
+ FAIL  src/components/ControlPanel.captureFailure.test.tsx > F4/9 cleans replacement microphone and both old lanes after worklet failure and Reset
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ resetAfterFailure src/components/ControlPanel.captureFailure.test.tsx:119:104
+    117|   expect(phase()).toBe("idle");
+    118|   expect(contexts.every(context => context.state === "closed")).toBe(t…
+    119|   expect(streams.every(stream => stream.getTracks().every(track => tra…
+       |                                                                                                        ^
+    120|   expect([...nodes.values()].filter(node => node.port.onmessage)).toHa…
+    121| }
+ ❯ src/components/ControlPanel.captureFailure.test.tsx:149:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯ Unhandled Rejection ⎯⎯⎯⎯⎯
+Error: capture AudioContext is not running
+ ❯ CaptureClient.<anonymous> src/components/ControlPanel.captureFailure.test.tsx:136:11
+    134|   await click("Enable microphone");
+    135|   const request = vi.spyOn(CaptureClient.prototype, "requestDisplayMed…
+    136|     throw new Error("capture AudioContext is not running");
+       |           ^
+    137|   });
+    138|   await act(async () => {
+ ❯ CaptureClient.requestDisplayMedia ../../MOSS-Transcribe-Diarize/frontend/node_modules/@vitest/spy/dist/index.js:332:34
+ ❯ shareAudio src/components/ControlPanel.tsx:143:35
+ ❯ onClick src/components/ControlPanel.tsx:384:69
+ ❯ HTMLButtonElement.<anonymous> ../../MOSS-Transcribe-Diarize/frontend/node_modules/preact/dist/preact.mjs:1:4591
+ ❯ HTMLButtonElement.callTheUserObjectsOperation ../../MOSS-Transcribe-Diarize/frontend/node_modules/jsdom/lib/generated/idl/EventListener.js:26:30
+ ❯ innerInvokeEventListeners ../../MOSS-Transcribe-Diarize/frontend/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16
+ ❯ invokeEventListeners ../../MOSS-Transcribe-Diarize/frontend/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3
+ ❯ HTMLButtonElementImpl._dispatch ../../MOSS-Transcribe-Diarize/frontend/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9
+ ❯ fireAnEvent ../../MOSS-Transcribe-Diarize/frontend/node_modules/jsdom/lib/jsdom/living/helpers/events.js:18:36
+
+This error originated in "src/components/ControlPanel.captureFailure.test.tsx" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "F4/6 catches synchronous chooser errors in the user gesture". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 2 passed (9)
+     Errors  1 error
+   Start at  23:16:01
+   Duration  588ms (transform 63ms, setup 0ms, import 81ms, tests 91ms, environment 302ms)
+

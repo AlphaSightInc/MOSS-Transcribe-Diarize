@@ -891,6 +891,11 @@ class TerminalTranscriptFinalizer:
             return self._refused(plan, TerminalOutcome.TAPE_UNAVAILABLE, str(exc), gaps=gaps)
 
         tape_samples = len(pcm) // PCM16_BYTES_PER_SAMPLE
+        if not any(pcm):
+            return self._refused(
+                plan, TerminalOutcome.NO_TRANSCRIPT, "all_zero_pcm",
+                gaps=gaps, tape_samples=tape_samples, decode_elapsed_sec=0.0,
+            )
         started = time.monotonic()
         with tempfile.TemporaryDirectory(prefix="mtd-terminal-", dir=self.scratch_dir) as scratch:
             wav_path = Path(scratch) / f"terminal-{plan.epoch:04d}.wav"

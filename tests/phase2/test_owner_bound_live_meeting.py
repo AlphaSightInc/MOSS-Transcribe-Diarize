@@ -355,7 +355,8 @@ def v2_frame(sequence: int, lane: str) -> dict[str, object]:
         "sequence": sequence,
         "capture_timestamp_ns": sequence * samples * 1_000_000_000 // LIVE_SAMPLE_RATE,
         "device_epoch": 0,
-        "pcm_base64": base64.b64encode(b"\0" * samples * 2).decode("ascii"),
+        # These fixtures ask a stub decoder to emit speech; give it nonzero signal.
+        "pcm_base64": base64.b64encode(b"\x64\x00" * samples).decode("ascii"),
         "sample_count": samples,
         "sample_rate": LIVE_SAMPLE_RATE,
         "silent": False,
@@ -3599,3 +3600,46 @@ def test_http_stop_bounds_wait_for_terminal_finalizer(tmp_path):
         assert scheduler.run_one()
         final = wait_snapshot(client, meeting_id, lambda body: body['snapshot']['session']['finalization_status'] == 'final')
         assert final['snapshot']['terminal_failure'] is None
+
+
+@pytest.mark.parametrize("correlation", [False, True])
+def test_capture_guard_rate_rejection_does_not_advance_and_snapshot_reports_span(tmp_path, monkeypatch, correlation):
+    monkeypatch.delenv("MOSS_CAPTURE_CORRELATION", raising=False)
+    if correlation:
+        monkeypatch.setenv("MOSS_CAPTURE_CORRELATION", "1")
+    database = tmp_path / 'moss.sqlite3'
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+    with TestClient(app, base_url='https://moss.test') as client:
+        session(client, sessions['a'])
+        created = client.post('/api/live/sessions', json={'echo_mode': 'speakers'})
+        assert created.status_code == 201
+        meeting_id = created.json()['id']
+        path = f'/api/live/sessions/{meeting_id}'
+        bad = {**v2_frame(0, 'system'), 'sample_rate': 8000}
+        before = client.get(path + '/snapshot').json()
+        response = client.post(path + '/frames', json=bad)
+        assert response.status_code == 400
+        assert response.json() == {'detail': 'frame sample_rate must be 16000.'}
+        after = client.get(path + '/snapshot').json()
+        assert after['v2_session'] == before['v2_session']
+        for lane in ('system', 'microphone'):
+            for counter in ('next_sequence', 'accepted_samples', 'accounted_samples', 'retained_samples'):
+                assert after['v2_session']['lanes'][lane][counter] == before['v2_session']['lanes'][lane][counter] == 0
+        for counter in ('next_frame_sequence', 'accepted_samples'):
+            assert after['snapshot']['session'][counter] == before['snapshot']['session'][counter] == 0
+        for seq in range(2):
+            for lane in ('system', 'microphone'):
+                assert client.post(path + '/frames', json={**v2_frame(seq, lane), 'silent': True}).status_code == 200
+        snapshot = client.get(path + '/snapshot').json()
+        guard = snapshot['capture_guard']
+        for lane in ('system', 'microphone'):
+            assert snapshot['v2_session']['lanes'][lane]['next_sequence'] == 2
+            assert snapshot['v2_session']['lanes'][lane]['accepted_samples'] == 4
+        if correlation:
+            assert guard['system']['decision'] == 'skip-zero'
+            assert guard['microphone']['decision'] == 'skip-zero'
+            assert guard['leak_suppression'] is False
+            assert guard['end_timestamp_ns'] > guard['start_timestamp_ns']
+        else:
+            assert guard is None

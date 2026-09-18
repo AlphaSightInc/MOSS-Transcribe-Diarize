@@ -310,6 +310,10 @@ class RunnerBoundedWavInference:
         _validate_pcm_length(pcm, span.sample_count)
         if span.sample_count > self.max_samples:
             raise LiveProviderError("canonical span exceeds bounded inference capacity.")
+        # Keep span/timeline accounting, but never ask a model to invent words for
+        # digital zeros. The mixer already renders explicitly silent frames to zero.
+        if not any(pcm):
+            return InferenceTranscript(transcript="", generated_tokens=0, elapsed_sec=0.0)
         token_cap = self._token_cap(span)
         with tempfile.TemporaryDirectory(prefix="mtd-live-", dir=self.scratch_dir) as scratch:
             wav_path = Path(scratch) / f"span-{span.id:04d}.wav"

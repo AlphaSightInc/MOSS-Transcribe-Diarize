@@ -1,0 +1,1379 @@
+[
+  {
+    "name": "baseline-10",
+    "decision": "decode",
+    "seconds": 2.1113811249961145,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 154,
+      "edit_distance": 9,
+      "wer": 0.06206896551724138,
+      "unique_retained": 83,
+      "unique_reference": 83
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 154,
+      "edit_distance": 176,
+      "wer": 0.9361702127659575,
+      "unique_retained": 24,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "baseline-15",
+    "decision": "decode",
+    "seconds": 1.4589534170081606,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 154,
+      "edit_distance": 9,
+      "wer": 0.06206896551724138,
+      "unique_retained": 83,
+      "unique_reference": 83
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 154,
+      "edit_distance": 176,
+      "wer": 0.9361702127659575,
+      "unique_retained": 24,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "baseline-20",
+    "decision": "decode",
+    "seconds": 1.474858542002039,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 154,
+      "edit_distance": 9,
+      "wer": 0.06206896551724138,
+      "unique_retained": 83,
+      "unique_reference": 83
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 154,
+      "edit_distance": 176,
+      "wer": 0.9361702127659575,
+      "unique_retained": 24,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "zero",
+    "decision": "skip-zero",
+    "seconds": 0.1717665830074111,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "noise-45",
+    "decision": "decode",
+    "seconds": 0.1307948750036303,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "noise-60",
+    "decision": "decode",
+    "seconds": 0.12153929099440575,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-10_delay30_noiseNone",
+    "decision": "leak-suspect",
+    "seconds": 2.1544551249971846,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 195,
+      "edit_distance": 31,
+      "wer": 0.16489361702127658,
+      "unique_retained": 91,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 195,
+      "edit_distance": 31,
+      "wer": 0.16489361702127658,
+      "unique_retained": 91,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-10_delay30_noise-45",
+    "decision": "decode",
+    "seconds": 1.4057793749962002,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 197,
+      "edit_distance": 33,
+      "wer": 0.17553191489361702,
+      "unique_retained": 88,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 197,
+      "edit_distance": 33,
+      "wer": 0.17553191489361702,
+      "unique_retained": 88,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-10_delay30_noise-60",
+    "decision": "leak-suspect",
+    "seconds": 2.2997426250076387,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 195,
+      "edit_distance": 27,
+      "wer": 0.14361702127659576,
+      "unique_retained": 91,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 195,
+      "edit_distance": 27,
+      "wer": 0.14361702127659576,
+      "unique_retained": 91,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-30_delay30_noiseNone",
+    "decision": "leak-suspect",
+    "seconds": 2.40994562501146,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 197,
+      "edit_distance": 29,
+      "wer": 0.15425531914893617,
+      "unique_retained": 91,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 197,
+      "edit_distance": 29,
+      "wer": 0.15425531914893617,
+      "unique_retained": 91,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-30_delay30_noise-45",
+    "decision": "decode",
+    "seconds": 1.7597329580021324,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 195,
+      "edit_distance": 78,
+      "wer": 0.4148936170212766,
+      "unique_retained": 80,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 195,
+      "edit_distance": 78,
+      "wer": 0.4148936170212766,
+      "unique_retained": 80,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-30_delay30_noise-60",
+    "decision": "decode",
+    "seconds": 2.3919722919963533,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 196,
+      "edit_distance": 38,
+      "wer": 0.20212765957446807,
+      "unique_retained": 86,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 196,
+      "edit_distance": 38,
+      "wer": 0.20212765957446807,
+      "unique_retained": 86,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-50_delay30_noiseNone",
+    "decision": "leak-suspect",
+    "seconds": 2.369038000004366,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 203,
+      "edit_distance": 39,
+      "wer": 0.2074468085106383,
+      "unique_retained": 90,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 203,
+      "edit_distance": 39,
+      "wer": 0.2074468085106383,
+      "unique_retained": 90,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-50_delay30_noise-45",
+    "decision": "decode",
+    "seconds": 0.13175220899574924,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-50_delay30_noise-60",
+    "decision": "decode",
+    "seconds": 1.6796128330024658,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 160,
+      "edit_distance": 117,
+      "wer": 0.6223404255319149,
+      "unique_retained": 64,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 160,
+      "edit_distance": 117,
+      "wer": 0.6223404255319149,
+      "unique_retained": 64,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-70_delay30_noiseNone",
+    "decision": "decode",
+    "seconds": 1.8344531249895226,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 197,
+      "edit_distance": 40,
+      "wer": 0.2127659574468085,
+      "unique_retained": 86,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 197,
+      "edit_distance": 40,
+      "wer": 0.2127659574468085,
+      "unique_retained": 86,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-70_delay30_noise-45",
+    "decision": "decode",
+    "seconds": 0.13844020800024737,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "nearNone_bleed-70_delay30_noise-60",
+    "decision": "decode",
+    "seconds": 0.11843845900148153,
+    "vs_reference": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 0,
+      "edit_distance": 188,
+      "wer": 1.0,
+      "unique_retained": 0,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-10_bleed-10_delay5_noiseNone",
+    "decision": "decode",
+    "seconds": 2.625006582995411,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 222,
+      "edit_distance": 104,
+      "wer": 0.7172413793103448,
+      "unique_retained": 72,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 222,
+      "edit_distance": 100,
+      "wer": 0.6493506493506493,
+      "unique_retained": 76,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 222,
+      "edit_distance": 100,
+      "wer": 0.6493506493506493,
+      "unique_retained": 76,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 222,
+      "edit_distance": 156,
+      "wer": 0.8297872340425532,
+      "unique_retained": 59,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-10_bleed-10_delay5_noise-45",
+    "decision": "decode",
+    "seconds": 2.5451270420016954,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 263,
+      "edit_distance": 181,
+      "wer": 1.2482758620689656,
+      "unique_retained": 52,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 263,
+      "edit_distance": 175,
+      "wer": 1.1363636363636365,
+      "unique_retained": 55,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 263,
+      "edit_distance": 175,
+      "wer": 1.1363636363636365,
+      "unique_retained": 55,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 263,
+      "edit_distance": 121,
+      "wer": 0.6436170212765957,
+      "unique_retained": 81,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-10_bleed-10_delay5_noise-60",
+    "decision": "decode",
+    "seconds": 1.7804230420006206,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 196,
+      "edit_distance": 123,
+      "wer": 0.8482758620689655,
+      "unique_retained": 50,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 196,
+      "edit_distance": 119,
+      "wer": 0.7727272727272727,
+      "unique_retained": 54,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 196,
+      "edit_distance": 119,
+      "wer": 0.7727272727272727,
+      "unique_retained": 54,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 196,
+      "edit_distance": 95,
+      "wer": 0.5053191489361702,
+      "unique_retained": 64,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-10_bleed-10_delay30_noiseNone",
+    "decision": "decode",
+    "seconds": 2.4994490000099177,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 213,
+      "edit_distance": 113,
+      "wer": 0.7793103448275862,
+      "unique_retained": 66,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 213,
+      "edit_distance": 109,
+      "wer": 0.7077922077922078,
+      "unique_retained": 69,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 213,
+      "edit_distance": 109,
+      "wer": 0.7077922077922078,
+      "unique_retained": 69,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 213,
+      "edit_distance": 127,
+      "wer": 0.675531914893617,
+      "unique_retained": 64,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-10_bleed-10_delay30_noise-45",
+    "decision": "decode",
+    "seconds": 2.1363384160067653,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 348,
+      "edit_distance": 217,
+      "wer": 1.4965517241379311,
+      "unique_retained": 80,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 348,
+      "edit_distance": 208,
+      "wer": 1.3506493506493507,
+      "unique_retained": 84,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 348,
+      "edit_distance": 208,
+      "wer": 1.3506493506493507,
+      "unique_retained": 84,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 348,
+      "edit_distance": 189,
+      "wer": 1.0053191489361701,
+      "unique_retained": 82,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-10_bleed-10_delay30_noise-60",
+    "decision": "decode",
+    "seconds": 2.391837791990838,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 210,
+      "edit_distance": 91,
+      "wer": 0.6275862068965518,
+      "unique_retained": 75,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 210,
+      "edit_distance": 87,
+      "wer": 0.564935064935065,
+      "unique_retained": 78,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 210,
+      "edit_distance": 87,
+      "wer": 0.564935064935065,
+      "unique_retained": 78,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 210,
+      "edit_distance": 151,
+      "wer": 0.8031914893617021,
+      "unique_retained": 58,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-10_bleed-10_delay60_noiseNone",
+    "decision": "decode",
+    "seconds": 2.585259125000448,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 212,
+      "edit_distance": 149,
+      "wer": 1.0275862068965518,
+      "unique_retained": 47,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 212,
+      "edit_distance": 144,
+      "wer": 0.935064935064935,
+      "unique_retained": 50,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 212,
+      "edit_distance": 144,
+      "wer": 0.935064935064935,
+      "unique_retained": 50,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 212,
+      "edit_distance": 98,
+      "wer": 0.5212765957446809,
+      "unique_retained": 73,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-10_bleed-10_delay60_noise-45",
+    "decision": "decode",
+    "seconds": 2.4461480419995496,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 331,
+      "edit_distance": 202,
+      "wer": 1.393103448275862,
+      "unique_retained": 80,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 331,
+      "edit_distance": 193,
+      "wer": 1.2532467532467533,
+      "unique_retained": 84,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 331,
+      "edit_distance": 193,
+      "wer": 1.2532467532467533,
+      "unique_retained": 84,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 331,
+      "edit_distance": 200,
+      "wer": 1.0638297872340425,
+      "unique_retained": 80,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-10_bleed-10_delay60_noise-60",
+    "decision": "decode",
+    "seconds": 2.659857958002249,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 226,
+      "edit_distance": 158,
+      "wer": 1.089655172413793,
+      "unique_retained": 47,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 226,
+      "edit_distance": 153,
+      "wer": 0.9935064935064936,
+      "unique_retained": 50,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 226,
+      "edit_distance": 153,
+      "wer": 0.9935064935064936,
+      "unique_retained": 50,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 226,
+      "edit_distance": 104,
+      "wer": 0.5531914893617021,
+      "unique_retained": 74,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-15_bleed-10_delay5_noiseNone",
+    "decision": "decode",
+    "seconds": 2.6579786670044996,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 233,
+      "edit_distance": 180,
+      "wer": 1.2413793103448276,
+      "unique_retained": 41,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 233,
+      "edit_distance": 174,
+      "wer": 1.12987012987013,
+      "unique_retained": 45,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 233,
+      "edit_distance": 174,
+      "wer": 1.12987012987013,
+      "unique_retained": 45,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 233,
+      "edit_distance": 67,
+      "wer": 0.35638297872340424,
+      "unique_retained": 84,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-15_bleed-10_delay5_noise-45",
+    "decision": "decode",
+    "seconds": 2.017872708005598,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 303,
+      "edit_distance": 227,
+      "wer": 1.5655172413793104,
+      "unique_retained": 55,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 303,
+      "edit_distance": 220,
+      "wer": 1.4285714285714286,
+      "unique_retained": 59,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 303,
+      "edit_distance": 220,
+      "wer": 1.4285714285714286,
+      "unique_retained": 59,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 303,
+      "edit_distance": 141,
+      "wer": 0.75,
+      "unique_retained": 86,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-15_bleed-10_delay5_noise-60",
+    "decision": "decode",
+    "seconds": 2.6259065409976756,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 241,
+      "edit_distance": 166,
+      "wer": 1.1448275862068966,
+      "unique_retained": 49,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 241,
+      "edit_distance": 160,
+      "wer": 1.0389610389610389,
+      "unique_retained": 53,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 241,
+      "edit_distance": 160,
+      "wer": 1.0389610389610389,
+      "unique_retained": 53,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 241,
+      "edit_distance": 104,
+      "wer": 0.5531914893617021,
+      "unique_retained": 79,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-15_bleed-10_delay30_noiseNone",
+    "decision": "decode",
+    "seconds": 2.851004332987941,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 237,
+      "edit_distance": 186,
+      "wer": 1.282758620689655,
+      "unique_retained": 40,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 237,
+      "edit_distance": 182,
+      "wer": 1.1818181818181819,
+      "unique_retained": 42,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 237,
+      "edit_distance": 182,
+      "wer": 1.1818181818181819,
+      "unique_retained": 42,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 237,
+      "edit_distance": 80,
+      "wer": 0.425531914893617,
+      "unique_retained": 83,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-15_bleed-10_delay30_noise-45",
+    "decision": "decode",
+    "seconds": 2.4008527919941116,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 318,
+      "edit_distance": 202,
+      "wer": 1.393103448275862,
+      "unique_retained": 72,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 318,
+      "edit_distance": 196,
+      "wer": 1.2727272727272727,
+      "unique_retained": 74,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 318,
+      "edit_distance": 196,
+      "wer": 1.2727272727272727,
+      "unique_retained": 74,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 318,
+      "edit_distance": 174,
+      "wer": 0.925531914893617,
+      "unique_retained": 78,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-15_bleed-10_delay30_noise-60",
+    "decision": "decode",
+    "seconds": 2.473001292004483,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 213,
+      "edit_distance": 164,
+      "wer": 1.1310344827586207,
+      "unique_retained": 40,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 213,
+      "edit_distance": 161,
+      "wer": 1.0454545454545454,
+      "unique_retained": 43,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 213,
+      "edit_distance": 161,
+      "wer": 1.0454545454545454,
+      "unique_retained": 43,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 213,
+      "edit_distance": 67,
+      "wer": 0.35638297872340424,
+      "unique_retained": 79,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-15_bleed-10_delay60_noiseNone",
+    "decision": "decode",
+    "seconds": 2.934498167000129,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 235,
+      "edit_distance": 181,
+      "wer": 1.2482758620689656,
+      "unique_retained": 41,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 235,
+      "edit_distance": 176,
+      "wer": 1.1428571428571428,
+      "unique_retained": 44,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 235,
+      "edit_distance": 176,
+      "wer": 1.1428571428571428,
+      "unique_retained": 44,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 235,
+      "edit_distance": 78,
+      "wer": 0.4148936170212766,
+      "unique_retained": 85,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-15_bleed-10_delay60_noise-45",
+    "decision": "decode",
+    "seconds": 2.4409497089945944,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 300,
+      "edit_distance": 204,
+      "wer": 1.4068965517241379,
+      "unique_retained": 63,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 300,
+      "edit_distance": 198,
+      "wer": 1.2857142857142858,
+      "unique_retained": 66,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 300,
+      "edit_distance": 198,
+      "wer": 1.2857142857142858,
+      "unique_retained": 66,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 300,
+      "edit_distance": 135,
+      "wer": 0.7180851063829787,
+      "unique_retained": 87,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-15_bleed-10_delay60_noise-60",
+    "decision": "decode",
+    "seconds": 2.8799736670043785,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 242,
+      "edit_distance": 174,
+      "wer": 1.2,
+      "unique_retained": 49,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 242,
+      "edit_distance": 169,
+      "wer": 1.0974025974025974,
+      "unique_retained": 52,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 242,
+      "edit_distance": 169,
+      "wer": 1.0974025974025974,
+      "unique_retained": 52,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 242,
+      "edit_distance": 93,
+      "wer": 0.4946808510638298,
+      "unique_retained": 82,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-20_bleed-10_delay5_noiseNone",
+    "decision": "decode",
+    "seconds": 2.067385458998615,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 197,
+      "edit_distance": 181,
+      "wer": 1.2482758620689656,
+      "unique_retained": 21,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 197,
+      "edit_distance": 180,
+      "wer": 1.1688311688311688,
+      "unique_retained": 24,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 197,
+      "edit_distance": 180,
+      "wer": 1.1688311688311688,
+      "unique_retained": 24,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 197,
+      "edit_distance": 35,
+      "wer": 0.18617021276595744,
+      "unique_retained": 88,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-20_bleed-10_delay5_noise-45",
+    "decision": "decode",
+    "seconds": 2.595816625005682,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 199,
+      "edit_distance": 184,
+      "wer": 1.2689655172413794,
+      "unique_retained": 23,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 199,
+      "edit_distance": 184,
+      "wer": 1.1948051948051948,
+      "unique_retained": 25,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 199,
+      "edit_distance": 184,
+      "wer": 1.1948051948051948,
+      "unique_retained": 25,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 199,
+      "edit_distance": 48,
+      "wer": 0.2553191489361702,
+      "unique_retained": 84,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-20_bleed-10_delay5_noise-60",
+    "decision": "decode",
+    "seconds": 2.0496171249978943,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 193,
+      "edit_distance": 177,
+      "wer": 1.2206896551724138,
+      "unique_retained": 22,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 193,
+      "edit_distance": 178,
+      "wer": 1.155844155844156,
+      "unique_retained": 24,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 193,
+      "edit_distance": 178,
+      "wer": 1.155844155844156,
+      "unique_retained": 24,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 193,
+      "edit_distance": 35,
+      "wer": 0.18617021276595744,
+      "unique_retained": 87,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-20_bleed-10_delay30_noiseNone",
+    "decision": "decode",
+    "seconds": 1.7598267499997746,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 193,
+      "edit_distance": 179,
+      "wer": 1.2344827586206897,
+      "unique_retained": 20,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 193,
+      "edit_distance": 180,
+      "wer": 1.1688311688311688,
+      "unique_retained": 22,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 193,
+      "edit_distance": 180,
+      "wer": 1.1688311688311688,
+      "unique_retained": 22,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 193,
+      "edit_distance": 36,
+      "wer": 0.19148936170212766,
+      "unique_retained": 86,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-20_bleed-10_delay30_noise-45",
+    "decision": "decode",
+    "seconds": 1.8579710420017364,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 197,
+      "edit_distance": 181,
+      "wer": 1.2482758620689656,
+      "unique_retained": 23,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 197,
+      "edit_distance": 182,
+      "wer": 1.1818181818181819,
+      "unique_retained": 25,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 197,
+      "edit_distance": 182,
+      "wer": 1.1818181818181819,
+      "unique_retained": 25,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 197,
+      "edit_distance": 42,
+      "wer": 0.22340425531914893,
+      "unique_retained": 85,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-20_bleed-10_delay30_noise-60",
+    "decision": "decode",
+    "seconds": 1.7104603750049137,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 191,
+      "edit_distance": 177,
+      "wer": 1.2206896551724138,
+      "unique_retained": 20,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 191,
+      "edit_distance": 178,
+      "wer": 1.155844155844156,
+      "unique_retained": 22,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 191,
+      "edit_distance": 178,
+      "wer": 1.155844155844156,
+      "unique_retained": 22,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 191,
+      "edit_distance": 34,
+      "wer": 0.18085106382978725,
+      "unique_retained": 87,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-20_bleed-10_delay60_noiseNone",
+    "decision": "decode",
+    "seconds": 2.2575886249978794,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 192,
+      "edit_distance": 177,
+      "wer": 1.2206896551724138,
+      "unique_retained": 21,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 192,
+      "edit_distance": 179,
+      "wer": 1.1623376623376624,
+      "unique_retained": 23,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 192,
+      "edit_distance": 179,
+      "wer": 1.1623376623376624,
+      "unique_retained": 23,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 192,
+      "edit_distance": 30,
+      "wer": 0.1595744680851064,
+      "unique_retained": 89,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-20_bleed-10_delay60_noise-45",
+    "decision": "decode",
+    "seconds": 1.8044883749971632,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 190,
+      "edit_distance": 175,
+      "wer": 1.206896551724138,
+      "unique_retained": 22,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 190,
+      "edit_distance": 177,
+      "wer": 1.1493506493506493,
+      "unique_retained": 24,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 190,
+      "edit_distance": 177,
+      "wer": 1.1493506493506493,
+      "unique_retained": 24,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 190,
+      "edit_distance": 33,
+      "wer": 0.17553191489361702,
+      "unique_retained": 86,
+      "unique_reference": 94
+    }
+  },
+  {
+    "name": "near-20_bleed-10_delay60_noise-60",
+    "decision": "decode",
+    "seconds": 2.152066124996054,
+    "vs_reference": {
+      "reference_words": 145,
+      "emitted_words": 193,
+      "edit_distance": 178,
+      "wer": 1.2275862068965517,
+      "unique_retained": 21,
+      "unique_reference": 83
+    },
+    "vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 193,
+      "edit_distance": 180,
+      "wer": 1.1688311688311688,
+      "unique_retained": 23,
+      "unique_reference": 87
+    },
+    "guard_vs_lane_alone": {
+      "reference_words": 154,
+      "emitted_words": 193,
+      "edit_distance": 180,
+      "wer": 1.1688311688311688,
+      "unique_retained": 23,
+      "unique_reference": 87
+    },
+    "vs_playback": {
+      "reference_words": 188,
+      "emitted_words": 193,
+      "edit_distance": 30,
+      "wer": 0.1595744680851064,
+      "unique_retained": 89,
+      "unique_reference": 94
+    }
+  }
+]

@@ -1,0 +1,4809 @@
+{
+  "chunks": 300,
+  "samples_per_chunk": 8000,
+  "clock": "process_time_ns",
+  "median_us": 440.0,
+  "max_us": 5121.0,
+  "rows": [
+    {
+      "chunk": 0,
+      "cpu_us": 1215.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008878401654900897,
+        "playback_delay_samples": 795,
+        "playback_gain": 3.517238494120553,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 1,
+      "cpu_us": 565.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.022388930193490555,
+        "playback_delay_samples": 345,
+        "playback_gain": 0.1203898216222895,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 2,
+      "cpu_us": 506.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013009383556964646,
+        "playback_delay_samples": 415,
+        "playback_gain": -0.08726539183285612,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 3,
+      "cpu_us": 487.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008759409174565618,
+        "playback_delay_samples": 960,
+        "playback_gain": 0.22252265400835913,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 4,
+      "cpu_us": 470.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 4.7423230552132686e-05,
+        "playback_delay_samples": 569,
+        "playback_gain": -0.008169224740423621,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 5,
+      "cpu_us": 457.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.003117580021150418,
+        "playback_delay_samples": 267,
+        "playback_gain": -0.06196395867758624,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 6,
+      "cpu_us": 453.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005106768361945857,
+        "playback_delay_samples": 569,
+        "playback_gain": 0.1028002042616046,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 7,
+      "cpu_us": 442.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004345952550067108,
+        "playback_delay_samples": 792,
+        "playback_gain": -3.472756364115971,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 8,
+      "cpu_us": 459.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.01691586896150716,
+        "playback_delay_samples": 490,
+        "playback_gain": -0.1536583655493487,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 9,
+      "cpu_us": 472.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004344181752687195,
+        "playback_delay_samples": 415,
+        "playback_gain": 0.06043074216765569,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 10,
+      "cpu_us": 469.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 3.851591141766184e-05,
+        "playback_delay_samples": 319,
+        "playback_gain": -0.015184824543750976,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 11,
+      "cpu_us": 465.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00221461430795437,
+        "playback_delay_samples": 936,
+        "playback_gain": 0.032106761894118825,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 12,
+      "cpu_us": 443.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0019662197183964126,
+        "playback_delay_samples": 705,
+        "playback_gain": 0.07701211511594143,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 13,
+      "cpu_us": 439.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0027703879239932803,
+        "playback_delay_samples": 688,
+        "playback_gain": -0.24576549524546046,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 14,
+      "cpu_us": 449.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0021767069416363228,
+        "playback_delay_samples": 321,
+        "playback_gain": -0.027245490043468486,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 15,
+      "cpu_us": 445.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002188625346657046,
+        "playback_delay_samples": 182,
+        "playback_gain": 0.08875419362441758,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 16,
+      "cpu_us": 464.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.001640289732062024,
+        "playback_delay_samples": 852,
+        "playback_gain": -0.02668945979576822,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 17,
+      "cpu_us": 467.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002796790581873744,
+        "playback_delay_samples": 885,
+        "playback_gain": 0.07651056306821392,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 18,
+      "cpu_us": 464.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005497430840359232,
+        "playback_delay_samples": 46,
+        "playback_gain": 0.14873932047604602,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 19,
+      "cpu_us": 451.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0020989276342391013,
+        "playback_delay_samples": 5,
+        "playback_gain": -0.05347657853658073,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 20,
+      "cpu_us": 433.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004943042148967811,
+        "playback_delay_samples": 791,
+        "playback_gain": -0.057452749882181436,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 21,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0028056776998084633,
+        "playback_delay_samples": 622,
+        "playback_gain": 1.0409293999527445,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 22,
+      "cpu_us": 471.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007018305435168909,
+        "playback_delay_samples": 898,
+        "playback_gain": -0.061421823827047875,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 23,
+      "cpu_us": 476.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0006755833895584286,
+        "playback_delay_samples": 938,
+        "playback_gain": -0.012165665944319717,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 24,
+      "cpu_us": 473.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0001713278408904917,
+        "playback_delay_samples": 863,
+        "playback_gain": 0.02257045474639105,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 25,
+      "cpu_us": 457.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.001114185876220233,
+        "playback_delay_samples": 914,
+        "playback_gain": 0.042107255675318304,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 26,
+      "cpu_us": 448.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.014171521250158881,
+        "playback_delay_samples": 317,
+        "playback_gain": -0.10212047557576741,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 27,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.030763223566929825,
+        "playback_delay_samples": 238,
+        "playback_gain": -0.2707470719633965,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 28,
+      "cpu_us": 449.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0008941722878995703,
+        "playback_delay_samples": 83,
+        "playback_gain": -0.17626948601143705,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 29,
+      "cpu_us": 489.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00039177096620879033,
+        "playback_delay_samples": 671,
+        "playback_gain": -0.008290828196500474,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 30,
+      "cpu_us": 497.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004159106382855186,
+        "playback_delay_samples": 497,
+        "playback_gain": -0.18021155167953146,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 31,
+      "cpu_us": 490.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005726001914759856,
+        "playback_delay_samples": 295,
+        "playback_gain": -0.0737560523319235,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 32,
+      "cpu_us": 452.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004871913292700025,
+        "playback_delay_samples": 185,
+        "playback_gain": -0.18164685775671913,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 33,
+      "cpu_us": 463.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0038896769838573353,
+        "playback_delay_samples": 110,
+        "playback_gain": -0.05794032604705443,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 34,
+      "cpu_us": 607.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0037805322962535712,
+        "playback_delay_samples": 17,
+        "playback_gain": 0.037462905716230094,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 35,
+      "cpu_us": 498.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009676660912636503,
+        "playback_delay_samples": 35,
+        "playback_gain": 0.3699619859880828,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 36,
+      "cpu_us": 449.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.02907893709660067,
+        "playback_delay_samples": 953,
+        "playback_gain": -0.6993976733406432,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 37,
+      "cpu_us": 472.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010677845505051443,
+        "playback_delay_samples": 66,
+        "playback_gain": -0.12018073116439741,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 38,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0017251376142924757,
+        "playback_delay_samples": 0,
+        "playback_gain": -0.025065820558801036,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 39,
+      "cpu_us": 410.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008761692402868476,
+        "playback_delay_samples": 267,
+        "playback_gain": -0.14661442584683626,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 40,
+      "cpu_us": 404.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0049400989719433006,
+        "playback_delay_samples": 205,
+        "playback_gain": -0.07408081637376135,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 41,
+      "cpu_us": 416.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.011701585824844662,
+        "playback_delay_samples": 201,
+        "playback_gain": 0.18563721561143062,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 42,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00014111367937544295,
+        "playback_delay_samples": 925,
+        "playback_gain": -0.039457308874059425,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 43,
+      "cpu_us": 428.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009525844166784331,
+        "playback_delay_samples": 706,
+        "playback_gain": 0.12429424204969669,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 44,
+      "cpu_us": 447.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.012695740400763152,
+        "playback_delay_samples": 869,
+        "playback_gain": 0.14297995653469606,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 45,
+      "cpu_us": 400.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009821951789770144,
+        "playback_delay_samples": 765,
+        "playback_gain": 0.1155892845127486,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 46,
+      "cpu_us": 398.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.01632294305987671,
+        "playback_delay_samples": 864,
+        "playback_gain": 0.09092585061521379,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 47,
+      "cpu_us": 401.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0010060160150187065,
+        "playback_delay_samples": 746,
+        "playback_gain": 0.015530707918943083,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 48,
+      "cpu_us": 444.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013852838972668858,
+        "playback_delay_samples": 438,
+        "playback_gain": -0.09286651561708757,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 49,
+      "cpu_us": 437.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.001048454007876252,
+        "playback_delay_samples": 447,
+        "playback_gain": -0.006188179677814077,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 50,
+      "cpu_us": 422.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013930749305380635,
+        "playback_delay_samples": 950,
+        "playback_gain": -0.17706161187209346,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 51,
+      "cpu_us": 403.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.006824513598944984,
+        "playback_delay_samples": 345,
+        "playback_gain": -0.21831465598768585,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 52,
+      "cpu_us": 399.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005460821510894732,
+        "playback_delay_samples": 73,
+        "playback_gain": 0.12459881188733912,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 53,
+      "cpu_us": 399.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.012737992462070436,
+        "playback_delay_samples": 154,
+        "playback_gain": -0.12840878958092902,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 54,
+      "cpu_us": 680.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 3.5566681403302765e-05,
+        "playback_delay_samples": 139,
+        "playback_gain": -0.006086718379289991,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 55,
+      "cpu_us": 529.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.027435744210086453,
+        "playback_delay_samples": 820,
+        "playback_gain": -0.32880051987104575,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 56,
+      "cpu_us": 508.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.06301467451797271,
+        "playback_delay_samples": 117,
+        "playback_gain": 0.1574857766956899,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 57,
+      "cpu_us": 481.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.017023230524960173,
+        "playback_delay_samples": 300,
+        "playback_gain": 0.11241449604235079,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 58,
+      "cpu_us": 461.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0015830868653996391,
+        "playback_delay_samples": 876,
+        "playback_gain": 0.07823541664628092,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 59,
+      "cpu_us": 446.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010106195790541603,
+        "playback_delay_samples": 534,
+        "playback_gain": -0.04042470626942636,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 60,
+      "cpu_us": 450.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.018156162108870427,
+        "playback_delay_samples": 450,
+        "playback_gain": -0.11975733210483112,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 61,
+      "cpu_us": 490.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008459315430281077,
+        "playback_delay_samples": 12,
+        "playback_gain": 0.11682223400377491,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 62,
+      "cpu_us": 463.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008842066403407652,
+        "playback_delay_samples": 351,
+        "playback_gain": -0.12950219680066027,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 63,
+      "cpu_us": 458.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007765839800155743,
+        "playback_delay_samples": 157,
+        "playback_gain": 0.17826876226892918,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 64,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008701764361600148,
+        "playback_delay_samples": 140,
+        "playback_gain": -0.1630772942781645,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 65,
+      "cpu_us": 447.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 3.356590365335366e-05,
+        "playback_delay_samples": 564,
+        "playback_gain": 0.0014608296453911683,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 66,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0296988440633678,
+        "playback_delay_samples": 496,
+        "playback_gain": 0.22013161761333214,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 67,
+      "cpu_us": 466.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.011079183717551212,
+        "playback_delay_samples": 119,
+        "playback_gain": 0.28775809596156665,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 68,
+      "cpu_us": 487.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0005360279904949437,
+        "playback_delay_samples": 909,
+        "playback_gain": -0.026512640684762494,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 69,
+      "cpu_us": 461.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.012720288724977272,
+        "playback_delay_samples": 250,
+        "playback_gain": 0.04439416924819929,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 70,
+      "cpu_us": 445.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007107103088999229,
+        "playback_delay_samples": 326,
+        "playback_gain": 0.08512514968552623,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 71,
+      "cpu_us": 425.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00696384659791577,
+        "playback_delay_samples": 108,
+        "playback_gain": 0.0355705652472723,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 72,
+      "cpu_us": 421.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.006320457178860831,
+        "playback_delay_samples": 504,
+        "playback_gain": 0.08435953776328321,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 73,
+      "cpu_us": 446.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007805622454504561,
+        "playback_delay_samples": 23,
+        "playback_gain": 0.08036848252529784,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 74,
+      "cpu_us": 475.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0016768612301118304,
+        "playback_delay_samples": 730,
+        "playback_gain": 1.440427442607876,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 75,
+      "cpu_us": 481.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00369020559344337,
+        "playback_delay_samples": 217,
+        "playback_gain": -0.054766791607684086,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 76,
+      "cpu_us": 453.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010717811290096224,
+        "playback_delay_samples": 179,
+        "playback_gain": -0.07717332806100571,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 77,
+      "cpu_us": 5121.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0009800259118256153,
+        "playback_delay_samples": 40,
+        "playback_gain": 0.14367887140208446,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 78,
+      "cpu_us": 448.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002122455085204919,
+        "playback_delay_samples": 482,
+        "playback_gain": -0.07542411942654262,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 79,
+      "cpu_us": 444.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002922092001165456,
+        "playback_delay_samples": 87,
+        "playback_gain": 0.050068573359795386,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 80,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009317983612569237,
+        "playback_delay_samples": 4,
+        "playback_gain": 0.11297667576043466,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 81,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.02274730416426894,
+        "playback_delay_samples": 812,
+        "playback_gain": 0.013980566508021436,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 82,
+      "cpu_us": 439.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010369913517575933,
+        "playback_delay_samples": 793,
+        "playback_gain": -0.04732207716705857,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 83,
+      "cpu_us": 443.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0041730405095796,
+        "playback_delay_samples": 161,
+        "playback_gain": 0.007034334017009369,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 84,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0002650633567327176,
+        "playback_delay_samples": 2,
+        "playback_gain": 0.0012112786953545325,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 85,
+      "cpu_us": 444.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002686112862467215,
+        "playback_delay_samples": 656,
+        "playback_gain": -0.5805939471500763,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 86,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.003346746601118527,
+        "playback_delay_samples": 7,
+        "playback_gain": -0.07249587257314519,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 87,
+      "cpu_us": 450.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 3.9730849307242164e-05,
+        "playback_delay_samples": 130,
+        "playback_gain": 0.0037373725419675152,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 88,
+      "cpu_us": 561.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.02239359483090057,
+        "playback_delay_samples": 202,
+        "playback_gain": 0.1487708211683453,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 89,
+      "cpu_us": 451.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008570552873322236,
+        "playback_delay_samples": 231,
+        "playback_gain": -0.7231762376624894,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 90,
+      "cpu_us": 413.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010004676360505067,
+        "playback_delay_samples": 655,
+        "playback_gain": 0.04508060626272769,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 91,
+      "cpu_us": 422.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.003824594674735097,
+        "playback_delay_samples": 42,
+        "playback_gain": -0.055073023459362894,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 92,
+      "cpu_us": 405.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002495901214968741,
+        "playback_delay_samples": 462,
+        "playback_gain": 0.11856681019339162,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 93,
+      "cpu_us": 403.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0021927935971599154,
+        "playback_delay_samples": 10,
+        "playback_gain": 0.031566864821634524,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 94,
+      "cpu_us": 402.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0009968692779531146,
+        "playback_delay_samples": 510,
+        "playback_gain": -0.5629402284305115,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 95,
+      "cpu_us": 428.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.006523451692944843,
+        "playback_delay_samples": 160,
+        "playback_gain": 0.08913299653116714,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 96,
+      "cpu_us": 403.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0035258453642427233,
+        "playback_delay_samples": 868,
+        "playback_gain": 0.13792080942573545,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 97,
+      "cpu_us": 402.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0024209816748656187,
+        "playback_delay_samples": 408,
+        "playback_gain": -0.1249909257944358,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 98,
+      "cpu_us": 403.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.011708252289386894,
+        "playback_delay_samples": 485,
+        "playback_gain": 19.225139967123248,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 99,
+      "cpu_us": 400.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 1.2734063899135348e-05,
+        "playback_delay_samples": 87,
+        "playback_gain": 0.002927177411420234,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 100,
+      "cpu_us": 402.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 2.9892362397612544e-05,
+        "playback_delay_samples": 51,
+        "playback_gain": -0.00623404413709716,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 101,
+      "cpu_us": 400.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010825833680956316,
+        "playback_delay_samples": 945,
+        "playback_gain": -0.12325237145141174,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 102,
+      "cpu_us": 398.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0030268821927754035,
+        "playback_delay_samples": 509,
+        "playback_gain": -0.05514492234126988,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 103,
+      "cpu_us": 401.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0024960570528585833,
+        "playback_delay_samples": 833,
+        "playback_gain": -0.047868321806350776,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 104,
+      "cpu_us": 420.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.000721624202614683,
+        "playback_delay_samples": 59,
+        "playback_gain": -0.020605684142161358,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 105,
+      "cpu_us": 409.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0040301838227562396,
+        "playback_delay_samples": 70,
+        "playback_gain": -0.03546446752399118,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 106,
+      "cpu_us": 423.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.01923936053594,
+        "playback_delay_samples": 960,
+        "playback_gain": -0.5793644294060313,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 107,
+      "cpu_us": 401.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.003651178131116917,
+        "playback_delay_samples": 815,
+        "playback_gain": 0.05447462636173166,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 108,
+      "cpu_us": 399.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.06658718982309617,
+        "playback_delay_samples": 219,
+        "playback_gain": 0.332705264754578,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 109,
+      "cpu_us": 399.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 1.2283747227803957e-05,
+        "playback_delay_samples": 145,
+        "playback_gain": -1.7263224821312415e-06,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 110,
+      "cpu_us": 398.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010186824399141236,
+        "playback_delay_samples": 418,
+        "playback_gain": -0.27510305434485127,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 111,
+      "cpu_us": 396.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0033240017331469013,
+        "playback_delay_samples": 0,
+        "playback_gain": 0.041276964502160035,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 112,
+      "cpu_us": 432.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0015638475763983942,
+        "playback_delay_samples": 904,
+        "playback_gain": 0.17029047328954244,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 113,
+      "cpu_us": 501.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0012022007182890555,
+        "playback_delay_samples": 248,
+        "playback_gain": -0.05895030333470437,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 114,
+      "cpu_us": 448.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0017681644301104844,
+        "playback_delay_samples": 960,
+        "playback_gain": 0.0014314865029438804,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 115,
+      "cpu_us": 448.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.006685711434537629,
+        "playback_delay_samples": 156,
+        "playback_gain": -0.05109696115161336,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 116,
+      "cpu_us": 442.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007863786462009983,
+        "playback_delay_samples": 181,
+        "playback_gain": 0.09272913119973128,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 117,
+      "cpu_us": 450.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.01830927483776644,
+        "playback_delay_samples": 67,
+        "playback_gain": 0.060081652097693526,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 118,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013712364612640039,
+        "playback_delay_samples": 235,
+        "playback_gain": -0.12954173433358449,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 119,
+      "cpu_us": 442.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0021396329676262255,
+        "playback_delay_samples": 747,
+        "playback_gain": -0.0400652215755391,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 120,
+      "cpu_us": 446.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008878401654900897,
+        "playback_delay_samples": 795,
+        "playback_gain": 3.517238494120553,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 121,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.022388930193490555,
+        "playback_delay_samples": 345,
+        "playback_gain": 0.1203898216222895,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 122,
+      "cpu_us": 447.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013009383556964646,
+        "playback_delay_samples": 415,
+        "playback_gain": -0.08726539183285612,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 123,
+      "cpu_us": 447.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008759409174565618,
+        "playback_delay_samples": 960,
+        "playback_gain": 0.22252265400835913,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 124,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 4.7423230552132686e-05,
+        "playback_delay_samples": 569,
+        "playback_gain": -0.008169224740423621,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 125,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.003117580021150418,
+        "playback_delay_samples": 267,
+        "playback_gain": -0.06196395867758624,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 126,
+      "cpu_us": 439.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005106768361945857,
+        "playback_delay_samples": 569,
+        "playback_gain": 0.1028002042616046,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 127,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004345952550067108,
+        "playback_delay_samples": 792,
+        "playback_gain": -3.472756364115971,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 128,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.01691586896150716,
+        "playback_delay_samples": 490,
+        "playback_gain": -0.1536583655493487,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 129,
+      "cpu_us": 433.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004344181752687195,
+        "playback_delay_samples": 415,
+        "playback_gain": 0.06043074216765569,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 130,
+      "cpu_us": 447.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 3.851591141766184e-05,
+        "playback_delay_samples": 319,
+        "playback_gain": -0.015184824543750976,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 131,
+      "cpu_us": 434.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00221461430795437,
+        "playback_delay_samples": 936,
+        "playback_gain": 0.032106761894118825,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 132,
+      "cpu_us": 442.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0019662197183964126,
+        "playback_delay_samples": 705,
+        "playback_gain": 0.07701211511594143,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 133,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0027703879239932803,
+        "playback_delay_samples": 688,
+        "playback_gain": -0.24576549524546046,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 134,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0021767069416363228,
+        "playback_delay_samples": 321,
+        "playback_gain": -0.027245490043468486,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 135,
+      "cpu_us": 449.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002188625346657046,
+        "playback_delay_samples": 182,
+        "playback_gain": 0.08875419362441758,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 136,
+      "cpu_us": 444.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.001640289732062024,
+        "playback_delay_samples": 852,
+        "playback_gain": -0.02668945979576822,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 137,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002796790581873744,
+        "playback_delay_samples": 885,
+        "playback_gain": 0.07651056306821392,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 138,
+      "cpu_us": 445.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005497430840359232,
+        "playback_delay_samples": 46,
+        "playback_gain": 0.14873932047604602,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 139,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0020989276342391013,
+        "playback_delay_samples": 5,
+        "playback_gain": -0.05347657853658073,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 140,
+      "cpu_us": 442.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004943042148967811,
+        "playback_delay_samples": 791,
+        "playback_gain": -0.057452749882181436,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 141,
+      "cpu_us": 433.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0028056776998084633,
+        "playback_delay_samples": 622,
+        "playback_gain": 1.0409293999527445,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 142,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007018305435168909,
+        "playback_delay_samples": 898,
+        "playback_gain": -0.061421823827047875,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 143,
+      "cpu_us": 465.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0006755833895584286,
+        "playback_delay_samples": 938,
+        "playback_gain": -0.012165665944319717,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 144,
+      "cpu_us": 445.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0001713278408904917,
+        "playback_delay_samples": 863,
+        "playback_gain": 0.02257045474639105,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 145,
+      "cpu_us": 431.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.001114185876220233,
+        "playback_delay_samples": 914,
+        "playback_gain": 0.042107255675318304,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 146,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.014171521250158881,
+        "playback_delay_samples": 317,
+        "playback_gain": -0.10212047557576741,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 147,
+      "cpu_us": 434.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.030763223566929825,
+        "playback_delay_samples": 238,
+        "playback_gain": -0.2707470719633965,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 148,
+      "cpu_us": 432.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0008941722878995703,
+        "playback_delay_samples": 83,
+        "playback_gain": -0.17626948601143705,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 149,
+      "cpu_us": 433.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00039177096620879033,
+        "playback_delay_samples": 671,
+        "playback_gain": -0.008290828196500474,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 150,
+      "cpu_us": 433.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004159106382855186,
+        "playback_delay_samples": 497,
+        "playback_gain": -0.18021155167953146,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 151,
+      "cpu_us": 434.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005726001914759856,
+        "playback_delay_samples": 295,
+        "playback_gain": -0.0737560523319235,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 152,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004871913292700025,
+        "playback_delay_samples": 185,
+        "playback_gain": -0.18164685775671913,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 153,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0038896769838573353,
+        "playback_delay_samples": 110,
+        "playback_gain": -0.05794032604705443,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 154,
+      "cpu_us": 439.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0037805322962535712,
+        "playback_delay_samples": 17,
+        "playback_gain": 0.037462905716230094,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 155,
+      "cpu_us": 564.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009676660912636503,
+        "playback_delay_samples": 35,
+        "playback_gain": 0.3699619859880828,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 156,
+      "cpu_us": 503.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.02907893709660067,
+        "playback_delay_samples": 953,
+        "playback_gain": -0.6993976733406432,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 157,
+      "cpu_us": 422.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010677845505051443,
+        "playback_delay_samples": 66,
+        "playback_gain": -0.12018073116439741,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 158,
+      "cpu_us": 409.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0017251376142924757,
+        "playback_delay_samples": 0,
+        "playback_gain": -0.025065820558801036,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 159,
+      "cpu_us": 407.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008761692402868476,
+        "playback_delay_samples": 267,
+        "playback_gain": -0.14661442584683626,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 160,
+      "cpu_us": 411.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0049400989719433006,
+        "playback_delay_samples": 205,
+        "playback_gain": -0.07408081637376135,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 161,
+      "cpu_us": 406.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.011701585824844662,
+        "playback_delay_samples": 201,
+        "playback_gain": 0.18563721561143062,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 162,
+      "cpu_us": 402.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00014111367937544295,
+        "playback_delay_samples": 925,
+        "playback_gain": -0.039457308874059425,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 163,
+      "cpu_us": 404.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009525844166784331,
+        "playback_delay_samples": 706,
+        "playback_gain": 0.12429424204969669,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 164,
+      "cpu_us": 400.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.012695740400763152,
+        "playback_delay_samples": 869,
+        "playback_gain": 0.14297995653469606,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 165,
+      "cpu_us": 402.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009821951789770144,
+        "playback_delay_samples": 765,
+        "playback_gain": 0.1155892845127486,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 166,
+      "cpu_us": 401.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.01632294305987671,
+        "playback_delay_samples": 864,
+        "playback_gain": 0.09092585061521379,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 167,
+      "cpu_us": 405.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0010060160150187065,
+        "playback_delay_samples": 746,
+        "playback_gain": 0.015530707918943083,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 168,
+      "cpu_us": 403.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013852838972668858,
+        "playback_delay_samples": 438,
+        "playback_gain": -0.09286651561708757,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 169,
+      "cpu_us": 401.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.001048454007876252,
+        "playback_delay_samples": 447,
+        "playback_gain": -0.006188179677814077,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 170,
+      "cpu_us": 402.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013930749305380635,
+        "playback_delay_samples": 950,
+        "playback_gain": -0.17706161187209346,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 171,
+      "cpu_us": 402.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.006824513598944984,
+        "playback_delay_samples": 345,
+        "playback_gain": -0.21831465598768585,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 172,
+      "cpu_us": 404.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005460821510894732,
+        "playback_delay_samples": 73,
+        "playback_gain": 0.12459881188733912,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 173,
+      "cpu_us": 402.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.012737992462070436,
+        "playback_delay_samples": 154,
+        "playback_gain": -0.12840878958092902,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 174,
+      "cpu_us": 400.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 3.5566681403302765e-05,
+        "playback_delay_samples": 139,
+        "playback_gain": -0.006086718379289991,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 175,
+      "cpu_us": 401.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.027435744210086453,
+        "playback_delay_samples": 820,
+        "playback_gain": -0.32880051987104575,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 176,
+      "cpu_us": 401.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.06301467451797271,
+        "playback_delay_samples": 117,
+        "playback_gain": 0.1574857766956899,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 177,
+      "cpu_us": 398.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.017023230524960173,
+        "playback_delay_samples": 300,
+        "playback_gain": 0.11241449604235079,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 178,
+      "cpu_us": 398.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0015830868653996391,
+        "playback_delay_samples": 876,
+        "playback_gain": 0.07823541664628092,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 179,
+      "cpu_us": 397.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010106195790541603,
+        "playback_delay_samples": 534,
+        "playback_gain": -0.04042470626942636,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 180,
+      "cpu_us": 526.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.018156162108870427,
+        "playback_delay_samples": 450,
+        "playback_gain": -0.11975733210483112,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 181,
+      "cpu_us": 443.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008459315430281077,
+        "playback_delay_samples": 12,
+        "playback_gain": 0.11682223400377491,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 182,
+      "cpu_us": 447.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008842066403407652,
+        "playback_delay_samples": 351,
+        "playback_gain": -0.12950219680066027,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 183,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007765839800155743,
+        "playback_delay_samples": 157,
+        "playback_gain": 0.17826876226892918,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 184,
+      "cpu_us": 437.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008701764361600148,
+        "playback_delay_samples": 140,
+        "playback_gain": -0.1630772942781645,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 185,
+      "cpu_us": 448.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 3.356590365335366e-05,
+        "playback_delay_samples": 564,
+        "playback_gain": 0.0014608296453911683,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 186,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0296988440633678,
+        "playback_delay_samples": 496,
+        "playback_gain": 0.22013161761333214,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 187,
+      "cpu_us": 465.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.011079183717551212,
+        "playback_delay_samples": 119,
+        "playback_gain": 0.28775809596156665,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 188,
+      "cpu_us": 446.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0005360279904949437,
+        "playback_delay_samples": 909,
+        "playback_gain": -0.026512640684762494,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 189,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.012720288724977272,
+        "playback_delay_samples": 250,
+        "playback_gain": 0.04439416924819929,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 190,
+      "cpu_us": 462.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007107103088999229,
+        "playback_delay_samples": 326,
+        "playback_gain": 0.08512514968552623,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 191,
+      "cpu_us": 437.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00696384659791577,
+        "playback_delay_samples": 108,
+        "playback_gain": 0.0355705652472723,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 192,
+      "cpu_us": 437.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.006320457178860831,
+        "playback_delay_samples": 504,
+        "playback_gain": 0.08435953776328321,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 193,
+      "cpu_us": 437.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007805622454504561,
+        "playback_delay_samples": 23,
+        "playback_gain": 0.08036848252529784,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 194,
+      "cpu_us": 461.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0016768612301118304,
+        "playback_delay_samples": 730,
+        "playback_gain": 1.440427442607876,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 195,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00369020559344337,
+        "playback_delay_samples": 217,
+        "playback_gain": -0.054766791607684086,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 196,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010717811290096224,
+        "playback_delay_samples": 179,
+        "playback_gain": -0.07717332806100571,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 197,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0009800259118256153,
+        "playback_delay_samples": 40,
+        "playback_gain": 0.14367887140208446,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 198,
+      "cpu_us": 433.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002122455085204919,
+        "playback_delay_samples": 482,
+        "playback_gain": -0.07542411942654262,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 199,
+      "cpu_us": 444.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002922092001165456,
+        "playback_delay_samples": 87,
+        "playback_gain": 0.050068573359795386,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 200,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009317983612569237,
+        "playback_delay_samples": 4,
+        "playback_gain": 0.11297667576043466,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 201,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.02274730416426894,
+        "playback_delay_samples": 812,
+        "playback_gain": 0.013980566508021436,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 202,
+      "cpu_us": 445.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010369913517575933,
+        "playback_delay_samples": 793,
+        "playback_gain": -0.04732207716705857,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 203,
+      "cpu_us": 442.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0041730405095796,
+        "playback_delay_samples": 161,
+        "playback_gain": 0.007034334017009369,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 204,
+      "cpu_us": 444.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0002650633567327176,
+        "playback_delay_samples": 2,
+        "playback_gain": 0.0012112786953545325,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 205,
+      "cpu_us": 443.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002686112862467215,
+        "playback_delay_samples": 656,
+        "playback_gain": -0.5805939471500763,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 206,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.003346746601118527,
+        "playback_delay_samples": 7,
+        "playback_gain": -0.07249587257314519,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 207,
+      "cpu_us": 445.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 3.9730849307242164e-05,
+        "playback_delay_samples": 130,
+        "playback_gain": 0.0037373725419675152,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 208,
+      "cpu_us": 437.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.02239359483090057,
+        "playback_delay_samples": 202,
+        "playback_gain": 0.1487708211683453,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 209,
+      "cpu_us": 484.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008570552873322236,
+        "playback_delay_samples": 231,
+        "playback_gain": -0.7231762376624894,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 210,
+      "cpu_us": 466.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010004676360505067,
+        "playback_delay_samples": 655,
+        "playback_gain": 0.04508060626272769,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 211,
+      "cpu_us": 449.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.003824594674735097,
+        "playback_delay_samples": 42,
+        "playback_gain": -0.055073023459362894,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 212,
+      "cpu_us": 445.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002495901214968741,
+        "playback_delay_samples": 462,
+        "playback_gain": 0.11856681019339162,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 213,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0021927935971599154,
+        "playback_delay_samples": 10,
+        "playback_gain": 0.031566864821634524,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 214,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0009968692779531146,
+        "playback_delay_samples": 510,
+        "playback_gain": -0.5629402284305115,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 215,
+      "cpu_us": 462.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.006523451692944843,
+        "playback_delay_samples": 160,
+        "playback_gain": 0.08913299653116714,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 216,
+      "cpu_us": 464.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0035258453642427233,
+        "playback_delay_samples": 868,
+        "playback_gain": 0.13792080942573545,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 217,
+      "cpu_us": 476.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0024209816748656187,
+        "playback_delay_samples": 408,
+        "playback_gain": -0.1249909257944358,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 218,
+      "cpu_us": 465.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.011708252289386894,
+        "playback_delay_samples": 485,
+        "playback_gain": 19.225139967123248,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 219,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 1.2734063899135348e-05,
+        "playback_delay_samples": 87,
+        "playback_gain": 0.002927177411420234,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 220,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 2.9892362397612544e-05,
+        "playback_delay_samples": 51,
+        "playback_gain": -0.00623404413709716,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 221,
+      "cpu_us": 439.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010825833680956316,
+        "playback_delay_samples": 945,
+        "playback_gain": -0.12325237145141174,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 222,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0030268821927754035,
+        "playback_delay_samples": 509,
+        "playback_gain": -0.05514492234126988,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 223,
+      "cpu_us": 451.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0024960570528585833,
+        "playback_delay_samples": 833,
+        "playback_gain": -0.047868321806350776,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 224,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.000721624202614683,
+        "playback_delay_samples": 59,
+        "playback_gain": -0.020605684142161358,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 225,
+      "cpu_us": 437.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0040301838227562396,
+        "playback_delay_samples": 70,
+        "playback_gain": -0.03546446752399118,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 226,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.01923936053594,
+        "playback_delay_samples": 960,
+        "playback_gain": -0.5793644294060313,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 227,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.003651178131116917,
+        "playback_delay_samples": 815,
+        "playback_gain": 0.05447462636173166,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 228,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.06658718982309617,
+        "playback_delay_samples": 219,
+        "playback_gain": 0.332705264754578,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 229,
+      "cpu_us": 434.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 1.2283747227803957e-05,
+        "playback_delay_samples": 145,
+        "playback_gain": -1.7263224821312415e-06,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 230,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010186824399141236,
+        "playback_delay_samples": 418,
+        "playback_gain": -0.27510305434485127,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 231,
+      "cpu_us": 439.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0033240017331469013,
+        "playback_delay_samples": 0,
+        "playback_gain": 0.041276964502160035,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 232,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0015638475763983942,
+        "playback_delay_samples": 904,
+        "playback_gain": 0.17029047328954244,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 233,
+      "cpu_us": 434.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0012022007182890555,
+        "playback_delay_samples": 248,
+        "playback_gain": -0.05895030333470437,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 234,
+      "cpu_us": 437.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0017681644301104844,
+        "playback_delay_samples": 960,
+        "playback_gain": 0.0014314865029438804,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 235,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.006685711434537629,
+        "playback_delay_samples": 156,
+        "playback_gain": -0.05109696115161336,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 236,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007863786462009983,
+        "playback_delay_samples": 181,
+        "playback_gain": 0.09272913119973128,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 237,
+      "cpu_us": 434.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.01830927483776644,
+        "playback_delay_samples": 67,
+        "playback_gain": 0.060081652097693526,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 238,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013712364612640039,
+        "playback_delay_samples": 235,
+        "playback_gain": -0.12954173433358449,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 239,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0021396329676262255,
+        "playback_delay_samples": 747,
+        "playback_gain": -0.0400652215755391,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 240,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008878401654900897,
+        "playback_delay_samples": 795,
+        "playback_gain": 3.517238494120553,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 241,
+      "cpu_us": 447.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.022388930193490555,
+        "playback_delay_samples": 345,
+        "playback_gain": 0.1203898216222895,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 242,
+      "cpu_us": 450.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013009383556964646,
+        "playback_delay_samples": 415,
+        "playback_gain": -0.08726539183285612,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 243,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008759409174565618,
+        "playback_delay_samples": 960,
+        "playback_gain": 0.22252265400835913,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 244,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 4.7423230552132686e-05,
+        "playback_delay_samples": 569,
+        "playback_gain": -0.008169224740423621,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 245,
+      "cpu_us": 442.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.003117580021150418,
+        "playback_delay_samples": 267,
+        "playback_gain": -0.06196395867758624,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 246,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005106768361945857,
+        "playback_delay_samples": 569,
+        "playback_gain": 0.1028002042616046,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 247,
+      "cpu_us": 447.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004345952550067108,
+        "playback_delay_samples": 792,
+        "playback_gain": -3.472756364115971,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 248,
+      "cpu_us": 445.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.01691586896150716,
+        "playback_delay_samples": 490,
+        "playback_gain": -0.1536583655493487,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 249,
+      "cpu_us": 436.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004344181752687195,
+        "playback_delay_samples": 415,
+        "playback_gain": 0.06043074216765569,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 250,
+      "cpu_us": 461.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 3.851591141766184e-05,
+        "playback_delay_samples": 319,
+        "playback_gain": -0.015184824543750976,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 251,
+      "cpu_us": 439.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00221461430795437,
+        "playback_delay_samples": 936,
+        "playback_gain": 0.032106761894118825,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 252,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0019662197183964126,
+        "playback_delay_samples": 705,
+        "playback_gain": 0.07701211511594143,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 253,
+      "cpu_us": 433.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0027703879239932803,
+        "playback_delay_samples": 688,
+        "playback_gain": -0.24576549524546046,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 254,
+      "cpu_us": 448.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0021767069416363228,
+        "playback_delay_samples": 321,
+        "playback_gain": -0.027245490043468486,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 255,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002188625346657046,
+        "playback_delay_samples": 182,
+        "playback_gain": 0.08875419362441758,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 256,
+      "cpu_us": 439.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.001640289732062024,
+        "playback_delay_samples": 852,
+        "playback_gain": -0.02668945979576822,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 257,
+      "cpu_us": 441.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.002796790581873744,
+        "playback_delay_samples": 885,
+        "playback_gain": 0.07651056306821392,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 258,
+      "cpu_us": 444.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005497430840359232,
+        "playback_delay_samples": 46,
+        "playback_gain": 0.14873932047604602,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 259,
+      "cpu_us": 437.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0020989276342391013,
+        "playback_delay_samples": 5,
+        "playback_gain": -0.05347657853658073,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 260,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004943042148967811,
+        "playback_delay_samples": 791,
+        "playback_gain": -0.057452749882181436,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 261,
+      "cpu_us": 437.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0028056776998084633,
+        "playback_delay_samples": 622,
+        "playback_gain": 1.0409293999527445,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 262,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.007018305435168909,
+        "playback_delay_samples": 898,
+        "playback_gain": -0.061421823827047875,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 263,
+      "cpu_us": 572.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0006755833895584286,
+        "playback_delay_samples": 938,
+        "playback_gain": -0.012165665944319717,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 264,
+      "cpu_us": 458.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0001713278408904917,
+        "playback_delay_samples": 863,
+        "playback_gain": 0.02257045474639105,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 265,
+      "cpu_us": 413.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.001114185876220233,
+        "playback_delay_samples": 914,
+        "playback_gain": 0.042107255675318304,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 266,
+      "cpu_us": 406.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.014171521250158881,
+        "playback_delay_samples": 317,
+        "playback_gain": -0.10212047557576741,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 267,
+      "cpu_us": 407.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.030763223566929825,
+        "playback_delay_samples": 238,
+        "playback_gain": -0.2707470719633965,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 268,
+      "cpu_us": 426.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0008941722878995703,
+        "playback_delay_samples": 83,
+        "playback_gain": -0.17626948601143705,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 269,
+      "cpu_us": 424.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00039177096620879033,
+        "playback_delay_samples": 671,
+        "playback_gain": -0.008290828196500474,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 270,
+      "cpu_us": 427.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004159106382855186,
+        "playback_delay_samples": 497,
+        "playback_gain": -0.18021155167953146,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 271,
+      "cpu_us": 425.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005726001914759856,
+        "playback_delay_samples": 295,
+        "playback_gain": -0.0737560523319235,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 272,
+      "cpu_us": 422.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.004871913292700025,
+        "playback_delay_samples": 185,
+        "playback_gain": -0.18164685775671913,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 273,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0038896769838573353,
+        "playback_delay_samples": 110,
+        "playback_gain": -0.05794032604705443,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 274,
+      "cpu_us": 409.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0037805322962535712,
+        "playback_delay_samples": 17,
+        "playback_gain": 0.037462905716230094,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 275,
+      "cpu_us": 403.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009676660912636503,
+        "playback_delay_samples": 35,
+        "playback_gain": 0.3699619859880828,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 276,
+      "cpu_us": 403.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.02907893709660067,
+        "playback_delay_samples": 953,
+        "playback_gain": -0.6993976733406432,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 277,
+      "cpu_us": 429.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010677845505051443,
+        "playback_delay_samples": 66,
+        "playback_gain": -0.12018073116439741,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 278,
+      "cpu_us": 422.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0017251376142924757,
+        "playback_delay_samples": 0,
+        "playback_gain": -0.025065820558801036,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 279,
+      "cpu_us": 400.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.008761692402868476,
+        "playback_delay_samples": 267,
+        "playback_gain": -0.14661442584683626,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 280,
+      "cpu_us": 440.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0049400989719433006,
+        "playback_delay_samples": 205,
+        "playback_gain": -0.07408081637376135,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 281,
+      "cpu_us": 435.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.011701585824844662,
+        "playback_delay_samples": 201,
+        "playback_gain": 0.18563721561143062,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 282,
+      "cpu_us": 453.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.00014111367937544295,
+        "playback_delay_samples": 925,
+        "playback_gain": -0.039457308874059425,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 283,
+      "cpu_us": 443.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009525844166784331,
+        "playback_delay_samples": 706,
+        "playback_gain": 0.12429424204969669,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 284,
+      "cpu_us": 421.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.012695740400763152,
+        "playback_delay_samples": 869,
+        "playback_gain": 0.14297995653469606,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 285,
+      "cpu_us": 406.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.009821951789770144,
+        "playback_delay_samples": 765,
+        "playback_gain": 0.1155892845127486,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 286,
+      "cpu_us": 427.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.01632294305987671,
+        "playback_delay_samples": 864,
+        "playback_gain": 0.09092585061521379,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 287,
+      "cpu_us": 602.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0010060160150187065,
+        "playback_delay_samples": 746,
+        "playback_gain": 0.015530707918943083,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 288,
+      "cpu_us": 496.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013852838972668858,
+        "playback_delay_samples": 438,
+        "playback_gain": -0.09286651561708757,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 289,
+      "cpu_us": 462.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.001048454007876252,
+        "playback_delay_samples": 447,
+        "playback_gain": -0.006188179677814077,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 290,
+      "cpu_us": 472.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.013930749305380635,
+        "playback_delay_samples": 950,
+        "playback_gain": -0.17706161187209346,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 291,
+      "cpu_us": 500.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.006824513598944984,
+        "playback_delay_samples": 345,
+        "playback_gain": -0.21831465598768585,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 292,
+      "cpu_us": 470.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.005460821510894732,
+        "playback_delay_samples": 73,
+        "playback_gain": 0.12459881188733912,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 293,
+      "cpu_us": 486.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.012737992462070436,
+        "playback_delay_samples": 154,
+        "playback_gain": -0.12840878958092902,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 294,
+      "cpu_us": 528.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 3.5566681403302765e-05,
+        "playback_delay_samples": 139,
+        "playback_gain": -0.006086718379289991,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 295,
+      "cpu_us": 509.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.027435744210086453,
+        "playback_delay_samples": 820,
+        "playback_gain": -0.32880051987104575,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 296,
+      "cpu_us": 439.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.06301467451797271,
+        "playback_delay_samples": 117,
+        "playback_gain": 0.1574857766956899,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 297,
+      "cpu_us": 438.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.017023230524960173,
+        "playback_delay_samples": 300,
+        "playback_gain": 0.11241449604235079,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 298,
+      "cpu_us": 425.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.0015830868653996391,
+        "playback_delay_samples": 876,
+        "playback_gain": 0.07823541664628092,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 299,
+      "cpu_us": 402.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": 0.010106195790541603,
+        "playback_delay_samples": 534,
+        "playback_gain": -0.04042470626942636,
+        "leak_suppression": false
+      }
+    }
+  ]
+}

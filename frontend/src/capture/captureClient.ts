@@ -497,16 +497,7 @@ export class CaptureClient {
     if (state.health === "failed") {
       throw new Error(`${lane} lane is failed; recreate the capture session before replacing it`);
     }
-    const [context, descriptor] = await Promise.all([this.prepare(), this.requireDescriptor()]);
-    const source = context.createMediaStreamSource(stream);
-    const framer = new AudioWorkletNode(context, "lane-framer", {
-      numberOfInputs: 1,
-      numberOfOutputs: 1,
-      processorOptions: { lane, frameSamples: descriptor.frameSamples },
-    });
-    const mute = context.createGain();
-    mute.gain.value = 0;
-    source.connect(framer).connect(mute).connect(context.destination);
+    const { source, framer, mute } = await this.createLaneGraph(lane, stream, tracks);
 
     this.detachLaneResources(state);
     state.source = source;
@@ -684,22 +675,43 @@ export class CaptureClient {
     }
   }
 
+  // Own acquired tracks immediately: attachment can fail before a LaneState exists.
+  private async createLaneGraph(
+    lane: CaptureLane,
+    stream: MediaStream,
+    tracks: MediaStreamTrack[],
+  ): Promise<{ source: MediaStreamAudioSourceNode; framer: AudioWorkletNode; mute: GainNode }> {
+    let source: MediaStreamAudioSourceNode | undefined;
+    let framer: AudioWorkletNode | undefined;
+    let mute: GainNode | undefined;
+    try {
+      const [context, descriptor] = await Promise.all([this.prepare(), this.requireDescriptor()]);
+      source = context.createMediaStreamSource(stream);
+      framer = new AudioWorkletNode(context, "lane-framer", {
+        numberOfInputs: 1,
+        numberOfOutputs: 1,
+        processorOptions: { lane, frameSamples: descriptor.frameSamples },
+      });
+      mute = context.createGain();
+      mute.gain.value = 0;
+      source.connect(framer).connect(mute).connect(context.destination);
+      return { source, framer, mute };
+    } catch (error) {
+      source?.disconnect();
+      framer?.disconnect();
+      mute?.disconnect();
+      tracks.forEach(track => track.stop());
+      throw error;
+    }
+  }
+
   private async attachLane(
     lane: CaptureLane,
     stream: MediaStream,
     tracks: MediaStreamTrack[],
   ): Promise<void> {
     if (this.lanes.has(lane)) throw new Error(`${lane} lane is already active`);
-    const [context, descriptor] = await Promise.all([this.prepare(), this.requireDescriptor()]);
-    const source = context.createMediaStreamSource(stream);
-    const framer = new AudioWorkletNode(context, "lane-framer", {
-      numberOfInputs: 1,
-      numberOfOutputs: 1,
-      processorOptions: { lane, frameSamples: descriptor.frameSamples },
-    });
-    const mute = context.createGain();
-    mute.gain.value = 0;
-    source.connect(framer).connect(mute).connect(context.destination);
+    const { source, framer, mute } = await this.createLaneGraph(lane, stream, tracks);
     const state: LaneState = {
       source,
       framer,

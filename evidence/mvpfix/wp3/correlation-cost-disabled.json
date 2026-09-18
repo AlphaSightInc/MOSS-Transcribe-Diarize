@@ -1,0 +1,4810 @@
+{
+  "correlation": false,
+  "chunks": 300,
+  "samples_per_chunk": 8000,
+  "clock": "process_time_ns",
+  "median_us": 1.0,
+  "max_us": 17.0,
+  "rows": [
+    {
+      "chunk": 0,
+      "cpu_us": 7.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 1,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 2,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 3,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 4,
+      "cpu_us": 11.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 5,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 6,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 7,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 8,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 9,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 10,
+      "cpu_us": 3.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 11,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 12,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 13,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 14,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 15,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 16,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 17,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 18,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 19,
+      "cpu_us": 3.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 20,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 21,
+      "cpu_us": 3.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 22,
+      "cpu_us": 3.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 23,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 24,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 25,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 26,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 27,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 28,
+      "cpu_us": 16.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 29,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 30,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 31,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 32,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 33,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 34,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 35,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 36,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 37,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 38,
+      "cpu_us": 3.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 39,
+      "cpu_us": 9.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 40,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 41,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 42,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 43,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 44,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 45,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 46,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 47,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 48,
+      "cpu_us": 10.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 49,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 50,
+      "cpu_us": 6.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 51,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 52,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 53,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 54,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 55,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 56,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 57,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 58,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 59,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 60,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 61,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 62,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 63,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 64,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 65,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 66,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 67,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 68,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 69,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 70,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 71,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 72,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 73,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 74,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 75,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 76,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 77,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 78,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 79,
+      "cpu_us": 7.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 80,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 81,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 82,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 83,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 84,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 85,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 86,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 87,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 88,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 89,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 90,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 91,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 92,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 93,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 94,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 95,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 96,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 97,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 98,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 99,
+      "cpu_us": 16.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 100,
+      "cpu_us": 8.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 101,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 102,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 103,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 104,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 105,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 106,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 107,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 108,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 109,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 110,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 111,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 112,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 113,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 114,
+      "cpu_us": 16.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 115,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 116,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 117,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 118,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 119,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 120,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 121,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 122,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 123,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 124,
+      "cpu_us": 11.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 125,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 126,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 127,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 128,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 129,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 130,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 131,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 132,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 133,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 134,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 135,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 136,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 137,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 138,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 139,
+      "cpu_us": 3.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 140,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 141,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 142,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 143,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 144,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 145,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 146,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 147,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 148,
+      "cpu_us": 17.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 149,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 150,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 151,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 152,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 153,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 154,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 155,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 156,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 157,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 158,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 159,
+      "cpu_us": 10.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 160,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 161,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 162,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 163,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 164,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 165,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 166,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 167,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 168,
+      "cpu_us": 10.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 169,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 170,
+      "cpu_us": 5.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 171,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 172,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 173,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 174,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 175,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 176,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 177,
+      "cpu_us": 3.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 178,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 179,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 180,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 181,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 182,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 183,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 184,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 185,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 186,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 187,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 188,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 189,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 190,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 191,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 192,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 193,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 194,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 195,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 196,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 197,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 198,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 199,
+      "cpu_us": 8.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 200,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 201,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 202,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 203,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 204,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 205,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 206,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 207,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 208,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 209,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 210,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 211,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 212,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 213,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 214,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 215,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 216,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 217,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 218,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 219,
+      "cpu_us": 12.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 220,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 221,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 222,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 223,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 224,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 225,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 226,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 227,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 228,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 229,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 230,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 231,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 232,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 233,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 234,
+      "cpu_us": 17.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 235,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 236,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 237,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 238,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 239,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 240,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 241,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 242,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 243,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 244,
+      "cpu_us": 11.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 245,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 246,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 247,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 248,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 249,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 250,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 251,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 252,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 253,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 254,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 255,
+      "cpu_us": 3.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 256,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 257,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 258,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 259,
+      "cpu_us": 4.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 260,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 261,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 262,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 263,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 264,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 265,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 266,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 267,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 268,
+      "cpu_us": 17.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 269,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 270,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 271,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 272,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 273,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 274,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 275,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 276,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 277,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 278,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 279,
+      "cpu_us": 11.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 280,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 281,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 282,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 283,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 284,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 285,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 286,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 287,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 288,
+      "cpu_us": 10.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 289,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 290,
+      "cpu_us": 5.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 291,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 292,
+      "cpu_us": 2.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 293,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 294,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 295,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 296,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 297,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 298,
+      "cpu_us": 0.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    },
+    {
+      "chunk": 299,
+      "cpu_us": 1.0,
+      "state": {
+        "system": {
+          "decision": "decode"
+        },
+        "microphone": {
+          "decision": "decode"
+        },
+        "playback_explained_fraction": null,
+        "playback_delay_samples": null,
+        "playback_gain": null,
+        "leak_suppression": false
+      }
+    }
+  ]
+}
