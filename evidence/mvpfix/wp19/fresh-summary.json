@@ -1,0 +1,150 @@
+{
+  "fresh_context": "PASS",
+  "tested_sha": "30418b2e7c5d15bedf835cb10f95dddf1803ee09",
+  "branch": "mvpfix/wp19-file-identity-album",
+  "verified_at_utc": "2026-09-18T06:32:53.597892+00:00",
+  "import_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp19-file-identity-album/moss_transcribe_diarize/__init__.py",
+  "A1": {
+    "status": "PASS",
+    "cases": [
+      {
+        "voices": 1,
+        "windows": 3,
+        "identities": 1,
+        "text_time_unchanged": true
+      },
+      {
+        "voices": 2,
+        "windows": 3,
+        "identities": 2,
+        "text_time_unchanged": true
+      }
+    ]
+  },
+  "A2": {
+    "status": "PASS",
+    "returning_voice_labels": [
+      "S01",
+      "S02",
+      "S01"
+    ],
+    "unknown_short_label": "S00"
+  },
+  "A3": {
+    "status": "PASS",
+    "six_minute_mode": "fresh CPU album replay of retained real decoder outputs",
+    "thirty_minute_mode": "fresh reference scoring and same-input legacy control on retained album output; no fresh album timing",
+    "equality_fields": [
+      "identities",
+      "mapping",
+      "segments",
+      "correct_segments",
+      "rows",
+      "text_time_unchanged"
+    ],
+    "all_equal": true,
+    "measurements": [
+      {
+        "minutes": 6,
+        "identities": 3,
+        "window_count": 3,
+        "segments": 92,
+        "scored_segments": 92,
+        "correct_segments": 84,
+        "segment_accuracy": 0.9130434782608695,
+        "truth_overlap_seconds": 338.0399999999998,
+        "correct_seconds": 322.10999999999984,
+        "duration_accuracy": 0.9528753993610225,
+        "unattributed_segments": 0,
+        "unscored_segments": 0,
+        "resolver_seconds": 62.804386583011365,
+        "text_time_unchanged": true
+      },
+      {
+        "minutes": 30,
+        "identities": 3,
+        "window_count": 15,
+        "segments": 464,
+        "scored_segments": 464,
+        "correct_segments": 420,
+        "segment_accuracy": 0.9051724137931034,
+        "truth_overlap_seconds": 1684.9800000000082,
+        "correct_seconds": 1592.9700000000073,
+        "duration_accuracy": 0.9453940106114016,
+        "unattributed_segments": 0,
+        "unscored_segments": 0,
+        "resolver_seconds": 332.00792645898764,
+        "text_time_unchanged": true
+      }
+    ]
+  },
+  "A4": {
+    "status": "PASS",
+    "integration": "real File task/window stitching/WAV-MP3 archive/restart/rename/private enrollment with fake decoder and perfect vectors",
+    "exports": [
+      "md",
+      "txt",
+      "json",
+      "srt",
+      "vtt"
+    ],
+    "browser_campaign": false
+  },
+  "A5": {
+    "status": "PASS",
+    "python": {
+      "passed": 1889,
+      "skipped": 2,
+      "subtests": 37,
+      "warnings": 21,
+      "seconds": 157.94,
+      "exit_code": 0
+    },
+    "frontend": {
+      "passed": 249,
+      "files": 28,
+      "seconds": 2.72,
+      "exit_code": 0
+    },
+    "typecheck_exit_code": 0,
+    "fifteen_window_resolver_seconds": 332.00792645898764,
+    "fifteen_window_timing": "retained original measurement including embedding; not remeasured"
+  },
+  "lease": {
+    "fresh_passed": 20,
+    "fresh_total": 20,
+    "separate_processes": true,
+    "policy_seconds": 0.03,
+    "proof": "existing fake timer; renewal cancels old handle; real expiry callback fires after capture and heartbeat; terminal interrupted; later frame 409"
+  },
+  "checks": {
+    "import_custody": "PASS",
+    "fake_probe_exit": 0,
+    "replay_exit": 0,
+    "evidence_verifier_exit": 0,
+    "layout_exit": 0,
+    "diff_check_exit": 0,
+    "tunnel_lsof_exit": 1,
+    "tunnel_listeners": 0
+  },
+  "decoder": {
+    "fresh_requests": 0,
+    "original_requests": 18,
+    "original_max_in_flight": 1,
+    "original_port": 18119,
+    "original_seconds": 93.56177241601108,
+    "original_generated_tokens": 21176
+  },
+  "deviations": [
+    "Added fresh 20-process lease campaign to prescribed verification.",
+    "No new decode/tunnel: VERIFY.md explicitly requires offline replay."
+  ],
+  "unmeasured": [
+    "Fresh 30-minute album runtime",
+    "Real-browser click campaign",
+    "Acoustic enrollment accuracy beyond retained MP3 prototype",
+    "Broader corpus and concurrent capacity",
+    "Word accuracy",
+    "Currency cost"
+  ]
+}

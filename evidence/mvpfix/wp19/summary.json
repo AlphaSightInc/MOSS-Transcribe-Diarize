@@ -51,5 +51,6 @@
     "passed": 20,
     "total": 20
   },
-  "fresh_context": "PENDING /new"
+  "fresh_context": "PASS",
+  "fresh_verification": "fresh-summary.json"
 }

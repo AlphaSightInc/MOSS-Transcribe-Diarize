@@ -1,6 +1,10 @@
 # WP19 measured acceptance
 
-**PASS A1–A5 locally; fresh-context gate still pending before final report.**
+**PASS A1–A5 locally and in fresh-context verification at 30418b2e.**
+Fresh Python 1889 passed / 2 skipped / 37 subtests (157.94 s); frontend 249/249;
+typecheck PASS; fresh lease 20/20. Six-minute replay exactly matches retained rows,
+62.804387 s; 30-minute reference scoring revalidated (runtime retained, not rerun).
+See docs/verify/wp19/VERIFY-RESULT.md and fresh-summary.json.
 Base c2e45867; branch mvpfix/wp19-file-identity-album.
 
 F1 — WP18 falsifier becomes a canonical album: local window voices match ONE reference
