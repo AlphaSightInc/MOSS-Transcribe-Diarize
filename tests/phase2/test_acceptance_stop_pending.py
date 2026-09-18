@@ -95,6 +95,33 @@ def test_four_resumable_stops_close_the_rolling_ledger_before_measurement(monkey
     assert result["canonical_processed_items"] == 4
 
 
+def test_a_window_the_session_stopped_awaiting_closes_its_admission_without_compute():
+    """WP35: Stop ends rolling, so a queued window is dispatched and refused, not decoded.
+
+    It still has to close the admission the §7.4 accounting opened -- otherwise every meeting
+    with a terminal pass would read as an incomplete ledger -- and it must contribute nothing
+    to the pre-Stop projection, because nothing was decoded and every measurement is null.
+    """
+
+    def event(session_id, kind, **payload):
+        return {"session_id": session_id, "kind": kind, "payload": payload}
+
+    events = [
+        event("s", "canonical_processed", item_id=1, canonical_decode_elapsed_sec=.1),
+        event("s", "rolling_decode_queued", item_id=2, admitted=True),
+        event("s", "rolling_decode_completed", item_id=2, outcome="applied", decode_failure=None,
+              windows_failed=0, stale_completions=0, rolling_decode_elapsed_sec=.2),
+        event("s", "rolling_decode_queued", item_id=3, admitted=True),
+        event("s", "rolling_decode_completed", item_id=3, outcome="not_awaited",
+              decode_failure=None, windows_failed=None, stale_completions=None,
+              rolling_decode_elapsed_sec=None),
+    ]
+    result = prestop_inference_projection(events, accepted_audio_seconds=600)
+    assert result["rolling_completed_items"] == 2
+    assert result["rolling_decode_seconds"] == pytest.approx(.2)
+    assert result["decode_seconds"] == pytest.approx(.3)
+
+
 def test_load_event_capture_rejects_ring_overrun_instead_of_scoring_partial_history():
     from moss_transcribe_diarize.phase2_acceptance_external import _LoadEventCapture, ExternalMeasurementError
     capture = _LoadEventCapture()

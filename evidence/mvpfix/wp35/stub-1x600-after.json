@@ -1,0 +1,56 @@
+{
+  "prototype": "wp35-stop-drain",
+  "cheap_voiceprints": true,
+  "sessions": 1,
+  "seconds": 600,
+  "wall_seconds": 603.7298936250008,
+  "stub_latency": {
+    "floor": 0.15,
+    "ceiling": 0.6,
+    "decode_rtf": 0.22,
+    "terminal_stride_seconds": 120.0
+  },
+  "decoder_requests": 300,
+  "decoder_requests_by_kind": {
+    "canonical": 240,
+    "rolling": 59,
+    "terminal": 1
+  },
+  "decoder_requests_after_first_stop": {
+    "canonical": 1,
+    "terminal": 1
+  },
+  "peak_in_flight": 1,
+  "all_final": true,
+  "all_within_90s": true,
+  "max_stop_to_outcome_seconds": 3.7104306660039583,
+  "sessions_detail": [
+    {
+      "ordinal": 1,
+      "session_id": "c182478d851a4786aadbd7eb48866df8",
+      "backpressure_retries": 0,
+      "words_at_stop_request": 956,
+      "committed_samples_at_stop": 9560000,
+      "accepted_samples_at_stop": 9600000,
+      "events_at_stop": 1000,
+      "requests_at_stop": 298,
+      "stop_requested_monotonic": 112693.016703875,
+      "stop_returned_seconds": 0.6325433330057422,
+      "status": "closed",
+      "finalization_status": "final",
+      "stop_to_outcome_seconds": 3.7104306660039583,
+      "stop_to_final_seconds": 3.7104306660039583,
+      "accepted_samples": 9600000,
+      "accounted_samples": 9600000,
+      "words_at_final": 960,
+      "within_90s": true,
+      "stop_event_seq": 2576,
+      "rolling_admitted_after_stop": 0,
+      "rolling_completed_after_stop": 0,
+      "rolling_outcomes_after_stop": {},
+      "rolling_revisions_after_stop": 0,
+      "terminal_started": true,
+      "canonical_processed_after_stop": 1
+    }
+  ]
+}

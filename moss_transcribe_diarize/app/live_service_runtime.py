@@ -924,6 +924,15 @@ class LiveServiceRuntime:
         loop = asyncio.get_running_loop()
         end_time = float("inf")
         try:
+            with self._lock:
+                self._raise_terminal(state)
+                # Rolling ends here, before the drain, for the meetings a terminal pass is
+                # about to speak for. `stop` already refuses new frames, so the extent the
+                # pass inherits is final at this point and is the same one the call below
+                # would have produced; what changes is that the drain no longer has to
+                # answer windows whose words terminal is going to replace.
+                if self._terminal_supersedes_rolling_locked(state):
+                    state.terminal_plan = state.coordinator.stop_rolling()
             # `stop_endpoint` submits the final open partition and had no capacity
             # preflight, so stopping while the canonical queue was full raised straight
             # into the handler below and terminalized the session -- losing the tail span
@@ -963,6 +972,10 @@ class LiveServiceRuntime:
             with self._lock:
                 # Rolling ends before the last identity sweep, for the sweep's own reason: a
                 # revision applied after the sweep would carry labels the sweep never saw.
+                # Unconditional and idempotent: a meeting whose rolling was already ended at
+                # the top of the stop -- because a terminal pass supersedes it -- answers
+                # with the same frozen plan, and a meeting that gets no pass ends here as it
+                # always did.
                 state.terminal_plan = state.coordinator.stop_rolling()
                 self._finalize_identity_locked(state)
             remaining = max(0.0, end_time - loop.time())
@@ -1109,6 +1122,37 @@ class LiveServiceRuntime:
         )
 
     # ------------------------------------------------------------------ terminal (plan E4)
+
+    def _terminal_supersedes_rolling_locked(self, state: _RuntimeSession) -> bool:
+        """Will this meeting's last listener replace whatever rolling has left to say?
+
+        The terminal pass decodes the whole meeting and proposes `[0, end_sample)` as the
+        surface, so every window rolling has not yet decoded when Stop arrives is work whose
+        result terminal is about to overwrite. Draining it first is what put four concurrent
+        600 s meetings past the campaign's bar: a completed window re-plans the next one
+        (`submit_refinement` -> `_observe_base_and_queue`), so the queue the drain waits on
+        refills itself through the single process-scoped pump worker until rolling has caught
+        up with the whole meeting. Four 600 s meetings measured 143 post-Stop windows and no
+        terminal pass started at all (`prototypes/stop-drain`, WP25 capacity_4x600 F4).
+
+        Cancelling that work is only correct where the replacement is actually going to
+        happen, which is exactly the preconditions `_begin_terminal_locked` checks: a
+        deployment that named a finalizer, a meeting whose audio was retained, and a witness
+        to give the pass its extent. A meeting that gets no pass keeps rolling as its last
+        listener and its drain is unchanged -- that is the difference between "this work is
+        superseded" and "this work is the only work there will be".
+
+        Nothing acknowledged is lost either way. A rolling window revises the *text* of spans
+        the base path has already committed and published (ADR-0005 D2/D4), so a window that
+        never decodes leaves the committed surface exactly where the meeting's own listener
+        put it, and leaves the rolling frontier where it stood.
+        """
+
+        return (
+            self._terminal_finalizer is not None
+            and state.coordinator.tape is not None
+            and state.coordinator.converger is not None
+        )
 
     def _begin_terminal_locked(self, state: _RuntimeSession) -> bool:
         """Start the meeting's last listener, or say why this meeting gets none.

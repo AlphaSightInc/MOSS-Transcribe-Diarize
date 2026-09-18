@@ -66,6 +66,17 @@ def prestop_inference_projection(
         if identity not in rolling_admitted or identity in rolling_completed_items:
             raise ValueError("rolling completion lacks one admitted session-scoped item")
         rolling_completed_items.add(identity)
+        if item.get("outcome") == "not_awaited":
+            # A window the session was no longer waiting for by the time the pump reached it.
+            # The coordinator refuses to decode one (`capture_refinement_item`), so there is
+            # no inference to project and no measurement to read -- every field this branch
+            # would otherwise check is null by construction, because no decode happened. It
+            # is counted as completed, because the §7.4 property this reduction enforces is
+            # that every *admitted* window ends, and skipped as compute, which is what this
+            # reduction measures. The ordinary producer of one is a meeting whose Stop ended
+            # rolling while a window sat in the queue; that window is post-Stop by
+            # definition, exactly like the canonical tail `stop_items` already excludes.
+            continue
         if item.get("outcome") not in {"applied", "refused", "no_proposal"}:
             raise ValueError("rolling completion has a non-healthy terminal outcome")
         if item.get("decode_failure") is not None:
