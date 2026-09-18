@@ -137,6 +137,36 @@ costs the whole drain.
 whose audio was not retained, or one with no witness gets no replacement, so rolling stays its
 last listener and its drain is unchanged. That is the exact condition the fix keys on.
 
+## Real-decoder confirmation (`evidence/mvpfix/wp35/real-4x300-after/`)
+
+`prototypes/capacity-campaign/run.py --sessions 4 --seconds 300 --allow-contention`, own
+loopback forward on 18135, own stack on 17835, isolated finalized manifest
+(`max_tape_bytes` 57,600,000), against the existing vLLM. 549 real decoder requests, peak 2
+in flight, `foreign_load_detected` false. Re-scored with `rescore.py` because the run
+predates the `prestop_inference_projection` repair the same change required.
+
+| Session | clip | Stop→final (s) | outcome | accepted = accounted | frames | words | rolling admitted after Stop | rolling completions after Stop | terminal started |
+|---|---|---:|---|---:|---:|---:|---:|---|---|
+| 1 | bill_ackman | 32.443 | final | 4,800,000 ✓ | 1200 | 920 | **0** | 1 × `not_awaited` | yes |
+| 2 | keyu_jin | 18.325 | final | 4,800,000 ✓ | 1200 | 740 | **0** | 1 × `not_awaited` | yes |
+| 3 | mono_javier | 35.355 | final | 4,800,000 ✓ | 1200 | 647 | **0** | 1 × `not_awaited` | yes |
+| 4 | jamie_dimon | 29.247 | final | 4,800,000 ✓ | 1200 | 964 | **0** | 1 × `not_awaited` | yes |
+
+Every session `clean`; 0 backpressure retries, 0 wrong-owner failures, `reopened_status`
+`completed` 4/4; fairness passes (max pairwise dispatch skew 1 over 1074 contended
+observations); pre-Stop RTF 0.0804; max refinement queue depth 1; max GPU cache use 0.0946;
+RSS growth 702,283,776 bytes. WP25 measured 30/31/5/22 windows admitted after Stop and
+terminal started 0/4 on the same build.
+
+**Length deviation, stated plainly:** the brief asked for one real 4×600. The stub after-arm
+needs 1,060 decoder requests at that length (960 canonical + 96 rolling + 4 terminal) and the
+WP's budget is 800, so 4×600 cannot be run inside it; 4×300 costs 549 and keeps the property
+under test — four near-simultaneous Stops sharing one pump worker. The two things 4×300 does
+**not** confirm are the absolute Stop→final at 600 s (terminal decodes twice the audio) and
+the 90 s campaign bar at that length. Per-session WER is not comparable to `QUALITY_BOUNDS`
+here either: each session loops a 50–180 s clip to fill 300 s, which is the WP6/WP25
+construction, and session 4's reference is partial (`wer` null by the harness's own rule).
+
 ## Prototype status
 
 Retained as executable before/after evidence for this WP rather than deleted: it is the only
