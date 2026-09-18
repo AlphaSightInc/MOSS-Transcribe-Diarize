@@ -52,3 +52,38 @@ Fresh verification additionally tightens two witnesses: case8 submits from two s
 Tooling caveat: COMMON prescribed symlinked node_modules and default npm commands. Default Vite/Vitest can write shared dependency caches/config-bundle temporaries through that symlink; no source outside this worktree was intentionally edited, but byte-for-byte external-tree isolation is not established. Fresh verification disables Vitest cache and uses Vite's runner config loader to avoid those writes. Shared caches were not cleaned or altered as a repair.
 
 The first cache-isolated invocation failed before tests/build: the existing Vite config relies on bundle-injected `__dirname`. Retained `*-isolated.txt`. The runner now receives a temporary worktree-local copy of that same config with the exact frontend directory bound explicitly; cleanup removes the copy. `*-isolated-02.txt` records the corrected run. Production config and built assets remain unchanged.
+
+## WP14 integrated acceptance prototype (8068afce)
+
+Question: do actual browser capture and durable state meet the existing acceptance
+contract on the integrated build? Extend this bench with cases 15 (native headed
+visibility) and 16 (25/35-second live-route outages). Frames, acknowledgements,
+lease state and saved words are the minimum independent witnesses. No quality,
+identity, readiness, protocol or lifecycle bound changes are permitted.
+Falsifier: hidden interval without frames/words, lost acknowledged content, false
+completion after lease expiry, or same-document reset unable to capture again.
+One command (own stack/tunnel already running): `source runs/wp14/env.sh; "$WP14_PY"
+runs/wp14/browser_harness.py prototypes/browser-stress/run.py 15,16 --headed
+--base "$MOSS_BASE" --output evidence/mvpfix/wp14/browser-initial`.
+This is a scripted real-client state probe rather than an interactive TUI: native
+browser state and real decoder persistence are the behavior under measurement.
+
+Initial harness experiment: 7/14 PASS. The desktop navigation link is visually
+hidden by `frontend/src/styles/index.css:3610`; clicking it times out before capture.
+Repeated failures are retained under `evidence/mvpfix/wp14/workspace-failed-rerun`.
+Correction: only click navigation when visible; use the already visible desktop
+controls. No DOM state injection. No-provider summaries must be explicit SKIP.
+The independent lane run already falsifies integrated quality acceptance; those
+producer results belong to WP1/WP12, not a threshold relaxation in this WP.
+
+WP14 final prototype verdict: case15 UNMEASURED (both headed native tricks leave
+hidden=false); case16 25s recovers, 3/3 acknowledgements preserved and 1/27 published
+words revised by terminal decoding; 35s truthfully interrupted, clear reset message,
+30/30 words + 3/3 acknowledgements retained, same-document next capture completes.
+No identity/decode policy change proposed. The only product repair is plain lease
+expiry wording in ControlPanel. Acceptance remains failed/incomplete: lane quality,
+voiceprint recognition, hidden coverage and budget-blocked reshare. Full numbers,
+all failed attempts, source ownership and exact commands: evidence/mvpfix/wp14/NOTES.md.
+
+Final pre-/new suites: Python 1849 passed, 2 skipped, 37 subtests; frontend 242/242;
+typecheck/build pass. Decoder cap reached exactly 400; owned stack/tunnel stopped.

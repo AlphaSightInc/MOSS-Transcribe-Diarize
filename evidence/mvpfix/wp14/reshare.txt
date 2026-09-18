@@ -1,0 +1,10 @@
+  -- reshared SYSTEM lane at frame 14 (device_epoch bumped, discontinuity set)
+  -- switched MICROPHONE device at frame 26
+  FAIL  every frame accepted across both mid-session swaps | [('system', 39, 409, '{"detail":"live Meeting is terminal."}'), ('microphone', 39, 409, '{"detail":"live Meeting is term
+  FAIL  session stops cleanly after the swaps | status=409
+  FAIL  finalizes after the swaps | not_started
+  PASS  transcribes across the reshare boundary | last_sample=259840 reshare_sample=112000
+  PASS  transcribes across the mic-switch boundary | last_sample=259840 switch_sample=208000
+  PASS  produced real text | 30 words in 5 segments
+
+  3/6 reshare checks passed

@@ -1,0 +1,47 @@
+{
+  "base_sha": "8068afce47e72d061f41447bb5d683e7ee4196ac",
+  "workspace_source": "workspace-final/results.json",
+  "rows": {
+    "1": "PASS",
+    "2": "PASS",
+    "3": "PASS",
+    "4": "FAIL",
+    "5": "PASS",
+    "6": "PASS",
+    "7": "PASS",
+    "8": "PASS",
+    "9": "SKIP",
+    "10": "FAIL",
+    "11": "PASS",
+    "12": "PASS",
+    "13": "PASS",
+    "14": "PASS"
+  },
+  "counts": {
+    "PASS": 11,
+    "FAIL": 2,
+    "SKIP": 1
+  },
+  "first_text_seconds": 3.3231154170061927,
+  "stop_to_terminal_seconds": 8.094546957989223,
+  "hidden_source": "browser-corrected/campaign-results.json",
+  "hidden_verdict": "UNMEASURED",
+  "lease_25_source": "browser-lease-rerun/campaign-results.json",
+  "lease_35_source": "browser-ui-final/campaign-results.json",
+  "voiceprint_quality_retry": "Only first substantive measurement; earlier failed-row rerun was blocked by clipped navigation. Further real recognition rerun constrained by 400-call budget.",
+  "lifecycle": {
+    "passed": 7,
+    "total": 7,
+    "source": "lifecycle.txt"
+  },
+  "reshare": {
+    "passed": 3,
+    "total": 6,
+    "source": "reshare.txt",
+    "verdict": "BUDGET_BLOCKED",
+    "qualification": "Final-frame/Stop/finalization failures coincide with 400-call cap; no budget for an uncontaminated retry. Product cause not independently adjudicated."
+  },
+  "decoder_requests": 400,
+  "decoder_budget": 400,
+  "configured_concurrency_cap": 2
+}

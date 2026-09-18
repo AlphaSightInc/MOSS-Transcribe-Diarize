@@ -1,0 +1,6 @@
+{
+  "outage_seconds": 3,
+  "ok": false,
+  "error": null,
+  "exception": "TimeoutError"
+}

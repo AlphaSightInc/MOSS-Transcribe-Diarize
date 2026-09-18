@@ -1,0 +1,10 @@
+{
+  "meeting": "m-YLIyV17vTeUxfNa-DAkXiO",
+  "bank_contains_name": true,
+  "visible_name_within_30_seconds": false,
+  "durable_speaker_links": 0,
+  "root_cause": "not isolated",
+  "owner": "WP12",
+  "production_match_entry": "moss_transcribe_diarize/app/live_provider_bundle.py:774",
+  "publication_entry": "moss_transcribe_diarize/app/phase2_live.py:623"
+}

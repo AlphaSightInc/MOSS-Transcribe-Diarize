@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "bound_seconds": 4.0,
+  "decoder_trace": null,
+  "expected_name": null,
+  "bank_contains_name": true,
+  "recognition_seconds": null,
+  "measurement": null,
+  "meeting": "m-YLIyV17vTeUxfNa-DAkXiO",
+  "screenshot": null,
+  "status": "FAIL",
+  "seconds": 31.457,
+  "network": null,
+  "row": 10
+}

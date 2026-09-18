@@ -1,0 +1,581 @@
+{"t": 1789708268.28797, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.3500469, "row": 0, "method": "GET", "path": null, "status": 401}
+{"t": 1789708268.3642108, "row": 0, "method": "POST", "path": "/api/workspace/bootstrap", "status": 200}
+{"t": 1789708268.367692, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.371467, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.3766122, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.390783, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.421192, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.423418, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.423607, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.423807, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.5766551, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.57692, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.5770628, "row": 0, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.594359, "row": 0, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789708268.5946171, "row": 0, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708268.6623528, "row": 16, "page_closed": true}
+{"t": 1789708268.6796522, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.6840801, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.697037, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.721751, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.722018, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.722186, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.7223601, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.7389581, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.739232, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.739552, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708268.742962, "row": 16, "method": "GET", "path": "/api/llm/models", "status": 200}
+{"t": 1789708268.743114, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708268.829568, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708269.7119958, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708269.756341, "row": 16, "method": "POST", "path": null, "status": 201}
+{"t": 1789708269.756683, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708269.759265, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708269.760878, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708269.761238, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708269.7619479, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708269.769839, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708269.772581, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708269.8830872, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708269.884161, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708269.9410508, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708270.3872588, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708270.390225, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708270.445198, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708270.883532, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708270.8865101, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708270.886935, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708270.940939, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708271.3868911, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708271.389781, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708271.4448671, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708271.770632, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708271.7708428, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708271.874986, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708271.875267, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708271.882784, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708271.885718, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708271.940754, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708271.978239, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708271.97853, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708272.0868852, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708272.087148, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708272.1997619, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708272.199998, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708272.310364, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708272.310678, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708272.387095, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708272.3905852, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708272.423142, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708272.423368, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708272.444475, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708272.530308, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708272.530564, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708272.634872, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708272.635112, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708272.7468228, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708272.747137, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708272.851104, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708272.851315, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708272.882932, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708272.885994, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708272.9413419, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708272.9542348, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708272.954396, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708273.058064, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708273.0583239, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708273.1707442, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708273.1711, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708273.278667, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708273.279128, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708273.387717, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708273.390673, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708273.391098, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708273.391455, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708273.445135, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708273.495708, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708273.495883, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708273.600702, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708273.600956, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708273.7059531, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708273.706101, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708273.809744, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708273.8099918, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708273.883513, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708273.8863192, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708273.916193, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708273.916403, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708273.940829, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708274.0206661, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708274.02101, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708274.1258051, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708274.12608, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708274.233343, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708274.23381, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708274.33793, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708274.338204, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708274.402896, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708274.411913, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708274.4668522, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708274.467702, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708274.4691489, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708274.5798059, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708274.581986, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708274.688649, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708274.689245, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708274.7975419, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708274.798165, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708274.885087, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708274.889513, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708274.9059799, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708274.906879, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708274.9441159, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708275.0121322, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708275.012834, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708275.117019, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708275.118218, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708275.223917, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708275.224203, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708275.335387, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708275.335747, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708275.3874571, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708275.3905768, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708275.445579, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708275.446896, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708275.4473972, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708275.5514822, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708275.552341, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708275.655058, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708275.6553369, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708275.759237, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708275.7801049, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708275.865197, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708275.8654878, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708275.883353, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708275.886663, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708275.941368, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708275.968792, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708275.998044, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708276.073008, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708276.073229, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708276.1798441, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708276.180031, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708276.2848482, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708276.2851589, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708276.387892, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708276.3911512, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708276.391551, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708276.392129, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708276.4454458, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708276.496038, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708276.5166411, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708276.601116, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708276.601352, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708276.703939, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708276.7042, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708276.808589, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708276.808851, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708276.88315, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708276.886127, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708276.9144902, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708276.914796, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708276.940767, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708277.018191, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708277.0184581, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708277.125091, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708277.12538, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708277.231321, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708277.231543, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708277.3344982, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708277.3347, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708277.3875, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708277.391485, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708277.444696, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708277.445548, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708277.4458408, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708277.55086, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708277.551271, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708277.661259, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708277.6614451, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708277.771351, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708277.771842, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708277.880254, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708277.8805351, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708277.884644, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708277.88742, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708277.9408362, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708277.98535, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708277.985718, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708278.088328, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708278.08861, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708278.191355, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708278.1915588, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708278.298452, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708278.298743, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708278.387221, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708278.390045, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708278.401345, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708278.4015412, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708278.445266, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708278.505922, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708278.5061278, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708278.610656, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708278.611058, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708278.7181702, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708278.7184372, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708278.8212218, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708278.821578, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708278.8834949, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708278.8866858, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708278.925695, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708278.926016, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708278.941834, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708279.0312161, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708279.031467, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708279.1346471, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708279.134893, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708279.247275, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708279.247562, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708279.3598132, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708279.359992, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708279.387101, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 200}
+{"t": 1789708279.3899982, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708279.4448588, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 200}
+{"t": 1789708279.465653, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708279.465864, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708279.57434, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708279.574611, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708279.6827211, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708279.6831071, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708279.782769, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708279.785559, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708279.785888, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708279.883392, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708279.88354, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708279.888318, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "failure": null}
+{"t": 1789708279.8886101, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "failure": null}
+{"t": 1789708279.930728, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708280.387519, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708280.3880398, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708280.391437, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "failure": null}
+{"t": 1789708280.3917718, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "failure": null}
+{"t": 1789708280.435919, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708280.8829079, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708280.8830788, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708280.930795, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708281.3867679, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708281.387008, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708281.39446, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "failure": null}
+{"t": 1789708281.394658, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "failure": null}
+{"t": 1789708281.434788, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708281.882955, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708281.883212, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708281.93186, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708282.3867352, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708282.386985, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708282.434989, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708282.882674, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708282.882935, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708282.931265, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708283.386658, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708283.395992, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708283.399078, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "failure": null}
+{"t": 1789708283.399293, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "failure": null}
+{"t": 1789708283.4347332, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708283.8839839, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708283.8841321, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708283.930629, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708284.386485, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708284.386764, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708284.435043, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708284.882911, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708284.883245, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708284.9309409, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708285.3868601, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708285.38701, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708285.435072, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708285.883022, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708285.883195, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708285.9308748, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708286.38681, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708286.387135, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708286.4350138, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708286.882696, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708286.882953, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708286.930836, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708287.3867588, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708287.3870442, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708287.435201, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708287.8828428, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708287.883003, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708287.9313889, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708288.3865979, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708288.386878, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708288.406312, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "failure": null}
+{"t": 1789708288.406519, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "failure": null}
+{"t": 1789708288.435194, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708288.88285, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708288.8834739, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708288.9312809, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708289.387014, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708289.387182, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708289.435009, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708289.882717, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708289.8828852, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708289.931415, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708290.386932, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708290.387108, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708290.434914, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708290.8825579, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708290.8828459, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708290.931236, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708291.3874629, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708291.387844, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708291.435785, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708291.882865, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708291.883115, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708291.930998, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708292.386893, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708292.3870761, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708292.4349408, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708292.883147, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708292.883316, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708292.9308999, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708293.386921, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708293.387119, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708293.41642, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "failure": null}
+{"t": 1789708293.4167092, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "failure": null}
+{"t": 1789708293.434927, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708293.883019, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708293.883193, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708293.930995, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708294.386852, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708294.387229, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708294.434687, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708294.882947, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708294.88316, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708294.930969, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708295.386764, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708295.387028, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708295.434975, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708295.882881, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708295.883174, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708295.931144, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708296.387091, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708296.387278, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708296.435256, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708296.882721, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708296.882999, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708296.9309921, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708297.387121, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708297.387331, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708297.4353778, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708297.8831732, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708297.8835258, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708297.931804, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708298.387327, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708298.387517, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708298.4291022, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "failure": null}
+{"t": 1789708298.429437, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "failure": null}
+{"t": 1789708298.434601, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708298.876745, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708298.8769941, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708298.925271, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708299.382129, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708299.3823822, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708299.429878, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708299.8774579, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708299.8777, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708299.924949, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708300.381736, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708300.381932, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708300.4279318, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708300.877959, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708300.878268, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708300.9245598, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708301.38238, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708301.3827, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708301.4290109, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708301.875419, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708301.875673, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708301.924673, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708302.381191, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708302.381526, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708302.429101, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708302.876564, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708302.8768902, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708302.924607, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708303.3794281, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708303.379772, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708303.428763, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708303.432033, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "failure": null}
+{"t": 1789708303.432204, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "failure": null}
+{"t": 1789708303.8781812, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708303.878401, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708303.924917, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708304.3798678, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708304.380117, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708304.429599, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708304.877223, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708304.8774168, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708304.924879, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708305.382401, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708305.3827252, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708305.4285061, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708305.8773131, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708305.877751, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708305.9249542, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708306.3812091, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708306.381375, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708306.428747, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708306.8778691, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708306.878114, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708306.9249542, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708307.384137, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708307.38537, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708307.428863, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708307.876491, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708307.8767538, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708307.925029, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708308.381523, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708308.381875, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708308.430992, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708308.4341571, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "failure": null}
+{"t": 1789708308.434512, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "failure": null}
+{"t": 1789708308.8767529, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708308.8771808, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708308.925688, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708309.382869, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708309.383202, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708309.428521, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708309.875468, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708309.8756218, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708309.9249458, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708310.381442, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708310.3817658, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708310.430112, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708310.87715, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708310.877352, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708310.9248, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708311.381292, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708311.381599, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708311.4282181, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708311.877849, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708311.8780758, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708311.925109, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708312.3830888, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708312.383441, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708312.429539, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708312.8776069, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708312.877831, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708312.92523, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708313.3804438, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708313.38078, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708313.4286668, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708313.4373991, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "failure": null}
+{"t": 1789708313.437618, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "failure": null}
+{"t": 1789708313.878324, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708313.878461, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708313.92532, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708314.38175, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "failure": null}
+{"t": 1789708314.381912, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708314.4284658, "row": 16, "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "failure": null}
+{"t": 1789708314.794658, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708314.798294, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708314.87851, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/heartbeat", "status": 409}
+{"t": 1789708314.880537, "row": 16, "method": "POST", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/frames", "status": 409}
+{"t": 1789708318.441492, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708318.442028, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/events", "status": 200}
+{"t": 1789708318.444959, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708324.815448, "row": 16, "method": "GET", "path": "/api/meetings/kK9zXhjf5qi0Aapi4EKiunHc", "status": 200}
+{"t": 1789708324.818057, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708324.820311, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708324.826634, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708324.89011, "row": 16, "method": "GET", "path": null, "status": 200}
+{"t": 1789708326.266042, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708326.299215, "row": 16, "method": "POST", "path": null, "status": 201}
+{"t": 1789708326.299613, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708326.301924, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/heartbeat", "status": 200}
+{"t": 1789708326.303755, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708326.3047428, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708326.305378, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708326.404268, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/heartbeat", "status": 200}
+{"t": 1789708326.405087, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708326.494123, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708326.906143, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/heartbeat", "status": 200}
+{"t": 1789708326.9063969, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708326.989387, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708327.4035661, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/heartbeat", "status": 200}
+{"t": 1789708327.40718, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708327.407679, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/heartbeat", "status": 200}
+{"t": 1789708327.494674, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708327.90021, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/heartbeat", "status": 200}
+{"t": 1789708327.903717, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708327.989609, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708328.3084009, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708328.308984, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708328.4038022, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/heartbeat", "status": 200}
+{"t": 1789708328.4073322, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708328.412013, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708328.412304, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708328.493501, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708328.518372, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708328.518694, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708328.626986, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708328.627253, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708328.729577, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708328.729764, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708328.8352041, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708328.83549, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708328.900436, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/heartbeat", "status": 200}
+{"t": 1789708328.904686, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708328.940244, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708328.940763, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708328.990023, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/frames", "status": 200}
+{"t": 1789708329.044835, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708329.047595, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708329.154214, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708329.154457, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708329.265406, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708329.265697, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708329.333668, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/heartbeat", "status": 200}
+{"t": 1789708329.33408, "row": 16, "method": "GET", "path": "/api/meetings/AUv0MQ9RdWsuX0pWkX-mzENi", "status": 200}
+{"t": 1789708329.3690162, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708329.3693938, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708329.478823, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708329.479056, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708329.582756, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708329.5829902, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708329.694752, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708329.695036, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708329.804081, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708329.804437, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708329.9087129, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708329.908919, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708330.0165188, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708330.016959, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708330.120262, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708330.120532, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708330.224735, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708330.224944, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708330.332386, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708330.3333938, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708330.337079, "row": 16, "method": "GET", "path": "/api/meetings/AUv0MQ9RdWsuX0pWkX-mzENi", "status": 200}
+{"t": 1789708330.442688, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708330.443155, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708331.342504, "row": 16, "method": "GET", "path": "/api/meetings/AUv0MQ9RdWsuX0pWkX-mzENi", "status": 200}
+{"t": 1789708332.3486788, "row": 16, "method": "GET", "path": "/api/meetings/AUv0MQ9RdWsuX0pWkX-mzENi", "status": 200}
+{"t": 1789708332.39397, "row": 16, "method": "POST", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/stop", "status": 200}
+{"t": 1789708332.4484181, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708332.4489548, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/events", "status": 200}
+{"t": 1789708332.450963, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708333.354358, "row": 16, "method": "GET", "path": "/api/meetings/AUv0MQ9RdWsuX0pWkX-mzENi", "status": 200}
+{"t": 1789708333.3573089, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708333.360468, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708333.364533, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708333.3707032, "row": 16, "method": "GET", "path": "/api/meetings", "status": 200}
+{"t": 1789708333.379829, "row": 16, "method": "GET", "path": "/api/live/sessions/AUv0MQ9RdWsuX0pWkX-mzENi/snapshot", "status": 200}
+{"t": 1789708333.383063, "row": 16, "method": "GET", "path": "/api/live/sessions/kK9zXhjf5qi0Aapi4EKiunHc/snapshot", "status": 200}
+{"t": 1789708333.433203, "row": 16, "method": "GET", "path": "/api/meetings/AUv0MQ9RdWsuX0pWkX-mzENi", "status": 200}
+{"t": 1789708333.438297, "row": 16, "page_closed": true}

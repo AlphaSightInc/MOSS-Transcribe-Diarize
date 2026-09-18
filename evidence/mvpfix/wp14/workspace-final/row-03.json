@@ -1,0 +1,16 @@
+{
+  "ok": true,
+  "meeting": "P7FYdv1VkjgD8Cot4M3unJGL",
+  "status_received": "completed",
+  "speaker_count": 1,
+  "reference_words": 115,
+  "hypothesis_words": 111,
+  "edits": 10,
+  "wer": 0.08695652173913043,
+  "artifact": null,
+  "screenshot": null,
+  "status": "PASS",
+  "seconds": 2.17,
+  "network": null,
+  "row": 3
+}

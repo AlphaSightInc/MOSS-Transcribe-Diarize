@@ -1,0 +1,31 @@
+{
+  "ok": true,
+  "renames": [
+    {
+      "name": null,
+      "http": 200,
+      "speaker_id": "speaker-0002",
+      "enrollment": null,
+      "rows_legend_updated": true,
+      "history_updated": true,
+      "export_updated": null
+    },
+    {
+      "name": null,
+      "http": 200,
+      "speaker_id": "speaker-0002",
+      "enrollment": null,
+      "rows_legend_updated": true,
+      "history_updated": true,
+      "export_updated": true
+    }
+  ],
+  "meeting": "hNzWMVyrWOokMiPUHtz1hdz7",
+  "export_after_stop_without_reload": true,
+  "export": null,
+  "screenshot": null,
+  "status": "PASS",
+  "seconds": 0.057,
+  "network": null,
+  "row": 5
+}

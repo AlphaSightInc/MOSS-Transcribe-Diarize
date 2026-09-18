@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "filename": null,
+  "duration": 29.904,
+  "source_duration": 50.0,
+  "artifact": null,
+  "decodable": true,
+  "meeting": "m-YLIyV17vTeUxfNa-DAkXiO",
+  "status_received": "interrupted",
+  "screenshot": null,
+  "status": "PASS",
+  "seconds": 30.637,
+  "network": null,
+  "row": 8
+}

@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "formats": {
+    "md": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true,
+      "bytes": 705,
+      "artifact": null
+    },
+    "txt": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true,
+      "bytes": 702,
+      "artifact": null
+    },
+    "json": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true,
+      "lane": true,
+      "bytes": 1470,
+      "artifact": null
+    },
+    "srt": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true,
+      "bytes": 724,
+      "artifact": null
+    },
+    "vtt": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true,
+      "bytes": 732,
+      "artifact": null
+    }
+  },
+  "screenshot": null,
+  "status": "PASS",
+  "seconds": 0.412,
+  "network": null,
+  "row": 6
+}

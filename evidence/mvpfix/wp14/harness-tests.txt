@@ -1,0 +1,80 @@
+
+==================================== ERRORS ====================================
+_______________ ERROR collecting tests/e2e/test_smoke_options.py _______________
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/python.py:508: in importtestmodule
+    mod = import_path(
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:596: in import_path
+    importlib.import_module(module_name)
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+tests/e2e/test_smoke_options.py:3: in <module>
+    from tests.e2e.verify_workspace import Harness, parse_args, summary
+E     File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp14-integrated-e2e/tests/e2e/verify_workspace.py", line 228
+E       evidence.update(ready=False,reason_code='previous_meeting_not_ready', 'no_configured_relay_models',exception=type(exc).__name__)
+E                                                                                                                                      ^
+E   SyntaxError: positional argument follows keyword argument
+____________ ERROR collecting tests/e2e/test_capture_sequencing.py _____________
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/python.py:508: in importtestmodule
+    mod = import_path(
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:596: in import_path
+    importlib.import_module(module_name)
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+tests/e2e/test_capture_sequencing.py:8: in <module>
+    from tests.e2e.verify_workspace import Harness
+E     File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp14-integrated-e2e/tests/e2e/verify_workspace.py", line 228
+E       evidence.update(ready=False,reason_code='previous_meeting_not_ready', 'no_configured_relay_models',exception=type(exc).__name__)
+E                                                                                                                                      ^
+E   SyntaxError: positional argument follows keyword argument
+_____________ ERROR collecting tests/e2e/test_evidence_boundary.py _____________
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/python.py:508: in importtestmodule
+    mod = import_path(
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/pathlib.py:596: in import_path
+    importlib.import_module(module_name)
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+tests/e2e/test_evidence_boundary.py:6: in <module>
+    from tests.e2e.verify_workspace import Harness, retained_metadata, write
+E     File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp14-integrated-e2e/tests/e2e/verify_workspace.py", line 228
+E       evidence.update(ready=False,reason_code='previous_meeting_not_ready', 'no_configured_relay_models',exception=type(exc).__name__)
+E                                                                                                                                      ^
+E   SyntaxError: positional argument follows keyword argument
+=========================== short test summary info ============================
+ERROR tests/e2e/test_smoke_options.py
+ERROR tests/e2e/test_capture_sequencing.py
+ERROR tests/e2e/test_evidence_boundary.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!
+3 errors in 0.18s

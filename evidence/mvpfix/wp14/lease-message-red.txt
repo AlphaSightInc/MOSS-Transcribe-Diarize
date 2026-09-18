@@ -1,0 +1,53 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run --configLoader native --cache=false src/components/ControlPanel.test.tsx
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp14-integrated-e2e/frontend
+
+(node:68201) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/components/ControlPanel.test.tsx (11 tests | 2 failed) 151ms
+     × clears network warnings only after capture and polling recover, never after terminal 7ms
+     × stops without automatically recreating a terminal capture: helper_lease_expired 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/ControlPanel.test.tsx > ControlPanel reattach > clears network warnings only after capture and polling recover, never after terminal
+AssertionError: expected 'Capture · Microphone + shared audioBo…' to contain 'Recording interrupted: the connection…'
+
+Expected: "Recording interrupted: the connection was lost for too long. Reset capture to start again."
+Received: "Capture · Microphone + shared audioBoth sources are required to start. Microphone-only capture is not available.Private to this browser; no sign-in or capture key is needed.Listening setupSpeakersHeadphonesHow you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.MicrophoneNot connectedShared audioNot connectedEnable microphoneReset capturehelper_lease_expired"
+
+ ❯ src/components/ControlPanel.test.tsx:257:30
+    255|     act(() => mocks.pollerOptions?.onTerminal?.("helper_lease_expired"…
+    256|     act(() => { mocks.captureOptions?.onTransportRecovered?.(); mocks.…
+    257|     expect(root.textContent).toContain("Recording interrupted: the con…
+       |                              ^
+    258|     expect(root.textContent).not.toContain("Connection restored");
+    259|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/components/ControlPanel.test.tsx > ControlPanel reattach > stops without automatically recreating a terminal capture: helper_lease_expired
+AssertionError: expected 'helper_lease_expired' to be 'Recording interrupted: the connection…' // Object.is equality
+
+Expected: "Recording interrupted: the connection was lost for too long. Reset capture to start again."
+Received: "helper_lease_expired"
+
+ ❯ src/components/ControlPanel.test.tsx:300:64
+    298|     expect(mocks.poller.stop).toHaveBeenCalledOnce();
+    299|     expect(root.querySelector('[data-capture-phase="terminal"]')).not.…
+    300|     expect(root.querySelector('[role="status"]')?.textContent).toBe(re…
+       |                                                                ^
+    301|       ? "Recording interrupted: the connection was lost for too long. …
+    302|       : reason);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  01:02:51
+   Duration  617ms (transform 63ms, setup 0ms, import 81ms, tests 151ms, environment 279ms)
+
