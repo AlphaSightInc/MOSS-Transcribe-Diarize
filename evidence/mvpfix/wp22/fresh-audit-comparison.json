@@ -1,0 +1,17 @@
+{
+  "session_id": "01a0b383-f517-7f00-a7d5-ddc67e28aad2",
+  "parent_session_id": "01a0b339-0f54-7d82-9cc9-f119bc04f5c3",
+  "session_differs_from_parent": true,
+  "inspected_sha": "977d036edd43620c4272b036f27bc7dbb08b2ed6",
+  "real_audit_exactly_equal_committed": true,
+  "stub_content": {
+    "exact_equal": true,
+    "segments": 1440,
+    "words": 4320
+  },
+  "stub_finalizations": {
+    "mono-base": "unavailable",
+    "lanes-before": "failed",
+    "lanes-after": "failed"
+  }
+}

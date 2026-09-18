@@ -1,0 +1,5 @@
+No listeners on 18122 or 17882 (lsof exit 1, empty output).
+COMMAND   PID USER   FD   TYPE DEVICE SIZE/OFF      NODE NAME
+zsh     70356  gao  cwd    DIR   1,18      960 425221722 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp22-memory-longrun
+lsof    70361  gao  cwd    DIR   1,18      960 425221722 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp22-memory-longrun
+lsof    70362  gao  cwd    DIR   1,18      960 425221722 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp22-memory-longrun
