@@ -71,6 +71,74 @@ changes Stop→final by less than one decode per session. *Falsifier:* it change
 **H5 — draft lane (rank 5).** Post-Stop draft decodes contribute. *Prediction:* zero, the
 campaign runs with `draft_lane_seconds=None`. *Falsifier:* draft requests after Stop.
 
+## Results — stub, 0.5 s real-time frames, system lane = corpus audio, mic lane = digital zeros
+
+Evidence: `evidence/mvpfix/wp35/stub-{1,4}x600-{before,after}.json`. "Before" is
+`integration/mvp-fix-20260917` @ `a6b512fd`; "after" adds the `_finish_stop` change only.
+Decoder latency: flat 0.22 decode RTF clamped to [0.15, 0.60] s, terminal charged 0.6 s per
+120 s stride window, all requests through a 2-slot ceiling (the campaign harness's).
+
+| Arm | Stop→final per session (s) | outcome | rolling requests after the first Stop | terminal started | words at Stop → at final | accepted = accounted |
+|---|---|---|---|---|---|---|
+| 1×600 before | 4.314 | final | 1 | yes | 956 → 960 | 9,600,000 ✓ |
+| 1×600 after | **3.710** | final | **0** | yes | 956 → 960 | 9,600,000 ✓ |
+| 4×600 before | none — all four still draining at the 600 s cap | `not_started` 4/4, Stop returned `LiveServiceStopPending` | **143** (35 admitted / 36 completed per session) | **0/4** | 956 → 960 | 9,600,000 ✓ |
+| 4×600 after | **5.518 / 5.544 / 8.537 / 8.544** | **final 4/4** | **0** admitted (1 already-queued window per session dispatched as `not_awaited`) | **4/4** | 952–956 → 960 | 9,600,000 ✓ |
+
+Total stub decoder requests at 4×600: 1200 → 1060; peak in flight 1 → 2 (terminal now runs).
+No backpressure retries in any arm. No `text_revision_applied` from rolling after Stop in the
+after arms; the surface between the stop request and the terminal revision does not move.
+
+The before arm reproduces WP25 capacity_4x600 F4 in every respect that matters: accepted and
+accounted 9,600,000 per session, no final inside the bar, terminal never started, and a
+post-Stop rolling backlog that is larger the longer the meeting ran.
+
 ## Verdicts
 
-See `## Results` below — filled in after the runs.
+- **H1 — rolling treadmill: CONFIRMED, and it is the whole cause.** Post-Stop rolling decodes
+  went 143 → 0 admitted and 4×600 Stop→final went "never" → 8.5 s worst case. The fix is
+  three lines: end rolling at the top of `_finish_stop` for the meetings that will get a
+  terminal pass, which is where `submit_refinement`'s `observe_base` re-plan loop stops.
+- **H2 — one process-scoped worker: CONFIRMED but not the binding constraint here.** Four
+  sessions cost 8.5 s where one costs 3.7 s, and the tail canonical work of each session
+  still serialises through the single pump. At 600 s that tail is one span per session, so
+  the residual serialisation is seconds, not minutes.
+- **H3 — terminal becomes the floor: CONFIRMED in shape, unquantified in the stub.** With the
+  drain fixed, Stop→final is the tail canonical work plus the terminal decode; the stub prices
+  a whole 600 s lane at 3.0 s, so the stub number is a lower bound on the real one by
+  construction. The real measurement is the campaign run, reported separately.
+- **H4 — the refinement gate in `_has_unresolved_work_locked`: FALSIFIED as a cause.** The
+  arbiter coalesces one window per session, so at most one queued window per session survives
+  Stop, and `capture_refinement_item` already drops it for free once rolling has ended: the
+  after arms show exactly one `rolling_decode_completed` per session with no decode. The gate
+  was left exactly as it was; removing it would have bought one dispatch per session.
+- **H5 — draft lane: FALSIFIED.** `run_local_stack.py` only passes `--live-draft-lane-seconds`
+  when asked and the campaign stack never asks, so `draft_decoder_factory` is `None` and no
+  draft request exists to cancel. No production change was made for it.
+- **Candidate (b), "prioritise terminal over any session's rolling work": not needed.** Terminal
+  never contends with rolling through the arbiter — it runs on its own per-meeting thread and
+  goes straight to the runner — and after (a) there is no post-Stop rolling work left to
+  outrank. Implementing (b) would have added a priority rule with nothing to order.
+
+## What still runs at Stop, and why (the question's first half)
+
+**Must still run:** canonical decode of every span whose frames were accepted, including the
+tail partition `stop_endpoint()` freezes. Those are the words the meeting has not published
+yet, and `accepted_samples == accounted_samples` at Stop is what says they all landed.
+
+**Superseded by terminal:** every rolling window not yet decoded, and any window queued but
+not dispatched. A rolling window only ever revises the *text* of spans the base path has
+already committed (ADR-0005 D2/D4); the terminal pass then proposes `[0, end_sample)` for the
+whole meeting and replaces that text wholesale. So cancelling it cannot lose anything the
+meeting acknowledged — the measured word counts are identical in both arms — and keeping it
+costs the whole drain.
+
+**Not superseded when there is no terminal pass:** a deployment with no finalizer, a meeting
+whose audio was not retained, or one with no witness gets no replacement, so rolling stays its
+last listener and its drain is unchanged. That is the exact condition the fix keys on.
+
+## Prototype status
+
+Retained as executable before/after evidence for this WP rather than deleted: it is the only
+harness that reproduces the concurrent-Stop drain without a GPU. It imports production modules
+but nothing production imports it.
