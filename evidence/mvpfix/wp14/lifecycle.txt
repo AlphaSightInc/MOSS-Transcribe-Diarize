@@ -1,0 +1,23 @@
+
+=== 1. start -> stop -> restart (new session in same workspace) ===
+  PASS  restart after stop yields a usable second session | stop1=200 stop2=200
+
+=== 2. Stop pressed twice quickly ===
+  PASS  double stop does not 5xx | first=200 second=409 body={"detail":"live Meeting is terminal."}
+
+=== 3. frames after stop are refused ===
+  PASS  frame after stop is refused (4xx, not accepted, not 5xx) | status=409 body={"detail":"live Meeting is terminal."}
+
+=== 4. stop a session that received no audio at all ===
+  PASS  empty session stops without 5xx | status=200 body={'snapshot': {'session_id': '4wr0MnkLdLmmuJL4a3q_O5ye', 'descriptor': {'source_r
+
+=== 5. snapshot after stop (the reload / reattach path) ===
+  PASS  snapshot after stop still serves the finalized session | status=200 finalization=final
+
+=== 6. two concurrent live sessions in one workspace ===
+  PASS  two concurrent sessions both accept frames | g=2JB42fjo h=hDOMj8Fz
+
+=== 7. unknown session id ===
+  PASS  unknown session id is 404 | status=404
+
+  7/7 lifecycle checks passed

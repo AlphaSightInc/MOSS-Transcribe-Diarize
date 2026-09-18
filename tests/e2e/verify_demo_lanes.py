@@ -1,8 +1,8 @@
 """Known different-voice lane acceptance, before Stop and after saved/reopened output.
 
 Run: python tests/e2e/verify_demo_lanes.py --allow-local-self-signed --case both
-Alternation must pass. Overlap is an explicitly expected-failing negative control
-on the current mono mixer. Counts-only evidence can never satisfy either oracle.
+Alternation and overlap must both pass on the integrated per-lane decoder.
+Counts-only evidence can never satisfy either oracle.
 No transcript text is printed or retained. Thresholds use existing QUALITY_BOUNDS.
 """
 from __future__ import annotations
@@ -133,15 +133,15 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
                     for name, result in surfaces.items()}
     finalization=(final.get('snapshot') or {}).get('session',{}).get('finalization_status')
     passed=saved['status']=='completed' and finalization=='final' and all(s['passed'] for s in surfaces.values())
-    return dict(case=case,meeting=ident,passed=passed,expected_failure=case=='overlap',
+    return dict(case=case,meeting=ident,passed=passed,expected_failure=False,
                 status=saved['status'],finalization_status=finalization,seconds=round(time.monotonic()-started,3),
                 stop_seconds=round(time.monotonic()-stopped,3),frames_per_lane=total,
                 microphone_gain=mic_gain,surfaces=surfaces,file_url_wer_bar=.15,file_url_wer_pass=file_url_bar)
 
 
 def accepted_case(result):
-    # A crash/interruption is not evidence that the mixer failed a semantic control.
-    return result['status']=='completed' and result['finalization_status']=='final' and result['passed'] != result['expected_failure']
+    # Completion alone cannot hide a semantic failure on either supported lane case.
+    return result['status']=='completed' and result['finalization_status']=='final' and result['passed']
 
 
 def run_cases(base,context,case='both',mic_gain=DEFAULT_MIC_GAIN):

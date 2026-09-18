@@ -1,0 +1,48 @@
+{
+  "outage_seconds": 20,
+  "meeting": "pzblNgaMjol4PumdH_pxP_9K",
+  "before": {
+    "status": "active",
+    "version": 21,
+    "accepted_samples": 78976,
+    "committed_samples": 40000
+  },
+  "phase_during_outage": null,
+  "restored_monotonic": 92730.875447541,
+  "actual_outage_seconds": 20.001245915991603,
+  "blocked_requests": 134,
+  "origin_outage_verified": true,
+  "blocked_routes": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "phase_after_restore": null,
+  "ui_status": null,
+  "text_changes_after_restore": 2,
+  "frames_resumed": true,
+  "first_frame_recovery_seconds": {
+    "microphone": 0.0383076670113951,
+    "system": 0.0967768749978859
+  },
+  "first_snapshot_recovery_seconds": 3.547186875002808,
+  "heartbeat_resumed": true,
+  "maximum_heartbeat_gap_seconds": 20.496439374997863,
+  "polling_resumed": true,
+  "sequence_continuity": {
+    "microphone": true,
+    "system": true
+  },
+  "frame_errors": [],
+  "status_received": "completed",
+  "finalization_status": "final",
+  "failure_reason": null,
+  "history_preserved": true,
+  "audio_seconds": 29.436,
+  "audio_preserved": true,
+  "partial_audio": false,
+  "recovery_feedback_clear": true,
+  "ok": true,
+  "outcome": null
+}

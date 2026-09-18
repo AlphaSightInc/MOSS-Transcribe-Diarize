@@ -4,13 +4,15 @@ Run: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <python> prototypes/browser-stress/r
 Start stack.py on 17865 and own decoder forward 18105 first. No microphone evidence.
 """
 from __future__ import annotations
-import argparse, asyncio, functools, http.server, json, os, signal, sqlite3, subprocess, sys, threading, time
+import argparse, asyncio, functools, http.server, json, os, re, signal, sqlite3, subprocess, sys, threading, time
+from difflib import SequenceMatcher
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import urlsplit
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
-os.environ['TMPDIR']=str(ROOT/'runs/wp5')
+os.environ.setdefault('TMPDIR',str(ROOT/'runs/wp5'))
+Path(os.environ['TMPDIR']).mkdir(parents=True,exist_ok=True)
 import tempfile
 tempfile.tempdir=os.environ['TMPDIR']
 from tests.e2e.verify_workspace import Harness, QuietHandler
@@ -32,11 +34,13 @@ PREDICATES={
 11:'Rename updates all selected-speaker labels, enrolls voiceprint, persists through reload/export.',
 12:'60 history fixtures render after reload at 400px, two Refresh controls, no overflow.',
 13:'No-provider summary is disabled or explains setup, with zero provider POSTs.',
-14:'Own idle server restart preserves credential, history and transcripts.'}
+14:'Own idle server restart preserves credential, history and transcripts.',
+15:'Actual headed hidden tab for 60s advances frames and words, restores, completes.',
+16:'25s outage recovers without losing acknowledged content; 35s expires truthfully and permits new capture.'}
 class Bench(Harness):
-    def __init__(self,out,base='https://127.0.0.1:17865',microphone_file=None):
+    def __init__(self,out,base='https://127.0.0.1:17865',microphone_file=None,headed=False,lease_seconds=(25,35)):
         super().__init__(SimpleNamespace(output=out,base=base))
-        self.microphone_file=microphone_file
+        self.microphone_file=microphone_file;self.headed=headed;self.lease_seconds=lease_seconds
         self.errors=[];self.failures=[];self.frames=[];self.posts=[];self.results={};self.case=0
     def attach(self,page):
         super().attach(page)
@@ -44,7 +48,7 @@ class Bench(Harness):
         page.on('console',lambda m:self.errors.append(m.text) if m.type=='error' else None)
         page.on('requestfailed',lambda r:self.failures.append({'path':urlsplit(r.url).path,'failure':r.failure}))
         page.on('request',lambda r:self.posts.append(urlsplit(r.url).path) if r.method=='POST' else None)
-        page.on('response',lambda r:self.frames.append({'t':time.monotonic(),'status':r.status}) if urlsplit(r.url).path.endswith('/frames') else None)
+        page.on('response',lambda r:self.frames.append({'t':time.monotonic(),'status':r.status,'lane':(r.request.post_data_json or {}).get('lane'),'sequence':(r.request.post_data_json or {}).get('sequence')}) if urlsplit(r.url).path.endswith('/frames') else None)
         return page
     async def state_at(self,action):
         rows=(await self.api('/api/meetings'))['body'].get('meetings',[])
@@ -114,6 +118,90 @@ class Bench(Harness):
             recovered=any(f['status']==200 and f['t']>restored for f in self.frames)
             m=await self.stop(ident);variants.append({'seconds':seconds,'recovered_frames':recovered,'phase':phase,'visible_status':status,'terminal':m['status'],'ok':recovered or (phase=='terminal' and any(x in status.lower() for x in ('fail','lost','error','disconnect')))})
         return {'variants':variants,'ok':all(v['ok'] for v in variants)}
+    async def hidden_headed(self):
+        """WP14 prototype: observe native visibility; never spoof browser state."""
+        ident=await self.begin();await asyncio.sleep(8)
+        before=await self.state_at('before-hidden');attempts=[]
+        cdp=await self.context.new_cdp_session(self.page)
+        window=await cdp.send('Browser.getWindowForTarget')
+        await cdp.send('Browser.setWindowBounds',{'windowId':window['windowId'],'bounds':{'windowState':'minimized'}})
+        await asyncio.sleep(1)
+        hidden=await self.page.evaluate('document.hidden')
+        attempts.append({'method':'minimize','hidden':hidden})
+        other=None
+        if not hidden:
+            other=await self.context.new_page();await other.goto('about:blank');await other.bring_to_front();await asyncio.sleep(1)
+            hidden=await self.page.evaluate('document.hidden');attempts.append({'method':'second-tab-front','hidden':hidden})
+        start=time.monotonic();samples=[]
+        if hidden:
+            for _ in range(60):
+                samples.append({'elapsed':time.monotonic()-start,'hidden':await self.page.evaluate('document.hidden')})
+                await asyncio.sleep(1)
+        end=time.monotonic();after=await self.state_at('after-hidden')
+        cadence={}
+        for lane in ('system','microphone'):
+            times=[f['t'] for f in self.frames if f['status']==200 and f['lane']==lane and start<=f['t']<=end]
+            points=[start,*times,end]
+            cadence[lane]={'frames':len(times),'max_gap_seconds':max(b-a for a,b in zip(points,points[1:]))}
+        await cdp.send('Browser.setWindowBounds',{'windowId':window['windowId'],'bounds':{'windowState':'normal'}})
+        if other:await other.close()
+        await self.page.bring_to_front();await asyncio.sleep(3)
+        restored=await self.state_at('restored-visible');m=await self.stop(ident);await cdp.detach()
+        recovery={lane:sum(f['status']==200 and f['lane']==lane and f['t']>end for f in self.frames) for lane in cadence}
+        return {'attempts':attempts,'visibility_samples':samples,'hidden_seconds':end-start,'cadence':cadence,
+                'word_delta':after['transcript_words']-before['transcript_words'],'recovery_frames':recovery,
+                'restored_visible':not await self.page.evaluate('document.hidden'),'terminal':m['status'],
+                'blocked':None if hidden else 'Neither native minimization nor another foreground tab yielded document.hidden',
+                'ok':hidden and all(s['hidden'] for s in samples) and end-start>=60 and all(v['frames']>0 for v in cadence.values()) and after['transcript_words']>before['transcript_words'] and all(recovery.values()) and m['status']=='completed'}
+
+    async def lease_outages(self):
+        """WP14 prototype: real client, route outages spanning the configured lease."""
+        variants=[]
+        for seconds in self.lease_seconds:
+            ident=await self.begin();await asyncio.sleep(10)
+            before=(await self.api(f'/api/live/sessions/{ident}/snapshot'))['body']['snapshot']['session']
+            rows=before.get('effective_transcript') or []
+            acknowledged=[(c['span_id'],c['transcript']) for c in before.get('committed',[])]
+            words=lambda rows:re.findall(r"[a-z0-9]+",' '.join(r.get('text','') for r in rows).lower())
+            old_words=words(rows);blocked=[]
+            async def drop(route):
+                blocked.append({'elapsed':time.monotonic()-start,'route':urlsplit(route.request.url).path.rsplit('/',1)[-1]})
+                await route.abort('internetdisconnected')
+            start=time.monotonic();await self.page.route('**/api/live/**',drop)
+            try:await asyncio.sleep(seconds)
+            finally:await self.page.unroute('**/api/live/**',drop)
+            restored=time.monotonic();await self.state_at(f'lease-restored-{seconds}')
+            await asyncio.sleep(10)
+            phase=await self.page.locator('[data-capture-phase]').get_attribute('data-capture-phase')
+            status=await self.page.locator('.capture-status').inner_text()
+            resumed={lane:any(f['status']==200 and f['lane']==lane and f['t']>restored for f in self.frames) for lane in ('system','microphone')}
+            stop_started=time.monotonic();m=await self.stop(ident)
+            stop_seconds=time.monotonic()-stop_started
+            final=(await self.api(f'/api/live/sessions/{ident}/snapshot'))['body']['snapshot']['session']
+            new_words=words((m.get('transcript') or {}).get('segments',[]))
+            matcher=SequenceMatcher(None,old_words,new_words,autojunk=False)
+            retained=sum(match.size for match in matcher.get_matching_blocks())
+            v={'seconds':seconds,'actual_seconds':restored-start,'meeting':ident,'blocked_requests':len(blocked),
+               'blocked_routes':sorted({r['route'] for r in blocked}),'phase_after_restore':phase,'ui_status':status,
+               'resumed_frames':resumed,'terminal':m['status'],'failure_reason':final.get('failure_reason'),
+               'accepted_samples_before':before.get('accepted_samples'),'accepted_samples_after':final.get('accepted_samples'),
+               'published_words_before':len(old_words),'stop_seconds':stop_seconds,
+               'acknowledged_commits_before':len(acknowledged),'acknowledged_commits_preserved':acknowledged==[(c['span_id'],c['transcript']) for c in final.get('committed',[])][:len(acknowledged)],'saved_words_after':len(new_words),'ordered_words_retained':retained,
+               'words_removed_or_revised':len(old_words)-retained}
+            if seconds==25:
+                v['ok']=all(resumed.values()) and phase=='active' and m['status']=='completed' and v['acknowledged_commits_preserved'] and len(acknowledged)>0 and len(old_words)>0
+            else:
+                explained='Recording interrupted' in status and 'Reset capture' in status
+                v['truthful_failure']=m['status'] in ('failed','interrupted') and phase=='terminal' and explained
+                # Same document; no reload or replacement page hides broken reset.
+                await self.page.locator('[data-capture-phase=terminal]').wait_for(timeout=30000)
+                await self.page.get_by_role('button',name='Reset capture',exact=True).click()
+                await self.setup_live();second=await self.start_live('lease-recovery');await asyncio.sleep(3)
+                recovery=await self.stop(second);v['new_capture_status']=recovery['status']
+                v['ok']=v['truthful_failure'] and recovery['status']=='completed'
+            variants.append(v);print('LEASE_VARIANT',json.dumps(v),flush=True)
+        return {'variants':variants,'ok':all(v['ok'] for v in variants)}
+
     async def tabs(self):
         other=self.attach(await self.context.new_page());await other.goto(self.args.base);await other.locator('[data-history-boot="ready"]').wait_for()
         a=(await self.api('/api/meetings'))['body']['meetings'];b=await other.evaluate('fetch("/api/meetings").then(r=>r.json()).then(v=>v.meetings)')
@@ -258,14 +346,14 @@ class Bench(Harness):
         (self.private/'source.wav').symlink_to(self.wav);(self.private/'source.html').write_text('<title>MOSS E2E Audio Source</title><audio src="source.wav" controls autoplay loop></audio>')
         server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(QuietHandler,directory=str(self.private)));threading.Thread(target=server.serve_forever,daemon=True).start();self.media=f'http://127.0.0.1:{server.server_port}'
         async with async_playwright() as p:
-            browser=await p.chromium.launch(executable_path=str(browser_executable(p)),channel='chromium',headless=True,ignore_default_args=['--mute-audio'],args=['--use-fake-device-for-media-stream','--auto-accept-camera-and-microphone-capture','--auto-select-tab-capture-source-by-title=MOSS E2E Audio Source','--autoplay-policy=no-user-gesture-required']+([f'--use-file-for-fake-audio-capture={self.microphone_file}'] if self.microphone_file else []))
+            browser=await p.chromium.launch(executable_path=str(browser_executable(p)),channel='chromium',headless=not self.headed,ignore_default_args=['--mute-audio']+(['--disable-backgrounding-occluded-windows','--disable-renderer-backgrounding','--disable-background-timer-throttling'] if self.headed else []),args=['--use-fake-device-for-media-stream','--auto-accept-camera-and-microphone-capture','--auto-select-tab-capture-source-by-title=MOSS E2E Audio Source','--autoplay-policy=no-user-gesture-required']+([f'--use-file-for-fake-audio-capture={self.microphone_file}'] if self.microphone_file else []))
             self.context=await browser.new_context(ignore_https_errors=True,accept_downloads=True,viewport={'width':1440,'height':1100});self.context.set_default_timeout(12000)
             self.page=self.attach(await self.context.new_page());self.source=await self.context.new_page();await self.source.goto(self.media+'/source.html');await self.source.locator('audio').evaluate('a=>a.play()');await self.open()
             try:
                 for n in cases:
                     self.case=n;self.row=n;start=time.monotonic();self.errors=[];self.failures=[]
                     try:
-                        fn={4:self.outage,7:self.tabs,8:self.files,9:self.urls,10:self.downloads,11:self.names,12:self.scale,13:self.no_summary,14:self.restart}.get(n)
+                        fn={4:self.outage,7:self.tabs,8:self.files,9:self.urls,10:self.downloads,11:self.names,12:self.scale,13:self.no_summary,14:self.restart,15:self.hidden_headed,16:self.lease_outages}.get(n)
                         result=await fn() if fn else await self.case_live(n)
                         result['status']='BLOCKED' if result.get('blocked') else 'PASS' if result.get('ok') else 'FAIL'
                     except Exception as exc:
@@ -277,7 +365,7 @@ class Bench(Harness):
                     except Exception as exc:result['screenshot_error']=type(exc).__name__
                     self.results[str(n)]=result;(self.out/'campaign-results.json').write_text(json.dumps(self.results,indent=2)+'\n');print('RESULT',n,json.dumps(result),flush=True)
                     # No abandoned active work overlaps the next case.
-                    if n in (1,2,3,4,5,6,11):
+                    if n in (1,2,3,4,5,6,11,15,16):
                         try:
                             ident=getattr(self,'last_live_meeting',None)
                             if ident:
@@ -291,8 +379,8 @@ class Bench(Harness):
                 if getattr(self,'restarted',None):self.restarted.terminate();self.restarted.wait(timeout=30)
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('case');parser.add_argument('--output',default='evidence/mvpfix/wp5/base');parser.add_argument('--base',default='https://127.0.0.1:17865');parser.add_argument('--microphone-file',type=Path);args=parser.parse_args()
-    cases=list(range(1,15)) if args.case=='all' else [int(x) for x in args.case.split(',')]
-    bench=Bench(args.output,args.base,args.microphone_file)
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('case');parser.add_argument('--output',default='evidence/mvpfix/wp5/base');parser.add_argument('--base',default='https://127.0.0.1:17865');parser.add_argument('--microphone-file',type=Path);parser.add_argument('--headed',action='store_true');parser.add_argument('--lease-seconds',type=int,nargs='+',choices=(25,35),default=[25,35]);args=parser.parse_args()
+    cases=list(range(1,17)) if args.case=='all' else [int(x) for x in args.case.split(',')]
+    bench=Bench(args.output,args.base,args.microphone_file,args.headed,args.lease_seconds)
     return asyncio.run(bench.run_cases(cases))
 if __name__=='__main__':raise SystemExit(main())

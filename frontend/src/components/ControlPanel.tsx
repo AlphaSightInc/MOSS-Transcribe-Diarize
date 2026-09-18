@@ -104,7 +104,9 @@ export function ControlPanel() {
     setMeters(EMPTY_METERS);
     setConnected({ microphone: false, system: false });
     transition("terminal");
-    setMessage(terminalMessage);
+    setMessage(terminalMessage === "helper_lease_expired"
+      ? "Recording interrupted: the connection was lost for too long. Reset capture to start again."
+      : terminalMessage);
     requestMeetingHistoryRefresh();
   };
 

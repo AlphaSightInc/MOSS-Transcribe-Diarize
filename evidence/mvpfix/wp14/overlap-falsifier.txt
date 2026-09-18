@@ -1,0 +1,2 @@
+PASS falsifier: original expected-failure comparator rejected by integrated quality assertion
+PASS restored comparator: missing quality cannot qualify either lane case

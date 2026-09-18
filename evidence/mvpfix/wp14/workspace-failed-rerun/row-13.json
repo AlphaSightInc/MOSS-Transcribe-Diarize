@@ -1,0 +1,22 @@
+{
+  "ok": false,
+  "variants": [
+    {
+      "outage_seconds": 3,
+      "ok": false,
+      "error": null,
+      "exception": "TimeoutError"
+    },
+    {
+      "outage_seconds": 20,
+      "ok": false,
+      "error": null,
+      "exception": "TimeoutError"
+    }
+  ],
+  "screenshot": null,
+  "status": "FAIL",
+  "seconds": 24.229,
+  "network": null,
+  "row": 13
+}

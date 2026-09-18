@@ -1,0 +1,7 @@
+ROW 4: FAIL {"exception": "TimeoutError", "screenshot": null, "status": "FAIL", "seconds": 12.007, "network": null, "row": 4}
+ROW 9: FAIL {"ok": false, "reason": null, "screenshot": null, "status": "FAIL", "seconds": 0.005, "network": null, "row": 9}
+ROW 10: FAIL {"exception": "TimeoutError", "screenshot": null, "status": "FAIL", "seconds": 12.444, "network": null, "row": 10}
+ROW 8: FAIL {"exception": "AssertionError", "screenshot": null, "status": "FAIL", "seconds": 0.0, "network": null, "row": 8}
+ROW 13: FAIL {"ok": false, "variants": [{"outage_seconds": 3, "ok": false, "error": null, "exception": "TimeoutError"}, {"outage_seconds": 20, "ok": false, "error": null, "exception": "TimeoutError"}], "screenshot": null, "status": "FAIL", "seconds": 24.229, "network": null, "row": 13}
+ROW 14: FAIL {"exception": "TimeoutError", "screenshot": null, "status": "FAIL", "seconds": 12.005, "network": null, "row": 14}
+4:FAIL | 5:FAIL | 8:FAIL | 9:FAIL | 10:FAIL | 13:FAIL | 14:FAIL | total 0/7 PASS, 7 FAIL

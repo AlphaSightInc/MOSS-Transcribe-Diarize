@@ -254,7 +254,7 @@ describe("ControlPanel reattach", () => {
     expect(root.textContent).toContain("Connection restored. Recording microphone and shared audio.");
     act(() => mocks.pollerOptions?.onTerminal?.("helper_lease_expired"));
     act(() => { mocks.captureOptions?.onTransportRecovered?.(); mocks.pollerOptions?.onRecovered?.(); });
-    expect(root.textContent).toContain("helper_lease_expired");
+    expect(root.textContent).toContain("Recording interrupted: the connection was lost for too long. Reset capture to start again.");
     expect(root.textContent).not.toContain("Connection restored");
   });
 
@@ -297,7 +297,9 @@ describe("ControlPanel reattach", () => {
     expect(captureMeetingId.value).toBeNull();
     expect(mocks.poller.stop).toHaveBeenCalledOnce();
     expect(root.querySelector('[data-capture-phase="terminal"]')).not.toBeNull();
-    expect(root.querySelector('[role="status"]')?.textContent).toBe(reason);
+    expect(root.querySelector('[role="status"]')?.textContent).toBe(reason === "helper_lease_expired"
+      ? "Recording interrupted: the connection was lost for too long. Reset capture to start again."
+      : reason);
     expect(button("Stop and finalize")).toBeUndefined();
     expect(button("Reset capture")).toBeTruthy();
   });

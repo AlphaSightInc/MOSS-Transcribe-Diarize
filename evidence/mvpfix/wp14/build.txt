@@ -1,0 +1,17 @@
+
+> livetranscribe-frontend@0.0.0 build
+> vite build --configLoader runner
+
+vite v8.2.1 building client environment for production...
+[2Ktransforming...✓ 34 modules transformed.
+rendering chunks...
+computing gzip size...
+../moss_transcribe_diarize/app/frontend_assets/styles.css   53.24 kB │ gzip: 10.72 kB
+../moss_transcribe_diarize/app/frontend_assets/app.js      125.28 kB │ gzip: 41.22 kB │ map: 391.15 kB
+
+✓ built in 76ms
+npm notice
+npm notice New minor version of npm available! 11.12.1 -> 11.19.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.19.1
+npm notice To update run: npm install -g npm@11.19.1
+npm notice

@@ -1,0 +1,47 @@
+[
+  {
+    "cycle": 1,
+    "pane_empty_before_start": true,
+    "meeting": "iaCuHHdKwG3icpvujX2BAJM_",
+    "active_phase": null,
+    "first_frame_sequence": 0,
+    "status_received": "completed",
+    "finalization_status": "final",
+    "history_present": true,
+    "export": null,
+    "export_filename": null,
+    "terminal_phase": null,
+    "screenshot": null,
+    "ok": true
+  },
+  {
+    "cycle": 2,
+    "pane_empty_before_start": true,
+    "meeting": "uy7RZ2YRFZ-3Q1N6r3R7MuUK",
+    "active_phase": null,
+    "first_frame_sequence": 0,
+    "status_received": "completed",
+    "finalization_status": "final",
+    "history_present": true,
+    "export": null,
+    "export_filename": null,
+    "terminal_phase": null,
+    "screenshot": null,
+    "ok": true
+  },
+  {
+    "cycle": 3,
+    "pane_empty_before_start": true,
+    "meeting": "HE04Bi8KMKOx89-WRVwCz4aF",
+    "active_phase": null,
+    "first_frame_sequence": 0,
+    "status_received": "completed",
+    "finalization_status": "final",
+    "history_present": true,
+    "export": null,
+    "export_filename": null,
+    "terminal_phase": null,
+    "screenshot": null,
+    "ok": true
+  }
+]

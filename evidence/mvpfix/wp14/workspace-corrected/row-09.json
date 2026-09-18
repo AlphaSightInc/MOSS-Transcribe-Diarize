@@ -1,0 +1,10 @@
+{
+  "skip": true,
+  "reason_code": "no_configured_relay_models",
+  "configured_models": 0,
+  "screenshot": null,
+  "status": "SKIP",
+  "seconds": 0.003,
+  "network": null,
+  "row": 9
+}

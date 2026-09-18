@@ -1,0 +1,233 @@
+{
+  "rows": {
+    "1": {
+      "signed_in": true,
+      "boot_ready": true,
+      "fresh_profile": true,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 0.114,
+      "network": null,
+      "row": 1
+    },
+    "2": {
+      "ok": true,
+      "meeting": "iTq_lQLPZpCGBQxNY8SY4xbm",
+      "status_received": "completed",
+      "speaker_count": 1,
+      "reference_words": 115,
+      "hypothesis_words": 111,
+      "edits": 10,
+      "wer": 0.08695652173913043,
+      "artifact": null,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 3.335,
+      "network": null,
+      "row": 2
+    },
+    "3": {
+      "ok": true,
+      "meeting": "pr-ory-yLUSpYfEfdSqiPngB",
+      "status_received": "completed",
+      "speaker_count": 1,
+      "reference_words": 115,
+      "hypothesis_words": 111,
+      "edits": 10,
+      "wer": 0.08695652173913043,
+      "artifact": null,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 2.32,
+      "network": null,
+      "row": 3
+    },
+    "4": {
+      "exception": "TimeoutError",
+      "screenshot": null,
+      "status": "FAIL",
+      "seconds": 12.004,
+      "network": null,
+      "row": 4
+    },
+    "6": {
+      "ok": true,
+      "formats": {
+        "md": {
+          "ok": true,
+          "expected_turns": 1,
+          "downloaded_turns": 1,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "bytes": 705,
+          "artifact": null
+        },
+        "txt": {
+          "ok": true,
+          "expected_turns": 1,
+          "downloaded_turns": 1,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "bytes": 702,
+          "artifact": null
+        },
+        "json": {
+          "ok": true,
+          "expected_turns": 1,
+          "downloaded_turns": 1,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "lane": true,
+          "bytes": 1470,
+          "artifact": null
+        },
+        "srt": {
+          "ok": true,
+          "expected_turns": 1,
+          "downloaded_turns": 1,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "bytes": 724,
+          "artifact": null
+        },
+        "vtt": {
+          "ok": true,
+          "expected_turns": 1,
+          "downloaded_turns": 1,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "bytes": 732,
+          "artifact": null
+        }
+      },
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 0.578,
+      "network": null,
+      "row": 6
+    },
+    "7": {
+      "ok": true,
+      "filename": null,
+      "duration": 50.0,
+      "source_duration": 50.0,
+      "artifact": null,
+      "decodable": true,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 0.167,
+      "network": null,
+      "row": 7
+    },
+    "9": {
+      "ok": false,
+      "reason": null,
+      "screenshot": null,
+      "status": "FAIL",
+      "seconds": 0.003,
+      "network": null,
+      "row": 9
+    },
+    "11": {
+      "header_visible": true,
+      "header_box": {
+        "x": 527.375,
+        "y": 104,
+        "width": 187.6875,
+        "height": 33.5
+      },
+      "ok": true,
+      "title_matches": true,
+      "mode": null,
+      "panel_box": {
+        "x": 310,
+        "y": 97.5,
+        "width": 820,
+        "height": 984.5
+      },
+      "selected": null,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 0.078,
+      "network": null,
+      "row": 11
+    },
+    "12": {
+      "width": 400,
+      "scroll": 400,
+      "historyY": 69.671875,
+      "file_y": 70.1875,
+      "ok": true,
+      "screenshot": null,
+      "status": "PASS",
+      "seconds": 0.467,
+      "network": null,
+      "row": 12
+    },
+    "10": {
+      "exception": "TimeoutError",
+      "screenshot": null,
+      "status": "FAIL",
+      "seconds": 12.459,
+      "network": null,
+      "row": 10
+    },
+    "8": {
+      "exception": "AssertionError",
+      "screenshot": null,
+      "status": "FAIL",
+      "seconds": 0.0,
+      "network": null,
+      "row": 8
+    },
+    "13": {
+      "ok": false,
+      "variants": [
+        {
+          "outage_seconds": 3,
+          "ok": false,
+          "error": null,
+          "exception": "TimeoutError"
+        },
+        {
+          "outage_seconds": 20,
+          "ok": false,
+          "error": null,
+          "exception": "TimeoutError"
+        }
+      ],
+      "screenshot": null,
+      "status": "FAIL",
+      "seconds": 24.249,
+      "network": null,
+      "row": 13
+    },
+    "14": {
+      "exception": "TimeoutError",
+      "screenshot": null,
+      "status": "FAIL",
+      "seconds": 12.005,
+      "network": null,
+      "row": 14
+    },
+    "5": {
+      "status": "FAIL",
+      "reason": null
+    }
+  },
+  "meetings": {
+    "file": "iTq_lQLPZpCGBQxNY8SY4xbm",
+    "url": "pr-ory-yLUSpYfEfdSqiPngB"
+  },
+  "base": null
+}
