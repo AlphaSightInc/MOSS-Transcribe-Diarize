@@ -1,0 +1,7 @@
+{
+  "acknowledged_version": 1,
+  "source_transcripts": 1,
+  "database_only_transcripts": 0,
+  "online_backup_transcripts": 1,
+  "wal_bytes": 226632
+}

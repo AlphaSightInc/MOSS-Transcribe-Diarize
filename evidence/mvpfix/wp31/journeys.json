@@ -1,0 +1,251 @@
+{
+  "stores": {
+    "codex-prelane": {
+      "meetings": 8,
+      "rendered": 8,
+      "lanes": 8,
+      "formats": 40,
+      "exports_passed": 40,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 4.619340125005692,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "lead-prelane": {
+      "meetings": 13,
+      "rendered": 13,
+      "lanes": 13,
+      "formats": 65,
+      "exports_passed": 65,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 4.114916708000237,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "lead-perlane": {
+      "meetings": 8,
+      "rendered": 8,
+      "lanes": 8,
+      "formats": 40,
+      "exports_passed": 40,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 4.119257958998787,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "wp6-0": {
+      "meetings": 1,
+      "rendered": 1,
+      "lanes": 1,
+      "formats": 5,
+      "exports_passed": 5,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 4.112049167000805,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "wp6-1": {
+      "meetings": 2,
+      "rendered": 2,
+      "lanes": 2,
+      "formats": 10,
+      "exports_passed": 10,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 3.862045832996955,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "wp6-2": {
+      "meetings": 2,
+      "rendered": 2,
+      "lanes": 2,
+      "formats": 10,
+      "exports_passed": 10,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 3.8618947500071954,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "wp6-3": {
+      "meetings": 4,
+      "rendered": 4,
+      "lanes": 4,
+      "formats": 20,
+      "exports_passed": 20,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 4.0966395839932375,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "wp6-4": {
+      "meetings": 4,
+      "rendered": 4,
+      "lanes": 4,
+      "formats": 20,
+      "exports_passed": 20,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 4.112803291995078,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "wp15-0": {
+      "meetings": 1,
+      "rendered": 1,
+      "lanes": 1,
+      "formats": 5,
+      "exports_passed": 5,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 4.106695291004144,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "wp15-1": {
+      "meetings": 1,
+      "rendered": 1,
+      "lanes": 1,
+      "formats": 5,
+      "exports_passed": 5,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 3.8734686670068186,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "wp15-2": {
+      "meetings": 1,
+      "rendered": 1,
+      "lanes": 1,
+      "formats": 5,
+      "exports_passed": 5,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 3.8752044590073638,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "wp15-3": {
+      "meetings": 1,
+      "rendered": 1,
+      "lanes": 1,
+      "formats": 5,
+      "exports_passed": 5,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 4.1155584170046495,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    },
+    "wp22-0": {
+      "meetings": 1,
+      "rendered": 1,
+      "lanes": 1,
+      "formats": 5,
+      "exports_passed": 5,
+      "empty_disabled": 0,
+      "failures": [],
+      "startup_seconds": 4.122403625005973,
+      "new_capture": {
+        "frames_per_lane": 16,
+        "status": "completed",
+        "segments": 2,
+        "old_and_new_coexist": true
+      },
+      "ok": true,
+      "exit_code": -15,
+      "requests": 5
+    }
+  }
+}

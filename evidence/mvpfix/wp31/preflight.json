@@ -1,0 +1,22 @@
+{
+  "missing": {
+    "type": "LiveProviderBundleAdmissionError",
+    "code": "bundle_manifest_unreadable",
+    "content_free_reason": "manifest is not readable: <private manifest path>"
+  },
+  "invalid": {
+    "type": "LiveProviderBundleAdmissionError",
+    "code": "bundle_manifest_invalid",
+    "content_free_reason": "manifest is not valid JSON."
+  },
+  "valid": {
+    "available": true,
+    "failure_count": 0
+  },
+  "missing_model": {
+    "type": "LiveProviderBundleAdmissionError",
+    "code": "bundle_preflight_failed",
+    "reason": "live provider bundle preflight failed.",
+    "failure_count": 1
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "by_state": {
+    "stores/wp15-1": 5,
+    "stores/wp15-0": 5,
+    "stores/lead-prelane": 5,
+    "stores/wp6-0": 5,
+    "stores/wp6-1": 5,
+    "stores/lead-perlane": 5,
+    "stores/codex-prelane": 5,
+    "stores/wp15-2": 5,
+    "stores/wp15-3": 5,
+    "stores/wp22-0": 5,
+    "stores/wp6-3": 5,
+    "stores/wp6-4": 5,
+    "stores/wp6-2": 5,
+    "recovery-final": 12,
+    "recovery": 2,
+    "recovery-corrected": 28
+  },
+  "total": 107,
+  "budget": 200,
+  "maximum_inflight_enforced": 2,
+  "own_tunnel_port": 18131
+}

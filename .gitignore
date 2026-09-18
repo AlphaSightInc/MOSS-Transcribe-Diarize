@@ -99,3 +99,6 @@ evidence/mvpfix/*/raw/
 >>>>>>> mvpfix/wp24-visual-copy-pack
 
 .wp28runtime/
+
+# WP31 private copied stores, audio and runtime.
+.wp31/
