@@ -100,3 +100,64 @@ states; this policy/structure is measured before production absorption.
 
 The passing experiment can now be absorbed. Remaining implementation defects and
 unit/fault coverage must be resolved before any production acceptance claim.
+
+
+## Production absorption / final request accounting
+
+Production commits 2cb9d014 (lane producers/identity/retention) and 644833ee
+(snapshot replay) absorb the passing design. Deleted the throwaway overlay and
+helper; the bench now imports production. Canonical preview ordering was restored
+before identity preparation, draft was traced and separated, and replay now keeps
+both new lane fields. Lifecycle/reachability fixture audio was changed from exact
+zeros to one nonzero system source; numeric assertions and oracles were unchanged.
+
+Six fixed-build cases consumed 143 requests: same 26, zero 13, parity 26,
+mic -10 26, mic -15 26, system -10 26. Saved final word counts, system/mic:
+86/86, 86/0, 86/56, 86/56, 86/60, 84/56 respectively. Same voice has two disjoint
+speaker IDs; all six final surfaces equal saved text/identity sequences. Unity
+control vocabulary retention is 50/50 and 45/45 for parity and mic attenuation;
+system -10 is 49/50 and 45/45. The controls are historical prototype versions,
+not matched final-SHA/gain controls and not accuracy acceptance.
+
+The final E2E scripts consumed 36 requests: lifecycle 9 (6/6 allowed checks,
+concurrent case excluded), reshare 15 (6/6), demo lanes 12 (PASS at supported
+20-second setting). Heartbeats and wait-until-final adapters enforce single-meeting
+load without changing script assertions. Total cumulative 646/650; max observed
+client concurrency 1. Every new batch records decoder queue admission; all owned
+servers/tunnels stopped. No further provider requests are needed for verification.
+
+26/26 retained saved/final surfaces agree; all 17 resumed/fixed case runs satisfy
+their named falsifiers. 99 individual fixed-build 2.5-second decodes: median
+0.144524 s, max 1.133294 s, excluding identity and queue latency. Fixed Stop-to-final
+4.999514–11.763544 s. Both-active cases use 65 requests/capture-minute; zero-mic
+32.5. Mono baseline cost was not remeasured. Instrumented canonical queue max 3;
+point samples do not bound an unseen peak. Exact counts: fixed-measurements.json,
+scores.json, spans.jsonl, requests.jsonl, concurrency.json and evidence-audit.txt.
+
+Fixed production absorption runs preceded final preview/replay cleanup; final
+commit E2Es passed. Budget prevented a complete final-SHA 11-case ladder. Noise,
+48-second alternation, Stop mid-speech, two-voice reshare and system -15 retain
+prototype evidence, not final-SHA ladder reruns. This is an explicit measurement
+limit, not a falsifier failure. No numeric product acceptance is claimed.
+
+Full-reference ordered saved WER remains boundary-biased as directed: at parity,
+system 2 substitutions / 106 omissions / 4 additions against 188 reference words;
+mic 0 / 95 / 6 against 145. Mic -15 additions are 10; system -10 additions are 2.
+Unplayed source audio contributes omissions. Saved lane attribution is positional
+correspondence with the matching final surface; WP2 still owns native persistence.
+
+Failed suite attempts are retained. Initial missing node_modules and overlong
+socket paths were setup failures. The local pytest adapter now redirects only
+socket temp locations. Two staging tests still expect deletion inside the protected
+project tree; storage deliberately refuses that (unchanged product code). The known
+voiceprint-latency HTML fixture still lacks the expected Meeting history tab (WP4).
+A cold isolated decode-failure test sometimes returns HTTP 202 at its 2-second
+Stop deadline; full-suite ordering passed it. Deadline policy was not changed.
+Final suite counts and fresh verification are in the evidence logs / VERIFY-RESULT.
+
+Final pre-/new suite: 1718 passed, 3 failed, 2 skipped, 37 subtests passed
+(167.17 s). Failures are exactly staging dry-run x2 and the known WP4 latency
+fixture. Last standalone phase2 attempt was 744 passed / 5 failed; its socket
+adapter issue and cold 2-second Stop timing failure did not recur in the final
+full suite. Earlier full suite 1717/4 exposed the replay field omission; retained
+red/green evidence shows that fix (27 passed plus 9 subtests).

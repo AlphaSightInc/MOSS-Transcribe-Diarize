@@ -9,11 +9,11 @@ from types import SimpleNamespace
 HERE=Path(__file__).resolve().parent
 sys.path.insert(0,str(HERE.parents[1]))
 import moss_transcribe_diarize.app
-moss_transcribe_diarize.app.__path__.insert(0,str(HERE/'runtime/app'))
+
 from moss_transcribe_diarize.app.live_session import AudioFrame,LiveSession,LiveIdentityPreparation,LiveIdentitySnapshot,CanonicalResult
 from moss_transcribe_diarize.app.live_transcript_convergence import RollingTranscriptConverger
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript,LiveProviderTransientError
-from moss_transcribe_diarize.app.wp1_lane import decode_refinement
+from moss_transcribe_diarize.app.live_lane_decode import decode_refinement
 session=LiveSession(max_retained_samples=320000)
 session.accept_frame(AudioFrame(sequence=0,pcm=bytes(640000),sample_count=320000))
 span=session.freeze_until(320000,reason='prototype')

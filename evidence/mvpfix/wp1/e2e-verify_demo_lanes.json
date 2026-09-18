@@ -1,0 +1,13 @@
+{
+  "case": "verify_demo_lanes",
+  "first": 635,
+  "last": 646,
+  "count": 12,
+  "exit_code": 0,
+  "adaptations": [
+    "heartbeat every frame",
+    "wait for finalization before next meeting"
+  ],
+  "excluded": [],
+  "capture_seconds": 20
+}

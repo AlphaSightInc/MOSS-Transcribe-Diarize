@@ -1,0 +1,576 @@
+F.F.FFFFFFFFF.........................................................   [100%]
+=================================== FAILURES ===================================
+______ test_coordinator_endpoint_queues_and_atomically_commits_frozen_pcm ______
+
+    def test_coordinator_endpoint_queues_and_atomically_commits_frozen_pcm():
+        live, decoder, arbiter, session = coordinator(speech=(True, False))
+    
+        first = live.accept_frame(frame(0, 1000, b"a"))
+        second = live.accept_frame(frame(1, 1000, b"b"))
+    
+        assert first.queued_item_ids == ()
+        assert [(span.start_sample, span.end_sample, span.reason) for span in second.endpoint_spans] == [
+            (0, 1000, "end_silence")
+        ]
+        assert second.queued_item_ids == (0,)
+    
+        item = arbiter.next_work()
+>       result = live.process_work_item(item)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_coordinator.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:869: in process_work_item
+    result = self.submit_prepared_work(prepared)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10db51e50>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PreparingIdentity' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+_________ test_coordinator_prepared_work_preserves_decoder_elapsed_sec _________
+
+    def test_coordinator_prepared_work_preserves_decoder_elapsed_sec():
+        live, _decoder, arbiter, _session = coordinator(
+            speech=(True, False),
+            decoder=RecordingDecoder(elapsed_sec=123.0),
+        )
+        live.accept_frame(frame(0, 1000, b"a"))
+        live.accept_frame(frame(1, 1000, b"b"))
+    
+        prepared = live.prepare_work_item(live.capture_work_item(arbiter.next_work()))
+    
+        assert prepared.decode_elapsed_sec == 123.0
+>       result = live.submit_prepared_work(prepared)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_coordinator.py:193: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10db53dd0>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PreparingIdentity' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+_ test_multiple_spans_from_one_frame_reserve_their_full_decode_weight_atomically _
+
+    def test_multiple_spans_from_one_frame_reserve_their_full_decode_weight_atomically():
+        class AlternatingSpeech:
+            def observe(self, *, frame, start_sample, end_sample):
+                del frame
+                step = (end_sample - start_sample) // 4
+                return tuple(
+                    SpeechObservation(
+                        start_sample=start_sample + index * step,
+                        end_sample=start_sample + (index + 1) * step,
+                        speech_present=index % 2 == 0,
+                    )
+                    for index in range(4)
+                )
+    
+        session = LiveSession(max_retained_samples=8000)
+        arbiter = InferenceArbiter(max_live_canonical_items=3)
+        decoder = RecordingDecoder()
+        live = LiveCoordinator(
+            session_key="session-a",
+            session=session,
+            endpoint_policy=EndpointPolicy(
+                EndpointPolicyConfig(min_speech_samples=1, min_silence_samples=1, hard_cap_samples=4000)
+            ),
+            speech_provider=AlternatingSpeech(),
+            decoder=decoder,
+            identity_preparer=PreparingIdentity(),
+            arbiter=arbiter,
+        )
+    
+        staged_frame = frame(0, 4000)
+        assert live.preview_frame_work_items(staged_frame) == 3
+        assert session.snapshot().accepted_samples == 0
+        assert arbiter.snapshot().live_canonical == 0
+        accepted = live.accept_frame(staged_frame)
+    
+        assert len(accepted.frozen_spans) == 3
+        assert accepted.queued_item_ids == (0,)
+        assert arbiter.snapshot().live_canonical == 3
+>       live.process_work_item(arbiter.next_work())
+
+tests/test_live_coordinator.py:255: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:869: in process_work_item
+    result = self.submit_prepared_work(prepared)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10db50170>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PreparingIdentity' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+__ test_coordinator_identity_abstention_publishes_the_span_without_a_speaker ___
+
+    def test_coordinator_identity_abstention_publishes_the_span_without_a_speaker():
+        """An abstention withholds the label, not the audio.
+    
+        It is the *designed* answer to ambiguous identity or exhausted speaker capacity, so it
+        cannot also mean "end the meeting". The span commits, the identity snapshot does not
+        move -- no speaker is born and the next span still prepares against this state -- and
+        the words carry the unattributed marker rather than the decoder's local `S01`.
+        """
+        live, decoder, arbiter, session = coordinator(
+            speech=(True, False),
+            identity=PreparingIdentity(status="abstain", reason="ambiguous identity"),
+        )
+        live.accept_frame(frame(0, 1000))
+        live.accept_frame(frame(1, 1000))
+        before = session.snapshot()
+    
+>       result = live.process_work_item(arbiter.next_work())
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_coordinator.py:276: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:869: in process_work_item
+    result = self.submit_prepared_work(prepared)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10db10fe0>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PreparingIdentity' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+_ test_a_session_end_finalize_settles_the_stack_against_the_meetings_final_snapshot _
+
+    def test_a_session_end_finalize_settles_the_stack_against_the_meetings_final_snapshot():
+        """The last span's own preparation is what the stack has to reconcile.
+    
+        A span's vectors acquire their canonical speaker when the *next* span's preparation
+        arrives, so the meeting's last span is the one nothing follows. Handing the stack the
+        session's snapshot as it stands at stop time is what closes that gap, and it is the
+        snapshot rather than the preparation because the session is the thing that decided
+        which preparation was published.
+        """
+    
+        identity = FinalizingIdentity()
+        live, _decoder, arbiter, session = coordinator(speech=(True, False), identity=identity)
+        live.accept_frame(frame(0, 1000))
+        live.accept_frame(frame(1, 1000))
+>       live.process_work_item(arbiter.next_work())
+
+tests/test_live_coordinator.py:326: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:869: in process_work_item
+    result = self.submit_prepared_work(prepared)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10db550a0>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'FinalizingIdentity' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+____ test_a_session_end_finalize_is_harmless_for_a_stack_that_cannot_sweep _____
+
+    def test_a_session_end_finalize_is_harmless_for_a_stack_that_cannot_sweep():
+        """Every identity stack that predates ADR-0002 step 3, and every test double.
+    
+        The capability is asked for by name, so a stack without it is not an error condition:
+        it has retained nothing and has nothing to say about a span it has already answered.
+        """
+    
+        live, _decoder, arbiter, _session = coordinator(speech=(True, False))
+        live.accept_frame(frame(0, 1000))
+        live.accept_frame(frame(1, 1000))
+>       live.process_work_item(arbiter.next_work())
+
+tests/test_live_coordinator.py:349: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:869: in process_work_item
+    result = self.submit_prepared_work(prepared)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10db52b40>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PreparingIdentity' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+____ test_a_session_end_finalize_that_raises_is_named_rather_than_terminal _____
+
+    def test_a_session_end_finalize_that_raises_is_named_rather_than_terminal():
+        """A meeting that reached a clean stop has already succeeded.
+    
+        An identity layer that breaks on the way out costs the transcript its last correction
+        and nothing else. It is counted by name because the alternative -- reporting zero
+        corrections -- is indistinguishable from a meeting nobody needed to correct.
+        """
+    
+        identity = FinalizingIdentity(raises=True)
+        live, _decoder, arbiter, session = coordinator(speech=(True, False), identity=identity)
+        live.accept_frame(frame(0, 1000))
+        live.accept_frame(frame(1, 1000))
+>       live.process_work_item(arbiter.next_work())
+
+tests/test_live_coordinator.py:368: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:869: in process_work_item
+    result = self.submit_prepared_work(prepared)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10db28fe0>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'FinalizingIdentity' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+_ test_analysis_audio_drives_speech_and_identity_but_not_decoder_and_is_pruned[False] _
+
+staged = False
+
+    @pytest.mark.parametrize('staged', [False, True])
+    def test_analysis_audio_drives_speech_and_identity_but_not_decoder_and_is_pruned(staged):
+        class Identity(PreparingIdentity):
+            def prepare(self, **kwargs):
+                assert kwargs['pcm'] == b'rr' * 4000
+                return super().prepare(**kwargs)
+    
+        live, decoder, arbiter, session = coordinator(speech=(), identity=Identity())
+        observed = []
+        class Speech:
+            def observe(self, *, frame, start_sample, end_sample):
+                observed.append(frame.pcm)
+                return (SpeechObservation(start_sample, end_sample, True),)
+        live.speech_provider = Speech()
+        audio = AudioFrame(0, b'dd' * 4000, 4000, analysis_pcm=b'rr' * 4000)
+        if staged:
+            live.preview_frame_work_items(audio)
+        live.accept_frame(audio)
+        item = arbiter.next_work()
+        work = live.capture_work_item(item)
+        assert work.pcm == b'dd' * 4000
+        assert work.analysis_pcm == b'rr' * 4000
+        assert observed == [b'rr' * 4000]
+>       result = live.process_work_item(item)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_coordinator.py:399: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:869: in process_work_item
+    result = self.submit_prepared_work(prepared)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10db2a660>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Identity' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+_ test_analysis_audio_drives_speech_and_identity_but_not_decoder_and_is_pruned[True] _
+
+staged = True
+
+    @pytest.mark.parametrize('staged', [False, True])
+    def test_analysis_audio_drives_speech_and_identity_but_not_decoder_and_is_pruned(staged):
+        class Identity(PreparingIdentity):
+            def prepare(self, **kwargs):
+                assert kwargs['pcm'] == b'rr' * 4000
+                return super().prepare(**kwargs)
+    
+        live, decoder, arbiter, session = coordinator(speech=(), identity=Identity())
+        observed = []
+        class Speech:
+            def observe(self, *, frame, start_sample, end_sample):
+                observed.append(frame.pcm)
+                return (SpeechObservation(start_sample, end_sample, True),)
+        live.speech_provider = Speech()
+        audio = AudioFrame(0, b'dd' * 4000, 4000, analysis_pcm=b'rr' * 4000)
+        if staged:
+            live.preview_frame_work_items(audio)
+        live.accept_frame(audio)
+        item = arbiter.next_work()
+        work = live.capture_work_item(item)
+        assert work.pcm == b'dd' * 4000
+        assert work.analysis_pcm == b'rr' * 4000
+        assert observed == [b'rr' * 4000]
+>       result = live.process_work_item(item)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_coordinator.py:399: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:869: in process_work_item
+    result = self.submit_prepared_work(prepared)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10aa4eab0>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Identity' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+_ test_analysis_retention_uses_existing_admission_bound_and_releases_committed_prefix _
+
+    def test_analysis_retention_uses_existing_admission_bound_and_releases_committed_prefix():
+        from moss_transcribe_diarize.app.live_session import LiveSessionBackpressure
+        live, _, arbiter, _ = coordinator(speech=(True,) * 3)
+        def audio(sequence):
+            return AudioFrame(sequence, b'dd' * 4000, 4000, analysis_pcm=b'rr' * 4000)
+        live.accept_frame(audio(0))
+        live.accept_frame(audio(1))
+        retained = lambda: sum(len(part.pcm) for part in live._analysis_pcm._slices)
+        assert retained() == 16000  # Existing 8,000-sample session admission bound.
+        with pytest.raises(LiveSessionBackpressure):
+            live.accept_frame(audio(2))
+        assert retained() == 16000
+>       live.process_work_item(arbiter.next_work())
+
+tests/test_live_coordinator.py:418: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:869: in process_work_item
+    result = self.submit_prepared_work(prepared)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10dbfade0>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PreparingIdentity' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+____________ test_identity_finalize_exception_does_not_log_content _____________
+
+caplog = <_pytest.logging.LogCaptureFixture object at 0x10db2a810>
+
+    def test_identity_finalize_exception_does_not_log_content(caplog):
+        class PrivateFailure(FinalizingIdentity):
+            def finalize_identity(self, **kwargs):
+                raise RuntimeError('PRIVATE_TRANSCRIPT PRIVATE_API_KEY')
+        live, _, arbiter, session = coordinator(speech=(True, False), identity=PrivateFailure())
+        live.accept_frame(frame(0, 1000))
+        live.accept_frame(frame(1, 1000))
+>       live.process_work_item(arbiter.next_work())
+
+tests/test_live_coordinator.py:434: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/app/live_coordinator.py:869: in process_work_item
+    result = self.submit_prepared_work(prepared)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/live_coordinator.py:684: in submit_prepared_work
+    revision = self._publish_identity_revision()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10db29130>
+
+    def _publish_identity_revision(self) -> _AppliedRevision:
+        """Apply any retrospective correction to the transcript a reader is being shown.
+    
+        The coordinator is where this belongs because it is the only object that holds both
+        halves: the identity stack, which knows a past minute was labelled wrong, and the
+        session, which owns the words that were published. It runs *after* the span above is
+        published -- the meeting advances first, then the corrections land -- and it is
+        unconditional, because a correction is about earlier spans and is no less true when
+        the current one was refused.
+        """
+    
+        from .live_identity_sweep import SweepRevision
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+>       revisions = [r for p in preparers if (r := p.take_identity_revision()) is not None]
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PrivateFailure' object has no attribute 'take_identity_revision'
+
+moss_transcribe_diarize/app/live_coordinator.py:796: AttributeError
+=========================== short test summary info ============================
+FAILED tests/test_live_coordinator.py::test_coordinator_endpoint_queues_and_atomically_commits_frozen_pcm
+FAILED tests/test_live_coordinator.py::test_coordinator_prepared_work_preserves_decoder_elapsed_sec
+FAILED tests/test_live_coordinator.py::test_multiple_spans_from_one_frame_reserve_their_full_decode_weight_atomically
+FAILED tests/test_live_coordinator.py::test_coordinator_identity_abstention_publishes_the_span_without_a_speaker
+FAILED tests/test_live_coordinator.py::test_a_session_end_finalize_settles_the_stack_against_the_meetings_final_snapshot
+FAILED tests/test_live_coordinator.py::test_a_session_end_finalize_is_harmless_for_a_stack_that_cannot_sweep
+FAILED tests/test_live_coordinator.py::test_a_session_end_finalize_that_raises_is_named_rather_than_terminal
+FAILED tests/test_live_coordinator.py::test_analysis_audio_drives_speech_and_identity_but_not_decoder_and_is_pruned[False]
+FAILED tests/test_live_coordinator.py::test_analysis_audio_drives_speech_and_identity_but_not_decoder_and_is_pruned[True]
+FAILED tests/test_live_coordinator.py::test_analysis_retention_uses_existing_admission_bound_and_releases_committed_prefix
+FAILED tests/test_live_coordinator.py::test_identity_finalize_exception_does_not_log_content
+11 failed, 59 passed in 0.87s

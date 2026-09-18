@@ -1,0 +1,636 @@
+....................F......FFFF.F.                                       [100%]
+=================================== FAILURES ===================================
+__________ test_draft_is_unlabelled_and_outside_every_quality_capture __________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/prototypes/lane-decode-proto/scratch/pytest-lanes/test_draft_is_unlabelled_and_o0')
+
+    def test_draft_is_unlabelled_and_outside_every_quality_capture(tmp_path):
+        decoder = HeldDraft()
+        r, _, sid = runtime(decoder)
+        before = r.accept_frame(sid, _frame(0)).snapshot
+        assert decoder.entered.wait(2)
+        decoder.release.set(); finished(r)
+        after = r.snapshot(sid, since_version=before.session.version)
+        assert after.draft.authority == 'draft'
+        assert '[S00]' in after.draft.transcript
+        assert dataclasses.asdict(before.session) == dataclasses.asdict(after.session)
+        assert after.session.identity_snapshot.version == 0
+        # The exact evaluator used by immediate, settled and final captures only sees LiveSnapshot.
+        _write_evaluator(tmp_path / 'before', before.session)
+        _write_evaluator(tmp_path / 'after', after.session)
+        assert (tmp_path / 'before').read_bytes() == (tmp_path / 'after').read_bytes() == b''
+        assert 'decoded' not in str([event.to_dict() for event in r.events(sid)])
+>       rows = read_snapshots([{'snapshot': after.to_dict()}])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_draft_lane.py:75: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/phase2/test_canonical_preview.py:14: in read_snapshots
+    result = subprocess.run(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = '[{"snapshot": {"session_id": "a85defdea24e4812924b1fa4b79fe921", "descriptor": {"source_revision": "eda5e69faf0e02513...: {"identities_born_count": 0, "album_admitted_count": null, "provisional_only_count": null, "abstention_count": 0}}}]'
+capture_output = True, timeout = None, check = True
+popenargs = (['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs'],)
+kwargs = {'text': True, 'stdin': -1, 'stdout': -1, 'stderr': -1}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs']' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_____________ test_reader_retires_draft_by_audio_boundary[preview] _____________
+
+replacement = 'preview'
+
+    @pytest.mark.parametrize('replacement', ['preview', 'multiple', 'empty', 'abort'])
+    def test_reader_retires_draft_by_audio_boundary(replacement):
+        r, _, sid = runtime(RecordingDecoder())
+        r.accept_frame(sid, _frame(0)); finished(r)
+        first = r.snapshot(sid).to_dict()
+        import copy
+        second = copy.deepcopy(first)
+        # Even a stale transport draft cannot survive the reader's canonical boundary.
+        if replacement == 'preview':
+            second['session']['provisional'] = dict(generation=1, start_sample=0,
+                                                   end_sample=1000, transcript='[0][S00]confirmed preview[0.0625]')
+        elif replacement == 'abort':
+            second['session']['status'] = 'aborted'
+        else:
+            second['session']['committed_samples'] = 1000
+            second['session']['committed'] = [dict(span_id=0, start_sample=0, end_sample=1000,
+                transcript='[0][S00]one[0.03][0.03][S00]two[0.0625]' if replacement == 'multiple' else '',
+                revised_transcript=None)]
+>       rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_draft_lane.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/phase2/test_canonical_preview.py:14: in read_snapshots
+    result = subprocess.run(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = '[{"snapshot": {"session_id": "c22e064ea7e14a60ab3f89eac165206f", "descriptor": {"source_revision": "eda5e69faf0e02513...: {"identities_born_count": 0, "album_admitted_count": null, "provisional_only_count": null, "abstention_count": 0}}}]'
+capture_output = True, timeout = None, check = True
+popenargs = (['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs'],)
+kwargs = {'text': True, 'stdin': -1, 'stdout': -1, 'stderr': -1}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs']' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+____________ test_reader_retires_draft_by_audio_boundary[multiple] _____________
+
+replacement = 'multiple'
+
+    @pytest.mark.parametrize('replacement', ['preview', 'multiple', 'empty', 'abort'])
+    def test_reader_retires_draft_by_audio_boundary(replacement):
+        r, _, sid = runtime(RecordingDecoder())
+        r.accept_frame(sid, _frame(0)); finished(r)
+        first = r.snapshot(sid).to_dict()
+        import copy
+        second = copy.deepcopy(first)
+        # Even a stale transport draft cannot survive the reader's canonical boundary.
+        if replacement == 'preview':
+            second['session']['provisional'] = dict(generation=1, start_sample=0,
+                                                   end_sample=1000, transcript='[0][S00]confirmed preview[0.0625]')
+        elif replacement == 'abort':
+            second['session']['status'] = 'aborted'
+        else:
+            second['session']['committed_samples'] = 1000
+            second['session']['committed'] = [dict(span_id=0, start_sample=0, end_sample=1000,
+                transcript='[0][S00]one[0.03][0.03][S00]two[0.0625]' if replacement == 'multiple' else '',
+                revised_transcript=None)]
+>       rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_draft_lane.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/phase2/test_canonical_preview.py:14: in read_snapshots
+    result = subprocess.run(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = '[{"snapshot": {"session_id": "042f7f955e9d49e3905a4db324ddf99a", "descriptor": {"source_revision": "eda5e69faf0e02513...: {"identities_born_count": 0, "album_admitted_count": null, "provisional_only_count": null, "abstention_count": 0}}}]'
+capture_output = True, timeout = None, check = True
+popenargs = (['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs'],)
+kwargs = {'text': True, 'stdin': -1, 'stdout': -1, 'stderr': -1}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs']' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+______________ test_reader_retires_draft_by_audio_boundary[empty] ______________
+
+replacement = 'empty'
+
+    @pytest.mark.parametrize('replacement', ['preview', 'multiple', 'empty', 'abort'])
+    def test_reader_retires_draft_by_audio_boundary(replacement):
+        r, _, sid = runtime(RecordingDecoder())
+        r.accept_frame(sid, _frame(0)); finished(r)
+        first = r.snapshot(sid).to_dict()
+        import copy
+        second = copy.deepcopy(first)
+        # Even a stale transport draft cannot survive the reader's canonical boundary.
+        if replacement == 'preview':
+            second['session']['provisional'] = dict(generation=1, start_sample=0,
+                                                   end_sample=1000, transcript='[0][S00]confirmed preview[0.0625]')
+        elif replacement == 'abort':
+            second['session']['status'] = 'aborted'
+        else:
+            second['session']['committed_samples'] = 1000
+            second['session']['committed'] = [dict(span_id=0, start_sample=0, end_sample=1000,
+                transcript='[0][S00]one[0.03][0.03][S00]two[0.0625]' if replacement == 'multiple' else '',
+                revised_transcript=None)]
+>       rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_draft_lane.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/phase2/test_canonical_preview.py:14: in read_snapshots
+    result = subprocess.run(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = '[{"snapshot": {"session_id": "4be98d96cec34662860fb2c78ae55c28", "descriptor": {"source_revision": "eda5e69faf0e02513...: {"identities_born_count": 0, "album_admitted_count": null, "provisional_only_count": null, "abstention_count": 0}}}]'
+capture_output = True, timeout = None, check = True
+popenargs = (['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs'],)
+kwargs = {'text': True, 'stdin': -1, 'stdout': -1, 'stderr': -1}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs']' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+______________ test_reader_retires_draft_by_audio_boundary[abort] ______________
+
+replacement = 'abort'
+
+    @pytest.mark.parametrize('replacement', ['preview', 'multiple', 'empty', 'abort'])
+    def test_reader_retires_draft_by_audio_boundary(replacement):
+        r, _, sid = runtime(RecordingDecoder())
+        r.accept_frame(sid, _frame(0)); finished(r)
+        first = r.snapshot(sid).to_dict()
+        import copy
+        second = copy.deepcopy(first)
+        # Even a stale transport draft cannot survive the reader's canonical boundary.
+        if replacement == 'preview':
+            second['session']['provisional'] = dict(generation=1, start_sample=0,
+                                                   end_sample=1000, transcript='[0][S00]confirmed preview[0.0625]')
+        elif replacement == 'abort':
+            second['session']['status'] = 'aborted'
+        else:
+            second['session']['committed_samples'] = 1000
+            second['session']['committed'] = [dict(span_id=0, start_sample=0, end_sample=1000,
+                transcript='[0][S00]one[0.03][0.03][S00]two[0.0625]' if replacement == 'multiple' else '',
+                revised_transcript=None)]
+>       rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_draft_lane.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/phase2/test_canonical_preview.py:14: in read_snapshots
+    result = subprocess.run(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = '[{"snapshot": {"session_id": "2f8ef9d6cc96496396ab4bb2684031d8", "descriptor": {"source_revision": "eda5e69faf0e02513...: {"identities_born_count": 0, "album_admitted_count": null, "provisional_only_count": null, "abstention_count": 0}}}]'
+capture_output = True, timeout = None, check = True
+popenargs = (['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs'],)
+kwargs = {'text': True, 'stdin': -1, 'stdout': -1, 'stderr': -1}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs']' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+__ test_draft_generation_replaces_previous_words_without_retaining_stale_copy __
+
+    def test_draft_generation_replaces_previous_words_without_retaining_stale_copy():
+        r, _, sid = runtime(RecordingDecoder())
+        r.accept_frame(sid, _frame(0)); finished(r)
+        first = r.snapshot(sid).to_dict()
+        r.accept_frame(sid, _frame(1)); finished(r)
+        second = r.snapshot(sid).to_dict()
+>       rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_draft_lane.py:179: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/phase2/test_canonical_preview.py:14: in read_snapshots
+    result = subprocess.run(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = '[{"snapshot": {"session_id": "a0da833c6d81465681211d05bf60378f", "descriptor": {"source_revision": "eda5e69faf0e02513...: {"identities_born_count": 0, "album_admitted_count": null, "provisional_only_count": null, "abstention_count": 0}}}]'
+capture_output = True, timeout = None, check = True
+popenargs = (['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs'],)
+kwargs = {'text': True, 'stdin': -1, 'stdout': -1, 'stderr': -1}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/tests/phase2/canonical_preview_reader.cjs']' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_draft_lane.py::test_draft_is_unlabelled_and_outside_every_quality_capture
+FAILED tests/phase2/test_draft_lane.py::test_reader_retires_draft_by_audio_boundary[preview]
+FAILED tests/phase2/test_draft_lane.py::test_reader_retires_draft_by_audio_boundary[multiple]
+FAILED tests/phase2/test_draft_lane.py::test_reader_retires_draft_by_audio_boundary[empty]
+FAILED tests/phase2/test_draft_lane.py::test_reader_retires_draft_by_audio_boundary[abort]
+FAILED tests/phase2/test_draft_lane.py::test_draft_generation_replaces_previous_words_without_retaining_stale_copy
+6 failed, 28 passed, 1 warning in 4.13s

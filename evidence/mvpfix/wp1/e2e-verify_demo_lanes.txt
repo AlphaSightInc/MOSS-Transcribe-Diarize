@@ -1,0 +1,18 @@
+vllm:num_requests_running{engine="0",model_name="OpenMOSS-Team/MOSS-Transcribe-Diarize"} 0.0
+vllm:num_requests_waiting{engine="0",model_name="OpenMOSS-Team/MOSS-Transcribe-Diarize"} 0.0
+vllm:num_requests_waiting_by_reason{engine="0",model_name="OpenMOSS-Team/MOSS-Transcribe-Diarize",reason="capacity"} 0.0
+vllm:num_requests_waiting_by_reason{engine="0",model_name="OpenMOSS-Team/MOSS-Transcribe-Diarize",reason="deferred"} 0.0
+  microphone lane at 3% of full scale (built-in-microphone level)
+  finalization: final | identity_counts: {'identities_born_count': 2, 'album_admitted_count': 2, 'provisional_only_count': 0, 'abstention_count': 0}
+  === 7 segments, handover at sample 160000 ===
+    [8480] speaker-0001: To figure out what something's worth,
+    [35360] speaker-0001: and you have to kind of weigh it.
+    [64800] speaker-0001: He talked about the difference between,
+    [106400] speaker-0001: he said, "The stock market in the short term is a voting machine."
+    [152320] speaker-0001: It represents
+    [159040] speaker-0002: is not blind submission.
+    [192640] speaker-0002: It's been written implicitly in our contract for thousands of years that in ex
+
+  PASS: tab half ['speaker-0001'] then microphone half ['speaker-0002'], separated at 160000
+{"case": "verify_demo_lanes", "first": 635, "last": 646, "count": 12, "exit_code": 0, "adaptations": ["heartbeat every frame", "wait for finalization before next meeting"], "excluded": [], "capture_seconds": 20}
+{"cases": 26, "requests": 646, "saved_matches": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true], "arbiter_max": {"live_canonical": 3, "live_refinement": 0, "batch": 0}}

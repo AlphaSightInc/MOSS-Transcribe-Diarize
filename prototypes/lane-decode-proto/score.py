@@ -44,7 +44,7 @@ for run_id,data in surfaces.items():
     rows.append(row)
 lat=[json.loads(x) for x in (HERE/'scratch/latencies.jsonl').read_text().splitlines()]
 queuepath=HERE/'scratch/queues.jsonl';queues=[json.loads(x) for x in queuepath.read_text().splitlines()] if queuepath.exists() else []
-summary={'cases':rows,'requests':len(lat),'request_latency_seconds':{'min':min(x['seconds'] for x in lat),'median':statistics.median(x['seconds'] for x in lat),'max':max(x['seconds'] for x in lat)},'arbiter_max':{k:max((int(q.get(k,0)) for q in queues),default=0) for k in ('live_canonical','live_refinement','batch')},'pending_signals_max':max((q.get('pending_signals',0) for q in queues),default=0),'pending_signals_scope':'instrumented v4 only; unknown earlier','same_v1_terminal_identity':'time projection; superseded by voice evidence in v2','production_fix':'not implemented: full prototype verdict pending'}
+summary={'cases':rows,'requests':len(lat),'request_latency_seconds':{'min':min(x['seconds'] for x in lat),'median':statistics.median(x['seconds'] for x in lat),'max':max(x['seconds'] for x in lat)},'arbiter_max':{k:max((int(q.get(k,0)) for q in queues),default=0) for k in ('live_canonical','live_refinement','batch')},'pending_signals_max':max((q.get('pending_signals',0) for q in queues),default=0),'pending_signals_scope':'instrumented v4 and later; unknown earlier','same_v1_terminal_identity':'time projection; superseded by voice evidence in v2','production_fix':'absorbed; production-v1 rows measure fixed build'}
 sp=HERE/'scratch/spans.jsonl'
 spans=[json.loads(x) for x in sp.read_text().splitlines()] if sp.exists() else []
 summary['span_latency_by_samples']={}
@@ -62,6 +62,8 @@ for name,data in surfaces.items():
     if 'request_count' in meta:
         summary['request_counts_by_case'][name]={'first':meta['first_request'],'last':meta['last_request'],'count':meta['request_count'],'per_capture_minute':meta['request_count']*60/meta['seconds'],'assignment':'measured cumulative request counters before and after single meeting'}
         last+=meta['request_count']
+summary['e2e_request_counts'] = [json.loads(p.read_text()) for p in OUT.glob('e2e-*.json')]
+last += sum(r['count'] for r in summary['e2e_request_counts'])
 summary['request_case_count_agrees']=last==len(lat)
 (OUT/'requests.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in lat))
 (OUT/'spans.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in spans))

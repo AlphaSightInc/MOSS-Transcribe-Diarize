@@ -34,7 +34,7 @@ def wer(ref,hyp):
     e,s,d,i=previous[-1]
     return {'reference_words':len(ref),'hypothesis_words':len(hyp),'substitutions':s,'omissions':d,'additions':i,'wer':e/len(ref) if ref else None}
 case=sys.argv[1] if len(sys.argv)>1 else 'same'
-run_id=os.environ.get('WP1_RUN_TAG','resume-v5')+'-'+case
+run_id=os.environ.get('WP1_RUN_TAG','fixed-v1')+'-'+case
 request_before=len((HERE/'scratch/latencies.jsonl').read_text().splitlines())
 seconds=48 if case=='alternation' else 12 if case=='stop_mid' else 24
 clips=['interview_bill_ackman_60s','interview_bill_ackman_60s' if case=='same' else 'interview_keyu_jin_60s']
@@ -80,7 +80,7 @@ meeting=c.call('GET',f'/api/meetings/{ident}')
 # Save API shapes privately for scorer development, never commit transcripts.
 (HERE/'scratch'/f'{run_id}-surfaces.json').write_text(json.dumps({'pre':pre,'final':ses,'meeting':meeting}))
 request_after=len((HERE/'scratch/latencies.jsonl').read_text().splitlines())
-result={'case':case,'run_id':run_id,'prototype':'v6','input_levels':input_levels,'first_request':request_before+1,'last_request':request_after,'request_count':request_after-request_before,'capture_start_monotonic':start,'capture_stop_monotonic':stop,'seconds':seconds,'pre':surface_summary(pre.get('effective_transcript',[])),'final':surface_summary(ses.get('effective_transcript',[])),'finalization':ses.get('finalization_status'),'stop_to_final_seconds':final_seconds,'meeting_top_keys':list(meeting),'queue_frames':depth}
+result={'case':case,'run_id':run_id,'prototype':'production-v1','input_levels':input_levels,'first_request':request_before+1,'last_request':request_after,'request_count':request_after-request_before,'capture_start_monotonic':start,'capture_stop_monotonic':stop,'seconds':seconds,'pre':surface_summary(pre.get('effective_transcript',[])),'final':surface_summary(ses.get('effective_transcript',[])),'finalization':ses.get('finalization_status'),'stop_to_final_seconds':final_seconds,'meeting_top_keys':list(meeting),'queue_frames':depth}
 (OUT/f'{run_id}.json').write_text(json.dumps(result,indent=2))
 print(json.dumps({k:v for k,v in result.items() if k!='queue_frames'}),flush=True)
 

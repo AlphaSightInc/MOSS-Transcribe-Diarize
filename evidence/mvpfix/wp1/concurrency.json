@@ -1,1 +1,5 @@
-{"requests": 467, "maximum_overlapping_client_requests": 1}
+{
+  "request_count": 646,
+  "max_client_requests_in_flight": 1,
+  "method": "interval sweep across retained request starts and elapsed seconds"
+}

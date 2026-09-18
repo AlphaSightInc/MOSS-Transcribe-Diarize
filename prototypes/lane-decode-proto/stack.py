@@ -6,7 +6,7 @@ ROOT = HERE.parents[1]
 sys.path.insert(0, str(ROOT))
 os.environ['TMPDIR'] = str(HERE/'scratch')
 import moss_transcribe_diarize.app
-moss_transcribe_diarize.app.__path__.insert(0, str(HERE/'runtime/app'))
+# The measured lane implementation is now absorbed into production.
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
 original=VllmRunner._post_multipart
 lock=threading.Lock()

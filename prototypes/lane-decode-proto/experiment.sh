@@ -6,7 +6,6 @@ WP1_PY=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt
 export PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
 export TMPDIR="$PWD/prototypes/lane-decode-proto/scratch"
 mkdir -p "$TMPDIR" evidence/mvpfix/wp1
-"$WP1_PY" prototypes/lane-decode-proto/build_overlay.py
 openssl req -x509 -newkey rsa:2048 -nodes -keyout "$TMPDIR/key.pem" -out "$TMPDIR/cert.pem" -days 2 -subj /CN=127.0.0.1 -addext subjectAltName=IP:127.0.0.1 2>/dev/null
 ssh -N -o BatchMode=yes -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -L 127.0.0.1:18101:127.0.0.1:8000 gyauo@ga0-alienware-rtx4070ti.tailnet.aisight.us > "$TMPDIR/tunnel.log" 2>&1 &
 WP1_TUNNEL=$!
@@ -28,7 +27,14 @@ PYCODE
 WP1_STACK=$!
 for _ in $(seq 1 30); do if curl -kfsS --max-time 1 https://127.0.0.1:17871/ > /dev/null 2>&1; then break; fi; sleep 1; done
 for WP1_CASE in "${@:-same}"; do
-  if "$WP1_PY" prototypes/lane-decode-proto/run.py "$WP1_CASE"; then :; else
+  if [[ "$WP1_CASE" == e2e-* ]]; then
+    WP1_DRIVER=prototypes/lane-decode-proto/run_e2e.py
+    WP1_ARGUMENT="${WP1_CASE#e2e-}"
+  else
+    WP1_DRIVER=prototypes/lane-decode-proto/run.py
+    WP1_ARGUMENT="$WP1_CASE"
+  fi
+  if "$WP1_PY" "$WP1_DRIVER" "$WP1_ARGUMENT"; then :; else
     WP1_RESULT=$?
     "$WP1_PY" prototypes/lane-decode-proto/score.py
     exit "$WP1_RESULT"

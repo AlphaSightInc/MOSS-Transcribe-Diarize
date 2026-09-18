@@ -1,0 +1,62 @@
+{
+  "fixed_cases": [
+    {
+      "case": "mic-10",
+      "requests": 26,
+      "requests_per_capture_minute": 65.0,
+      "stop_to_final_seconds": 11.572018499995465,
+      "individual_2_5s_decode_count": 18,
+      "individual_2_5s_decode_median_seconds": 0.14304514549439773,
+      "individual_2_5s_decode_max_seconds": 1.0937379579991102
+    },
+    {
+      "case": "mic-15",
+      "requests": 26,
+      "requests_per_capture_minute": 65.0,
+      "stop_to_final_seconds": 11.63974120898638,
+      "individual_2_5s_decode_count": 18,
+      "individual_2_5s_decode_median_seconds": 0.12963339599809842,
+      "individual_2_5s_decode_max_seconds": 0.7828703330014832
+    },
+    {
+      "case": "parity",
+      "requests": 26,
+      "requests_per_capture_minute": 65.0,
+      "stop_to_final_seconds": 11.395471374999033,
+      "individual_2_5s_decode_count": 18,
+      "individual_2_5s_decode_median_seconds": 0.14490958350506844,
+      "individual_2_5s_decode_max_seconds": 0.8389782500016736
+    },
+    {
+      "case": "same",
+      "requests": 26,
+      "requests_per_capture_minute": 65.0,
+      "stop_to_final_seconds": 11.640392208995763,
+      "individual_2_5s_decode_count": 18,
+      "individual_2_5s_decode_median_seconds": 0.15219735400023637,
+      "individual_2_5s_decode_max_seconds": 0.8410969159886008
+    },
+    {
+      "case": "system-10",
+      "requests": 26,
+      "requests_per_capture_minute": 65.0,
+      "stop_to_final_seconds": 11.763543958004448,
+      "individual_2_5s_decode_count": 18,
+      "individual_2_5s_decode_median_seconds": 0.1512836249967222,
+      "individual_2_5s_decode_max_seconds": 1.0094865840073908
+    },
+    {
+      "case": "zero",
+      "requests": 13,
+      "requests_per_capture_minute": 32.5,
+      "stop_to_final_seconds": 4.999513749993639,
+      "individual_2_5s_decode_count": 9,
+      "individual_2_5s_decode_median_seconds": 0.25647133401071187,
+      "individual_2_5s_decode_max_seconds": 1.133293874998344
+    }
+  ],
+  "individual_decode_not_identity_or_queue_latency": true,
+  "mono_baseline_not_remeasured": true,
+  "request_count": 646,
+  "remaining_authorized": 4
+}
