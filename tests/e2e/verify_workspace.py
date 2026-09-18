@@ -333,7 +333,15 @@ class Harness:
         await self.check(5,names_and_export)
         await self.select(ident)
         segments=(meeting.get('transcript') or {}).get('segments',[])
-        return {'ok':first is not None and first<=4 and meeting['status']=='completed' and bool(segments),'first_visible_seconds':first,
+        # Keep the browser capture checks; independently exercise deterministic lane
+        # speech through the published live protocol, using different known voices.
+        from tests.e2e.verify_demo_lanes import accepted_case, run_cases
+        import ssl
+        tls=ssl._create_unverified_context() if self.args.allow_local_self_signed else None
+        lane_cases=await asyncio.to_thread(run_cases,self.args.base,tls)
+        lanes_ok=all(accepted_case(row) for row in lane_cases)
+        return {'ok':first is not None and first<=4 and meeting['status']=='completed' and bool(segments) and lanes_ok,
+                'controlled_lane_cases':lane_cases,'first_visible_seconds':first,
                 'stop_to_terminal_seconds':stop_seconds,'meeting':ident,'status_received':meeting['status'],'segments':len(segments),
                 'meters':meters,'artifact':f'meeting-{ident}.json'}
 

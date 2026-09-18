@@ -29,6 +29,7 @@ from moss_transcribe_diarize.phase2_cutover import (
 from moss_transcribe_diarize.installed_candidate import validated_candidate_artifacts
 from moss_transcribe_diarize.phase2_g7_canary import (
     AttendedCanaryError,
+    G7_OPERATOR_PHRASE,
     G7_EVIDENCE_SCHEMA,
     G7_EVIDENCE_SOURCE,
     G7_PRODUCTION_ORIGIN,
@@ -243,6 +244,8 @@ def _attended_evidence(candidate, *, source=G7_EVIDENCE_SOURCE):
                     for lane in ("microphone", "system")
                 },
                 "distinct_speakers": 2,
+                "operator_phrase": {"phrase": G7_OPERATOR_PHRASE, "reference_words": 8, "matched_words": 8,
+                                    "operator_speakers": ["operator"], "tab_speakers": ["tab"]},
                 "meeting_status": "completed",
                 "audio_state": "available",
                 "owner_download_status": 200,

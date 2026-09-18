@@ -1,0 +1,251 @@
+..................................................................F..... [  9%]
+............F........................................................... [ 18%]
+................................................................FF...... [ 27%]
+........................................................................ [ 36%]
+........................................................................ [ 45%]
+........................................................................ [ 54%]
+........................................................................ [ 63%]
+........................................................................ [ 72%]
+........................................................................ [ 81%]
+........................................................................ [ 90%]
+...........................................................F............ [ 99%]
+....                                                                     [100%]
+=================================== FAILURES ===================================
+________ test_cutover_success_requires_attended_g7_before_preadmission _________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1185933b0>
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-full/test_cutover_success_requires_0')
+
+    def test_cutover_success_requires_attended_g7_before_preadmission(monkeypatch, tmp_path):
+        fixture = _cutover_fixture(monkeypatch, tmp_path)
+        ops = FakeCutoverOps(fixture)
+        monkeypatch.setattr("moss_transcribe_diarize.phase2_cutover.time.sleep", lambda _: None)
+        attempt = tmp_path / "attempt"
+        result = CutoverRun.prepare(
+            profile_path=fixture["profile"],
+            attempt=attempt,
+            terminal="preadmission",
+            ops=ops,
+        ).run()
+>       assert result.terminal == "preadmission"
+E       AssertionError: assert 'restored' == 'preadmission'
+E         
+E         - preadmission
+E         + restored
+
+tests/phase2/test_atomic_cutover.py:395: AssertionError
+________ test_attended_g7_reducer_rejects_each_load_bearing_observation ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1185010d0>
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-full/test_attended_g7_reducer_rejec0')
+
+    def test_attended_g7_reducer_rejects_each_load_bearing_observation(monkeypatch, tmp_path):
+        fixture = _cutover_fixture(monkeypatch, tmp_path)
+        candidate = fixture["candidate"]
+        valid = _attended_evidence(candidate)
+>       validate_attended_g7(valid, candidate=candidate)
+
+tests/phase2/test_atomic_cutover.py:799: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema': 'moss-phase2-attended-g7.v1', 'source': 'candidate-owned-production-browser', 'production_origin': True, 'operator_attended': True, ...}
+candidate = {'schema': 'moss-account-candidate.v1', 'activation_state': 'staged_inert', 'git_sha': '155e240cc28cccd0d7f48af114ecdb8adfd6c3b5', 'git_tree': 'f4758b9f271b9c1b1d34c4760c40458728565640', ...}
+
+    def validate_attended_g7(
+        payload: Mapping[str, object], *, candidate: Mapping[str, object]
+    ) -> None:
+        identity = payload.get("candidate")
+        scenarios = payload.get("scenarios")
+        if (
+            payload.get("schema") != G7_EVIDENCE_SCHEMA
+            or payload.get("source") != G7_EVIDENCE_SOURCE
+            or payload.get("production_origin") is not True
+            or payload.get("operator_attended") is not True
+            or payload.get("admitted") is not False
+            or payload.get("origin") != G7_PRODUCTION_ORIGIN
+            or not isinstance(identity, Mapping)
+            or any(identity.get(key) != candidate.get(key) for key in ("git_sha", "git_tree", "uv_lock_sha256"))
+            or not isinstance(payload.get("chrome_version"), str)
+            or not payload.get("chrome_version")
+            or not isinstance(scenarios, list)
+            or len(scenarios) != 2
+        ):
+            raise AttendedCanaryError("attended G7 evidence identity is incomplete")
+        by_id = {
+            row.get("id"): row for row in scenarios if isinstance(row, Mapping)
+        }
+        if set(by_id) != set(G7_SCENARIOS):
+            raise AttendedCanaryError("attended G7 scenarios are incomplete")
+        session_ids = {
+            row.get("session_id") for row in by_id.values() if isinstance(row.get("session_id"), str)
+        }
+        if len(session_ids) != 2 or any(not value for value in session_ids):
+            raise AttendedCanaryError("attended G7 session identity is incomplete")
+        for scenario, surface in G7_SCENARIOS.items():
+            row = by_id[scenario]
+            frames = row.get("frames")
+            meters = row.get("meter_nonzero_samples")
+            probe = row.get("audio_probe")
+            if (
+                not _valid_operator_phrase(row.get("operator_phrase"))
+                or row.get("display_surface") != surface
+                or row.get("display_audio_tracks") != 1
+                or not isinstance(meters, Mapping)
+                or set(meters) != {"microphone", "system"}
+                or any(not _positive_int(meters.get(lane)) for lane in meters)
+                or not isinstance(frames, Mapping)
+                or set(frames) != {"microphone", "system"}
+                or row.get("source_revision") != candidate.get("git_sha")
+                or not _positive_int(row.get("distinct_speakers"))
+                or int(row["distinct_speakers"]) < 2
+                or row.get("meeting_status") != "completed"
+                or row.get("audio_state") != "available"
+                or row.get("owner_download_status") != 200
+                or not isinstance(probe, Mapping)
+                or probe.get("codec") != "mp3"
+                or probe.get("sample_rate_hz") != 16_000
+                or probe.get("channels") != 1
+                or probe.get("bit_rate_bps") != 48_000
+                or not _positive_int(probe.get("byte_count"))
+            ):
+>               raise AttendedCanaryError(f"attended G7 scenario failed: {scenario}")
+E               moss_transcribe_diarize.phase2_g7_canary.AttendedCanaryError: attended G7 scenario failed: microphone_meeting_tab
+
+moss_transcribe_diarize/phase2_g7_canary.py:637: AttendedCanaryError
+__________________ test_staging_dry_run_deletes_nothing[True] __________________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-full/test_staging_dry_run_deletes_n0')
+flag = True
+
+    @pytest.mark.parametrize("flag", [True, False])
+    def test_staging_dry_run_deletes_nothing(tmp_path, flag):
+        import subprocess
+        share=tmp_path/'.local/share/moss-transcribe-diarize'
+        victim=directory(share/'staging'/'old',2*storage.DAY,now=storage.time.time())
+        result=subprocess.run(['bash','ops/stage-account-candidate.sh'] + (['--dry-run'] if flag else []),
+                              env=dict(os.environ,HOME=str(tmp_path),MOSS_TOOL_DRY_RUN='0' if flag else '1'),capture_output=True,text=True)
+>       assert result.returncode==0 and 'would_remove' in result.stdout
+E       assert (0 == 0 and 'would_remove' in '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n')
+E        +  where 0 = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh', '--dry-run'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').returncode
+E        +  and   '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n' = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh', '--dry-run'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').stdout
+
+tests/phase2/test_candidate_storage.py:150: AssertionError
+_________________ test_staging_dry_run_deletes_nothing[False] __________________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-full/test_staging_dry_run_deletes_n1')
+flag = False
+
+    @pytest.mark.parametrize("flag", [True, False])
+    def test_staging_dry_run_deletes_nothing(tmp_path, flag):
+        import subprocess
+        share=tmp_path/'.local/share/moss-transcribe-diarize'
+        victim=directory(share/'staging'/'old',2*storage.DAY,now=storage.time.time())
+        result=subprocess.run(['bash','ops/stage-account-candidate.sh'] + (['--dry-run'] if flag else []),
+                              env=dict(os.environ,HOME=str(tmp_path),MOSS_TOOL_DRY_RUN='0' if flag else '1'),capture_output=True,text=True)
+>       assert result.returncode==0 and 'would_remove' in result.stdout
+E       assert (0 == 0 and 'would_remove' in '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n')
+E        +  where 0 = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').returncode
+E        +  and   '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n' = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').stdout
+
+tests/phase2/test_candidate_storage.py:150: AssertionError
+_________ test_schema_v2_contains_exact_ownership_tables_and_settings __________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-full/test_schema_v2_contains_exact_0')
+
+    def test_schema_v2_contains_exact_ownership_tables_and_settings(tmp_path: Path):
+        database = tmp_path / "moss.sqlite3"
+    
+        async def exercise():
+            store = await Phase2Store.open(database)
+            try:
+                assert await store.user_version() == 2
+                assert await store.table_names() == {
+                    "accounts",
+                    "sign_in_sessions",
+                    "meetings",
+                    "meeting_transcripts",
+                    "meeting_speakers",
+                    "meeting_audio",
+                    "voiceprints",
+                    "voiceprint_samples",
+                    "llm_artifacts",
+                }
+                cursor = await store._connection.execute("PRAGMA table_info(meetings)")
+                meeting_columns = {row[1] for row in await cursor.fetchall()}
+                await cursor.close()
+                assert "title_source" in meeting_columns
+                cursor = await store._connection.execute("PRAGMA table_info(voiceprints)")
+                voiceprint_columns = {row[1] for row in await cursor.fetchall()}
+                await cursor.close()
+                assert {"embedder_id", "embedding_dimension"} <= voiceprint_columns
+                settings = await store.sqlite_settings()
+                assert settings == {"journal_mode": "wal", "foreign_keys": 1, "synchronous": 2}
+            finally:
+                await store.close()
+    
+>       asyncio.run(exercise())
+
+tests/phase2/test_workspace_lifecycle.py:165: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def exercise():
+        store = await Phase2Store.open(database)
+        try:
+            assert await store.user_version() == 2
+>           assert await store.table_names() == {
+                "accounts",
+                "sign_in_sessions",
+                "meetings",
+                "meeting_transcripts",
+                "meeting_speakers",
+                "meeting_audio",
+                "voiceprints",
+                "voiceprint_samples",
+                "llm_artifacts",
+            }
+E           AssertionError: assert {'accounts', ...scripts', ...} == {'accounts', ...eetings', ...}
+E             
+E             Extra items in the left set:
+E             'meeting_outcomes'
+E             Use -v to get more diff
+
+tests/phase2/test_workspace_lifecycle.py:141: AssertionError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/phase2/test_atomic_cutover.py: 18 warnings
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/moss_transcribe_diarize/phase2_cutover.py:1410: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    source.extractall(extraction)
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:16: DeprecationWarning: 'aifc' is deprecated and slated for removal in Python 3.13
+    import aifc
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:17: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:19: DeprecationWarning: 'sunau' is deprecated and slated for removal in Python 3.13
+    import sunau
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_atomic_cutover.py::test_cutover_success_requires_attended_g7_before_preadmission
+FAILED tests/phase2/test_atomic_cutover.py::test_attended_g7_reducer_rejects_each_load_bearing_observation
+FAILED tests/phase2/test_candidate_storage.py::test_staging_dry_run_deletes_nothing[True]
+FAILED tests/phase2/test_candidate_storage.py::test_staging_dry_run_deletes_nothing[False]
+FAILED tests/phase2/test_workspace_lifecycle.py::test_schema_v2_contains_exact_ownership_tables_and_settings
+5 failed, 791 passed, 22 warnings in 107.23s (0:01:47)

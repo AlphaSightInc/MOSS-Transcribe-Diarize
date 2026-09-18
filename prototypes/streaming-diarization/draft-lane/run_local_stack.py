@@ -22,6 +22,8 @@ def main():
     parser.add_argument('--key', type=Path, required=True)
     parser.add_argument('--port', type=int, default=17862)
     parser.add_argument('--draft-lane-seconds', type=float)
+    parser.add_argument('--vllm-base-url', default='http://127.0.0.1:18000/v1')
+    parser.add_argument('--max-requests', type=int)
     model_snapshots = sorted(Path.home().glob(
         '.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/*'))
     parser.add_argument('--model', type=Path, default=model_snapshots[-1] if model_snapshots else None)
@@ -37,12 +39,20 @@ def main():
     phase2.REQUIRED_SQLITE_RUNTIME = sqlite3.sqlite_version  # Local harness only.
     original = VllmRunner._post_multipart
     lock = threading.Lock()
+    capacity = threading.BoundedSemaphore(2)
+    request_count = 0
 
     def counted(self, *call_args, **kwargs):
-        with lock, (args.state / 'requests.jsonl').open('a') as stream:
-            stream.write(json.dumps({'time': time.monotonic(),
-                'draft': threading.current_thread().name == 'moss-draft'}) + '\n')
-        return original(self, *call_args, **kwargs)
+        nonlocal request_count
+        with capacity:
+            with lock:
+                if args.max_requests is not None and request_count >= args.max_requests:
+                    raise RuntimeError("Local measurement request budget exhausted")
+                request_count += 1
+                with (args.state / 'requests.jsonl').open('a') as stream:
+                    stream.write(json.dumps({'time': time.monotonic(), 'request': request_count,
+                        'draft': threading.current_thread().name == 'moss-draft'}) + '\n')
+            return original(self, *call_args, **kwargs)
 
     VllmRunner._post_multipart = counted
     argv = [
@@ -50,7 +60,7 @@ def main():
         '--control-socket', str(args.state / 'control.sock'),
         '--tls-certfile', str(args.cert), '--tls-keyfile', str(args.key),
         '--backend', 'vllm', '--model', str(args.model),
-        '--vllm-base-url', 'http://127.0.0.1:18000/v1',
+        '--vllm-base-url', args.vllm_base_url,
         '--vllm-model', 'OpenMOSS-Team/MOSS-Transcribe-Diarize', '--vllm-timeout', '1800',
         '--file-work-root', str(args.state / 'file-work'),
         '--meeting-audio-root', str(args.state / 'meeting-audio'),

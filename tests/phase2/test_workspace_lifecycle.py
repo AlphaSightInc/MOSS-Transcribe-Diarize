@@ -145,6 +145,7 @@ def test_schema_v2_contains_exact_ownership_tables_and_settings(tmp_path: Path):
                 "meeting_transcripts",
                 "meeting_speakers",
                 "meeting_audio",
+                "meeting_outcomes",
                 "voiceprints",
                 "voiceprint_samples",
                 "llm_artifacts",

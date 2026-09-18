@@ -1,0 +1,8 @@
+{"case": "403", "status": "failed", "failure_code": "acquisition_http_403", "failure_reason": "Controlled acquisition failure.", "segments": null}
+{"case": "404", "status": "failed", "failure_code": "acquisition_http_404", "failure_reason": "Controlled acquisition failure.", "segments": null}
+{"case": "timeout", "status": "failed", "failure_code": "acquisition_timeout", "failure_reason": "Controlled acquisition failure.", "segments": null}
+{"case": "unsupported_container", "status": "failed", "failure_code": "transcode_failed", "failure_reason": "Media could not be decoded. The format may be unsupported or damaged.", "segments": null}
+{"case": "transcode", "status": "failed", "failure_code": "transcode_failed", "failure_reason": "Media could not be decoded. The format may be unsupported or damaged.", "segments": null}
+{"case": "decoder", "status": "failed", "failure_code": "decode_failed", "failure_reason": "The speech decoder could not transcribe this media.", "segments": null}
+{"case": "no_speech", "status": "completed", "audio": "unavailable", "notice": "No speech detected.", "segments": 0}
+{"case": "malformed_decoder", "status": "failed", "failure_code": "decode_invalid", "failure_reason": "The speech decoder returned no usable transcript.", "segments": null}

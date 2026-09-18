@@ -68,3 +68,14 @@ This deliberately cannot detect copies consisting entirely of shared vocabulary;
 ordered WER still measures resulting omissions/additions. It is a lexical witness,
 not a physical echo detector. Threshold and accepted reference scope stay explicit.
 Fix work resumes for A/B/C. The earlier stop is superseded, retained as failed history.
+
+## Implementation measurements (continuation)
+Shared scorer absorbed into moss_transcribe_diarize/lane_word_oracle.py; bench now
+imports it. G7 counts-only fixture is rejected. File benchmark now records seven
+coded failures and one confirmed-speechless completion/notice. Initial File boundary
+observations remain in prototype-file.jsonl; corrected outcomes in file-boundary-after.jsonl.
+Actual browser downloads pass 5/5; corrupted download controls reject 5/5.
+Real alternation does not meet existing WER gates (11/106 system, 6/48 microphone);
+overlap exhausted the total 40-call cap and is NOT counted as a successful negative
+control. Exact counts and failed attempts: evidence/mvpfix/wp4/STATUS.md.
+No hypothesis was protected by weakening QUALITY_BOUNDS or changing identity values.
