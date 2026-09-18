@@ -20,7 +20,7 @@ VOICEPRINT_ENROLLMENT_SECONDS = 2.0
 
 
 class SpeakerIdentityNotFound(KeyError):
-    """The owner-bound active Meeting Speaker does not exist in this Account scope."""
+    """The owner-bound Meeting Speaker does not exist in this Account scope."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,7 +204,10 @@ class AccountSpeakerIdentity:
         if not speaker_id:
             raise SpeakerIdentityNotFound(speaker_id)
 
+        live_naming = True
         try:
+            if self._active_meetings is None:
+                raise SpeakerIdentityNotFound(speaker_id)
             async with self._active_meetings.manual_speaker(
                 handle,
                 speaker_id,
@@ -221,15 +224,38 @@ class AccountSpeakerIdentity:
                     save_voiceprint=save_voiceprint,
                 )
                 active.mark_committed(transcript_version)
-        except SpeakerIdentityNotFound:
-            raise
         except KeyError as exc:
-            raise SpeakerIdentityNotFound(speaker_id) from exc
+            # Capture may have finished before this request acquired the binding.
+            # Only durable terminal truth can replace the active naming path.
+            meeting = await handle.snapshot()
+            if meeting.status == "active" or meeting.transcript is None:
+                raise SpeakerIdentityNotFound(speaker_id) from exc
+            document = json.loads(json.dumps(meeting.transcript))
+            segments = document["segments"]
+            # Older/file documents use their original speaker token as identity.
+            # Freeze it for every row before any display label can be edited.
+            for segment in segments:
+                if "speaker_entity_id" not in segment and segment["speaker"] != "S00":
+                    segment["speaker_entity_id"] = segment["speaker"]
+            addressed = [s for s in segments if s.get("speaker_entity_id") == speaker_id]
+            if not addressed:
+                raise SpeakerIdentityNotFound(speaker_id) from exc
+            for segment in addressed:
+                segment["speaker"] = normalized
+            evidence = None
+            live_naming = False
+            voiceprint_id, transcript_version, was_linked = await self._persist_manual_name(
+                owner_key, handle.meeting_id, speaker_id, normalized, document, evidence,
+                save_voiceprint=save_voiceprint, status=meeting.status,
+            )
 
         key = _pending_key(owner_key, handle.meeting_id, speaker_id)
         if not save_voiceprint:
             self._pending.pop(key, None)
             enrollment = "not_requested"
+        elif not live_naming:
+            self._pending.pop(key, None)
+            enrollment = "enrolled" if voiceprint_id is not None else "unavailable"
         elif evidence is None:
             self._pending[key] = _PendingEnrollment(
                 owner_key=owner_key,
@@ -262,7 +288,7 @@ class AccountSpeakerIdentity:
         label: str,
         document: Mapping[str, object],
         evidence: _EligibleEvidence | None,
-        *, save_voiceprint: bool = True,
+        *, save_voiceprint: bool = True, status: str = "active",
     ) -> tuple[str | None, int, bool]:
         account_id, authority_generation = owner_key
         document_json = json.dumps(document, ensure_ascii=False, separators=(",", ":"))
@@ -271,13 +297,13 @@ class AccountSpeakerIdentity:
             cursor = await self._store._connection.execute(
                 """
                 UPDATE meetings SET updated_at_ms = ?
-                WHERE account_id = ? AND meeting_id = ? AND status = 'active'
+                WHERE account_id = ? AND meeting_id = ? AND status = ?
                   AND EXISTS (
                     SELECT 1 FROM accounts
                     WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
                   )
                 """,
-                (now, account_id, meeting_id, account_id, authority_generation),
+                (now, account_id, meeting_id, status, account_id, authority_generation),
             )
             if cursor.rowcount != 1:
                 raise AccountRevoked("Meeting authority is revoked or interrupted.")

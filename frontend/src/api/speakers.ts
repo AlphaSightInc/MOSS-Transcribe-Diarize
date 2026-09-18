@@ -2,7 +2,7 @@ export interface SpeakerNameResult {
   meeting_id: string;
   speaker_id: string;
   label: string;
-  enrollment: "pending" | "enrolled" | "not_requested";
+  enrollment: "pending" | "enrolled" | "not_requested" | "unavailable";
 }
 
 export interface Voiceprint {
@@ -54,7 +54,7 @@ export async function nameMeetingSpeaker(
     throw new Error(typeof payload?.detail === "string" ? payload.detail : `Speaker naming failed (${response.status}).`);
   }
   if (payload?.meeting_id !== meetingId || payload?.speaker_id !== speakerId ||
-      typeof payload?.label !== "string" || !["pending", "enrolled", "not_requested"].includes(payload?.enrollment)) {
+      typeof payload?.label !== "string" || !["pending", "enrolled", "not_requested", "unavailable"].includes(payload?.enrollment)) {
     throw new Error("Speaker naming response is invalid.");
   }
   return payload;
