@@ -1,6 +1,7 @@
 """Real UI/decoder verification. One pass; no decoder mocks or automatic decoder retries.
 Run: .venv/bin/python tests/e2e/verify_workspace.py --corpus /path/to/mono_javier_intro_50s --output /tmp/moss-e2e-20260911
-Requires ffmpeg/ffprobe and Playwright Chrome/Chromium. Exit 77 = browser unavailable.
+Requires ffmpeg/ffprobe and Playwright Chrome/Chromium. Exit 0 = all selected rows PASS; 1 = FAIL; 2 = INCOMPLETE (required SKIP);
+77 = browser unavailable.
 Retained artifacts contain identifiers, statuses and numeric measurements only.
 Audio/downloads are temporary measurement inputs, never retained evidence.
 --rows selects checks in a fresh workspace. Evidence output must be empty.
@@ -34,6 +35,7 @@ FIRST_ENROLLED_LABEL_BOUND_SECONDS = 2.5 + 1.0 + 0.5
 
 
 _STATUS_VALUES = frozenset({
+    "INCOMPLETE",
     'PASS', 'FAIL', 'SKIP', 'active', 'completed', 'failed', 'closed', 'final',
     'not_started', 'running', 'stopping', 'terminal', 'idle', 'capturing',
     'enrolled', 'already_enrolled', 'matched', 'unmatched', 'unavailable',
@@ -66,7 +68,7 @@ def retained_metadata(value, key=''):
         if key in _ID_KEYS and re.fullmatch(r'[A-Za-z0-9_-]{1,128}', value):
             return value
         if key in {'status', 'status_received', 'history_status', 'snapshot_status',
-                   'finalization_status', 'phase', 'method', 'mode', 'lane', 'codec_name', 'reason_code'} and value in _STATUS_VALUES:
+                   'finalization_status', 'verdict', 'phase', 'method', 'mode', 'lane', 'codec_name', 'reason_code'} and value in _STATUS_VALUES:
             return value
         if key == 'exception' and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', value):
             return value
@@ -95,6 +97,18 @@ def wer(reference, hypothesis):
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *args): pass
+
+
+def required_rows_verdict(rows):
+    """Every selected workspace row is required; a skip is not acceptance."""
+    statuses = [row['status'] for row in rows.values()]
+    if any(status not in ('PASS', 'SKIP') for status in statuses):
+        return 'FAIL'
+    return 'INCOMPLETE' if not statuses or 'SKIP' in statuses else 'PASS'
+
+
+def verdict_exit_code(verdict):
+    return {'PASS': 0, 'FAIL': 1, 'INCOMPLETE': 2}[verdict]
 
 
 class Harness:
@@ -703,8 +717,9 @@ class Harness:
                     if n in rows and not (n==5 and 4 in rows): await self.check(n,fn)
                 for n in rows:
                     if str(n) not in self.state['rows']: self.state['rows'][str(n)]={'status':'FAIL','reason':'Prerequisite not reached'}
+                self.state['verdict'] = required_rows_verdict(self.state['rows'])
                 write(self.out/'results.json',self.state)
-                return int(any(r['status'] not in ('PASS','SKIP') for r in self.state['rows'].values()))
+                return verdict_exit_code(self.state['verdict'])
             finally:
                 if self.pending: await asyncio.gather(*self.pending,return_exceptions=True)
                 await self.context.close(); await browser.close()

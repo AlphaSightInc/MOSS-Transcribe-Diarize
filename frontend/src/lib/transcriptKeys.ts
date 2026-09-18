@@ -14,6 +14,7 @@ export function buildTranscriptTargetKey(
   }
 
   const key = serializeTranscriptSegmentKey(item.start, item.end, item.text);
+  if (!item.source_lane) return key;
   const speaker = item.speaker_entity_id ?? item.speaker;
-  return `${key}${item.source_lane ? `|${item.source_lane}` : ""}${speaker ? `|${speaker}` : ""}`;
+  return `${key}|${item.source_lane}${speaker ? `|${speaker}` : ""}`;
 }

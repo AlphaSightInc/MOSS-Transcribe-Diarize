@@ -1,0 +1,56 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run --configLoader runner src/components/ControlPanel.captureFailure.test.tsx src/lib/transcriptKeys.test.ts -t pre-session ended|legacy no-lane
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp33-crossreview-fixes/frontend
+
+ ❯ src/lib/transcriptKeys.test.ts (4 tests | 1 failed | 3 skipped) 4ms
+   × keeps the legacy no-lane key even when speaker identity is present 3ms
+{"step":"pre-session microphone ended","phase":"ready","status":"Both sources are receiving sound. Start capture when ready.","reset":false,"meters":["Microphone level 43%","Shared audio level 83%"],"connected":["Connected · receiving sound","Connected · receiving sound"],"tracks":[0,0,0],"contexts":["running"],"handlers":2,"chooserCalls":1}
+{"step":"pre-session system ended","phase":"ready","status":"Both sources are receiving sound. Start capture when ready.","reset":false,"meters":["Microphone level 43%","Shared audio level 83%"],"connected":["Connected · receiving sound","Connected · receiving sound"],"tracks":[0,0,0],"contexts":["running"],"handlers":2,"chooserCalls":1}
+ ❯ src/components/ControlPanel.captureFailure.test.tsx (25 tests | 2 failed | 23 skipped) 42ms
+   × pre-session ended microphone offers Reset, cleans capture and permits retry 31ms
+   × pre-session ended system offers Reset, cleans capture and permits retry 11ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/ControlPanel.captureFailure.test.tsx > pre-session ended microphone offers Reset, cleans capture and permits retry
+ FAIL  src/components/ControlPanel.captureFailure.test.tsx > pre-session ended system offers Reset, cleans capture and permits retry
+AssertionError: expected 'ready' to be 'error' // Object.is equality
+
+Expected: "error"
+Received: "ready"
+
+ ❯ src/components/ControlPanel.captureFailure.test.tsx:302:19
+    300|   await settle(() => track.dispatchEvent(new Event("ended")));
+    301|   snapshot(`pre-session ${lane} ended`);
+    302|   expect(phase()).toBe("error");
+       |                   ^
+    303|   expect(status()).toContain("browser_track_ended");
+    304|   expect(status()).not.toContain("connected");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/lib/transcriptKeys.test.ts > keeps the legacy no-lane key even when speaker identity is present
+AssertionError: expected '0.00|1.00|words|speaker-0001' to be '0.00|1.00|words' // Object.is equality
+
+Expected: "0.00|1.00|words"
+Received: "0.00|1.00|words|speaker-0001"
+
+ ❯ src/lib/transcriptKeys.test.ts:34:6
+     32| it("keeps the legacy no-lane key even when speaker identity is present…
+     33|   expect(buildTranscriptTargetKey({start: 0, end: 1, text: "Words", sp…
+     34|     .toBe("0.00|1.00|words");
+       |      ^
+     35| });
+     36| it("retains lane and speaker disambiguation for lane-tagged rows", () …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  3 failed | 26 skipped (29)
+   Start at  05:08:28
+   Duration  481ms (transform 58ms, setup 0ms, import 79ms, tests 46ms, environment 272ms)
+

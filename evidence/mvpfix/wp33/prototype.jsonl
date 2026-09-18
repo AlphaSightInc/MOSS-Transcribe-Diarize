@@ -1,0 +1,5 @@
+{"action": "1", "state": [{"lanes": [false, false], "possibly_truncated": false, "finalization": "final"}, {"lanes": [true, false], "possibly_truncated": true, "finalization": "final"}, {"lanes": [false, true], "possibly_truncated": true, "finalization": "final"}]}
+{"action": "2", "state": {"event": "pre-session ended", "callback": "onPreSessionFailure", "phase": "error", "reset": true, "connected": false, "tracks": "closed"}}
+{"action": "3", "state": [{"lane": null, "key": "0.00|1.00|words"}, {"lane": "system", "key": "0.00|1.00|words|system|speaker-0001"}, {"lane": "microphone", "key": "0.00|1.00|words|microphone|speaker-0001"}]}
+{"action": "4", "state": [{"rows": ["PASS"], "verdict": "PASS"}, {"rows": ["PASS", "SKIP"], "verdict": "INCOMPLETE"}, {"rows": ["FAIL", "SKIP"], "verdict": "FAIL"}]}
+{"action": "5", "state": {"historical_valid": 3, "historical_invalid": 2, "reason": "missing required gaps"}}

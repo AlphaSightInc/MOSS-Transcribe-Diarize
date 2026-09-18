@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Exit codes preserved: 0 PASS, 1 FAIL, 2 INCOMPLETE.
 # Local measurement only. No deployment or attended-capture acceptance.
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

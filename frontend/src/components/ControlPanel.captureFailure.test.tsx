@@ -290,3 +290,27 @@ it.each(["success", "reject"] as const)("Reset while chooser pending handles lat
   expect(contexts.every(c => c.state === "closed")).toBe(true);
   expect(streams.every(s => s.getTracks().every(t => t.stop.mock.calls.length > 0))).toBe(true);
 });
+
+it.each([
+  ["microphone", false], ["system", false], ["microphone", true], ["system", true]
+] as const)("pre-session ended %s (ready=%s) offers Reset, cleans capture and permits retry", async (lane, isReady) => {
+  await click("Enable microphone");
+  await click("Share audio");
+  if (isReady) {
+    await settle(() => feed("microphone", .02));
+    await settle(() => feed("system", .3));
+  }
+  expect(phase()).toBe(isReady ? "ready" : "configuring");
+  const track = streams[lane === "microphone" ? 0 : 1].getTracks()[0];
+  await settle(() => track.dispatchEvent(new Event("ended")));
+  snapshot(`pre-session ${lane} ended`);
+  expect(phase()).toBe("error");
+  expect(status()).toContain("browser_track_ended");
+  expect(status()).not.toContain("connected");
+  expect([...root.querySelectorAll(".capture-meter small")].map(n => n.textContent)).toEqual(["Not connected", "Not connected"]);
+  expect(contexts.every(c => c.state === "closed")).toBe(true);
+  expect(streams.every(s => s.getTracks().every(t => t.stop.mock.calls.length > 0))).toBe(true);
+  expect([...nodes.values()].filter(n => n.port.onmessage)).toHaveLength(0);
+  await assertReset();
+  await ready();
+});
