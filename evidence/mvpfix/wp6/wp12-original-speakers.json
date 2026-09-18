@@ -1,0 +1,90 @@
+[
+  {
+    "ordinal": 1,
+    "clip": "interview_bill_ackman_60s:0:960000",
+    "speaker_segment_counts": [
+      {
+        "speaker_entity_id": "speaker-0001",
+        "label": "S01",
+        "segments": 180
+      },
+      {
+        "speaker_entity_id": null,
+        "label": "S00",
+        "segments": 10
+      },
+      {
+        "speaker_entity_id": "speaker-0002",
+        "label": "S02",
+        "segments": 20
+      }
+    ],
+    "birth_count": "not retained by original collector"
+  },
+  {
+    "ordinal": 2,
+    "clip": "interview_keyu_jin_60s:0:960000",
+    "speaker_segment_counts": [
+      {
+        "speaker_entity_id": "speaker-0001",
+        "label": "S01",
+        "segments": 110
+      },
+      {
+        "speaker_entity_id": "speaker-0002",
+        "label": "S02",
+        "segments": 50
+      }
+    ],
+    "birth_count": "not retained by original collector"
+  },
+  {
+    "ordinal": 3,
+    "clip": "mono_javier_intro_50s:0:800000",
+    "speaker_segment_counts": [
+      {
+        "speaker_entity_id": "speaker-0001",
+        "label": "S01",
+        "segments": 211
+      },
+      {
+        "speaker_entity_id": null,
+        "label": "S00",
+        "segments": 25
+      }
+    ],
+    "birth_count": "not retained by original collector"
+  },
+  {
+    "ordinal": 4,
+    "clip": "discussion_jamie_dimon_180s:0:2880000",
+    "speaker_segment_counts": [
+      {
+        "speaker_entity_id": "speaker-0001",
+        "label": "S01",
+        "segments": 165
+      },
+      {
+        "speaker_entity_id": "speaker-0002",
+        "label": "S02",
+        "segments": 27
+      },
+      {
+        "speaker_entity_id": null,
+        "label": "S00",
+        "segments": 23
+      },
+      {
+        "speaker_entity_id": "speaker-0004",
+        "label": "S04",
+        "segments": 3
+      },
+      {
+        "speaker_entity_id": "speaker-0003",
+        "label": "S03",
+        "segments": 2
+      }
+    ],
+    "birth_count": "not retained by original collector"
+  }
+]

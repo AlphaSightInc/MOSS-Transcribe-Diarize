@@ -1,4 +1,4 @@
-# WP6 capacity prototype — 4x600 not accepted
+# WP6 capacity prototype — local retention correction
 
 ## Contract
 
@@ -19,7 +19,34 @@
   RSS and shared read-only metrics observe resource costs. No synthetic decoder
   can answer this question. Offline preparation only validates corpus/imports.
 
-## Verdict and authority
+## 2026-09-18 correction and authorized continuation
+
+F1 applies to the LOCAL August measurement manifest, not a demonstrated deployed
+product limit. Round 16 recorded four 600-second finals; its exact tape bound is
+not recorded in this checkout. See evidence/mvpfix/wp6/MANIFEST.md. User authorized
+one rerun with an isolated 30-minute manifest; finalizer admission passes with no
+coupled rolling-bound change. Shared manifest never written.
+
+`copy_manifest.py` creates the ignored copy and `run.py --manifest` forwards it
+through stack.py to run_local_stack.py. Actual executing production source remains
+37979e53; the manifest preserves its historical revision field, recorded separately.
+This is a local measurement adaptation, not staging or deployment.
+
+Original speaker totals included the unassigned bucket. Named counts are 2/2/1/4
+for reference 2/2/1/3, not 3/2/2/5 people. Original birth counters were not retained.
+The rerun records identity_counts, and recover_run.py independently reads saved
+content, probes MP3s and reports named versus unassigned speech. The running runner
+is preserved as runner-used.py; the subsequent reporting-only count correction in
+run.py excludes unassigned segments for future runs. No identity policy changed.
+
+Commands:
+```sh
+python prototypes/capacity-campaign/copy_manifest.py
+python prototypes/capacity-campaign/run.py --sessions 4 --seconds 600 --manifest .wp6-tmp/manifest-30m.json
+python evidence/mvpfix/wp6/recover_run.py evidence/mvpfix/wp6/<new-run>
+```
+
+## Original verdict and authority (300-second local cap)
 
 MEASURED / NOT ACCEPTED. Four workspaces each accepted 600 seconds and saved a
 completed transcript, but the supplied 9,600,000-byte retention declaration caps
@@ -99,7 +126,7 @@ metadata to evidence. Local state/audio/certificates/logs remain in ignored
   keeps exact replay/Stop anchors and a local ignored final snapshot, and records
   Stop-to-final as null when no final exists. Original failures are preserved;
   `recover_four.py` reads the saved transcript/audio offline and labels timing bounds.
-  The corrected reporting path was not used to rerun the load to green.
+  The original ladder was not retried; the later isolated-manifest rerun has separate explicit user authorization.
 - Paused-run wall-clock lag and decoder elapsed timing include pause/dispatch waits;
   they are not uncontended inference measurements. Words/minute uses audio duration.
 - Setup failures and exceptions write failed results, then terminate every owned
@@ -107,3 +134,45 @@ metadata to evidence. Local state/audio/certificates/logs remain in ignored
 
 Retain this explicitly provisional harness for the integrated-build rerun, per
 WP6 brief (exception to deleting the throwaway prototype). Live results and failed harness attempts are retained under evidence/mvpfix/wp6/.
+
+
+## Authorized rerun verdict: retention corrected, capacity NOT ACCEPTED
+
+Run 20260918-002944-4x600 used the isolated 30-minute cap exactly once.
+4/4 MP3s are 600.000 seconds; 2/4 final, 2/4 helper-lease interrupted. Stop-to-final
+39.686738/29.489338 seconds for sessions 1/2; unavailable for 3/4. Foreign traffic
+in 12/32 samples, three pauses totaling 269.986569 seconds. All 9,600 lane frames
+acknowledged; no wrong-owner success in 9,600 probes. 1,275 decoder calls completed,
+max own in-flight 2; WP cumulative 2,887. App RSS growth 466.265625 MiB, not a remote
+process-tree or leak claim. No eight-session step because the prerequisite failed.
+
+The exception path omitted HTTP status/body and failed-session snapshots. Saved
+SQLite and app logs establish interrupted status/lease expiry and complete-length
+partial MP3s, but not an exact causal Stop sequence or birth counters for 3/4.
+STOP-ASSESSMENT.md records the hypotheses and missing evidence. No production fix
+is justified from this contaminated run. Subsequent reporting-only edits preserve
+last-observed counters and HTTP status/code; no live retry of those edits.
+
+## Full-suite environment adjudication
+
+Initial full Python run used the original VERIFY.md TMPDIR inside this checkout:
+4 failed, 1698 passed, 2 skipped, 21 warnings, 37 subtests (161.06s).
+- tests/phase2/test_browser_workspace.py: the inherited long TMPDIR makes the
+  temporary control socket exceed the 104-byte host limit. No production bug.
+- tests/phase2/test_candidate_storage.py: both dry-run parameters place the test
+  victim under the protected PROJECT_DIR because TMPDIR is inside the checkout.
+  The staging retention tool correctly refuses to prune that protected subtree.
+- tests/phase2/test_voiceprint_latency_measurement.py: the existing fixture has
+  Private voiceprints/button while Harness.bank expects Meeting history/Voiceprints
+  tab. This is COMMON.md's explicitly tolerated pre-WP4 failure, not changed here.
+
+The full suite is rerun using an isolated short /private/tmp/wp6-verify.* directory,
+with source/tests unchanged. Both attempts remain committed. Frontend initially
+could not find vitest; adding COMMON.md's prescribed node_modules symlink gives
+24 files/206 tests passed. An invocation wrapper also used zsh's read-only `status`
+variable after tests finished; the exact pytest/vitest output is retained, and
+subsequent wrappers use wp6_test_status. No test result is inferred from that wrapper.
+
+Short-temp full-suite result: **1 failed, 1701 passed, 2 skipped, 21 warnings,
+37 subtests passed in 158.38s**. Only the documented WP4 fixture failure remains.
+Both environment hypotheses were confirmed without changing source or tests.

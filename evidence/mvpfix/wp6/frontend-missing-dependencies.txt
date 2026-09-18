@@ -1,0 +1,5 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run
+
+sh: vitest: command not found

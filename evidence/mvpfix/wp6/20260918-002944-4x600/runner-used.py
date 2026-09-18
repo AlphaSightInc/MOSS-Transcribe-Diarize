@@ -274,9 +274,6 @@ def main():
             def observe():
                 nonlocal seen, event_seq
                 snap = c.call('GET', f'/api/live/sessions/{ident}/snapshot')['snapshot']
-                row['last_observed_identity_counts'] = snap.get('identity_counts')
-                row['last_observed_session_counters'] = {
-                    k: snap['session'][k] for k in ('accepted_samples', 'accounted_samples')}
                 now = time.monotonic()-started
                 visible = latency.visible_segments(snap)
                 text = tuple((s.get('start_sample'), s.get('end_sample'), s.get('text')) for s in visible)
@@ -388,8 +385,7 @@ def main():
                            words_per_minute=len(words)/(args.seconds/60),
                            unique_vocabulary_retention=len(set(words)&ref_set)/len(ref_set) if ref_set else None,
                            wer=latency.edit_wer(ref,words) if not partial_reference_rows else None,
-                           speakers=len({s['canonical_speaker'] for s in latency.segments_of(snap) if s.get('canonical_speaker')}),
-                           unassigned_segments=sum(not s.get('canonical_speaker') for s in latency.segments_of(snap)),
+                           speakers=len({s.get('canonical_speaker') for s in latency.segments_of(snap)}),
                            identities_born_count=snap['identity_counts']['identities_born_count'],
                            p95_coverage_lag=percentile(row['coverage_lags'], .95),
                            covered_buckets=len(coverage), expected_buckets=int(args.seconds/cadence))
@@ -408,10 +404,6 @@ def main():
                     and row['p95_canonical_lag']<=10 and row['reopened_status']=='completed')
             except Exception as exc:
                 row['error'] = type(exc).__name__
-                if isinstance(exc, urllib.error.HTTPError):
-                    row['http_status'] = exc.code
-                    body = json.loads(exc.read())
-                    row['http_failure_code'] = body.get('code') or body.get('failure', {}).get('code')
                 row['failure_code'] = str(exc) if isinstance(exc,RuntimeError) else None
                 row['clean'] = False
                 failures.append(f'session_{index+1}:{type(exc).__name__}')

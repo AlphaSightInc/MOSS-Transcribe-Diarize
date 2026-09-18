@@ -1,0 +1,6 @@
+{
+  "base_sha": "57907d76ce07e121eabffa8921b50650f9dfd574",
+  "actual_code": "worktree source, production unchanged from 37979e53",
+  "manifest_source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea",
+  "runner_snapshot": "runner-used.py"
+}

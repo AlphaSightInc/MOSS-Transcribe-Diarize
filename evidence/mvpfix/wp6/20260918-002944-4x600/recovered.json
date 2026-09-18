@@ -1,0 +1,183 @@
+{
+  "source": "read-only saved SQLite, final API snapshot and independent ffprobe",
+  "per_session": [
+    {
+      "ordinal": 1,
+      "saved_meeting_status": "completed",
+      "finalization_status": "final",
+      "terminal_events": [
+        {
+          "kind": "terminal_finalization_started",
+          "seq": 2584,
+          "session_id": "iTi6JOqtil6HOdoAbORcZlqC",
+          "payload": {
+            "runtime_monotonic_ns": 91208232266416,
+            "finalization_status": "running"
+          }
+        }
+      ],
+      "stop_to_final_seconds": 39.68673754199699,
+      "saved_audio_status": "available",
+      "saved_audio_duration_seconds": 600.0,
+      "saved_audio_bytes": 3600765,
+      "mp3_probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "16000",
+            "channels": 1
+          }
+        ],
+        "format": {
+          "duration": "600.000000",
+          "size": "3600765"
+        }
+      },
+      "saved_matches_final_snapshot": true,
+      "word_count": 1841,
+      "reference_word_count": 1760,
+      "partial_reference_rows": 0,
+      "p95_canonical_lag_seconds": 272.8037860395925,
+      "last_retained_canonical_samples": 9600000,
+      "saved_transcript_end_seconds": 599.94,
+      "wer": 0.15284090909090908,
+      "identity_counts": {
+        "identities_born_count": 2,
+        "album_admitted_count": 2,
+        "provisional_only_count": 0,
+        "abstention_count": 10
+      },
+      "named_speakers": 2,
+      "unassigned_segments": 0,
+      "reference_speakers": 2
+    },
+    {
+      "ordinal": 2,
+      "saved_meeting_status": "completed",
+      "finalization_status": "final",
+      "terminal_events": [
+        {
+          "kind": "terminal_finalization_started",
+          "seq": 2584,
+          "session_id": "n2et3iuuogUCqlj7TeN4jNFB",
+          "payload": {
+            "runtime_monotonic_ns": 91208712858791,
+            "finalization_status": "running"
+          }
+        }
+      ],
+      "stop_to_final_seconds": 29.48933808298898,
+      "saved_audio_status": "available",
+      "saved_audio_duration_seconds": 600.0,
+      "saved_audio_bytes": 3600765,
+      "mp3_probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "16000",
+            "channels": 1
+          }
+        ],
+        "format": {
+          "duration": "600.000000",
+          "size": "3600765"
+        }
+      },
+      "saved_matches_final_snapshot": true,
+      "word_count": 1513,
+      "reference_word_count": 1390,
+      "partial_reference_rows": 0,
+      "p95_canonical_lag_seconds": 272.81899027914767,
+      "last_retained_canonical_samples": 9600000,
+      "saved_transcript_end_seconds": 599.88,
+      "wer": 0.08848920863309352,
+      "identity_counts": {
+        "identities_born_count": 2,
+        "album_admitted_count": 2,
+        "provisional_only_count": 0,
+        "abstention_count": 0
+      },
+      "named_speakers": 2,
+      "unassigned_segments": 0,
+      "reference_speakers": 2
+    },
+    {
+      "ordinal": 3,
+      "saved_meeting_status": "interrupted",
+      "finalization_status": "not retained; interrupted meeting",
+      "terminal_events": [],
+      "stop_to_final_seconds": null,
+      "saved_audio_status": "partial",
+      "saved_audio_duration_seconds": 600.0,
+      "saved_audio_bytes": 3600765,
+      "mp3_probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "16000",
+            "channels": 1
+          }
+        ],
+        "format": {
+          "duration": "600.000000",
+          "size": "3600765"
+        }
+      },
+      "saved_matches_final_snapshot": null,
+      "word_count": 1303,
+      "reference_word_count": 1356,
+      "partial_reference_rows": 0,
+      "p95_canonical_lag_seconds": 273.31297841280633,
+      "last_retained_canonical_samples": 9556000,
+      "saved_transcript_end_seconds": 599.99,
+      "wer": 0.11135693215339233,
+      "identity_counts": null,
+      "named_speakers": 1,
+      "unassigned_segments": 10,
+      "reference_speakers": 1
+    },
+    {
+      "ordinal": 4,
+      "saved_meeting_status": "interrupted",
+      "finalization_status": "not retained; interrupted meeting",
+      "terminal_events": [],
+      "stop_to_final_seconds": null,
+      "saved_audio_status": "partial",
+      "saved_audio_duration_seconds": 600.0,
+      "saved_audio_bytes": 3600765,
+      "mp3_probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "mp3",
+            "sample_rate": "16000",
+            "channels": 1
+          }
+        ],
+        "format": {
+          "duration": "600.000000",
+          "size": "3600765"
+        }
+      },
+      "saved_matches_final_snapshot": null,
+      "word_count": 1938,
+      "reference_word_count": 1884,
+      "partial_reference_rows": 1,
+      "p95_canonical_lag_seconds": 273.36780253749504,
+      "last_retained_canonical_samples": 9552800,
+      "saved_transcript_end_seconds": 599.97,
+      "wer": null,
+      "identity_counts": null,
+      "named_speakers": 3,
+      "unassigned_segments": 10,
+      "reference_speakers": 3
+    }
+  ]
+}

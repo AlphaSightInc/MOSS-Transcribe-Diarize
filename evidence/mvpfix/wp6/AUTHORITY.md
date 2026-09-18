@@ -24,3 +24,16 @@ post-pause catch-up burst; detect interleaved foreign completions; require an
 entire clear sample interval before resuming; single-session fairness marked N/A.
 The first 2x300 attempt was deliberately interrupted to repair the resume condition;
 its evidence and runner are preserved, and its calls count toward the total.
+
+## 2026-09-18 fresh continuation (Fable, MOSS:2.1)
+
+Starting branch mvpfix/wp6-capacity-baseline at 57907d76, clean. User explicitly
+authorized a private manifest copy raised to the deployed bound, or 57,600,000 bytes
+if unknown; one 4x600 rerun, then eight sessions only if clean. Shared manifest must
+not be edited. Repo-only deployed-bound investigation; no host access for that task.
+The campaign retains previously authorized read-only GPU sampling and own tunnel
+18106/stack 17866. No push/merge/deploy, shared-service changes, or peer messages.
+Fresh-context verification refers to the supplied 57907d76 evidence; new measurement
+harness changes and results are checked in this continuation, not claimed to have
+another context reset. Old VERIFY.md expected exactly four runs; that expectation
+is superseded by the explicitly authorized additional run(s), not silently discarded.
