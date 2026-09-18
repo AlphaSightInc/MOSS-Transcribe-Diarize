@@ -1,0 +1,6 @@
+ssss                                                                     [100%]
+=========================== short test summary info ============================
+SKIPPED [2] tests/test_file_resolver_performance.py:131: set WP28_REAL_FIXTURES to retained real-{6,30} WAV directories
+SKIPPED [1] tests/test_live_identity_real_corpus.py:60: operator-owned real identity corpus is not provisioned
+SKIPPED [1] tests/test_live_speaker_accuracy.py:44: real F-cert corpus is not provisioned in this clean worktree
+4 skipped in 2.92s

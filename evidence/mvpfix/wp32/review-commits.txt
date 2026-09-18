@@ -1,0 +1,138 @@
+d8fa767f Merge branch 'mvpfix/wp29-tape-exhaustion' into integration/mvp-fix-20260917
+1c615121 docs(wp29): record fresh-context verification results
+ea89af0c Merge branch 'mvpfix/wp28-file-resolver-perf' into integration/mvp-fix-20260917
+ef2b1550 docs(wp28): record fresh-context verification and timing evidence
+9ac68d11 test(wp29): retain exhaustion and repeated-session RSS evidence
+1497e6a9 fix(live): preserve truthful finalization when lane tapes exhaust
+263c4bc5 docs(wp28): prescribe actual fresh-context verification
+418258c6 perf(file): parallelize interval embeddings without changing album decisions
+9e58205b Merge branch 'mvpfix/wp22-memory-longrun' into integration/mvp-fix-20260917
+3d498020 docs(wp22): record fresh memory and durability verification
+f5fff0b2 Merge branch 'mvpfix/wp27-early-share' into integration/mvp-fix-20260917
+379eac08 test(wp27): verify early-share ordering and repair success fixtures
+977d036e Record WP22 merged-tree thirty-minute durability and final suite evidence
+7f4051a8 fix(capture): retain early-share errors through microphone setup
+d49fc50a Merge branch 'mvpfix/wp26-unassigned-terminal' into integration/mvp-fix-20260917
+648be684 docs(wp26): record fresh verification and reference attribution
+d3ca29dc Merge branch 'mvpfix/wp24-visual-copy-pack' into integration/mvp-fix-20260917
+550911b1 verify(wp24): record fresh sign-off pack and full-suite results
+dfb9b261 fix: probe terminal lane segments left unmapped by overlap
+8d3a2850 docs(wp24): retain 52-state visual sign-off pack and regeneration bench
+205dc611 fix(ui): correct sign-off copy, contrast, and outcome clipping
+625dbaa9 Merge branch 'mvpfix/wp21-qualify-bundle' into integration/mvp-fix-20260917
+a28eecd9 Merge accepted WP12 integration before WP22 durability measurement
+a630827f Record completed thirty-minute memory profiles and ownership evidence
+46f72fd6 docs(wp21): retain fresh qualification rerun and gate comparison
+1745b96f Merge branch 'mvpfix/wp12-stop-latency-identity' into integration/mvp-fix-20260917
+f47f0dc9 Accept lane terminal overlap mapping and lock regression coverage
+9f76961b Record native constructor equivalence and tape-refusal finding
+79916973 fix(qualify): record sibling contention without refusing bounded run
+0ce5122d Merge branch 'mvpfix/wp23-closure-docs' into integration/mvp-fix-20260917
+50ea910e docs(wp23): record fresh ten-row closure verification
+852155b5 docs(wp21): retain source-backed identity rescore provenance
+a0918a1b docs(wp21): retain bounded dry run and fresh-context comparison contract
+198dae9f Reduce retained ONNX workspace for variable-length speaker inputs
+ff8bcb79 docs(wp23): refresh closure ledger, contract and attended handoff
+5ae9566f feat(wp21): invoke unchanged identity cases on owned fixed endpoint
+a1c1602d fix(wp21): bootstrap readiness and retain aborted preparation evidence
+c609d7f3 Merge branch 'mvpfix/wp19-file-identity-album' into integration/mvp-fix-20260917
+8938cb2c Merge branch 'mvpfix/wp15-stop-lease-longrun' into integration/mvp-fix-20260917
+33112b07 feat(wp21): add isolated local qualification bundle and explicit bench gaps
+16460396 docs(wp19): record fresh-context acceptance and lease proof
+e721fc7d Verify WP15 Stop lifecycle and unpaused 600-second durability
+30418b2e docs: specify fresh-context WP19 acceptance verification
+5094206d Merge branch 'mvpfix/wp20-lane-endpointing' into integration/mvp-fix-20260917
+448a4cf3 feat: resolve file-window speakers with the live identity album
+717daaa8 docs(wp20): record fresh offline verification and rejected endpointing hypothesis
+ad7575ae test: make owner-bound helper lease expiration deterministic
+8b46938a Measure WP20 lane endpointing and reject unsupported overlap fix
+c2e45867 Merge branch 'mvpfix/wp18-file-identity' into integration/mvp-fix-20260917
+57fa5e7b docs(wp18): record fresh verification failure and reproduced identity falsifier
+de35ef36 Merge branch 'mvpfix/wp17-lane-quality-voiceprint' into integration/mvp-fix-20260917
+a2ee97eb Adjudicate WP12 terminal speakers against reference; measure mono 180s
+371af1be docs: verify WP17 independently and correct verification layout
+cfc69b7e docs(wp18): specify fresh-context verification and unresolved identity boundary
+82ab6d27 fix(file): retain reported truncation and record WP18 identity falsifier
+12b9e163 docs: retain WP17 lane differential and recognition verification evidence
+c410db8f Prototype lane terminal overlap; stop on 180s attribution mismatch
+d769b010 build: rebuild frontend assets after merging WP14 and WP16
+024218b4 Merge branch 'mvpfix/wp16-file-url-long' into integration/mvp-fix-20260917
+685319f4 test: include source sentence tail in microphone lane reference
+7870eb2c fix: retain causal lane observations through voiceprint publication
+67c020fd docs(wp16): record fresh verification and WP17 port collision
+d36f0be3 test(wp16): retain real browser scale and failure evidence
+76665702 fix(file): skip digital silence and preflight upload capacity
+41cfebb9 chore: relocate WP14 verification records under docs/verify
+f599c1a6 Merge branch 'mvpfix/wp14-integrated-e2e' into integration/mvp-fix-20260917
+d562d768 docs(wp14): record fresh verification and retained acceptance limits
+b30ea628 docs(e2e): retain WP14 measurements and fresh verification contract
+4b1d3401 test(e2e): measure integrated acceptance and lease recovery honestly
+826af986 docs: preserve cleanly formatted WP15 verification evidence
+6fa503ff fix: end helper lease authority when Stop accepts capture
+1b1fc692 fix(ui): explain expired live capture connections
+5179368e Merge branch 'mvpfix/wp13-tls-hygiene' into integration/mvp-fix-20260917
+8d01ab06 docs(wp13): record fresh verification and retained blockers
+60b3b584 Measure WP12 Stop drain and terminal acoustic work; verify full suites
+3d5fdfe0 Merge branch 'mvpfix/wp6-capacity-baseline' into integration/mvp-fix-20260917
+06a6737a Measure WP6 with isolated tape cap and correct capacity evidence
+38b35eea Prepare two-port TLS renewal and isolate mutable test evidence
+8068afce build: rebuild frontend assets after merging WP10 and WP11
+33a419f2 Merge branch 'mvpfix/wp11-export-labels' into integration/mvp-fix-20260917
+a73a51bd test(integration): WP9 silence-birth test builds its decoder through the WP10 composition root
+a02a8491 Retain WP12 timing evidence and fresh verification procedure
+57286fdf Record WP11 fresh verification and inherited suite failures
+5dd97206 Merge branch 'mvpfix/wp10-zero-guard-seams' into integration/mvp-fix-20260917
+9d10e0d8 Align decoder and draft fixtures with integrated input contracts
+8977e4d1 docs(wp10): retain the harness logs the matrix is read from
+2c5318ec docs(wp10): record the candidate matrix, the verdict and fresh-shell verification
+e0bb7104 Record WP11 integrated export evidence and fresh verification contract
+c30174b8 Fix export speaker labels and preserve lanes through saved live meetings
+33be55ec Overlap independent terminal lane jobs after live drain
+4a21a38e test(wp10): pin the dispatch guarantees, and make the draft-lane snapshot self-consistent
+d8ee6f41 build: rebuild frontend assets after merging WP1 and WP9
+b3e5d4d6 Merge branch 'mvpfix/wp9-rename-identity' into integration/mvp-fix-20260917
+8f8847fc test(wp9): record fresh full-suite verification and base failure proof
+f369f218 fix(wp10): decide digital silence at dispatch, not inside the decode seam
+79a6d38e prototype(wp10): harness and shared seams for the zero-guard placement question
+57907d76 fix(wp6): report unavailable finalization and retain capacity baseline evidence
+97f09c3a docs: retain WP9 test outputs including baseline failures
+b31683a6 Merge branch 'mvpfix/wp1-lane-decode' into integration/mvp-fix-20260917
+154869cd fix: allow owned saved meeting speaker names after capture
+2ffd80e7 docs(wp1): record fresh verification and base storage comparison
+da3d1818 test(wp1): retain fixed-build evidence and prepare fresh-context verification
+79467f08 fix(integration): explicit .ts extension so the node strip-types export oracle resolves transcriptOrder
+644833ee fix(replay): retain lane provenance across snapshot reconstruction
+a92bb4aa build: rebuild frontend assets after merging WP2/WP3/WP4/WP5/WP7
+1a19a69b Merge branch 'mvpfix/wp5-browser-stress' into integration/mvp-fix-20260917
+ccc4e88c Merge branch 'mvpfix/wp2-lane-consumers' into integration/mvp-fix-20260917
+db8b0614 Merge branch 'mvpfix/wp3-capture-guards' into integration/mvp-fix-20260917
+622088b1 Merge branch 'mvpfix/wp7-identity-stress' into integration/mvp-fix-20260917
+cf8147f5 docs(wp7): record fresh offline verification and mixed verdict
+2cb9d014 fix(live): decode source lanes serially with isolated speaker identity
+5509a757 Record shutdown of WP7 measurement services
+3bfec558 docs(wp5): record fresh browser verification and hidden-tab probe
+ed74e6da Measure identity stress and retain mixed verdict with bounded real decoder evidence
+24b31e95 fix(wp6): pause capacity replay until foreign decoder traffic clears
+29d69b0e Make cache-isolated verification use explicit frontend config directory
+fa3d00dd Keep fresh verification tooling out of shared dependency caches
+43174c8f Add WP5 real-browser stress bench and adjudicated base evidence
+c3d15928 prototype: prepare WP6 capacity campaign pending decoder authority
+195fa253 Calibrate operator phrase tolerance and expose lane switch attribution
+a7bb4201 docs(wp4): record fresh-context verification and live limits
+a20595a5 test: keep Phase-2 SQLite fixture stable across file order
+efec6cc7 experiment(wp1): pass lane falsifiers and isolate failed refinement ownership
+c14e9e24 Measure lane acceptance through Stop and reopen; retain bounded live failures
+2e7206c7 fix(wp3): opt in to capture correlation and audit guard evidence
+db851d2f test: record fresh WP2 verification and ordering correction evidence
+2d2dc7e2 fix: preserve provisional tail precedence in lane consumers
+cf866016 docs(wp3): record failed fresh verification and retained checks
+fb73b30e fix: guard silent decodes and release failed browser capture resources
+baf9b9e6 experiment(wp1): retain partial serial lane runtime evidence
+56045484 Compare every transcript export against its selected API meeting
+a3ab4f82 Require attended operator phrase and add reference-aware lane scoring
+5adff063 Persist safe file failure reasons and speechless notices; suggest Flash Lite
+e820644f Retain WP2 successful and failed measurement logs
+0a63fa18 Record WP2 prototype evidence and fresh verification procedure
+b5096c14 Preserve published lane segments across transcript consumers
+b7695017 fix: reject live frames that declare the wrong sample rate
+755a94e4 Record WP4 oracle false-positive prototype and file boundary evidence

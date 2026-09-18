@@ -1,0 +1,1054 @@
+diff --git a/frontend/src/components/ControlPanel.test.tsx b/frontend/src/components/ControlPanel.test.tsx
+index e95eb1e0..028a218b 100644
+--- a/frontend/src/components/ControlPanel.test.tsx
++++ b/frontend/src/components/ControlPanel.test.tsx
+@@ -254,7 +254,7 @@ describe("ControlPanel reattach", () => {
+     expect(root.textContent).toContain("Connection restored. Recording microphone and shared audio.");
+     act(() => mocks.pollerOptions?.onTerminal?.("helper_lease_expired"));
+     act(() => { mocks.captureOptions?.onTransportRecovered?.(); mocks.pollerOptions?.onRecovered?.(); });
+-    expect(root.textContent).toContain("helper_lease_expired");
++    expect(root.textContent).toContain("Recording interrupted: the connection was lost for too long. Reset capture to start again.");
+     expect(root.textContent).not.toContain("Connection restored");
+   });
+ 
+@@ -297,7 +297,9 @@ describe("ControlPanel reattach", () => {
+     expect(captureMeetingId.value).toBeNull();
+     expect(mocks.poller.stop).toHaveBeenCalledOnce();
+     expect(root.querySelector('[data-capture-phase="terminal"]')).not.toBeNull();
+-    expect(root.querySelector('[role="status"]')?.textContent).toBe(reason);
++    expect(root.querySelector('[role="status"]')?.textContent).toBe(reason === "helper_lease_expired"
++      ? "Recording interrupted: the connection was lost for too long. Reset capture to start again."
++      : reason);
+     expect(button("Stop and finalize")).toBeUndefined();
+     expect(button("Reset capture")).toBeTruthy();
+   });
+
+diff --git a/frontend/src/components/TranscriptPane.test.tsx b/frontend/src/components/TranscriptPane.test.tsx
+index dec58bc8..ab1169f3 100644
+--- a/frontend/src/components/TranscriptPane.test.tsx
++++ b/frontend/src/components/TranscriptPane.test.tsx
+@@ -26,6 +26,12 @@ describe("TranscriptPane", () => {
+     vi.useRealTimers();
+   });
+ 
++  it("uses the product name for an untitled transcript", () => {
++    act(() => render(<TranscriptPane />, root));
++    expect(root.querySelector(".tr-title")?.textContent).toContain("MOSS");
++    expect(root.querySelector(".tr-title")?.textContent).not.toContain("LiveTranscribe");
++  });
++
+   it("renders display names and a provisional row without exposing canonical IDs", () => {
+     act(() => {
+       render(<TranscriptPane />, root);
+@@ -115,14 +121,14 @@ describe("TranscriptPane", () => {
+     expect([...root.querySelectorAll(".legend-chip-name")].map(node => node.textContent)).toEqual(["Alex", "Sam"]);
+   });
+ 
+-  it("keeps observers, terminal meetings and provisional-only speakers read-only", () => {
++  it("allows owned observers and terminal meetings but keeps provisional-only speakers read-only", () => {
+     showSpeakers(false);
+-    expect([...root.querySelectorAll<HTMLButtonElement>(".legend-chip")].every(button => button.disabled)).toBe(true);
++    expect([...root.querySelectorAll<HTMLButtonElement>(".legend-chip")].every(button => !button.disabled)).toBe(true);
+     act(() => {
+       captureMeetingId.value = "meeting/one";
+       sessionStatus.value = "closed";
+     });
+-    expect(root.querySelector<HTMLButtonElement>(".legend-chip")?.disabled).toBe(true);
++    expect(root.querySelector<HTMLButtonElement>(".legend-chip")?.disabled).toBe(false);
+     act(() => {
+       sessionStatus.value = "active";
+       replaceTranscript([{ start: 0, end: 1, text: "preview", speaker: "S01", speaker_entity_id: "canonical/a", display_name: "S01", state: "provisional" }]);
+@@ -132,11 +138,12 @@ describe("TranscriptPane", () => {
+ 
+   it("explains why a row cannot be named", () => {
+     showSpeakers(false);
++    act(() => { sessionId.value = null; });
+     act(() => root.querySelector<HTMLButtonElement>(".utt-speaker")!.click());
+-    expect(root.querySelector('[role="status"]')?.textContent).toContain("active capture page");
++    expect(root.querySelector('[role="status"]')?.textContent).toContain("Open a meeting");
+     expect(root.querySelector("dialog")).toBeNull();
+     act(() => {
+-      captureMeetingId.value = "meeting/one";
++      sessionId.value = "meeting/one";
+       replaceTranscript([{ start: 0, end: 1, text: "Preview", speaker: "S01", speaker_entity_id: "canonical/a", display_name: "Alex", state: "provisional" }]);
+     });
+     act(() => root.querySelector<HTMLButtonElement>(".utt-speaker")!.click());
+
+diff --git a/frontend/src/components/speakerRename.test.tsx b/frontend/src/components/speakerRename.test.tsx
+index 32706d22..69b58360 100644
+--- a/frontend/src/components/speakerRename.test.tsx
++++ b/frontend/src/components/speakerRename.test.tsx
+@@ -6,6 +6,7 @@ import { TranscriptPane } from "./TranscriptPane";
+ import { MeetingHistory } from "./MeetingHistory";
+ import { createMossSessionPoller } from "../api/mossPoller";
+ import { SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
++import { providerBody } from "../lib/finalSummary";
+ import { groupSegmentsIntoTurns } from "../lib/mergeTranscript";
+ import { serializeTranscriptExport } from "../lib/transcriptExport";
+ import { captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus, transcript } from "../state/session";
+@@ -14,28 +15,37 @@ const root = document.createElement("div");
+ document.body.append(root);
+ afterEach(() => { act(() => render(null, root)); resetSessionState(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+ 
+-it.each([[".utt-speaker", true], [".legend-chip", false]] as const)("renames from %s with save voiceprint=%s across rows, history and export", async (selector, saveVoiceprint) => {
++it.each([
++  [".utt-speaker", true, "active", "live"],
++  [".legend-chip", false, "active", "live"],
++  [".utt-speaker", true, "completed", "live"],
++  [".legend-chip", false, "completed", "live"],
++  [".utt-speaker", true, "completed", "file"],
++  [".legend-chip", false, "completed", "file"],
++] as const)("renames from %s save=%s status=%s mode=%s across history/export/summary", async (selector, saveVoiceprint, status, mode) => {
+   let name = "Before";
+-  const meeting = () => ({ id: "m", title: "Meeting", title_source: "manual", mode: "live", status: "active", created_at_ms: 1,
++  const meeting = () => ({ id: "m", title: "Meeting", title_source: "manual" as const, mode, status, created_at_ms: 1,
+     transcript_version: name === "Before" ? 1 : 2, audio: null, transcript: { segments: ["a", "b", "a"].map((id, i) => ({
+-      id: String(i), start: i, end: i + 1, speaker_entity_id: id, speaker: id === "a" ? name : "Other", text: `Words ${i}`
++      id: String(i), start: i === 1 ? 0 : i, end: i + 1, source_lane: id === "a" ? "system" as const : "microphone" as const, speaker_entity_id: id, speaker: id === "a" ? name : "Other", text: `Words ${i}`
+     })) } });
+   vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+     if (String(url).endsWith("/speakers/a/name")) {
+       const body = JSON.parse(init.body);
+       expect(body).toEqual(saveVoiceprint ? { label: "After" } : { label: "After", save_voiceprint: false });
+       name = body.label;
+-      return Response.json({ meeting_id: "m", speaker_id: "a", label: name, enrollment: saveVoiceprint ? "pending" : "not_requested" });
++      return Response.json({ meeting_id: "m", speaker_id: "a", label: name, enrollment: saveVoiceprint ? (status === "active" ? "pending" : "unavailable") : "not_requested" });
+     }
+     return Response.json(String(url) === "/api/meetings" ? { meetings: [meeting()] } : meeting());
+   }));
+   await act(async () => {
+-    sessionId.value = captureMeetingId.value = "m"; sessionStatus.value = "active";
++    sessionId.value = "m"; captureMeetingId.value = status === "active" ? "m" : null; sessionStatus.value = status === "active" ? "active" : "closed";
+     replaceTranscript(meeting().transcript.segments.map(s => ({ ...s, speaker: s.speaker_entity_id === "a" ? "S01" : "S02", display_name: s.speaker, state: "confirmed" })));
+     render(<><TranscriptPane /><MeetingHistory /></>, root);
+   });
+   await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="m"]')).not.toBeNull());
+   act(() => root.querySelector<HTMLButtonElement>(selector)!.click());
++  expect(root.querySelector("dialog")?.textContent).toContain("Applies to this speaker throughout this meeting.");
++  expect(root.querySelector("dialog")?.textContent).not.toContain("active meeting");
+   const checkbox = root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')!;
+   expect(checkbox.checked).toBe(true);
+   if (!saveVoiceprint) act(() => checkbox.click());
+@@ -45,8 +55,13 @@ it.each([[".utt-speaker", true], [".legend-chip", false]] as const)("renames fro
+   });
+   await act(async () => { root.querySelector('dialog form')!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+   const assertNames = () => {
++    expect([...root.querySelectorAll('.utt-lane')].map(n => n.textContent)).toEqual(["System", "Microphone", "System"]);
+     expect([...root.querySelectorAll('.utt-speaker-label')].map(n => n.textContent)).toEqual(["After", "Other", "After"]);
+     expect([...root.querySelectorAll('.legend-chip-name')].map(n => n.textContent)).toEqual(["After", "Other"]);
++    if (status === "completed") {
++      const body = providerBody(meeting(), {endpoint:"", model:"test", apiKey:"", prompt:"Summarize", language:"English", timeoutSeconds:60});
++      expect(body).toContain("After"); expect(body).not.toContain("Before");
++    }
+     for (const format of ["md", "txt", "json", "srt", "vtt"] as const) {
+       const file = serializeTranscriptExport(format, groupSegmentsIntoTurns(transcript.value), t => t.display_name,
+         { sessionId: "m", exportedAt: new Date(0) });
+@@ -83,3 +98,30 @@ it("discards a pre-rename poll response and fetches the acknowledged labels", as
+     expect(JSON.stringify(dispatched)).not.toContain('"display_name":"Before"');
+   } finally { poller.stop(); }
+ });
++
++
++it("allows the same voiceprint result for independent speakers on both lanes", async () => {
++  const named: string[] = [];
++  vi.stubGlobal("fetch", vi.fn(async (url, init) => {
++    const id = String(url).includes("/speakers/system-person/") ? "system-person" : "mic-person";
++    named.push(id);
++    expect(JSON.parse(init.body)).toEqual({label:"Alex"});
++    return Response.json({meeting_id:"m",speaker_id:id,label:"Alex",voiceprint_id:"shared-person",enrollment:"enrolled"});
++  }));
++  await act(async () => {
++    sessionId.value = captureMeetingId.value = "m"; sessionStatus.value = "active";
++    replaceTranscript([
++      {start:0,end:3,text:"System speech",source_lane:"system",speaker:"S01",speaker_entity_id:"system-person",display_name:"Alex",state:"confirmed"},
++      {start:0,end:2,text:"Mic speech",source_lane:"microphone",speaker:"S02",speaker_entity_id:"mic-person",display_name:"Alex",state:"confirmed"}
++    ]);
++    render(<TranscriptPane />,root);
++  });
++  for (const index of [0,1]) {
++    act(()=>root.querySelectorAll<HTMLButtonElement>('.utt-speaker')[index].click());
++    await act(async()=>{ root.querySelector('dialog form')!.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true})); });
++    await vi.waitFor(()=>expect(root.querySelector('dialog')).toBeNull());
++  }
++  expect(named).toEqual(["system-person","mic-person"]);
++  expect(transcript.value.map(s=>s.speaker_entity_id)).toEqual(["system-person","mic-person"]);
++  expect(root.querySelectorAll('.legend-chip')).toHaveLength(2);
++});
+
+diff --git a/tests/e2e/stress_reshare.py b/tests/e2e/stress_reshare.py
+index 46acd34c..ddecae73 100644
+--- a/tests/e2e/stress_reshare.py
++++ b/tests/e2e/stress_reshare.py
+@@ -58,6 +58,11 @@ for seq in range(total):
+     if seq==micswitch_at:
+         epoch["microphone"]+=1_000_000; disc["microphone"]=True
+         print(f"  -- switched MICROPHONE device at frame {seq}")
++    health=lambda lane:dict(state='capturing',device_epoch=epoch[lane],dropped_frames=0,discontinuities=int(disc[lane]),failure_code=None)
++    call('POST',f'/api/live/sessions/{sid}/heartbeat',dict(
++        schema='moss-live-helper-health.v1',instance_id='reshare-stress',sequence=seq,
++        sent_monotonic_ns=time.monotonic_ns(),helper_version='e2e',state='capturing',
++        lanes={lane:health(lane) for lane in ('system','microphone')}))
+     send("system", seq, pcm[off:off+fb] or silence)
+     send("microphone", seq, silence)
+     time.sleep(max(0.0,(seq+1)*(fs/rate)-(time.monotonic()-t0)))
+@@ -79,5 +84,5 @@ check("transcribes across the mic-switch boundary",
+       last > micswitch_at*fs, f"last_sample={last} switch_sample={micswitch_at*fs}")
+ check("produced real text", words>20, f"{words} words in {len(segs)} segments")
+ print(f"\n  {len(results)-results.count(False)}/{len(results)} reshare checks passed")
+-for x in segs[:6]: print(f"    [{x.get('start_sample')}] {x.get('canonical_speaker')}: {str(x.get('text',''))[:70]}")
++
+ raise SystemExit(1 if results.count(False) else 0)
+
+diff --git a/tests/e2e/verify_demo_lanes.py b/tests/e2e/verify_demo_lanes.py
+index 242dd43e..d5b25caa 100644
+--- a/tests/e2e/verify_demo_lanes.py
++++ b/tests/e2e/verify_demo_lanes.py
+@@ -1,16 +1,9 @@
+-"""Demo-path verification: two DIFFERENT voices, one per lane, NON-overlapping.
++"""Known different-voice lane acceptance, before Stop and after saved/reopened output.
+ 
+-`verify_workspace.py` feeds identical audio to both lanes, so it never proves that two
+-distinct speakers survive the mixer. The presenter flow in `docs/handoffs/demo-script.md`
+-depends on exactly that, and on it holding at the level a built-in laptop microphone
+-actually produces -- roughly 3 % of shared-tab audio, which is what the 2026-09-14
+-attended run measured. Both conditions are checked here.
+-
+-Run: .venv/bin/python tests/e2e/verify_demo_lanes.py --allow-local-self-signed
+-Exit 0 = the demo path is intact; exit 1 = it is not; nothing is retained.
+-
+-Scope: the NON-overlapping path only. Simultaneous speech on both lanes is a known
+-limitation (see the handback) -- do not read a pass here as overlap support.
++Run: python tests/e2e/verify_demo_lanes.py --allow-local-self-signed --case both
++Alternation and overlap must both pass on the integrated per-lane decoder.
++Counts-only evidence can never satisfy either oracle.
++No transcript text is printed or retained. Thresholds use existing QUALITY_BOUNDS.
+ """
+ from __future__ import annotations
+ import argparse
+@@ -24,16 +17,15 @@ import urllib.request
+ import wave
+ from pathlib import Path
+ from urllib.parse import urlsplit
+-
+ REPO = Path(__file__).resolve().parents[2]
++sys.path.insert(0, str(REPO))
++from moss_transcribe_diarize.lane_word_oracle import score_lanes
++from moss_transcribe_diarize.phase2_acceptance import QUALITY_BOUNDS
+ CORPUS = REPO / 'evidence/live-policy-sweep-20260825/corpus'
+ SHARED_TAB_VOICE = CORPUS / 'interview_bill_ackman_60s/audio.wav'
+ MICROPHONE_VOICE = CORPUS / 'interview_keyu_jin_60s/audio.wav'
+-
+-# The attended run measured the built-in microphone at ~3 % of shared-tab full scale.
+ DEFAULT_MIC_GAIN = 0.03
+ 
+-
+ class Client:
+     """Cookie-carrying JSON client. One bootstrap per run: each call creates a workspace."""
+ 
+@@ -65,110 +57,119 @@ def lane_pcm(path: Path, seconds: float, gain: float = 1.0) -> bytes:
+     return samples.tobytes()
+ 
+ 
+-def run(base: str, context: ssl.SSLContext | None, seconds: float, mic_gain: float) -> int:
+-    client = Client(base, context)
+-    client.call('POST', '/api/workspace/bootstrap')
+-    descriptor = client.call('GET', '/api/live/descriptor')['descriptor']
+-    frame_samples, sample_rate = descriptor['frame_samples'], descriptor['sample_rate']
+-
+-    created = client.call('POST', '/api/live/sessions', {'source_revision': descriptor['source_revision']})
+-    session_id = created.get('id') or created.get('session_id')
+-    if not session_id:
+-        print('  FAIL: no session id in create response')
+-        return 1
+-
+-    tab = lane_pcm(SHARED_TAB_VOICE, seconds)
+-    microphone = lane_pcm(MICROPHONE_VOICE, seconds, mic_gain)
+-    print(f'  microphone lane at {mic_gain:.0%} of full scale (built-in-microphone level)')
+-
+-    frame_bytes = frame_samples * 2
+-    silence = b'\0' * frame_bytes
+-    total = min(len(tab), len(microphone)) // frame_bytes
+-    handover = total // 2
+-    epoch = int(time.time() * 1e9)
+-    started = time.monotonic()
+-
+-    for sequence in range(total):
+-        offset = sequence * frame_bytes
+-        # First half: the shared tab speaks alone. Second half: the microphone does.
+-        if sequence < handover:
+-            lanes = (('system', tab[offset:offset + frame_bytes]), ('microphone', silence))
+-        else:
+-            lanes = (('system', silence), ('microphone', microphone[offset:offset + frame_bytes]))
+-        for lane, chunk in lanes:
+-            client.call('POST', f'/api/live/sessions/{session_id}/frames', {
+-                'lane': lane,
+-                'sequence': sequence,
+-                'capture_timestamp_ns': epoch + sequence * int(frame_samples / sample_rate * 1e9),
+-                'device_epoch': epoch,
+-                'pcm_base64': base64.b64encode(chunk).decode(),
+-                'sample_count': frame_samples,
+-                'sample_rate': sample_rate,
+-                'silent': chunk == silence,
+-                'discontinuity': False,
+-            })
+-        # Real time, because the runtime's span freeze is wall-clock driven.
+-        time.sleep(max(0.0, (sequence + 1) * (frame_samples / sample_rate) - (time.monotonic() - started)))
+-
+-    client.call('POST', f'/api/live/sessions/{session_id}/stop', {'deadline': 30})
+-    time.sleep(12)
+-    snapshot = client.call('GET', f'/api/live/sessions/{session_id}/snapshot')['snapshot']
+-    session = snapshot.get('session') or {}
+-    segments = session.get('effective_transcript') or session.get('committed') or []
+-    if isinstance(segments, dict):
+-        segments = segments.get('segments') or []
+-
+-    handover_sample = handover * frame_samples
+-    speakers = [s.get('canonical_speaker') for s in segments if s.get('canonical_speaker')]
+-    before = {s.get('canonical_speaker') for s in segments if s.get('end_sample', 0) <= handover_sample}
+-    after = {s.get('canonical_speaker') for s in segments if s.get('start_sample', 0) >= handover_sample}
+-
+-    print(f'  finalization: {session.get("finalization_status")} | identity_counts: {snapshot.get("identity_counts")}')
+-    print(f'  === {len(segments)} segments, handover at sample {handover_sample} ===')
+-    for segment in segments:
+-        label = segment.get('canonical_speaker') or '(unlabeled)'
+-        print(f'    [{segment.get("start_sample", "?")}] {label}: {str(segment.get("text", ""))[:78]}')
+-
+-    failures = []
+-    if session.get('finalization_status') != 'final':
+-        failures.append(f'session did not finalize: {session.get("finalization_status")}')
+-    if len(set(speakers)) < 2:
+-        failures.append(f'expected 2 distinct speakers, saw {sorted(set(speakers))}')
+-    if not after:
+-        failures.append('microphone half produced no transcript -- the presenter would not be transcribed')
+-    if before and after and before == after:
+-        failures.append(f'both halves carry the same speaker {before} -- the lanes did not separate')
+-
+-    print()
+-    for failure in failures:
+-        print(f'  FAIL: {failure}')
+-    if failures:
+-        return 1
+-    print(f'  PASS: tab half {sorted(before)} then microphone half {sorted(after)}, separated at {handover_sample}')
+-    return 0
++def reference_inputs(mic_gain):
++    """Use complete reference intervals, never proportional word guesses for clips."""
++    result={}
++    for lane,path in [('system',SHARED_TAB_VOICE),('microphone',MICROPHONE_VOICE)]:
++        first=json.loads(path.with_name('reference.jsonl').read_text().splitlines()[0])
++        if lane == 'microphone':
++            # The corpus row omits an audible sentence tail inside this exact window.
++            first=json.loads((REPO/'tests/e2e/fixtures/lane-microphone-reference.json').read_text())
++        with wave.open(str(path)) as source:
++            assert source.getframerate()==16000 and source.getnchannels()==1 and source.getsampwidth()==2
++            source.setpos(round(first['start']*16000))
++            pcm=source.readframes(round((first['end']-first['start'])*16000))
++        samples=array.array('h');samples.frombytes(pcm)
++        if lane=='microphone':
++            for i in range(len(samples)): samples[i]=int(samples[i]*mic_gain)
++        result[lane]={'pcm':samples.tobytes(),'reference':first['text']}
++    return result
++
++
++def snapshot_segments(envelope):
++    session=(envelope.get('snapshot') or {}).get('session') or {}
++    rows=session.get('effective_transcript') or session.get('committed') or []
++    return rows.get('segments',[]) if isinstance(rows,dict) else rows
++
++
++def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, realtime=True):
++    client=client or Client(base,context)
++    client.call('POST','/api/workspace/bootstrap')
++    descriptor=client.call('GET','/api/live/descriptor')['descriptor']
++    size,rate=descriptor['frame_samples'],descriptor['sample_rate']
++    assert rate==16000
++    inputs=reference_inputs(mic_gain)
++    refs={lane:row['reference'] for lane,row in inputs.items()}
++    frame_bytes=size*2
++    frames={lane:(len(row['pcm'])+frame_bytes-1)//frame_bytes for lane,row in inputs.items()}
++    offsets={'system':0,'microphone':frames['system'] if case=='alternation' else 0}
++    total=max(offsets[lane]+frames[lane] for lane in inputs)
++    created=client.call('POST','/api/live/sessions',{'source_revision':descriptor['source_revision']})
++    ident=created.get('id') or created['session_id']
++    epoch=time.time_ns(); started=time.monotonic(); pre=None
++    try:
++        for sequence in range(total):
++            health=dict(state='capturing',device_epoch=epoch,dropped_frames=0,discontinuities=0,failure_code=None)
++            client.call('POST',f'/api/live/sessions/{ident}/heartbeat',dict(
++                schema='moss-live-helper-health.v1',instance_id='wp4-reference-replay',sequence=sequence,
++                sent_monotonic_ns=time.monotonic_ns(),helper_version='reference-oracle',state='capturing',
++                lanes={'system':health,'microphone':dict(health)}))
++            for lane,row in inputs.items():
++                index=sequence-offsets[lane]
++                chunk=row['pcm'][index*frame_bytes:(index+1)*frame_bytes] if 0<=index<frames[lane] else b''
++                chunk=chunk.ljust(frame_bytes,b'\0')
++                client.call('POST',f'/api/live/sessions/{ident}/frames',dict(
++                    lane=lane,sequence=sequence,capture_timestamp_ns=epoch+round(sequence*size/rate*1e9),
++                    device_epoch=epoch,pcm_base64=base64.b64encode(chunk).decode(),sample_count=size,
++                    sample_rate=rate,silent=not any(chunk),discontinuity=False))
++            if realtime: time.sleep(max(0,(sequence+1)*size/rate-(time.monotonic()-started)))
++        pre=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
++    finally:
++        stopped=time.monotonic()
++        client.call('POST',f'/api/live/sessions/{ident}/stop',{'deadline':30})
++    deadline=time.monotonic()+240
++    while True:
++        saved=client.call('GET',f'/api/meetings/{ident}')
++        if saved['status']!='active' or time.monotonic()>deadline: break
++        time.sleep(.5)
++    final=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
++    # A fresh GET is the reopened saved surface, independently of the live snapshot.
++    reopened=client.call('GET',f'/api/meetings/{ident}')
++    switches=(offsets['microphone']*size/rate,) if case=='alternation' else ()
++    surfaces={
++        'pre_terminal':score_lanes(snapshot_segments(pre),refs,max_wer=QUALITY_BOUNDS['immediate_wer'][1],lane_switches=switches),
++        'final':score_lanes(snapshot_segments(final),refs,max_wer=QUALITY_BOUNDS['final_wer'][1],lane_switches=switches),
++        'reopened':score_lanes((reopened.get('transcript') or {}).get('segments',[]),refs,max_wer=QUALITY_BOUNDS['final_wer'][1],lane_switches=switches),
++    }
++    # The file/URL bar is reported separately; it does not override live QUALITY_BOUNDS.
++    file_url_bar = {name: all(v['wer'] is not None and v['wer'] <= .15 for v in result['lanes'].values())
++                    for name, result in surfaces.items()}
++    finalization=(final.get('snapshot') or {}).get('session',{}).get('finalization_status')
++    passed=saved['status']=='completed' and finalization=='final' and all(s['passed'] for s in surfaces.values())
++    return dict(case=case,meeting=ident,passed=passed,expected_failure=False,
++                status=saved['status'],finalization_status=finalization,seconds=round(time.monotonic()-started,3),
++                stop_seconds=round(time.monotonic()-stopped,3),frames_per_lane=total,
++                microphone_gain=mic_gain,surfaces=surfaces,file_url_wer_bar=.15,file_url_wer_pass=file_url_bar)
++
++
++def accepted_case(result):
++    # Completion alone cannot hide a semantic failure on either supported lane case.
++    return result['status']=='completed' and result['finalization_status']=='final' and result['passed']
++
++
++def run_cases(base,context,case='both',mic_gain=DEFAULT_MIC_GAIN):
++    cases=('alternation','overlap') if case=='both' else (case,)
++    return [run_case(base,context,name,mic_gain) for name in cases]
+ 
+ 
+ def main(argv=None):
+-    parser = argparse.ArgumentParser(description=__doc__)
+-    parser.add_argument('--base', default='https://127.0.0.1:17861')
+-    parser.add_argument('--allow-local-self-signed', action='store_true',
+-                        help='Bypass TLS only for an isolated loopback test stack')
+-    parser.add_argument('--seconds', type=float, default=24.0, help='Audio per lane; half to each speaker')
+-    parser.add_argument('--mic-gain', type=float, default=DEFAULT_MIC_GAIN,
+-                        help='Microphone lane scale; 1.0 is full scale')
+-    args = parser.parse_args(argv)
+-
+-    context = None
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--base',default='https://127.0.0.1:17861')
++    parser.add_argument('--allow-local-self-signed',action='store_true')
++    parser.add_argument('--case',choices=['alternation','overlap','both'],default='both')
++    parser.add_argument('--mic-gain',type=float,default=DEFAULT_MIC_GAIN)
++    parser.add_argument('--output',type=Path)
++    args=parser.parse_args(argv)
++    context=None
+     if args.allow_local_self_signed:
+-        if urlsplit(args.base).hostname not in {'127.0.0.1', '::1', 'localhost'}:
+-            parser.error('--allow-local-self-signed is only permitted against a loopback base')
+-        context = ssl._create_unverified_context()
+-    for voice in (SHARED_TAB_VOICE, MICROPHONE_VOICE):
+-        if not voice.exists():
+-            print(f'  SKIP: corpus voice missing: {voice}')
+-            return 77
+-    return run(args.base, context, args.seconds, args.mic_gain)
+-
+-
+-if __name__ == '__main__':
+-    sys.exit(main())
++        if urlsplit(args.base).hostname not in {'127.0.0.1','::1','localhost'}: parser.error('TLS bypass is loopback-only')
++        context=ssl._create_unverified_context()
++    results=[]
++    for case in ('alternation','overlap') if args.case=='both' else (args.case,):
++        result=run_case(args.base,context,case,args.mic_gain)
++        results.append(result)
++        print(json.dumps(result),flush=True)
++        if args.output: args.output.write_text(json.dumps(results,indent=2)+'\n')
++    return int(not all(accepted_case(r) for r in results))
++
++if __name__=='__main__': raise SystemExit(main())
+
+diff --git a/tests/e2e/verify_summaries.py b/tests/e2e/verify_summaries.py
+index 544ebd2d..61547772 100644
+--- a/tests/e2e/verify_summaries.py
++++ b/tests/e2e/verify_summaries.py
+@@ -11,7 +11,7 @@ Run: .venv/bin/python tests/e2e/verify_summaries.py
+   MOSS_RELAY_MODEL       default qwen/qwen3.6-35b-a3b; skipped if the relay does not list it
+   OPENROUTER_API_KEY     enables the external provider; never printed or retained
+   MOSS_SUMMARY_ENDPOINT  default https://openrouter.ai/api/v1
+-  MOSS_SUMMARY_MODEL     default google/gemini-2.5-flash
++  MOSS_SUMMARY_MODEL     default google/gemini-2.5-flash-lite
+   TRIALS                 default 1
+   MOSS_SUMMARY_PROVIDERS default relay,external; use external to check only the demo provider
+ Exit 0 = every attempted summary became current; 1 = one did not; 77 = nothing could be attempted.
+@@ -43,9 +43,9 @@ CONTEXT = ssl._create_unverified_context() if LOOPBACK else None
+ CORPUS = REPO / 'evidence/live-policy-sweep-20260825/corpus'
+ TRANSCRIPTS = ('mono_javier_intro_50s', 'interview_adam_frank_180s')
+ RELAY_MODEL = os.environ.get('MOSS_RELAY_MODEL', 'qwen/qwen3.6-35b-a3b')
+-EXTERNAL_KEY = os.environ.get('OPENROUTER_API_KEY', '')
++EXTERNAL_KEY = os.environ.get('OPENROUTER_API_KEY') or os.environ.get('MOSS_DEMO_OPENROUTER_API_KEY', '')
+ EXTERNAL_ENDPOINT = os.environ.get('MOSS_SUMMARY_ENDPOINT', 'https://openrouter.ai/api/v1')
+-EXTERNAL_MODEL = os.environ.get('MOSS_SUMMARY_MODEL', 'google/gemini-2.5-flash')
++EXTERNAL_MODEL = os.environ.get('MOSS_SUMMARY_MODEL', 'google/gemini-2.5-flash-lite')
+ TRIALS = int(os.environ.get('TRIALS', '1'))
+ PROVIDERS = {name.strip() for name in os.environ.get('MOSS_SUMMARY_PROVIDERS', 'relay,external').split(',') if name.strip()}
+ 
+
+diff --git a/tests/e2e/verify_workspace.py b/tests/e2e/verify_workspace.py
+index 3846e637..9ac6d46f 100644
+--- a/tests/e2e/verify_workspace.py
++++ b/tests/e2e/verify_workspace.py
+@@ -23,6 +23,7 @@ from urllib.parse import urlsplit
+ 
+ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+ from tests.phase2.browser_support import browser_executable, BrowserExecutableMissing
++from tests.e2e.export_oracle import compare_export
+ 
+ 
+ # First eligible canonical span (2.5s) + decode/identity allowance (1.0s)
+@@ -38,7 +39,7 @@ _STATUS_VALUES = frozenset({
+     'enrolled', 'already_enrolled', 'matched', 'unmatched', 'unavailable',
+     'live', 'file', 'url', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'mp3',
+     'microphone', 'system', 'interrupted', 'aborted', 'confirmed', 'provisional',
+-    'previous_meeting_not_ready',
++    'previous_meeting_not_ready', 'no_configured_relay_models',
+ })
+ _ID_KEYS = frozenset({'id', 'meeting', 'session_id', 'meeting_id', 'speaker_id', 'speaker_entity_id', 'voiceprint_id'})
+ _BODY_KEYS = frozenset({'body', 'messages', 'prompt', 'content', 'text', 'transcript',
+@@ -141,7 +142,7 @@ class Harness:
+         previous_row=self.row; self.row=n; start=time.monotonic(); data={}
+         try:
+             data=await fn() or {}
+-            status='PASS' if data.get('ok', True) else 'FAIL'
++            status='SKIP' if data.get('skip') else 'PASS' if data.get('ok', True) else 'FAIL'
+         except Exception as exc:
+             status='FAIL'
+             # Locator/errors only; no response/prompt text.
+@@ -233,7 +234,8 @@ class Harness:
+     async def setup_live(self, *, foreground=True):
+         if foreground:
+             await self.page.bring_to_front()
+-        await self.page.get_by_role('link',name='Live / Transcript & export',exact=True).click()
++        # Desktop navigation is clipped but Playwright still calls it visible.
++        # Capture controls exist on both layouts; their clicks scroll as needed.
+         await self.wait_before_reset()
+         reset=self.page.get_by_role('button',name='Reset capture',exact=True)
+         if await reset.count(): await reset.click()
+@@ -332,7 +334,15 @@ class Harness:
+         await self.check(5,names_and_export)
+         await self.select(ident)
+         segments=(meeting.get('transcript') or {}).get('segments',[])
+-        return {'ok':first is not None and first<=4 and meeting['status']=='completed' and bool(segments),'first_visible_seconds':first,
++        # Keep the browser capture checks; independently exercise deterministic lane
++        # speech through the published live protocol, using different known voices.
++        from tests.e2e.verify_demo_lanes import accepted_case, run_cases
++        import ssl
++        tls=ssl._create_unverified_context() if self.args.allow_local_self_signed else None
++        lane_cases=await asyncio.to_thread(run_cases,self.args.base,tls)
++        lanes_ok=all(accepted_case(row) for row in lane_cases)
++        return {'ok':first is not None and first<=4 and meeting['status']=='completed' and bool(segments) and lanes_ok,
++                'controlled_lane_cases':lane_cases,'first_visible_seconds':first,
+                 'stop_to_terminal_seconds':stop_seconds,'meeting':ident,'status_received':meeting['status'],'segments':len(segments),
+                 'meters':meters,'artifact':f'meeting-{ident}.json'}
+ 
+@@ -353,18 +363,12 @@ class Harness:
+             disabled=await self.page.get_by_role('button',name='Export transcript',exact=True).is_disabled()
+             return {'ok':disabled, 'scope':'empty_workspace', 'export_disabled':disabled, 'populated_export_not_exercised':True}
+         await self.select(ident)
++        meeting=(await self.api('/api/meetings/'+ident))['body']
+         results={}
+         for fmt in ('md','txt','json','srt','vtt'):
+-            path=await self.export(fmt); text=path.read_text(); result={'bytes':path.stat().st_size,'artifact':path.name,'ok':bool(text.strip())}
+-            if fmt=='json':
+-                body=json.loads(text); result['turns']=len(body['turns']); result['ok'] &= bool(body['turns']) and json.loads(json.dumps(body))==body
+-            if fmt in ('srt','vtt'):
+-                cues=re.findall(r'(\d\d:\d\d:\d\d[.,]\d{3}) --> (\d\d:\d\d:\d\d[.,]\d{3})\n([^\n]+)',text)
+-                def seconds(t):
+-                    h,m,s=t.replace(',','.').split(':'); return int(h)*3600+int(m)*60+float(s)
+-                result.update(cues=len(cues),monotonic=all(seconds(a)<seconds(b) for a,b,_ in cues) and all(seconds(cues[i][0])<=seconds(cues[i+1][0]) for i in range(len(cues)-1)),speaker_prefixes=all(':' in s for _,_,s in cues))
+-                result['ok'] &= bool(cues) and result['monotonic'] and result['speaker_prefixes'] and (fmt!='vtt' or text.startswith('WEBVTT'))
+-            results[fmt]=result
++            path=await self.export(fmt)
++            results[fmt]={**compare_export(fmt,path.read_text(),meeting),
++                          'bytes':path.stat().st_size,'artifact':path.name}
+         return {'ok':all(r['ok'] for r in results.values()),'formats':results}
+ 
+     async def audio(self, ident, partial=False):
+@@ -380,7 +384,7 @@ class Harness:
+ 
+     async def summaries(self):
+         models=(await self.api('/api/llm/models'))['body']['data']
+-        if not models: return {'ok':False,'reason':'No configured relay models'}
++        if not models: return {'skip':True,'reason_code':'no_configured_relay_models','configured_models':0}
+         ident=self.state['meetings'].get('live') or self.state['meetings'].get('file') or self.state['meetings']['url']
+         await self.select(ident)
+         cancel=self.page.get_by_role('button',name='Cancel summary',exact=True)
+@@ -700,7 +704,7 @@ class Harness:
+                 for n in rows:
+                     if str(n) not in self.state['rows']: self.state['rows'][str(n)]={'status':'FAIL','reason':'Prerequisite not reached'}
+                 write(self.out/'results.json',self.state)
+-                return int(any(r['status']!='PASS' for r in self.state['rows'].values()))
++                return int(any(r['status'] not in ('PASS','SKIP') for r in self.state['rows'].values()))
+             finally:
+                 if self.pending: await asyncio.gather(*self.pending,return_exceptions=True)
+                 await self.context.close(); await browser.close()
+@@ -739,7 +743,8 @@ def parse_args(argv=None):
+ def summary(state, rows):
+     statuses=[(n,state['rows'].get(str(n),{}).get('status','FAIL')) for n in sorted(rows)]
+     passed=sum(status=='PASS' for _,status in statuses)
+-    return ' | '.join(f'{n}:{status}' for n,status in statuses)+f' | total {passed}/{len(rows)} PASS, {len(rows)-passed} FAIL'
++    skipped=sum(status=='SKIP' for _,status in statuses)
++    return ' | '.join(f'{n}:{status}' for n,status in statuses)+f' | total {passed}/{len(rows)} PASS, {len(rows)-passed-skipped} FAIL'+(f', {skipped} SKIP' if skipped else '')
+ 
+ 
+ def main(argv=None):
+
+diff --git a/tests/phase2/conftest.py b/tests/phase2/conftest.py
+deleted file mode 100644
+index 84063446..00000000
+--- a/tests/phase2/conftest.py
++++ /dev/null
+@@ -1,14 +0,0 @@
+-from __future__ import annotations
+-
+-import sqlite3
+-
+-import pytest
+-
+-from moss_transcribe_diarize.app import phase2
+-
+-
+-@pytest.fixture(autouse=True)
+-def permit_test_runner_sqlite(monkeypatch: pytest.MonkeyPatch):
+-    """Semantic tests use host SQLite; the packaged exact runtime has its own gate tests."""
+-
+-    monkeypatch.setattr(phase2, "REQUIRED_SQLITE_RUNTIME", sqlite3.sqlite_version)
+
+diff --git a/tests/phase2/test_candidate_storage.py b/tests/phase2/test_candidate_storage.py
+index 8d0f1ea2..47380ee4 100644
+--- a/tests/phase2/test_candidate_storage.py
++++ b/tests/phase2/test_candidate_storage.py
+@@ -145,7 +145,16 @@ def test_staging_dry_run_deletes_nothing(tmp_path, flag):
+     import subprocess
+     share=tmp_path/'.local/share/moss-transcribe-diarize'
+     victim=directory(share/'staging'/'old',2*storage.DAY,now=storage.time.time())
+-    result=subprocess.run(['bash','ops/stage-account-candidate.sh'] + (['--dry-run'] if flag else []),
++    # Keep fake home outside the script's protected checkout, including when pytest's
++    # basetemp is inside the real checkout. Exercise unmodified production scripts.
++    import shutil
++    checkout=tmp_path/'checkout'
++    (checkout/'ops').mkdir(parents=True)
++    (checkout/'moss_transcribe_diarize').mkdir()
++    for name in ('stage-account-candidate.sh','moss-ops-lib.sh'):
++        shutil.copyfile(Path('ops')/name,checkout/'ops'/name)
++    shutil.copyfile(storage.__file__,checkout/'moss_transcribe_diarize/candidate_storage.py')
++    result=subprocess.run(['bash',str(checkout/'ops/stage-account-candidate.sh')] + (['--dry-run'] if flag else []),
+                           env=dict(os.environ,HOME=str(tmp_path),MOSS_TOOL_DRY_RUN='0' if flag else '1'),capture_output=True,text=True)
+     assert result.returncode==0 and 'would_remove' in result.stdout
+     assert victim.exists() and (victim/'data').read_bytes()==b'x'*1024
+
+diff --git a/tests/phase2/test_file_mp3_artifact.py b/tests/phase2/test_file_mp3_artifact.py
+index f020e1a8..a12c50bf 100644
+--- a/tests/phase2/test_file_mp3_artifact.py
++++ b/tests/phase2/test_file_mp3_artifact.py
+@@ -49,7 +49,7 @@ class BlockingArchive:
+         self.started = threading.Event()
+         self.release = threading.Event()
+ 
+-    def prepare_mix(self, source: Path, destination: Path) -> Path:
++    def prepare_mix(self, source: Path, destination: Path, *, notices=None) -> Path:
+         destination.write_bytes(source.read_bytes())
+         return destination
+ 
+@@ -113,7 +113,9 @@ def stereo_wav() -> bytes:
+         writer.setnchannels(2)
+         writer.setsampwidth(2)
+         writer.setframerate(48_000)
+-        writer.writeframes(b"\0\0\0\0" * 48_000)
++        # These tests assert a decoder transcript and publication lifecycle. Give
++        # dispatch a signal; exact-zero files now correctly complete speechless.
++        writer.writeframes(b"\1\0\1\0" * 48_000)
+     return output.getvalue()
+ 
+ 
+
+diff --git a/tests/phase2/test_owner_bound_live_meeting.py b/tests/phase2/test_owner_bound_live_meeting.py
+index 0842c455..ef06bbc6 100644
+--- a/tests/phase2/test_owner_bound_live_meeting.py
++++ b/tests/phase2/test_owner_bound_live_meeting.py
+@@ -158,6 +158,15 @@ class WholeMeetingStub:
+ 
+ @dataclass
+ class Identity:
++    def fork_lane(self):
++        # A lane gets its own preparer; held-event fixtures retain their shared controls.
++        from copy import copy
++        return copy(self)
++
++    def prepare_revision(self, **kwargs):
++        from dataclasses import replace
++        return replace(self.prepare(**kwargs), relabeled_transcript=kwargs['transcript'])
++
+     def prepare(
+         self,
+         *,
+@@ -165,6 +174,7 @@ class Identity:
+         pcm: bytes,
+         transcript: str,
+         base_snapshot: LiveIdentitySnapshot,
++        allowed_speakers: tuple[str, ...] | None = None,
+     ) -> LiveIdentityPreparation:
+         del pcm, transcript
+         return LiveIdentityPreparation(
+@@ -355,7 +365,8 @@ def v2_frame(sequence: int, lane: str) -> dict[str, object]:
+         "sequence": sequence,
+         "capture_timestamp_ns": sequence * samples * 1_000_000_000 // LIVE_SAMPLE_RATE,
+         "device_epoch": 0,
+-        "pcm_base64": base64.b64encode(b"\0" * samples * 2).decode("ascii"),
++        # Lifecycle tests need one decoded voice. Digital zero now correctly skips ASR.
++        "pcm_base64": base64.b64encode((b"\x01\x00" if lane == "system" else b"\0\0") * samples).decode("ascii"),
+         "sample_count": samples,
+         "sample_rate": LIVE_SAMPLE_RATE,
+         "silent": False,
+@@ -626,8 +637,8 @@ def test_saved_live_transcript_keeps_attributed_id_and_omits_unattributed_id():
+         session=SimpleNamespace(
+             identity_snapshot=SimpleNamespace(canonical_speakers=("canonical-a",)),
+             effective_transcript=(
+-                SimpleNamespace(start_sample=0, end_sample=16000, canonical_speaker="canonical-a", text="Named speech"),
+-                SimpleNamespace(start_sample=16000, end_sample=32000, canonical_speaker=None, text="Unattributed speech"),
++                SimpleNamespace(start_sample=0, end_sample=16000, canonical_speaker="canonical-a", text="Named speech", source_lane=None),
++                SimpleNamespace(start_sample=16000, end_sample=32000, canonical_speaker=None, text="Unattributed speech", source_lane=None),
+             ),
+         ),
+     )
+@@ -2074,7 +2085,15 @@ def test_public_stop_keeps_preexisting_v2_terminal_states_as_conflicts(
+ 
+ def test_helper_lease_loss_interrupts_without_client_terminal_request_and_never_resumes(
+     tmp_path: Path,
++    monkeypatch,
+ ):
++    from test_live_helper_failure import FakeTimer
++    from moss_transcribe_diarize.app.live_helper_failure import AsyncioLiveHelperTimer
++
++    # Drive the actual expiry callback after capture and renewal. Wall-clock scheduling
++    # cannot expire the 30 ms lease before this test reaches the behavior it exercises.
++    timer = FakeTimer()
++    monkeypatch.setattr(AsyncioLiveHelperTimer, "schedule", lambda _self, deadline, callback: timer.schedule(deadline, callback))
+     database = tmp_path / "moss.sqlite3"
+     sessions = asyncio.run(provision(database))
+     app = make_app(database, lease_seconds=0.03)
+@@ -2091,6 +2110,9 @@ def test_helper_lease_loss_interrupts_without_client_terminal_request_and_never_
+         assert client.post(
+             f"/api/live/sessions/{meeting_id}/heartbeat", json=heartbeat()
+         ).status_code == 200
++        assert len(timer.scheduled) == 2
++        assert timer.scheduled[0][1].cancelled
++        client.portal.call(timer.scheduled[-1][1].fire)
+         terminal = wait_snapshot(
+             client,
+             meeting_id,
+
+diff --git a/tests/phase2/test_runner_composition.py b/tests/phase2/test_runner_composition.py
+index 57764e78..a00a7e0e 100644
+--- a/tests/phase2/test_runner_composition.py
++++ b/tests/phase2/test_runner_composition.py
+@@ -144,7 +144,7 @@ def test_launcher_without_prompt_finalizer_builds_http_request(monkeypatch):
+     )
+     class Tape:
+         def gaps(self, end_sample): return ()
+-        def read(self, *, start_sample, end_sample): return b'\0\0' * (end_sample-start_sample)
++        def read(self, *, start_sample, end_sample): return b'\1\0' * (end_sample-start_sample)
+     finalizer.finalize(
+         plan=TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0,
+             rolling_status=RollingStatus.ROLLING, windows_completed=0, windows_failed=0),
+@@ -169,3 +169,22 @@ def test_live_and_terminal_share_prompt_resolution(prompt):
+                                        decoding='greedy', temperature=None)
+     assert live_fields['prompt'] == terminal.transcribe_kwargs['prompt']
+     assert live_fields['prompt'] == (prompt if prompt and prompt.strip() else DEFAULT_PROMPT)
++
++
++def test_file_album_default_legacy_fallback_and_live_terminal_isolation():
++    from moss_transcribe_diarize.app.file_identity_album import AlbumIdentityResolver
++    from moss_transcribe_diarize.app.speaker_identity import IdentityResolver
++    config=dict(model_path='test',device='cpu',dtype='bf16',backend='vllm',
++                vllm_base_url='http://unused/v1',vllm_model='test',vllm_api_key=None,vllm_timeout=30)
++    file=runner_composition.build_file_runner(**config)
++    assert isinstance(file.identity_resolver,AlbumIdentityResolver)
++    fallback=runner_composition.build_file_runner(**config,file_identity='legacy')
++    assert isinstance(fallback.identity_resolver,IdentityResolver)
++    assert not fallback.identity_resolver.config.tier_b_enabled
++    terminal=runner_composition.build_terminal_finalizer(runner=file,prompt=None,max_length=16384,
++        max_new_tokens=12000,decoding='greedy',temperature=None,max_length_cap=16384)
++    assert terminal.runner.delegate is file.delegate
++    assert isinstance(terminal.runner.identity_resolver,IdentityResolver)
++    assert isinstance(file.identity_resolver,AlbumIdentityResolver)
++    with pytest.raises(ValueError):
++        runner_composition.build_file_runner(**config,file_identity='typo')
+
+diff --git a/tests/phase2/test_voiceprint_latency_measurement.py b/tests/phase2/test_voiceprint_latency_measurement.py
+index b9840d2e..fabe93c4 100644
+--- a/tests/phase2/test_voiceprint_latency_measurement.py
++++ b/tests/phase2/test_voiceprint_latency_measurement.py
+@@ -16,7 +16,8 @@ def test_name_latency_is_independent_of_observer_polling_delay(tmp_path):
+                 context = await browser.new_context()
+                 page = await context.new_page()
+                 html = '''<div data-auth-state="signed-in" data-boot="ready" data-history-boot="ready">Ready</div>
+-                  <section aria-label="Private voiceprints"><button>Voiceprints</button>
++                  <section aria-label="Meeting history"><button role="tab">Voiceprints</button></section>
++                  <section aria-label="Private voiceprints">
+                     <div data-voiceprint-id="saved">E2E Rowan</div></section>
+                   <button onclick="setTimeout(() => {
+                     const label = document.createElement('span');
+
+diff --git a/tests/phase2/workspace_reachability_fixtures.py b/tests/phase2/workspace_reachability_fixtures.py
+index d0124f6f..ff2ee4f6 100644
+--- a/tests/phase2/workspace_reachability_fixtures.py
++++ b/tests/phase2/workspace_reachability_fixtures.py
+@@ -55,6 +55,9 @@ class _Decoder:
+ 
+ 
+ class _Identity:
++    def fork_lane(self):
++        return _Identity()
++
+     def prepare(
+         self,
+         *,
+@@ -62,6 +65,7 @@ class _Identity:
+         pcm: bytes,
+         transcript: str,
+         base_snapshot: LiveIdentitySnapshot,
++        allowed_speakers: tuple[str, ...] | None = None,
+     ) -> LiveIdentityPreparation:
+         del pcm, transcript
+         return LiveIdentityPreparation(
+@@ -125,7 +129,8 @@ def _v2_frame(sequence: int, lane: str) -> dict[str, object]:
+         "sequence": sequence,
+         "capture_timestamp_ns": sequence * samples * 1_000_000_000 // LIVE_SAMPLE_RATE,
+         "device_epoch": 0,
+-        "pcm_base64": base64.b64encode(b"\0" * samples * 2).decode("ascii"),
++        # One real decoder input; the other lane is deliberately digital silence.
++        "pcm_base64": base64.b64encode((b"\x01\x00" if lane == "system" else b"\0\0") * samples).decode("ascii"),
+         "sample_count": samples,
+         "sample_rate": LIVE_SAMPLE_RATE,
+         "silent": False,
+
+diff --git a/tests/test_live_pipeline_seams.py b/tests/test_live_pipeline_seams.py
+index d1909d19..19c5ce31 100644
+--- a/tests/test_live_pipeline_seams.py
++++ b/tests/test_live_pipeline_seams.py
+@@ -611,6 +611,8 @@ def test_a_meeting_of_pure_silence_stops_with_exact_accounting():
+ # What each of the three no-speech answers actually was, and what a reader must be told about
+ # it. The publishing decision is identical for all three -- the span commits empty -- which is
+ # precisely why the *observation* has to survive: it is the only thing that differs.
++# Transport-response fixtures must be nonzero: digital zeros intentionally bypass
++# the decoder before it can classify the mocked answer. VAD silence may be nonzero.
+ NO_SPEECH_DISPOSITIONS = {
+     "zero generated tokens": (EmptyTranscriptCause.NO_GENERATED_TOKENS, 0, "decoder_returned_no_transcript"),
+     "empty transcript text": (EmptyTranscriptCause.EMPTY_TEXT, 4, "decoder_returned_no_transcript"),
+@@ -633,7 +635,7 @@ def test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_
+         decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+         span = _span(0, DEPLOYED_MIXED_FRAME_SAMPLES)
+ 
+-        inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * DEPLOYED_MIXED_FRAME_SAMPLES)
++        inferred = decoder.transcribe_pcm(span=span, pcm=b"\x01\x00" * DEPLOYED_MIXED_FRAME_SAMPLES)
+ 
+         assert inferred.transcript == "", label
+         assert inferred.empty_cause is cause, label
+@@ -675,7 +677,7 @@ def test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it(
+     decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+     span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="hard_cap")
+ 
+-    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
++    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x01\x00" * 40000)
+ 
+     assert inferred.transcript == "[0][S01]The difference between, you said the stock market.[2.5]"
+     assert inferred.empty_cause is None
+@@ -690,7 +692,7 @@ def test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence():
+     decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+     span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="leading_silence")
+ 
+-    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
++    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x01\x00" * 40000)
+ 
+     assert inferred.transcript == ""
+     assert inferred.empty_cause is EmptyTranscriptCause.UNPARSEABLE_TEXT
+@@ -709,7 +711,7 @@ def test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with
+     decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+     span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="hard_cap")
+ 
+-    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
++    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x01\x00" * 40000)
+ 
+     assert inferred.transcript == ""
+     assert inferred.empty_cause is EmptyTranscriptCause.NO_GENERATED_TOKENS
+@@ -810,7 +812,7 @@ def test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say():
+     decoder = RunnerBoundedWavInference(BrokenRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+ 
+     with pytest.raises(LiveProviderError) as caught:
+-        decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
++        decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x01\x00" * 8000)
+ 
+     assert not isinstance(caught.value, LiveProviderTransientError)
+     assert "ValueError" in str(caught.value)
+@@ -856,7 +858,7 @@ def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_
+     )
+ 
+     with pytest.raises(LiveProviderError) as caught:
+-        decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
++        decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x01\x00" * 8000)
+ 
+     assert isinstance(caught.value, LiveProviderTransientError) is transient
+ 
+@@ -1136,7 +1138,7 @@ def test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span():
+ 
+     decoder = RunnerBoundedWavInference(NegativeElapsedRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+ 
+-    inferred = decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
++    inferred = decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x01\x00" * 8000)
+ 
+     assert "hello there" in inferred.transcript
+     assert inferred.elapsed_sec is not None and inferred.elapsed_sec >= 0.0
+@@ -1265,7 +1267,7 @@ def test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire():
+     decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+ 
+     for sample_count in (DEPLOYED_HARD_CAP_SAMPLES, DEPLOYED_MIXED_FRAME_SAMPLES):
+-        inferred = decoder.transcribe_pcm(span=_span(0, sample_count), pcm=b"\x00\x00" * sample_count)
++        inferred = decoder.transcribe_pcm(span=_span(0, sample_count), pcm=b"\x01\x00" * sample_count)
+         expected = canonical_decode_token_cap(sample_count=sample_count)
+         assert inferred.token_cap == expected
+         assert inferred.capped is False
+@@ -1274,11 +1276,11 @@ def test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire():
+     # A configured ceiling may only tighten the derived one -- a deployment cannot opt out
+     # of the bound, and it can still ask for less.
+     tight = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES, max_new_tokens=32)
+-    tight.transcribe_pcm(span=_span(0, DEPLOYED_HARD_CAP_SAMPLES), pcm=b"\x00\x00" * DEPLOYED_HARD_CAP_SAMPLES)
++    tight.transcribe_pcm(span=_span(0, DEPLOYED_HARD_CAP_SAMPLES), pcm=b"\x01\x00" * DEPLOYED_HARD_CAP_SAMPLES)
+     assert runner.request_fields[-1]["max_completion_tokens"] == "32"
+ 
+     loose = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES, max_new_tokens=2048)
+-    inferred = loose.transcribe_pcm(span=_span(0, DEPLOYED_HARD_CAP_SAMPLES), pcm=b"\x00\x00" * DEPLOYED_HARD_CAP_SAMPLES)
++    inferred = loose.transcribe_pcm(span=_span(0, DEPLOYED_HARD_CAP_SAMPLES), pcm=b"\x01\x00" * DEPLOYED_HARD_CAP_SAMPLES)
+     assert inferred.token_cap == canonical_decode_token_cap(sample_count=DEPLOYED_HARD_CAP_SAMPLES)
+     assert runner.request_fields[-1]["max_completion_tokens"] != "2048"
+ 
+
+diff --git a/tests/test_live_provider_bundle.py b/tests/test_live_provider_bundle.py
+index f64943e3..19cb8e3f 100644
+--- a/tests/test_live_provider_bundle.py
++++ b/tests/test_live_provider_bundle.py
+@@ -87,7 +87,8 @@ def _load_fake_silero(**kwargs):
+ class _FakeWeSpeakerAdapter:
+     actual_dimension = 2
+ 
+-    def __init__(self, state_path, *, spec, device):
++    def __init__(self, state_path, *, spec, device, interval_workers=1):
++        assert interval_workers == 1  # File scheduling must not change live defaults.
+         self.state_path = state_path
+         self.spec = spec
+         self.device = device
+
+diff --git a/tests/test_live_rolling_wiring.py b/tests/test_live_rolling_wiring.py
+index ca9e1675..2a4ddb8d 100644
+--- a/tests/test_live_rolling_wiring.py
++++ b/tests/test_live_rolling_wiring.py
+@@ -434,7 +434,7 @@ class RollingRuntimeWiringTest(unittest.TestCase):
+             span=FrozenSpan(
+                 id=1, epoch=0, start_sample=0, end_sample=HARD_CAP_SAMPLES, reason=HARD_CAP_REASON
+             ),
+-            pcm=b"\0" * HARD_CAP_SAMPLES * 2,
++            pcm=b"\1\0" * HARD_CAP_SAMPLES,
+         )
+         refused = adapter.transcribe_pcm(
+             span=FrozenSpan(
+@@ -444,7 +444,7 @@ class RollingRuntimeWiringTest(unittest.TestCase):
+                 end_sample=WINDOW_SAMPLES,
+                 reason=ROLLING_WINDOW_REASON,
+             ),
+-            pcm=b"\0" * WINDOW_SAMPLES * 2,
++            pcm=b"\1\0" * WINDOW_SAMPLES,
+         )
+ 
+         self.assertIn("stock market", salvaged.transcript)
+
+diff --git a/tests/test_live_service_replay.py b/tests/test_live_service_replay.py
+index b6ed843b..19b65217 100644
+--- a/tests/test_live_service_replay.py
++++ b/tests/test_live_service_replay.py
+@@ -922,6 +922,7 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
+                 prefix_hash=_digest("commit"),
+                 identity_snapshot_version=2,
+                 revised_transcript="[0][S01]hello[2.49]",
++                source_lanes=("system",),
+             ),
+         ),
+         provisional=ProvisionalSuffix(
+@@ -944,6 +945,7 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
+                 text="hello there",
+                 canonical_speaker="speaker-0002",
+                 authority="rolling",
++                source_lane="microphone",
+             ),
+             EffectiveTranscriptSegment(
+                 start_sample=32000,
+@@ -951,6 +953,7 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
+                 text="hello",
+                 canonical_speaker=None,
+                 authority="provisional",
++                source_lane="system",
+             ),
+         ),
+         finalization_status="running",
+@@ -1279,7 +1282,7 @@ def _run_terminal_replay(
+     descriptor = runtime.descriptor
+     clock = TerminalScriptedClock(scheduler, delay_polls=delay_polls)
+     audio = root / "audio.wav"
+-    _write_wav(audio, samples=_TERMINAL_MEETING_SAMPLES)
++    _write_wav(audio, samples=_TERMINAL_MEETING_SAMPLES, sample=b"\x11\x22")
+     live_service_replay.run_service_replay(
+         service=live_service_replay.InMemoryLiveReplayService(runtime),
+         audio_path=audio,
+@@ -1306,8 +1309,17 @@ def _one_trace_record(case: unittest.TestCase, trace: list[dict], kind: str) ->
+     return records[0]
+ 
+ 
+-def _write_wav(path: Path, *, samples: int) -> None:
+-    pcm = b"\0\0" * samples
++def _write_wav(path: Path, *, samples: int, sample: bytes = b"\0\0") -> None:
++    """Replayed audio. `sample` is silence by default and audible where the run needs audio.
++
++    Digital zeros are the cheapest thing to write and the only PCM most of these runs care
++    about -- they measure pacing, framing and event order, never words. The terminal run is
++    the exception: its last listener refuses to decode a meeting that never held a nonzero
++    sample (`live_silence`), so a zero-filled meeting there would measure the refusal instead
++    of the surface the test is about.
++    """
++
++    pcm = sample * samples
+     with wave.open(str(path), "wb") as wav:
+         wav.setnchannels(1)
+         wav.setsampwidth(2)
+
+diff --git a/tests/test_live_vad.py b/tests/test_live_vad.py
+index 2409edca..754d390b 100644
+--- a/tests/test_live_vad.py
++++ b/tests/test_live_vad.py
+@@ -293,7 +293,7 @@ def test_runner_bounded_wav_inference_writes_complete_16khz_pcm_wav(tmp_path):
+     adapter = RunnerBoundedWavInference(runner, max_samples=4000, scratch_dir=tmp_path)
+     frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
+ 
+-    result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
++    result = adapter.transcribe_pcm(span=frozen, pcm=b"\x01\x00" * 4000)
+ 
+     assert result.transcript == "[0][S01]ok[0.25]"
+     # The adapter's own monotonic measurement, not the 0.01 the runner reported.
+@@ -329,7 +329,7 @@ def test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_re
+     adapter = RunnerBoundedWavInference(TimingRunner(), max_samples=4000, scratch_dir=tmp_path)
+     frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
+ 
+-    result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
++    result = adapter.transcribe_pcm(span=frozen, pcm=b"\x01\x00" * 4000)
+ 
+     assert result.transcript == "[0][S01]ok[0.25]"
+     assert result.elapsed_sec is not None and result.elapsed_sec >= 0.0
