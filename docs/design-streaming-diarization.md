@@ -584,3 +584,30 @@ zero residual corrections. Remaining caveat: in-span local diarization assumed c
 
 Retention TTL/privacy posture is no longer fog: ADR-0003 decided it. Full crash/resume and batch
 identity unification remain targets, not shipped behavior.
+
+## 9. WP12 terminal lane latency measurement (2026-09-18)
+
+A terminal lane job decodes its complete tape through the existing 150/120-second
+file-window planner, then embeds the resulting speech to match the lane's settled
+album. Unlike mono's overlap mapping, these lane jobs pay fresh acoustic matching
+cost. On matched public-corpus parity input, original Stop-to-final was 11.803 s
+at 24 s and 26.636 s at 60 s; mono was 1.970 s and 4.424 s. At 24 s only 1.829 s
+was terminal decoding: approximately 6.79 s was terminal voice preparation.
+
+The measured change runs the two independent terminal lane jobs concurrently,
+then assembles results in lane order for one publication. Causal/rolling execution,
+window geometry, identity thresholds and final-surface contract stay unchanged.
+24/60 s prototype Stop-to-final became 7.715/16.175 s with unchanged 26/62 request
+counts. All 142/351 ordered words retained their speaker assignments; 24 s saved
+segments were identical, while 60 s punctuation/segmentation/timestamps differed.
+This is an improvement, not latency acceptance: the 60 s case still exceeds 10 s.
+180 s and 30-minute scaling are unmeasured under the 300-request WP budget.
+
+WP1's 48 s alternation microphone interval is not a one-voice control: its supplied
+reference names both Keyu Jin and Lex Fridman. The second birth retained the first
+speaker's album; its score was 0.084412 versus the unchanged 0.35 threshold, with
+1.56 s evidence clearing the 1.0 s birth floor. No lane evidence loss or threshold
+repair is supported. A real-album regression separately verifies one returning
+voice keeps its ID across silent lane gaps. Evidence and limits:
+`prototypes/streaming-diarization/wp12-stop-identity/NOTES.md` and
+`evidence/mvpfix/wp12/`.

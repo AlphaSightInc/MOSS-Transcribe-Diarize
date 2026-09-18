@@ -296,7 +296,7 @@ class Runner:
 
 
 @pytest.mark.parametrize("fail", [None, 1, 2])
-def test_terminal_serial_lane_decode_and_failure_preserves_committed_lane(
+def test_terminal_lane_decode_and_failure_preserves_committed_lane(
     fail, tmp_path
 ):
     c, _, session, arbiter = make()
@@ -322,7 +322,7 @@ def test_terminal_serial_lane_decode_and_failure_preserves_committed_lane(
         base_surface=before,
         canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers,
     )
-    assert runner.calls == [1, 2]
+    assert sorted(runner.calls) == [1, 2]
     assert session.apply_text_revision(result.proposal).applied
     after = session.snapshot().effective_transcript
     assert {s.canonical_speaker for s in after} == {"speaker-0001", "speaker-0002"}
@@ -410,3 +410,84 @@ def test_terminal_zero_lane_never_calls_decoder(tmp_path):
     )
     assert runner.calls == [1]
     assert {s.source_lane for s in result.proposal.segments} == {"system"}
+
+
+def test_terminal_jobs_overlap_and_publish_only_after_both_lanes(tmp_path):
+    """Two Stop listeners must overlap; each keeps its own captured decoder result."""
+    from threading import Barrier, Lock
+
+    c, _, session, arbiter = make()
+    c.accept_frame(frame())
+    commit(c, arbiter)
+    before = session.snapshot().effective_transcript
+    barrier = Barrier(2, timeout=2)
+    lock = Lock()
+
+    class ConcurrentRunner(Runner):
+        peak = 0
+        active = 0
+
+        def transcribe(self, path, **kwargs):
+            with lock:
+                self.active += 1
+                self.peak = max(self.peak, self.active)
+            try:
+                barrier.wait()
+                assert session.snapshot().effective_transcript == before
+                with wave.open(str(path)) as f:
+                    marker = f.readframes(1)[0]
+                self.calls.append(marker)
+                return SimpleNamespace(text=f"[0][S01]terminal lane {marker}[2.5]")
+            finally:
+                with lock:
+                    self.active -= 1
+
+    runner = ConcurrentRunner()
+    result = finalize_lanes(
+        c, TerminalTranscriptFinalizer(runner=runner, scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0, base_surface=before,
+        canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers,
+    )
+    assert runner.peak == 2
+    assert sorted(runner.calls) == [1, 2]
+    assert session.snapshot().effective_transcript == before
+    assert session.apply_text_revision(result.proposal).applied
+    assert [(s.source_lane, s.text, s.canonical_speaker)
+            for s in session.snapshot().effective_transcript] == [
+        ('system', 'terminal lane 1', 'speaker-0001'),
+        ('microphone', 'terminal lane 2', 'speaker-0002'),
+    ]
+
+
+def test_lane_album_survives_silent_peer_spans_and_matches_returning_voice():
+    """Real evidence/album lifecycle: a microphone voice returns after a silent gap."""
+    from moss_transcribe_diarize.app.live_identity_album import FingerprintAlbum
+    from moss_transcribe_diarize.app.live_provider_bundle import WeSpeakerLiveEvidenceProvider
+
+    class Encoder:
+        def embed(self, path, intervals):
+            return [1.0, 0.0]
+
+    def preparer():
+        return BoundedCausalIdentityPreparer(
+            config=LiveIdentityConfig(16, 0.35, 0.1),
+            evidence_provider=WeSpeakerLiveEvidenceProvider(
+                encoder=Encoder(), album=FingerprintAlbum(admission_seconds=2.0),
+                birth_min_seconds=1.0, min_segment_samples=8000,
+            ), lane_factory=preparer,
+        )
+
+    c, _, session, arbiter = make()
+    c.identity_preparer = preparer()
+    for seq, mic in enumerate((2, 0, 0, 2)):
+        c.accept_frame(frame(seq=seq, mic=mic))
+        assert commit(c, arbiter)[1].submitted
+        provider = c._lane_preparers['microphone'].evidence_provider
+        assert provider._album.speakers() == ('speaker-0002',)
+        assert provider._album.reference('speaker-0002') is not None
+    assert session.snapshot().identity_snapshot.canonical_speakers == (
+        'speaker-0001', 'speaker-0002',
+    )
+    assert {s.canonical_speaker for s in session.snapshot().effective_transcript
+            if s.source_lane == 'microphone'} == {'speaker-0002'}

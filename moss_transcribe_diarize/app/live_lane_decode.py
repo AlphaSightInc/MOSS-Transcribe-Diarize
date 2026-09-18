@@ -1,5 +1,6 @@
 """Serial source-lane decoding and voice attribution on the shared meeting clock."""
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from copy import copy
 from .live_span_bounds import span_segments, render_segments
@@ -240,16 +241,19 @@ def finalize_lanes(c, finalizer, **kwargs):
     failures = []
     placed = []
     base = kwargs["base_surface"]
-    for lane, tape in c.lane_tapes.items():
+
+    def finish_lane(item):
+        lane, tape = item
+        results, failures, placed = [], [], []
         lane_base = tuple(s for s in base if s.source_lane == lane)
         try:
             pcm = tape.read(end_sample=kwargs["plan"].end_sample)
         except Exception as exc:
             failures.append((lane, type(exc).__name__))
             placed.extend(lane_base)
-            continue
+            return results, failures, placed
         if not any(pcm):
-            continue
+            return results, failures, placed
         captured = []
 
         class CaptureRunner:
@@ -293,6 +297,19 @@ def finalize_lanes(c, finalizer, **kwargs):
                 failures.append((lane, type(exc).__name__))
                 revised = ()
             placed.extend(revised or lane_base)
+        return results, failures, placed
+
+    # Stop has drained causal work. Each lane reads its own tape and settled voice
+    # evidence; results are assembled in lane order before the single publication.
+    with ThreadPoolExecutor(
+        max_workers=len(LANES), thread_name_prefix="moss-lane-terminal"
+    ) as pool:
+        for lane_results, lane_failures, lane_segments in pool.map(
+            finish_lane, c.lane_tapes.items()
+        ):
+            results.extend(lane_results)
+            failures.extend(lane_failures)
+            placed.extend(lane_segments)
     if not results:
         return finalizer._refused(
             kwargs["plan"],
