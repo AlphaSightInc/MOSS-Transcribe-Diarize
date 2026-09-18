@@ -1,0 +1,11 @@
+{
+  "branch": "mvpfix/wp24-visual-copy-pack",
+  "integrated_base": "0ce5122de781630b7ec0c933a6ba5d9cfba95236",
+  "production_commit": "205dc6118190f0e1e0e839c15aebff476d73cee0",
+  "worktree": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp24-visual-copy-pack",
+  "served_assets": "moss_transcribe_diarize/app/frontend_assets",
+  "vllm_forward": 18124,
+  "private_port": 17884,
+  "shared_port": 17885,
+  "reference_port": 17886
+}

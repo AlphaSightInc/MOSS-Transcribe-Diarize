@@ -1,0 +1,693 @@
+Media URLs, one per line
+Transcribe files and URLs
+Standby
+MOSS
+Live
+Controls
+Capture · Microphone + shared audio
+Both sources are required to start. Microphone-only capture is not available.
+Private to this browser; no sign-in or capture key is needed.
+Listening setup
+How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+Microphone
+Not connected
+Shared audio
+Not connected
+Next: enable your microphone.
+Enable microphone
+Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.
+MOSS
+Speakers
+0
+Find
+Copy
+Auto-scroll
+Export transcript
+Transcript will appear here when a session starts.
+Sessions
+Voiceprints
+Refresh
+Optional AI summaries ·
+off
+Yesterday
+Review meeting 01
+11:00 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 02
+10:59 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 03
+10:58 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 04
+10:57 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 05
+10:56 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 06
+10:55 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 07
+10:54 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 08
+10:53 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 09
+10:52 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 10
+10:51 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 11
+10:50 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 12
+10:49 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 13
+10:48 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 14
+10:47 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 15
+10:46 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 16
+10:45 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 17
+10:44 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 18
+10:43 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 19
+10:42 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 20
+10:41 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 21
+10:40 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 22
+10:39 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 23
+10:38 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 24
+10:37 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 25
+10:36 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 26
+10:35 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 27
+10:34 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 28
+10:33 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 29
+10:32 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 30
+10:31 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 31
+10:30 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 32
+10:29 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 33
+10:28 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 34
+10:27 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 35
+10:26 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 36
+10:25 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 37
+10:24 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 38
+10:23 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 39
+10:22 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 40
+10:21 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 41
+10:20 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 42
+10:19 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 43
+10:18 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 44
+10:17 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 45
+10:16 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 46
+10:15 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 47
+10:14 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 48
+10:13 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 49
+10:12 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 50
+10:11 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 51
+10:10 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 52
+10:09 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 53
+10:08 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 54
+10:07 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 55
+10:06 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 56
+10:05 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 57
+10:04 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 58
+10:03 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 59
+10:02 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Review meeting 60
+10:01 PM
+·
+File / URL
+·
+Completed
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+v
+1
+Rename
+Download audio
+Speakers

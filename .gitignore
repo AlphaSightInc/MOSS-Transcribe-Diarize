@@ -86,3 +86,6 @@ evidence/mvpfix/*/raw/
 
 .wp19runtime/
 >>>>>>> mvpfix/wp19-file-identity-album
+
+# WP24 isolated capture/test runtime; TLS, cookies and audio never committed.
+.wp24/

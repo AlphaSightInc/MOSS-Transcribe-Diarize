@@ -1,0 +1,48 @@
+Media URLs, one per line
+Transcribe files and URLs
+The speech decoder returned no usable transcript.
+Public corpus review
+File / URL
+Controls
+Capture · Microphone + shared audio
+Both sources are required to start. Microphone-only capture is not available.
+Private to this browser; no sign-in or capture key is needed.
+Listening setup
+How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+Microphone
+Not connected
+Shared audio
+Not connected
+Next: enable your microphone.
+Enable microphone
+Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.
+Public corpus review
+Speakers
+0
+Find
+Copy
+Auto-scroll
+Export transcript
+Transcript will appear here when a session starts.
+Sessions
+Voiceprints
+Refresh
+Optional AI summaries ·
+off
+Selected:
+Public corpus review
+.
+View selected transcript and export
+The speech decoder returned no usable transcript.
+Yesterday
+Public corpus review
+11:00 PM
+·
+File / URL
+·
+Failed
+The speech decoder returned no usable transcript.
+v
+1
+Rename
+Speakers

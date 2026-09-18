@@ -1,0 +1,44 @@
+Media URLs, one per line
+Transcribe files and URLs
+Audio capture failed.
+MOSS
+Live
+Controls
+Capture · Microphone + shared audio
+Both sources are required to start. Microphone-only capture is not available.
+Private to this browser; no sign-in or capture key is needed.
+Listening setup
+How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+Microphone
+Not connected
+Shared audio
+Not connected
+Enable microphone
+Reset capture
+Recording interrupted: the connection was lost for too long. Reset capture to start again.
+MOSS
+Speakers
+0
+Find
+Copy
+Auto-scroll
+Export transcript
+Transcript will appear here when a session starts.
+Sessions
+Voiceprints
+Refresh
+Optional AI summaries ·
+off
+Today
+Live meeting
+3:04 AM
+·
+Live
+·
+Interrupted
+No transcript
+v
+0
+Rename
+Audio unavailable
+Speakers

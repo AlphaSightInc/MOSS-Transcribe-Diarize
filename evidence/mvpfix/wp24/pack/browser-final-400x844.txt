@@ -1,0 +1,65 @@
+This browser
+History stays with this browser profile. Clearing site data loses automatic access.
+Files & URLs
+Live / Transcript & export
+Meeting history
+Voiceprints
+Your meetings
+File transcription
+Audio or video files
+Media URLs, one per line
+Transcribe files and URLs
+Live transcription
+Audio capture stopped.
+MOSS
+Live
+Controls
+Capture · Microphone + shared audio
+Both sources are required to start. Microphone-only capture is not available.
+Private to this browser; no sign-in or capture key is needed.
+Listening setup
+How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+Microphone
+Not connected
+Shared audio
+Not connected
+Enable microphone
+Reset capture
+Audio capture stopped.
+MOSS
+Speakers
+2
+S02
+S01
+Find
+Copy
+Auto-scroll
+Export transcript
+S02
+Microphone
+00:00:00
+They think that they're responsible for you, um, but uh.
+S01
+System
+00:00:00
+it. He talked about the difference between, you said, the stock market
+Meeting history
+Sessions
+Voiceprints
+Refresh
+Optional AI summaries ·
+off
+Today
+Live meeting
+3:26 AM
+·
+Live
+·
+Completed
+They think that they're responsible for you, um, but uh. it. He talked about the difference between, you said, the stock market
+v
+3
+Rename
+Download audio
+Private voice bank
+Headphones

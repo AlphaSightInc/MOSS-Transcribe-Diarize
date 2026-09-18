@@ -1,0 +1,4243 @@
+[
+  {
+    "geometric_overlaps": [],
+    "transcript_rows": [],
+    "visible_copy": "Media URLs, one per line\nTranscribe files and URLs\nStandby\nMOSS\nLive\nControls\nCapture \u00b7 Microphone + shared audio\nBoth sources are required to start. Microphone-only capture is not available.\nPrivate to this browser; no sign-in or capture key is needed.\nListening setup\nHow you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.\nMicrophone\nNot connected\nShared audio\nNot connected\nNext: enable your microphone.\nEnable microphone\nLive capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.\nMOSS\nSpeakers\n0\nFind\nCopy\nAuto-scroll\nExport transcript\nTranscript will appear here when a session starts.\nSessions\nVoiceprints\nRefresh\nOptional AI summaries \u00b7\noff\nNo meetings yet.\nSpeakers",
+    "copy_scope": "Rendered text excluding CSS-clipped headings and unselected options; includes content reachable by scrolling panels",
+    "horizontal_scroll": false,
+    "document_width": 1440,
+    "viewport_width": 1440,
+    "clipping": [],
+    "contrast": [
+      {
+        "text": "Media URLs, one per line",
+        "tag": "SPAN",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          254,
+          254,
+          254
+        ],
+        "fontSize": "11px",
+        "ratio": 4.84,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Transcribe files and URLs",
+        "tag": "BUTTON",
+        "class": "btn btn-primary",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          26,
+          29,
+          36
+        ],
+        "fontSize": "15px",
+        "ratio": 16.87,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Standby",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(42, 45, 54)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12.5px",
+        "ratio": 13.75,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "MOSS",
+        "tag": "SPAN",
+        "class": "session-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "13px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live",
+        "tag": "SPAN",
+        "class": "session-chip",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Controls",
+        "tag": "H2",
+        "class": "panel-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254,
+          254,
+          254
+        ],
+        "fontSize": "15px",
+        "ratio": 17.93,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Capture \u00b7 Microphone + shared audio",
+        "tag": "DIV",
+        "class": "label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Both sources are required to start. Microphone-only capture is not available.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private to this browser; no sign-in or capture key is needed.",
+        "tag": "P",
+        "class": "capture-security-note",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Listening setup",
+        "tag": "LABEL",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Shared audio",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Next: enable your microphone.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Enable microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          20,
+          22,
+          28
+        ],
+        "fontSize": "14px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.",
+        "tag": "P",
+        "class": "capture-status",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Speakers",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "15px",
+        "ratio": 17.29,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "0",
+        "tag": "SPAN",
+        "class": "tr-speakers-count",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "10.5px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Find",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Auto-scroll",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Transcript will appear here when a session starts.",
+        "tag": "P",
+        "class": "empty-state transcript-empty-state",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "17px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Sessions",
+        "tag": "BUTTON",
+        "class": "seg-btn is-active",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "13px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Voiceprints",
+        "tag": "BUTTON",
+        "class": "seg-btn",
+        "color": "rgb(42, 45, 54)",
+        "background": [
+          236,
+          236,
+          228
+        ],
+        "fontSize": "13px",
+        "ratio": 11.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Refresh",
+        "tag": "BUTTON",
+        "class": "history-toolbar-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.29411764705884,
+          254.29411764705884,
+          253.87058823529412
+        ],
+        "fontSize": "12px",
+        "ratio": 17.97,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Optional AI summaries \u00b7 off",
+        "tag": "BUTTON",
+        "class": "history-action-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.8726643598616,
+          254.8726643598616,
+          254.79626297577857
+        ],
+        "fontSize": "12px",
+        "ratio": 18.06,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "No meetings yet.",
+        "tag": "P",
+        "class": "history-state-card",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.09803921568627,
+          254.09803921568627,
+          253.55686274509804
+        ],
+        "fontSize": "15px",
+        "ratio": 17.94,
+        "required": 4.5,
+        "result": "pass"
+      }
+    ],
+    "controls": [
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "AUDIO OR VIDEO FILES",
+        "disabled": false
+      },
+      {
+        "tag": "TEXTAREA",
+        "role": null,
+        "name": "Media URLs, one per line",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Transcribe files and URLs",
+        "disabled": false
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "Listening setup",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Enable microphone",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "MOSS\n\u270e",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Search transcript (\u2318F)",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Copy",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Auto-scroll as new text arrives",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Export transcript",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Sessions",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Voiceprints",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "Search meetings",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Refresh",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Optional AI summaries \u00b7 off",
+        "disabled": false
+      }
+    ],
+    "focus_order": [
+      {
+        "tag": "INPUT",
+        "name": "AUDIO OR VIDEO FILES",
+        "tabIndex": 0,
+        "x": 37,
+        "y": 33
+      },
+      {
+        "tag": "TEXTAREA",
+        "name": "Media URLs, one per line",
+        "tabIndex": 0,
+        "x": 623,
+        "y": 33
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Transcribe files and URLs",
+        "tabIndex": 0,
+        "x": 900,
+        "y": 29
+      },
+      {
+        "tag": "SELECT",
+        "name": "Listening setup",
+        "tabIndex": 0,
+        "x": 32,
+        "y": 397
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Enable microphone",
+        "tabIndex": 0,
+        "x": 31,
+        "y": 646
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Search transcript (\u2318F)",
+        "tabIndex": 0,
+        "x": 749,
+        "y": 243
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Auto-scroll as new text arrives",
+        "tabIndex": 0,
+        "x": 858,
+        "y": 243
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Sessions",
+        "tabIndex": 0,
+        "x": 1161,
+        "y": 33
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Voiceprints",
+        "tabIndex": 0,
+        "x": 1283,
+        "y": 33
+      },
+      {
+        "tag": "INPUT",
+        "name": "Search meetings",
+        "tabIndex": 0,
+        "x": 1157,
+        "y": 85
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Refresh",
+        "tabIndex": 0,
+        "x": 1336,
+        "y": 85
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Optional AI summaries \u00b7 off",
+        "tabIndex": 0,
+        "x": 1172,
+        "y": 154
+      }
+    ],
+    "focus_anomalies": [],
+    "active_focus": "Open workspace History stays with this browser profile. Clearing site data loses automatic access.\nFiles & URLs\nLive / Transcript & export\nMeeting history\nVoiceprints\nYour meetings\nFile transcription\nAUDIO OR VIDEO FILES\nMedia URLs, one per line\nTranscribe files and URLs\n\nLive transcription\nStandby\nMOSS\nLive\nControls\nCAPTURE \u00b7 MICROPHONE + SHARED AUDIO\n\nBoth sources are required to start. Microphone-only capture is not available.\n\nPrivate to this browser; no sign-in or capture key is needed.\n\nLISTENING SETUP\nSpeakers\nHeadphones\n\nHow you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.\n\nMicrophone\nNot connected\nShared audio\nNot connected\n\nNext: enable your microphone.\n\nEnable microphone\n\nLive capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.\n\nMOSS\n\u270e\nSpeakers\n0\nFind\nCopy\nAuto-scroll\nExport transcript\n\nTranscript will appear here when a session starts.\n\nMeeting history\nSessions\nVoiceprints\nSearch meetings\nRefresh\nOptional AI summaries \u00b7 off\n\nNo meetings yet.\n\nPrivate voice bank",
+    "overlap_review": "Requires screenshot review; intentional transcript time overlap is not geometric overlap.",
+    "missing_accessible_names": [],
+    "state": "shared-workspace-header",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "screenshot": "shared-workspace-header-1440x900.png",
+    "provenance": "Actual open_workspace=True isolated instance, no cookie needed",
+    "copy_verdict": "D3 DEFERRED: private-browser and history-access claims mismatch shared workspace"
+  },
+  {
+    "geometric_overlaps": [],
+    "transcript_rows": [],
+    "visible_copy": "Media URLs, one per line\nTranscribe files and URLs\nStandby\nMOSS\nLive\nControls\nCapture \u00b7 Microphone + shared audio\nBoth sources are required to start. Microphone-only capture is not available.\nPrivate to this browser; no sign-in or capture key is needed.\nListening setup\nHow you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.\nMicrophone\nNot connected\nShared audio\nNot connected\nNext: enable your microphone.\nEnable microphone\nLive capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.\nMOSS\nSpeakers\n0\nFind\nCopy\nAuto-scroll\nExport transcript\nTranscript will appear here when a session starts.\nSessions\nVoiceprints\nRefresh\nPrivate to this browser workspace. Name a speaker during capture to save their voiceprint; no separate recording needed.\nRefresh\nNo voiceprints yet.\nSpeakers",
+    "copy_scope": "Rendered text excluding CSS-clipped headings and unselected options; includes content reachable by scrolling panels",
+    "horizontal_scroll": false,
+    "document_width": 1440,
+    "viewport_width": 1440,
+    "clipping": [],
+    "contrast": [
+      {
+        "text": "Media URLs, one per line",
+        "tag": "SPAN",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          254,
+          254,
+          254
+        ],
+        "fontSize": "11px",
+        "ratio": 4.84,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Transcribe files and URLs",
+        "tag": "BUTTON",
+        "class": "btn btn-primary",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          26,
+          29,
+          36
+        ],
+        "fontSize": "15px",
+        "ratio": 16.87,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Standby",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(42, 45, 54)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12.5px",
+        "ratio": 13.75,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "MOSS",
+        "tag": "SPAN",
+        "class": "session-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "13px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live",
+        "tag": "SPAN",
+        "class": "session-chip",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Controls",
+        "tag": "H2",
+        "class": "panel-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254,
+          254,
+          254
+        ],
+        "fontSize": "15px",
+        "ratio": 17.93,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Capture \u00b7 Microphone + shared audio",
+        "tag": "DIV",
+        "class": "label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Both sources are required to start. Microphone-only capture is not available.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private to this browser; no sign-in or capture key is needed.",
+        "tag": "P",
+        "class": "capture-security-note",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Listening setup",
+        "tag": "LABEL",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Shared audio",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Next: enable your microphone.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Enable microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          20,
+          22,
+          28
+        ],
+        "fontSize": "14px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.",
+        "tag": "P",
+        "class": "capture-status",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Speakers",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "15px",
+        "ratio": 17.29,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "0",
+        "tag": "SPAN",
+        "class": "tr-speakers-count",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "10.5px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Find",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Auto-scroll",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Transcript will appear here when a session starts.",
+        "tag": "P",
+        "class": "empty-state transcript-empty-state",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "17px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Sessions",
+        "tag": "BUTTON",
+        "class": "seg-btn",
+        "color": "rgb(41, 44, 53)",
+        "background": [
+          236.59607843137255,
+          236.59607843137255,
+          228.8470588235294
+        ],
+        "fontSize": "13px",
+        "ratio": 11.81,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Voiceprints",
+        "tag": "BUTTON",
+        "class": "seg-btn is-active",
+        "color": "rgb(21, 23, 29)",
+        "background": [
+          254.40392156862745,
+          254.40392156862745,
+          254.1529411764706
+        ],
+        "fontSize": "13px",
+        "ratio": 17.82,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Refresh",
+        "tag": "BUTTON",
+        "class": "history-toolbar-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.29411764705884,
+          254.29411764705884,
+          253.87058823529412
+        ],
+        "fontSize": "12px",
+        "ratio": 17.97,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private to this browser workspace. Name a speaker during capture to save their voiceprint; no separate recording needed.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Refresh",
+        "tag": "BUTTON",
+        "class": "history-toolbar-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.29411764705884,
+          254.29411764705884,
+          253.87058823529412
+        ],
+        "fontSize": "12px",
+        "ratio": 17.97,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "No voiceprints yet.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      }
+    ],
+    "controls": [
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "AUDIO OR VIDEO FILES",
+        "disabled": false
+      },
+      {
+        "tag": "TEXTAREA",
+        "role": null,
+        "name": "Media URLs, one per line",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Transcribe files and URLs",
+        "disabled": false
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "Listening setup",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Enable microphone",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "MOSS\n\u270e",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Search transcript (\u2318F)",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Copy",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Auto-scroll as new text arrives",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Export transcript",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Sessions",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Voiceprints",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "Search meetings",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Refresh",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Refresh",
+        "disabled": false
+      }
+    ],
+    "focus_order": [
+      {
+        "tag": "INPUT",
+        "name": "AUDIO OR VIDEO FILES",
+        "tabIndex": 0,
+        "x": 37,
+        "y": 33
+      },
+      {
+        "tag": "TEXTAREA",
+        "name": "Media URLs, one per line",
+        "tabIndex": 0,
+        "x": 623,
+        "y": 33
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Transcribe files and URLs",
+        "tabIndex": 0,
+        "x": 900,
+        "y": 29
+      },
+      {
+        "tag": "SELECT",
+        "name": "Listening setup",
+        "tabIndex": 0,
+        "x": 32,
+        "y": 397
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Enable microphone",
+        "tabIndex": 0,
+        "x": 31,
+        "y": 646
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Search transcript (\u2318F)",
+        "tabIndex": 0,
+        "x": 749,
+        "y": 243
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Auto-scroll as new text arrives",
+        "tabIndex": 0,
+        "x": 858,
+        "y": 243
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Sessions",
+        "tabIndex": 0,
+        "x": 1161,
+        "y": 33
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Voiceprints",
+        "tabIndex": 0,
+        "x": 1283,
+        "y": 33
+      },
+      {
+        "tag": "INPUT",
+        "name": "Search meetings",
+        "tabIndex": 0,
+        "x": 1157,
+        "y": 85
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Refresh",
+        "tabIndex": 0,
+        "x": 1336,
+        "y": 85
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Refresh",
+        "tabIndex": 0,
+        "x": 1175,
+        "y": 224
+      }
+    ],
+    "focus_anomalies": [],
+    "active_focus": "Voiceprints",
+    "overlap_review": "Requires screenshot review; intentional transcript time overlap is not geometric overlap.",
+    "missing_accessible_names": [],
+    "state": "shared-voiceprints",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "screenshot": "shared-voiceprints-1440x900.png",
+    "provenance": "Actual open_workspace=True instance",
+    "copy_verdict": "D3 DEFERRED: Private voiceprints / Private to this browser workspace mismatch shared ownership"
+  },
+  {
+    "geometric_overlaps": [],
+    "transcript_rows": [],
+    "visible_copy": "Media URLs, one per line\nTranscribe files and URLs\nStandby\nMOSS\nLive\nControls\nCapture \u00b7 Microphone + shared audio\nBoth sources are required to start. Microphone-only capture is not available.\nPrivate to this browser; no sign-in or capture key is needed.\nListening setup\nHow you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.\nMicrophone\nNot connected\nShared audio\nNot connected\nNext: enable your microphone.\nEnable microphone\nLive capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.\nMOSS\nSpeakers\n0\nFind\nCopy\nAuto-scroll\nExport transcript\nTranscript will appear here when a session starts.\nSessions\nVoiceprints\nRefresh\nOptional AI summaries \u00b7\noff\nNo meetings yet.\nSpeakers",
+    "copy_scope": "Rendered text excluding CSS-clipped headings and unselected options; includes content reachable by scrolling panels",
+    "horizontal_scroll": false,
+    "document_width": 1280,
+    "viewport_width": 1280,
+    "clipping": [],
+    "contrast": [
+      {
+        "text": "Media URLs, one per line",
+        "tag": "SPAN",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          254,
+          254,
+          254
+        ],
+        "fontSize": "11px",
+        "ratio": 4.84,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Transcribe files and URLs",
+        "tag": "BUTTON",
+        "class": "btn btn-primary",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          26,
+          29,
+          36
+        ],
+        "fontSize": "15px",
+        "ratio": 16.87,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Standby",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(42, 45, 54)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12.5px",
+        "ratio": 13.75,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "MOSS",
+        "tag": "SPAN",
+        "class": "session-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "13px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live",
+        "tag": "SPAN",
+        "class": "session-chip",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Controls",
+        "tag": "H2",
+        "class": "panel-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254,
+          254,
+          254
+        ],
+        "fontSize": "15px",
+        "ratio": 17.93,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Capture \u00b7 Microphone + shared audio",
+        "tag": "DIV",
+        "class": "label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Both sources are required to start. Microphone-only capture is not available.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private to this browser; no sign-in or capture key is needed.",
+        "tag": "P",
+        "class": "capture-security-note",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Listening setup",
+        "tag": "LABEL",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Shared audio",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Next: enable your microphone.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Enable microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          20,
+          22,
+          28
+        ],
+        "fontSize": "14px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.",
+        "tag": "P",
+        "class": "capture-status",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Speakers",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "15px",
+        "ratio": 17.29,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "0",
+        "tag": "SPAN",
+        "class": "tr-speakers-count",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "10.5px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Find",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Auto-scroll",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Transcript will appear here when a session starts.",
+        "tag": "P",
+        "class": "empty-state transcript-empty-state",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "17px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Sessions",
+        "tag": "BUTTON",
+        "class": "seg-btn is-active",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "13px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Voiceprints",
+        "tag": "BUTTON",
+        "class": "seg-btn",
+        "color": "rgb(42, 45, 54)",
+        "background": [
+          236,
+          236,
+          228
+        ],
+        "fontSize": "13px",
+        "ratio": 11.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Refresh",
+        "tag": "BUTTON",
+        "class": "history-toolbar-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.29411764705884,
+          254.29411764705884,
+          253.87058823529412
+        ],
+        "fontSize": "12px",
+        "ratio": 17.97,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Optional AI summaries \u00b7 off",
+        "tag": "BUTTON",
+        "class": "history-action-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.8726643598616,
+          254.8726643598616,
+          254.79626297577857
+        ],
+        "fontSize": "12px",
+        "ratio": 18.06,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "No meetings yet.",
+        "tag": "P",
+        "class": "history-state-card",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.09803921568627,
+          254.09803921568627,
+          253.55686274509804
+        ],
+        "fontSize": "15px",
+        "ratio": 17.94,
+        "required": 4.5,
+        "result": "pass"
+      }
+    ],
+    "controls": [
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "AUDIO OR VIDEO FILES",
+        "disabled": false
+      },
+      {
+        "tag": "TEXTAREA",
+        "role": null,
+        "name": "Media URLs, one per line",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Transcribe files and URLs",
+        "disabled": false
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "Listening setup",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Enable microphone",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "MOSS\n\u270e",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Search transcript (\u2318F)",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Copy",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Auto-scroll as new text arrives",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Export transcript",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Sessions",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Voiceprints",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "Search meetings",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Refresh",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Optional AI summaries \u00b7 off",
+        "disabled": false
+      }
+    ],
+    "focus_order": [
+      {
+        "tag": "INPUT",
+        "name": "AUDIO OR VIDEO FILES",
+        "tabIndex": 0,
+        "x": 37,
+        "y": 33
+      },
+      {
+        "tag": "TEXTAREA",
+        "name": "Media URLs, one per line",
+        "tabIndex": 0,
+        "x": 563,
+        "y": 33
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Transcribe files and URLs",
+        "tabIndex": 0,
+        "x": 780,
+        "y": 29
+      },
+      {
+        "tag": "SELECT",
+        "name": "Listening setup",
+        "tabIndex": 0,
+        "x": 32,
+        "y": 414
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Enable microphone",
+        "tabIndex": 0,
+        "x": 31,
+        "y": 663
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Search transcript (\u2318F)",
+        "tabIndex": 0,
+        "x": 629,
+        "y": 243
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Auto-scroll as new text arrives",
+        "tabIndex": 0,
+        "x": 738,
+        "y": 243
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Sessions",
+        "tabIndex": 0,
+        "x": 1041,
+        "y": 33
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Voiceprints",
+        "tabIndex": 0,
+        "x": 1143,
+        "y": 33
+      },
+      {
+        "tag": "INPUT",
+        "name": "Search meetings",
+        "tabIndex": 0,
+        "x": 1037,
+        "y": 85
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Refresh",
+        "tabIndex": 0,
+        "x": 1176,
+        "y": 85
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Optional AI summaries \u00b7 off",
+        "tabIndex": 0,
+        "x": 1052,
+        "y": 154
+      }
+    ],
+    "focus_anomalies": [],
+    "active_focus": "Open workspace History stays with this browser profile. Clearing site data loses automatic access.\nFiles & URLs\nLive / Transcript & export\nMeeting history\nVoiceprints\nYour meetings\nFile transcription\nAUDIO OR VIDEO FILES\nMedia URLs, one per line\nTranscribe files and URLs\n\nLive transcription\nStandby\nMOSS\nLive\nControls\nCAPTURE \u00b7 MICROPHONE + SHARED AUDIO\n\nBoth sources are required to start. Microphone-only capture is not available.\n\nPrivate to this browser; no sign-in or capture key is needed.\n\nLISTENING SETUP\nSpeakers\nHeadphones\n\nHow you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.\n\nMicrophone\nNot connected\nShared audio\nNot connected\n\nNext: enable your microphone.\n\nEnable microphone\n\nLive capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.\n\nMOSS\n\u270e\nSpeakers\n0\nFind\nCopy\nAuto-scroll\nExport transcript\n\nTranscript will appear here when a session starts.\n\nMeeting history\nSessions\nVoiceprints\nSearch meetings\nRefresh\nOptional AI summaries \u00b7 off\n\nNo meetings yet.\n\nPrivate voice bank",
+    "overlap_review": "Requires screenshot review; intentional transcript time overlap is not geometric overlap.",
+    "missing_accessible_names": [],
+    "state": "shared-workspace-header",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "screenshot": "shared-workspace-header-1280x800.png",
+    "provenance": "Actual open_workspace=True isolated instance, no cookie needed",
+    "copy_verdict": "D3 DEFERRED: private-browser and history-access claims mismatch shared workspace"
+  },
+  {
+    "geometric_overlaps": [],
+    "transcript_rows": [],
+    "visible_copy": "Media URLs, one per line\nTranscribe files and URLs\nStandby\nMOSS\nLive\nControls\nCapture \u00b7 Microphone + shared audio\nBoth sources are required to start. Microphone-only capture is not available.\nPrivate to this browser; no sign-in or capture key is needed.\nListening setup\nHow you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.\nMicrophone\nNot connected\nShared audio\nNot connected\nNext: enable your microphone.\nEnable microphone\nLive capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.\nMOSS\nSpeakers\n0\nFind\nCopy\nAuto-scroll\nExport transcript\nTranscript will appear here when a session starts.\nSessions\nVoiceprints\nRefresh\nPrivate to this browser workspace. Name a speaker during capture to save their voiceprint; no separate recording needed.\nRefresh\nNo voiceprints yet.\nSpeakers",
+    "copy_scope": "Rendered text excluding CSS-clipped headings and unselected options; includes content reachable by scrolling panels",
+    "horizontal_scroll": false,
+    "document_width": 1280,
+    "viewport_width": 1280,
+    "clipping": [],
+    "contrast": [
+      {
+        "text": "Media URLs, one per line",
+        "tag": "SPAN",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          254,
+          254,
+          254
+        ],
+        "fontSize": "11px",
+        "ratio": 4.84,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Transcribe files and URLs",
+        "tag": "BUTTON",
+        "class": "btn btn-primary",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          26,
+          29,
+          36
+        ],
+        "fontSize": "15px",
+        "ratio": 16.87,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Standby",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(42, 45, 54)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12.5px",
+        "ratio": 13.75,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "MOSS",
+        "tag": "SPAN",
+        "class": "session-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "13px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live",
+        "tag": "SPAN",
+        "class": "session-chip",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Controls",
+        "tag": "H2",
+        "class": "panel-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254,
+          254,
+          254
+        ],
+        "fontSize": "15px",
+        "ratio": 17.93,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Capture \u00b7 Microphone + shared audio",
+        "tag": "DIV",
+        "class": "label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Both sources are required to start. Microphone-only capture is not available.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private to this browser; no sign-in or capture key is needed.",
+        "tag": "P",
+        "class": "capture-security-note",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Listening setup",
+        "tag": "LABEL",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Shared audio",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Next: enable your microphone.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Enable microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          20,
+          22,
+          28
+        ],
+        "fontSize": "14px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.",
+        "tag": "P",
+        "class": "capture-status",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Speakers",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "15px",
+        "ratio": 17.29,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "0",
+        "tag": "SPAN",
+        "class": "tr-speakers-count",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "10.5px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Find",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Auto-scroll",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Transcript will appear here when a session starts.",
+        "tag": "P",
+        "class": "empty-state transcript-empty-state",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "17px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Sessions",
+        "tag": "BUTTON",
+        "class": "seg-btn",
+        "color": "rgb(41, 44, 53)",
+        "background": [
+          236.59607843137255,
+          236.59607843137255,
+          228.8470588235294
+        ],
+        "fontSize": "13px",
+        "ratio": 11.81,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Voiceprints",
+        "tag": "BUTTON",
+        "class": "seg-btn is-active",
+        "color": "rgb(21, 23, 29)",
+        "background": [
+          254.40392156862745,
+          254.40392156862745,
+          254.1529411764706
+        ],
+        "fontSize": "13px",
+        "ratio": 17.82,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Refresh",
+        "tag": "BUTTON",
+        "class": "history-toolbar-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.29411764705884,
+          254.29411764705884,
+          253.87058823529412
+        ],
+        "fontSize": "12px",
+        "ratio": 17.97,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private to this browser workspace. Name a speaker during capture to save their voiceprint; no separate recording needed.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Refresh",
+        "tag": "BUTTON",
+        "class": "history-toolbar-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.29411764705884,
+          254.29411764705884,
+          253.87058823529412
+        ],
+        "fontSize": "12px",
+        "ratio": 17.97,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "No voiceprints yet.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      }
+    ],
+    "controls": [
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "AUDIO OR VIDEO FILES",
+        "disabled": false
+      },
+      {
+        "tag": "TEXTAREA",
+        "role": null,
+        "name": "Media URLs, one per line",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Transcribe files and URLs",
+        "disabled": false
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "Listening setup",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Enable microphone",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "MOSS\n\u270e",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Search transcript (\u2318F)",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Copy",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Auto-scroll as new text arrives",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Export transcript",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Sessions",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Voiceprints",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "Search meetings",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Refresh",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Refresh",
+        "disabled": false
+      }
+    ],
+    "focus_order": [
+      {
+        "tag": "INPUT",
+        "name": "AUDIO OR VIDEO FILES",
+        "tabIndex": 0,
+        "x": 37,
+        "y": 33
+      },
+      {
+        "tag": "TEXTAREA",
+        "name": "Media URLs, one per line",
+        "tabIndex": 0,
+        "x": 563,
+        "y": 33
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Transcribe files and URLs",
+        "tabIndex": 0,
+        "x": 780,
+        "y": 29
+      },
+      {
+        "tag": "SELECT",
+        "name": "Listening setup",
+        "tabIndex": 0,
+        "x": 32,
+        "y": 414
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Enable microphone",
+        "tabIndex": 0,
+        "x": 31,
+        "y": 663
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Search transcript (\u2318F)",
+        "tabIndex": 0,
+        "x": 629,
+        "y": 243
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Auto-scroll as new text arrives",
+        "tabIndex": 0,
+        "x": 738,
+        "y": 243
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Sessions",
+        "tabIndex": 0,
+        "x": 1041,
+        "y": 33
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Voiceprints",
+        "tabIndex": 0,
+        "x": 1143,
+        "y": 33
+      },
+      {
+        "tag": "INPUT",
+        "name": "Search meetings",
+        "tabIndex": 0,
+        "x": 1037,
+        "y": 85
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Refresh",
+        "tabIndex": 0,
+        "x": 1176,
+        "y": 85
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Refresh",
+        "tabIndex": 0,
+        "x": 1055,
+        "y": 240
+      }
+    ],
+    "focus_anomalies": [],
+    "active_focus": "Voiceprints",
+    "overlap_review": "Requires screenshot review; intentional transcript time overlap is not geometric overlap.",
+    "missing_accessible_names": [],
+    "state": "shared-voiceprints",
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "screenshot": "shared-voiceprints-1280x800.png",
+    "provenance": "Actual open_workspace=True instance",
+    "copy_verdict": "D3 DEFERRED: Private voiceprints / Private to this browser workspace mismatch shared ownership"
+  },
+  {
+    "geometric_overlaps": [],
+    "transcript_rows": [],
+    "visible_copy": "Open workspace\nHistory stays with this browser profile. Clearing site data loses automatic access.\nFiles & URLs\nLive / Transcript & export\nMeeting history\nVoiceprints\nYour meetings\nFile transcription\nAudio or video files\nMedia URLs, one per line\nTranscribe files and URLs\nLive transcription\nStandby\nMOSS\nLive\nControls\nCapture \u00b7 Microphone + shared audio\nBoth sources are required to start. Microphone-only capture is not available.\nPrivate to this browser; no sign-in or capture key is needed.\nListening setup\nHow you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.\nMicrophone\nNot connected\nShared audio\nNot connected\nNext: enable your microphone.\nEnable microphone\nLive capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.\nMOSS\nSpeakers\n0\nFind\nCopy\nAuto-scroll\nExport transcript\nTranscript will appear here when a session starts.\nMeeting history\nSessions\nVoiceprints\nRefresh\nOptional AI summaries \u00b7\noff\nNo meetings yet.\nPrivate voice bank\nSpeakers",
+    "copy_scope": "Rendered text excluding CSS-clipped headings and unselected options; includes content reachable by scrolling panels",
+    "horizontal_scroll": false,
+    "document_width": 400,
+    "viewport_width": 400,
+    "clipping": [],
+    "contrast": [
+      {
+        "text": "Open workspace",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "15px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "History stays with this browser profile. Clearing site data loses automatic access.",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Files & URLs",
+        "tag": "A",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "15px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live / Transcript & export",
+        "tag": "A",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "15px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Meeting history",
+        "tag": "A",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "15px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Voiceprints",
+        "tag": "A",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "15px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Your meetings",
+        "tag": "H1",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "30px",
+        "ratio": 18.08,
+        "required": 3,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "File transcription",
+        "tag": "H2",
+        "class": "phase2-workspace-heading",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "20px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Audio or video files",
+        "tag": "SPAN",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "11px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Media URLs, one per line",
+        "tag": "SPAN",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "11px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Transcribe files and URLs",
+        "tag": "BUTTON",
+        "class": "btn btn-primary",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          26,
+          29,
+          36
+        ],
+        "fontSize": "15px",
+        "ratio": 16.87,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live transcription",
+        "tag": "H2",
+        "class": "phase2-workspace-heading",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "20px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Standby",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(42, 45, 54)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12.5px",
+        "ratio": 13.75,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "MOSS",
+        "tag": "SPAN",
+        "class": "session-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "13px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live",
+        "tag": "SPAN",
+        "class": "session-chip",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Controls",
+        "tag": "H2",
+        "class": "panel-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254,
+          254,
+          254
+        ],
+        "fontSize": "15px",
+        "ratio": 17.93,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Capture \u00b7 Microphone + shared audio",
+        "tag": "DIV",
+        "class": "label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Both sources are required to start. Microphone-only capture is not available.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private to this browser; no sign-in or capture key is needed.",
+        "tag": "P",
+        "class": "capture-security-note",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Listening setup",
+        "tag": "LABEL",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Shared audio",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Next: enable your microphone.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Enable microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          20,
+          22,
+          28
+        ],
+        "fontSize": "14px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.",
+        "tag": "P",
+        "class": "capture-status",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Speakers",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "15px",
+        "ratio": 17.29,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "0",
+        "tag": "SPAN",
+        "class": "tr-speakers-count",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "10.5px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Find",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Auto-scroll",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Transcript will appear here when a session starts.",
+        "tag": "P",
+        "class": "empty-state transcript-empty-state",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "17px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Meeting history",
+        "tag": "H2",
+        "class": "phase2-workspace-heading",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "20px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Sessions",
+        "tag": "BUTTON",
+        "class": "seg-btn is-active",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "13px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Voiceprints",
+        "tag": "BUTTON",
+        "class": "seg-btn",
+        "color": "rgb(42, 45, 54)",
+        "background": [
+          236,
+          236,
+          228
+        ],
+        "fontSize": "13px",
+        "ratio": 11.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Refresh",
+        "tag": "BUTTON",
+        "class": "history-toolbar-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.29411764705884,
+          254.29411764705884,
+          253.87058823529412
+        ],
+        "fontSize": "12px",
+        "ratio": 17.97,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Optional AI summaries \u00b7 off",
+        "tag": "BUTTON",
+        "class": "history-action-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.8726643598616,
+          254.8726643598616,
+          254.79626297577857
+        ],
+        "fontSize": "12px",
+        "ratio": 18.06,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "No meetings yet.",
+        "tag": "P",
+        "class": "history-state-card",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.09803921568627,
+          254.09803921568627,
+          253.55686274509804
+        ],
+        "fontSize": "15px",
+        "ratio": 17.94,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private voice bank",
+        "tag": "H2",
+        "class": "phase2-workspace-heading",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "20px",
+        "ratio": 17.29,
+        "required": 4.5,
+        "result": "pass"
+      }
+    ],
+    "controls": [
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Files & URLs",
+        "disabled": false
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Live / Transcript & export",
+        "disabled": false
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Meeting history",
+        "disabled": false
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Voiceprints",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "AUDIO OR VIDEO FILES",
+        "disabled": false
+      },
+      {
+        "tag": "TEXTAREA",
+        "role": null,
+        "name": "MEDIA URLS, ONE PER LINE",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Transcribe files and URLs",
+        "disabled": false
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "Listening setup",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Enable microphone",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "MOSS\n\u270e",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Search transcript (\u2318F)",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Copy",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Auto-scroll as new text arrives",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Export transcript",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Sessions",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Voiceprints",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "Search meetings",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Refresh",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Optional AI summaries \u00b7 off",
+        "disabled": false
+      }
+    ],
+    "focus_order": [
+      {
+        "tag": "A",
+        "name": "Files & URLs",
+        "tabIndex": 0,
+        "x": 18,
+        "y": 57
+      },
+      {
+        "tag": "A",
+        "name": "Live / Transcript & export",
+        "tabIndex": 0,
+        "x": 124,
+        "y": 57
+      },
+      {
+        "tag": "A",
+        "name": "Meeting history",
+        "tabIndex": 0,
+        "x": 18,
+        "y": 98
+      },
+      {
+        "tag": "A",
+        "name": "Voiceprints",
+        "tabIndex": 0,
+        "x": 146,
+        "y": 98
+      },
+      {
+        "tag": "INPUT",
+        "name": "AUDIO OR VIDEO FILES",
+        "tabIndex": 0,
+        "x": 18,
+        "y": 325
+      },
+      {
+        "tag": "TEXTAREA",
+        "name": "MEDIA URLS, ONE PER LINE",
+        "tabIndex": 0,
+        "x": 18,
+        "y": 407
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Transcribe files and URLs",
+        "tabIndex": 0,
+        "x": 18,
+        "y": 486
+      },
+      {
+        "tag": "SELECT",
+        "name": "Listening setup",
+        "tabIndex": 0,
+        "x": 26,
+        "y": 901
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Enable microphone",
+        "tabIndex": 0,
+        "x": 25,
+        "y": 1117
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Search transcript (\u2318F)",
+        "tabIndex": 0,
+        "x": 17,
+        "y": 1376
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Auto-scroll as new text arrives",
+        "tabIndex": 0,
+        "x": 126,
+        "y": 1376
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Sessions",
+        "tabIndex": 0,
+        "x": 31,
+        "y": 1703
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Voiceprints",
+        "tabIndex": 0,
+        "x": 201,
+        "y": 1703
+      },
+      {
+        "tag": "INPUT",
+        "name": "Search meetings",
+        "tabIndex": 0,
+        "x": 27,
+        "y": 1754
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Refresh",
+        "tabIndex": 0,
+        "x": 27,
+        "y": 1804
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Optional AI summaries \u00b7 off",
+        "tabIndex": 0,
+        "x": 42,
+        "y": 1867
+      }
+    ],
+    "focus_anomalies": [],
+    "active_focus": "Open workspace History stays with this browser profile. Clearing site data loses automatic access.\nFiles & URLs\nLive / Transcript & export\nMeeting history\nVoiceprints\nYour meetings\nFile transcription\nAUDIO OR VIDEO FILES\nMEDIA URLS, ONE PER LINE\nTranscribe files and URLs\n\nLive transcription\nStandby\nMOSS\nLive\nControls\nCAPTURE \u00b7 MICROPHONE + SHARED AUDIO\n\nBoth sources are required to start. Microphone-only capture is not available.\n\nPrivate to this browser; no sign-in or capture key is needed.\n\nLISTENING SETUP\nSpeakers\nHeadphones\n\nHow you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.\n\nMicrophone\nNot connected\nShared audio\nNot connected\n\nNext: enable your microphone.\n\nEnable microphone\n\nLive capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.\n\nMOSS\n\u270e\nSpeakers\n0\nFind\nCopy\nAuto-scroll\nExport transcript\n\nTranscript will appear here when a session starts.\n\nMeeting history\nSessions\nVoiceprints\nSearch meetings\nRefresh\nOptional AI summaries \u00b7 off\n\nNo meetings yet.\n\nPrivate voice bank",
+    "overlap_review": "Requires screenshot review; intentional transcript time overlap is not geometric overlap.",
+    "missing_accessible_names": [],
+    "state": "shared-workspace-header",
+    "viewport": {
+      "width": 400,
+      "height": 844
+    },
+    "screenshot": "shared-workspace-header-400x844.png",
+    "provenance": "Actual open_workspace=True isolated instance, no cookie needed",
+    "copy_verdict": "D3 DEFERRED: private-browser and history-access claims mismatch shared workspace"
+  },
+  {
+    "geometric_overlaps": [],
+    "transcript_rows": [],
+    "visible_copy": "Open workspace\nHistory stays with this browser profile. Clearing site data loses automatic access.\nFiles & URLs\nLive / Transcript & export\nMeeting history\nVoiceprints\nYour meetings\nFile transcription\nAudio or video files\nMedia URLs, one per line\nTranscribe files and URLs\nLive transcription\nStandby\nMOSS\nLive\nControls\nCapture \u00b7 Microphone + shared audio\nBoth sources are required to start. Microphone-only capture is not available.\nPrivate to this browser; no sign-in or capture key is needed.\nListening setup\nHow you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.\nMicrophone\nNot connected\nShared audio\nNot connected\nNext: enable your microphone.\nEnable microphone\nLive capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.\nMOSS\nSpeakers\n0\nFind\nCopy\nAuto-scroll\nExport transcript\nTranscript will appear here when a session starts.\nMeeting history\nSessions\nVoiceprints\nRefresh\nPrivate voice bank\nPrivate to this browser workspace. Name a speaker during capture to save their voiceprint; no separate recording needed.\nRefresh\nNo voiceprints yet.\nSpeakers",
+    "copy_scope": "Rendered text excluding CSS-clipped headings and unselected options; includes content reachable by scrolling panels",
+    "horizontal_scroll": false,
+    "document_width": 400,
+    "viewport_width": 400,
+    "clipping": [],
+    "contrast": [
+      {
+        "text": "Open workspace",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "15px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "History stays with this browser profile. Clearing site data loses automatic access.",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Files & URLs",
+        "tag": "A",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "15px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live / Transcript & export",
+        "tag": "A",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "15px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Meeting history",
+        "tag": "A",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "15px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Voiceprints",
+        "tag": "A",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "15px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Your meetings",
+        "tag": "H1",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "30px",
+        "ratio": 18.08,
+        "required": 3,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "File transcription",
+        "tag": "H2",
+        "class": "phase2-workspace-heading",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "20px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Audio or video files",
+        "tag": "SPAN",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "11px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Media URLs, one per line",
+        "tag": "SPAN",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "11px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Transcribe files and URLs",
+        "tag": "BUTTON",
+        "class": "btn btn-primary",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          26,
+          29,
+          36
+        ],
+        "fontSize": "15px",
+        "ratio": 16.87,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live transcription",
+        "tag": "H2",
+        "class": "phase2-workspace-heading",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "20px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Standby",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(42, 45, 54)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12.5px",
+        "ratio": 13.75,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "MOSS",
+        "tag": "SPAN",
+        "class": "session-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "13px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live",
+        "tag": "SPAN",
+        "class": "session-chip",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Controls",
+        "tag": "H2",
+        "class": "panel-title",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254,
+          254,
+          254
+        ],
+        "fontSize": "15px",
+        "ratio": 17.93,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Capture \u00b7 Microphone + shared audio",
+        "tag": "DIV",
+        "class": "label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Both sources are required to start. Microphone-only capture is not available.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private to this browser; no sign-in or capture key is needed.",
+        "tag": "P",
+        "class": "capture-security-note",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Listening setup",
+        "tag": "LABEL",
+        "class": "field-label",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Shared audio",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "10.5px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Not connected",
+        "tag": "SMALL",
+        "class": "",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "8.75px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Next: enable your microphone.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Enable microphone",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(255, 255, 255)",
+        "background": [
+          20,
+          22,
+          28
+        ],
+        "fontSize": "14px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.",
+        "tag": "P",
+        "class": "capture-status",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "11.5px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Speakers",
+        "tag": "SPAN",
+        "class": "",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "15px",
+        "ratio": 17.29,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "0",
+        "tag": "SPAN",
+        "class": "tr-speakers-count",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          246,
+          245,
+          241
+        ],
+        "fontSize": "10.5px",
+        "ratio": 16.58,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Find",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Auto-scroll",
+        "tag": "BUTTON",
+        "class": "mini-btn",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "12px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Transcript will appear here when a session starts.",
+        "tag": "P",
+        "class": "empty-state transcript-empty-state",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "17px",
+        "ratio": 4.88,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Meeting history",
+        "tag": "H2",
+        "class": "phase2-workspace-heading",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          255,
+          255,
+          255
+        ],
+        "fontSize": "20px",
+        "ratio": 18.08,
+        "required": 4.5,
+        "result": "manual-review-gradient-or-opacity"
+      },
+      {
+        "text": "Sessions",
+        "tag": "BUTTON",
+        "class": "seg-btn",
+        "color": "rgb(42, 45, 54)",
+        "background": [
+          236.14901960784314,
+          236.14901960784314,
+          228.21176470588236
+        ],
+        "fontSize": "13px",
+        "ratio": 11.6,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Voiceprints",
+        "tag": "BUTTON",
+        "class": "seg-btn is-active",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.85098039215686,
+          254.85098039215686,
+          254.78823529411764
+        ],
+        "fontSize": "13px",
+        "ratio": 18.06,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Refresh",
+        "tag": "BUTTON",
+        "class": "history-toolbar-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.29411764705884,
+          254.29411764705884,
+          253.87058823529412
+        ],
+        "fontSize": "12px",
+        "ratio": 17.97,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private voice bank",
+        "tag": "H2",
+        "class": "phase2-workspace-heading",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "20px",
+        "ratio": 17.29,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Private to this browser workspace. Name a speaker during capture to save their voiceprint; no separate recording needed.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "Refresh",
+        "tag": "BUTTON",
+        "class": "history-toolbar-btn",
+        "color": "rgb(20, 22, 28)",
+        "background": [
+          254.29411764705884,
+          254.29411764705884,
+          253.87058823529412
+        ],
+        "fontSize": "12px",
+        "ratio": 17.97,
+        "required": 4.5,
+        "result": "pass"
+      },
+      {
+        "text": "No voiceprints yet.",
+        "tag": "P",
+        "class": "hint",
+        "color": "rgb(107, 113, 128)",
+        "background": [
+          250,
+          250,
+          247
+        ],
+        "fontSize": "12px",
+        "ratio": 4.67,
+        "required": 4.5,
+        "result": "pass"
+      }
+    ],
+    "controls": [
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Files & URLs",
+        "disabled": false
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Live / Transcript & export",
+        "disabled": false
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Meeting history",
+        "disabled": false
+      },
+      {
+        "tag": "A",
+        "role": null,
+        "name": "Voiceprints",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "AUDIO OR VIDEO FILES",
+        "disabled": false
+      },
+      {
+        "tag": "TEXTAREA",
+        "role": null,
+        "name": "MEDIA URLS, ONE PER LINE",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Transcribe files and URLs",
+        "disabled": false
+      },
+      {
+        "tag": "SELECT",
+        "role": null,
+        "name": "Listening setup",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Enable microphone",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "MOSS\n\u270e",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Search transcript (\u2318F)",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Copy",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Auto-scroll as new text arrives",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Export transcript",
+        "disabled": true
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Sessions",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": "tab",
+        "name": "Voiceprints",
+        "disabled": false
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "name": "Search meetings",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Refresh",
+        "disabled": false
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "name": "Refresh",
+        "disabled": false
+      }
+    ],
+    "focus_order": [
+      {
+        "tag": "A",
+        "name": "Files & URLs",
+        "tabIndex": 0,
+        "x": 18,
+        "y": 12
+      },
+      {
+        "tag": "A",
+        "name": "Live / Transcript & export",
+        "tabIndex": 0,
+        "x": 124,
+        "y": 12
+      },
+      {
+        "tag": "A",
+        "name": "Meeting history",
+        "tabIndex": 0,
+        "x": 18,
+        "y": 53
+      },
+      {
+        "tag": "A",
+        "name": "Voiceprints",
+        "tabIndex": 0,
+        "x": 146,
+        "y": 53
+      },
+      {
+        "tag": "INPUT",
+        "name": "AUDIO OR VIDEO FILES",
+        "tabIndex": 0,
+        "x": 18,
+        "y": -917
+      },
+      {
+        "tag": "TEXTAREA",
+        "name": "MEDIA URLS, ONE PER LINE",
+        "tabIndex": 0,
+        "x": 18,
+        "y": -835
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Transcribe files and URLs",
+        "tabIndex": 0,
+        "x": 18,
+        "y": -756
+      },
+      {
+        "tag": "SELECT",
+        "name": "Listening setup",
+        "tabIndex": 0,
+        "x": 26,
+        "y": -341
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Enable microphone",
+        "tabIndex": 0,
+        "x": 25,
+        "y": -125
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Search transcript (\u2318F)",
+        "tabIndex": 0,
+        "x": 17,
+        "y": 134
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Auto-scroll as new text arrives",
+        "tabIndex": 0,
+        "x": 126,
+        "y": 134
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Sessions",
+        "tabIndex": 0,
+        "x": 31,
+        "y": 461
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Voiceprints",
+        "tabIndex": 0,
+        "x": 201,
+        "y": 461
+      },
+      {
+        "tag": "INPUT",
+        "name": "Search meetings",
+        "tabIndex": 0,
+        "x": 27,
+        "y": 512
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Refresh",
+        "tabIndex": 0,
+        "x": 27,
+        "y": 562
+      },
+      {
+        "tag": "BUTTON",
+        "name": "Refresh",
+        "tabIndex": 0,
+        "x": 45,
+        "y": 719
+      }
+    ],
+    "focus_anomalies": [],
+    "active_focus": "Voiceprints",
+    "overlap_review": "Requires screenshot review; intentional transcript time overlap is not geometric overlap.",
+    "missing_accessible_names": [],
+    "state": "shared-voiceprints",
+    "viewport": {
+      "width": 400,
+      "height": 844
+    },
+    "screenshot": "shared-voiceprints-400x844.png",
+    "provenance": "Actual open_workspace=True instance",
+    "copy_verdict": "D3 DEFERRED: Private voiceprints / Private to this browser workspace mismatch shared ownership"
+  }
+]

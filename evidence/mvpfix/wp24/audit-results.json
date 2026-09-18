@@ -1,0 +1,26 @@
+{
+  "states": 52,
+  "captures": 156,
+  "viewports": 3,
+  "contrast_occurrences": {
+    "pass": 8019,
+    "manual-review-gradient-or-opacity": 606
+  },
+  "horizontal_overflow": 0,
+  "geometric_overlaps": 0,
+  "missing_accessible_names": 0,
+  "focus_positive_tabindex": 0,
+  "intentional_ellipsis_candidates": 315,
+  "keyboard_restoration": "3/3",
+  "fixed": [
+    "F1",
+    "F2",
+    "F3",
+    "F5",
+    "F6"
+  ],
+  "deferred": [
+    "F4",
+    "D3"
+  ]
+}

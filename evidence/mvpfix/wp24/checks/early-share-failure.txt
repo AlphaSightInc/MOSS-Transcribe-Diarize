@@ -1,0 +1,20 @@
+Observed before successful microphone-ready sequencing; public synthetic devices.
+CAPTURE · MICROPHONE + SHARED AUDIO
+
+Both sources are required to start. Microphone-only capture is not available.
+
+Private to this browser; no sign-in or capture key is needed.
+
+LISTENING SETUP
+Speakers
+Headphones
+
+How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+
+Microphone
+Connected · receiving sound
+Shared audio
+Not connected
+Reset capture
+
+Microphone connected. Share a browser tab, window, or screen with audio.

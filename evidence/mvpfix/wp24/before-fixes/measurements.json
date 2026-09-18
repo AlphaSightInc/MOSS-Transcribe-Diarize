@@ -1,0 +1,12 @@
+{
+  "captures": 129,
+  "states": 43,
+  "horizontal_overflow_captures": 15,
+  "selected_secondary_contrast": 4.22,
+  "missing_accessible_names": 0,
+  "retained_examples": [
+    "live-final-1440x900",
+    "failure-transcode_failed-400x844",
+    "speaker-rename-save-voiceprint-1440x900"
+  ]
+}
