@@ -1,0 +1,194 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it __
+
+    def test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it():
+        """Words the parser threw away come back, and a reader can tell they were repaired."""
+    
+        runner = StubbedTransportVllmRunner([SALVAGEABLE_ANSWER])
+        decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+        span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="hard_cap")
+    
+        inferred = decoder.transcribe_pcm(span=span, pcm=b"\x01\x00" * 40000)
+    
+>       assert inferred.transcript == "[0][S01]The difference between, you said the stock market.[2.5]"
+E       AssertionError: assert '' == '[0][S01]The ... market.[2.5]'
+E         
+E         - [0][S01]The difference between, you said the stock market.[2.5]
+
+tests/test_live_pipeline_seams.py:682: AssertionError
+_ RollingRuntimeWiringTest.test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate _
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate>
+
+    def test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate(self):
+        """Bounded salvage was measured on 2.5 s hard-cap spans, and stays there.
+    
+        The same unparseable answer is decoded twice through the production adapter: once as
+        a hard-cap span, where M1 completes its absent closing bound and publishes it, and
+        once as a rolling window, where the gate refuses it and the window fails.
+        """
+    
+        raw = "[0.00][S01] the difference between, you said the stock market."
+    
+        class UnparseableRunner:
+            def transcribe(self, audio_path, **kwargs):
+                raise EmptyTranscriptionError(
+                    "zero parsed segments",
+                    cause=EmptyTranscriptCause.UNPARSEABLE_TEXT,
+                    text=raw,
+                    generated_tokens=17,
+                )
+    
+        adapter = RunnerBoundedWavInference(UnparseableRunner(), max_samples=WINDOW_SAMPLES)
+        salvaged = adapter.transcribe_pcm(
+            span=FrozenSpan(
+                id=1, epoch=0, start_sample=0, end_sample=HARD_CAP_SAMPLES, reason=HARD_CAP_REASON
+            ),
+            pcm=b"\1\0" * HARD_CAP_SAMPLES,
+        )
+        refused = adapter.transcribe_pcm(
+            span=FrozenSpan(
+                id=2,
+                epoch=0,
+                start_sample=0,
+                end_sample=WINDOW_SAMPLES,
+                reason=ROLLING_WINDOW_REASON,
+            ),
+            pcm=b"\1\0" * WINDOW_SAMPLES,
+        )
+    
+>       self.assertIn("stock market", salvaged.transcript)
+E       AssertionError: 'stock market' not found in ''
+
+tests/test_live_rolling_wiring.py:450: AssertionError
+__________ test_launcher_without_prompt_finalizer_builds_http_request __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1188fe7e0>
+
+    def test_launcher_without_prompt_finalizer_builds_http_request(monkeypatch):
+        import io
+        import json
+        from moss_transcribe_diarize.app.phase2_web_cli import parse_args, _build_file_runner
+        from moss_transcribe_diarize.app.live_transcript_convergence import TerminalDecodePlan, RollingStatus
+        from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
+    
+        # Mirrors account-web-launcher.sh: deliberately no --prompt.
+        args = parse_args([
+            '--database', '/tmp/account.sqlite', '--control-socket', '/tmp/control.sock',
+            '--tls-certfile', '/tmp/cert.pem', '--tls-keyfile', '/tmp/key.pem',
+            '--backend', 'vllm', '--model', '/tmp/model',
+            '--vllm-base-url', 'http://127.0.0.1:8000/v1',
+            '--vllm-model', 'OpenMOSS-Team/MOSS-Transcribe-Diarize', '--vllm-timeout', '1800',
+            '--file-work-root', '/tmp/file-work', '--meeting-audio-root', '/tmp/audio',
+            '--live-provider-manifest', '/tmp/provider.json', '--live-helper-lease-seconds', '30',
+            '--host', '0.0.0.0', '--port', '7861', '--max-len', '16384', '--max-new-tokens', '12000',
+        ])
+        assert args.prompt is None
+        requests = []
+        class Response(io.BytesIO):
+            headers = {'Content-Type': 'application/json'}
+        def fake_urlopen(request, **kwargs):
+            requests.append(request)
+            return Response(json.dumps({'text': '[0][S01]test[2.5]',
+                            'usage': {'completion_tokens': 12, 'prompt_tokens': 10}}).encode())
+        monkeypatch.setattr('urllib.request.urlopen', fake_urlopen)
+        finalizer = runner_composition.build_terminal_finalizer(
+            runner=_build_file_runner(args), prompt=args.prompt, max_length=args.max_len,
+            max_new_tokens=args.max_new_tokens, decoding=args.decoding,
+            temperature=args.temperature, max_length_cap=args.max_len,
+        )
+        class Tape:
+            def gaps(self, end_sample): return ()
+            def read(self, *, start_sample, end_sample): return b'\1\0' * (end_sample-start_sample)
+>       finalizer.finalize(
+            plan=TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0,
+                rolling_status=RollingStatus.ROLLING, windows_completed=0, windows_failed=0),
+            tape=Tape(), base_text_revision_version=0,
+        )
+
+tests/phase2/test_runner_composition.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_transcript_convergence.TerminalTranscriptFinalizer object at 0x118c300e0>
+kwargs = {'plan': TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0, rolling_status=<RollingStatus.ROLLING...her_without_prompt_finalizer_builds_http_request.<locals>.Tape object at 0x11890b6e0>, 'base_text_revision_version': 0}
+
+>   TerminalTranscriptFinalizer.finalize=lambda self,**kwargs:self._refused(kwargs['plan'],TerminalOutcome.NO_TRANSCRIPT,'mutation_dropped_terminal')
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: TerminalTranscriptFinalizer._refused() missing 1 required keyword-only argument: 'gaps'
+
+.wp12/fixture_mutations.py:9: TypeError
+_ ReplayTerminalFinalizationWaitTest.test_the_run_reports_the_terminal_surface_and_the_events_that_made_it _
+
+self = <test_live_service_replay.ReplayTerminalFinalizationWaitTest testMethod=test_the_run_reports_the_terminal_surface_and_the_events_that_made_it>
+
+    def test_the_run_reports_the_terminal_surface_and_the_events_that_made_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            trace, summary = _run_terminal_replay(Path(tmp), finalizer=_terminal_finalizer())
+    
+        wait = _one_trace_record(self, trace, "terminal_finalization_wait")
+        terminal = _one_trace_record(self, trace, "terminal")
+        session = terminal["snapshot"]["session"]
+        kinds = [
+            record["event"]["kind"] for record in trace if record["kind"] == "service_event"
+        ]
+    
+        self.assertEqual(wait["stop_finalization_status"], "running")
+>       self.assertEqual(wait["finalization_status"], "final")
+E       AssertionError: 'failed' != 'final'
+E       - failed
+E       + final
+
+tests/test_live_service_replay.py:724: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  moss_transcribe_diarize.live.terminal:live_service_runtime.py:1203 live terminal finalization failed: error_type=TypeError
+____________ test_reader_retires_draft_by_audio_boundary[multiple] _____________
+
+replacement = 'multiple'
+
+    @pytest.mark.parametrize('replacement', ['preview', 'multiple', 'empty', 'abort'])
+    def test_reader_retires_draft_by_audio_boundary(replacement):
+        r, _, sid = runtime(RecordingDecoder())
+        r.accept_frame(sid, _frame(0)); finished(r)
+        first = r.snapshot(sid).to_dict()
+        import copy
+        second = copy.deepcopy(first)
+        # Even a stale transport draft cannot survive the reader's canonical boundary.
+        if replacement == 'preview':
+            second['session']['provisional'] = dict(generation=1, start_sample=0,
+                                                   end_sample=1000, transcript='[0][S00]confirmed preview[0.0625]')
+        elif replacement == 'abort':
+            second['session']['status'] = 'aborted'
+        else:
+            second['session']['committed_samples'] = 1000
+            second['session']['committed'] = [dict(span_id=0, start_sample=0, end_sample=1000,
+                transcript='[0][S00]one[0.03][0.03][S00]two[0.0625]' if replacement == 'multiple' else '',
+                revised_transcript=None)]
+            # Current snapshots publish the authoritative surface as well as commits.
+            # Leaving the initial empty surface here correctly hides the commit text.
+            second['session']['effective_transcript'] = [
+                dict(start_sample=0, end_sample=480, text='one', canonical_speaker=None,
+                     authority='canonical'),
+                dict(start_sample=480, end_sample=1000, text='two', canonical_speaker=None,
+                     authority='canonical'),
+            ] if replacement == 'multiple' else []
+        rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
+        assert len(rows[0]) == 1
+>       assert len(rows[1]) == {'preview': 1, 'multiple': 2, 'empty': 0, 'abort': 0}[replacement]
+E       assert 0 == 2
+E        +  where 0 = len([])
+
+tests/phase2/test_draft_lane.py:167: AssertionError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_live_pipeline_seams.py::test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate
+FAILED tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+FAILED tests/test_live_service_replay.py::ReplayTerminalFinalizationWaitTest::test_the_run_reports_the_terminal_surface_and_the_events_that_made_it
+FAILED tests/phase2/test_draft_lane.py::test_reader_retires_draft_by_audio_boundary[multiple]
+5 failed, 1 warning in 3.66s

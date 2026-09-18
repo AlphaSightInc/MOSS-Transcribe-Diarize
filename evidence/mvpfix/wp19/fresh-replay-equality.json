@@ -1,0 +1,8 @@
+{
+  "identities": true,
+  "mapping": true,
+  "segments": true,
+  "correct_segments": true,
+  "rows": true,
+  "text_time_unchanged": true
+}

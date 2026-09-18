@@ -23,8 +23,10 @@
   fake ASR/identity and always-speech VAD; synthetic PCM, 1,800 audio seconds.
   Publication queue counts sampled after each pair of HTTP frame posts; no claim
   that transient queue occupancy between samples was zero.
-- No GPU request, tunnel, shared service restart, deployment, push, merge or GitHub
-  mutation occurred. Part C remains pending the user's WP12 confirmation.
+- At completion of Parts A/B: no GPU request or tunnel; no shared service restart,
+  deployment, push, merge or GitHub mutation. The subsequent user instruction
+  authorizes merging integration 1745b96f and running Part C with 2,600 requests.
+  Real-run source SHA and request counts are recorded separately in its result.
 
 Additional controls: native `--arena production --varying` exercises the changed
 constructor without overriding options; 80/80 vectors exactly equal to default

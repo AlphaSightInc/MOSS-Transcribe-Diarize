@@ -1,0 +1,122 @@
+[
+  {
+    "run": 1,
+    "returncode": 0,
+    "seconds": 4.052720542007592,
+    "summary": "1 passed, 1 warning in 3.29s"
+  },
+  {
+    "run": 2,
+    "returncode": 0,
+    "seconds": 4.155465749994619,
+    "summary": "1 passed, 1 warning in 3.37s"
+  },
+  {
+    "run": 3,
+    "returncode": 0,
+    "seconds": 4.087902625004062,
+    "summary": "1 passed, 1 warning in 3.35s"
+  },
+  {
+    "run": 4,
+    "returncode": 0,
+    "seconds": 4.109585333993891,
+    "summary": "1 passed, 1 warning in 3.37s"
+  },
+  {
+    "run": 5,
+    "returncode": 0,
+    "seconds": 4.0870543329947395,
+    "summary": "1 passed, 1 warning in 3.35s"
+  },
+  {
+    "run": 6,
+    "returncode": 0,
+    "seconds": 4.132217666992801,
+    "summary": "1 passed, 1 warning in 3.36s"
+  },
+  {
+    "run": 7,
+    "returncode": 0,
+    "seconds": 4.073613832995761,
+    "summary": "1 passed, 1 warning in 3.33s"
+  },
+  {
+    "run": 8,
+    "returncode": 0,
+    "seconds": 4.0972751660010545,
+    "summary": "1 passed, 1 warning in 3.34s"
+  },
+  {
+    "run": 9,
+    "returncode": 0,
+    "seconds": 4.18158529199718,
+    "summary": "1 passed, 1 warning in 3.42s"
+  },
+  {
+    "run": 10,
+    "returncode": 0,
+    "seconds": 4.025409084002604,
+    "summary": "1 passed, 1 warning in 3.27s"
+  },
+  {
+    "run": 11,
+    "returncode": 0,
+    "seconds": 4.039367833000142,
+    "summary": "1 passed, 1 warning in 3.31s"
+  },
+  {
+    "run": 12,
+    "returncode": 0,
+    "seconds": 3.9227784579998115,
+    "summary": "1 passed, 1 warning in 3.24s"
+  },
+  {
+    "run": 13,
+    "returncode": 0,
+    "seconds": 3.9615789170056814,
+    "summary": "1 passed, 1 warning in 3.24s"
+  },
+  {
+    "run": 14,
+    "returncode": 0,
+    "seconds": 4.058872082998278,
+    "summary": "1 passed, 1 warning in 3.34s"
+  },
+  {
+    "run": 15,
+    "returncode": 0,
+    "seconds": 4.0086307500023395,
+    "summary": "1 passed, 1 warning in 3.28s"
+  },
+  {
+    "run": 16,
+    "returncode": 0,
+    "seconds": 4.0611312499968335,
+    "summary": "1 passed, 1 warning in 3.31s"
+  },
+  {
+    "run": 17,
+    "returncode": 0,
+    "seconds": 4.0423370829958,
+    "summary": "1 passed, 1 warning in 3.30s"
+  },
+  {
+    "run": 18,
+    "returncode": 0,
+    "seconds": 4.200050083003589,
+    "summary": "1 passed, 1 warning in 3.36s"
+  },
+  {
+    "run": 19,
+    "returncode": 0,
+    "seconds": 3.9643247080093715,
+    "summary": "1 passed, 1 warning in 3.28s"
+  },
+  {
+    "run": 20,
+    "returncode": 0,
+    "seconds": 3.926392915993347,
+    "summary": "1 passed, 1 warning in 3.22s"
+  }
+]

@@ -116,7 +116,16 @@ and generic `failed`, not the intended `tape_unavailable`. The mono base reports
 `unavailable`. The runtime's finally block still releases all tapes. Reproduced with
 two 2.5-second frames and one-frame tape capacity, no ONNX/model involvement; exact
 error in `evidence/mvpfix/wp22/tape-refusal-defect.txt`. The same omitted argument is
-present in the locally visible WP12 tip a2ee97eb (read only; not merged).
+present in the accepted integrated WP12 tip 1745b96f; the merge does not fix it.
 No change to WP12-owned terminal mapping/lifecycle code in this memory package.
 The full 30-minute per-lane bounded-tape profiles must report this failure explicitly,
 not relabel it successful finalization. Part C still needs its authorized larger tape.
+
+## Integrated WP12 gate
+
+Merged authorized integration 1745b96f, preserving both branches' appended tests/docs.
+Removed inherited stray conflict-marker lines from .gitignore; retained all ignore rules.
+Before Part C: full Python 1,911 passed, 2 skipped, 37 subtests (149.16 s); frontend
+249 tests / 28 files, typecheck and build pass. No generated asset change. The imported
+WP12 historical failure logs contain whitespace; left upstream evidence unchanged.
+WP22's production diff versus integration remains only the four encoder lines.

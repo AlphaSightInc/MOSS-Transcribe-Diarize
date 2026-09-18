@@ -2085,7 +2085,15 @@ def test_public_stop_keeps_preexisting_v2_terminal_states_as_conflicts(
 
 def test_helper_lease_loss_interrupts_without_client_terminal_request_and_never_resumes(
     tmp_path: Path,
+    monkeypatch,
 ):
+    from test_live_helper_failure import FakeTimer
+    from moss_transcribe_diarize.app.live_helper_failure import AsyncioLiveHelperTimer
+
+    # Drive the actual expiry callback after capture and renewal. Wall-clock scheduling
+    # cannot expire the 30 ms lease before this test reaches the behavior it exercises.
+    timer = FakeTimer()
+    monkeypatch.setattr(AsyncioLiveHelperTimer, "schedule", lambda _self, deadline, callback: timer.schedule(deadline, callback))
     database = tmp_path / "moss.sqlite3"
     sessions = asyncio.run(provision(database))
     app = make_app(database, lease_seconds=0.03)
@@ -2102,6 +2110,9 @@ def test_helper_lease_loss_interrupts_without_client_terminal_request_and_never_
         assert client.post(
             f"/api/live/sessions/{meeting_id}/heartbeat", json=heartbeat()
         ).status_code == 200
+        assert len(timer.scheduled) == 2
+        assert timer.scheduled[0][1].cancelled
+        client.portal.call(timer.scheduled[-1][1].fire)
         terminal = wait_snapshot(
             client,
             meeting_id,

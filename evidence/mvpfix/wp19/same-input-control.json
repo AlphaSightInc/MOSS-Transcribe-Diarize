@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "minutes": 6,
+      "windows": 3,
+      "legacy_identities": 7,
+      "album_identities": 3,
+      "segments": 92,
+      "correct_segments": 84,
+      "duration_accuracy": 0.9528753993610225,
+      "retained_rows_exact": true,
+      "text_time_exact": true
+    },
+    {
+      "minutes": 30,
+      "windows": 15,
+      "legacy_identities": 31,
+      "album_identities": 3,
+      "segments": 464,
+      "correct_segments": 420,
+      "duration_accuracy": 0.9453940106114016,
+      "retained_rows_exact": true,
+      "text_time_exact": true
+    }
+  ],
+  "lease_passes": 20,
+  "decoder_requests": 18
+}

@@ -144,7 +144,7 @@ def test_launcher_without_prompt_finalizer_builds_http_request(monkeypatch):
     )
     class Tape:
         def gaps(self, end_sample): return ()
-        def read(self, *, start_sample, end_sample): return b'\0\0' * (end_sample-start_sample)
+        def read(self, *, start_sample, end_sample): return b'\1\0' * (end_sample-start_sample)
     finalizer.finalize(
         plan=TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0,
             rolling_status=RollingStatus.ROLLING, windows_completed=0, windows_failed=0),
@@ -169,3 +169,22 @@ def test_live_and_terminal_share_prompt_resolution(prompt):
                                        decoding='greedy', temperature=None)
     assert live_fields['prompt'] == terminal.transcribe_kwargs['prompt']
     assert live_fields['prompt'] == (prompt if prompt and prompt.strip() else DEFAULT_PROMPT)
+
+
+def test_file_album_default_legacy_fallback_and_live_terminal_isolation():
+    from moss_transcribe_diarize.app.file_identity_album import AlbumIdentityResolver
+    from moss_transcribe_diarize.app.speaker_identity import IdentityResolver
+    config=dict(model_path='test',device='cpu',dtype='bf16',backend='vllm',
+                vllm_base_url='http://unused/v1',vllm_model='test',vllm_api_key=None,vllm_timeout=30)
+    file=runner_composition.build_file_runner(**config)
+    assert isinstance(file.identity_resolver,AlbumIdentityResolver)
+    fallback=runner_composition.build_file_runner(**config,file_identity='legacy')
+    assert isinstance(fallback.identity_resolver,IdentityResolver)
+    assert not fallback.identity_resolver.config.tier_b_enabled
+    terminal=runner_composition.build_terminal_finalizer(runner=file,prompt=None,max_length=16384,
+        max_new_tokens=12000,decoding='greedy',temperature=None,max_length_cap=16384)
+    assert terminal.runner.delegate is file.delegate
+    assert isinstance(terminal.runner.identity_resolver,IdentityResolver)
+    assert isinstance(file.identity_resolver,AlbumIdentityResolver)
+    with pytest.raises(ValueError):
+        runner_composition.build_file_runner(**config,file_identity='typo')

@@ -1,0 +1,43 @@
+{
+  "arm": "overlap-shadow-s60",
+  "case": "same-voice",
+  "seconds": 60,
+  "start": 92822.532193833,
+  "stop": 92882.539080791,
+  "stop_to_final": 19.181933750005555,
+  "status": "final",
+  "requests": 62,
+  "pre": {
+    "system": {
+      "words": 189,
+      "speakers": [
+        "speaker-0001",
+        "speaker-0003"
+      ]
+    },
+    "microphone": {
+      "words": 189,
+      "speakers": [
+        "speaker-0002",
+        "speaker-0004"
+      ]
+    }
+  },
+  "final": {
+    "system": {
+      "words": 197,
+      "speakers": [
+        "speaker-0001",
+        "speaker-0003"
+      ]
+    },
+    "microphone": {
+      "words": 197,
+      "speakers": [
+        "speaker-0002",
+        "speaker-0004"
+      ]
+    }
+  },
+  "saved_equal": true
+}

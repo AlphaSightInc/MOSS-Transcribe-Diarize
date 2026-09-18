@@ -1,0 +1,13 @@
+{
+  "revision": "37979e53",
+  "python_files_compared": 86,
+  "differences": [],
+  "loaded_source": [
+    {
+      "time": 95193.053284041,
+      "arm": "mono180-traced",
+      "kind": "source",
+      "package": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/moss_transcribe_diarize/__init__.py"
+    }
+  ]
+}

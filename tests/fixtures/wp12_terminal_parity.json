@@ -1,0 +1,335 @@
+{
+  "provenance": "Retained overlap-shadow-p24/p60 acoustic saved surfaces; original times, canonical IDs, lane and authority. Words replaced by unique synthetic text. Causal test evidence is synthetic subdivision, not retained causal state.",
+  "24": [
+    {
+      "start_sample": 0,
+      "end_sample": 84480,
+      "text": "terminal row 0",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 8640,
+      "end_sample": 52320,
+      "text": "terminal row 1",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 65280,
+      "end_sample": 142080,
+      "text": "terminal row 2",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 98240,
+      "end_sample": 191680,
+      "text": "terminal row 3",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 142080,
+      "end_sample": 152640,
+      "text": "terminal row 4",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 152640,
+      "end_sample": 238080,
+      "text": "terminal row 5",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 192960,
+      "end_sample": 308480,
+      "text": "terminal row 6",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 238080,
+      "end_sample": 245280,
+      "text": "terminal row 7",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 245280,
+      "end_sample": 282720,
+      "text": "terminal row 8",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 293280,
+      "end_sample": 310080,
+      "text": "terminal row 9",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 314880,
+      "end_sample": 337920,
+      "text": "terminal row 10",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 321920,
+      "end_sample": 383680,
+      "text": "terminal row 11",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 341760,
+      "end_sample": 382080,
+      "text": "terminal row 12",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    }
+  ],
+  "60": [
+    {
+      "start_sample": 0,
+      "end_sample": 84480,
+      "text": "terminal row 0",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 8640,
+      "end_sample": 52320,
+      "text": "terminal row 1",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 65280,
+      "end_sample": 142080,
+      "text": "terminal row 2",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 98240,
+      "end_sample": 191360,
+      "text": "terminal row 3",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 142080,
+      "end_sample": 152640,
+      "text": "terminal row 4",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 152640,
+      "end_sample": 244320,
+      "text": "terminal row 5",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 192960,
+      "end_sample": 307840,
+      "text": "terminal row 6",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 244320,
+      "end_sample": 310080,
+      "text": "terminal row 7",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 314880,
+      "end_sample": 337920,
+      "text": "terminal row 8",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 321920,
+      "end_sample": 394880,
+      "text": "terminal row 9",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 341760,
+      "end_sample": 408000,
+      "text": "terminal row 10",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 400640,
+      "end_sample": 471040,
+      "text": "terminal row 11",
+      "canonical_speaker": "speaker-0003",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 408000,
+      "end_sample": 444960,
+      "text": "terminal row 12",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 448320,
+      "end_sample": 468000,
+      "text": "terminal row 13",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 473760,
+      "end_sample": 540000,
+      "text": "terminal row 14",
+      "canonical_speaker": "speaker-0004",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 476160,
+      "end_sample": 570240,
+      "text": "terminal row 15",
+      "canonical_speaker": "speaker-0003",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 541760,
+      "end_sample": 641280,
+      "text": "terminal row 16",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 574080,
+      "end_sample": 667520,
+      "text": "terminal row 17",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 641760,
+      "end_sample": 647040,
+      "text": "terminal row 18",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 650880,
+      "end_sample": 662400,
+      "text": "terminal row 19",
+      "canonical_speaker": "speaker-0004",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 674880,
+      "end_sample": 747360,
+      "text": "terminal row 20",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 678400,
+      "end_sample": 791040,
+      "text": "terminal row 21",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 747840,
+      "end_sample": 881280,
+      "text": "terminal row 22",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 791360,
+      "end_sample": 871680,
+      "text": "terminal row 23",
+      "canonical_speaker": "speaker-0002",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 879360,
+      "end_sample": 958080,
+      "text": "terminal row 24",
+      "canonical_speaker": "speaker-0003",
+      "authority": "terminal",
+      "source_lane": "microphone"
+    },
+    {
+      "start_sample": 881280,
+      "end_sample": 932640,
+      "text": "terminal row 25",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 932640,
+      "end_sample": 949920,
+      "text": "terminal row 26",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    },
+    {
+      "start_sample": 949920,
+      "end_sample": 959040,
+      "text": "terminal row 27",
+      "canonical_speaker": "speaker-0001",
+      "authority": "terminal",
+      "source_lane": "system"
+    }
+  ]
+}

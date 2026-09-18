@@ -1,0 +1,81 @@
+[
+  {
+    "seconds": 24,
+    "stop_to_final": 3.7885335000028135,
+    "requests": 26,
+    "stop_to_terminal": 2.5786908750014845,
+    "terminal_to_publication": 1.1005894999980228,
+    "terminal_embedding_calls": 0,
+    "terminal_encoder_intervals": 0,
+    "terminal_embedding_audio_seconds": 0,
+    "saved_equal": true,
+    "final": {
+      "microphone": {
+        "words": 56,
+        "speakers": [
+          "speaker-0002"
+        ]
+      },
+      "system": {
+        "words": 86,
+        "speakers": [
+          "speaker-0001"
+        ]
+      }
+    }
+  },
+  {
+    "seconds": 60,
+    "stop_to_final": 7.49013816700608,
+    "requests": 62,
+    "stop_to_terminal": 4.867833333002636,
+    "terminal_to_publication": 2.446688209005515,
+    "terminal_embedding_calls": 0,
+    "terminal_encoder_intervals": 0,
+    "terminal_embedding_audio_seconds": 0,
+    "saved_equal": true,
+    "final": {
+      "microphone": {
+        "words": 154,
+        "speakers": [
+          "speaker-0002",
+          "speaker-0003"
+        ]
+      },
+      "system": {
+        "words": 197,
+        "speakers": [
+          "speaker-0001",
+          "speaker-0004"
+        ]
+      }
+    }
+  },
+  {
+    "seconds": 180,
+    "stop_to_final": 16.964282291999552,
+    "requests": 184,
+    "stop_to_terminal": 4.794547375000548,
+    "terminal_to_publication": 11.791760583990254,
+    "terminal_embedding_calls": 0,
+    "terminal_encoder_intervals": 0,
+    "terminal_embedding_audio_seconds": 0,
+    "saved_equal": true,
+    "final": {
+      "microphone": {
+        "words": 462,
+        "speakers": [
+          "speaker-0002",
+          "speaker-0003"
+        ]
+      },
+      "system": {
+        "words": 591,
+        "speakers": [
+          "speaker-0001",
+          "speaker-0004"
+        ]
+      }
+    }
+  }
+]

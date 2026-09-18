@@ -1,0 +1,102 @@
+622088b1 Merge branch 'mvpfix/wp7-identity-stress' into integration/mvp-fix-20260917
+
+db8b0614 Merge branch 'mvpfix/wp3-capture-guards' into integration/mvp-fix-20260917
+# Conflicts:
+#	VERIFY-RESULT.md
+#	VERIFY.md
+#	moss_transcribe_diarize/app/frontend_assets/app.js
+#	moss_transcribe_diarize/app/frontend_assets/app.js.map
+
+ccc4e88c Merge branch 'mvpfix/wp2-lane-consumers' into integration/mvp-fix-20260917
+# Conflicts:
+#	frontend/vite.config.ts
+#	moss_transcribe_diarize/app/frontend_assets/app.js
+#	moss_transcribe_diarize/app/frontend_assets/app.js.map
+
+1a19a69b Merge branch 'mvpfix/wp5-browser-stress' into integration/mvp-fix-20260917
+
+a92bb4aa build: rebuild frontend assets after merging WP2/WP3/WP4/WP5/WP7
+Typecheck/build pass; frontend 230/230 on the integrated tree.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016ZzHVWDihdc8P6kBJfAdYF
+
+79467f08 fix(integration): explicit .ts extension so the node strip-types export oracle resolves transcriptOrder
+WP4's export oracle loads transcriptExport.ts via node --experimental-strip-types, which cannot resolve WP2's new extensionless runtime import. tsconfig already allows .ts import extensions. test_export_oracle 22/22.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016ZzHVWDihdc8P6kBJfAdYF
+
+b31683a6 Merge branch 'mvpfix/wp1-lane-decode' into integration/mvp-fix-20260917
+# Conflicts:
+#	.gitignore
+#	VERIFY-RESULT.md
+#	VERIFY.md
+#	tests/phase2/test_owner_bound_live_meeting.py
+
+b3e5d4d6 Merge branch 'mvpfix/wp9-rename-identity' into integration/mvp-fix-20260917
+# Conflicts:
+#	.gitignore
+#	moss_transcribe_diarize/app/frontend_assets/app.js.map
+
+d8ee6f41 build: rebuild frontend assets after merging WP1 and WP9
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016ZzHVWDihdc8P6kBJfAdYF
+
+5dd97206 Merge branch 'mvpfix/wp10-zero-guard-seams' into integration/mvp-fix-20260917
+# Conflicts:
+#	VERIFY-RESULT.md
+#	VERIFY.md
+
+a73a51bd test(integration): WP9 silence-birth test builds its decoder through the WP10 composition root
+The digital-silence guard now lives at dispatch (bounded_live_inference), not inside RunnerBoundedWavInference; the test's bare adapter bypassed it.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016ZzHVWDihdc8P6kBJfAdYF
+
+33a419f2 Merge branch 'mvpfix/wp11-export-labels' into integration/mvp-fix-20260917
+# Conflicts:
+#	moss_transcribe_diarize/app/frontend_assets/app.js
+#	moss_transcribe_diarize/app/frontend_assets/app.js.map
+
+8068afce build: rebuild frontend assets after merging WP10 and WP11
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016ZzHVWDihdc8P6kBJfAdYF
+
+3d5fdfe0 Merge branch 'mvpfix/wp6-capacity-baseline' into integration/mvp-fix-20260917
+# Conflicts:
+#	.gitignore
+
+5179368e Merge branch 'mvpfix/wp13-tls-hygiene' into integration/mvp-fix-20260917
+# Conflicts:
+#	.gitignore
+
+f599c1a6 Merge branch 'mvpfix/wp14-integrated-e2e' into integration/mvp-fix-20260917
+
+41cfebb9 chore: relocate WP14 verification records under docs/verify
+
+024218b4 Merge branch 'mvpfix/wp16-file-url-long' into integration/mvp-fix-20260917
+# Conflicts:
+#	moss_transcribe_diarize/app/frontend_assets/app.js
+#	moss_transcribe_diarize/app/frontend_assets/app.js.map
+
+d769b010 build: rebuild frontend assets after merging WP14 and WP16
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016ZzHVWDihdc8P6kBJfAdYF
+
+de35ef36 Merge branch 'mvpfix/wp17-lane-quality-voiceprint' into integration/mvp-fix-20260917
+
+c2e45867 Merge branch 'mvpfix/wp18-file-identity' into integration/mvp-fix-20260917
+
+5094206d Merge branch 'mvpfix/wp20-lane-endpointing' into integration/mvp-fix-20260917
+# Conflicts:
+#	docs/design-streaming-diarization.md
+
+8938cb2c Merge branch 'mvpfix/wp15-stop-lease-longrun' into integration/mvp-fix-20260917
+# Conflicts:
+#	.gitignore
+
+c609d7f3 Merge branch 'mvpfix/wp19-file-identity-album' into integration/mvp-fix-20260917
+# Conflicts:
+#	.gitignore
+#	docs/design-streaming-diarization.md

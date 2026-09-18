@@ -41,6 +41,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--vllm-model")
     parser.add_argument("--vllm-api-key", default="EMPTY")
     parser.add_argument("--vllm-timeout", type=float, default=600.0)
+    parser.add_argument("--file-identity", choices=["album", "legacy"], default="album",
+                        help="File cross-window identity; legacy is the one-release fallback.")
     parser.add_argument("--device", default="auto")
     parser.add_argument("--dtype", default="bf16")
     parser.add_argument(
@@ -92,6 +94,8 @@ def _build_file_runner(args: argparse.Namespace):
         vllm_model=args.vllm_model,
         vllm_api_key=args.vllm_api_key,
         vllm_timeout=args.vllm_timeout,
+        file_identity=args.file_identity,
+        identity_manifest=args.live_provider_manifest,
     )
 
 

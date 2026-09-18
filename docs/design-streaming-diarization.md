@@ -622,3 +622,174 @@ rejected. This changes allocation reuse only; identity/tape/queue values stay fi
 These are local memory measurements, not ASR accuracy or durability acceptance.
 Evidence and full-session ownership accounting:
 `prototypes/streaming-diarization/memory-longrun/NOTES.md`, `evidence/mvpfix/wp22/`.
+### WP19: file-window album composition (2026-09-18)
+
+WP18 falsified pairwise occurrence matching: repeated observations of one voice
+competed as different candidates. File mode now composes the existing
+`assign_speakers`, `FingerprintAlbum`, and `LiveIdentitySweeper`: each window offers
+one vector per local voice, matches canonical album references, admits evidence under
+the manifest's existing rules, and a terminal sweep revisits earlier assignments.
+No identity threshold, decoder/window plan, text, timing, live algorithm or saved
+transcript schema changes. Embedding failure abstains without discarding words.
+
+Production Account vLLM file composition defaults to `--file-identity album`.
+`--file-identity legacy` restores the previous resolver (including disabled Tier B)
+for one release. The manifest supplied through `--live-provider-manifest` supplies
+the file album's identical measured policy and pinned encoder. Direct low-level
+`IdentityResolver` remains the legacy implementation. Single-window decoding and
+HF decoding remain unchanged: this repair addresses cross-window vLLM files.
+The shared terminal-decoder composition retains its legacy resolver explicitly,
+so changing the File default does not change Live terminal behavior.
+
+A1 perfect vectors: 1 voice x 3 windows -> 1; 2 -> 2. A2 returning voice and unknown
+short utterance tested; A4 admission, ambiguity and retrospective rescue use the
+same live modules. Fresh decoder A3: 6 minutes -> 3 voices, 84/92 segments correct
+(91.3043%), 322.11/338.04 truth-overlap seconds correct (95.2875%); 30 minutes -> 3,
+420/464 segments correct (90.5172%), 1592.97/1684.98 seconds (94.5394%). No abstentions;
+text/time unchanged. One global canonical-to-reference assignment, then per-segment
+maximum temporal reference overlap; no per-window remapping or word-accuracy claim.
+The resolver cannot repair incorrect diarization within a window.
+
+Cost: 62.894428 seconds for three windows; 332.007926 seconds for fifteen, including
+all pinned CPU embeddings. Eighteen serial vLLM requests, own tunnel 18119. These
+are local corpus measurements, not a deployment or capacity qualification.
+
+File enrollment previously returned unavailable. An explicit enrollment request now
+reconstructs evidence from owner-bound retained MP3 and addressed canonical segments,
+using existing admission and private-bank rules. No new persisted embedding/schema.
+Saved audio is required; reconstruction costs embedding work on each enrollment request.
+The MP3 prototype retained PCM voice agreement (cosine .969589); 5 s eligible, .6 s
+refused. Save/reopen/export/rename/enrollment tested with real archive operations and
+perfect-vector controls. Evidence: `evidence/mvpfix/wp19/`; bench: `prototypes/streaming-diarization/wp19-file-identity-album/`.
+## 9. WP12 terminal lane latency measurement (2026-09-18)
+
+A terminal lane job decodes its complete tape through the existing 150/120-second
+file-window planner, then embeds the resulting speech to match the lane's settled
+album. Unlike mono's overlap mapping, these lane jobs pay fresh acoustic matching
+cost. On matched public-corpus parity input, original Stop-to-final was 11.803 s
+at 24 s and 26.636 s at 60 s; mono was 1.970 s and 4.424 s. At 24 s only 1.829 s
+was terminal decoding: approximately 6.79 s was terminal voice preparation.
+
+The measured change runs the two independent terminal lane jobs concurrently,
+then assembles results in lane order for one publication. Causal/rolling execution,
+window geometry, identity thresholds and final-surface contract stay unchanged.
+24/60 s prototype Stop-to-final became 7.715/16.175 s with unchanged 26/62 request
+counts. All 142/351 ordered words retained their speaker assignments; 24 s saved
+segments were identical, while 60 s punctuation/segmentation/timestamps differed.
+This is an improvement, not latency acceptance: the 60 s case still exceeds 10 s.
+180 s and 30-minute scaling are unmeasured under the 300-request WP budget.
+
+WP1's 48 s alternation microphone interval is not a one-voice control: its supplied
+reference names both Keyu Jin and Lex Fridman. The second birth retained the first
+speaker's album; its score was 0.084412 versus the unchanged 0.35 threshold, with
+1.56 s evidence clearing the 1.0 s birth floor. No lane evidence loss or threshold
+repair is supported. A real-album regression separately verifies one returning
+voice keeps its ID across silent lane gaps. Evidence and limits:
+`prototypes/streaming-diarization/wp12-stop-identity/NOTES.md` and
+`evidence/mvpfix/wp12/`.
+
+Fresh-context matched instrumentation on the same 24 s parity input explains the
+remaining difference (2026-09-18): mono Stop→final 1.880702 s, serial lanes
+11.327668 s, accepted concurrent lanes 6.839325 s. Serial terminal begins
+2.733792 s after Stop: 0.897933 s remaining rolling work, 1.108433 s queued causal
+work, 0.722543 s tail work, and 0.002924 s final identity sweep. Mono has only a
+0.369481 s tail job plus 0.001617 s sweep. No fixed sleep or lease delay.
+
+Serial terminal voice preparation makes two speaker embedding calls containing
+12 intervals / 43.53 audio-seconds, taking 6.704376 s. System contributes
+8 intervals / 21.33 s; microphone 4 / 22.20 s. Mono embeds zero terminal seconds:
+it maps labels by overlap with the existing transcript. Lane preparation already
+reuses causal album vectors as references; it computes new probes from terminal
+speaker intervals. Although 40.29 terminal audio-seconds overlap causal evidence,
+none of the 12 intervals exactly equals a causal interval; neither whole embedding
+call repeats any prior call. One 5.28 s interval repeats part of a rolling call,
+whose individual interval vector was not retained. Album means cannot reconstruct
+different interval encodings/averaging. Thus dominant cost is inherent to the
+current acoustic-probe design; removing it requires a different evidence-mapping
+design, not equivalent reuse of an existing probe. No such policy change made.
+All 12 saved serial/concurrent segment dictionaries equal exactly in this pair.
+Budget now authorized at 1200; 339 calls used. Optimization stopped per user's
+inherent-cost instruction; 180 s remains unmeasured, not budget-blocked.
+
+### WP12 follow-up: reuse mono's terminal mapping within each lane
+
+**Current status: ACCEPTED by the lead after reference adjudication.** The
+six requested 24/60 s comparisons pass. The 180 s attribution-equivalence failure
+was adjudicated against the reference after the user rejected the premise that
+the acoustic baseline was necessarily correct. All 54 restored assignments are
+source-correct. The implementation has been the production lane path since
+c410db8f; concurrent jobs and legacy mono behavior remain unchanged.
+
+The user subsequently authorized changing the terminal evidence source to
+mono's existing time-overlap assignment. The diagnosis above describes the old
+algorithm's cost, not an unavoidable product cost. `finalize_lanes` now passes
+each lane's settled pre-terminal surface and canonical speaker set to the same
+`TerminalTranscriptFinalizer` used by mono. This includes accepted rolling
+corrections, exactly as mono's caller does, but cannot use another lane's segments
+or canonical speakers. The terminal decoder's local-speaker partition and the
+existing one-to-one overlap assignment are retained.
+
+Only a terminal segment with no labelled same-lane overlap receives a fresh
+acoustic probe. Its PCM is cropped to that segment; the existing revision reader,
+evidence floor, matching thresholds and birth rules apply unchanged. Other-lane
+evidence cannot cover this gap. A failed probe preserves the terminal words with
+unattributed identity. No changes to QUALITY_BOUNDS, identity/sampling policy
+values, decoder windows, causal/rolling preparation, or publication lifecycle.
+
+Before production edits, matched shadow comparisons exercised both mappings on
+the SAME terminal decoder output and settled session state. All six cases passed:
+24/60 s parity (13/28 segments), mic -10 dB (13/28), same voice on both lanes
+(17/36). **135/135 segment dictionaries equal**, zero cross-lane assignments,
+zero fallback audio. The acoustic control remained the saved output, and all six
+saved/final agreements passed. This removes decoder nondeterminism from the
+attribution comparison; it is not a human transcription-accuracy claim.
+
+Three production-seam regression tests first failed on the acoustic implementation
+and then passed: two covered-lane variants require no probes; a system gap requires
+only its 3–5 s audio while simultaneous microphone evidence cannot cover it.
+The focused lane/identity/session/coordinator/runtime/lifecycle set passed 191 tests.
+The final Stop timings and full-suite results are recorded in root VERIFY-RESULT.md
+and `evidence/mvpfix/wp12/overlap-*`.
+
+Candidate Stop→final: 24 s **3.788534 s**, 60 s **7.490138 s**, 180 s
+**16.964282 s** (mono 24 s reference 1.880702 s). Terminal embedding audio-seconds
+fall from **43.08 / 111.90 / 335.52** to **0 / 0 / 0**. At 180 s, draining still
+takes 4.794547 s and terminal processing 11.791761 s; the 10 s bar is not met.
+
+The 180 s frozen-acoustic control uses the same decoder output and settled state
+for both mapping methods. Acoustic preparation abstains for the whole system lane
+on `same_span_cannot_link_conflict` (three local labels, two known system voices).
+Overlap maps 54/56 system segments that acoustic leaves unassigned: 50 segments /
+543 words to speaker-0001, 4 / 32 to speaker-0004. Two remain unassigned; mic 30/30
+segments equal. Words, boundaries and lane ownership do not change. The original
+any-case equivalence falsifier stopped work at 1073/1200 calls without tuning.
+
+The subsequent reference adjudication confirms **all 54 restored assignments**:
+50 Bill Ackman segments and four Lex Fridman segments. Reference rows 2 and 4 name
+Lex; speaker-0004 is legitimate at 29.61–33.75, 40.68–41.40, 89.61–93.75 and
+100.68–101.40 s. The same Lex turns at 149.61–153.75 and 160.68–161.40 s remain
+unassigned (16 words). Reference timestamps are coarse: reviewed word-to-reference
+associations and raw time overlaps are retained separately for every system row
+in `reference-adjudication.json`. The acoustic whole-lane abstention was wrong;
+this is not a single-voice fixture. The lead subsequently accepted the improvement
+without tuning. The two remaining Lex turns have causal overlap but their third
+terminal local label loses the unchanged one-to-one assignment against two known
+voices. No fallback runs for those covered turns. Truly uncovered segments use
+cropped acoustic probes and may separately abstain. Both limitations preserve words.
+An independent 180 s single-voice regression now keeps all 36 terminal segments
+attributed without probing. The uncovered-tail regression covers both successful
+preparation and abstention; 24/60 s deterministic tests preserve all 13/28 accepted
+row geometries with synthetic words, supplementing the real 135-row comparison.
+
+One authorized mono-180 run on verified base archive 37979e53 takes **12.717313 s**:
+1.282284 s before terminal, 11.025424 s decode, 0.000692 s overlap mapping,
+0.002557 s publication-method wall time, zero terminal embeddings. The candidate
+lane-180 critical decoder stage is 11.783398 s (system; mic 9.257648 s), following
+4.794547 s before terminal. Whole-meeting decode dominates both: 69.5% and 86.7%
+of observed lane/mono Stop time. Old lane instrumentation bounds mapping plus
+other non-decode work to 3.45 ms/system and 2.97 ms/mic; it does not separately
+measure those calls. Last terminal return to publication event is 2.875 ms.
+These are single observations, not a 30-minute capacity claim. Current total
+1165/1200 calls, including the original 14 invalidated calls; peak two. Production
+behavior is accepted locally, not deployed. Current fresh-shell full gates:
+VERIFY-RESULT.md. No new decoder runs were needed for productionization.

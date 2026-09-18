@@ -1,0 +1,103 @@
+{
+  "reports": [
+    {
+      "arm": "overlap-fixed",
+      "stop_to_final": 16.964282291999552,
+      "requests": 184,
+      "saved_equal": true,
+      "stop_to_terminal_seconds": 4.794547375000548,
+      "drain_wait_seconds": 4.769187832993339,
+      "drain_phases": [
+        {
+          "phase": "_process_in_flight_item",
+          "seconds": 1.0881892499892274,
+          "start_after_stop": 0.01530520900269039
+        },
+        {
+          "phase": "_process_refinement_item",
+          "seconds": 3.6812033750029514,
+          "start_after_stop": 1.1041299999924377
+        },
+        {
+          "phase": "_finalize_identity_locked",
+          "seconds": 0.00847062500542961,
+          "start_after_stop": 4.785576374997618
+        }
+      ],
+      "terminal_to_publication_seconds": 11.791760583990254,
+      "jobs": [
+        {
+          "lane": "microphone",
+          "windows": 2,
+          "decoded_audio_seconds": 180.0,
+          "terminal_wall_seconds": 9.260608625001623,
+          "decode_stage_seconds": 9.257647542006453,
+          "mapping_and_other_non_decode_upper_bound_seconds": 0.0029610829951707274
+        },
+        {
+          "lane": "system",
+          "windows": 2,
+          "decoded_audio_seconds": 180.0,
+          "terminal_wall_seconds": 11.78684354199504,
+          "decode_stage_seconds": 11.783398333995137,
+          "mapping_and_other_non_decode_upper_bound_seconds": 0.0034452079999027774
+        }
+      ],
+      "mapping_seconds": null,
+      "publication_seconds": null,
+      "last_terminal_return_to_publication_event_seconds": 0.002874583995435387,
+      "publication_event_to_client_final_seconds": 0.3779743330087513,
+      "terminal_embedding_calls": 0,
+      "terminal_embedding_audio_seconds": 0,
+      "critical_decode_fraction_of_stop_to_final": 0.6946004629710891
+    },
+    {
+      "arm": "mono180-traced",
+      "stop_to_final": 12.717313291999744,
+      "requests": 92,
+      "saved_equal": true,
+      "stop_to_terminal_seconds": 1.2822844170004828,
+      "drain_wait_seconds": 1.2626684999995632,
+      "drain_phases": [
+        {
+          "phase": "_process_in_flight_item",
+          "seconds": 0.6751467079884605,
+          "start_after_stop": 0.011880000005476177
+        },
+        {
+          "phase": "_process_refinement_item",
+          "seconds": 0.5877037500031292,
+          "start_after_stop": 0.687234917000751
+        },
+        {
+          "phase": "_finalize_identity_locked",
+          "seconds": 0.006495791007182561,
+          "start_after_stop": 1.2752781669987598
+        }
+      ],
+      "terminal_to_publication_seconds": 11.031424625005457,
+      "jobs": [
+        {
+          "lane": "mono",
+          "windows": 2,
+          "decoded_audio_seconds": 180.0,
+          "terminal_wall_seconds": 11.028736833002768,
+          "decode_stage_seconds": 11.025423624989344,
+          "mapping_and_other_non_decode_upper_bound_seconds": 0.0033132080134237185
+        }
+      ],
+      "mapping_seconds": [
+        0.0006920839950907975
+      ],
+      "publication_seconds": [
+        0.002557250001700595
+      ],
+      "last_terminal_return_to_publication_event_seconds": 0.002115000010235235,
+      "publication_event_to_client_final_seconds": 0.40360424999380484,
+      "terminal_embedding_calls": 0,
+      "terminal_embedding_audio_seconds": 0,
+      "critical_decode_fraction_of_stop_to_final": 0.8669617058129141
+    }
+  ],
+  "limitations": "Single observations, shared GPU; mono mixes the same two inputs. Old candidate trace did not isolate mapping/publication calls: report non-decode upper bounds and final-return-to-publication interval, not exact mapping or persistence timing. New mono trace measures mapping and publication method wall time. Decode stage includes WAV/window handling. Publication event precedes client observation; that residual is not attributed solely to persistence."
+}
