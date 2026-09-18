@@ -1,0 +1,6814 @@
+{
+  "truth_voices": 3,
+  "identities": 3,
+  "mapping": {
+    "S01": "Bill Ackman",
+    "S02": "Lex Fridman",
+    "S03": "Keyu Jin"
+  },
+  "segments": 464,
+  "scored_segments": 464,
+  "correct_segments": 420,
+  "segment_accuracy": 0.9051724137931034,
+  "truth_overlap_seconds": 1684.9800000000082,
+  "correct_seconds": 1592.9700000000073,
+  "duration_accuracy": 0.9453940106114016,
+  "unattributed_segments": 0,
+  "unscored_segments": 0,
+  "rows": [
+    {
+      "index": 0,
+      "start": 0.54,
+      "end": 3.27,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.73
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 1,
+      "start": 4.08,
+      "end": 8.88,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.800000000000001
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 2,
+      "start": 8.88,
+      "end": 9.54,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6599999999999984
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 3,
+      "start": 9.54,
+      "end": 15.33,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.790000000000001
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 4,
+      "start": 15.33,
+      "end": 19.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.049999999999999
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 5,
+      "start": 19.68,
+      "end": 21.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4400000000000013
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 6,
+      "start": 21.36,
+      "end": 25.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.140000000000001
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 7,
+      "start": 25.5,
+      "end": 27.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999987
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 8,
+      "start": 28.05,
+      "end": 29.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9499999999999993,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 9,
+      "start": 29.61,
+      "end": 33.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3900000000000006
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 10,
+      "start": 33.87,
+      "end": 40.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.130000000000003,
+        "Lex Fridman": 0.0799999999999983
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 11,
+      "start": 40.11,
+      "end": 40.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3299999999999983
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 12,
+      "start": 40.68,
+      "end": 41.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7199999999999989
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 13,
+      "start": 42.21,
+      "end": 46.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 14,
+      "start": 46.74,
+      "end": 55.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.339999999999996
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 15,
+      "start": 55.08,
+      "end": 58.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.210000000000001
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 16,
+      "start": 58.29,
+      "end": 59.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.0799999999999983
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 17,
+      "start": 59.37,
+      "end": 61.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6300000000000026,
+        "Keyu Jin": 1.0200000000000031
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 18,
+      "start": 61.02,
+      "end": 62.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.1999999999999957
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 19,
+      "start": 63.03,
+      "end": 65.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.219999999999999
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 20,
+      "start": 66.12,
+      "end": 71.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.819999999999993
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 21,
+      "start": 72.06,
+      "end": 78.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.1200000000000045
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 22,
+      "start": 78.18,
+      "end": 84.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.47999999999999
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 23,
+      "start": 85.05,
+      "end": 89.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.409999999999997
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 24,
+      "start": 89.76,
+      "end": 95.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.239999999999995,
+        "Keyu Jin": 0.6400000000000006
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 25,
+      "start": 95.88,
+      "end": 96.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8400000000000034
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 26,
+      "start": 96.84,
+      "end": 101.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.859999999999999
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 27,
+      "start": 102.42,
+      "end": 108.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999994
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 28,
+      "start": 108.27,
+      "end": 114.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000007
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 29,
+      "start": 114.96,
+      "end": 121.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.019999999999996,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.04000000000000625
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 30,
+      "start": 121.02,
+      "end": 123.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.219999999999999
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 31,
+      "start": 124.05,
+      "end": 128.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000011
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 32,
+      "start": 128.46,
+      "end": 129.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8400000000000034
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 33,
+      "start": 129.54,
+      "end": 134.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.1200000000000045
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 34,
+      "start": 134.66,
+      "end": 135.18,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5200000000000102
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 35,
+      "start": 135.33,
+      "end": 139.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.049999999999983
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 36,
+      "start": 139.68,
+      "end": 141.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4399999999999977
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 37,
+      "start": 141.36,
+      "end": 145.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.139999999999986
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 38,
+      "start": 145.5,
+      "end": 147.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3100000000000023
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 39,
+      "start": 148.05,
+      "end": 149.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9499999999999886,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 40,
+      "start": 149.61,
+      "end": 153.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3899999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 41,
+      "start": 153.87,
+      "end": 160.07999999999998,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.1299999999999955,
+        "Lex Fridman": 0.07999999999998408
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 42,
+      "start": 160.11,
+      "end": 160.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3299999999999841
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 43,
+      "start": 160.68,
+      "end": 161.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7199999999999989
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 44,
+      "start": 162.21,
+      "end": 166.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 45,
+      "start": 166.74,
+      "end": 175.07999999999998,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.339999999999975
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 46,
+      "start": 175.07999999999998,
+      "end": 178.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.210000000000008
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 47,
+      "start": 178.29,
+      "end": 179.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.0800000000000125
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 48,
+      "start": 179.37,
+      "end": 181.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6299999999999955,
+        "Keyu Jin": 1.0200000000000102
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 49,
+      "start": 181.02,
+      "end": 182.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.1999999999999886
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 50,
+      "start": 183.03,
+      "end": 185.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.219999999999999
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 51,
+      "start": 186.12,
+      "end": 191.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.819999999999993
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 52,
+      "start": 192.06,
+      "end": 198.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.1200000000000045
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 53,
+      "start": 198.18,
+      "end": 204.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.47999999999999
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 54,
+      "start": 205.05,
+      "end": 209.45999999999998,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.409999999999968
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 55,
+      "start": 209.76,
+      "end": 215.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6399999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 56,
+      "start": 215.88,
+      "end": 216.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8400000000000034
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 57,
+      "start": 216.84,
+      "end": 221.67000000000002,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.8300000000000125
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 58,
+      "start": 222.42000000000002,
+      "end": 228.26999999999998,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999966
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 59,
+      "start": 228.26999999999998,
+      "end": 234.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000007
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 60,
+      "start": 234.95999999999998,
+      "end": 241.01999999999998,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.040000000000020464
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 61,
+      "start": 241.01999999999998,
+      "end": 243.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 62,
+      "start": 244.05,
+      "end": 248.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.409999999999997
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 63,
+      "start": 248.46,
+      "end": 249.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8400000000000034
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 64,
+      "start": 249.54,
+      "end": 254.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.1200000000000045
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 65,
+      "start": 254.66,
+      "end": 255.18,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5200000000000102
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 66,
+      "start": 255.33,
+      "end": 259.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.049999999999983
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 67,
+      "start": 259.68,
+      "end": 261.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4399999999999977
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 68,
+      "start": 261.36,
+      "end": 265.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.139999999999986
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 69,
+      "start": 265.5,
+      "end": 267.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3100000000000023
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 70,
+      "start": 268.05,
+      "end": 269.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9499999999999886,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 71,
+      "start": 269.61,
+      "end": 273.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3899999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 72,
+      "start": 273.87,
+      "end": 280.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.1299999999999955,
+        "Lex Fridman": 0.07999999999998408
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 73,
+      "start": 280.11,
+      "end": 280.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3299999999999841
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 74,
+      "start": 280.68,
+      "end": 281.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7199999999999704
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 75,
+      "start": 282.21,
+      "end": 286.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 76,
+      "start": 286.74,
+      "end": 295.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.339999999999975
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 77,
+      "start": 295.08,
+      "end": 298.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2100000000000364
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 78,
+      "start": 298.29,
+      "end": 299.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.079999999999984
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 79,
+      "start": 299.37,
+      "end": 301.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6299999999999955,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 80,
+      "start": 301.02,
+      "end": 302.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 81,
+      "start": 303.03,
+      "end": 305.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 82,
+      "start": 306.12,
+      "end": 311.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.819999999999993
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 83,
+      "start": 312.06,
+      "end": 318.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.1200000000000045
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 84,
+      "start": 318.18,
+      "end": 324.65999999999997,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.479999999999961
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 85,
+      "start": 325.05,
+      "end": 329.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.409999999999968
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 86,
+      "start": 329.76,
+      "end": 335.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6399999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 87,
+      "start": 335.88,
+      "end": 336.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8400000000000318
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 88,
+      "start": 336.84000000000003,
+      "end": 341.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.859999999999957
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 89,
+      "start": 342.42,
+      "end": 348.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999966
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 90,
+      "start": 348.27,
+      "end": 354.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000007
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 91,
+      "start": 354.96,
+      "end": 361.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.040000000000020464
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 92,
+      "start": 361.02,
+      "end": 363.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 93,
+      "start": 364.05,
+      "end": 368.46000000000004,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000025
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 94,
+      "start": 368.46000000000004,
+      "end": 369.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.839999999999975
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 95,
+      "start": 369.53999999999996,
+      "end": 374.65999999999997,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.1200000000000045
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 96,
+      "start": 374.65999999999997,
+      "end": 375.18,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5200000000000387
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 97,
+      "start": 375.33,
+      "end": 379.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.050000000000011
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 98,
+      "start": 379.68,
+      "end": 381.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4399999999999977
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 99,
+      "start": 381.36,
+      "end": 385.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.139999999999986
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 100,
+      "start": 385.5,
+      "end": 387.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3100000000000023
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 101,
+      "start": 388.05,
+      "end": 389.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9499999999999886,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 102,
+      "start": 389.61,
+      "end": 393.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3899999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 103,
+      "start": 393.87,
+      "end": 400.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.1299999999999955,
+        "Lex Fridman": 0.07999999999998408
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 104,
+      "start": 400.11,
+      "end": 400.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3299999999999841
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 105,
+      "start": 400.68,
+      "end": 401.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7199999999999704
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 106,
+      "start": 402.21,
+      "end": 406.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 107,
+      "start": 406.74,
+      "end": 415.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.339999999999975
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 108,
+      "start": 415.08,
+      "end": 418.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2100000000000364
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 109,
+      "start": 418.29,
+      "end": 419.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.079999999999984
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 110,
+      "start": 419.37,
+      "end": 421.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6299999999999955,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 111,
+      "start": 421.02,
+      "end": 422.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 112,
+      "start": 423.03,
+      "end": 425.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 113,
+      "start": 426.12,
+      "end": 431.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.819999999999993
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 114,
+      "start": 432.06,
+      "end": 438.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.1200000000000045
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 115,
+      "start": 438.18,
+      "end": 444.65999999999997,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.479999999999961
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 116,
+      "start": 445.05,
+      "end": 449.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.409999999999968
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 117,
+      "start": 449.76,
+      "end": 455.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6399999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 118,
+      "start": 455.88,
+      "end": 456.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8400000000000318
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 119,
+      "start": 456.84000000000003,
+      "end": 461.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.859999999999957
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 120,
+      "start": 462.42,
+      "end": 468.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999966
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 121,
+      "start": 468.27,
+      "end": 474.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000007
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 122,
+      "start": 474.96,
+      "end": 481.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.040000000000020464
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 123,
+      "start": 481.02,
+      "end": 483.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 124,
+      "start": 484.05,
+      "end": 488.46000000000004,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000025
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 125,
+      "start": 488.46000000000004,
+      "end": 489.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.839999999999975
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 126,
+      "start": 489.53999999999996,
+      "end": 494.65999999999997,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.1200000000000045
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 127,
+      "start": 494.65999999999997,
+      "end": 495.18,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5200000000000387
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 128,
+      "start": 495.33,
+      "end": 499.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.050000000000011
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 129,
+      "start": 499.68,
+      "end": 501.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4399999999999977
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 130,
+      "start": 501.36,
+      "end": 505.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.139999999999986
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 131,
+      "start": 505.5,
+      "end": 507.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3100000000000023
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 132,
+      "start": 508.05,
+      "end": 509.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9499999999999886,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 133,
+      "start": 509.61,
+      "end": 513.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3899999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 134,
+      "start": 513.87,
+      "end": 520.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.1299999999999955,
+        "Lex Fridman": 0.08000000000004093
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 135,
+      "start": 520.11,
+      "end": 520.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000000409
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 136,
+      "start": 520.68,
+      "end": 521.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 137,
+      "start": 522.21,
+      "end": 526.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 138,
+      "start": 526.74,
+      "end": 535.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.340000000000032
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 139,
+      "start": 535.08,
+      "end": 538.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2099999999999227
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 140,
+      "start": 538.29,
+      "end": 539.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.080000000000041
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 141,
+      "start": 539.37,
+      "end": 541.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6299999999999955,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 142,
+      "start": 541.02,
+      "end": 542.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 143,
+      "start": 543.03,
+      "end": 545.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 144,
+      "start": 546.12,
+      "end": 551.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.82000000000005
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 145,
+      "start": 552.06,
+      "end": 558.1800000000001,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 146,
+      "start": 558.1800000000001,
+      "end": 564.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.4799999999999045
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 147,
+      "start": 565.05,
+      "end": 569.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 148,
+      "start": 569.76,
+      "end": 575.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6399999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 149,
+      "start": 575.88,
+      "end": 576.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8400000000000318
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 150,
+      "start": 576.84,
+      "end": 581.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.860000000000014
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 151,
+      "start": 582.42,
+      "end": 588.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.850000000000023
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 152,
+      "start": 588.27,
+      "end": 594.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 153,
+      "start": 594.96,
+      "end": 601.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 154,
+      "start": 601.02,
+      "end": 603.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 155,
+      "start": 604.05,
+      "end": 608.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000082
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 156,
+      "start": 608.46,
+      "end": 609.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8399999999999181
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 157,
+      "start": 609.54,
+      "end": 614.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.1200000000000045
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 158,
+      "start": 614.66,
+      "end": 615.1800000000001,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5200000000000955
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 159,
+      "start": 615.33,
+      "end": 619.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.0499999999999545
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 160,
+      "start": 619.68,
+      "end": 621.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4400000000000546
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 161,
+      "start": 621.36,
+      "end": 625.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.139999999999986
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 162,
+      "start": 625.5,
+      "end": 627.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999454
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 163,
+      "start": 628.05,
+      "end": 629.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9500000000000455,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 164,
+      "start": 629.61,
+      "end": 633.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3899999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 165,
+      "start": 633.87,
+      "end": 640.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.1299999999999955,
+        "Lex Fridman": 0.08000000000004093
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 166,
+      "start": 640.11,
+      "end": 640.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000000409
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 167,
+      "start": 640.68,
+      "end": 641.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 168,
+      "start": 642.21,
+      "end": 646.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 169,
+      "start": 646.74,
+      "end": 655.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.340000000000032
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 170,
+      "start": 655.08,
+      "end": 658.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2099999999999227
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 171,
+      "start": 658.29,
+      "end": 659.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.080000000000041
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 172,
+      "start": 659.37,
+      "end": 661.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6299999999999955,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 173,
+      "start": 661.02,
+      "end": 662.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 174,
+      "start": 663.03,
+      "end": 665.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 175,
+      "start": 666.12,
+      "end": 671.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.82000000000005
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 176,
+      "start": 672.06,
+      "end": 678.1800000000001,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 177,
+      "start": 678.1800000000001,
+      "end": 684.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.4799999999999045
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 178,
+      "start": 685.05,
+      "end": 689.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 179,
+      "start": 689.76,
+      "end": 695.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6399999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 180,
+      "start": 695.88,
+      "end": 696.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8400000000000318
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 181,
+      "start": 696.84,
+      "end": 701.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.860000000000014
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 182,
+      "start": 702.42,
+      "end": 708.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.850000000000023
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 183,
+      "start": 708.27,
+      "end": 714.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 184,
+      "start": 714.96,
+      "end": 721.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 185,
+      "start": 721.02,
+      "end": 723.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 186,
+      "start": 724.05,
+      "end": 728.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000082
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 187,
+      "start": 728.46,
+      "end": 729.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8399999999999181
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 188,
+      "start": 729.54,
+      "end": 734.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.1200000000000045
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 189,
+      "start": 734.66,
+      "end": 735.1800000000001,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5200000000000955
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 190,
+      "start": 735.33,
+      "end": 739.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.0499999999999545
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 191,
+      "start": 739.68,
+      "end": 741.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4400000000000546
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 192,
+      "start": 741.36,
+      "end": 745.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.139999999999986
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 193,
+      "start": 745.5,
+      "end": 747.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999454
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 194,
+      "start": 748.05,
+      "end": 749.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9500000000000455,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 195,
+      "start": 749.61,
+      "end": 753.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3899999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 196,
+      "start": 753.87,
+      "end": 760.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.1299999999999955,
+        "Lex Fridman": 0.08000000000004093
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 197,
+      "start": 760.11,
+      "end": 760.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000000409
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 198,
+      "start": 760.68,
+      "end": 761.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 199,
+      "start": 762.21,
+      "end": 766.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 200,
+      "start": 766.74,
+      "end": 775.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.340000000000032
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 201,
+      "start": 775.08,
+      "end": 778.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2099999999999227
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 202,
+      "start": 778.29,
+      "end": 779.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.080000000000041
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 203,
+      "start": 779.37,
+      "end": 781.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6299999999999955,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 204,
+      "start": 781.02,
+      "end": 782.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 205,
+      "start": 783.03,
+      "end": 785.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 206,
+      "start": 786.12,
+      "end": 791.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.82000000000005
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 207,
+      "start": 792.06,
+      "end": 798.1800000000001,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 208,
+      "start": 798.1800000000001,
+      "end": 804.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.4799999999999045
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 209,
+      "start": 805.05,
+      "end": 809.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 210,
+      "start": 809.76,
+      "end": 815.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6399999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 211,
+      "start": 815.88,
+      "end": 816.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8400000000000318
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 212,
+      "start": 816.84,
+      "end": 821.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.860000000000014
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 213,
+      "start": 822.42,
+      "end": 828.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.850000000000023
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 214,
+      "start": 828.27,
+      "end": 834.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 215,
+      "start": 834.96,
+      "end": 841.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 216,
+      "start": 841.02,
+      "end": 843.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 217,
+      "start": 844.05,
+      "end": 848.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000082
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 218,
+      "start": 848.46,
+      "end": 849.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8399999999999181
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 219,
+      "start": 849.54,
+      "end": 854.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.1200000000000045
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 220,
+      "start": 854.66,
+      "end": 855.1800000000001,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5200000000000955
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 221,
+      "start": 855.33,
+      "end": 859.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.0499999999999545
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 222,
+      "start": 859.68,
+      "end": 861.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4400000000000546
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 223,
+      "start": 861.36,
+      "end": 865.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.139999999999986
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 224,
+      "start": 865.5,
+      "end": 867.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999454
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 225,
+      "start": 868.05,
+      "end": 869.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9500000000000455,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 226,
+      "start": 869.61,
+      "end": 873.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3899999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 227,
+      "start": 873.87,
+      "end": 880.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.1299999999999955,
+        "Lex Fridman": 0.08000000000004093
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 228,
+      "start": 880.11,
+      "end": 880.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000000409
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 229,
+      "start": 880.68,
+      "end": 881.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 230,
+      "start": 882.21,
+      "end": 886.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 231,
+      "start": 886.74,
+      "end": 895.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.340000000000032
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 232,
+      "start": 895.08,
+      "end": 898.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2099999999999227
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 233,
+      "start": 898.29,
+      "end": 899.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.080000000000041
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 234,
+      "start": 899.37,
+      "end": 901.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6299999999999955,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 235,
+      "start": 901.02,
+      "end": 902.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 236,
+      "start": 903.03,
+      "end": 905.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 237,
+      "start": 906.12,
+      "end": 911.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.82000000000005
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 238,
+      "start": 912.06,
+      "end": 918.1800000000001,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 239,
+      "start": 918.1800000000001,
+      "end": 924.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.4799999999999045
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 240,
+      "start": 925.05,
+      "end": 929.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 241,
+      "start": 929.76,
+      "end": 935.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6399999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 242,
+      "start": 935.88,
+      "end": 936.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8400000000000318
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 243,
+      "start": 936.84,
+      "end": 941.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.860000000000014
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 244,
+      "start": 942.42,
+      "end": 948.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.850000000000023
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 245,
+      "start": 948.27,
+      "end": 954.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 246,
+      "start": 954.96,
+      "end": 961.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 247,
+      "start": 961.02,
+      "end": 963.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 248,
+      "start": 964.05,
+      "end": 968.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000082
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 249,
+      "start": 968.46,
+      "end": 969.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8399999999999181
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 250,
+      "start": 969.54,
+      "end": 974.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.1200000000000045
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 251,
+      "start": 974.66,
+      "end": 975.1800000000001,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5200000000000955
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 252,
+      "start": 975.33,
+      "end": 979.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.0499999999999545
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 253,
+      "start": 979.68,
+      "end": 981.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4400000000000546
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 254,
+      "start": 981.36,
+      "end": 985.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.139999999999986
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 255,
+      "start": 985.5,
+      "end": 987.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999454
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 256,
+      "start": 988.05,
+      "end": 989.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9500000000000455,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 257,
+      "start": 989.61,
+      "end": 993.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3899999999999864
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 258,
+      "start": 993.87,
+      "end": 1000.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.1299999999999955,
+        "Lex Fridman": 0.08000000000004093
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 259,
+      "start": 1000.11,
+      "end": 1000.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000000409
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 260,
+      "start": 1000.68,
+      "end": 1001.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 261,
+      "start": 1002.21,
+      "end": 1006.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 262,
+      "start": 1006.74,
+      "end": 1015.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.340000000000032
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 263,
+      "start": 1015.08,
+      "end": 1018.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2099999999999227
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 264,
+      "start": 1018.29,
+      "end": 1019.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.080000000000041
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 265,
+      "start": 1019.37,
+      "end": 1021.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6299999999999955,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 266,
+      "start": 1021.02,
+      "end": 1022.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 267,
+      "start": 1023.03,
+      "end": 1025.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 268,
+      "start": 1026.12,
+      "end": 1031.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.820000000000164
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 269,
+      "start": 1032.06,
+      "end": 1038.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 270,
+      "start": 1038.18,
+      "end": 1044.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.480000000000018
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 271,
+      "start": 1045.05,
+      "end": 1049.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 272,
+      "start": 1049.76,
+      "end": 1055.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6400000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 273,
+      "start": 1055.88,
+      "end": 1056.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8399999999999181
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 274,
+      "start": 1056.84,
+      "end": 1061.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.860000000000127
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 275,
+      "start": 1062.42,
+      "end": 1068.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999909
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 276,
+      "start": 1068.27,
+      "end": 1074.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 277,
+      "start": 1074.96,
+      "end": 1081.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 278,
+      "start": 1081.02,
+      "end": 1083.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 279,
+      "start": 1084.05,
+      "end": 1088.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000082
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 280,
+      "start": 1088.46,
+      "end": 1089.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8399999999999181
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 281,
+      "start": 1089.54,
+      "end": 1094.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.120000000000118
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 282,
+      "start": 1094.66,
+      "end": 1095.18,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5199999999999818
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 283,
+      "start": 1095.33,
+      "end": 1099.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.050000000000182
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 284,
+      "start": 1099.68,
+      "end": 1101.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4399999999998272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 285,
+      "start": 1101.36,
+      "end": 1105.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.1400000000001
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 286,
+      "start": 1105.5,
+      "end": 1107.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999454
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 287,
+      "start": 1108.05,
+      "end": 1109.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9500000000000455,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 288,
+      "start": 1109.61,
+      "end": 1113.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3900000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 289,
+      "start": 1113.87,
+      "end": 1120.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.130000000000109,
+        "Lex Fridman": 0.07999999999992724
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 290,
+      "start": 1120.11,
+      "end": 1120.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000001546
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 291,
+      "start": 1120.68,
+      "end": 1121.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 292,
+      "start": 1122.21,
+      "end": 1126.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 293,
+      "start": 1126.74,
+      "end": 1135.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.339999999999918
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 294,
+      "start": 1135.08,
+      "end": 1138.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2100000000000364
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 295,
+      "start": 1138.29,
+      "end": 1139.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.0799999999999272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 296,
+      "start": 1139.37,
+      "end": 1141.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6300000000001091,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 297,
+      "start": 1141.02,
+      "end": 1142.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 298,
+      "start": 1143.03,
+      "end": 1145.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 299,
+      "start": 1146.12,
+      "end": 1151.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.820000000000164
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 300,
+      "start": 1152.06,
+      "end": 1158.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 301,
+      "start": 1158.18,
+      "end": 1164.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.480000000000018
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 302,
+      "start": 1165.05,
+      "end": 1169.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 303,
+      "start": 1169.76,
+      "end": 1175.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6400000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 304,
+      "start": 1175.88,
+      "end": 1176.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8399999999999181
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 305,
+      "start": 1176.84,
+      "end": 1181.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.860000000000127
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 306,
+      "start": 1182.42,
+      "end": 1188.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999909
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 307,
+      "start": 1188.27,
+      "end": 1194.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 308,
+      "start": 1194.96,
+      "end": 1201.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 309,
+      "start": 1201.02,
+      "end": 1203.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 310,
+      "start": 1204.05,
+      "end": 1208.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000082
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 311,
+      "start": 1208.46,
+      "end": 1209.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8399999999999181
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 312,
+      "start": 1209.54,
+      "end": 1214.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.120000000000118
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 313,
+      "start": 1214.66,
+      "end": 1215.18,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5199999999999818
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 314,
+      "start": 1215.33,
+      "end": 1219.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.050000000000182
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 315,
+      "start": 1219.68,
+      "end": 1221.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4399999999998272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 316,
+      "start": 1221.36,
+      "end": 1225.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.1400000000001
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 317,
+      "start": 1225.5,
+      "end": 1227.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999454
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 318,
+      "start": 1228.05,
+      "end": 1229.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9500000000000455,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 319,
+      "start": 1229.61,
+      "end": 1233.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3900000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 320,
+      "start": 1233.87,
+      "end": 1240.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.130000000000109,
+        "Lex Fridman": 0.07999999999992724
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 321,
+      "start": 1240.11,
+      "end": 1240.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000001546
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 322,
+      "start": 1240.68,
+      "end": 1241.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 323,
+      "start": 1242.21,
+      "end": 1246.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 324,
+      "start": 1246.74,
+      "end": 1255.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.339999999999918
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 325,
+      "start": 1255.08,
+      "end": 1258.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2100000000000364
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 326,
+      "start": 1258.29,
+      "end": 1259.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.0799999999999272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 327,
+      "start": 1259.37,
+      "end": 1261.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6300000000001091,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 328,
+      "start": 1261.02,
+      "end": 1262.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 329,
+      "start": 1263.03,
+      "end": 1265.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 330,
+      "start": 1266.12,
+      "end": 1271.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.820000000000164
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 331,
+      "start": 1272.06,
+      "end": 1278.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 332,
+      "start": 1278.18,
+      "end": 1284.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.480000000000018
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 333,
+      "start": 1285.05,
+      "end": 1289.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 334,
+      "start": 1289.76,
+      "end": 1295.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6400000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 335,
+      "start": 1295.88,
+      "end": 1296.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8399999999999181
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 336,
+      "start": 1296.84,
+      "end": 1301.67,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.830000000000155
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 337,
+      "start": 1302.42,
+      "end": 1308.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999909
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 338,
+      "start": 1308.27,
+      "end": 1314.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 339,
+      "start": 1314.96,
+      "end": 1321.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 340,
+      "start": 1321.02,
+      "end": 1323.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 341,
+      "start": 1324.05,
+      "end": 1328.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000082
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 342,
+      "start": 1328.46,
+      "end": 1329.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8399999999999181
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 343,
+      "start": 1329.54,
+      "end": 1334.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.120000000000118
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 344,
+      "start": 1334.66,
+      "end": 1335.18,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5199999999999818
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 345,
+      "start": 1335.33,
+      "end": 1339.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.050000000000182
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 346,
+      "start": 1339.68,
+      "end": 1341.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4399999999998272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 347,
+      "start": 1341.36,
+      "end": 1345.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.1400000000001
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 348,
+      "start": 1345.5,
+      "end": 1347.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999454
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 349,
+      "start": 1348.05,
+      "end": 1349.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9500000000000455,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 350,
+      "start": 1349.61,
+      "end": 1353.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3900000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 351,
+      "start": 1353.87,
+      "end": 1360.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.130000000000109,
+        "Lex Fridman": 0.07999999999992724
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 352,
+      "start": 1360.11,
+      "end": 1360.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000001546
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 353,
+      "start": 1360.68,
+      "end": 1361.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 354,
+      "start": 1362.21,
+      "end": 1366.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 355,
+      "start": 1366.74,
+      "end": 1375.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.339999999999918
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 356,
+      "start": 1375.08,
+      "end": 1378.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2100000000000364
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 357,
+      "start": 1378.29,
+      "end": 1379.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.0799999999999272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 358,
+      "start": 1379.37,
+      "end": 1381.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6300000000001091,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 359,
+      "start": 1381.02,
+      "end": 1382.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 360,
+      "start": 1383.03,
+      "end": 1385.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 361,
+      "start": 1386.12,
+      "end": 1391.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.820000000000164
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 362,
+      "start": 1392.06,
+      "end": 1398.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 363,
+      "start": 1398.18,
+      "end": 1404.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.480000000000018
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 364,
+      "start": 1405.05,
+      "end": 1409.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 365,
+      "start": 1409.76,
+      "end": 1415.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6400000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 366,
+      "start": 1415.88,
+      "end": 1416.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8399999999999181
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 367,
+      "start": 1416.84,
+      "end": 1421.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.860000000000127
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 368,
+      "start": 1422.42,
+      "end": 1428.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999909
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 369,
+      "start": 1428.27,
+      "end": 1434.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 370,
+      "start": 1434.96,
+      "end": 1441.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 371,
+      "start": 1441.02,
+      "end": 1443.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 372,
+      "start": 1444.05,
+      "end": 1448.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000082
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 373,
+      "start": 1448.46,
+      "end": 1449.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8399999999999181
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 374,
+      "start": 1449.54,
+      "end": 1454.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.120000000000118
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 375,
+      "start": 1454.66,
+      "end": 1455.18,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5199999999999818
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 376,
+      "start": 1455.33,
+      "end": 1459.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.050000000000182
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 377,
+      "start": 1459.68,
+      "end": 1461.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4399999999998272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 378,
+      "start": 1461.36,
+      "end": 1465.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.1400000000001
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 379,
+      "start": 1465.5,
+      "end": 1467.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999454
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 380,
+      "start": 1468.05,
+      "end": 1469.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9500000000000455,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 381,
+      "start": 1469.61,
+      "end": 1473.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3900000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 382,
+      "start": 1473.87,
+      "end": 1480.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.130000000000109,
+        "Lex Fridman": 0.07999999999992724
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 383,
+      "start": 1480.11,
+      "end": 1480.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000001546
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 384,
+      "start": 1480.68,
+      "end": 1481.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 385,
+      "start": 1482.21,
+      "end": 1486.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 386,
+      "start": 1486.74,
+      "end": 1495.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.339999999999918
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 387,
+      "start": 1495.08,
+      "end": 1498.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2100000000000364
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 388,
+      "start": 1498.29,
+      "end": 1499.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.0799999999999272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 389,
+      "start": 1499.37,
+      "end": 1501.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6300000000001091,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 390,
+      "start": 1501.02,
+      "end": 1502.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 391,
+      "start": 1503.03,
+      "end": 1505.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 392,
+      "start": 1506.12,
+      "end": 1511.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.820000000000164
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 393,
+      "start": 1512.06,
+      "end": 1518.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 394,
+      "start": 1518.18,
+      "end": 1524.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.480000000000018
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 395,
+      "start": 1525.05,
+      "end": 1529.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 396,
+      "start": 1529.76,
+      "end": 1535.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6400000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 397,
+      "start": 1535.88,
+      "end": 1536.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8399999999999181
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 398,
+      "start": 1536.84,
+      "end": 1541.67,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.830000000000155
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 399,
+      "start": 1542.42,
+      "end": 1548.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999909
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 400,
+      "start": 1548.27,
+      "end": 1554.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 401,
+      "start": 1554.96,
+      "end": 1561.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 402,
+      "start": 1561.02,
+      "end": 1563.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 403,
+      "start": 1564.05,
+      "end": 1568.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000082
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 404,
+      "start": 1568.46,
+      "end": 1569.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8399999999999181
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 405,
+      "start": 1569.54,
+      "end": 1574.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.120000000000118
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 406,
+      "start": 1574.66,
+      "end": 1575.18,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5199999999999818
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 407,
+      "start": 1575.33,
+      "end": 1579.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.050000000000182
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 408,
+      "start": 1579.68,
+      "end": 1581.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4399999999998272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 409,
+      "start": 1581.36,
+      "end": 1585.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.1400000000001
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 410,
+      "start": 1585.5,
+      "end": 1587.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999454
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 411,
+      "start": 1588.05,
+      "end": 1589.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9500000000000455,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 412,
+      "start": 1589.61,
+      "end": 1593.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3900000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 413,
+      "start": 1593.87,
+      "end": 1600.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.130000000000109,
+        "Lex Fridman": 0.07999999999992724
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 414,
+      "start": 1600.11,
+      "end": 1600.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000001546
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 415,
+      "start": 1600.68,
+      "end": 1601.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 416,
+      "start": 1602.21,
+      "end": 1606.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.5
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 417,
+      "start": 1606.74,
+      "end": 1615.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.339999999999918
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 418,
+      "start": 1615.08,
+      "end": 1618.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2100000000000364
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 419,
+      "start": 1618.29,
+      "end": 1619.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.0799999999999272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 420,
+      "start": 1619.37,
+      "end": 1621.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6300000000001091,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 421,
+      "start": 1621.02,
+      "end": 1622.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 422,
+      "start": 1623.03,
+      "end": 1625.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 423,
+      "start": 1626.12,
+      "end": 1631.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.820000000000164
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 424,
+      "start": 1632.06,
+      "end": 1638.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 425,
+      "start": 1638.18,
+      "end": 1644.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.480000000000018
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 426,
+      "start": 1645.05,
+      "end": 1649.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 427,
+      "start": 1649.76,
+      "end": 1655.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6400000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 428,
+      "start": 1655.88,
+      "end": 1656.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8399999999999181
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 429,
+      "start": 1656.84,
+      "end": 1661.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.860000000000127
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 430,
+      "start": 1662.42,
+      "end": 1668.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999909
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 431,
+      "start": 1668.27,
+      "end": 1674.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 432,
+      "start": 1674.96,
+      "end": 1681.02,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 1.0199999999999818,
+        "Lex Fridman": 5.0,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 433,
+      "start": 1681.02,
+      "end": 1683.24,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 2.2200000000000273
+      },
+      "truth": "Bill Ackman",
+      "correct": false
+    },
+    {
+      "index": 434,
+      "start": 1684.05,
+      "end": 1688.46,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.410000000000082
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 435,
+      "start": 1688.46,
+      "end": 1689.3,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.8399999999999181
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 436,
+      "start": 1689.54,
+      "end": 1694.66,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 5.120000000000118
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 437,
+      "start": 1694.66,
+      "end": 1695.18,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.5199999999999818
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 438,
+      "start": 1695.27,
+      "end": 1699.38,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.110000000000127
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 439,
+      "start": 1699.68,
+      "end": 1701.12,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.4399999999998272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 440,
+      "start": 1701.36,
+      "end": 1705.5,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.1400000000001
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 441,
+      "start": 1705.5,
+      "end": 1707.81,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 2.3099999999999454
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 442,
+      "start": 1708.02,
+      "end": 1709.25,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.9800000000000182,
+        "Lex Fridman": 0.25
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 443,
+      "start": 1709.61,
+      "end": 1713.75,
+      "predicted": "S02",
+      "overlaps": {
+        "Bill Ackman": 0.75,
+        "Lex Fridman": 3.3900000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 444,
+      "start": 1713.87,
+      "end": 1720.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 6.130000000000109,
+        "Lex Fridman": 0.07999999999992724
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 445,
+      "start": 1720.11,
+      "end": 1720.44,
+      "predicted": "S01",
+      "overlaps": {
+        "Lex Fridman": 0.3300000000001546
+      },
+      "truth": "Lex Fridman",
+      "correct": false
+    },
+    {
+      "index": 446,
+      "start": 1720.68,
+      "end": 1721.4,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 0.7200000000000273
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 447,
+      "start": 1722.18,
+      "end": 1726.71,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 4.529999999999973
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 448,
+      "start": 1726.74,
+      "end": 1735.08,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 8.339999999999918
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 449,
+      "start": 1735.08,
+      "end": 1738.29,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 3.2100000000000364
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 450,
+      "start": 1738.29,
+      "end": 1739.37,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 1.0799999999999272
+      },
+      "truth": "Bill Ackman",
+      "correct": true
+    },
+    {
+      "index": 451,
+      "start": 1739.37,
+      "end": 1741.02,
+      "predicted": "S01",
+      "overlaps": {
+        "Bill Ackman": 0.6300000000001091,
+        "Keyu Jin": 1.0199999999999818
+      },
+      "truth": "Keyu Jin",
+      "correct": false
+    },
+    {
+      "index": 452,
+      "start": 1741.02,
+      "end": 1742.22,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 1.2000000000000455
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 453,
+      "start": 1743.03,
+      "end": 1745.25,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 2.2200000000000273
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 454,
+      "start": 1746.12,
+      "end": 1751.94,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.820000000000164
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 455,
+      "start": 1752.06,
+      "end": 1758.18,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.120000000000118
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 456,
+      "start": 1758.18,
+      "end": 1764.66,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.480000000000018
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 457,
+      "start": 1765.05,
+      "end": 1769.46,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.410000000000082
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 458,
+      "start": 1769.76,
+      "end": 1775.64,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 5.240000000000009,
+        "Keyu Jin": 0.6400000000001
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    },
+    {
+      "index": 459,
+      "start": 1775.88,
+      "end": 1776.72,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 0.8399999999999181
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 460,
+      "start": 1776.84,
+      "end": 1781.7,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 4.860000000000127
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 461,
+      "start": 1782.42,
+      "end": 1788.27,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 5.849999999999909
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 462,
+      "start": 1788.27,
+      "end": 1794.45,
+      "predicted": "S03",
+      "overlaps": {
+        "Keyu Jin": 6.180000000000064
+      },
+      "truth": "Keyu Jin",
+      "correct": true
+    },
+    {
+      "index": 463,
+      "start": 1794.96,
+      "end": 1799.85,
+      "predicted": "S02",
+      "overlaps": {
+        "Lex Fridman": 4.849999999999909,
+        "Keyu Jin": 0.03999999999996362
+      },
+      "truth": "Lex Fridman",
+      "correct": true
+    }
+  ],
+  "resolver_seconds": 332.00792645898764,
+  "window_count": 15,
+  "decodes": [
+    {
+      "window": {
+        "index": 0,
+        "start": 0.0,
+        "end": 150.0,
+        "own_start": 0.0,
+        "own_end": 135.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.405733417006559,
+      "tokens": 1211,
+      "requests": 4
+    },
+    {
+      "window": {
+        "index": 1,
+        "start": 120.0,
+        "end": 270.0,
+        "own_start": 135.0,
+        "own_end": 255.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.3573416659928625,
+      "tokens": 1211,
+      "requests": 5
+    },
+    {
+      "window": {
+        "index": 2,
+        "start": 240.0,
+        "end": 390.0,
+        "own_start": 255.0,
+        "own_end": 375.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.405422540992731,
+      "tokens": 1211,
+      "requests": 6
+    },
+    {
+      "window": {
+        "index": 3,
+        "start": 360.0,
+        "end": 510.0,
+        "own_start": 375.0,
+        "own_end": 495.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.43942275000154,
+      "tokens": 1211,
+      "requests": 7
+    },
+    {
+      "window": {
+        "index": 4,
+        "start": 480.0,
+        "end": 630.0,
+        "own_start": 495.0,
+        "own_end": 615.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.360437750001438,
+      "tokens": 1211,
+      "requests": 8
+    },
+    {
+      "window": {
+        "index": 5,
+        "start": 600.0,
+        "end": 750.0,
+        "own_start": 615.0,
+        "own_end": 735.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.171914124992327,
+      "tokens": 1211,
+      "requests": 9
+    },
+    {
+      "window": {
+        "index": 6,
+        "start": 720.0,
+        "end": 870.0,
+        "own_start": 735.0,
+        "own_end": 855.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.184672542003682,
+      "tokens": 1211,
+      "requests": 10
+    },
+    {
+      "window": {
+        "index": 7,
+        "start": 840.0,
+        "end": 990.0,
+        "own_start": 855.0,
+        "own_end": 975.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.161122125005932,
+      "tokens": 1211,
+      "requests": 11
+    },
+    {
+      "window": {
+        "index": 8,
+        "start": 960.0,
+        "end": 1110.0,
+        "own_start": 975.0,
+        "own_end": 1095.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.201521124996361,
+      "tokens": 1211,
+      "requests": 12
+    },
+    {
+      "window": {
+        "index": 9,
+        "start": 1080.0,
+        "end": 1230.0,
+        "own_start": 1095.0,
+        "own_end": 1215.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.160581292002462,
+      "tokens": 1211,
+      "requests": 13
+    },
+    {
+      "window": {
+        "index": 10,
+        "start": 1200.0,
+        "end": 1350.0,
+        "own_start": 1215.0,
+        "own_end": 1335.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.313488041996607,
+      "tokens": 1211,
+      "requests": 14
+    },
+    {
+      "window": {
+        "index": 11,
+        "start": 1320.0,
+        "end": 1470.0,
+        "own_start": 1335.0,
+        "own_end": 1455.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.3722499160066945,
+      "tokens": 1211,
+      "requests": 15
+    },
+    {
+      "window": {
+        "index": 12,
+        "start": 1440.0,
+        "end": 1590.0,
+        "own_start": 1455.0,
+        "own_end": 1575.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.407054291004897,
+      "tokens": 1211,
+      "requests": 16
+    },
+    {
+      "window": {
+        "index": 13,
+        "start": 1560.0,
+        "end": 1710.0,
+        "own_start": 1575.0,
+        "own_end": 1695.0,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 5.40706237500126,
+      "tokens": 1211,
+      "requests": 17
+    },
+    {
+      "window": {
+        "index": 14,
+        "start": 1680.0,
+        "end": 1800,
+        "own_start": 1695.0,
+        "own_end": 1800,
+        "merged_tail_start": null
+      },
+      "queue_before": [
+        "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+        "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+      ],
+      "elapsed": 4.002324708999367,
+      "tokens": 900,
+      "requests": 18
+    }
+  ],
+  "summary": {
+    "resolver": "album",
+    "canonical_speakers": 3,
+    "unattributed_segments": 0
+  },
+  "diagnostics": {
+    "schema_version": 2,
+    "contract": {
+      "schema_version": 2,
+      "resolver": "album",
+      "config": {
+        "max_speakers": 16,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35
+      },
+      "provider": {
+        "album_admission_seconds": 2.0,
+        "birth_min_seconds": 1.0,
+        "frontend_version": "wespeaker-onnx-fbank-v1",
+        "kind": "wespeaker_resnet152_lm",
+        "min_segment_samples": 8000,
+        "package_import": "onnxruntime",
+        "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "state_asset_name": "identity-state"
+      },
+      "encoder": {
+        "provider": "wespeaker_resnet152_lm",
+        "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+        "embedding_dimension": 256,
+        "frontend_version": "wespeaker-onnx-fbank-v1",
+        "device": "cpu"
+      }
+    },
+    "windows": [
+      {
+        "window": 0,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [],
+        "album": {
+          "S01": {
+            "exemplars": 1,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 1,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 1,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 1,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.13999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.539999999999985
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999962804447718,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0860170011308549,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07922581137863101,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08514658843828968,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07883358297799428,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08525691453294812,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999967653316547,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 2,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 2,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 2,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 2,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999990704770392,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07895616736914544,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08631561418202151,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08520179946666266,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07915223037386743,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828968,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999991919457945,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 3,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 3,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 3,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 3,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999995869331183,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07899697982318038,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08641509013364353,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08518340642664166,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07912767707839333,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828968,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999996409557195,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 4,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 4,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 4,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 4,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999997676652135,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07901737685675386,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08646481650538651,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08517420591438643,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07911539551237834,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828968,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999997980631771,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 5,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 5,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 5,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 5,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999998513116302,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07902961213447146,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08649464861138698,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08516868433093806,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07910802500043547,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828968,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999998707702606,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 6,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 6,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 6,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 6,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999998967469176,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07903776776015109,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08651453513241919,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08516500274392887,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07910311067101865,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828966,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999999102616759,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 7,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 7,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 7,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 7,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999999241420257,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.0790435926064726,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08652873903102203,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08516237277875979,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.0790996001151188,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828966,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.999999934072191,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 8,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 8,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 8,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 8,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999999419220615,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.08661394912638844,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07904796091275015,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08653939153964009,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08516040016264628,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07909696702290692,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828966,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999999495253927,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 9,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 9,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 9,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 9,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999999541117645,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.08661394912638844,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07905135828964789,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08654767657795111,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08515886582139819,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07909491895844248,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828965,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999999601196717,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 10,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.13999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.539999999999985
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999969869219739,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0860170011308549,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07920135248109114,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0865543044534908,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08515763829531744,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07884832832729084,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.0852569145329481,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999973795205921,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 11,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999999628308571,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07905407606853257,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0865543044534908,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08515763829531744,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07909328044145118,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828966,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999999676974802,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 12,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.13999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.539999999999985
+        },
+        "admissions": {
+          "S01": "rejected_weaker_than_bank",
+          "S02": "admitted",
+          "S03": "rejected_weaker_than_bank"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9999962804447717,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0860170011308549,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07922581137863102,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08514658843828969,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07883358297799428,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.0852569145329481,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 0.9999967653316548,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 13,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 76.16999999999999,
+          "S02": 23.429999999999993,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.07907853117279298,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.08661394912638842,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.08514658843828969,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07907853117279297,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828966,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 14,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02",
+          "S03": "S03"
+        },
+        "durations": {
+          "S01": 52.17,
+          "S02": 20.039999999999992,
+          "S03": 39.569999999999986
+        },
+        "admissions": {
+          "S01": "rejected_weaker_than_bank",
+          "S02": "rejected_weaker_than_bank",
+          "S03": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 0.9967594694309406,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.10292313147922866,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S03",
+            "score": 0.08813711197613237,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 0.960365688603917,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S03",
+            "score": 0.078698665440289,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S01",
+            "score": 0.07907853117279297,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S02",
+            "score": 0.08514658843828966,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S03",
+            "canonical_speaker": "S03",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S03": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      }
+    ],
+    "sweep": {
+      "corrections": [],
+      "merges": [],
+      "swept_spans": 15,
+      "swept_units": 45,
+      "dispositions": {
+        "kept": 45
+      }
+    }
+  },
+  "text_time_unchanged": true
+}

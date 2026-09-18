@@ -80,13 +80,19 @@ def build_file_runner(
     vllm_model: str | None,
     vllm_api_key: str | None,
     vllm_timeout: float,
+    file_identity: str = "album",
+    identity_manifest: str | Path | None = None,
 ):
-    """Build the single runner shared by Account File and Live terminal decoding."""
+    """Build Account File inference; retain legacy identity as a one-release fallback."""
+
+    if file_identity not in {"album", "legacy"}:
+        raise ValueError("file_identity must be album or legacy.")
 
     if backend == "vllm":
         if not vllm_base_url:
             raise ValueError("--vllm-base-url is required when backend='vllm'.")
         from .speaker_identity import IdentityResolver, IdentityResolverConfig
+        from .file_identity_album import AlbumIdentityResolver
         from .vllm_runner import VllmRunner
         from .windowed_transcription import WindowedRunner
 
@@ -97,7 +103,9 @@ def build_file_runner(
                 api_key=vllm_api_key,
                 timeout=vllm_timeout,
             ),
-            identity_resolver=IdentityResolver(config=IdentityResolverConfig()),
+            identity_resolver=(AlbumIdentityResolver(manifest_path=identity_manifest)
+                               if file_identity == "album"
+                               else IdentityResolver(config=IdentityResolverConfig())),
         )
     from .model_runner import ModelRunner
 
@@ -170,9 +178,19 @@ def build_terminal_finalizer(
     temperature: float | None,
     max_length_cap: int | None,
 ):
-    """Bind Live's last listener to the exact File runner and inference rule."""
+    """Bind Live's last listener to the shared decoder, retaining Live's identity policy."""
 
     from .live_transcript_convergence import TerminalTranscriptFinalizer
+    from .file_identity_album import AlbumIdentityResolver
+    from .speaker_identity import IdentityResolver
+    from .windowed_transcription import WindowedRunner
+
+    # WP19 is File-only. File and terminal decode historically share a runner; give
+    # terminal its existing resolver while retaining the same decoder and options.
+    if isinstance(runner, WindowedRunner) and isinstance(runner.identity_resolver, AlbumIdentityResolver):
+        from copy import copy
+        runner = copy(runner)
+        runner.identity_resolver = IdentityResolver()
 
     return TerminalTranscriptFinalizer(
         runner=runner,

@@ -79,8 +79,10 @@ evidence/mvpfix/*/raw/
 .wp16runtime/
 
 .wp18runtime/
-=======
 
 # WP15 private scratch; no audio or credentials in evidence.
 .wp15/
->>>>>>> mvpfix/wp15-stop-lease-longrun
+=======
+
+.wp19runtime/
+>>>>>>> mvpfix/wp19-file-identity-album

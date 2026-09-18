@@ -609,3 +609,43 @@ Identical speech plus alternation's 25 s zero padding gives 9–11/106 instead.
 No production endpoint/policy change promoted. The standing bench retains the
 failed hypothesis, 24/48 s controls, exact stage counts, and limitations in
 `evidence/mvpfix/wp20/NOTES.md`; lane-local scheduler timing remains unmeasured.
+
+### WP19: file-window album composition (2026-09-18)
+
+WP18 falsified pairwise occurrence matching: repeated observations of one voice
+competed as different candidates. File mode now composes the existing
+`assign_speakers`, `FingerprintAlbum`, and `LiveIdentitySweeper`: each window offers
+one vector per local voice, matches canonical album references, admits evidence under
+the manifest's existing rules, and a terminal sweep revisits earlier assignments.
+No identity threshold, decoder/window plan, text, timing, live algorithm or saved
+transcript schema changes. Embedding failure abstains without discarding words.
+
+Production Account vLLM file composition defaults to `--file-identity album`.
+`--file-identity legacy` restores the previous resolver (including disabled Tier B)
+for one release. The manifest supplied through `--live-provider-manifest` supplies
+the file album's identical measured policy and pinned encoder. Direct low-level
+`IdentityResolver` remains the legacy implementation. Single-window decoding and
+HF decoding remain unchanged: this repair addresses cross-window vLLM files.
+The shared terminal-decoder composition retains its legacy resolver explicitly,
+so changing the File default does not change Live terminal behavior.
+
+A1 perfect vectors: 1 voice x 3 windows -> 1; 2 -> 2. A2 returning voice and unknown
+short utterance tested; A4 admission, ambiguity and retrospective rescue use the
+same live modules. Fresh decoder A3: 6 minutes -> 3 voices, 84/92 segments correct
+(91.3043%), 322.11/338.04 truth-overlap seconds correct (95.2875%); 30 minutes -> 3,
+420/464 segments correct (90.5172%), 1592.97/1684.98 seconds (94.5394%). No abstentions;
+text/time unchanged. One global canonical-to-reference assignment, then per-segment
+maximum temporal reference overlap; no per-window remapping or word-accuracy claim.
+The resolver cannot repair incorrect diarization within a window.
+
+Cost: 62.894428 seconds for three windows; 332.007926 seconds for fifteen, including
+all pinned CPU embeddings. Eighteen serial vLLM requests, own tunnel 18119. These
+are local corpus measurements, not a deployment or capacity qualification.
+
+File enrollment previously returned unavailable. An explicit enrollment request now
+reconstructs evidence from owner-bound retained MP3 and addressed canonical segments,
+using existing admission and private-bank rules. No new persisted embedding/schema.
+Saved audio is required; reconstruction costs embedding work on each enrollment request.
+The MP3 prototype retained PCM voice agreement (cosine .969589); 5 s eligible, .6 s
+refused. Save/reopen/export/rename/enrollment tested with real archive operations and
+perfect-vector controls. Evidence: `evidence/mvpfix/wp19/`; bench: `prototypes/streaming-diarization/wp19-file-identity-album/`.
