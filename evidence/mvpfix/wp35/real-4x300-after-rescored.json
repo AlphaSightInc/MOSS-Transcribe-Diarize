@@ -1,0 +1,94 @@
+{
+  "run": "evidence/mvpfix/wp35/real-4x300-after",
+  "decoder_calls": 549,
+  "maximum_own_inflight": 2,
+  "foreign_load_detected": false,
+  "prestop_inference": {
+    "canonical_processed_items": 520,
+    "rolling_completed_items": 29,
+    "stop_items": 2,
+    "canonical_decode_seconds": 87.52490329300053,
+    "rolling_decode_seconds": 8.957016415006365,
+    "decode_seconds": 96.4819197080069,
+    "accepted_audio_seconds": 1200,
+    "rtf": 0.08040159975667241
+  },
+  "clean_terms": {
+    "every_session_clean": true,
+    "session_rows": true,
+    "no_other_failures": true,
+    "no_foreign_load": true,
+    "fairness_passes": true,
+    "rss_growth_within_4gib": true,
+    "prestop_rtf_below_1": true,
+    "refinement_queue_depth_at_most_1": true,
+    "gpu_cache_at_most_95pc": true
+  },
+  "clean_rescored": true,
+  "clean_as_run": false,
+  "excluded_failures": [
+    "inference_evidence:rolling completion has a non-healthy terminal outcome"
+  ],
+  "sessions": [
+    {
+      "ordinal": 1,
+      "finalization_status": "final",
+      "stop_to_final_seconds": 32.443246374998125,
+      "accepted_samples": 4800000,
+      "accounted_samples": 4800000,
+      "acknowledged_frames": 1200,
+      "word_count": 920,
+      "rolling_admitted_after_stop": 0,
+      "rolling_completed_after_stop": [
+        "not_awaited"
+      ],
+      "canonical_processed_after_stop": 2,
+      "terminal_started": true
+    },
+    {
+      "ordinal": 2,
+      "finalization_status": "final",
+      "stop_to_final_seconds": 18.324632249990827,
+      "accepted_samples": 4800000,
+      "accounted_samples": 4800000,
+      "acknowledged_frames": 1200,
+      "word_count": 740,
+      "rolling_admitted_after_stop": 0,
+      "rolling_completed_after_stop": [
+        "not_awaited"
+      ],
+      "canonical_processed_after_stop": 2,
+      "terminal_started": true
+    },
+    {
+      "ordinal": 3,
+      "finalization_status": "final",
+      "stop_to_final_seconds": 35.35527929199452,
+      "accepted_samples": 4800000,
+      "accounted_samples": 4800000,
+      "acknowledged_frames": 1200,
+      "word_count": 647,
+      "rolling_admitted_after_stop": 0,
+      "rolling_completed_after_stop": [
+        "not_awaited"
+      ],
+      "canonical_processed_after_stop": 5,
+      "terminal_started": true
+    },
+    {
+      "ordinal": 4,
+      "finalization_status": "final",
+      "stop_to_final_seconds": 29.247092207995593,
+      "accepted_samples": 4800000,
+      "accounted_samples": 4800000,
+      "acknowledged_frames": 1200,
+      "word_count": 964,
+      "rolling_admitted_after_stop": 0,
+      "rolling_completed_after_stop": [
+        "not_awaited"
+      ],
+      "canonical_processed_after_stop": 1,
+      "terminal_started": true
+    }
+  ]
+}
