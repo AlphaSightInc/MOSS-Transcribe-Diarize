@@ -59,9 +59,9 @@ class Bundle:
         self.sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
         dirty = subprocess.check_output(['git', 'status', '--porcelain=v1', '--untracked-files=all'], text=True).splitlines()
         stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
-        self.out = ROOT/'evidence/qualify'/f'{self.sha[:12]}-{stamp}'
+        self.out = (args.out or ROOT/'evidence/mvpfix/wp25').resolve()/f'{self.sha[:12]}-{stamp}'
         self.out.mkdir(parents=True)
-        self.work = ROOT/'.wp21runtime'/stamp
+        self.work = ROOT/'.wp25runtime'/stamp
         self.work.mkdir(parents=True)
         self.env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1', PYTHONPATH=str(ROOT))
         for key, subdir in [('TMPDIR','tmp'), ('XDG_CACHE_HOME','cache'), ('NUMBA_CACHE_DIR','numba'), ('npm_config_cache','npm')]:
@@ -80,8 +80,8 @@ class Bundle:
         self.data = dict(schema='moss-local-qualification.v1', scope='local measurement; not deployment or attended acceptance',
                          identity=dict(git_sha=self.sha, tree_clean=not dirty, dirty_files=dirty,
                                        python=sys.version.split()[0], node=subprocess.check_output(['node','--version'], text=True).strip(),
-                                       decoder_tunnel_url='http://127.0.0.1:18121', decoder_base_url='http://127.0.0.1:18122/v1'),
-                         gates=[], request_budget=args.budget)
+                                       decoder_tunnel_url='http://127.0.0.1:18125', decoder_base_url='http://127.0.0.1:19125/v1'),
+                         gates=[], request_budget=args.budget, long=args.long, integrated_candidate='625dbaa97b55fb5be66e06db9bfe4d8c985fd935')
         self.current = None
         self.gate('tree_clean', 'PASS' if not dirty else 'FAIL', measurements={'dirty_files':dirty})
 
@@ -206,7 +206,7 @@ class Bundle:
             self.gate(name, 'PASS' if code == 0 else 'FAIL', duration=elapsed, code=code)
 
     def metrics(self):
-        with urllib.request.urlopen('http://127.0.0.1:18121/metrics', timeout=5) as r:
+        with urllib.request.urlopen('http://127.0.0.1:18125/metrics', timeout=5) as r:
             source = r.read().decode()
         result = {}
         for key in ('num_requests_running','num_requests_waiting','request_success_total'):
@@ -227,14 +227,14 @@ class Bundle:
 
     def stack(self):
         start = time.monotonic()
-        for port in (18121,18122,17867):
+        for port in (18125,19125,17825,17826,17827,17828,17829):
             with socket.socket() as sock:
                 if sock.connect_ex(('127.0.0.1',port)) == 0:
                     self.gate('stack', 'UNRUNNABLE', reason=f'Own required port {port} already occupied; no reuse or termination')
                     return False
         tunnel = self.start('tunnel', ['ssh','-N','-o','BatchMode=yes','-o','ExitOnForwardFailure=yes',
             '-o','ControlMaster=no','-o','ControlPath=none','-o','UpdateHostKeys=no','-o','StrictHostKeyChecking=yes',
-            '-L','127.0.0.1:18121:127.0.0.1:8000',HOST])
+            '-L','127.0.0.1:18125:127.0.0.1:8000',HOST])
         initial = None
         for _ in range(30):
             if tunnel.poll() is not None:
@@ -249,7 +249,7 @@ class Bundle:
             return False
         self.data['initial_contention'] = initial
         try:
-            with urllib.request.urlopen('http://127.0.0.1:18121/version', timeout=5) as r:
+            with urllib.request.urlopen('http://127.0.0.1:18125/version', timeout=5) as r:
                 value = json.load(r).get('version')
                 self.data['identity']['vllm_version'] = value if isinstance(value,str) and re.fullmatch(r'[A-Za-z0-9.+_-]{1,100}',value) else None
         except Exception:
@@ -270,20 +270,25 @@ class Bundle:
         if code:
             self.gate('stack','UNRUNNABLE',duration=time.monotonic()-start,code=code,reason='Local certificate generation failed')
             return False
-        self.proxy = Decoder(18122,18121,self.args.budget,self.out/'decoder-requests.jsonl')
+        import certifi
+        ca=self.work/'ca.pem'
+        ca.write_bytes(Path(certifi.where()).read_bytes()+b'\n'+cert.read_bytes())
+        self.env['SSL_CERT_FILE']=str(ca)
+        self.manifest,self.cert,self.key=manifest,cert,key
+        self.proxy = Decoder(19125,18125,self.args.budget,self.out/'decoder-requests.jsonl')
         self.proxy.start()
         self.monitor = threading.Thread(target=self.sample, daemon=True)
         self.monitor.start()
         state = (self.work/'state').relative_to(ROOT)
         app = self.start('stack', [PY,'prototypes/streaming-diarization/draft-lane/run_local_stack.py',
-            '--state',str(state),'--cert',str(cert),'--key',str(key),'--port','17867',
-            '--manifest',str(manifest),'--vllm-base-url','http://127.0.0.1:18122/v1', '--max-requests',str(self.args.budget)])
+            '--state',str(state),'--cert',str(cert),'--key',str(key),'--port','17825',
+            '--manifest',str(manifest),'--vllm-base-url','http://127.0.0.1:19125/v1', '--max-requests',str(self.args.budget)])
         ready = False
         for _ in range(120):
             if app.poll() is not None:
                 break
             try:
-                descriptor = ready_descriptor('https://127.0.0.1:17867')
+                descriptor = ready_descriptor('https://127.0.0.1:17825')
                 ready = bool(descriptor.get('source_revision'))
                 if ready:
                     break
@@ -294,19 +299,99 @@ class Bundle:
                   measurements={'readiness':ready})
         return ready
 
-    def unportable(self):
-        for name, expected, reason in [
-            ('browser_stress_all',16,'run.py all includes case 14 restart with fixed WP5 paths/port and stack.py tunnel 18105; no restart/decoder arguments'),
-            ('file_6min',1,'WP16 probe fixes app at 17876, metrics at 18116, output under WP16; no base/metrics/output arguments'),
-            ('file_failures',5,'WP16 failure cases share fixed 18116 metrics and fixed source ports; no isolation arguments')]:
-            self.gate(name,'UNRUNNABLE',counts(['UNRUNNABLE']*expected),reason=reason)
-        for name, expected, reason in [('file_30min',3,'WP16 probe has fixed decoder metrics 18116; no isolation arguments'),
-                                      ('capacity_4x600',4,'capacity run owns tunnel 18106 and fixed WP6 output; no decoder-port/output arguments')]:
-            status = 'UNRUNNABLE' if self.args.long else 'SKIP'
-            self.gate(name,status,counts([status]*expected),reason=reason if self.args.long else 'Default bounded run; --long requests this gate')
+    def extended(self, ready):
+        specs=[('browser_stress_all',16),('file_6min',1),('file_failures',5),('file_30min',3),('capacity_4x600',4)]
+        if not ready:
+            for name,n in specs:
+                status='SKIP' if name in ('file_30min','capacity_4x600') and not self.args.long else 'UNRUNNABLE'
+                self.gate(name,status,counts([status]*n),reason='Requires --long' if status=='SKIP' else 'Isolated stack unavailable')
+            return
+        output=self.work/'browser'
+        state=(self.work/'browser-state').relative_to(ROOT)
+        code,elapsed,_=self.command('browser_stress_all',[PY,'prototypes/browser-stress/run.py','all','--headed',
+            '--base','https://127.0.0.1:17826','--stack-port','17826','--decoder-url','http://127.0.0.1:19125/v1',
+            '--out',str(output),'--state',str(state),'--cert',str(self.cert),'--key',str(self.key),
+            '--manifest',str(self.manifest)],timeout=3600)
+        rows=json.loads((output/'campaign-results.json').read_text()) if (output/'campaign-results.json').exists() else {}
+        statuses=[('UNRUNNABLE' if rows.get(str(i),{}).get('status')=='BLOCKED' else rows.get(str(i),{}).get('status','UNRUNNABLE')) for i in range(1,17)]
+        import ast
+        module=ast.parse((ROOT/'prototypes/browser-stress/run.py').read_text())
+        predicates=next(ast.literal_eval(node.value) for node in module.body if isinstance(node,ast.Assign)
+            and any(isinstance(t,ast.Name) and t.id=='PREDICATES' for t in node.targets))
+        measurements={str(i):dict(status=statuses[i-1],predicate=predicates[i],
+            observation=retained_metadata(rows.get(str(i),{}))) for i in range(1,17)}
+        self.gate('browser_stress_all',aggregate(statuses,code),counts(statuses),elapsed,code,
+            reason='Native hidden-tab cases are UNRUNNABLE if Chromium never becomes hidden; missing rows mean bench could not execute',measurements=measurements)
+        self.files()
+        if self.args.long:
+            output=self.work/'capacity'
+            scratch=(self.work/'capacity-runtime').relative_to(ROOT)
+            code,elapsed,_=self.command('capacity_4x600',[PY,'prototypes/capacity-campaign/run.py',
+                '--sessions','4','--seconds','600','--stack-port','17827','--decoder-url','http://127.0.0.1:19125/v1',
+                '--out',str(output),'--scratch',str(scratch),'--manifest',str(self.manifest),'--allow-contention'],timeout=3600)
+            result=json.loads((output/'result.json').read_text()) if (output/'result.json').exists() else {}
+            rows=result.get('session_results',[])
+            statuses=['PASS' if r.get('clean') else 'FAIL' for r in rows]+['UNRUNNABLE']*(4-len(rows))
+            self.gate('capacity_4x600','UNRUNNABLE' if not rows else 'PASS' if result.get('clean') and code==0 else 'FAIL',
+                counts(statuses),elapsed,code,reason='Existing capacity clean bar includes no detected foreign load; contention is recorded without pausing',measurements=retained_metadata(result))
+        else:
+            self.gate('capacity_4x600','SKIP',counts(['SKIP']*4),reason='Requires --long')
+
+    def files(self):
+        bench='prototypes/streaming-diarization/wp16-file-url-long/'
+        scratch=self.work/'files'; output=self.work/'file-results'
+        start=time.monotonic()
+        code,_,_=self.command('file_prepare',[PY,bench+'prepare.py','--scratch',str(scratch),'--out',str(output)])
+        if not code:
+            code,_,_=self.command('file_six_minute',['ffmpeg','-v','error','-y','-i',str(scratch/'media/long.wav'),'-t','360',str(scratch/'media/six.wav')])
+        specs=[('file_6min',['six.wav']),('file_failures',['empty.wav','text.mp3','missing','html','hang'])]
+        if self.args.long:specs.append(('file_30min',['long.wav','long.mp3','long.m4a']))
+        else:self.gate('file_30min','SKIP',counts(['SKIP']*3),reason='Requires --long')
+        if code:
+            for name,cases in specs:self.gate(name,'UNRUNNABLE',counts(['UNRUNNABLE']*len(cases)),time.monotonic()-start,code,reason='Public media preparation failed')
+            return
+        origin=self.start('file_origins',[PY,bench+'sources.py','--scratch',str(scratch),'--out',str(output),
+            '--source-port','17828','--hang-port','17829','--cert',str(self.cert),'--key',str(self.key)])
+        try:
+            for _ in range(50):
+                if origin.poll() is not None:break
+                with socket.socket() as sock:
+                    if sock.connect_ex(('127.0.0.1',17828))==0:break
+                time.sleep(.1)
+            for name,cases in specs:
+                codes=[];elapsed=0
+                for case in cases:
+                    c,d,_=self.command(name+'_'+case,[PY,bench+'probe.py',case,'--base','https://127.0.0.1:17825',
+                        '--decoder-url','http://127.0.0.1:19125','--out',str(output),'--scratch',str(scratch),
+                        '--source-base','https://127.0.0.1:17828','--hang-base','http://127.0.0.1:17829','--allow-contention'],timeout=7200)
+                    codes.append(c);elapsed+=d
+                code=next((c for c in codes if c),0)
+                statuses=[]; rows=[]
+                for case in cases:
+                    path=output/(case+'.json')
+                    row=json.loads(path.read_text()) if path.exists() else {}
+                    status='PASS' if file_passed(row,case) else 'FAIL' if row else 'UNRUNNABLE'
+                    statuses.append(status)
+                    projection=dict(case=case,status=status,measurements=retained_metadata(row))
+                    projection['expected_failure_code']=FILE_FAILURES.get(case)
+                    value=row.get('failure_code')
+                    projection['observed_failure_code']=value if isinstance(value,str) and re.fullmatch(r'[a-z0-9_]+',value) else None
+                    if row and case not in FILE_FAILURES:
+                        from moss_transcribe_diarize.lane_word_oracle import words,distance
+                        seconds=360 if case=='six.wav' else 1800
+                        refs=[json.loads(line) for line in (scratch/'media/reference.jsonl').read_text().splitlines()]
+                        reference=words(' '.join(r['text'] for r in refs if r['end']<=seconds))
+                        meeting=json.loads((scratch/(case+'.meeting.json')).read_text())
+                        observed=words(' '.join(r['text'] for r in meeting['transcript']['segments']))
+                        projection['ordered_word_score']=distance(reference,observed)
+                    rows.append(projection)
+                self.gate(name,aggregate(statuses,code),counts(statuses),elapsed,code,
+                    reason='Existing WP16 bars: durable outcome, five exact exports for speech, audio download, foreign read 404; failures typed and visible after reload',measurements=rows)
+        finally:
+            self.stop(origin);self.processes.remove(origin)
 
     def benches(self, ready):
-        base = 'https://127.0.0.1:17867'
+        base = 'https://127.0.0.1:17825'
         expected = [('workspace',14),('demo_lanes',2),('lifecycle',7),('reshare',6),('level_ladder',6),('identity_stress',3)]
         if not ready:
             for name,n in expected:
@@ -333,7 +418,7 @@ class Bundle:
             '--allow-local-self-signed','--case','both','--output',str(demo)])
         rows = json.loads(demo.read_text()) if demo.exists() else []
         statuses = ['PASS' if r['passed'] else 'FAIL' for r in rows]+['UNRUNNABLE']*(2-len(rows))
-        self.gate('demo_lanes','PASS' if code==0 and statuses==['PASS','PASS'] else 'FAIL',counts(statuses),elapsed,code,measurements=retained_metadata(rows))
+        self.gate('demo_lanes','PASS' if code==0 and statuses==['PASS','PASS'] else 'FAIL',counts(statuses),elapsed,code,measurements=[dict(retained_metadata(row),case=case) for case,row in zip(('alternation','overlap'),rows)])
         for name,n in [('lifecycle',7),('reshare',6)]:
             code, elapsed, log = self.command(name,[PY,'tests/e2e/stress_'+name+'.py'],env=dict(self.env,MOSS_BASE=base))
             matches = re.findall(r'^\s*(PASS|FAIL)\s+',log.read_text(),re.M)
@@ -347,36 +432,32 @@ class Bundle:
         code, elapsed, _ = self.command('level_ladder',[PY,str(LADDER),str(output),base,','.join(CASES)])
         raw = json.loads(output.read_text())['cases'] if output.exists() else []
         scores = score_ladder(raw)
+        for row in scores:
+            expected={'system':37,'microphone':32}
+            active={'system'} if row['case']=='system@1' else {'microphone'} if row['case']=='mic@1' else set(expected)
+            row['lead_reference_retained']={lane:expected[lane] if lane in active else 0 for lane in expected}
+            row['reproduces_lead']=all(row['retention_vs_alone'][lane]['alone_unique']==expected[lane]
+                and row['retention_vs_alone'][lane]['retained']==row['lead_reference_retained'][lane] for lane in expected)
         statuses = ['PASS' if r.get('finalization')=='final' else 'FAIL' for r in raw]+['UNRUNNABLE']*(6-len(raw))
         self.gate('level_ladder','PASS' if code==0 and statuses==['PASS']*6 else 'FAIL',counts(statuses),elapsed,code,
                   reason='PASS means six finalized measurements; retention has no supplied acceptance threshold. Unique vocabulary is not transcript accuracy.',measurements=scores)
 
     def identity(self):
-        # Fixed paths are checkout-local; restore inherited evidence byte for byte.
-        output = ROOT/'evidence/mvpfix/wp7'
-        targets = [output/'stress-events.jsonl', output/'stress-results.json']
-        backups = {p: p.read_bytes() if p.exists() else None for p in targets}
-        (ROOT/'.wp7runtime').mkdir(exist_ok=True)
-        output.mkdir(parents=True, exist_ok=True)
-        statuses, results, codes = [], [], []
-        started = time.monotonic()
-        try:
-            for case in ('single','gap','alternating'):
-                targets[1].unlink(missing_ok=True)
-                code, elapsed, _ = self.command('identity_'+case,[PY,'prototypes/identity-stress/run.py',case])
-                rows = json.loads(targets[1].read_text()) if targets[1].exists() else []
-                row = rows[-1] if rows else {}
-                passed = code == 0 and identity_passed(row, expected_voices=2 if case == 'alternating' else 1)
-                statuses.append('PASS' if passed else 'FAIL')
-                codes.append(code)
-                results.append(dict(case=case, status=statuses[-1], exit_code=code, seconds=elapsed,
-                                    measurements=retained_metadata(row)))
-        finally:
-            for path, original in backups.items():
-                if original is None:
-                    path.unlink(missing_ok=True)
-                else:
-                    path.write_bytes(original)
+        output=self.work/'identity'
+        output.mkdir()
+        target=output/'stress-results.json'
+        statuses,results,codes=[],[],[]
+        started=time.monotonic()
+        for case in ('single','gap','alternating'):
+            target.unlink(missing_ok=True)
+            code,elapsed,_=self.command('identity_'+case,[PY,'prototypes/identity-stress/run.py',case,
+                '--base','https://127.0.0.1:17825','--out',str(output),'--scratch',str(self.work/'identity-scratch')])
+            rows=json.loads(target.read_text()) if target.exists() else []
+            row=rows[-1] if rows else {}
+            passed=code==0 and identity_passed(row,expected_voices=2 if case=='alternating' else 1)
+            statuses.append('PASS' if passed else 'FAIL' if row else 'UNRUNNABLE')
+            codes.append(code)
+            results.append(dict(case=case,status=statuses[-1],exit_code=code,seconds=elapsed,measurements=retained_metadata(row)))
         self.gate('identity_stress','PASS' if statuses == ['PASS']*3 else 'FAIL',counts(statuses),
                   time.monotonic()-started, 0 if all(code==0 for code in codes) else 1,
                   reason='One saved identity per reference voice, distinct across voices, zero within-voice switches/unresolved segments; unused births reported separately',
@@ -411,10 +492,33 @@ class Bundle:
         if self.args.compare:
             baseline = json.loads(self.args.compare.read_text())
             deltas = compare(baseline,self.data)
+            omitted=[d for d in deltas if not self.args.long and d['name'] in ('file_30min','capacity_4x600') and d['after']=='SKIP']
+            deltas=[d for d in deltas if d not in omitted]
             self.data['determinism'] = dict(baseline=str(self.args.compare),status='PASS' if not deltas else 'FAIL',deltas=deltas,
-                                           same_candidate=baseline['identity']['git_sha']==self.sha)
+                                           same_candidate=baseline['identity']['git_sha']==self.sha, intentionally_omitted_long_gates=omitted)
         self.flush()
         print('BUNDLE '+str(self.out.relative_to(ROOT)),flush=True)
+
+
+FILE_FAILURES={'empty.wav':'transcode_failed','text.mp3':'transcode_failed','missing':'acquisition_http_404',
+               'html':'acquisition_failed','hang':'acquisition_timeout'}
+
+
+def aggregate(statuses,code):
+    if 'FAIL' in statuses:return 'FAIL'
+    if 'UNRUNNABLE' in statuses:return 'UNRUNNABLE'
+    return 'PASS' if code==0 else 'FAIL'
+
+
+def file_passed(row,case):
+    if not row:return False
+    common=(row.get('foreign_read_status')==404 and row.get('history_reason') and row.get('header_reason')
+        and row.get('reason_content_free') and row.get('status')==row.get('reload_status'))
+    if case in FILE_FAILURES:
+        return bool(common and row.get('status')=='failed' and row.get('failure_code')==FILE_FAILURES[case])
+    exports=row.get('exports',{})
+    return bool(common and row.get('status')=='completed' and row.get('mp3_link') and row.get('mp3_bytes',0)>0
+        and set(exports)=={'md','txt','json','srt','vtt'} and all(e['ok'] for e in exports.values()))
 
 
 def identity_passed(row, expected_voices=2):
@@ -446,12 +550,13 @@ def main():
     global LADDER
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--long',action='store_true')
-    parser.add_argument('--budget',type=int,default=300)
+    parser.add_argument('--budget',type=int,default=2000)
+    parser.add_argument('--out',type=Path)
     parser.add_argument('--compare',type=Path)
     parser.add_argument('--ladder',type=Path,default=LADDER)
     args = parser.parse_args()
-    if not 1 <= args.budget <= 300:
-        parser.error('budget must be 1..300')
+    if args.budget < 1:
+        parser.error('budget must be positive')
     LADDER = args.ladder
     bundle = Bundle(args)
     def interrupted(signum, frame):
@@ -461,16 +566,17 @@ def main():
         bundle.static()
         ready = bundle.stack()
         bundle.benches(ready)
+        bundle.extended(ready)
     except (Exception,KeyboardInterrupt) as exc:
         bundle.gate('runner','FAIL',reason=type(exc).__name__+'; inspect private runtime log')
         # Preserve details privately, never copy exception strings into the bundle.
         import traceback
         (bundle.work/'runner-error.raw').write_text(traceback.format_exc())
     finally:
-        bundle.unportable()
         recorded = {gate['name'] for gate in bundle.data['gates']}
         required = dict(python_import=1, asset_parity=17, pytest=0, frontend=0,
                         bundle_helpers=0, typecheck=1, verify_layout=1, stack=1,
+                        browser_stress_all=16,file_6min=1,file_failures=5,file_30min=3,capacity_4x600=4,
                         workspace=14, demo_lanes=2, lifecycle=7, reshare=6, level_ladder=6, identity_stress=3)
         required.update({'workspace_row_'+str(n):1 for n in range(1,15)})
         for name, expected in required.items():

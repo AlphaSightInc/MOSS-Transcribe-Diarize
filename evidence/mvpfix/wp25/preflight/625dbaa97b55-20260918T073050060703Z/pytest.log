@@ -1,0 +1,22 @@
+{
+  "name": "pytest",
+  "status": "PASS",
+  "exit_code": 0,
+  "denominators": {
+    "collected": 1912,
+    "executed": 1910,
+    "passed": 1910,
+    "failed": 0,
+    "skipped": 2,
+    "errors": 0,
+    "deselected": 0,
+    "failure_names": [],
+    "subtests": 37,
+    "reported": 1912,
+    "exit_code": 0
+  },
+  "duration_seconds": 152.229,
+  "artifacts": [
+    "pytest.log"
+  ]
+}

@@ -16,6 +16,7 @@ from tests.e2e.verify_demo_lanes import Client, snapshot_segments
 from moss_transcribe_diarize.lane_word_oracle import normalize_segment, score_lanes
 OUT=ROOT/'evidence/mvpfix/wp7'
 SCRATCH=ROOT/'.wp7runtime'
+BASE='https://127.0.0.1:17867'
 CORPUS=ROOT/'evidence/live-policy-sweep-20260825/corpus'
 
 def emit(kind, **data):
@@ -45,7 +46,7 @@ def speaker_score(rows,truth):
 
 class Probe:
     def __init__(self):
-        self.client=Client('https://127.0.0.1:17867',ssl._create_unverified_context())
+        self.client=Client(BASE,ssl._create_unverified_context())
         self.client.call('POST','/api/workspace/bootstrap')
         # Private scratch cookie lets the local browser inspect the same meeting; never evidence.
         (SCRATCH/'cookies.json').write_text(json.dumps(self.client._jar))
@@ -142,7 +143,10 @@ class Probe:
         elif case=='lanes':self.meeting(case,adam[:12*32000],[(0,12,'Adam')],mic=adam[:12*32000])
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('case',choices=['all','single','gap','alternating','recognition','rename','hygiene','lanes']);args=parser.parse_args()
+    global BASE,OUT,SCRATCH
+    parser=argparse.ArgumentParser();parser.add_argument('case',choices=['all','single','gap','alternating','recognition','rename','hygiene','lanes']);parser.add_argument('--base',default=BASE);parser.add_argument('--out',type=Path,default=OUT);parser.add_argument('--scratch',type=Path,default=SCRATCH);args=parser.parse_args()
+    BASE,OUT,SCRATCH=args.base,args.out,args.scratch
+    OUT.mkdir(parents=True,exist_ok=True);SCRATCH.mkdir(parents=True,exist_ok=True)
     p=Probe()
     for case in (['single','gap','alternating','recognition','lanes'] if args.case=='all' else [args.case]):p.run(case)
 

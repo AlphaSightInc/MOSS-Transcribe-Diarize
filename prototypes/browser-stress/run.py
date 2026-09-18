@@ -38,8 +38,9 @@ PREDICATES={
 15:'Actual headed hidden tab for 60s advances frames and words, restores, completes.',
 16:'25s outage recovers without losing acknowledged content; 35s expires truthfully and permits new capture.'}
 class Bench(Harness):
-    def __init__(self,out,base='https://127.0.0.1:17865',microphone_file=None,headed=False,lease_seconds=(25,35)):
+    def __init__(self,out,base='https://127.0.0.1:17865',microphone_file=None,headed=False,lease_seconds=(25,35),runtime=None):
         super().__init__(SimpleNamespace(output=out,base=base))
+        self.runtime=runtime;self.stack_proc=None
         self.microphone_file=microphone_file;self.headed=headed;self.lease_seconds=lease_seconds
         self.errors=[];self.failures=[];self.frames=[];self.posts=[];self.results={};self.case=0
     def attach(self,page):
@@ -307,7 +308,7 @@ class Bench(Harness):
     async def scale(self):
         # Explicit scratch DB fixture only: no decoder calls, no claim of 60 captures.
         rows=(await self.api('/api/meetings'))['body']['meetings'];ident=rows[0]['id']
-        con=sqlite3.connect(ROOT/'runs/wp5/state/phase2.sqlite')
+        con=sqlite3.connect(self.runtime.state/'phase2.sqlite' if self.runtime else ROOT/'runs/wp5/state/phase2.sqlite')
         account=con.execute('SELECT account_id FROM meetings WHERE meeting_id=?',(ident,)).fetchone()[0]
         for i in range(max(0,60-len(rows))):
             con.execute("INSERT INTO meetings(account_id,meeting_id,mode,title,title_source,status,created_at_ms,updated_at_ms) VALUES(?,?, 'file',?,'automatic','failed',?,?)",(account,f'wp5-scale-{i}',f'WP5 fixture {i}',int(time.time()*1000),int(time.time()*1000)))
@@ -322,16 +323,14 @@ class Bench(Harness):
         await self.state_at('no-provider-summary');return {'explained':explained,'provider_posts':len(paid),'ok':explained and not paid}
     async def restart(self):
         before=(await self.api('/api/meetings'))['body']['meetings'];cookies=await self.context.cookies();docs={r['id']:(await self.api('/api/meetings/'+r['id']))['body'].get('transcript') for r in before}
-        # Only owned stack.py in this worktree, PID supplied by caller.
-        pid=int((ROOT/'runs/wp5/server.pid').read_text());await self.page.close();os.kill(pid,signal.SIGTERM)
-        for _ in range(600):
-            try:os.kill(pid,0)
-            except ProcessLookupError:break
-            await asyncio.sleep(.1)
-        else:raise AssertionError('Own server did not stop within 60s; no replacement launched')
-        log=(ROOT/'runs/wp5/server-restart.log').open('a')
-        proc=subprocess.Popen([sys.executable,'prototypes/browser-stress/stack.py','--state','runs/wp5/state','--cert','runs/wp5/cert.pem','--key','runs/wp5/key.pem','--port','17865'],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,env={**os.environ,'PYTHONDONTWRITEBYTECODE':'1','PYTHONPATH':'.'})
-        self.restarted=proc;(ROOT/'runs/wp5/server.pid').write_text(str(proc.pid))
+        # Restart only the stack launched by this bench, preserving state and runtime arguments.
+        await self.page.close()
+        if self.stack_proc is None:
+            raise RuntimeError('Restart requires --stack-port and owned stack')
+        self.stack_proc.terminate()
+        await asyncio.to_thread(self.stack_proc.wait, 60)
+        self.stack_log.close()
+        self.start_stack()
         for _ in range(60):
             try:
                 response=await self.context.request.get(self.args.base+'/');
@@ -340,6 +339,13 @@ class Bench(Harness):
             await asyncio.sleep(.5)
         self.page=self.attach(await self.context.new_page());await self.open();after=(await self.api('/api/meetings'))['body']['meetings'];newdocs={r['id']:(await self.api('/api/meetings/'+r['id']))['body'].get('transcript') for r in after};cookie_values=lambda values: sorted((c['name'],c['value'],c['domain'],c['path']) for c in values);same=cookie_values(await self.context.cookies())==cookie_values(cookies);await self.state_at('server-restart')
         return {'before':len(before),'after':len(after),'cookies_equal':same,'transcripts_equal':docs==newdocs,'ok':before==after and same and docs==newdocs}
+    def start_stack(self):
+        args=self.runtime
+        self.stack_log=(args.state.parent/'server.log').open('ab')
+        self.stack_proc=subprocess.Popen([sys.executable,'prototypes/streaming-diarization/draft-lane/run_local_stack.py',
+            '--state',str(args.state),'--cert',str(args.cert),'--key',str(args.key),'--port',str(args.stack_port),
+            '--manifest',str(args.manifest),'--vllm-base-url',args.decoder_url],cwd=ROOT,stdout=self.stack_log,stderr=subprocess.STDOUT)
+
     async def run_cases(self,cases):
         self.wav=CORPUS/'audio.wav';self.mp3=self.private/'source.mp3'
         subprocess.run(['ffmpeg','-v','error','-i',str(self.wav),'-t','12','-ac','1','-ar','16000',str(self.mp3)],check=True)
@@ -376,11 +382,43 @@ class Bench(Harness):
                 return int(any(r['status']!='PASS' for r in self.results.values()))
             finally:
                 await self.context.close();await browser.close();server.shutdown();self.network.close();self._private.cleanup()
-                if getattr(self,'restarted',None):self.restarted.terminate();self.restarted.wait(timeout=30)
+
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('case');parser.add_argument('--output',default='evidence/mvpfix/wp5/base');parser.add_argument('--base',default='https://127.0.0.1:17865');parser.add_argument('--microphone-file',type=Path);parser.add_argument('--headed',action='store_true');parser.add_argument('--lease-seconds',type=int,nargs='+',choices=(25,35),default=[25,35]);args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('case')
+    parser.add_argument('--output','--out',dest='output',default='evidence/mvpfix/wp5/base')
+    parser.add_argument('--base',default='https://127.0.0.1:17865')
+    parser.add_argument('--microphone-file',type=Path)
+    parser.add_argument('--headed',action='store_true')
+    parser.add_argument('--lease-seconds',type=int,nargs='+',choices=(25,35),default=[25,35])
+    parser.add_argument('--stack-port',type=int)
+    parser.add_argument('--state',type=Path,default=Path('runs/wp5/state'))
+    parser.add_argument('--cert',type=Path,default=Path('runs/wp5/cert.pem'))
+    parser.add_argument('--key',type=Path,default=Path('runs/wp5/key.pem'))
+    parser.add_argument('--manifest',type=Path)
+    parser.add_argument('--decoder-url',default='http://127.0.0.1:18105/v1')
+    args=parser.parse_args()
+    if args.stack_port in (7861,7862):parser.error('private stack port required')
     cases=list(range(1,17)) if args.case=='all' else [int(x) for x in args.case.split(',')]
-    bench=Bench(args.output,args.base,args.microphone_file,args.headed,args.lease_seconds)
-    return asyncio.run(bench.run_cases(cases))
+    bench=Bench(args.output,args.base,args.microphone_file,args.headed,args.lease_seconds,args)
+    try:
+        if args.stack_port:
+            if not args.manifest:parser.error('--manifest required with owned stack')
+            bench.start_stack()
+            import ssl,urllib.request
+            for _ in range(120):
+                if bench.stack_proc.poll() is not None:raise RuntimeError('Owned stack failed to start')
+                try:
+                    urllib.request.urlopen(args.base,context=ssl._create_unverified_context(),timeout=2).close()
+                    break
+                except OSError:time.sleep(1)
+            else:raise RuntimeError('Owned stack readiness timeout')
+        return asyncio.run(bench.run_cases(cases))
+    finally:
+        if bench.stack_proc:
+            bench.stack_proc.terminate()
+            try:bench.stack_proc.wait(timeout=30)
+            except subprocess.TimeoutExpired:bench.stack_proc.kill();bench.stack_proc.wait()
+            bench.stack_log.close()
 if __name__=='__main__':raise SystemExit(main())

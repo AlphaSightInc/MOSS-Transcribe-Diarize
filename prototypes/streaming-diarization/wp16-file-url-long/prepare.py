@@ -1,7 +1,12 @@
 """WP16 throwaway real-media preparation; no audio committed."""
-import json, subprocess, wave
+import argparse, json, subprocess, wave
 from pathlib import Path
-root=Path('.wp16runtime/media'); root.mkdir(exist_ok=True)
+parser=argparse.ArgumentParser()
+parser.add_argument('--scratch',type=Path,default=Path('.wp16runtime'))
+parser.add_argument('--out',type=Path,default=Path('evidence/mvpfix/wp16'))
+args=parser.parse_args()
+root=args.scratch/'media'; root.mkdir(parents=True,exist_ok=True)
+args.out.mkdir(parents=True,exist_ok=True)
 corpus=Path('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus')
 names=['interview_bill_ackman_60s','interview_keyu_jin_60s']
 refs=[]; boundaries=[]
@@ -17,7 +22,7 @@ with wave.open(str(root/'long.wav'),'wb') as out:
         for line in (corpus/name/'reference.jsonl').read_text().splitlines():
             row=json.loads(line); row.update(start=row['start']+i*60,end=row['end']+i*60,source=name); refs.append(row)
 (root/'reference.jsonl').write_text(''.join(json.dumps(r)+'\n' for r in refs))
-Path('evidence/mvpfix/wp16/composite-boundaries.json').write_text(json.dumps(dict(duration=1800,distinct_clips=2,reference_speakers=sorted({r['speaker'] for r in refs}),boundaries=boundaries),indent=2)+'\n')
+(args.out/'composite-boundaries.json').write_text(json.dumps(dict(duration=1800,distinct_clips=2,reference_speakers=sorted({r['speaker'] for r in refs}),boundaries=boundaries),indent=2)+'\n')
 def ff(*a): subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y',*map(str,a)],check=True)
 ff('-i',root/'long.wav','-c:a','libmp3lame','-b:a','64k',root/'long.mp3')
 ff('-i',root/'long.wav','-c:a','aac','-b:a','64k',root/'long.m4a')
