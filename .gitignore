@@ -84,3 +84,6 @@ evidence/mvpfix/*/raw/
 # WP15 private scratch; no audio or credentials in evidence.
 .wp15/
 >>>>>>> mvpfix/wp15-stop-lease-longrun
+
+# WP22 private memory-profile scratch.
+.wp22/

@@ -451,3 +451,29 @@ def test_lane_commit_preserves_causal_voiceprint_matches_across_lane_namespaces(
         assert c.match_observations() == observed
         assert len(c.journal_observations()) == 2
     assert encoder.calls == 5  # Recognition must not re-embed.
+
+
+def test_thirty_minute_lane_buffers_plateau_and_release_without_losing_words():
+    import asyncio
+
+    c, decoder, session, arbiter = make(capacity=9_600_000)
+    checkpoints = {}
+    for seq in range(720):  # 720 production-sized 2.5-second spans = 30 minutes.
+        c.accept_frame(frame(seq))
+        assert commit(c, arbiter)[1].submitted
+        if seq + 1 in (120, 360, 720):
+            checkpoints[seq + 1] = (
+                len(session._frames),
+                tuple(len(p._slices) for p in (c._pcm, c._analysis_pcm, *c._lane_pcm.values())),
+                tuple(t.retained_bytes for t in (c.tape, *c.lane_tapes.values())),
+            )
+    # Audio working state stops growing at five minutes; transcript history may grow.
+    assert checkpoints[120] == checkpoints[360] == checkpoints[720]
+    assert checkpoints[720] == (0, (0, 0, 0, 0), (9_600_000,) * 3)
+    before = session.snapshot().effective_transcript
+    assert len(before) == 1440
+    assert len(decoder.calls) == 1440
+    asyncio.run(session.stop(1))
+    c.release_tape()
+    assert all(t.retained_bytes == 0 for t in (c.tape, *c.lane_tapes.values()))
+    assert session.snapshot().effective_transcript == before

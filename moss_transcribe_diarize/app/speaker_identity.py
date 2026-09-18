@@ -623,6 +623,10 @@ class _OnnxWeSpeakerEmbedder:
         if "CPUExecutionProvider" not in ort.get_available_providers():
             raise _TierBProviderError("cpu_provider_unavailable")
         options = ort.SessionOptions()
+        # Speech intervals have variable lengths. Cached per-shape memory patterns
+        # retain large workspaces across requests; WP22 measured identical vectors
+        # and lower retained RSS without them (memory-longrun/NOTES.md).
+        options.enable_mem_pattern = False
         options.inter_op_num_threads = 1
         options.intra_op_num_threads = 1
         factory = self._session_factory or ort.InferenceSession
