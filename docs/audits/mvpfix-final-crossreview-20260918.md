@@ -114,5 +114,7 @@ console state; a retained repeat exposed it via stdout. Automated probes replace
 interactive TUI for the read-mostly review and are retained as the audit bench.
 No source/assets changed, so no rebuild; no GPU/shared service/physical capture.
 
-Fresh-context result belongs in `docs/verify/wp32/VERIFY-RESULT.md` after executing
-`VERIFY.md`. A queued `/new` is not evidence that verification has happened.
+Completed [fresh-context verification](../verify/wp32/VERIFY-RESULT.md): **10/10
+audit statements accurate**, with F1–F5 unresolved; not product acceptance.
+Fresh full suites also passed: Python 1941 passed/4 skipped/21 warnings/37 subtests
+in 184.44 s; frontend 265 passed/28 files in 2.66 s; typecheck exit 0.

@@ -1,0 +1,27 @@
+{
+  "rows": [
+    {
+      "truncated_lane": null,
+      "expected": false,
+      "actual": false,
+      "applied": true,
+      "finalization": "final"
+    },
+    {
+      "truncated_lane": "system",
+      "expected": true,
+      "actual": true,
+      "applied": true,
+      "finalization": "final"
+    },
+    {
+      "truncated_lane": "microphone",
+      "expected": true,
+      "actual": false,
+      "applied": true,
+      "finalization": "final"
+    }
+  ],
+  "matched": 2,
+  "total": 3
+}
