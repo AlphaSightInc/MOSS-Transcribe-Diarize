@@ -53,3 +53,6 @@ evidence/e2e-*/*.mp3
 evidence/e2e-*/*.wav
 evidence/e2e-*/*.png
 prototypes/streaming-diarization/identity-floor-a2/results/*.npz
+
+# WP1 isolated prototype runtime state (audio, SQLite, local sockets).
+.wp1/

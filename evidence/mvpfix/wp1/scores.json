@@ -1,0 +1,768 @@
+{
+  "cases": [
+    {
+      "case": "same",
+      "saved_words": 172,
+      "saved_segments": 17,
+      "saved_has_lane_tags": false,
+      "saved_matches_final_text_and_identity": true,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_unique_speaker_owner": 86,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 31,
+            "additions": 4,
+            "wer": 0.3274336283185841
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 73,
+            "substitutions": 0,
+            "omissions": 47,
+            "additions": 7,
+            "wer": 0.4778761061946903
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 45,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 86,
+          "saved_words_via_unique_speaker_owner": 86,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 31,
+            "additions": 4,
+            "wer": 0.3274336283185841
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 73,
+            "substitutions": 0,
+            "omissions": 47,
+            "additions": 7,
+            "wer": 0.4778761061946903
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 45,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        }
+      }
+    },
+    {
+      "case": "stop_mid",
+      "saved_words": 69,
+      "saved_segments": 7,
+      "saved_has_lane_tags": false,
+      "saved_matches_final_text_and_identity": true,
+      "lanes": {
+        "system": {
+          "final_words": 38,
+          "saved_words_via_unique_speaker_owner": 38,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 38,
+            "substitutions": 1,
+            "omissions": 75,
+            "additions": 0,
+            "wer": 0.672566371681416
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 37,
+            "substitutions": 1,
+            "omissions": 77,
+            "additions": 1,
+            "wer": 0.6991150442477876
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 32,
+          "pre_retained_unique_vocabulary_vs_control": 31,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": false,
+          "pre_unique_vocabulary": 31,
+          "pre_vocabulary_retained_at_final": 31,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 31,
+          "saved_words_via_unique_speaker_owner": 31,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 31,
+            "substitutions": 0,
+            "omissions": 28,
+            "additions": 8,
+            "wer": 0.7058823529411765
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 28,
+            "substitutions": 0,
+            "omissions": 32,
+            "additions": 9,
+            "wer": 0.803921568627451
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 26,
+          "pre_retained_unique_vocabulary_vs_control": 22,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": false,
+          "pre_unique_vocabulary": 24,
+          "pre_vocabulary_retained_at_final": 24,
+          "unattributed_words": 0
+        }
+      }
+    },
+    {
+      "case": "system_control",
+      "saved_words": 86,
+      "saved_segments": 8,
+      "saved_has_lane_tags": false,
+      "saved_matches_final_text_and_identity": true,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_unique_speaker_owner": 86,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 31,
+            "additions": 4,
+            "wer": 0.3274336283185841
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 84,
+            "substitutions": 1,
+            "omissions": 36,
+            "additions": 7,
+            "wer": 0.3893805309734513
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 48,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 49,
+          "pre_vocabulary_retained_at_final": 48,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 0,
+          "saved_words_via_unique_speaker_owner": 0,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 0,
+            "hypothesis_words": 0,
+            "substitutions": 0,
+            "omissions": 0,
+            "additions": 0,
+            "wer": null
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 0,
+            "hypothesis_words": 0,
+            "substitutions": 0,
+            "omissions": 0,
+            "additions": 0,
+            "wer": null
+          },
+          "reference_boundary_crossing_rows": 0,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 0,
+          "pre_retained_unique_vocabulary_vs_control": 0,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 0,
+          "pre_vocabulary_retained_at_final": 0,
+          "unattributed_words": 0
+        }
+      }
+    },
+    {
+      "case": "parity",
+      "saved_words": 142,
+      "saved_segments": 12,
+      "saved_has_lane_tags": false,
+      "saved_matches_final_text_and_identity": true,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_unique_speaker_owner": 86,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 31,
+            "additions": 4,
+            "wer": 0.3274336283185841
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 73,
+            "substitutions": 0,
+            "omissions": 47,
+            "additions": 7,
+            "wer": 0.4778761061946903
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 45,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 56,
+          "saved_words_via_unique_speaker_owner": 56,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 1,
+            "additions": 6,
+            "wer": 0.13725490196078433
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 48,
+            "substitutions": 0,
+            "omissions": 10,
+            "additions": 7,
+            "wer": 0.3333333333333333
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 38,
+          "pre_vocabulary_retained_at_final": 37,
+          "unattributed_words": 0
+        }
+      }
+    },
+    {
+      "case": "mic-15",
+      "saved_words": 146,
+      "saved_segments": 12,
+      "saved_has_lane_tags": false,
+      "saved_matches_final_text_and_identity": true,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_unique_speaker_owner": 86,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 31,
+            "additions": 4,
+            "wer": 0.3274336283185841
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 71,
+            "substitutions": 0,
+            "omissions": 48,
+            "additions": 6,
+            "wer": 0.4778761061946903
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 46,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 60,
+          "saved_words_via_unique_speaker_owner": 60,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 60,
+            "substitutions": 0,
+            "omissions": 1,
+            "additions": 10,
+            "wer": 0.21568627450980393
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 52,
+            "substitutions": 1,
+            "omissions": 9,
+            "additions": 10,
+            "wer": 0.39215686274509803
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 40,
+          "pre_vocabulary_retained_at_final": 39,
+          "unattributed_words": 0
+        }
+      }
+    },
+    {
+      "case": "system-10",
+      "saved_words": 140,
+      "saved_segments": 12,
+      "saved_has_lane_tags": false,
+      "saved_matches_final_text_and_identity": true,
+      "lanes": {
+        "system": {
+          "final_words": 84,
+          "saved_words_via_unique_speaker_owner": 84,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 84,
+            "substitutions": 2,
+            "omissions": 31,
+            "additions": 2,
+            "wer": 0.30973451327433627
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 71,
+            "substitutions": 0,
+            "omissions": 48,
+            "additions": 6,
+            "wer": 0.4778761061946903
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 49,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 45,
+          "pre_vocabulary_retained_at_final": 43,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 56,
+          "saved_words_via_unique_speaker_owner": 56,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 1,
+            "additions": 6,
+            "wer": 0.13725490196078433
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 51,
+            "substitutions": 1,
+            "omissions": 9,
+            "additions": 9,
+            "wer": 0.37254901960784315
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 40,
+          "pre_vocabulary_retained_at_final": 37,
+          "unattributed_words": 0
+        }
+      }
+    },
+    {
+      "case": "system-15",
+      "saved_words": 142,
+      "saved_segments": 13,
+      "saved_has_lane_tags": false,
+      "saved_matches_final_text_and_identity": true,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_unique_speaker_owner": 86,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 31,
+            "additions": 4,
+            "wer": 0.3274336283185841
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 72,
+            "substitutions": 0,
+            "omissions": 48,
+            "additions": 7,
+            "wer": 0.48672566371681414
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 45,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 56,
+          "saved_words_via_unique_speaker_owner": 56,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 1,
+            "additions": 6,
+            "wer": 0.13725490196078433
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 51,
+            "substitutions": 1,
+            "omissions": 9,
+            "additions": 9,
+            "wer": 0.37254901960784315
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 40,
+          "pre_vocabulary_retained_at_final": 37,
+          "unattributed_words": 0
+        }
+      }
+    },
+    {
+      "case": "mic-10",
+      "saved_words": 142,
+      "saved_segments": 12,
+      "saved_has_lane_tags": false,
+      "saved_matches_final_text_and_identity": true,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_unique_speaker_owner": 86,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 31,
+            "additions": 4,
+            "wer": 0.3274336283185841
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 113,
+            "hypothesis_words": 71,
+            "substitutions": 0,
+            "omissions": 48,
+            "additions": 6,
+            "wer": 0.4778761061946903
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 46,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 56,
+          "saved_words_via_unique_speaker_owner": 56,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 1,
+            "additions": 6,
+            "wer": 0.13725490196078433
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 52,
+            "substitutions": 1,
+            "omissions": 9,
+            "additions": 10,
+            "wer": 0.39215686274509803
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 40,
+          "pre_vocabulary_retained_at_final": 37,
+          "unattributed_words": 0
+        }
+      }
+    },
+    {
+      "case": "mic_control",
+      "saved_words": 56,
+      "saved_segments": 4,
+      "saved_has_lane_tags": false,
+      "saved_matches_final_text_and_identity": true,
+      "lanes": {
+        "system": {
+          "final_words": 0,
+          "saved_words_via_unique_speaker_owner": 0,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 0,
+            "hypothesis_words": 0,
+            "substitutions": 0,
+            "omissions": 0,
+            "additions": 0,
+            "wer": null
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 0,
+            "hypothesis_words": 0,
+            "substitutions": 0,
+            "omissions": 0,
+            "additions": 0,
+            "wer": null
+          },
+          "reference_boundary_crossing_rows": 0,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 0,
+          "pre_retained_unique_vocabulary_vs_control": 0,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 0,
+          "pre_vocabulary_retained_at_final": 0,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 56,
+          "saved_words_via_unique_speaker_owner": 56,
+          "attribution_method": "unique speaker-to-lane map from final surface, not persisted lane provenance",
+          "final_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 1,
+            "additions": 6,
+            "wer": 0.13725490196078433
+          },
+          "pre_vs_reference_overlapping_rows": {
+            "reference_words": 51,
+            "hypothesis_words": 52,
+            "substitutions": 0,
+            "omissions": 6,
+            "additions": 7,
+            "wer": 0.2549019607843137
+          },
+          "reference_boundary_crossing_rows": 1,
+          "exact_clip_wer": "unmeasured: reference lacks word timestamps at clip boundary",
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 41,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 42,
+          "pre_vocabulary_retained_at_final": 41,
+          "unattributed_words": 0
+        }
+      }
+    }
+  ],
+  "requests": 196,
+  "request_latency_seconds": {
+    "min": 0.09276304100058042,
+    "median": 0.18969947950245114,
+    "max": 1.047538999991957
+  },
+  "arbiter_max": {
+    "live_canonical": 1,
+    "live_refinement": 0,
+    "batch": 0
+  },
+  "pending_signals_max": 1,
+  "pending_signals_scope": "instrumented v4 only; unknown earlier",
+  "same_v1_terminal_identity": "time projection; superseded by voice evidence in v2",
+  "production_fix": "not implemented: full prototype verdict pending",
+  "span_latency_by_samples": {
+    "24000": {
+      "n": 8,
+      "min": 0.0952756250044331,
+      "median": 0.12633572949562222,
+      "max": 0.169855792002636
+    },
+    "32000": {
+      "n": 2,
+      "min": 0.13633354200283065,
+      "median": 0.15537539600336459,
+      "max": 0.17441725000389852
+    },
+    "40000": {
+      "n": 80,
+      "min": 0.09613145899493247,
+      "median": 0.17043133299739566,
+      "max": 0.9631550000049174
+    },
+    "160000": {
+      "n": 18,
+      "min": 0.2456084169971291,
+      "median": 0.33670462499867426,
+      "max": 0.5027207089879084
+    }
+  },
+  "request_counts_by_case": {
+    "same": {
+      "first": 1,
+      "last": 26,
+      "count": 26,
+      "per_capture_minute": 65.0,
+      "assignment": "serial case boundaries; checked against request log"
+    },
+    "parity": {
+      "first": 27,
+      "last": 52,
+      "count": 26,
+      "per_capture_minute": 65.0,
+      "assignment": "serial case boundaries; checked against request log"
+    },
+    "system_control": {
+      "first": 53,
+      "last": 65,
+      "count": 13,
+      "per_capture_minute": 32.5,
+      "assignment": "serial case boundaries; checked against request log"
+    },
+    "mic_control": {
+      "first": 66,
+      "last": 78,
+      "count": 13,
+      "per_capture_minute": 32.5,
+      "assignment": "serial case boundaries; checked against request log"
+    },
+    "mic-10": {
+      "first": 79,
+      "last": 104,
+      "count": 26,
+      "per_capture_minute": 65.0,
+      "assignment": "serial case boundaries; checked against request log"
+    },
+    "mic-15": {
+      "first": 105,
+      "last": 130,
+      "count": 26,
+      "per_capture_minute": 65.0,
+      "assignment": "serial case boundaries; checked against request log"
+    },
+    "system-10": {
+      "first": 131,
+      "last": 156,
+      "count": 26,
+      "per_capture_minute": 65.0,
+      "assignment": "serial case boundaries; checked against request log"
+    },
+    "system-15": {
+      "first": 157,
+      "last": 182,
+      "count": 26,
+      "per_capture_minute": 65.0,
+      "assignment": "serial case boundaries; checked against request log"
+    },
+    "stop_mid": {
+      "first": 183,
+      "last": 196,
+      "count": 14,
+      "per_capture_minute": 70.0,
+      "assignment": "serial case boundaries; checked against request log"
+    }
+  },
+  "request_case_count_agrees": true
+}
