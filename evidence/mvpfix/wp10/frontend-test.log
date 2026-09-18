@@ -1,0 +1,20 @@
+npm:1: command not found: _nvm_lazy_load
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp10-zero-guard-seams/frontend
+
+(node:30130) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:30131) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:30136) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  26 passed (26)
+      Tests  230 passed (230)
+   Start at  00:40:03
+   Duration  2.61s (transform 2.41s, setup 0ms, import 3.35s, tests 6.12s, environment 7.72s)
+

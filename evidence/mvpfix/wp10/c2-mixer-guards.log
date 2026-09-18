@@ -1,0 +1,252 @@
+FFF.....................................              [100%]
+=================================== FAILURES ===================================
+_____ test_ingest_zero_and_silent_spans_emit_no_words_or_speakers[False-0] _____
+
+self = <test_live_capture_guard.MustNotDecode object at 0x10ef06240>
+a = (PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-113/test_ingest_zero_and_silent_sp0/mtd-live-59jlni20/span-0001.wav'),)
+kw = {'max_new_tokens': 112}
+
+    def transcribe(self, *a, **kw):
+>       raise AssertionError('decoder invoked')
+E       AssertionError: decoder invoked
+
+tests/test_live_capture_guard.py:18: AssertionError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-113/test_ingest_zero_and_silent_sp0')
+silent = False, value = 0
+
+    @pytest.mark.parametrize('silent,value', [(False, 0), (True, 2000)])
+    def test_ingest_zero_and_silent_spans_emit_no_words_or_speakers(tmp_path, silent, value):
+        source=LiveV2Session(max_retained_samples=32000)
+        for lane in LiveLane:
+            source.accept(_frame(lane,0,0,16000,8000,value,silent=silent))
+        runtime=_Runtime()
+        mixer=LiveCompatibilityMixer(max_output_samples=8000)
+        mixed=mixer.admit_available('s',source,runtime,final=True)
+        assert mixed is not None and mixed.frame.sample_count==8000
+        assert not any(mixed.frame.pcm)
+        adapter=RunnerBoundedWavInference(MustNotDecode(),max_samples=8000,scratch_dir=tmp_path)
+>       result=adapter.transcribe_pcm(span=FrozenSpan(id=1,epoch=0,start_sample=0,end_sample=8000,reason='end_silence'),pcm=mixed.frame.pcm)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_capture_guard.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_adapters.RunnerBoundedWavInference object at 0x10ef04ce0>
+span = FrozenSpan(id=1, epoch=0, start_sample=0, end_sample=8000, reason='end_silence')
+pcm = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00...00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        _validate_pcm_length(pcm, span.sample_count)
+        if span.sample_count > self.max_samples:
+            raise LiveProviderError("canonical span exceeds bounded inference capacity.")
+        token_cap = self._token_cap(span)
+        with tempfile.TemporaryDirectory(prefix="mtd-live-", dir=self.scratch_dir) as scratch:
+            wav_path = Path(scratch) / f"span-{span.id:04d}.wav"
+            write_pcm16_wav(wav_path, pcm)
+            started = time.monotonic()
+            try:
+                result = self.runner.transcribe(
+                    wav_path,
+                    **{**self.transcribe_kwargs, "max_new_tokens": token_cap},
+                )
+            except EmptyTranscriptionError as exc:
+                # Nothing publishable came back for this span. That is a transcript of "",
+                # not a failure: the span is committed empty upstream so the audio stays
+                # accounted for. What the decoder actually did -- said nothing, emitted no
+                # tokens, or answered in a grammar that does not parse -- travels with it,
+                # because those are three different meetings and only one of them is silence.
+                # The raw words stay on the exception and are not carried forward here; the
+                # one policy entitled to read them is `classify_live_transcript`, which is
+                # called right here and hands back either a publishable transcript or a
+                # refusal. Telemetry sees the decision, never the words.
+                #
+                # Only an answer the decoder actually produced is offered to that policy. The
+                # other two endings are the decoder reporting that it produced nothing, and a
+                # `text` arriving beside a zero token count is not this span's answer -- it is
+                # whatever the response payload happened to hold -- so there is nothing there
+                # to repair and it must not become a transcript.
+                outcome = (
+                    classify_live_transcript(
+                        exc.text,
+                        sample_count=span.sample_count,
+                        freeze_reason=span.reason,
+                    )
+                    if exc.cause is EmptyTranscriptCause.UNPARSEABLE_TEXT
+                    else None
+                )
+                if outcome is not None and outcome.publishes:
+                    return InferenceTranscript(
+                        transcript=outcome.transcript,
+                        generated_tokens=exc.generated_tokens,
+                        elapsed_sec=time.monotonic() - started,
+                        token_cap=token_cap,
+                        salvage_disposition=outcome.disposition,
+                    )
+                return InferenceTranscript(
+                    transcript="",
+                    generated_tokens=exc.generated_tokens,
+                    elapsed_sec=time.monotonic() - started,
+                    token_cap=token_cap,
+                    empty_cause=exc.cause,
+                    salvage_disposition=None if outcome is None else outcome.disposition,
+                )
+            except LiveProviderError:
+                raise
+            except (TransientTranscriptionError, ConnectionError, TimeoutError) as exc:
+                # The request never got an answer. The bare exception types are here so this
+                # holds for any runner, not only the one that types its own transport
+                # failures: a reset socket and an expired deadline mean the same thing
+                # whoever raises them.
+                raise LiveProviderTransientError(
+                    f"canonical decode did not answer: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
+                ) from exc
+            except Exception as exc:
+                # Nothing leaves this seam unclassified. A decoder that failed is not a span
+                # with nothing to say, and must stay distinguishable from one -- and from a
+                # decoder that merely blinked.
+>               raise LiveProviderError(
+                    f"canonical decode failed: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
+                ) from exc
+E               moss_transcribe_diarize.app.live_adapters.LiveProviderError: canonical decode failed: AssertionError: decoder invoked
+
+moss_transcribe_diarize/app/live_adapters.py:379: LiveProviderError
+____ test_ingest_zero_and_silent_spans_emit_no_words_or_speakers[True-2000] ____
+
+self = <test_live_capture_guard.MustNotDecode object at 0x10f269dc0>
+a = (PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-113/test_ingest_zero_and_silent_sp1/mtd-live-d_ms9djz/span-0001.wav'),)
+kw = {'max_new_tokens': 112}
+
+    def transcribe(self, *a, **kw):
+>       raise AssertionError('decoder invoked')
+E       AssertionError: decoder invoked
+
+tests/test_live_capture_guard.py:18: AssertionError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-113/test_ingest_zero_and_silent_sp1')
+silent = True, value = 2000
+
+    @pytest.mark.parametrize('silent,value', [(False, 0), (True, 2000)])
+    def test_ingest_zero_and_silent_spans_emit_no_words_or_speakers(tmp_path, silent, value):
+        source=LiveV2Session(max_retained_samples=32000)
+        for lane in LiveLane:
+            source.accept(_frame(lane,0,0,16000,8000,value,silent=silent))
+        runtime=_Runtime()
+        mixer=LiveCompatibilityMixer(max_output_samples=8000)
+        mixed=mixer.admit_available('s',source,runtime,final=True)
+        assert mixed is not None and mixed.frame.sample_count==8000
+        assert not any(mixed.frame.pcm)
+        adapter=RunnerBoundedWavInference(MustNotDecode(),max_samples=8000,scratch_dir=tmp_path)
+>       result=adapter.transcribe_pcm(span=FrozenSpan(id=1,epoch=0,start_sample=0,end_sample=8000,reason='end_silence'),pcm=mixed.frame.pcm)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_live_capture_guard.py:31: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_adapters.RunnerBoundedWavInference object at 0x10f268d40>
+span = FrozenSpan(id=1, epoch=0, start_sample=0, end_sample=8000, reason='end_silence')
+pcm = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00...00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        _validate_pcm_length(pcm, span.sample_count)
+        if span.sample_count > self.max_samples:
+            raise LiveProviderError("canonical span exceeds bounded inference capacity.")
+        token_cap = self._token_cap(span)
+        with tempfile.TemporaryDirectory(prefix="mtd-live-", dir=self.scratch_dir) as scratch:
+            wav_path = Path(scratch) / f"span-{span.id:04d}.wav"
+            write_pcm16_wav(wav_path, pcm)
+            started = time.monotonic()
+            try:
+                result = self.runner.transcribe(
+                    wav_path,
+                    **{**self.transcribe_kwargs, "max_new_tokens": token_cap},
+                )
+            except EmptyTranscriptionError as exc:
+                # Nothing publishable came back for this span. That is a transcript of "",
+                # not a failure: the span is committed empty upstream so the audio stays
+                # accounted for. What the decoder actually did -- said nothing, emitted no
+                # tokens, or answered in a grammar that does not parse -- travels with it,
+                # because those are three different meetings and only one of them is silence.
+                # The raw words stay on the exception and are not carried forward here; the
+                # one policy entitled to read them is `classify_live_transcript`, which is
+                # called right here and hands back either a publishable transcript or a
+                # refusal. Telemetry sees the decision, never the words.
+                #
+                # Only an answer the decoder actually produced is offered to that policy. The
+                # other two endings are the decoder reporting that it produced nothing, and a
+                # `text` arriving beside a zero token count is not this span's answer -- it is
+                # whatever the response payload happened to hold -- so there is nothing there
+                # to repair and it must not become a transcript.
+                outcome = (
+                    classify_live_transcript(
+                        exc.text,
+                        sample_count=span.sample_count,
+                        freeze_reason=span.reason,
+                    )
+                    if exc.cause is EmptyTranscriptCause.UNPARSEABLE_TEXT
+                    else None
+                )
+                if outcome is not None and outcome.publishes:
+                    return InferenceTranscript(
+                        transcript=outcome.transcript,
+                        generated_tokens=exc.generated_tokens,
+                        elapsed_sec=time.monotonic() - started,
+                        token_cap=token_cap,
+                        salvage_disposition=outcome.disposition,
+                    )
+                return InferenceTranscript(
+                    transcript="",
+                    generated_tokens=exc.generated_tokens,
+                    elapsed_sec=time.monotonic() - started,
+                    token_cap=token_cap,
+                    empty_cause=exc.cause,
+                    salvage_disposition=None if outcome is None else outcome.disposition,
+                )
+            except LiveProviderError:
+                raise
+            except (TransientTranscriptionError, ConnectionError, TimeoutError) as exc:
+                # The request never got an answer. The bare exception types are here so this
+                # holds for any runner, not only the one that types its own transport
+                # failures: a reset socket and an expired deadline mean the same thing
+                # whoever raises them.
+                raise LiveProviderTransientError(
+                    f"canonical decode did not answer: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
+                ) from exc
+            except Exception as exc:
+                # Nothing leaves this seam unclassified. A decoder that failed is not a span
+                # with nothing to say, and must stay distinguishable from one -- and from a
+                # decoder that merely blinked.
+>               raise LiveProviderError(
+                    f"canonical decode failed: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
+                ) from exc
+E               moss_transcribe_diarize.app.live_adapters.LiveProviderError: canonical decode failed: AssertionError: decoder invoked
+
+moss_transcribe_diarize/app/live_adapters.py:379: LiveProviderError
+_________________ test_terminal_zero_tape_never_calls_decoder __________________
+
+tmp_path = PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-113/test_terminal_zero_tape_never_0')
+
+    def test_terminal_zero_tape_never_calls_decoder(tmp_path):
+        result=TerminalTranscriptFinalizer(runner=MustNotDecode(),scratch_dir=tmp_path).finalize(
+            plan=plan_for(8000),tape=tape_of(8000,fill=b'\0\0'),base_text_revision_version=0)
+        assert result.proposal is None
+>       assert result.accounting.outcome==TerminalOutcome.NO_TRANSCRIPT
+E       AssertionError: assert <TerminalOutc...ecode_failed'> == <TerminalOutc...o_transcript'>
+E         
+E         - no_transcript
+E         + decode_failed
+
+tests/test_live_capture_guard.py:42: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_capture_guard.py::test_ingest_zero_and_silent_spans_emit_no_words_or_speakers[False-0]
+FAILED tests/test_live_capture_guard.py::test_ingest_zero_and_silent_spans_emit_no_words_or_speakers[True-2000]
+FAILED tests/test_live_capture_guard.py::test_terminal_zero_tape_never_calls_decoder
+3 failed, 37 passed, 19 subtests passed in 3.01s
