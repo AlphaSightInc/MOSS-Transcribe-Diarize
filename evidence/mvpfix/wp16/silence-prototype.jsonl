@@ -1,0 +1,5 @@
+{"case": "silence.wav", "all_zero": true, "expected": true, "elapsed": 0.00039329100400209427, "passed": true}
+{"case": "two.wav", "all_zero": false, "expected": false, "elapsed": 9.262500680051744e-05, "passed": true}
+{"case": "quiet.wav", "all_zero": false, "expected": false, "elapsed": 7.591600297018886e-05, "passed": true}
+{"case": "last-signal.wav", "all_zero": false, "expected": false, "elapsed": 0.0003445000038482249, "passed": true}
+{"case": "long.wav", "all_zero": false, "expected": false, "elapsed": 6.7666987888515e-05, "passed": true}

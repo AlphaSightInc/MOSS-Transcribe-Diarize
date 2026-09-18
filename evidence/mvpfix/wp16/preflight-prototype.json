@@ -1,0 +1,20 @@
+[
+  {
+    "file_bytes": 64078,
+    "status": 200,
+    "body": {
+      "reason": "admitted"
+    },
+    "elapsed": 0.003580917007639073,
+    "expected": 200
+  },
+  {
+    "file_bytes": 177185845248,
+    "status": 507,
+    "body": {
+      "reason": "Insufficient storage for upload."
+    },
+    "elapsed": 0.001756750003551133,
+    "expected": 507
+  }
+]

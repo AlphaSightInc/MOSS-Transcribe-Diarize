@@ -1,0 +1,121 @@
+[
+  {
+    "case": "commons",
+    "meeting_id": "KfALx8a3GZzFuJwVdIkUc75T",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "concurrent-a",
+    "meeting_id": "h3N5E2DNvxqS47_M1dlMw_xR",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "concurrent-b",
+    "meeting_id": "45WZSk1bGKITrWvf2IyG6Y-z",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "direct",
+    "meeting_id": "XnMKBeKGISKPvaY7yVI4ZY3O",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "empty.wav",
+    "meeting_id": "bNf984Y4MF2dzm-5rsLQs1aM",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "hang",
+    "meeting_id": "x9wo9UvNyq6IiosYTx9J33g_",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "html",
+    "meeting_id": "tJdC1MGnl1PHLsrgr0vy1K8o",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "long.m4a",
+    "meeting_id": "1t3uiO5ixRcbDrxJmoMGUqIn",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "long.mp3",
+    "meeting_id": "mpNAcZ8KHeecg-RM7VVcT2D-",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "long.wav",
+    "meeting_id": "R5D3n561QocFrgDaHIji9FqJ",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "missing",
+    "meeting_id": "YM2hieji4Pnu2BUSdJ0WQBJ7",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "silence-before",
+    "meeting_id": "4_WC0rYaiGOLcyZDt9_h9B9U",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "silence.wav",
+    "meeting_id": "09xDUyBcJvADhC3rbS5ipbhr",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "text.mp3",
+    "meeting_id": "A9tRvamBvsxmrkd0qPZvvhID",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "truncated.mp3",
+    "meeting_id": "Hs7n6ZL2mjjO7-8cSlbJVylr",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "two.wav",
+    "meeting_id": "_BXQSAUVbnc5BYKyvVvDJxrG",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  },
+  {
+    "case": "youtube",
+    "meeting_id": "XsZBX7GjxUzKVPZwRROChUbS",
+    "history_reason": true,
+    "header_reason": true,
+    "foreign_read_status": 404
+  }
+]

@@ -71,3 +71,28 @@ it('shows the saved failure reason in the upload result row', async () => {
   await vi.waitFor(() => expect(document.querySelector('[data-file-upload="results"] li span')!.textContent)
     .toBe('Invalid audio: cannot decode this file.'));
 });
+
+it('shows capacity refusal before sending file bytes or creating a meeting', async () => {
+  const form = setup();
+  Object.defineProperty(form.querySelector('input'), 'files', { value: [new File(['audio'], 'large.wav')] });
+  const fetcher = vi.fn(async () => response({ detail: 'Insufficient storage for upload.' }, 507));
+  vi.stubGlobal('fetch', fetcher);
+  form.dispatchEvent(new Event('submit', { cancelable: true }));
+  await vi.waitFor(() => expect(document.body.textContent).toContain('Not accepted: Insufficient storage for upload.'));
+  expect(fetcher).toHaveBeenCalledOnce();
+  expect(fetcher.mock.calls[0]).toEqual(['/api/meetings/file/admission', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"file_bytes":5}'
+  }]);
+  expect(document.querySelector('[data-file-upload="results"] button')).toBeNull();
+});
+
+it('sends a file only after preflight succeeds, preserving authoritative upload refusal', async () => {
+  const form = setup();
+  Object.defineProperty(form.querySelector('input'), 'files', { value: [new File(['audio'], 'media.wav')] });
+  const fetcher = vi.fn(async (url: string) => url.endsWith('/admission')
+    ? new Response(null, { status: 204 }) : response({ detail: 'Insufficient storage for upload.' }, 507));
+  vi.stubGlobal('fetch', fetcher);
+  form.dispatchEvent(new Event('submit', { cancelable: true }));
+  await vi.waitFor(() => expect(document.body.textContent).toContain('Not accepted: Insufficient storage for upload.'));
+  expect(fetcher.mock.calls.map(call => call[0])).toEqual(['/api/meetings/file/admission', '/api/meetings/file']);
+});

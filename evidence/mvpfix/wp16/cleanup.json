@@ -1,0 +1,17 @@
+{
+  "own_pids_stopped": [
+    73737,
+    78208,
+    97528,
+    98122
+  ],
+  "ports_without_listeners": [
+    17876,
+    17877,
+    17878,
+    18116
+  ],
+  "requests_total": 158,
+  "budget": 200,
+  "scope": "own local measurement processes only"
+}

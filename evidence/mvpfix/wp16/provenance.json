@@ -1,0 +1,8 @@
+{
+  "branch": "mvpfix/wp16-file-url-long",
+  "base_sha": "5179368e671623e60f8eee67bbcaeb13f0d49204",
+  "product_sha": "76665702adfcab6214191f0d373d68abadbfd144",
+  "runtime": "own 17876 stack; own 18116 vLLM tunnel; local sources 17877/17878",
+  "limits": "200 requests; semaphore 2; no shared service changes",
+  "verification": "docs/verify/wp16/VERIFY.md"
+}

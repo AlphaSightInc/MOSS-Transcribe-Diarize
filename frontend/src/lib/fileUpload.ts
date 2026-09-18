@@ -33,7 +33,7 @@ export function bindFileUpload(): () => void {
     void refresh();
   }
 
-  const send = async (label: string, path: string, options: RequestInit, current: number): Promise<boolean> => {
+  const send = async (label: string, path: string, options: RequestInit, current: number, fileSize?: number): Promise<boolean> => {
     const row = document.createElement("li");
     const name = document.createElement("strong");
     name.textContent = label;
@@ -42,7 +42,13 @@ export function bindFileUpload(): () => void {
     row.append(name, document.createTextNode(" — "), message);
     results.append(row);
     try {
-      const response = await fetch(path, options);
+      // Ask with metadata before the browser prepares a potentially huge body.
+      // Actual upload admission still checks current capacity and multipart size.
+      const admission = fileSize === undefined ? null : await fetch("/api/meetings/file/admission", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ file_bytes: fileSize })
+      });
+      const response = admission && !admission.ok ? admission : await fetch(path, options);
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
         const detail = typeof payload?.detail === "string" ? payload.detail : `Request failed (${response.status}).`;
@@ -82,7 +88,7 @@ export function bindFileUpload(): () => void {
       for (const file of files) {
         status.textContent = `Submitting ${accepted + failed + 1} of ${files.length + urls.length}…`;
         const body = new FormData(); body.append("file", file, file.name);
-        (await send(file.name, "/api/meetings/file", { method: "POST", body }, current)) ? accepted++ : failed++;
+        (await send(file.name, "/api/meetings/file", { method: "POST", body }, current, file.size)) ? accepted++ : failed++;
       }
       for (const url of urls) {
         status.textContent = `Submitting ${accepted + failed + 1} of ${files.length + urls.length}…`;

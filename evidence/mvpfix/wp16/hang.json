@@ -1,0 +1,31 @@
+{
+  "case": "hang",
+  "source": "hang",
+  "duration_seconds": null,
+  "started_monotonic": 92762.937767916,
+  "queue_before": [
+    "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 1.0",
+    "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+  ],
+  "http_status": 201,
+  "accepted_seconds": 0.06881037499988452,
+  "meeting_id": "x9wo9UvNyq6IiosYTx9J33g_",
+  "first_status_seconds": 0.07744612501119263,
+  "elapsed_seconds": 30.160447250003926,
+  "status": "failed",
+  "failure_code": "acquisition_timeout",
+  "failure_reason": "URL acquisition timed out.",
+  "notice": null,
+  "audio": null,
+  "segments": 0,
+  "saved_words": 0,
+  "speakers": 0,
+  "last_segment_end": null,
+  "history_reason": true,
+  "header_reason": false,
+  "reason_content_free": true,
+  "reload_status": "failed",
+  "exports": {},
+  "mp3_link": false,
+  "foreign_read_status": 401
+}

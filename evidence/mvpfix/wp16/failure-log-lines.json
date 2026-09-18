@@ -1,0 +1,13 @@
+{
+  "lines": [
+    "File Meeting audio: transcode_failed; trying runner input",
+    "File Meeting failed: transcode_failed",
+    "File Meeting audio: transcode_failed; trying runner input",
+    "File Meeting failed: transcode_failed",
+    "File Meeting failed: acquisition_http_404",
+    "File Meeting failed: acquisition_failed",
+    "File Meeting failed: acquisition_timeout",
+    "File Meeting failed: acquisition_http_404"
+  ],
+  "content_free": true
+}

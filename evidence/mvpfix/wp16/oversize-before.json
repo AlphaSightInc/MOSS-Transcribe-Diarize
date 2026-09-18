@@ -1,0 +1,13 @@
+{
+  "free_bytes": 354671906816,
+  "reserve_bytes": 536870912,
+  "file_bytes": 177068566528,
+  "allocated_bytes": 0,
+  "rule": "required_free = 2 * Content-Length + 512 MiB",
+  "fixed_upload_limit": null,
+  "probe_error": "TimeoutError",
+  "elapsed": 20.003378749999683,
+  "request_failures": [],
+  "ui": "over-capacity.wav \u2014 Submitting\u2026",
+  "meetings": 0
+}

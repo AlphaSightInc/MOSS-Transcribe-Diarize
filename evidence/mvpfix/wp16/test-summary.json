@@ -1,0 +1,92 @@
+{
+  "base-python": {
+    "summaries": [
+      "1865 passed, 2 skipped, 21 warnings, 37 subtests passed in 150.33s (0:02:30)"
+    ],
+    "failed_nodes": []
+  },
+  "base-frontend": {
+    "summaries": [
+      "Test Files  27 passed (27)",
+      "Tests  242 passed (242)"
+    ],
+    "failed_nodes": []
+  },
+  "focused": {
+    "summaries": [
+      "8 failed, 47 passed, 1 warning in 8.36s"
+    ],
+    "failed_nodes": [
+      "FAILED tests/phase2/test_file_digital_silence.py::test_real_mix_dispatch_keeps_one_bit_signal",
+      "FAILED tests/phase2/test_file_digital_silence.py::test_silence_persists_notice_and_audio_while_empty_file_fails",
+      "FAILED tests/phase2/test_file_mp3_artifact.py::test_file_completion_publishes_private_exact_mp3_and_owner_whole_download",
+      "FAILED tests/phase2/test_file_mp3_artifact.py::test_audio_publication_failure_is_unavailable_and_preserves_transcript[storage]",
+      "FAILED tests/phase2/test_file_mp3_artifact.py::test_available_metadata_commit_failure_removes_mp3_and_commits_unavailable",
+      "FAILED tests/phase2/test_file_mp3_artifact.py::test_metadata_and_removal_failure_never_marks_surviving_mp3_unavailable[True]",
+      "FAILED tests/phase2/test_file_mp3_artifact.py::test_metadata_and_removal_failure_never_marks_surviving_mp3_unavailable[False]",
+      "FAILED tests/phase2/test_file_mp3_artifact.py::test_post_replace_failure_and_failed_discard_never_commits_unavailable"
+    ]
+  },
+  "focused2": {
+    "summaries": [
+      "1 failed, 54 passed, 2 warnings in 7.76s"
+    ],
+    "failed_nodes": [
+      "FAILED tests/phase2/test_file_digital_silence.py::test_silence_persists_notice_and_audio_while_empty_file_fails"
+    ]
+  },
+  "focused3": {
+    "summaries": [
+      "55 passed, 1 warning in 8.28s"
+    ],
+    "failed_nodes": []
+  },
+  "mutation": {
+    "summaries": [
+      "2 failed, 2 warnings in 0.53s"
+    ],
+    "failed_nodes": [
+      "FAILED tests/phase2/test_file_digital_silence.py::test_real_mix_dispatch_keeps_one_bit_signal[one-bit-quiet]",
+      "FAILED tests/phase2/test_file_mp3_artifact.py::test_file_completion_publishes_private_exact_mp3_and_owner_whole_download"
+    ]
+  },
+  "final-python": {
+    "summaries": [
+      "1869 passed, 2 skipped, 21 warnings, 37 subtests passed in 143.50s (0:02:23)"
+    ],
+    "failed_nodes": []
+  },
+  "final-frontend": {
+    "summaries": [
+      "Test Files  27 passed (27)",
+      "Tests  242 passed (242)"
+    ],
+    "failed_nodes": []
+  },
+  "preflight-tests": {
+    "summaries": [
+      "12 passed, 1 warning in 3.19s"
+    ],
+    "failed_nodes": []
+  },
+  "preflight-frontend": {
+    "summaries": [
+      "Test Files  27 passed (27)",
+      "Tests  244 passed (244)"
+    ],
+    "failed_nodes": []
+  },
+  "complete-python": {
+    "summaries": [
+      "1870 passed, 2 skipped, 21 warnings, 37 subtests passed in 142.38s (0:02:22)"
+    ],
+    "failed_nodes": []
+  },
+  "native-frontend": {
+    "summaries": [
+      "Test Files  27 passed (27)",
+      "Tests  244 passed (244)"
+    ],
+    "failed_nodes": []
+  }
+}

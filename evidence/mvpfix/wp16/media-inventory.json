@@ -1,0 +1,147 @@
+[
+  {
+    "file": "long.wav",
+    "bytes": 57600044,
+    "ffprobe_status": 0,
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "pcm_s16le",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "1800.000000"
+      }
+    }
+  },
+  {
+    "file": "long.mp3",
+    "bytes": 14400909,
+    "ffprobe_status": 0,
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "1800.000000"
+      }
+    }
+  },
+  {
+    "file": "long.m4a",
+    "bytes": 15711418,
+    "ffprobe_status": 0,
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "aac",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "1800.000000"
+      }
+    }
+  },
+  {
+    "file": "short.mp3",
+    "bytes": 36513,
+    "ffprobe_status": 0,
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "12.000000"
+      }
+    }
+  },
+  {
+    "file": "truncated.mp3",
+    "bytes": 21907,
+    "ffprobe_status": 0,
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "12.000000"
+      }
+    }
+  },
+  {
+    "file": "silence.wav",
+    "bytes": 320044,
+    "ffprobe_status": 0,
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "pcm_s16le",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "10.000000"
+      }
+    }
+  },
+  {
+    "file": "two.wav",
+    "bytes": 64078,
+    "ffprobe_status": 0,
+    "metadata": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "pcm_s16le",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "2.000000"
+      }
+    }
+  },
+  {
+    "file": "empty.wav",
+    "bytes": 0,
+    "ffprobe_status": 1,
+    "metadata": {}
+  },
+  {
+    "file": "text.mp3",
+    "bytes": 31,
+    "ffprobe_status": 1,
+    "metadata": {}
+  }
+]

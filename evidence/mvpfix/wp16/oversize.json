@@ -1,0 +1,19 @@
+{
+  "free_bytes": 354900336640,
+  "reserve_bytes": 536870912,
+  "file_bytes": 177182781440,
+  "allocated_bytes": 0,
+  "rule": "required_free = 2 * Content-Length + 512 MiB",
+  "fixed_upload_limit": null,
+  "status": 507,
+  "body": {
+    "detail": "Insufficient storage for upload."
+  },
+  "elapsed": 0.06077275000279769,
+  "content_length": null,
+  "ui": "over-capacity.wav \u2014 Not accepted: Insufficient storage for upload. Check this item before submitting it again.",
+  "post_routes": [
+    "admission"
+  ],
+  "meetings": 0
+}

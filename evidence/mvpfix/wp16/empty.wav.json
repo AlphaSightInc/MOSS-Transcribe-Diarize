@@ -1,0 +1,31 @@
+{
+  "case": "empty.wav",
+  "source": "empty.wav",
+  "duration_seconds": null,
+  "started_monotonic": 92741.161743208,
+  "queue_before": [
+    "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 1.0",
+    "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+  ],
+  "http_status": 201,
+  "accepted_seconds": 0.13450250000460073,
+  "meeting_id": "bNf984Y4MF2dzm-5rsLQs1aM",
+  "first_status_seconds": 0.1496559170045657,
+  "elapsed_seconds": 2.1549487080046674,
+  "status": "failed",
+  "failure_code": "transcode_failed",
+  "failure_reason": "Media could not be decoded. The format may be unsupported or damaged.",
+  "notice": null,
+  "audio": null,
+  "segments": 0,
+  "saved_words": 0,
+  "speakers": 0,
+  "last_segment_end": null,
+  "history_reason": true,
+  "header_reason": false,
+  "reason_content_free": true,
+  "reload_status": "failed",
+  "exports": {},
+  "mp3_link": false,
+  "foreign_read_status": 401
+}

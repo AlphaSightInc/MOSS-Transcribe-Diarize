@@ -1,0 +1,9 @@
+{
+  "control": "headers only, zero body bytes sent",
+  "declared_bytes": 176960477184,
+  "free_bytes": 354455728128,
+  "status": "HTTP/1.1 507 Insufficient Storage",
+  "body": "{\"detail\":\"Insufficient storage for upload.\"}",
+  "meetings_before": 0,
+  "meetings_after": 0
+}
