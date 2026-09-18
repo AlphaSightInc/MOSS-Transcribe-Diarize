@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="0.443" timestamp="2026-09-18T00:26:35.866934-04:00" hostname="MacStudio.local"><testcase classname="tests.phase2.test_admin_status_capture" name="test_status_capture_binds_each_rendering_to_its_own_response[None]" time="0.001"><failure message="OSError: AF_UNIX path too long">tests/phase2/test_admin_status_capture.py:39: in test_status_capture_binds_each_rendering_to_its_own_response
+    server.bind(str(path))
+E   OSError: AF_UNIX path too long</failure></testcase><testcase classname="tests.phase2.test_admin_status_capture" name="test_status_capture_binds_each_rendering_to_its_own_response[human]" time="0.001"><failure message="OSError: AF_UNIX path too long">tests/phase2/test_admin_status_capture.py:39: in test_status_capture_binds_each_rendering_to_its_own_response
+    server.bind(str(path))
+E   OSError: AF_UNIX path too long</failure></testcase><testcase classname="tests.phase2.test_admin_status_capture" name="test_status_capture_binds_each_rendering_to_its_own_response[json]" time="0.000"><failure message="OSError: AF_UNIX path too long">tests/phase2/test_admin_status_capture.py:39: in test_status_capture_binds_each_rendering_to_its_own_response
+    server.bind(str(path))
+E   OSError: AF_UNIX path too long</failure></testcase></testsuite></testsuites>

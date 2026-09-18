@@ -1,89 +1,117 @@
-# WP5 fresh-context verification result
+# WP9 fresh-context verification — PASS for WP9; full suite NOT GREEN
 
-**Execution PASS against VERIFY.md expectations: 6 PASS / 2 known N1 FAIL / 0 BLOCKED of 8 browser cases.**
-This reproduces the stated failures; it does not make the product all-pass. The separate retained baseline remains **11 PASS / 2 FAIL / 1 BLOCKED of 14** (`evidence/mvpfix/wp5/verdict.json`, `prototypes/browser-stress/NOTES.md`). No browser rerun or discarded failure.
+Fresh-context session, 2026-09-18: executed the user-provided `/new` verification
+handoff without implementation-session context. The literal tmux `/new` invocation
+and pane identity were not independently observed or asserted.
+Verified clean starting branch `mvpfix/wp9-rename-identity` at
+`97f09c3a82801910531b43536472c8dd7ba7cf65`.
+Base: `a92bb4aa88f9581b46cefcafae98c80e911a1d3b`.
+No production implementation changed in this verification session.
 
-## Identity and actual fresh-context status
+**F1 — Durable rename passes.** An owner names a stable speaker ID in an owned
+meeting; ending capture does not end the right to edit its saved display name.
+The production diff preserves owner authority, active naming, pending clearing,
+identity/enrollment thresholds and the two-Refresh sentinel. Existing linked
+voiceprints remain renameable; terminal meetings without retained eligible voice
+evidence return `unavailable`, with no fabricated voiceprint or pending enrollment.
+Exact-ID/duplicate-label, foreign-owner, restart and enrollment checks pass.
 
-- Worktree: `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp5-browser-stress`.
-- Branch: `mvpfix/wp5-browser-stress`; verified base: `29d69b0ecefa666b2ed523f75e28c8e806d9d7d7`; initially clean.
-- Verification date: 2026-09-17 EDT (2026-09-18 UTC); actual execution pane: `MOSS:3.2`, `%26`. Lead reference: Fable, MOSS:2.1.
-- This session began with the fresh-verification assignment. No previous conversation, rollout, or memory files were consulted. Only the prescribed worktree/briefs and applicable instructions were read. **Literal prior `/new` execution is unverified**; this session did not issue `/new`. Do not treat fresh task context as proof of that command.
-- Initial ports 17865/18105: zero listeners. Import witness resolves the package inside this worktree (`fresh/import.txt`). Decoder preflight: running 0, waiting 0.
+| Path | Fresh base before | Fresh WP9 after |
+|---|---:|---:|
+| (a) during capture | HTTP 200 | HTTP 200 |
+| (b) after Stop, before reload | HTTP 404 | HTTP 200 |
+| (c) after reload / same-owner observer | HTTP 404 | HTTP 200 |
+| (d) older meeting from History / recreated app | HTTP 404 | HTTP 200 |
+| (e) completed file meeting | HTTP 404 | HTTP 200 |
 
-## Question, contract, and tool decisions
+Fresh replay: 1/5 before, 5/5 after; GET/history agree 5/5 after. Naming replay
+explicitly disables enrollment: bank remains empty in 5/5 cases. Separate affected
+Python tests exercise default enrollment and linked profiles. Full frontend rerun
+with fresh route documents verifies 25/25 exports and 4/4 completed summary inputs.
+See `evidence/mvpfix/wp9/fresh-rename-matrix.json`, `fresh-base-prototype.json`,
+`fresh-prototype.json`, and `fresh-frontend-route-docs.log`.
 
-Question: do adversarial browser actions preserve truthful capture termination, durable meetings, and usable saved results?
-Primitives: browser capture, server session/lease, durable meeting, UI projection. Each owns a distinct witness; one cannot substitute for another.
-Invariants: terminal cleanup, persisted data/cookies, complete downloads, cause-bearing failures, exactly two Refresh controls in Voiceprints, and 400px layout. No product policy or threshold changes.
-Falsifiers: mismatched browser verdicts, generic failure counted as explanation, truncated downloads accepted, missing persisted data, changed sentinel/assets, or decoder budget exceeded. These would be retained and reported rather than retried away.
-Tools: the prescribed suites detect source/build/locator regressions; the real browser and own stack measure UI/transport/persistence; process checks detect leftover owned services; evidence inspection prevents staging private artifacts. No new production algorithm or policy was proposed.
+**F2 — History-card decision: leave unchanged.** LiveTranscribe's
+`frontend/src/components/historyPanelSurface.tsx:133–174` renders meeting title,
+metadata, duration and source, with no speaker field. Read that reference and
+`tools/uifidelity/reference_oracle.py`; saved names belong in the opened transcript
+and returned history documents. No card redesign is justified by this contract.
 
-## Commands and exact counts
+**F3 — Integrated silence span passes.** WP7 Adam Frank fixture, 49–109 s excerpt,
+25–35 s replaced by digital zeros; exact original birth span 25.25–27.75 s:
+0 nonzero bytes, 0 decoder requests, 0 identity preparations, 0 extra births.
+Existing speaker `speaker-0001` unchanged. Production adapter/coordinator are
+unchanged against base. This is the exact-span check, not a full 60 s acoustic rerun.
+See `evidence/mvpfix/wp9/fresh-silence.json`.
 
-Main command, from the worktree:
+**F4 — Exact fresh test counts.**
 
-```sh
-NPM_CONFIG_CACHE="$PWD/runs/wp5/npm-cache" bash prototypes/browser-stress/verify.sh
-```
+| Run | Passed | Failed | Errors | Skipped | Denominator / time |
+|---|---:|---:|---:|---:|---|
+| Entire Python `tests` tree | 1,753 | 19 | 22 | 2 | 1,796 test items; 137.99 s |
+| Affected Python, literal VERIFY script | 20 | 0 | 0 | 0 | 20; 3.48 s |
+| Known integration nodes, literal script | 0 | 2 | 22 | 0 | 24; 3.67 s |
+| Full frontend, literal script | 239 | 0 | 0 | 0 | 239 in 27 files; 2.66 s |
+| Full frontend, fresh route documents | 239 | 0 | 0 | 0 | 239 in 27 files; 2.43 s |
 
-The script was unmodified. Its Python uses `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.` and worktree-local `TMPDIR`.
+The full Python run also reports **37 passed subtests**, separately from 1,796
+items (JUnit includes them, hence 1,833 records). 21 warnings. The two skips concern
+unprovisioned operator-owned identity and F-cert corpora. Typecheck/build and
+`git diff --check` pass; rebuilt frontend assets are byte-identical to starting HEAD.
+The historical 805/2/22 result was phase2-only, not the entire Python suite.
 
-| Check | Actual result | Evidence under evidence/mvpfix/wp5/fresh/ |
-|---|---|---|
-| Frontend | PASS: 206/206 tests, 24/24 files | frontend.txt |
-| Typecheck | PASS, exit 0 | typecheck.txt |
-| Build | PASS, exit 0; 33 modules; tracked assets unchanged | build.txt, cleanup.json |
-| Exact locator sentinels | PASS: 3/3, 1.51s | sentinels.txt |
-| Browser selected population | 6 PASS / 2 FAIL of 8 | browser/campaign-results.json |
-| Expected-population assertions | PASS; verify.sh exit 0 | verification.json |
-| Additional visibility capability probe | BLOCKED: hidden 0/5 observations | visibility-probe.json |
+**F5 — Every product failure is pre-existing on base; 0 introduced by WP9.**
+A scratch `git archive a92bb4aa` lives inside `.wp9runtime/base-a92bb4aa`.
+Ran each failing **whole file** from that archive's own cwd, using its production
+code, the same interpreter, `PYTHONPATH=.` and the same temporary-path relocation.
+All 41 failing/error node IDs, outcome types and normalized tracebacks match.
+These six test files are unchanged by WP9. Per-node evidence:
+`evidence/mvpfix/wp9/fresh-failure-classification.json` and accompanying base XML/logs.
 
-The browser subprocess exited 1 for the two retained failures, as required. `verification.json` contains fixed suite labels; the actual 206/206 and 3/3 counts above were independently read from their logs.
+| Whole file on scratch base | Passed | Failed | Errors | Reason |
+|---|---:|---:|---:|---|
+| `tests/phase2/test_draft_lane.py` | 14 | 1 | 0 | Zero-PCM replacement returns 0 expected 2 rows |
+| `tests/phase2/test_runner_composition.py` | 12 | 1 | 0 | Zero PCM produces 0 expected 1 request |
+| `tests/phase2/test_export_oracle.py` | 0 | 0 | 22 | Node cannot resolve extensionless transcriptOrder |
+| `tests/test_live_pipeline_seams.py` | 52 | 15 | 0 | Guard bypasses fixture decoder results/errors/metadata |
+| `tests/test_live_rolling_wiring.py` | 27 | 1 | 0 | Empty zero-PCM result bypasses salvage fixture |
+| `tests/test_live_service_replay.py` | 23 | 1 | 0 | Terminal fixture reports failed instead of final |
 
-| Case | Fresh verdict | Exact measurement | Seconds |
-|---|---|---|---:|
-| 1 | PASS | Stop clicks 0.299999997 ms apart; 1 completed meeting; terminal UI | 11.936 |
-| 8 | FAIL (N1) | 3/5 variants pass: MP3, 244-character filename, concurrent two-tab uploads; 4/4 valid recordings complete. Invalid/empty: 2/2 failed, 0/2 causes. Two submit-coroutine starts 0.242209004 ms apart; not a server-arrival timing claim | 15.775 |
-| 9 | FAIL (N1) | Unreachable, 404, non-media: 3/3 failed, 0/3 explained causes | 9.192 |
-| 10 | PASS | 10/10 nonempty text exports; 2/2 audio transfers aborted after 1500 bytes, full retries exactly 48,861 and 72,837 bytes, both ffmpeg-decodable; 12/12 checks | 1.711 |
-| 11 | PASS | Rename HTTP 200; enrolled; 1 voiceprint in bank after reload; 1/1 selected-speaker exported turns correctly named; UI label persisted | 11.510 |
-| 12 | PASS | 60/60 scratch/history rows; exactly 2 Refresh controls in Voiceprints; viewport/scroll width 400/400px | 0.249 |
-| 13 | PASS | Missing-provider setup explained; 0 provider POSTs | 0.665 |
-| 14 | PASS | 60/60 history records equal, 60/60 transcript fields equal (including nulls), cookie values unchanged | 34.658 |
+Base total for these six files: 128 passed, 19 failed, 22 errors, 169 items,
+plus 9 passed subtests. First five: 7.08 s; service replay: 0.49 s.
+The 19 failures match the known WP3 adapter zero-guard seam failures assigned to
+WP10. The 22 export errors match the import corrected later in `79467f08` (inspected,
+not applied). No unrelated repair, merge, push or deployment was performed.
 
-Case 10 text-export byte counts, live/file respectively: md 176/229; txt 173/226; json 570/754; srt 195/248; vtt 203/256.
-Cases 2–7 were not rerun as capture cases; case 3 received only the additional no-audio capability probe. Their baseline verdicts remain retained evidence, not new measurements.
+**F6 — Execution boundaries and deviations.**
+- Ran `bash prototypes/rename-after-stop/verify.sh` literally, successfully. Its
+  full-suite prohibition is superseded by the user's explicit full-suite request.
+- Full command remains `python -m pytest -q -p no:cacheprovider tests`; the supplied
+  interpreter resolves this worktree. `PYTHONDONTWRITEBYTECODE=1`, `PYTHONPATH=.`,
+  own-tree TMPDIR/npm cache, and PYTEST_ADDOPTS for basetemp/JUnit/short tracebacks.
+  `evidence/mvpfix/wp9/contained-run.py` temporarily relocates hardcoded `/tmp`
+  sockets/directories to `.wp9runtime/t`, then restores all seven affected source/
+  test files and three regenerated WP2 screenshots byte-for-byte. Exact temporary
+  patch is retained losslessly inside containment JSON; trailing whitespace in
+  logs/XML is trimmed for diff-check. No test assertions or product policies were changed.
+- Initial relocation returned absolute tempfile paths exceeding macOS's Unix-socket
+  limit: three admin-status failures reproduced on scratch base twice. Correcting
+  only relative socket spelling gives 3/3 on base and 3/3 in the completed full run.
+  These are containment-harness failures also present on base, not WP9 defects.
+  The first full attempt was stopped (SIGINT did not finish; SIGTERM, exit -15)
+  and its partial log retained; it has no completed-suite count. A wrapper-edit
+  command initially used the archive-relative wrong path (FileNotFoundError);
+  it made no change. The corrected full run above completed normally, exit 1.
+- Extra base VAD file check: 15/15, no failures; it did not supply a missing failure.
+- Retained batch prototype instead of interactive TUI; semantic SQLite 3.50.4
+  override follows existing fixtures (production requires 3.53.4). Production
+  runtime, deployment, attended browser acceptance and full 60 s acoustic result
+  remain unmeasured. Prior-session `/tmp` writes are historical deviations;
+  this session's scratch/temp destinations stay inside the authorized worktree.
+- No shared decoder calls, tunnels, shared-service changes, pushes, merges or deploys.
 
-## Decoder budget and cleanup
-
-Counter **113 -> 127 = 14/80 additional submissions**, 66 unused under this assignment; cumulative 127/200. The counter was never reset. Wrapper semaphore remains at most two requests in flight; observed actual peak concurrency was not instrumented.
-To enforce the user's stricter cap, the sole temporary bench edit changed `stack.py`'s cumulative guard from 200 to **193 = 113 + 80**, including the replacement server. It was restored byte-for-byte after shutdown; this is a declared deviation from an entirely unchanged checkout during execution. No product code changed.
-Original stack PID 52541, replacement 53548, tunnel 52525, bench/browser and observed child processes all stopped. Cleanup inspection found zero owned processes and zero listeners on 17865/18105 (`cleanup.json`). The separate probe closed its browser. The SIGTERM message from the original server is the prescribed graceful restart, not an extra failure.
-
-## Case 3: one cheap Chromium configuration attempt
-
-Question: can native Chromium visibility change without spoofing DOM properties? Hypothesis: removing background-disabling defaults and using CDP focus/lifecycle controls may expose a hidden page. Falsifier of the blocker: native `document.hidden === true`; that would establish capability only, still requiring the full 60-second capture test.
-One Chrome **153.0.8010.53**, headless launch; no audio/decoder calls. Removed `--disable-backgrounding-occluded-windows`, `--disable-renderer-backgrounding`, and `--disable-background-timer-throttling` from Playwright defaults.
-
-| Action | hidden | visibilityState | hasFocus |
-|---|---|---|---|
-| Initial page | false | visible | true |
-| Second tab brought forward | false | visible | true |
-| Emulation.setFocusEmulationEnabled(true), second tab forward | false | visible | true |
-| Emulation.setFocusEmulationEnabled(false), second tab forward | false | visible | false |
-| Page.setWebLifecycleState({state: "hidden"}) | false | visible | false |
-
-Last command failed with `Protocol error (Page.setWebLifecycleState): Unidentified lifecycle state`. Zero visibilitychange events; **0/5 hidden observations**. No visibility getters were replaced. **This configuration did not unblock case 3.** Other configurations remain unmeasured; this does not prove Chromium can never hide a page. Need a browser configuration that demonstrably produces native hidden state, followed by the actual capture-continuity test. Probe source/result retained in `fresh/visibility-probe.py` and `.json`; no retry.
-
-## Limits, deviations, and retained evidence
-
-- **F1:** N1 remains a real product failure owned by WP4: invalid file/URL failure causes are missing. Generic failure is not explanation. No production repair in this verification branch.
-- **F2:** Hidden capture continuity remains BLOCKED; the visible 60-second baseline interval is not hidden evidence. This probe adds capability evidence only.
-- **F3:** All other selected contracts reproduced correctly. Baseline 14-case population is unchanged; no microphone fidelity, echo, recognition-quality, paid-summary, or deployment claim.
-- Synthetic microphone readiness, public corpus system-tab speech, scratch SQLite rows, shipped 5-second Stop behavior, expected download/navigation aborts, and retired live-session 404s remain the documented bench caveats. Sixty transcript-field comparisons include failed fixture rows with null transcripts; they are not sixty decoded transcripts.
-- Read-only shared Python/node_modules/corpus reuse only. Vitest cache disabled, Vite runner config temporary/local, npm cache and runtime outputs local. No task-authored changes outside the worktree; byte-for-byte external-tree isolation was not audited. No shared-service control, push, merge, or deployment.
-- Eight screenshots visually inspected: form fields, names and main transcript text masked. Some history previews contain short **public corpus** fragments; no private transcript input was used. Metadata JSON/JSONL excludes API documents, cookies and credential values. Audio, SQLite, TLS keys, browser profiles and private runtime logs remain ignored in `runs/wp5`, never staged.
-- Changes committed: this result plus `evidence/mvpfix/wp5/fresh/` verification logs, metadata, screenshots, probe and cleanup evidence. Production source, baseline verdict, existing NOTES.md, VERIFY.md, and built assets unchanged. No new regression test warranted for an evidence-only change.
-
-Evidence staging inspection: 35 files, 886 browser JSON/JSONL records checked; no retained transcript/body/cookie/credential fields, audio, databases, keys or profiles staged. All 8 screenshots inspected. `git diff --cached --check` reports one raw-log formatting warning (`fresh/typecheck.txt:4`, blank line at EOF); original tool output retained unchanged. No other whitespace finding.
+Implementation files are enumerated in `evidence/mvpfix/wp9/implementation-files.txt`.
+Core behavior: `phase2.py`, `phase2_speaker_identity.py`, `TranscriptPane.tsx`,
+`speakers.ts`; rebuilt JS/map; naming/silence tests, CONTEXT and replay documentation.
+This commit changes only VERIFY-RESULT, the prior phase2-count label/verification
+appendix in NOTES, and fresh WP9 evidence plus its reproduction helper.

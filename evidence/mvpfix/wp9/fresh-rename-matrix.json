@@ -1,0 +1,75 @@
+[
+  {
+    "path": "a",
+    "case": "capture",
+    "before_http": 200,
+    "after_http": 200,
+    "get_history_equal": true,
+    "saved_labels": [
+      "WP9 capture"
+    ],
+    "bank": {
+      "voiceprints": []
+    },
+    "enrollment": "not_requested"
+  },
+  {
+    "path": "b",
+    "case": "after_stop",
+    "before_http": 404,
+    "after_http": 200,
+    "get_history_equal": true,
+    "saved_labels": [
+      "WP9 after_stop",
+      "WP9 after_stop"
+    ],
+    "bank": {
+      "voiceprints": []
+    },
+    "enrollment": "not_requested"
+  },
+  {
+    "path": "c",
+    "case": "reload",
+    "before_http": 404,
+    "after_http": 200,
+    "get_history_equal": true,
+    "saved_labels": [
+      "WP9 reload",
+      "WP9 reload"
+    ],
+    "bank": {
+      "voiceprints": []
+    },
+    "enrollment": "not_requested"
+  },
+  {
+    "path": "d",
+    "case": "history",
+    "before_http": 404,
+    "after_http": 200,
+    "get_history_equal": true,
+    "saved_labels": [
+      "WP9 history",
+      "WP9 history"
+    ],
+    "bank": {
+      "voiceprints": []
+    },
+    "enrollment": "not_requested"
+  },
+  {
+    "path": "e",
+    "case": "file",
+    "before_http": 404,
+    "after_http": 200,
+    "get_history_equal": true,
+    "saved_labels": [
+      "WP9 file"
+    ],
+    "bank": {
+      "voiceprints": []
+    },
+    "enrollment": "not_requested"
+  }
+]

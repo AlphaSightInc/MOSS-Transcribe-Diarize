@@ -1,0 +1,2 @@
+git diff --exit-code a92bb4aa HEAD -- tests/phase2/test_draft_lane.py tests/phase2/test_runner_composition.py tests/phase2/test_export_oracle.py tests/test_live_pipeline_seams.py tests/test_live_rolling_wiring.py tests/test_live_service_replay.py
+Exit 0: all six failing files unchanged by WP9.

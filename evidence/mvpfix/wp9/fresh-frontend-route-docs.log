@@ -1,0 +1,19 @@
+Full frontend suite using fresh-prototype.json in the route-document fixture slot; restored afterward.
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/frontend
+
+(node:3204) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3203) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3209) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  27 passed (27)
+      Tests  239 passed (239)
+   Start at  00:26:11
+   Duration  2.43s (transform 3.31s, setup 0ms, import 4.28s, tests 6.56s, environment 5.91s)

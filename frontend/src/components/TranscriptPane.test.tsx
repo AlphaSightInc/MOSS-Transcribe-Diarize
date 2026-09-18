@@ -115,14 +115,14 @@ describe("TranscriptPane", () => {
     expect([...root.querySelectorAll(".legend-chip-name")].map(node => node.textContent)).toEqual(["Alex", "Sam"]);
   });
 
-  it("keeps observers, terminal meetings and provisional-only speakers read-only", () => {
+  it("allows owned observers and terminal meetings but keeps provisional-only speakers read-only", () => {
     showSpeakers(false);
-    expect([...root.querySelectorAll<HTMLButtonElement>(".legend-chip")].every(button => button.disabled)).toBe(true);
+    expect([...root.querySelectorAll<HTMLButtonElement>(".legend-chip")].every(button => !button.disabled)).toBe(true);
     act(() => {
       captureMeetingId.value = "meeting/one";
       sessionStatus.value = "closed";
     });
-    expect(root.querySelector<HTMLButtonElement>(".legend-chip")?.disabled).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>(".legend-chip")?.disabled).toBe(false);
     act(() => {
       sessionStatus.value = "active";
       replaceTranscript([{ start: 0, end: 1, text: "preview", speaker: "S01", speaker_entity_id: "canonical/a", display_name: "S01", state: "provisional" }]);
@@ -132,11 +132,12 @@ describe("TranscriptPane", () => {
 
   it("explains why a row cannot be named", () => {
     showSpeakers(false);
+    act(() => { sessionId.value = null; });
     act(() => root.querySelector<HTMLButtonElement>(".utt-speaker")!.click());
-    expect(root.querySelector('[role="status"]')?.textContent).toContain("active capture page");
+    expect(root.querySelector('[role="status"]')?.textContent).toContain("Open a meeting");
     expect(root.querySelector("dialog")).toBeNull();
     act(() => {
-      captureMeetingId.value = "meeting/one";
+      sessionId.value = "meeting/one";
       replaceTranscript([{ start: 0, end: 1, text: "Preview", speaker: "S01", speaker_entity_id: "canonical/a", display_name: "Alex", state: "provisional" }]);
     });
     act(() => root.querySelector<HTMLButtonElement>(".utt-speaker")!.click());

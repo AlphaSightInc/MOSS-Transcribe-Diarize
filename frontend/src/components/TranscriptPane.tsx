@@ -24,7 +24,7 @@ import {
   buildTranscriptSearchResults,
   type TranscriptSearchPart
 } from "../lib/transcriptSearch";
-import { captureMeetingId, sessionId, sessionStatus, sessionTitle, sessionTranscriptItems, transcript, transcriptSearchQuery } from "../state/session";
+import { sessionId, sessionTitle, sessionTranscriptItems, transcript, transcriptSearchQuery } from "../state/session";
 import { autoscroll } from "../state/ui";
 
 interface TranscriptLegendEntry {
@@ -120,7 +120,7 @@ export function TranscriptPane() {
       : -1;
   const transcriptAvailable = allTurns.length > 0;
   const activeSessionId = sessionId.value;
-  const canNameSpeakers = activeSessionId !== null && captureMeetingId.value === activeSessionId && sessionStatus.value === "active";
+  const canNameSpeakers = activeSessionId !== null;
   const transcriptExportAvailable = transcriptAvailable && activeSessionId !== null;
   const legendEntries = buildLegendEntries(
     fullTranscriptItems,
@@ -152,7 +152,7 @@ export function TranscriptPane() {
 
   function openSpeakerName(entry: TranscriptLegendEntry | undefined): void {
     const reason = !canNameSpeakers
-      ? "Speaker naming is available on the active capture page."
+      ? "Open a meeting to name its speakers."
       : !entry || !entry.committed
         ? "Wait until this speaker has committed speech before naming."
         : entry.speakerId === "S00"
@@ -174,7 +174,7 @@ export function TranscriptPane() {
     setNamingError(null);
     try {
       const result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, speakerName.trim(), undefined, saveVoiceprint);
-      if (sessionId.value !== meetingId || captureMeetingId.value !== meetingId) return;
+      if (sessionId.value !== meetingId) return;
       // The response acknowledges a durable display label, not a new identity.
       sessionTranscriptItems.value = sessionTranscriptItems.value.map(item =>
         item.speaker_entity_id === result.speaker_id ? { ...item, display_name: result.label } : item);
@@ -182,12 +182,14 @@ export function TranscriptPane() {
       requestMeetingHistoryRefresh();
       setNamingMessage(result.enrollment === "not_requested"
         ? `Saved ${result.label}. Voiceprint not saved.`
+        : result.enrollment === "unavailable"
+        ? `Saved ${result.label}. No retained voice evidence is available for a new voiceprint.`
         : result.enrollment === "enrolled"
         ? `Saved ${result.label}. Voiceprint saved privately in this browser workspace.`
         : `Saved ${result.label}. Voiceprint will save when enough clear speech arrives before Stop.`);
       setNamingTarget(null);
     } catch (error) {
-      if (sessionId.value === meetingId && captureMeetingId.value === meetingId) {
+      if (sessionId.value === meetingId) {
         setNamingError(error instanceof Error ? error.message : "Speaker naming failed.");
       }
     } finally {
@@ -311,7 +313,7 @@ export function TranscriptPane() {
             className={`legend-chip${entry.isUnidentified ? " is-unidentified" : ""}`}
             disabled={!canNameSpeakers || !entry.committed || entry.speakerId === "S00"}
             aria-label={`Name speaker ${entry.visibleLabel}`}
-            title={entry.speakerId === "S00" ? "This speech has no identified speaker yet" : canNameSpeakers ? "Name this speaker" : "Speaker naming is available on the active capture page"}
+            title={entry.speakerId === "S00" ? "This speech has no identified speaker yet" : canNameSpeakers ? "Name this speaker" : "Open a meeting to name its speakers"}
             onClick={() => openSpeakerName(entry)}
           >
             <span

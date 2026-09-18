@@ -1,0 +1,402 @@
+FFFFFFFFFF.                                                              [100%]
+=================================== FAILURES ===================================
+__________ test_saved_live_rename_after_stop_and_restart[False-False] __________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/red/test_saved_live_rename_after_s0')
+restart = False, enrolled = False
+
+    @pytest.mark.parametrize('restart', [False, True])
+    @pytest.mark.parametrize('enrolled', [False, True])
+    def test_saved_live_rename_after_stop_and_restart(tmp_path, restart, enrolled):
+        database = tmp_path / 'm.sqlite'
+        sessions = asyncio.run(provision(database))
+        app = make_app(database, **({'identity_factory': EligibleIdentity} if enrolled else {}))
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            mid = client.post('/api/live/sessions').json()['id']
+            client.post(f'/api/live/sessions/{mid}/heartbeat', json=heartbeat())
+            feed_two_lane_span(client, mid)
+            wait_snapshot(client, mid, lambda b: b['meeting_transcript_version'] == 1)
+            if enrolled:
+                assert client.put(f'/api/meetings/{mid}/speakers/speaker-0001/name',
+                                  json={'label': 'Before'}).json()['enrollment'] == 'enrolled'
+            assert client.post(f'/api/live/sessions/{mid}/stop', json={'deadline': 30}).status_code == 200
+            if not restart:
+>               check_rename(client, app, sessions, mid, 'speaker-0001', enrolled)
+
+tests/phase2/test_saved_speaker_naming.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x10881fc80>
+app = <fastapi.applications.FastAPI object at 0x1114800e0>
+sessions = {'a': 'gUEeogY1lVXu-azeP5tM4ZrjlIgIUWFfbAmXzyEL5NE', 'a-observer': 'gUEeogY1lVXu-azeP5tM4ZrjlIgIUWFfbAmXzyEL5NE', 'b': 'TAPdayCK0el6NTUyeW4Yw9aePY9k8qLhyz_7mUsMthQ'}
+mid = 'LiW79r8iyMbcowa9UYapsUw9', sid = 'speaker-0001', enrolled = False
+
+    def check_rename(client, app, sessions, mid, sid, enrolled):
+        session(client, sessions['a-observer'])
+        original = client.get(f'/api/meetings/{mid}').json()
+        for label in ['After Stop', 'After reload']:
+            result = client.put(f'/api/meetings/{mid}/speakers/{sid}/name', json={'label': label})
+>           assert result.status_code == 200, result.text
+E           AssertionError: {"detail":"Meeting Speaker not found."}
+E           assert 404 == 200
+E            +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_saved_speaker_naming.py:41: AssertionError
+__________ test_saved_live_rename_after_stop_and_restart[False-True] ___________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/red/test_saved_live_rename_after_s1')
+restart = True, enrolled = False
+
+    @pytest.mark.parametrize('restart', [False, True])
+    @pytest.mark.parametrize('enrolled', [False, True])
+    def test_saved_live_rename_after_stop_and_restart(tmp_path, restart, enrolled):
+        database = tmp_path / 'm.sqlite'
+        sessions = asyncio.run(provision(database))
+        app = make_app(database, **({'identity_factory': EligibleIdentity} if enrolled else {}))
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            mid = client.post('/api/live/sessions').json()['id']
+            client.post(f'/api/live/sessions/{mid}/heartbeat', json=heartbeat())
+            feed_two_lane_span(client, mid)
+            wait_snapshot(client, mid, lambda b: b['meeting_transcript_version'] == 1)
+            if enrolled:
+                assert client.put(f'/api/meetings/{mid}/speakers/speaker-0001/name',
+                                  json={'label': 'Before'}).json()['enrollment'] == 'enrolled'
+            assert client.post(f'/api/live/sessions/{mid}/stop', json={'deadline': 30}).status_code == 200
+            if not restart:
+                check_rename(client, app, sessions, mid, 'speaker-0001', enrolled)
+        if restart:
+            with TestClient(create_phase2_app(database_path=database), base_url='https://moss.test') as client:
+>               check_rename(client, client.app, sessions, mid, 'speaker-0001', enrolled)
+
+tests/phase2/test_saved_speaker_naming.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x1167fe150>
+app = <fastapi.applications.FastAPI object at 0x1167fe600>
+sessions = {'a': 'shgJCCzSEYdKu4oP7yAMITqKm1qYlqo3hJ2i_aGV2Qs', 'a-observer': 'shgJCCzSEYdKu4oP7yAMITqKm1qYlqo3hJ2i_aGV2Qs', 'b': '4rFOCucw5zewR2KJDlkCzdRwikglx4IafJ3xKWGzUeo'}
+mid = 'qVosdeanCXuNqGUXrzhoOgJL', sid = 'speaker-0001', enrolled = False
+
+    def check_rename(client, app, sessions, mid, sid, enrolled):
+        session(client, sessions['a-observer'])
+        original = client.get(f'/api/meetings/{mid}').json()
+        for label in ['After Stop', 'After reload']:
+            result = client.put(f'/api/meetings/{mid}/speakers/{sid}/name', json={'label': label})
+>           assert result.status_code == 200, result.text
+E           AssertionError: {"detail":"Meeting Speaker not found."}
+E           assert 404 == 200
+E            +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_saved_speaker_naming.py:41: AssertionError
+__________ test_saved_live_rename_after_stop_and_restart[True-False] ___________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/red/test_saved_live_rename_after_s2')
+restart = False, enrolled = True
+
+    @pytest.mark.parametrize('restart', [False, True])
+    @pytest.mark.parametrize('enrolled', [False, True])
+    def test_saved_live_rename_after_stop_and_restart(tmp_path, restart, enrolled):
+        database = tmp_path / 'm.sqlite'
+        sessions = asyncio.run(provision(database))
+        app = make_app(database, **({'identity_factory': EligibleIdentity} if enrolled else {}))
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            mid = client.post('/api/live/sessions').json()['id']
+            client.post(f'/api/live/sessions/{mid}/heartbeat', json=heartbeat())
+            feed_two_lane_span(client, mid)
+            wait_snapshot(client, mid, lambda b: b['meeting_transcript_version'] == 1)
+            if enrolled:
+                assert client.put(f'/api/meetings/{mid}/speakers/speaker-0001/name',
+                                  json={'label': 'Before'}).json()['enrollment'] == 'enrolled'
+            assert client.post(f'/api/live/sessions/{mid}/stop', json={'deadline': 30}).status_code == 200
+            if not restart:
+>               check_rename(client, app, sessions, mid, 'speaker-0001', enrolled)
+
+tests/phase2/test_saved_speaker_naming.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x11683b7a0>
+app = <fastapi.applications.FastAPI object at 0x11684caa0>
+sessions = {'a': 'rybs4Ee-YDnmw15qZOsWufDk0nCJmZ5oTMpdNO3Qt-I', 'a-observer': 'rybs4Ee-YDnmw15qZOsWufDk0nCJmZ5oTMpdNO3Qt-I', 'b': 'yw58LOptCFyfl4tcP4DfElf2nIcxLvoE7wBSmrNNYEM'}
+mid = 'y3OmxmCOA2q6upJonNsTwU3l', sid = 'speaker-0001', enrolled = True
+
+    def check_rename(client, app, sessions, mid, sid, enrolled):
+        session(client, sessions['a-observer'])
+        original = client.get(f'/api/meetings/{mid}').json()
+        for label in ['After Stop', 'After reload']:
+            result = client.put(f'/api/meetings/{mid}/speakers/{sid}/name', json={'label': label})
+>           assert result.status_code == 200, result.text
+E           AssertionError: {"detail":"Meeting Speaker not found."}
+E           assert 404 == 200
+E            +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_saved_speaker_naming.py:41: AssertionError
+___________ test_saved_live_rename_after_stop_and_restart[True-True] ___________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/red/test_saved_live_rename_after_s3')
+restart = True, enrolled = True
+
+    @pytest.mark.parametrize('restart', [False, True])
+    @pytest.mark.parametrize('enrolled', [False, True])
+    def test_saved_live_rename_after_stop_and_restart(tmp_path, restart, enrolled):
+        database = tmp_path / 'm.sqlite'
+        sessions = asyncio.run(provision(database))
+        app = make_app(database, **({'identity_factory': EligibleIdentity} if enrolled else {}))
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            mid = client.post('/api/live/sessions').json()['id']
+            client.post(f'/api/live/sessions/{mid}/heartbeat', json=heartbeat())
+            feed_two_lane_span(client, mid)
+            wait_snapshot(client, mid, lambda b: b['meeting_transcript_version'] == 1)
+            if enrolled:
+                assert client.put(f'/api/meetings/{mid}/speakers/speaker-0001/name',
+                                  json={'label': 'Before'}).json()['enrollment'] == 'enrolled'
+            assert client.post(f'/api/live/sessions/{mid}/stop', json={'deadline': 30}).status_code == 200
+            if not restart:
+                check_rename(client, app, sessions, mid, 'speaker-0001', enrolled)
+        if restart:
+            with TestClient(create_phase2_app(database_path=database), base_url='https://moss.test') as client:
+>               check_rename(client, client.app, sessions, mid, 'speaker-0001', enrolled)
+
+tests/phase2/test_saved_speaker_naming.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x106ffb0b0>
+app = <fastapi.applications.FastAPI object at 0x116776930>
+sessions = {'a': 'd6WI9kLBkYklL00DbJAHq_nGwQPvY3xwNwcbktcWR2s', 'a-observer': 'd6WI9kLBkYklL00DbJAHq_nGwQPvY3xwNwcbktcWR2s', 'b': 'OmRWH2-0LMYLcAmQ095nb_zHciW3RRLbMe5b8Mrz4pA'}
+mid = 'uo64DiYLDu-VbRv859cmTKnI', sid = 'speaker-0001', enrolled = True
+
+    def check_rename(client, app, sessions, mid, sid, enrolled):
+        session(client, sessions['a-observer'])
+        original = client.get(f'/api/meetings/{mid}').json()
+        for label in ['After Stop', 'After reload']:
+            result = client.put(f'/api/meetings/{mid}/speakers/{sid}/name', json={'label': label})
+>           assert result.status_code == 200, result.text
+E           AssertionError: {"detail":"Meeting Speaker not found."}
+E           assert 404 == 200
+E            +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_saved_speaker_naming.py:41: AssertionError
+_ test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[completed-file] __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/red/test_saved_exact_id_duplicate_0')
+mode = 'file', status = 'completed'
+
+    @pytest.mark.parametrize('mode', ['file', 'live'])
+    @pytest.mark.parametrize('status', ['completed', 'failed', 'interrupted'])
+    def test_saved_exact_id_duplicate_labels_and_legacy_file_tokens(tmp_path, mode, status):
+        database = tmp_path / 'm.sqlite'
+        sessions = asyncio.run(provision(database))
+        app = create_phase2_app(database_path=database)
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            async def seed():
+                account = await app.state.phase2_store.account_for_session(sessions['a'])
+                handle = await app.state.phase2_store.workspace(account).create_meeting(mode)
+                segments = [dict(id=str(i), start=i, end=i+1, speaker=s, text='synthetic words')
+                            for i, s in enumerate(['S01', 'S02', 'S01', 'S00'])]
+                if mode == 'live':
+                    for s in segments[:3]:
+                        s['speaker_entity_id'] = s['speaker']
+                        s['speaker'] = 'Same name'
+                await handle.finish_with_transcript({'segments': segments}, status)
+                return handle.meeting_id
+            mid = client.portal.call(seed)
+            for sid, label in [('S01', 'S02'), ('S01', 'Changed'), ('S02', 'Other')]:
+                response = client.put(f'/api/meetings/{mid}/speakers/{sid}/name',
+                                      json={'label': label, 'save_voiceprint': False})
+>               assert response.status_code == 200, response.text
+E               AssertionError: {"detail":"Meeting Speaker not found."}
+E               assert 404 == 200
+E                +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_saved_speaker_naming.py:87: AssertionError
+_ test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[completed-live] __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/red/test_saved_exact_id_duplicate_1')
+mode = 'live', status = 'completed'
+
+    @pytest.mark.parametrize('mode', ['file', 'live'])
+    @pytest.mark.parametrize('status', ['completed', 'failed', 'interrupted'])
+    def test_saved_exact_id_duplicate_labels_and_legacy_file_tokens(tmp_path, mode, status):
+        database = tmp_path / 'm.sqlite'
+        sessions = asyncio.run(provision(database))
+        app = create_phase2_app(database_path=database)
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            async def seed():
+                account = await app.state.phase2_store.account_for_session(sessions['a'])
+                handle = await app.state.phase2_store.workspace(account).create_meeting(mode)
+                segments = [dict(id=str(i), start=i, end=i+1, speaker=s, text='synthetic words')
+                            for i, s in enumerate(['S01', 'S02', 'S01', 'S00'])]
+                if mode == 'live':
+                    for s in segments[:3]:
+                        s['speaker_entity_id'] = s['speaker']
+                        s['speaker'] = 'Same name'
+                await handle.finish_with_transcript({'segments': segments}, status)
+                return handle.meeting_id
+            mid = client.portal.call(seed)
+            for sid, label in [('S01', 'S02'), ('S01', 'Changed'), ('S02', 'Other')]:
+                response = client.put(f'/api/meetings/{mid}/speakers/{sid}/name',
+                                      json={'label': label, 'save_voiceprint': False})
+>               assert response.status_code == 200, response.text
+E               AssertionError: {"detail":"Meeting Speaker not found."}
+E               assert 404 == 200
+E                +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_saved_speaker_naming.py:87: AssertionError
+___ test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[failed-file] ___
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/red/test_saved_exact_id_duplicate_2')
+mode = 'file', status = 'failed'
+
+    @pytest.mark.parametrize('mode', ['file', 'live'])
+    @pytest.mark.parametrize('status', ['completed', 'failed', 'interrupted'])
+    def test_saved_exact_id_duplicate_labels_and_legacy_file_tokens(tmp_path, mode, status):
+        database = tmp_path / 'm.sqlite'
+        sessions = asyncio.run(provision(database))
+        app = create_phase2_app(database_path=database)
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            async def seed():
+                account = await app.state.phase2_store.account_for_session(sessions['a'])
+                handle = await app.state.phase2_store.workspace(account).create_meeting(mode)
+                segments = [dict(id=str(i), start=i, end=i+1, speaker=s, text='synthetic words')
+                            for i, s in enumerate(['S01', 'S02', 'S01', 'S00'])]
+                if mode == 'live':
+                    for s in segments[:3]:
+                        s['speaker_entity_id'] = s['speaker']
+                        s['speaker'] = 'Same name'
+                await handle.finish_with_transcript({'segments': segments}, status)
+                return handle.meeting_id
+            mid = client.portal.call(seed)
+            for sid, label in [('S01', 'S02'), ('S01', 'Changed'), ('S02', 'Other')]:
+                response = client.put(f'/api/meetings/{mid}/speakers/{sid}/name',
+                                      json={'label': label, 'save_voiceprint': False})
+>               assert response.status_code == 200, response.text
+E               AssertionError: {"detail":"Meeting Speaker not found."}
+E               assert 404 == 200
+E                +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_saved_speaker_naming.py:87: AssertionError
+___ test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[failed-live] ___
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/red/test_saved_exact_id_duplicate_3')
+mode = 'live', status = 'failed'
+
+    @pytest.mark.parametrize('mode', ['file', 'live'])
+    @pytest.mark.parametrize('status', ['completed', 'failed', 'interrupted'])
+    def test_saved_exact_id_duplicate_labels_and_legacy_file_tokens(tmp_path, mode, status):
+        database = tmp_path / 'm.sqlite'
+        sessions = asyncio.run(provision(database))
+        app = create_phase2_app(database_path=database)
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            async def seed():
+                account = await app.state.phase2_store.account_for_session(sessions['a'])
+                handle = await app.state.phase2_store.workspace(account).create_meeting(mode)
+                segments = [dict(id=str(i), start=i, end=i+1, speaker=s, text='synthetic words')
+                            for i, s in enumerate(['S01', 'S02', 'S01', 'S00'])]
+                if mode == 'live':
+                    for s in segments[:3]:
+                        s['speaker_entity_id'] = s['speaker']
+                        s['speaker'] = 'Same name'
+                await handle.finish_with_transcript({'segments': segments}, status)
+                return handle.meeting_id
+            mid = client.portal.call(seed)
+            for sid, label in [('S01', 'S02'), ('S01', 'Changed'), ('S02', 'Other')]:
+                response = client.put(f'/api/meetings/{mid}/speakers/{sid}/name',
+                                      json={'label': label, 'save_voiceprint': False})
+>               assert response.status_code == 200, response.text
+E               AssertionError: {"detail":"Meeting Speaker not found."}
+E               assert 404 == 200
+E                +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_saved_speaker_naming.py:87: AssertionError
+_ test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[interrupted-file] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/red/test_saved_exact_id_duplicate_4')
+mode = 'file', status = 'interrupted'
+
+    @pytest.mark.parametrize('mode', ['file', 'live'])
+    @pytest.mark.parametrize('status', ['completed', 'failed', 'interrupted'])
+    def test_saved_exact_id_duplicate_labels_and_legacy_file_tokens(tmp_path, mode, status):
+        database = tmp_path / 'm.sqlite'
+        sessions = asyncio.run(provision(database))
+        app = create_phase2_app(database_path=database)
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            async def seed():
+                account = await app.state.phase2_store.account_for_session(sessions['a'])
+                handle = await app.state.phase2_store.workspace(account).create_meeting(mode)
+                segments = [dict(id=str(i), start=i, end=i+1, speaker=s, text='synthetic words')
+                            for i, s in enumerate(['S01', 'S02', 'S01', 'S00'])]
+                if mode == 'live':
+                    for s in segments[:3]:
+                        s['speaker_entity_id'] = s['speaker']
+                        s['speaker'] = 'Same name'
+                await handle.finish_with_transcript({'segments': segments}, status)
+                return handle.meeting_id
+            mid = client.portal.call(seed)
+            for sid, label in [('S01', 'S02'), ('S01', 'Changed'), ('S02', 'Other')]:
+                response = client.put(f'/api/meetings/{mid}/speakers/{sid}/name',
+                                      json={'label': label, 'save_voiceprint': False})
+>               assert response.status_code == 200, response.text
+E               AssertionError: {"detail":"Meeting Speaker not found."}
+E               assert 404 == 200
+E                +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_saved_speaker_naming.py:87: AssertionError
+_ test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[interrupted-live] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/red/test_saved_exact_id_duplicate_5')
+mode = 'live', status = 'interrupted'
+
+    @pytest.mark.parametrize('mode', ['file', 'live'])
+    @pytest.mark.parametrize('status', ['completed', 'failed', 'interrupted'])
+    def test_saved_exact_id_duplicate_labels_and_legacy_file_tokens(tmp_path, mode, status):
+        database = tmp_path / 'm.sqlite'
+        sessions = asyncio.run(provision(database))
+        app = create_phase2_app(database_path=database)
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            async def seed():
+                account = await app.state.phase2_store.account_for_session(sessions['a'])
+                handle = await app.state.phase2_store.workspace(account).create_meeting(mode)
+                segments = [dict(id=str(i), start=i, end=i+1, speaker=s, text='synthetic words')
+                            for i, s in enumerate(['S01', 'S02', 'S01', 'S00'])]
+                if mode == 'live':
+                    for s in segments[:3]:
+                        s['speaker_entity_id'] = s['speaker']
+                        s['speaker'] = 'Same name'
+                await handle.finish_with_transcript({'segments': segments}, status)
+                return handle.meeting_id
+            mid = client.portal.call(seed)
+            for sid, label in [('S01', 'S02'), ('S01', 'Changed'), ('S02', 'Other')]:
+                response = client.put(f'/api/meetings/{mid}/speakers/{sid}/name',
+                                      json={'label': label, 'save_voiceprint': False})
+>               assert response.status_code == 200, response.text
+E               AssertionError: {"detail":"Meeting Speaker not found."}
+E               assert 404 == 200
+E                +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_saved_speaker_naming.py:87: AssertionError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_saved_speaker_naming.py::test_saved_live_rename_after_stop_and_restart[False-False]
+FAILED tests/phase2/test_saved_speaker_naming.py::test_saved_live_rename_after_stop_and_restart[False-True]
+FAILED tests/phase2/test_saved_speaker_naming.py::test_saved_live_rename_after_stop_and_restart[True-False]
+FAILED tests/phase2/test_saved_speaker_naming.py::test_saved_live_rename_after_stop_and_restart[True-True]
+FAILED tests/phase2/test_saved_speaker_naming.py::test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[completed-file]
+FAILED tests/phase2/test_saved_speaker_naming.py::test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[completed-live]
+FAILED tests/phase2/test_saved_speaker_naming.py::test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[failed-file]
+FAILED tests/phase2/test_saved_speaker_naming.py::test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[failed-live]
+FAILED tests/phase2/test_saved_speaker_naming.py::test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[interrupted-file]
+FAILED tests/phase2/test_saved_speaker_naming.py::test_saved_exact_id_duplicate_labels_and_legacy_file_tokens[interrupted-live]
+10 failed, 1 passed, 1 warning in 3.53s

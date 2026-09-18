@@ -1,0 +1,40 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/frontend
+
+(node:87263) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:87269) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:87265) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/components/speakerRename.test.tsx (8 tests | 2 failed) 835ms
+   × renames from .utt-speaker save=true status=active mode=live across history/export/summary 132ms
+   × renames from .legend-chip save=false status=active mode=live across history/export/summary 110ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/speakerRename.test.tsx > renames from .utt-speaker save=true status=active mode=live across history/export/summary
+ FAIL  src/components/speakerRename.test.tsx > renames from .legend-chip save=false status=active mode=live across history/export/summary
+Error: Finalized speech is required.
+ ❯ providerBody src/lib/finalSummary.ts:115:103
+    113|
+    114| export function providerBody(meeting: Meeting, settings: SummarySettin…
+    115|   if (meeting.status !== "completed" || !meeting.transcript?.segments.…
+       |                                                                                                       ^
+    116|   return JSON.stringify({ model: settings.model, max_tokens: 2048, ...…
+    117|     { role: "system", content: `${settings.prompt}${settings.language.…
+ ❯ assertNames src/components/speakerRename.test.tsx:59:18
+ ❯ src/components/speakerRename.test.tsx:68:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed | 25 passed (26)
+      Tests  2 failed | 232 passed (234)
+   Start at  00:14:38
+   Duration  2.48s (transform 1.98s, setup 0ms, import 2.99s, tests 6.54s, environment 5.79s)
+

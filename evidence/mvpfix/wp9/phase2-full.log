@@ -1,0 +1,2151 @@
+........................................................................ [  8%]
+........................................................................ [ 17%]
+........................................................................ [ 26%]
+............................................F.....EEEEEEEEEEEEEEEEEEEEEE [ 34%]
+........................................................................ [ 43%]
+........................................................................ [ 52%]
+........................................................................ [ 60%]
+.................................................................F...... [ 69%]
+........................................................................ [ 78%]
+........................................................................ [ 86%]
+........................................................................ [ 95%]
+.....................................                                    [100%]
+==================================== ERRORS ====================================
+______________ ERROR at setup of test_real_exports_match_api[md] _______________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+---------------------------- Captured stderr setup -----------------------------
+node:internal/modules/esm/resolve:271
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/frontend/src/lib/transcriptOrder' imported from /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/frontend/src/lib/transcriptExport.ts
+    at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+    at moduleResolve (node:internal/modules/esm/resolve:861:10)
+    at defaultResolve (node:internal/modules/esm/resolve:988:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:697:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:714:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:746:52)
+    at #resolve (node:internal/modules/esm/loader:679:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:599:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:162:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:252:17) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/frontend/src/lib/transcriptOrder'
+}
+
+Node.js v25.9.0
+______________ ERROR at setup of test_real_exports_match_api[txt] ______________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_____________ ERROR at setup of test_real_exports_match_api[json] ______________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+______________ ERROR at setup of test_real_exports_match_api[srt] ______________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+______________ ERROR at setup of test_real_exports_match_api[vtt] ______________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+__________ ERROR at setup of test_download_corruptions_fail[words-md] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_________ ERROR at setup of test_download_corruptions_fail[words-txt] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_________ ERROR at setup of test_download_corruptions_fail[words-json] _________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_________ ERROR at setup of test_download_corruptions_fail[words-srt] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_________ ERROR at setup of test_download_corruptions_fail[words-vtt] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+__________ ERROR at setup of test_download_corruptions_fail[label-md] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_________ ERROR at setup of test_download_corruptions_fail[label-txt] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_________ ERROR at setup of test_download_corruptions_fail[label-json] _________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_________ ERROR at setup of test_download_corruptions_fail[label-srt] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_________ ERROR at setup of test_download_corruptions_fail[label-vtt] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+__________ ERROR at setup of test_download_corruptions_fail[time-md] ___________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+__________ ERROR at setup of test_download_corruptions_fail[time-txt] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+_________ ERROR at setup of test_download_corruptions_fail[time-json] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+__________ ERROR at setup of test_download_corruptions_fail[time-srt] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+__________ ERROR at setup of test_download_corruptions_fail[time-vtt] __________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+___________ ERROR at setup of test_harness_all_five_downloads[True] ____________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+___________ ERROR at setup of test_harness_all_five_downloads[False] ___________
+
+    @pytest.fixture(scope='module')
+    def real_exports():
+        # Invoke the production TypeScript serializer, not a Python imitation.
+        script='''import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
+    const turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};
+    console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));'''
+>       return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_export_oracle.py:18: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = None, check = True
+popenargs = (['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './fro...serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"],)
+kwargs = {'stdout': -1, 'text': True}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: CalledProcessError
+=================================== FAILURES ===================================
+____________ test_reader_retires_draft_by_audio_boundary[multiple] _____________
+
+replacement = 'multiple'
+
+    @pytest.mark.parametrize('replacement', ['preview', 'multiple', 'empty', 'abort'])
+    def test_reader_retires_draft_by_audio_boundary(replacement):
+        r, _, sid = runtime(RecordingDecoder())
+        r.accept_frame(sid, _frame(0)); finished(r)
+        first = r.snapshot(sid).to_dict()
+        import copy
+        second = copy.deepcopy(first)
+        # Even a stale transport draft cannot survive the reader's canonical boundary.
+        if replacement == 'preview':
+            second['session']['provisional'] = dict(generation=1, start_sample=0,
+                                                   end_sample=1000, transcript='[0][S00]confirmed preview[0.0625]')
+        elif replacement == 'abort':
+            second['session']['status'] = 'aborted'
+        else:
+            second['session']['committed_samples'] = 1000
+            second['session']['committed'] = [dict(span_id=0, start_sample=0, end_sample=1000,
+                transcript='[0][S00]one[0.03][0.03][S00]two[0.0625]' if replacement == 'multiple' else '',
+                revised_transcript=None)]
+        rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
+        assert len(rows[0]) == 1
+>       assert len(rows[1]) == {'preview': 1, 'multiple': 2, 'empty': 0, 'abort': 0}[replacement]
+E       assert 0 == 2
+E        +  where 0 = len([])
+
+tests/phase2/test_draft_lane.py:159: AssertionError
+__________ test_launcher_without_prompt_finalizer_builds_http_request __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x119523920>
+
+    def test_launcher_without_prompt_finalizer_builds_http_request(monkeypatch):
+        import io
+        import json
+        from moss_transcribe_diarize.app.phase2_web_cli import parse_args, _build_file_runner
+        from moss_transcribe_diarize.app.live_transcript_convergence import TerminalDecodePlan, RollingStatus
+        from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
+    
+        # Mirrors account-web-launcher.sh: deliberately no --prompt.
+        args = parse_args([
+            '--database', '/tmp/account.sqlite', '--control-socket', '/tmp/control.sock',
+            '--tls-certfile', '/tmp/cert.pem', '--tls-keyfile', '/tmp/key.pem',
+            '--backend', 'vllm', '--model', '/tmp/model',
+            '--vllm-base-url', 'http://127.0.0.1:8000/v1',
+            '--vllm-model', 'OpenMOSS-Team/MOSS-Transcribe-Diarize', '--vllm-timeout', '1800',
+            '--file-work-root', '/tmp/file-work', '--meeting-audio-root', '/tmp/audio',
+            '--live-provider-manifest', '/tmp/provider.json', '--live-helper-lease-seconds', '30',
+            '--host', '0.0.0.0', '--port', '7861', '--max-len', '16384', '--max-new-tokens', '12000',
+        ])
+        assert args.prompt is None
+        requests = []
+        class Response(io.BytesIO):
+            headers = {'Content-Type': 'application/json'}
+        def fake_urlopen(request, **kwargs):
+            requests.append(request)
+            return Response(json.dumps({'text': '[0][S01]test[2.5]',
+                            'usage': {'completion_tokens': 12, 'prompt_tokens': 10}}).encode())
+        monkeypatch.setattr('urllib.request.urlopen', fake_urlopen)
+        finalizer = runner_composition.build_terminal_finalizer(
+            runner=_build_file_runner(args), prompt=args.prompt, max_length=args.max_len,
+            max_new_tokens=args.max_new_tokens, decoding=args.decoding,
+            temperature=args.temperature, max_length_cap=args.max_len,
+        )
+        class Tape:
+            def gaps(self, end_sample): return ()
+            def read(self, *, start_sample, end_sample): return b'\0\0' * (end_sample-start_sample)
+        finalizer.finalize(
+            plan=TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0,
+                rolling_status=RollingStatus.ROLLING, windows_completed=0, windows_failed=0),
+            tape=Tape(), base_text_revision_version=0,
+        )
+>       assert len(requests) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/phase2/test_runner_composition.py:153: AssertionError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/phase2/test_atomic_cutover.py: 17 warnings
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/moss_transcribe_diarize/phase2_cutover.py:1410: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    source.extractall(extraction)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_draft_lane.py::test_reader_retires_draft_by_audio_boundary[multiple]
+FAILED tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+ERROR tests/phase2/test_export_oracle.py::test_real_exports_match_api[md] - s...
+ERROR tests/phase2/test_export_oracle.py::test_real_exports_match_api[txt] - ...
+ERROR tests/phase2/test_export_oracle.py::test_real_exports_match_api[json]
+ERROR tests/phase2/test_export_oracle.py::test_real_exports_match_api[srt] - ...
+ERROR tests/phase2/test_export_oracle.py::test_real_exports_match_api[vtt] - ...
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[words-md]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[words-txt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[words-json]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[words-srt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[words-vtt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[label-md]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[label-txt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[label-json]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[label-srt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[label-vtt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[time-md]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[time-txt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[time-json]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[time-srt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[time-vtt]
+ERROR tests/phase2/test_export_oracle.py::test_harness_all_five_downloads[True]
+ERROR tests/phase2/test_export_oracle.py::test_harness_all_five_downloads[False]
+2 failed, 805 passed, 18 warnings, 22 errors in 109.74s (0:01:49)

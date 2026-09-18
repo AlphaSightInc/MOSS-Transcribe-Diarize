@@ -1,0 +1,14 @@
+cwd=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/base-a92bb4aa
+command=['/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python', '-m', 'pytest', '-q', '-p', 'no:cacheprovider', 'tests/test_live_service_replay.py']
+PYTEST_ADDOPTS=--basetemp=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/base-a92bb4aa/.wp9runtime/pytest-fresh-base-service-replay --junitxml=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/evidence/mvpfix/wp9/fresh-base-service-replay.xml --tb=short
+.....................F..                                        [100%]
+=================================== FAILURES ===================================
+_ ReplayTerminalFinalizationWaitTest.test_the_run_reports_the_terminal_surface_and_the_events_that_made_it _
+tests/test_live_service_replay.py:724: in test_the_run_reports_the_terminal_surface_and_the_events_that_made_it
+    self.assertEqual(wait["finalization_status"], "final")
+E   AssertionError: 'failed' != 'final'
+E   - failed
+E   + final
+=========================== short test summary info ============================
+FAILED tests/test_live_service_replay.py::ReplayTerminalFinalizationWaitTest::test_the_run_reports_the_terminal_surface_and_the_events_that_made_it
+1 failed, 23 passed, 9 subtests passed in 0.49s

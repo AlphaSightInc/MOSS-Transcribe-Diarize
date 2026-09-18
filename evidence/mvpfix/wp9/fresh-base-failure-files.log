@@ -1,0 +1,380 @@
+cwd=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/base-a92bb4aa
+command=['/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python', '-m', 'pytest', '-q', '-p', 'no:cacheprovider', 'tests/phase2/test_draft_lane.py', 'tests/phase2/test_runner_composition.py', 'tests/phase2/test_export_oracle.py', 'tests/test_live_pipeline_seams.py', 'tests/test_live_rolling_wiring.py']
+PYTEST_ADDOPTS=--basetemp=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/base-a92bb4aa/.wp9runtime/pytest-fresh-base-failure-files --junitxml=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/evidence/mvpfix/wp9/fresh-base-failure-files.xml --tb=short
+.........F.............F....EEEEEEEEEEEEEEEEEEEEEE..........F.FFF..FFFFF [ 49%]
+FFFF......F..F...................................F...................... [ 99%]
+.                                                                        [100%]
+==================================== ERRORS ====================================
+______________ ERROR at setup of test_real_exports_match_api[md] _______________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+---------------------------- Captured stderr setup -----------------------------
+node:internal/modules/esm/resolve:271
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/base-a92bb4aa/frontend/src/lib/transcriptOrder' imported from /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/base-a92bb4aa/frontend/src/lib/transcriptExport.ts
+    at finalizeResolution (node:internal/modules/esm/resolve:271:11)
+    at moduleResolve (node:internal/modules/esm/resolve:861:10)
+    at defaultResolve (node:internal/modules/esm/resolve:988:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:697:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:714:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:746:52)
+    at #resolve (node:internal/modules/esm/loader:679:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:599:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:162:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:252:17) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/base-a92bb4aa/frontend/src/lib/transcriptOrder'
+}
+
+Node.js v25.9.0
+______________ ERROR at setup of test_real_exports_match_api[txt] ______________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+_____________ ERROR at setup of test_real_exports_match_api[json] ______________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+______________ ERROR at setup of test_real_exports_match_api[srt] ______________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+______________ ERROR at setup of test_real_exports_match_api[vtt] ______________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+__________ ERROR at setup of test_download_corruptions_fail[words-md] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+_________ ERROR at setup of test_download_corruptions_fail[words-txt] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+_________ ERROR at setup of test_download_corruptions_fail[words-json] _________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+_________ ERROR at setup of test_download_corruptions_fail[words-srt] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+_________ ERROR at setup of test_download_corruptions_fail[words-vtt] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+__________ ERROR at setup of test_download_corruptions_fail[label-md] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+_________ ERROR at setup of test_download_corruptions_fail[label-txt] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+_________ ERROR at setup of test_download_corruptions_fail[label-json] _________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+_________ ERROR at setup of test_download_corruptions_fail[label-srt] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+_________ ERROR at setup of test_download_corruptions_fail[label-vtt] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+__________ ERROR at setup of test_download_corruptions_fail[time-md] ___________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+__________ ERROR at setup of test_download_corruptions_fail[time-txt] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+_________ ERROR at setup of test_download_corruptions_fail[time-json] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+__________ ERROR at setup of test_download_corruptions_fail[time-srt] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+__________ ERROR at setup of test_download_corruptions_fail[time-vtt] __________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+___________ ERROR at setup of test_harness_all_five_downloads[True] ____________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+___________ ERROR at setup of test_harness_all_five_downloads[False] ___________
+tests/phase2/test_export_oracle.py:18: in real_exports
+    return json.loads(subprocess.check_output(['node','--experimental-strip-types','--input-type=module','-e',script],text=True))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:466: in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/subprocess.py:571: in run
+    raise CalledProcessError(retcode, process.args,
+E   subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', "import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"]' returned non-zero exit status 1.
+=================================== FAILURES ===================================
+____________ test_reader_retires_draft_by_audio_boundary[multiple] _____________
+tests/phase2/test_draft_lane.py:159: in test_reader_retires_draft_by_audio_boundary
+    assert len(rows[1]) == {'preview': 1, 'multiple': 2, 'empty': 0, 'abort': 0}[replacement]
+E   assert 0 == 2
+E    +  where 0 = len([])
+__________ test_launcher_without_prompt_finalizer_builds_http_request __________
+tests/phase2/test_runner_composition.py:153: in test_launcher_without_prompt_finalizer_builds_http_request
+    assert len(requests) == 1
+E   assert 0 == 1
+E    +  where 0 = len([])
+_ test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_which_it_was _
+tests/test_live_pipeline_seams.py:639: in test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_which_it_was
+    assert inferred.empty_cause is cause, label
+E   AssertionError: zero generated tokens
+E   assert None is <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'>
+E    +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause
+_ test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it __
+tests/test_live_pipeline_seams.py:680: in test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it
+    assert inferred.transcript == "[0][S01]The difference between, you said the stock market.[2.5]"
+E   AssertionError: assert '' == '[0][S01]The ... market.[2.5]'
+E
+E     - [0][S01]The difference between, you said the stock market.[2.5]
+__ test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence ___
+tests/test_live_pipeline_seams.py:696: in test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence
+    assert inferred.empty_cause is EmptyTranscriptCause.UNPARSEABLE_TEXT
+E   AssertionError: assert None is <EmptyTranscriptCause.UNPARSEABLE_TEXT: 'unparseable_text'>
+E    +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause
+E    +  and   <EmptyTranscriptCause.UNPARSEABLE_TEXT: 'unparseable_text'> = EmptyTranscriptCause.UNPARSEABLE_TEXT
+_ test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with_it _
+tests/test_live_pipeline_seams.py:715: in test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with_it
+    assert inferred.empty_cause is EmptyTranscriptCause.NO_GENERATED_TOKENS
+E   AssertionError: assert None is <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'>
+E    +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause
+E    +  and   <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'> = EmptyTranscriptCause.NO_GENERATED_TOKENS
+_________ test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say _________
+tests/test_live_pipeline_seams.py:812: in test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say
+    with pytest.raises(LiveProviderError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE LiveProviderError
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer0-True] _
+tests/test_live_pipeline_seams.py:858: in test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer
+    with pytest.raises(LiveProviderError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE LiveProviderError
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer1-True] _
+tests/test_live_pipeline_seams.py:858: in test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer
+    with pytest.raises(LiveProviderError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE LiveProviderError
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer2-True] _
+tests/test_live_pipeline_seams.py:858: in test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer
+    with pytest.raises(LiveProviderError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE LiveProviderError
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer3-True] _
+tests/test_live_pipeline_seams.py:858: in test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer
+    with pytest.raises(LiveProviderError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE LiveProviderError
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer4-True] _
+tests/test_live_pipeline_seams.py:858: in test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer
+    with pytest.raises(LiveProviderError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE LiveProviderError
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer5-False] _
+tests/test_live_pipeline_seams.py:858: in test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer
+    with pytest.raises(LiveProviderError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE LiveProviderError
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer6-False] _
+tests/test_live_pipeline_seams.py:858: in test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer
+    with pytest.raises(LiveProviderError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE LiveProviderError
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer7-False] _
+tests/test_live_pipeline_seams.py:858: in test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer
+    with pytest.raises(LiveProviderError) as caught:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE LiveProviderError
+__ test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span ___
+tests/test_live_pipeline_seams.py:1141: in test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span
+    assert "hello there" in inferred.transcript
+E   AssertionError: assert 'hello there' in ''
+E    +  where '' = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).transcript
+_____ test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire ______
+tests/test_live_pipeline_seams.py:1270: in test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire
+    assert inferred.token_cap == expected
+E   AssertionError: assert None == 286
+E    +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).token_cap
+_ RollingRuntimeWiringTest.test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate _
+tests/test_live_rolling_wiring.py:450: in test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate
+    self.assertIn("stock market", salvaged.transcript)
+E   AssertionError: 'stock market' not found in ''
+=============================== warnings summary ===============================
+../../../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:16: DeprecationWarning: 'aifc' is deprecated and slated for removal in Python 3.13
+    import aifc
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:17: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:19: DeprecationWarning: 'sunau' is deprecated and slated for removal in Python 3.13
+    import sunau
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_draft_lane.py::test_reader_retires_draft_by_audio_boundary[multiple]
+FAILED tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+FAILED tests/test_live_pipeline_seams.py::test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_which_it_was
+FAILED tests/test_live_pipeline_seams.py::test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it
+FAILED tests/test_live_pipeline_seams.py::test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence
+FAILED tests/test_live_pipeline_seams.py::test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with_it
+FAILED tests/test_live_pipeline_seams.py::test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer0-True]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer1-True]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer2-True]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer3-True]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer4-True]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer5-False]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer6-False]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer7-False]
+FAILED tests/test_live_pipeline_seams.py::test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span
+FAILED tests/test_live_pipeline_seams.py::test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate
+ERROR tests/phase2/test_export_oracle.py::test_real_exports_match_api[md] - s...
+ERROR tests/phase2/test_export_oracle.py::test_real_exports_match_api[txt] - ...
+ERROR tests/phase2/test_export_oracle.py::test_real_exports_match_api[json]
+ERROR tests/phase2/test_export_oracle.py::test_real_exports_match_api[srt] - ...
+ERROR tests/phase2/test_export_oracle.py::test_real_exports_match_api[vtt] - ...
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[words-md]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[words-txt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[words-json]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[words-srt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[words-vtt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[label-md]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[label-txt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[label-json]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[label-srt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[label-vtt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[time-md]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[time-txt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[time-json]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[time-srt]
+ERROR tests/phase2/test_export_oracle.py::test_download_corruptions_fail[time-vtt]
+ERROR tests/phase2/test_export_oracle.py::test_harness_all_five_downloads[True]
+ERROR tests/phase2/test_export_oracle.py::test_harness_all_five_downloads[False]
+18 failed, 105 passed, 4 warnings, 22 errors in 7.08s

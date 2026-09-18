@@ -6,6 +6,7 @@ import { TranscriptPane } from "./TranscriptPane";
 import { MeetingHistory } from "./MeetingHistory";
 import { createMossSessionPoller } from "../api/mossPoller";
 import { SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
+import { providerBody } from "../lib/finalSummary";
 import { groupSegmentsIntoTurns } from "../lib/mergeTranscript";
 import { serializeTranscriptExport } from "../lib/transcriptExport";
 import { captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus, transcript } from "../state/session";
@@ -14,9 +15,16 @@ const root = document.createElement("div");
 document.body.append(root);
 afterEach(() => { act(() => render(null, root)); resetSessionState(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
-it.each([[".utt-speaker", true], [".legend-chip", false]] as const)("renames from %s with save voiceprint=%s across rows, history and export", async (selector, saveVoiceprint) => {
+it.each([
+  [".utt-speaker", true, "active", "live"],
+  [".legend-chip", false, "active", "live"],
+  [".utt-speaker", true, "completed", "live"],
+  [".legend-chip", false, "completed", "live"],
+  [".utt-speaker", true, "completed", "file"],
+  [".legend-chip", false, "completed", "file"],
+] as const)("renames from %s save=%s status=%s mode=%s across history/export/summary", async (selector, saveVoiceprint, status, mode) => {
   let name = "Before";
-  const meeting = () => ({ id: "m", title: "Meeting", title_source: "manual", mode: "live", status: "active", created_at_ms: 1,
+  const meeting = () => ({ id: "m", title: "Meeting", title_source: "manual" as const, mode, status, created_at_ms: 1,
     transcript_version: name === "Before" ? 1 : 2, audio: null, transcript: { segments: ["a", "b", "a"].map((id, i) => ({
       id: String(i), start: i === 1 ? 0 : i, end: i + 1, source_lane: id === "a" ? "system" as const : "microphone" as const, speaker_entity_id: id, speaker: id === "a" ? name : "Other", text: `Words ${i}`
     })) } });
@@ -25,12 +33,12 @@ it.each([[".utt-speaker", true], [".legend-chip", false]] as const)("renames fro
       const body = JSON.parse(init.body);
       expect(body).toEqual(saveVoiceprint ? { label: "After" } : { label: "After", save_voiceprint: false });
       name = body.label;
-      return Response.json({ meeting_id: "m", speaker_id: "a", label: name, enrollment: saveVoiceprint ? "pending" : "not_requested" });
+      return Response.json({ meeting_id: "m", speaker_id: "a", label: name, enrollment: saveVoiceprint ? (status === "active" ? "pending" : "unavailable") : "not_requested" });
     }
     return Response.json(String(url) === "/api/meetings" ? { meetings: [meeting()] } : meeting());
   }));
   await act(async () => {
-    sessionId.value = captureMeetingId.value = "m"; sessionStatus.value = "active";
+    sessionId.value = "m"; captureMeetingId.value = status === "active" ? "m" : null; sessionStatus.value = status === "active" ? "active" : "closed";
     replaceTranscript(meeting().transcript.segments.map(s => ({ ...s, speaker: s.speaker_entity_id === "a" ? "S01" : "S02", display_name: s.speaker, state: "confirmed" })));
     render(<><TranscriptPane /><MeetingHistory /></>, root);
   });
@@ -48,6 +56,10 @@ it.each([[".utt-speaker", true], [".legend-chip", false]] as const)("renames fro
     expect([...root.querySelectorAll('.utt-lane')].map(n => n.textContent)).toEqual(["System", "Microphone", "System"]);
     expect([...root.querySelectorAll('.utt-speaker-label')].map(n => n.textContent)).toEqual(["After", "Other", "After"]);
     expect([...root.querySelectorAll('.legend-chip-name')].map(n => n.textContent)).toEqual(["After", "Other"]);
+    if (status === "completed") {
+      const body = providerBody(meeting(), {endpoint:"", model:"test", apiKey:"", prompt:"Summarize", language:"English", timeoutSeconds:60});
+      expect(body).toContain("After"); expect(body).not.toContain("Before");
+    }
     for (const format of ["md", "txt", "json", "srt", "vtt"] as const) {
       const file = serializeTranscriptExport(format, groupSegmentsIntoTurns(transcript.value), t => t.display_name,
         { sessionId: "m", exportedAt: new Date(0) });

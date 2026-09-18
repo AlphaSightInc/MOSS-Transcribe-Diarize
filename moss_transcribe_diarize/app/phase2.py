@@ -2094,7 +2094,7 @@ def create_phase2_app(
         account = await require_account(request)
         workspace = request.app.state.phase2_store.workspace(account)
         handle = await workspace.open_meeting(meeting_id)
-        if handle is None or phase2_live is None:
+        if handle is None:
             raise HTTPException(status_code=404, detail="Meeting Speaker not found.")
         try:
             payload = await request.json()

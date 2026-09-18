@@ -25,6 +25,15 @@
   through exactly one Meeting. It cannot have a different owner from that Meeting.
 - **Canonical meeting audio**: The single mixed recording retained for a Meeting after
   capture ends. Separate System and Microphone Lanes are not retained as Meeting artifacts.
+- **Meeting Speaker name**: Owner-chosen display text for one stable speaker ID.
+  Owners may edit names in active capture or saved live/file Meetings, including after
+  Stop and restart. A saved edit changes that Meeting's transcript, history selection,
+  exports and subsequent summary input. Legacy file speaker tokens become fixed IDs
+  before the first edit; duplicate labels never merge speakers. A completed Meeting
+  cannot create new Voiceprint evidence or wait for future speech: naming reports
+  unavailable enrollment unless it already links to a saved Voiceprint. Bank renames
+  still preserve other stopped Meetings' recorded names. History cards have no speaker
+  field in the LiveTranscribe reference. WP9 evidence: `prototypes/rename-after-stop/NOTES.md`.
 - **Voiceprint**: Durable acoustic reference stored in one Account's private Voiceprint bank
   and reusable across that Account's Meetings. It never represents or links to a MOSS Account,
   including when the represented voice belongs to an Account holder.
