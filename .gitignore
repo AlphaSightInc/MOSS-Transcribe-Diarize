@@ -101,3 +101,6 @@ evidence/mvpfix/*/raw/
 .wp28runtime/
 # WP29 isolated audio/database/test scratch; never commit meeting audio.
 .wp29/
+
+# WP31 private copied stores, audio and runtime.
+.wp31/

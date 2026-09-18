@@ -1,0 +1,1 @@
+{"extended_stores_reopened": {"audio_files": 60, "meetings": 60, "new_meetings": 13, "preserved_old_transcripts": 47, "stores": 13}, "pass": true, "retained_evidence_claims_checked": true}

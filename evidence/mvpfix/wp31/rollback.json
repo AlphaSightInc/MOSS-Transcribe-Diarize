@@ -1,0 +1,148 @@
+{
+  "integrated_before": {
+    "meetings": 8,
+    "rendered": 8,
+    "lanes": 8,
+    "formats": 40,
+    "exports_passed": 40,
+    "empty_disabled": 0,
+    "failures": [],
+    "startup_seconds": 4.438824207987636,
+    "all_rows_unchanged": true
+  },
+  "base_37979e53": {
+    "meetings": 8,
+    "rendered": 8,
+    "lanes": 0,
+    "formats": 40,
+    "exports_passed": 32,
+    "empty_disabled": 0,
+    "failures": [
+      {
+        "meeting_index": 1,
+        "format": "json",
+        "oracle": {
+          "ok": false,
+          "expected_turns": 1,
+          "downloaded_turns": 1,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "lane": false
+        }
+      },
+      {
+        "meeting_index": 2,
+        "format": "json",
+        "oracle": {
+          "ok": false,
+          "expected_turns": 1,
+          "downloaded_turns": 1,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "lane": false
+        }
+      },
+      {
+        "meeting_index": 3,
+        "format": "json",
+        "oracle": {
+          "ok": false,
+          "expected_turns": 1,
+          "downloaded_turns": 1,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "lane": false
+        }
+      },
+      {
+        "meeting_index": 4,
+        "format": "json",
+        "oracle": {
+          "ok": false,
+          "expected_turns": 8,
+          "downloaded_turns": 8,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "lane": false
+        }
+      },
+      {
+        "meeting_index": 5,
+        "format": "json",
+        "oracle": {
+          "ok": false,
+          "expected_turns": 8,
+          "downloaded_turns": 8,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "lane": false
+        }
+      },
+      {
+        "meeting_index": 6,
+        "format": "json",
+        "oracle": {
+          "ok": false,
+          "expected_turns": 8,
+          "downloaded_turns": 8,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "lane": false
+        }
+      },
+      {
+        "meeting_index": 7,
+        "format": "json",
+        "oracle": {
+          "ok": false,
+          "expected_turns": 8,
+          "downloaded_turns": 8,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "lane": false
+        }
+      },
+      {
+        "meeting_index": 8,
+        "format": "json",
+        "oracle": {
+          "ok": false,
+          "expected_turns": 8,
+          "downloaded_turns": 8,
+          "words": true,
+          "labels": true,
+          "timing": true,
+          "identity": true,
+          "lane": false
+        }
+      }
+    ],
+    "startup_seconds": 4.123805791998166,
+    "all_rows_unchanged": true
+  },
+  "integrated_after": {
+    "meetings": 8,
+    "rendered": 8,
+    "lanes": 8,
+    "formats": 40,
+    "exports_passed": 40,
+    "empty_disabled": 0,
+    "failures": [],
+    "startup_seconds": 4.141361834001145,
+    "all_rows_unchanged": true
+  }
+}
