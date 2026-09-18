@@ -1,0 +1,46 @@
+{
+  "meetings": [
+    {
+      "id": "fQnQlLI0PFRzfgY16nKhECBU",
+      "mode": "live",
+      "title": null,
+      "title_source": "automatic",
+      "status": "completed",
+      "created_at_ms": 1789716373190,
+      "transcript": {
+        "segments": [
+          {
+            "id": "seg_0001",
+            "start": 0.0,
+            "end": 4.24,
+            "speaker_entity_id": "speaker-0002",
+            "speaker": "S02",
+            "text": "They think that they're responsible for you, um, but uh.",
+            "source_lane": "microphone"
+          },
+          {
+            "id": "seg_0002",
+            "start": 0.08,
+            "end": 4.48,
+            "speaker_entity_id": "speaker-0001",
+            "speaker": "S01",
+            "text": "it. He talked about the difference between, you said, the stock market",
+            "source_lane": "system"
+          }
+        ]
+      },
+      "transcript_version": 3,
+      "audio": {
+        "state": "available",
+        "relative_path": "gt3KTpqAlR9RSDtg13chCz39JtgX-s3O/fQnQlLI0PFRzfgY16nKhECBU/audio.mp3",
+        "byte_count": 27693,
+        "duration_ms": 4500,
+        "format": "mp3",
+        "sample_rate_hz": 16000,
+        "channels": 1,
+        "bit_rate_bps": 48000
+      }
+    }
+  ],
+  "provenance": "Real browser capture with public WAV fake devices; real decoder"
+}

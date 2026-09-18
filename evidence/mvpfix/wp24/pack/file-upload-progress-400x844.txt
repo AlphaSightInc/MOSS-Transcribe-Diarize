@@ -1,0 +1,49 @@
+This browser
+History stays with this browser profile. Clearing site data loses automatic access.
+Files & URLs
+Live / Transcript & export
+Meeting history
+Voiceprints
+Your meetings
+File transcription
+Audio or video files
+Media URLs, one per line
+Transcribe files and URLs
+Submitting 1 of 1…
+public-12s.wav
+—
+Submitting…
+Live transcription
+Standby
+MOSS
+Live
+Controls
+Capture · Microphone + shared audio
+Both sources are required to start. Microphone-only capture is not available.
+Private to this browser; no sign-in or capture key is needed.
+Listening setup
+How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+Microphone
+Not connected
+Shared audio
+Not connected
+Next: enable your microphone.
+Enable microphone
+Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.
+MOSS
+Speakers
+0
+Find
+Copy
+Auto-scroll
+Export transcript
+Transcript will appear here when a session starts.
+Meeting history
+Sessions
+Voiceprints
+Refresh
+Optional AI summaries ·
+off
+No meetings yet.
+Private voice bank
+Speakers

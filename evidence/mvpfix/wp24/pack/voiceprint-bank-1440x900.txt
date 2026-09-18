@@ -1,0 +1,70 @@
+Media URLs, one per line
+Transcribe files and URLs
+Completed
+Live meeting
+Live
+Controls
+Capture · Microphone + shared audio
+Both sources are required to start. Microphone-only capture is not available.
+Private to this browser; no sign-in or capture key is needed.
+Listening setup
+How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+Microphone
+Not connected
+Shared audio
+Not connected
+Next: enable your microphone.
+Enable microphone
+Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.
+Live meeting
+Speakers
+2
+S02
+Public corpus speaker
+Find
+Copy
+Auto-scroll
+Export transcript
+S02
+Microphone
+00:00:00
+Kind of the same thing. There's paternalism, uh, they think that they're responsible for you.
+Public corpus speaker
+System
+00:00:00
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting
+S02
+Microphone
+00:00:05
+Um, but deference, a certain amount of deference to authority is not blind submission.
+Public corpus speaker
+System
+00:00:08
+machine. It represents speculative interests, you know, supply and demand of people in the short
+S02
+Microphone
+00:00:12
+It's been written implicitly in our contract, uh, for thousands of years that in exchange for some deference,
+Public corpus speaker
+System
+00:00:14
+term. But in the long term, the stock market is a weighing machine. You're much more accurate. It's going to tell you what something's worth.
+S02
+Microphone
+00:00:19
+uh, we are given stability, security and peace and hopefully prosperity.
+Public corpus speaker
+System
+00:00:21
+And so if you can divine what something's worth, then you can really take advantage of the market because it's really here to to help you. And that's kind of the message of.
+Sessions
+Voiceprints
+Refresh
+Private to this browser workspace. Name a speaker during capture to save their voiceprint; no separate recording needed.
+Refresh
+Public corpus speaker
+1
+saved sample
+Rename
+Delete
+Speakers

@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "checklist_equal": true,
+  "states": 52,
+  "viewports": 3,
+  "captures": 156,
+  "horizontal_overflow": 0,
+  "unnamed_controls": 0,
+  "measured_contrast_failures": 0,
+  "header_panel_overlaps": 0,
+  "keyboard_focus_restoration": "3/3",
+  "requests": {
+    "this_regeneration": 7,
+    "regeneration_limit": 100,
+    "wp24_cumulative": 56,
+    "limit": 150,
+    "max_inflight": 2
+  },
+  "owned_listeners_remaining": 0
+}

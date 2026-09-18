@@ -292,7 +292,7 @@ export function TranscriptPane() {
               its classes and the hint glyph are the reference's, because this pane is not an
               exempt region and its geometry is measured against the reference directly. */}
           <button type="button" className="tr-title" disabled>
-            {sessionTitle.value.trim() || "LiveTranscribe"}
+            {sessionTitle.value.trim() || "MOSS"}
             <span className="edit-hint" aria-hidden="true">
               ✎
             </span>
@@ -342,7 +342,7 @@ export function TranscriptPane() {
             <input ref={namingInputRef} id="speaker-name-input" value={speakerName} required
               disabled={savingName} onInput={(event) => setSpeakerName(event.currentTarget.value)} />
             <label className="sp-voiceprint"><input type="checkbox" checked={saveVoiceprint} onChange={event => setSaveVoiceprint(event.currentTarget.checked)} disabled={savingName} /><span>Save voiceprint</span></label>
-            <p className="hint">Applies to this speaker throughout the active meeting. When checked, enough clear speech also saves a private voiceprint. People may share the same name.</p>
+            <p className="hint">Applies to this speaker throughout this meeting. When checked, enough clear speech also saves a private voiceprint. People may share the same name.</p>
             {namingError ? <p role="alert">{namingError}</p> : null}
             <div className="history-dialog-actions">
               <button className="history-toolbar-btn" type="button" disabled={savingName} onClick={() => setNamingTarget(null)}>Cancel</button>

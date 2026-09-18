@@ -1,0 +1,16 @@
+{
+  "acquisition_timeout": "URL acquisition timed out.",
+  "acquisition_http_403": "The media server refused access (403).",
+  "acquisition_http_404": "The media was not found (404).",
+  "acquisition_failed": "URL media could not be acquired.",
+  "acquisition_server_error": "The media server returned an error.",
+  "acquisition_download_failed": "The media could not be downloaded.",
+  "acquisition_redirect": "URL redirected outside HTTP(S).",
+  "acquisition_html": "The URL returned a web page instead of direct media.",
+  "acquisition_size": "URL media exceeds the acquisition size limit.",
+  "acquisition_empty": "URL media was empty.",
+  "transcode_failed": "Media could not be decoded. The format may be unsupported or damaged.",
+  "decode_failed": "The speech decoder could not transcribe this media.",
+  "decode_invalid": "The speech decoder returned no usable transcript.",
+  "storage_failed": "The meeting could not be saved."
+}

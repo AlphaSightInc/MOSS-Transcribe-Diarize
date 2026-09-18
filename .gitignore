@@ -90,3 +90,7 @@ evidence/mvpfix/*/raw/
 # WP21 local qualification private runtime and content-bearing command output.
 .wp21runtime/
 !evidence/qualify/**/*.log
+
+# WP24 isolated capture/test runtime; TLS, cookies and audio never committed.
+.wp24/
+>>>>>>> mvpfix/wp24-visual-copy-pack

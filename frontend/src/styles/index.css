@@ -935,7 +935,7 @@ textarea:focus {
 }
 
 .record-btn[data-action="stop"] {
-  background: var(--live);
+  background: var(--danger);
 }
 
 .record-btn[data-action="stop"]:hover:not(:disabled) {
@@ -3695,3 +3695,31 @@ button.legend-chip:disabled {
 }
 
 .utt-lane { font-size: 11px; color: var(--text-muted, #696969); white-space: nowrap; }
+
+/* Selected-row tint needs the existing stronger ink token for AA secondary text. */
+.account-history-panel .history-card.is-active .history-card-meta,
+.account-history-panel .history-card.is-active .history-card-subtitle {
+  color: var(--ink-2);
+}
+
+/* Long outcome notices must share the narrow header without overlapping its title. */
+@media (max-width: 768px) {
+  .phase2-workspace .topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+  .phase2-workspace .top-status {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .phase2-workspace .session-meta {
+    max-width: 100%;
+  }
+}
+
+/* The transcript overlaps the desktop header by design; keep status inside its rail. */
+@media (min-width: 1025px) {
+  .phase2-workspace .top-status { max-width: var(--side-col); }
+}
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .phase2-workspace .top-status { max-width: 240px; }
+}

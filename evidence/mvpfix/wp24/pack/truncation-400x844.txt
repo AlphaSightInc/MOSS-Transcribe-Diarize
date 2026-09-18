@@ -1,0 +1,69 @@
+WP24 review workspace
+History stays with this browser profile. Clearing site data loses automatic access.
+Files & URLs
+Live / Transcript & export
+Meeting history
+Voiceprints
+Your meetings
+File transcription
+Audio or video files
+Media URLs, one per line
+Transcribe files and URLs
+Live transcription
+The speech decoder reached its output limit. This transcript may be incomplete.
+File meeting
+File / URL
+Controls
+Capture · Microphone + shared audio
+Both sources are required to start. Microphone-only capture is not available.
+Private to this browser; no sign-in or capture key is needed.
+Listening setup
+How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+Microphone
+Not connected
+Shared audio
+Not connected
+Next: enable your microphone.
+Enable microphone
+Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.
+File meeting
+Speakers
+1
+S01
+Find
+Copy
+Auto-scroll
+Export transcript
+S01
+00:00:00
+To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, "The stock market in the short term is a voting machine. It represents speculative interest."
+Meeting history
+Sessions
+Voiceprints
+Refresh
+Optional AI summaries ·
+off
+Selected:
+File meeting
+.
+View selected transcript and export
+The speech decoder reached its output limit. This transcript may be incomplete.
+Final summary
+No summary yet. Opening a meeting does not generate one.
+Summaries use only the finished transcript.
+Keep this browser tab open while generating a summary.
+Generate summary
+Today
+File meeting
+3:26 AM
+·
+File / URL
+·
+Completed
+The speech decoder reached its output limit. This transcript may be incomplete.
+v
+1
+Rename
+Download audio
+Private voice bank
+Speakers

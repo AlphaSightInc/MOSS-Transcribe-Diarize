@@ -44,6 +44,8 @@ it.each([
   });
   await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="m"]')).not.toBeNull());
   act(() => root.querySelector<HTMLButtonElement>(selector)!.click());
+  expect(root.querySelector("dialog")?.textContent).toContain("Applies to this speaker throughout this meeting.");
+  expect(root.querySelector("dialog")?.textContent).not.toContain("active meeting");
   const checkbox = root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')!;
   expect(checkbox.checked).toBe(true);
   if (!saveVoiceprint) act(() => checkbox.click());

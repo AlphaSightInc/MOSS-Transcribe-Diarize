@@ -1,0 +1,54 @@
+{
+  "saved": {
+    "id": "3RgfQJj5Cjv6zbIVRRqBJHO1",
+    "mode": "file",
+    "title": null,
+    "title_source": "automatic",
+    "status": "completed",
+    "created_at_ms": 1789716367691,
+    "transcript": {
+      "segments": [
+        {
+          "id": "seg_0001",
+          "start": 0.53,
+          "end": 3.25,
+          "speaker": "S01",
+          "text": "To figure out what something's worth and you have to kind of weigh it."
+        },
+        {
+          "id": "seg_0002",
+          "start": 4.06,
+          "end": 8.88,
+          "speaker": "S01",
+          "text": "He talked about the difference between, he said, \"The stock market in the short term is a voting"
+        },
+        {
+          "id": "seg_0003",
+          "start": 8.88,
+          "end": 9.53,
+          "speaker": "S01",
+          "text": "machine."
+        },
+        {
+          "id": "seg_0004",
+          "start": 9.53,
+          "end": 11.99,
+          "speaker": "S01",
+          "text": "It represents speculative interest.\""
+        }
+      ]
+    },
+    "transcript_version": 1,
+    "audio": {
+      "state": "available",
+      "relative_path": "yhK6Gp9GtkpcA23lcayz3EH86G-9mRL9/3RgfQJj5Cjv6zbIVRRqBJHO1/audio.mp3",
+      "byte_count": 72837,
+      "duration_ms": 12000,
+      "format": "mp3",
+      "sample_rate_hz": 16000,
+      "channels": 1,
+      "bit_rate_bps": 48000
+    }
+  },
+  "provenance": "Actual browser multipart upload; 12s public Bill Ackman corpus; real vLLM; final saved response"
+}

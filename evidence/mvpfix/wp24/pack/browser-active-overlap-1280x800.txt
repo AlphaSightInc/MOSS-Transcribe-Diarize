@@ -1,0 +1,53 @@
+Media URLs, one per line
+Transcribe files and URLs
+Capturing microphone and shared audio.
+MOSS
+Live
+Controls
+Capture · Microphone + shared audio
+Both sources are required to start. Microphone-only capture is not available.
+Private to this browser; no sign-in or capture key is needed.
+Listening setup
+How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+Microphone
+Connected · receiving sound
+Shared audio
+Connected · receiving sound
+Switch mic
+Reshare audio
+Stop and finalize
+Recording microphone and shared audio.
+MOSS
+Speakers
+2
+S01
+S02
+Find
+Copy
+Auto-scroll
+Export transcript
+S01
+System
+00:00:00
+say it. He talked about the
+S02
+Microphone
+00:00:00
+They think that they're responsible for you.
+Sessions
+Voiceprints
+Refresh
+Optional AI summaries ·
+off
+Active
+Live meeting
+3:26 AM
+·
+Live
+·
+Active
+Waiting for transcript…
+v
+0
+Rename
+Headphones

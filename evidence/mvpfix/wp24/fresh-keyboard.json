@@ -1,0 +1,173 @@
+[
+  {
+    "viewport": [
+      1440,
+      900
+    ],
+    "dialog_focus_cycle": [
+      {
+        "tag": "INPUT",
+        "id": "speaker-name-input",
+        "name": "Display name",
+        "insideDialog": true
+      },
+      {
+        "tag": "INPUT",
+        "id": "",
+        "name": "Save voiceprint",
+        "insideDialog": true
+      },
+      {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Cancel",
+        "insideDialog": true
+      },
+      {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Save name",
+        "insideDialog": true
+      },
+      {
+        "tag": "BODY",
+        "id": "",
+        "name": "Browser chrome transition",
+        "insideDialog": false
+      },
+      {
+        "tag": "INPUT",
+        "id": "speaker-name-input",
+        "name": "Display name",
+        "insideDialog": true
+      },
+      {
+        "tag": "INPUT",
+        "id": "",
+        "name": "Save voiceprint",
+        "insideDialog": true
+      },
+      {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Cancel",
+        "insideDialog": true
+      }
+    ],
+    "focus_restored_to_trigger": true
+  },
+  {
+    "viewport": [
+      1280,
+      800
+    ],
+    "dialog_focus_cycle": [
+      {
+        "tag": "INPUT",
+        "id": "speaker-name-input",
+        "name": "Display name",
+        "insideDialog": true
+      },
+      {
+        "tag": "INPUT",
+        "id": "",
+        "name": "Save voiceprint",
+        "insideDialog": true
+      },
+      {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Cancel",
+        "insideDialog": true
+      },
+      {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Save name",
+        "insideDialog": true
+      },
+      {
+        "tag": "BODY",
+        "id": "",
+        "name": "Browser chrome transition",
+        "insideDialog": false
+      },
+      {
+        "tag": "INPUT",
+        "id": "speaker-name-input",
+        "name": "Display name",
+        "insideDialog": true
+      },
+      {
+        "tag": "INPUT",
+        "id": "",
+        "name": "Save voiceprint",
+        "insideDialog": true
+      },
+      {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Cancel",
+        "insideDialog": true
+      }
+    ],
+    "focus_restored_to_trigger": true
+  },
+  {
+    "viewport": [
+      400,
+      844
+    ],
+    "dialog_focus_cycle": [
+      {
+        "tag": "INPUT",
+        "id": "speaker-name-input",
+        "name": "Display name",
+        "insideDialog": true
+      },
+      {
+        "tag": "INPUT",
+        "id": "",
+        "name": "Save voiceprint",
+        "insideDialog": true
+      },
+      {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Cancel",
+        "insideDialog": true
+      },
+      {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Save name",
+        "insideDialog": true
+      },
+      {
+        "tag": "BODY",
+        "id": "",
+        "name": "Browser chrome transition",
+        "insideDialog": false
+      },
+      {
+        "tag": "INPUT",
+        "id": "speaker-name-input",
+        "name": "Display name",
+        "insideDialog": true
+      },
+      {
+        "tag": "INPUT",
+        "id": "",
+        "name": "Save voiceprint",
+        "insideDialog": true
+      },
+      {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Cancel",
+        "insideDialog": true
+      }
+    ],
+    "focus_restored_to_trigger": true
+  }
+]
