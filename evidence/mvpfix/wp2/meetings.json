@@ -1,0 +1,152 @@
+{
+  "overlap": {
+    "id": "76ASC_IF5BzQhHWVsyS9CLTa",
+    "mode": "live",
+    "title": null,
+    "title_source": "automatic",
+    "status": "completed",
+    "created_at_ms": 1789701133647,
+    "transcript": {
+      "schema_version": 2,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 29.0,
+          "text": "And the key is to figure out what something's worth and you have to kind of weigh it. He talked about the difference between… He said the stock market in the short term is a voting machine. It represents speculative interests, supply and demand of people in the short term. But in the long term, the stock market's a weighing machine, much more accurate. It's going to tell you what something's worth. And so if you can define what something's worth, then you can really take advantage of the market because it's really here to help you. And that's kind of the message of the book.",
+          "id": "system-0",
+          "speaker": "Bill Ackman",
+          "speaker_entity_id": "speaker-0001",
+          "source_lane": "system"
+        },
+        {
+          "start": 0.0,
+          "end": 25.0,
+          "text": "There's paternalism, they think that they're responsible for you. But a certain amount of deference to authority is not blind submission. It's been written implicitly in our contract for thousands of years that in exchange for some deference, we are given stability, security, and peace and hopefully prosperity.",
+          "id": "microphone-0",
+          "speaker": "Keyu Jin",
+          "speaker_entity_id": "speaker-0003",
+          "source_lane": "microphone"
+        },
+        {
+          "start": 25.0,
+          "end": 35.0,
+          "text": "So there is some element that we have in the West of freedom of the individual so that a little bit of the rebel is allowed in balance with the deference to authority.",
+          "id": "microphone-1",
+          "speaker": "Lex Fridman",
+          "speaker_entity_id": "speaker-0004",
+          "source_lane": "microphone"
+        },
+        {
+          "start": 29.0,
+          "end": 33.0,
+          "text": "In that same way, there's a kind of difference between speculation and investing.",
+          "id": "system-1",
+          "speaker": "Lex Fridman",
+          "speaker_entity_id": "speaker-0002",
+          "source_lane": "system"
+        },
+        {
+          "start": 33.0,
+          "end": 40.0,
+          "text": "Yeah, speculation is just a bit like trading crypto, right? You're-",
+          "id": "system-2",
+          "speaker": "Bill Ackman",
+          "speaker_entity_id": "speaker-0001",
+          "source_lane": "system"
+        },
+        {
+          "start": 35.0,
+          "end": 55.0,
+          "text": "Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China? If you don't have a sense of self, a sense of the fact that you can find opportunities, you look for opportunities, you drive opportunities, it's all self-motivated.",
+          "id": "microphone-2",
+          "speaker": "Keyu Jin",
+          "speaker_entity_id": "speaker-0003",
+          "source_lane": "microphone"
+        },
+        {
+          "start": 40.0,
+          "end": 42.0,
+          "text": "Strong words.",
+          "id": "system-3",
+          "speaker": "Lex Fridman",
+          "speaker_entity_id": "speaker-0002",
+          "source_lane": "system"
+        },
+        {
+          "start": 42.0,
+          "end": 60.0,
+          "text": "Well, short-term trading crypto. Maybe in the long run there's intrinsic value, but many investors in a bubble going into the crash were really just pure speculators. They didn't know what things were worth, they just knew they were going up. That's speculation.",
+          "id": "system-4",
+          "speaker": "Bill Ackman",
+          "speaker_entity_id": "speaker-0001",
+          "source_lane": "system"
+        },
+        {
+          "start": 55.0,
+          "end": 60.0,
+          "text": "Is there still a young kid in China that's able to dream to",
+          "id": "microphone-3",
+          "speaker": "Lex Fridman",
+          "speaker_entity_id": "speaker-0004",
+          "source_lane": "microphone"
+        }
+      ]
+    },
+    "transcript_version": 1,
+    "audio": null
+  },
+  "legacy": {
+    "id": "5VG1WTAmtkSJhRW_gnXMrMrS",
+    "mode": "live",
+    "title": null,
+    "title_source": "automatic",
+    "status": "completed",
+    "created_at_ms": 1789701133652,
+    "transcript": {
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 29.0,
+          "text": "And the key is to figure out what something's worth and you have to kind of weigh it. He talked about the difference between… He said the stock market in the short term is a voting machine. It represents speculative interests, supply and demand of people in the short term. But in the long term, the stock market's a weighing machine, much more accurate. It's going to tell you what something's worth. And so if you can define what something's worth, then you can really take advantage of the market because it's really here to help you. And that's kind of the message of the book.",
+          "id": "system-0",
+          "speaker": "Bill Ackman",
+          "speaker_entity_id": "speaker-0001"
+        },
+        {
+          "start": 29.0,
+          "end": 33.0,
+          "text": "In that same way, there's a kind of difference between speculation and investing.",
+          "id": "system-1",
+          "speaker": "Lex Fridman",
+          "speaker_entity_id": "speaker-0002"
+        },
+        {
+          "start": 33.0,
+          "end": 40.0,
+          "text": "Yeah, speculation is just a bit like trading crypto, right? You're-",
+          "id": "system-2",
+          "speaker": "Bill Ackman",
+          "speaker_entity_id": "speaker-0001"
+        },
+        {
+          "start": 40.0,
+          "end": 42.0,
+          "text": "Strong words.",
+          "id": "system-3",
+          "speaker": "Lex Fridman",
+          "speaker_entity_id": "speaker-0002"
+        },
+        {
+          "start": 42.0,
+          "end": 60.0,
+          "text": "Well, short-term trading crypto. Maybe in the long run there's intrinsic value, but many investors in a bubble going into the crash were really just pure speculators. They didn't know what things were worth, they just knew they were going up. That's speculation.",
+          "id": "system-4",
+          "speaker": "Bill Ackman",
+          "speaker_entity_id": "speaker-0001"
+        }
+      ]
+    },
+    "transcript_version": 1,
+    "audio": null
+  }
+}
