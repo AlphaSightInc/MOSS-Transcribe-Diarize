@@ -1,0 +1,14 @@
+[
+  {
+    "case": "short.mp3",
+    "notice": [],
+    "duration_seconds": 12.0
+  },
+  {
+    "case": "truncated.mp3",
+    "notice": [
+      "The media decoder reported incomplete audio. This transcript may cover only part of the recording."
+    ],
+    "duration_seconds": 7.1669375
+  }
+]

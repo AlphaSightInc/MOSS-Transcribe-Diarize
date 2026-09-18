@@ -1,0 +1,97 @@
+{
+  "resolver_identities": 3,
+  "stitched_identities": 3,
+  "summary": {
+    "schema_version": 2,
+    "accepted_edges": 0,
+    "tier_a_accepted": 0,
+    "tier_b_status": "disabled",
+    "tier_b_accepted": 0,
+    "false_accepted_edges": 0,
+    "fragmented_recurring_speakers": 2
+  },
+  "diagnostics": {
+    "schema_version": 2,
+    "config": {
+      "tier_a": {
+        "min_overlap_support_seconds": 2.0,
+        "min_overlap_dice": 0.75,
+        "mutual_margin_seconds": 1.0
+      },
+      "tier_b": {
+        "enabled": false,
+        "min_segment_seconds": 2.0,
+        "max_segments_per_node": 3,
+        "similarity": 0.7,
+        "margin": 0.2
+      }
+    },
+    "contract": {
+      "schema_version": 2,
+      "config": {
+        "tier_a": {
+          "min_overlap_support_seconds": 2.0,
+          "min_overlap_dice": 0.75,
+          "mutual_margin_seconds": 1.0
+        },
+        "tier_b": {
+          "enabled": false,
+          "min_segment_seconds": 2.0,
+          "max_segments_per_node": 3,
+          "similarity": 0.7,
+          "margin": 0.2
+        }
+      },
+      "provider": {
+        "provider": "wespeaker_resnet152_lm",
+        "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+        "embedding_dimension": 256,
+        "frontend_version": "wespeaker-onnx-fbank-v1",
+        "device": "cpu"
+      },
+      "availability": {
+        "available": false,
+        "reason": "disabled"
+      }
+    },
+    "boundaries": [
+      {
+        "left_window": 0,
+        "right_window": 1,
+        "edges": [
+          {
+            "left": null,
+            "right": "1:S01",
+            "reason": "unmatched_birth_or_return"
+          },
+          {
+            "left": "0:S01",
+            "right": "1:S01",
+            "reason": "low_support"
+          }
+        ]
+      },
+      {
+        "left_window": 1,
+        "right_window": 2,
+        "edges": [
+          {
+            "left": null,
+            "right": "2:S01",
+            "reason": "unmatched_birth_or_return"
+          },
+          {
+            "left": "1:S01",
+            "right": "2:S01",
+            "reason": "low_support"
+          }
+        ]
+      }
+    ],
+    "tier_b": {
+      "status": "disabled",
+      "proposals": []
+    }
+  }
+}

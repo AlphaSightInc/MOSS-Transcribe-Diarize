@@ -243,6 +243,8 @@ class MeetingAudioArchive:
         self,
         source_path: str | Path,
         destination_path: str | Path,
+        *,
+        notices: list[str] | None = None,
     ) -> Path:
         """Decode the one transcription mix consumed by both inference and retention."""
 
@@ -251,12 +253,12 @@ class MeetingAudioArchive:
         destination = Path(destination_path)
         destination.unlink(missing_ok=True)
         try:
-            subprocess.run(
+            completed = subprocess.run(
                 [
                     self._ffmpeg,
                     "-nostdin",
                     "-v",
-                    "error",
+                    "warning",
                     "-y",
                     "-i",
                     str(Path(source_path)),
@@ -282,6 +284,13 @@ class MeetingAudioArchive:
                     or mixed.getnframes() <= 0
                 ):
                     raise RuntimeError("Meeting transcription mix violates the PCM contract.")
+            # FFmpeg can recover a prefix and exit successfully for a truncated MP3.
+            # Retain only the measured condition, never raw stderr or source paths.
+            if notices is not None and b"filesize and duration do not match" in completed.stderr.lower():
+                notices.append(
+                    "The media decoder reported incomplete audio. "
+                    "This transcript may cover only part of the recording."
+                )
             return destination
         except BaseException:
             destination.unlink(missing_ok=True)

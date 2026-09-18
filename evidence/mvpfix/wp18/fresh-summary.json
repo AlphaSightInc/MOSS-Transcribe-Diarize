@@ -1,0 +1,113 @@
+{
+  "verified_at_utc": "2026-09-18T06:02:54.194621+00:00",
+  "fresh_context_after_requested_new": true,
+  "branch": "mvpfix/wp18-file-identity",
+  "tested_sha": "cfc69b7e74b089a36fb612e3e6a4499db8c6738d",
+  "verification": "FAIL",
+  "identity_wiring_hypothesis": "FALSIFIED",
+  "identity_fix_shipped": false,
+  "initial_clean": true,
+  "checkout_local_import": true,
+  "command_exit_codes": {
+    "import": 0,
+    "python": 1,
+    "frontend": 0,
+    "evidence": 0,
+    "layout": 0,
+    "diff_check": 0,
+    "diff_stat": 0,
+    "product_diff": 0,
+    "listener": 1
+  },
+  "python": {
+    "passed": 1873,
+    "failed": 1,
+    "skipped": 2,
+    "subtests_passed": 37,
+    "warnings": 21,
+    "seconds": 138.52,
+    "failure": {
+      "nodeid": "tests/phase2/test_owner_bound_live_meeting.py::test_helper_lease_loss_interrupts_without_client_terminal_request_and_never_resumes",
+      "setup": "lease_seconds=0.03 at line 2091; feed_two_lane_span at line 2096",
+      "assertion": "line 474: first system frame sequence=0 returned HTTP 409, expected 200",
+      "captured_reason": "helper_lease_expired lanes=none",
+      "cause": "expiry before first frame observed; scheduler timing hypothesis, unproven",
+      "test_diff_from_base": false,
+      "waived": false,
+      "retried": false
+    }
+  },
+  "frontend": {
+    "passed": 244,
+    "files_passed": 27,
+    "seconds": 2.64
+  },
+  "replay": {
+    "exact_comparisons_passed": 6,
+    "total": 6,
+    "elapsed_excluded_from_comparison": true,
+    "cases": {
+      "fake-1-False": {
+        "resolver_identities": 3,
+        "stitched_identities": 3
+      },
+      "fake-1-True": {
+        "resolver_identities": 3,
+        "stitched_identities": 3
+      },
+      "fake-2-False": {
+        "resolver_identities": 6,
+        "stitched_identities": 6
+      },
+      "fake-2-True": {
+        "resolver_identities": 6,
+        "stitched_identities": 6
+      },
+      "real-False": {
+        "resolver_identities": 7,
+        "stitched_identities": 7
+      },
+      "real-True": {
+        "resolver_identities": 7,
+        "stitched_identities": 7
+      }
+    }
+  },
+  "fresh_real_enabled_resolver_seconds": 16.432141416997183,
+  "constructor": {
+    "tier_b_enabled": false,
+    "available": false,
+    "reason": "disabled"
+  },
+  "truncation_cases": {
+    "passed": 3,
+    "total": 3,
+    "scope": "full-suite real FFmpeg/fake speech decoder save/reopen tests"
+  },
+  "live_requests": {
+    "fresh": 0,
+    "current_cap": 60,
+    "retained_prior": 3,
+    "retained_max_in_flight": 1
+  },
+  "retained_measurement": {
+    "decoder_seconds": 19.60311987598834,
+    "output_tokens": 3323,
+    "enabled_resolver_seconds": 16.700404417002574
+  },
+  "port_18118": {
+    "listener": false,
+    "lsof_expected_exit": 1
+  },
+  "production_process_inspected": false,
+  "conditional_30_minute_rerun": "not applicable: repo-recorded production constructor also disables Tier B",
+  "historical_budget_metadata_mismatch": {
+    "summary_json": 400,
+    "common_default": 200,
+    "current_user_cap": 60,
+    "actual_usage_exceeded_60": false
+  },
+  "no_push_merge_rebase_deploy": true,
+  "source_changes_this_session": false,
+  "result_path": "docs/verify/wp18/VERIFY-RESULT.md"
+}

@@ -1,0 +1,193 @@
+{
+  "resolver_identities": 3,
+  "stitched_identities": 3,
+  "summary": {
+    "schema_version": 2,
+    "accepted_edges": 0,
+    "tier_a_accepted": 0,
+    "tier_b_status": "available",
+    "tier_b_accepted": 0,
+    "false_accepted_edges": 0,
+    "fragmented_recurring_speakers": 2
+  },
+  "diagnostics": {
+    "schema_version": 2,
+    "config": {
+      "tier_a": {
+        "min_overlap_support_seconds": 2.0,
+        "min_overlap_dice": 0.75,
+        "mutual_margin_seconds": 1.0
+      },
+      "tier_b": {
+        "enabled": true,
+        "min_segment_seconds": 2.0,
+        "max_segments_per_node": 3,
+        "similarity": 0.7,
+        "margin": 0.2
+      }
+    },
+    "contract": {
+      "schema_version": 2,
+      "config": {
+        "tier_a": {
+          "min_overlap_support_seconds": 2.0,
+          "min_overlap_dice": 0.75,
+          "mutual_margin_seconds": 1.0
+        },
+        "tier_b": {
+          "enabled": true,
+          "min_segment_seconds": 2.0,
+          "max_segments_per_node": 3,
+          "similarity": 0.7,
+          "margin": 0.2
+        }
+      },
+      "provider": {},
+      "availability": {
+        "available": true,
+        "reason": null
+      }
+    },
+    "boundaries": [
+      {
+        "left_window": 0,
+        "right_window": 1,
+        "edges": [
+          {
+            "left": null,
+            "right": "1:S01",
+            "reason": "unmatched_birth_or_return"
+          },
+          {
+            "left": "0:S01",
+            "right": "1:S01",
+            "reason": "low_support"
+          }
+        ]
+      },
+      {
+        "left_window": 1,
+        "right_window": 2,
+        "edges": [
+          {
+            "left": null,
+            "right": "2:S01",
+            "reason": "unmatched_birth_or_return"
+          },
+          {
+            "left": "1:S01",
+            "right": "2:S01",
+            "reason": "low_support"
+          }
+        ]
+      }
+    ],
+    "tier_b": {
+      "status": "available",
+      "provider": {},
+      "evidence": [
+        {
+          "component": [
+            "0:S01"
+          ],
+          "selected_interval_count": 1,
+          "selected_duration_seconds": 5.0,
+          "nodes": [
+            {
+              "node": "0:S01",
+              "selected_interval_count": 1,
+              "selected_duration_seconds": 5.0,
+              "selected_intervals": [
+                {
+                  "window": 0,
+                  "start": 20.0,
+                  "end": 25.0,
+                  "duration_seconds": 5.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "component": [
+            "1:S01"
+          ],
+          "selected_interval_count": 1,
+          "selected_duration_seconds": 5.0,
+          "nodes": [
+            {
+              "node": "1:S01",
+              "selected_interval_count": 1,
+              "selected_duration_seconds": 5.0,
+              "selected_intervals": [
+                {
+                  "window": 1,
+                  "start": 140.0,
+                  "end": 145.0,
+                  "duration_seconds": 5.0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "component": [
+            "2:S01"
+          ],
+          "selected_interval_count": 1,
+          "selected_duration_seconds": 5.0,
+          "nodes": [
+            {
+              "node": "2:S01",
+              "selected_interval_count": 1,
+              "selected_duration_seconds": 5.0,
+              "selected_intervals": [
+                {
+                  "window": 2,
+                  "start": 260.0,
+                  "end": 265.0,
+                  "duration_seconds": 5.0
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "proposals": [
+        {
+          "left": [
+            "0:S01"
+          ],
+          "right": [
+            "1:S01"
+          ],
+          "similarity": 1.0,
+          "margin": 0.0,
+          "reason": "low_margin"
+        },
+        {
+          "left": [
+            "0:S01"
+          ],
+          "right": [
+            "2:S01"
+          ],
+          "similarity": 1.0,
+          "margin": 0.0,
+          "reason": "low_margin"
+        },
+        {
+          "left": [
+            "1:S01"
+          ],
+          "right": [
+            "2:S01"
+          ],
+          "similarity": 1.0,
+          "margin": 0.0,
+          "reason": "low_margin"
+        }
+      ]
+    }
+  }
+}

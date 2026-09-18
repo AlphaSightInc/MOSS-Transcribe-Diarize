@@ -29,7 +29,8 @@ def test_real_mix_dispatch_keeps_one_bit_signal(tmp_path,pcm,expected_calls):
     source=tmp_path/'source.wav'; source.write_bytes(wav(pcm))
     archive=MeetingAudioArchive(tmp_path/'archive')
     tasks=FileMeetingTasks(Runner(),tmp_path/'file-work',audio_archive=archive)
-    result,mix=tasks._transcribe_from_one_mix(source,{'max_length':16384,'max_new_tokens':12000})
+    result,mix,notices=tasks._transcribe_from_one_mix(source,{'max_length':16384,'max_new_tokens':12000})
+    assert notices == []
     assert len(calls)==expected_calls
     if expected_calls:
         assert calls==[{'max_length':16384,'max_new_tokens':12000}]

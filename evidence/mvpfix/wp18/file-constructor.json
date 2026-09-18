@@ -1,0 +1,29 @@
+{
+  "schema_version": 2,
+  "config": {
+    "tier_a": {
+      "min_overlap_support_seconds": 2.0,
+      "min_overlap_dice": 0.75,
+      "mutual_margin_seconds": 1.0
+    },
+    "tier_b": {
+      "enabled": false,
+      "min_segment_seconds": 2.0,
+      "max_segments_per_node": 3,
+      "similarity": 0.7,
+      "margin": 0.2
+    }
+  },
+  "provider": {
+    "provider": "wespeaker_resnet152_lm",
+    "revision": "4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "state_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+    "embedding_dimension": 256,
+    "frontend_version": "wespeaker-onnx-fbank-v1",
+    "device": "cpu"
+  },
+  "availability": {
+    "available": false,
+    "reason": "disabled"
+  }
+}

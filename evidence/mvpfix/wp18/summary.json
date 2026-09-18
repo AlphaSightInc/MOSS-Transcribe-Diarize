@@ -1,0 +1,20 @@
+{
+  "question": "Can existing provider wiring alone fix file identity?",
+  "verdict": "FALSIFIED",
+  "duration_seconds": 360,
+  "reference_voices": 3,
+  "windows": 3,
+  "decoder_requests": 3,
+  "max_requests_in_flight": 1,
+  "budget": 400,
+  "baseline_identities": 7,
+  "enabled_identities": 7,
+  "resolver_matches_stitch": true,
+  "fake_one_voice_identities": 3,
+  "fake_two_voice_identities": 6,
+  "enabled_provider_available": true,
+  "identity_fix_shipped": false,
+  "decoder_elapsed_seconds": 19.60311987598834,
+  "decoder_generated_tokens": 3323,
+  "enabled_resolver_seconds": 16.700404417002574
+}

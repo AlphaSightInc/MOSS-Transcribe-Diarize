@@ -1,0 +1,12 @@
+[
+  {
+    "case": "short.mp3",
+    "returncode": 0,
+    "stderr": ""
+  },
+  {
+    "case": "truncated.mp3",
+    "returncode": 0,
+    "stderr": "[in#0 @ 0x941020000] filesize and duration do not match (growing file?)\n"
+  }
+]

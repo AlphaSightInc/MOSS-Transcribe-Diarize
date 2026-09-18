@@ -1,0 +1,10 @@
+{
+  "tunnel_port": 18118,
+  "owned_tunnel_pid": 18308,
+  "tunnel_stopped": true,
+  "listener_check": "lsof -nP -iTCP:18118 -sTCP:LISTEN: no listener, exit 1",
+  "servers_started": 0,
+  "decoder_requests": 3,
+  "maximum_in_flight": 1,
+  "shared_services_changed": false
+}
