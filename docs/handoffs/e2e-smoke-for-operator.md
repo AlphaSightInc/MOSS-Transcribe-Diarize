@@ -37,6 +37,26 @@ It summarizes a 50 s and a 180 s transcript through the browser's own summary wo
 
 Use a new or empty output directory each time. Every invocation opens a fresh isolated browser context and creates its own workspace; it never loads saved cookies or edits existing workspaces. Meetings/names/summaries are created only in that workspace. Evidence and test meetings are retained; nothing is deleted. Keep `browser-state.json` private if you need to inspect that test workspace later.
 
+## Per-lane build: attended overlap check still required
+
+On the per-lane candidate, microphone and shared-system speech are decoded separately:
+**both lanes are expected to retain words during cross-lane overlap**. The old
+“never overlap sources” presenter workaround is obsolete for this build, pending
+attended measurement; this statement is an expected contract, not attended proof.
+Confirm the served candidate supports per-lane decoding before using this protocol.
+
+With headphones, speak a known sentence while the interview plays a different known
+sentence. Record both references and lane attribution. Check live text, Stop → saved
+meeting → reopen → exports for both sentences, omissions, additions and speaker/lane
+mix-ups; use the existing ordered word-error oracle. Same-lane simultaneous speakers
+remain outside this contract. Headphones do not establish speakers-mode echo quality:
+that needs a separate attended measurement. Do not label the automated no-decoder smoke
+or its 4/4 result as overlap acceptance.
+
+Run the read-only checks in [TLS renewal runbook](tls-renewal-runbook.md) first.
+WP13 observed trusted TLS on 7862 but self-signed TLS on 7861; do not bypass the latter
+or treat 7862 as a qualified substitute for the admitted candidate on 7861.
+
 ## Local verification
 
 Verified on isolated port 17863, separate SQLite state, draft lane 1.0, **relay unset**, without a corpus:

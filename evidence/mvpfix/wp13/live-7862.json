@@ -1,0 +1,40 @@
+{
+  "exit_code": 0,
+  "result": {
+    "chain": [
+      {
+        "issuer": " CN=YE2,O=Let's Encrypt,C=US",
+        "not_after": "2026-12-09T21:32:04+00:00",
+        "serial": "0626202310F4C8DBD9E561C1E22E7AEAD836",
+        "subject": " CN=ga0-alienware-rtx4070ti.tailnet.aisight.us"
+      },
+      {
+        "issuer": " CN=Root YE,O=ISRG,C=US",
+        "not_after": "2028-09-02T23:59:59+00:00",
+        "serial": "4DF3B15DD6C0784C507CD37B58E6F115",
+        "subject": " CN=YE2,O=Let's Encrypt,C=US"
+      },
+      {
+        "issuer": " CN=ISRG Root X2,O=Internet Security Research Group,C=US",
+        "not_after": "2032-09-02T23:59:59+00:00",
+        "serial": "872165FC34B6E5FBA8ADD5B3705FB53A",
+        "subject": " CN=Root YE,O=ISRG,C=US"
+      },
+      {
+        "issuer": " CN=ISRG Root X1,O=Internet Security Research Group,C=US",
+        "not_after": "2032-09-02T23:59:59+00:00",
+        "serial": "6C8F1DC727C7117F7BAF853AC980F9CD",
+        "subject": " CN=ISRG Root X2,O=Internet Security Research Group,C=US"
+      }
+    ],
+    "expiry_ok": true,
+    "host": "ga0-alienware-rtx4070ti.tailnet.aisight.us",
+    "leaf_days_remaining": 82.702532,
+    "minimum_days": 21,
+    "observed_at": "2026-09-18T04:40:25.258373+00:00",
+    "ok": true,
+    "port": 7862,
+    "same_verified_leaf": true,
+    "trusted": true
+  }
+}

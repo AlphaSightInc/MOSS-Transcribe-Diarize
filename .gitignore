@@ -61,13 +61,18 @@ evidence/mvpfix/wp4/.pytest*/
 evidence/mvpfix/wp4/.npm-cache/
 
 .wp7runtime/
-<<<<<<< HEAD
 # WP1 isolated prototype runtime state (audio, SQLite, local sockets).
 .wp1/
 
 .wp9runtime/
 !evidence/mvpfix/wp9/*.log
-=======
 # WP6 private measurement state, audio, TLS material, and test scratch.
 .wp6-tmp/
->>>>>>> mvpfix/wp6-capacity-baseline
+=======
+
+# WP13 local test state and raw output; retained summaries live in evidence/mvpfix/wp13.
+.wp13runtime/
+frontend/.vite/
+# Large disposable WP test logs belong here, never in committed evidence.
+evidence/mvpfix/*/raw/
+>>>>>>> mvpfix/wp13-tls-hygiene

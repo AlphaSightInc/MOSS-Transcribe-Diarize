@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = json.loads((ROOT/'evidence/mvpfix/wp2/fixtures.json').read_text())['overlap']
 
 @pytest.mark.parametrize('width', [390, 400, 1280])
-def test_overlap_lane_badges_keep_chronology_and_fit_pane(width):
+def test_overlap_lane_badges_keep_chronology_and_fit_pane(width, tmp_path):
     meeting = dict(id='lanes', mode='live', title='Overlapping corpus', title_source='manual',
                    status='completed', created_at_ms=1, transcript=FIXTURE, transcript_version=1, audio=None)
     with sync_playwright() as p:
@@ -41,5 +41,5 @@ def test_overlap_lane_badges_keep_chronology_and_fit_pane(width):
             assert page.locator('#tr-body').evaluate('(e)=>e.scrollWidth<=e.clientWidth')
             for text in (s['text'] for s in FIXTURE['segments']): expect(page.locator('#tr-body')).to_contain_text(text)
             page.locator('#transcript-panel').scroll_into_view_if_needed()
-            page.screenshot(path=str(ROOT/f'evidence/mvpfix/wp2/production-{width}.png'))
+            page.screenshot(path=str(tmp_path / f'production-{width}.png'))
         finally: browser.close()

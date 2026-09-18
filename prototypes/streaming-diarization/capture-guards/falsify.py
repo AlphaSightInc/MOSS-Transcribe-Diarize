@@ -1,4 +1,4 @@
-"""Decode the strongest local-speech false-positive chunk at each quiet gain."""
+"""Decode strongest false-positive chunk; run offline chunks.py first to regenerate raw input."""
 import json,time
 from prototype import *
 from moss_transcribe_diarize.app.live_adapters import RunnerBoundedWavInference
@@ -6,7 +6,7 @@ from moss_transcribe_diarize.app.live_session import FrozenSpan
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
 from moss_transcribe_diarize.transcript_parser import parse_transcript
 s=read('interview_bill_ackman_60s');n=read('interview_keyu_jin_60s')
-rows=json.loads((ROOT/'evidence/mvpfix/wp3/chunks.json').read_text()); all_cases={name:x for name,x,_ in cases(s,n)}
+rows=json.loads((ROOT/'evidence/mvpfix/wp3/raw/chunks.json').read_text()); all_cases={name:x for name,x,_ in cases(s,n)}
 dec=RunnerBoundedWavInference(VllmRunner(base_url='http://127.0.0.1:18103/v1',model='OpenMOSS-Team/MOSS-Transcribe-Diarize'),max_samples=8000,scratch_dir=ROOT/'evidence/mvpfix/wp3')
 for level in [-10,-15,-20]:
     candidates=[r for r in rows if r['name'].startswith(f'near{level}_') and r['decision']=='leak-suspect']

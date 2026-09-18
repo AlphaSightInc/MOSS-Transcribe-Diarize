@@ -1,0 +1,23 @@
+{
+  "exit_code": 1,
+  "result": {
+    "chain": [
+      {
+        "issuer": " CN=ga0-alienware-rtx4070ti.tailnet.aisight.us",
+        "not_after": "2028-10-20T03:04:57+00:00",
+        "serial": "7FB9DA0475F325EA99A415E13569F7F8B8F944DA",
+        "subject": " CN=ga0-alienware-rtx4070ti.tailnet.aisight.us"
+      }
+    ],
+    "expiry_ok": true,
+    "host": "ga0-alienware-rtx4070ti.tailnet.aisight.us",
+    "leaf_days_remaining": 762.933702,
+    "minimum_days": 21,
+    "observed_at": "2026-09-18T04:40:25.133659+00:00",
+    "ok": false,
+    "port": 7861,
+    "same_verified_leaf": false,
+    "trust_error": "self signed certificate",
+    "trusted": false
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "service_user": "devcontainers",
+  "units": {
+    "moss-web.service": {
+      "exit_code": 0,
+      "output": "MainPID=232533\nLoadState=loaded\nActiveState=active\nFragmentPath=/home/devcontainers/.config/systemd/user/moss-web.service",
+      "tls_environment": {},
+      "tls_arguments": {
+        "--port": "7860"
+      }
+    },
+    "moss-internal.service": {
+      "exit_code": 0,
+      "output": "MainPID=291600\nExecReload={ path=/bin/kill ; argv[]=/bin/kill -HUP $MAINPID ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }\nLoadState=loaded\nActiveState=active\nFragmentPath=/home/devcontainers/.config/systemd/user/moss-internal.service",
+      "tls_environment": {
+        "MOSS_TLS_CERTFILE": "/home/devcontainers/.local/share/moss-transcribe-diarize/acme/production/certificates/ga0-alienware-rtx4070ti.tailnet.aisight.us.crt",
+        "MOSS_TLS_KEYFILE": "/home/devcontainers/.local/share/moss-transcribe-diarize/acme/production/certificates/ga0-alienware-rtx4070ti.tailnet.aisight.us.key"
+      },
+      "tls_arguments": {
+        "--tls-certfile": "/home/devcontainers/.local/share/moss-transcribe-diarize/acme/production/certificates/ga0-alienware-rtx4070ti.tailnet.aisight.us.crt",
+        "--tls-keyfile": "/home/devcontainers/.local/share/moss-transcribe-diarize/acme/production/certificates/ga0-alienware-rtx4070ti.tailnet.aisight.us.key",
+        "--port": "7862"
+      }
+    },
+    "moss-certificate-renew.service": {
+      "exit_code": 0,
+      "output": "MainPID=0\nLoadState=not-found\nActiveState=inactive\nFragmentPath="
+    },
+    "moss-certificate-renew.timer": {
+      "exit_code": 0,
+      "output": "NextElapseUSecRealtime=\nLoadState=not-found\nActiveState=inactive\nFragmentPath="
+    }
+  },
+  "private_prerequisites": {
+    "netlify-token": {
+      "exists": true,
+      "mode": "0o600"
+    },
+    "certificate.env": {
+      "exists": true,
+      "mode": "0o600"
+    }
+  },
+  "lego": {
+    "exit_code": 0,
+    "output": "lego version 5.3.1 linux/amd64"
+  }
+}
