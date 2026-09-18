@@ -44,3 +44,16 @@ corrected test: 1908 passed/2 skipped/37 subtests. Final release suites are reta
 Latest frontend contains 250 tests. Fresh /new regeneration must compare the checklist, never nondeterministic
 transcript pixels or timestamps. Core failures/notices/audio/history fixtures are explicitly labeled; they
 are a disclosed limitation from the requested all-genuine-state interpretation, not backend acceptance.
+
+## Fresh-session regeneration, 2026-09-18
+
+Starting commit: 8d3a2850. User narrowed regeneration traffic to at most 100 requests; the existing
+local-stack budget now enforces min(100, remaining cumulative allowance). No production policy changed.
+One regeneration succeeded with 7 calls (56 cumulative), 52 states and 156 PNG/copy pairs; checklist
+byte-identical. Zero measured contrast/name/horizontal-overflow/checked-overlap failures; keyboard 3/3.
+8009 contrast occurrences passed; 616 gradient/opacity occurrences remain manual review, not passes.
+315 clipping candidates are intentional ellipses; no non-ellipsis candidate or positive tabindex.
+
+F7: root VERIFY.md and VERIFY-RESULT.md violated scripts/check_verify_layout.sh. Standalone check failed
+for both paths before the move, passed afterward. Moved them to docs/verify/wp24/; no product repair.
+Fresh complete-suite results and source-line finding inventory: docs/verify/wp24/VERIFY-RESULT.md.

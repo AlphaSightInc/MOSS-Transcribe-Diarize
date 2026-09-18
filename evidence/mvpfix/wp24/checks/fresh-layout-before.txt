@@ -1,0 +1,2 @@
+FAIL: VERIFY.md belongs under docs/verify/<wp>/
+FAIL: VERIFY-RESULT.md belongs under docs/verify/<wp>/

@@ -1,0 +1,14 @@
+{
+  "states": 52,
+  "captures": 156,
+  "contrast_occurrences": {
+    "pass": 8009,
+    "manual-review-gradient-or-opacity": 616
+  },
+  "clipping_candidates": {
+    "ellipsis": 315
+  },
+  "positive_tabindex": 0,
+  "pngs": 156,
+  "copy_files": 156
+}

@@ -1,0 +1,181 @@
+{"state": "real-empty-workspace", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "mic-enabled", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "share-picker-pending", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "real-empty-workspace", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "mic-enabled", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "share-picker-pending", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "real-empty-workspace", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "mic-enabled", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "share-picker-pending", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "file-upload-progress", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "file-upload-progress", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "file-upload-progress", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"file_status": "completed", "segments": 4}
+CAPTURE · MICROPHONE + SHARED AUDIO
+
+Both sources are required to start. Microphone-only capture is not available.
+
+Private to this browser; no sign-in or capture key is needed.
+
+LISTENING SETUP
+Speakers
+Headphones
+
+How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+
+Microphone
+Connected · receiving sound
+Shared audio
+Connected · receiving sound
+
+Both sources are receiving sound. Start capture when ready.
+
+Switch mic
+Reshare audio
+Start capture
+
+Both sources are receiving sound. Start capture when ready.
+{"state": "browser-active-overlap", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "browser-active-overlap", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "browser-active-overlap", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "browser-stop-finalizing", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "browser-stop-finalizing", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "browser-stop-finalizing", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "browser-final", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "browser-final", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "browser-final", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "shared-workspace-header", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "shared-voiceprints", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "shared-workspace-header", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "shared-voiceprints", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "shared-workspace-header", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "shared-voiceprints", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "empty-workspace", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "listening-headphones", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "listening-speakers", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "live-final", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "exports-menu", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "speaker-rename-save-voiceprint", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "voiceprint-bank", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "meeting-rename", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "active-two-lanes", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "provisional-rows", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "finalizing", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "file-final", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-unconfigured", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-settings", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-provider-no-key", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-queued", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-generating", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-retry_wait", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-current", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-failed", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-cancelled", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "interrupted-lease-expiry", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_timeout", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_http_403", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_http_404", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_failed", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_server_error", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_download_failed", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_redirect", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_html", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_size", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_empty", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-transcode_failed", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-decode_failed", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-decode_invalid", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-storage_failed", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "no-speech", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "truncation", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "audio-available", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "audio-partial", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "audio-unavailable", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "history-60", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "history-to-voiceprints", "width": 1440, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "empty-workspace", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "listening-headphones", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "listening-speakers", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "live-final", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "exports-menu", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "speaker-rename-save-voiceprint", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "voiceprint-bank", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "meeting-rename", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "active-two-lanes", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "provisional-rows", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "finalizing", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "file-final", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-unconfigured", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-settings", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-provider-no-key", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-queued", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-generating", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-retry_wait", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-current", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-failed", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-cancelled", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "interrupted-lease-expiry", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_timeout", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_http_403", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_http_404", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_failed", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_server_error", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_download_failed", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_redirect", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_html", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_size", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_empty", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-transcode_failed", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-decode_failed", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-decode_invalid", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-storage_failed", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "no-speech", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "truncation", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "audio-available", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "audio-partial", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "audio-unavailable", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "history-60", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "history-to-voiceprints", "width": 1280, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "empty-workspace", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "listening-headphones", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "listening-speakers", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "live-final", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "exports-menu", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "speaker-rename-save-voiceprint", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "voiceprint-bank", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "meeting-rename", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "active-two-lanes", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "provisional-rows", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "finalizing", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "file-final", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-unconfigured", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-settings", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-provider-no-key", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-queued", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-generating", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-retry_wait", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-current", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-failed", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "summary-cancelled", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "interrupted-lease-expiry", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_timeout", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_http_403", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_http_404", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_failed", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_server_error", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_download_failed", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_redirect", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_html", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_size", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-acquisition_empty", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-transcode_failed", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-decode_failed", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-decode_invalid", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "failure-storage_failed", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "no-speech", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "truncation", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "audio-available", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "audio-partial", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "audio-unavailable", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "history-60", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}
+{"state": "history-to-voiceprints", "width": 400, "horizontal_scroll": false, "unnamed": 0, "contrast_failures": 0}

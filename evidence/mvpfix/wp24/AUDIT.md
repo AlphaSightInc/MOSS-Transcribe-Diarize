@@ -68,7 +68,7 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. python prototypes/ui-signoff-pack/run.py 
 ```
 
 The command owns ports 17884/17885/17886 and tunnel 18124, records queue/request counts, uses at most two
-in-flight decoder calls, and stops its processes. TLS, cookies, audio, databases and profiles stay ignored
+in-flight decoder calls, and stops its processes. Each regeneration is capped at 100 requests. TLS, cookies, audio, databases and profiles stay ignored
 inside `.wp24/`. Only public transcript text and screenshots are committed. Global WP budget is 150;
 `request-count.json` records usage. The generator preserves source envelopes for rare intermediate states.
 
@@ -85,4 +85,4 @@ lifecycle work package. Passing automated checks does not close either deferred 
 - Targeted geometry/accessibility: **11 passed**, including unchanged existing geometry tests.
 - Current decoder use **49/150**, at most 2 in flight; fresh verification records the later total.
 - Frozen production change: `205dc611`; integrated base `0ce5122d`.
-- `/new` outcome is exclusively in root `VERIFY-RESULT.md`; this paragraph does not assert it occurred.
+- Fresh-session outcome is in `docs/verify/wp24/VERIFY-RESULT.md`; frozen counts above describe the original pack.

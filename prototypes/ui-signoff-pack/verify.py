@@ -17,6 +17,7 @@ def main():
     assert all(any(t['state']=='provisional' for t in r['transcript_rows']) for r in rows if r['state']=='provisional-rows')
     assert all(r['focus_restored_to_trigger'] for r in json.loads((target/'keyboard.json').read_text()))
     counts=json.loads((target/'request-count.json').read_text());assert counts['wp24_cumulative']<=150
+    assert counts['this_regeneration']<=100
     for port in [18124,17884,17885,17886]:
         with socket.socket() as s:
             s.settimeout(.3);assert s.connect_ex(('127.0.0.1',port))!=0,('Owned listener still running',port)

@@ -37,7 +37,7 @@ def main():
         metrics=wait_url('http://127.0.0.1:18124/metrics',tunnel).decode()
         (target/'queue-before.txt').write_text('\n'.join(x for x in metrics.splitlines() if x.startswith('vllm:num_requests_'))+'\n')
         stack=['prototypes/streaming-diarization/draft-lane/run_local_stack.py','--cert','.wp24/cert.pem','--key','.wp24/key.pem','--vllm-base-url','http://127.0.0.1:18124/v1']
-        private=start([PY,*stack,'--state','.wp24/regen-state','--port','17884','--max-requests',str(150-used)],'regenerate-private')
+        private=start([PY,*stack,'--state','.wp24/regen-state','--port','17884','--max-requests',str(min(100,150-used))],'regenerate-private')
         shared=start([PY,*stack,'--state','.wp24/regen-shared','--port','17885','--max-requests','0'],'regenerate-shared',MOSS_OPEN_WORKSPACE='1')
         reference=start([PY,'tools/uifidelity/reference_oracle.py','--port','17886'],'regenerate-reference')
         wait_url('https://127.0.0.1:17884/',private);wait_url('https://127.0.0.1:17885/',shared);wait_url('http://127.0.0.1:17886/',reference)
@@ -51,5 +51,5 @@ def main():
         for log in logs:log.close()
         count=len((state/'requests.jsonl').read_text().splitlines()) if (state/'requests.jsonl').exists() else 0
         budget.write_text(json.dumps({'requests':used+count})+'\n')
-        (target/'request-count.json').write_text(json.dumps({'this_regeneration':count,'wp24_cumulative':used+count,'limit':150,'max_inflight':2})+'\n')
+        (target/'request-count.json').write_text(json.dumps({'this_regeneration':count,'regeneration_limit':100,'wp24_cumulative':used+count,'limit':150,'max_inflight':2})+'\n')
 if __name__=='__main__':main()

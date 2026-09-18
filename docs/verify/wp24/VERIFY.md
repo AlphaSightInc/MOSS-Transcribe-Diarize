@@ -8,7 +8,8 @@ commit it locally, then give the <=60-line report in THIS pane. No peer dispatch
 
 Only modify `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp24-visual-copy-pack`.
 No push/merge/rebase/deploy/GitHub; no ports 7861/7862; no operator-reserved fidelity gate.
-Own vLLM tunnel only 18124. Cumulative budget 150, maximum 2 in flight. Generator owns and stops its services.
+Own vLLM tunnel only 18124. At most 100 requests per regeneration, cumulative budget 150,
+maximum 2 in flight. Generator owns and stops its services.
 Use the specified Python with `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.` and cwd in this worktree.
 Do not use subagents. Do not change product behavior to make verification pass.
 
@@ -56,10 +57,20 @@ A mismatch, missing state, false provenance, or remaining owned listener falsifi
 Do not claim comprehensive visual acceptance or that gradients/opacity were measured as passes.
 If successful, copy `.wp24/fresh-verification/verification.json` and `request-count.json` to
 `evidence/mvpfix/wp24/fresh-verification.json` and `fresh-request-count.json`.
-Write `VERIFY-RESULT.md`: explicitly fresh session, commands, exact counts, checklist equality, decoder total,
+Write `docs/verify/wp24/VERIFY-RESULT.md`: explicitly fresh session, commands, exact counts, checklist equality, decoder total,
 remaining F4/D3 and fixture/native-picker limits. On failure write the exact failure honestly; do not self-retry
 provider traffic without diagnosing the cause and accounting for budget.
-Commit those 3 result files locally. Check clean status. No need to rerun full suites unless product changes.
+Before committing, run the full suites requested by the fresh-session assignment:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. TMPDIR="$PWD/.wp24/tmp" /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python -m pytest -q -p no:cacheprovider tests --basetemp=.wp24/test-fresh-session
+npm --prefix frontend test -- --run
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
+```
+
+Retain logs in `evidence/mvpfix/wp24/checks/`. Commit the result and supporting evidence locally;
+check clean status. Verification documents belong only under `docs/verify/wp24/`.
 
 5. Report <=60 lines in this pane: branch + final SHA; prototype verdict; changed files; test counts;
 52 states / 156 captures; five fixed, F4 and D3 deferred; decoder count; fresh result; pack link; limitations.
