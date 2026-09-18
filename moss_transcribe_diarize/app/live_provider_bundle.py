@@ -605,6 +605,17 @@ class WeSpeakerLiveEvidenceProvider:
         self._pending_vectors: dict[int, dict[str, tuple[tuple[float, ...], float]]] = {}
         self._canonical_vectors: dict[str, tuple[float, ...]] = {}
 
+    def revision_reader(self) -> WeSpeakerLiveEvidenceProvider:
+        return WeSpeakerLiveEvidenceProvider(
+            encoder=self.encoder,
+            canonical_embedding=self._canonical_vector,
+            min_segment_samples=self.min_segment_samples,
+            birth_min_seconds=self.birth_min_seconds,
+        )
+
+    def reconcile_committed(self, snapshot: LiveIdentitySnapshot) -> None:
+        self._reconcile_committed_vectors(snapshot)
+
     def score(
         self,
         *,
@@ -975,6 +986,7 @@ def _identity_preparer(
     identity_config = _identity_config(config.identity_config)
     return BoundedCausalIdentityPreparer(
         config=identity_config,
+        lane_factory=lambda: _identity_preparer(config, encoder=encoder),
         evidence_provider=_identity_evidence_provider(
             config,
             encoder=encoder,

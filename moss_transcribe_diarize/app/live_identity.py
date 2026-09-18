@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Callable, Protocol
 
 from scipy.optimize import linear_sum_assignment
 
@@ -82,9 +82,31 @@ class BoundedCausalIdentityPreparer:
         *,
         config: LiveIdentityConfig,
         evidence_provider: LiveSpeakerEvidenceProvider | None = None,
+        lane_factory: Callable[[], BoundedCausalIdentityPreparer] | None = None,
     ):
         self.config = config
         self.evidence_provider = evidence_provider or NoLiveSpeakerEvidence()
+        self._lane_factory = lane_factory
+
+    def fork_lane(self) -> BoundedCausalIdentityPreparer:
+        """Create independent evidence state under the same measured identity policy."""
+        if self._lane_factory is not None:
+            return self._lane_factory()
+        if isinstance(self.evidence_provider, NoLiveSpeakerEvidence):
+            return BoundedCausalIdentityPreparer(config=self.config)
+        raise LiveIdentityError(
+            "lane identity requires an independent evidence factory"
+        )
+
+    def prepare_revision(self, **kwargs) -> LiveIdentityPreparation:
+        """Read lane voice evidence without changing causal observations or the album."""
+        if isinstance(self.evidence_provider, NoLiveSpeakerEvidence):
+            provider = self.evidence_provider
+        else:
+            provider = self.evidence_provider.revision_reader()
+        return BoundedCausalIdentityPreparer(
+            config=self.config, evidence_provider=provider
+        ).prepare(**kwargs)
 
     def prepare(
         self,
@@ -93,6 +115,7 @@ class BoundedCausalIdentityPreparer:
         pcm: bytes,
         transcript: str,
         base_snapshot: LiveIdentitySnapshot,
+        allowed_speakers: tuple[str, ...] | None = None,
     ) -> LiveIdentityPreparation:
         expected_pcm_bytes = span.sample_count * PCM16_BYTES_PER_SAMPLE
         if len(pcm) != expected_pcm_bytes:
@@ -120,7 +143,15 @@ class BoundedCausalIdentityPreparer:
             return self._failed(span, transcript, base_snapshot, f"evidence_provider_failed:{exc.__class__.__name__}")
 
         try:
-            mapping = self._assign(local_speakers, base_snapshot.canonical_speakers, evidence)
+            mapping = self._assign(
+                local_speakers,
+                (
+                    base_snapshot.canonical_speakers
+                    if allowed_speakers is None
+                    else allowed_speakers
+                ),
+                evidence,
+            )
         except LiveIdentityError as exc:
             return self._abstain(span, transcript, base_snapshot, str(exc), local_speakers)
 

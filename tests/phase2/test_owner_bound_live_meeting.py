@@ -158,6 +158,15 @@ class WholeMeetingStub:
 
 @dataclass
 class Identity:
+    def fork_lane(self):
+        # A lane gets its own preparer; held-event fixtures retain their shared controls.
+        from copy import copy
+        return copy(self)
+
+    def prepare_revision(self, **kwargs):
+        from dataclasses import replace
+        return replace(self.prepare(**kwargs), relabeled_transcript=kwargs['transcript'])
+
     def prepare(
         self,
         *,
@@ -165,6 +174,7 @@ class Identity:
         pcm: bytes,
         transcript: str,
         base_snapshot: LiveIdentitySnapshot,
+        allowed_speakers: tuple[str, ...] | None = None,
     ) -> LiveIdentityPreparation:
         del pcm, transcript
         return LiveIdentityPreparation(
@@ -355,7 +365,8 @@ def v2_frame(sequence: int, lane: str) -> dict[str, object]:
         "sequence": sequence,
         "capture_timestamp_ns": sequence * samples * 1_000_000_000 // LIVE_SAMPLE_RATE,
         "device_epoch": 0,
-        "pcm_base64": base64.b64encode(b"\0" * samples * 2).decode("ascii"),
+        # Lifecycle tests need one decoded voice. Digital zero now correctly skips ASR.
+        "pcm_base64": base64.b64encode((b"\x01\x00" if lane == "system" else b"\0\0") * samples).decode("ascii"),
         "sample_count": samples,
         "sample_rate": LIVE_SAMPLE_RATE,
         "silent": False,
