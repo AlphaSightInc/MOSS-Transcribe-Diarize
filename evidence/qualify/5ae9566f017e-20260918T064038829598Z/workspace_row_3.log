@@ -1,0 +1,33 @@
+{
+  "name": "workspace_row_3",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 2.164,
+  "artifacts": [
+    "workspace_row_3.log"
+  ],
+  "measurements": {
+    "ok": true,
+    "meeting": "rK8o73sNN9PkwwegRk3CFwRt",
+    "status_received": "completed",
+    "speaker_count": 1,
+    "reference_words": 115,
+    "hypothesis_words": 111,
+    "edits": 10,
+    "wer": 0.08695652173913043,
+    "artifact": null,
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 2.164,
+    "network": null,
+    "row": 3
+  }
+}

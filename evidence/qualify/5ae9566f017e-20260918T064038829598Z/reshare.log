@@ -1,0 +1,17 @@
+{
+  "name": "reshare",
+  "status": "PASS",
+  "exit_code": 0,
+  "denominators": {
+    "expected": 6,
+    "executed": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 38.196,
+  "artifacts": [
+    "reshare.log"
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "stack",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 5.546,
+  "artifacts": [
+    "stack.log"
+  ],
+  "reason": "SQLite runtime pin bypassed by existing local recipe; not deployment parity",
+  "measurements": {
+    "readiness": true
+  }
+}

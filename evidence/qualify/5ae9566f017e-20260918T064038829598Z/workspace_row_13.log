@@ -1,0 +1,123 @@
+{
+  "name": "workspace_row_13",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 68.207,
+  "artifacts": [
+    "workspace_row_13.log"
+  ],
+  "measurements": {
+    "ok": true,
+    "variants": [
+      {
+        "outage_seconds": 3,
+        "meeting": "VOo99ObIO9ec3WS8bn4ZKf59",
+        "before": {
+          "status": "active",
+          "version": 22,
+          "accepted_samples": 80000,
+          "committed_samples": 40000
+        },
+        "phase_during_outage": null,
+        "restored_monotonic": 98543.533404125,
+        "actual_outage_seconds": 3.0030217919993447,
+        "blocked_requests": 25,
+        "origin_outage_verified": true,
+        "blocked_routes": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "phase_after_restore": null,
+        "ui_status": null,
+        "text_changes_after_restore": 7,
+        "frames_resumed": true,
+        "first_frame_recovery_seconds": {
+          "microphone": 0.43560149999393616,
+          "system": 0.5063041249959497
+        },
+        "first_snapshot_recovery_seconds": 0.6030076250026468,
+        "heartbeat_resumed": true,
+        "maximum_heartbeat_gap_seconds": 3.5046815410023555,
+        "polling_resumed": true,
+        "sequence_continuity": {
+          "microphone": true,
+          "system": true
+        },
+        "frame_errors": [],
+        "status_received": "completed",
+        "finalization_status": "final",
+        "failure_reason": null,
+        "history_preserved": true,
+        "audio_seconds": 12.5,
+        "audio_preserved": true,
+        "partial_audio": false,
+        "recovery_feedback_clear": true,
+        "ok": true,
+        "outcome": null
+      },
+      {
+        "outage_seconds": 20,
+        "meeting": "UZ30KnwBqCYzPFOuBmhrQ7_v",
+        "before": {
+          "status": "active",
+          "version": 23,
+          "accepted_samples": 86720,
+          "committed_samples": 40000
+        },
+        "phase_during_outage": null,
+        "restored_monotonic": 98582.136520708,
+        "actual_outage_seconds": 20.00329654199595,
+        "blocked_requests": 134,
+        "origin_outage_verified": true,
+        "blocked_routes": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "phase_after_restore": null,
+        "ui_status": null,
+        "text_changes_after_restore": 2,
+        "frames_resumed": true,
+        "first_frame_recovery_seconds": {
+          "microphone": 0.41402245800418314,
+          "system": 0.4888568330061389
+        },
+        "first_snapshot_recovery_seconds": 3.638992500011227,
+        "heartbeat_resumed": true,
+        "maximum_heartbeat_gap_seconds": 20.50715274999675,
+        "polling_resumed": true,
+        "sequence_continuity": {
+          "microphone": true,
+          "system": true
+        },
+        "frame_errors": [],
+        "status_received": "completed",
+        "finalization_status": "final",
+        "failure_reason": null,
+        "history_preserved": true,
+        "audio_seconds": 29.5,
+        "audio_preserved": true,
+        "partial_audio": false,
+        "recovery_feedback_clear": true,
+        "ok": true,
+        "outcome": null
+      }
+    ],
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 68.207,
+    "network": null,
+    "row": 13
+  }
+}

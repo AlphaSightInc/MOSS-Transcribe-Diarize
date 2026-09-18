@@ -103,6 +103,9 @@ class Bundle:
     def gate(self, name, status, denominators=None, duration=0, code=None, reason=None, measurements=None):
         row = dict(name=name, status=status, exit_code=code, denominators=denominators or counts([status]),
                    duration_seconds=round(duration, 3), artifacts=[name+'.log'])
+        if self.proxy:
+            row['decoder_requests_at_record'] = self.proxy.sent
+            row['decoder_budget_exhausted_at_record'] = self.proxy.sent >= self.args.budget
         if reason:
             row['reason'] = reason
         if measurements is not None:
@@ -365,7 +368,7 @@ class Bundle:
                 code, elapsed, _ = self.command('identity_'+case,[PY,'prototypes/identity-stress/run.py',case])
                 rows = json.loads(targets[1].read_text()) if targets[1].exists() else []
                 row = rows[-1] if rows else {}
-                passed = code == 0 and identity_passed(row)
+                passed = code == 0 and identity_passed(row, expected_voices=2 if case == 'alternating' else 1)
                 statuses.append('PASS' if passed else 'FAIL')
                 codes.append(code)
                 results.append(dict(case=case, status=statuses[-1], exit_code=code, seconds=elapsed,
@@ -395,6 +398,7 @@ class Bundle:
                                     peak_in_flight=self.proxy.peak if self.proxy else 0,
                                     rejected_by_budget=self.proxy.rejected if self.proxy else 0,
                                     active_at_teardown=self.proxy.active if self.proxy else 0,
+                                    budget_exhausted=(self.proxy.sent >= self.args.budget) if self.proxy else False,
                                     shared_metrics='sampled every 2 seconds; not own request attribution')
         alive = []
         for proc in self.processes:
@@ -415,11 +419,11 @@ class Bundle:
         print('BUNDLE '+str(self.out.relative_to(ROOT)),flush=True)
 
 
-def identity_passed(row):
+def identity_passed(row, expected_voices=2):
     score = row.get('score', {})
     identities = score.get('ids_by_truth', {})
     return (row.get('status') == 'completed' and row.get('finalization') == 'final'
-            and row.get('failure') is None and bool(identities)
+            and row.get('failure') is None and len(identities) == expected_voices
             and all(len(ids) == 1 for ids in identities.values())
             and len({speaker for ids in identities.values() for speaker in ids}) == len(identities)
             and not any(score.get('id_switches', {}).values())

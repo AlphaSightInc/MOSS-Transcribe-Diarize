@@ -1,0 +1,74 @@
+{
+  "name": "workspace_row_14",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 42.919,
+  "artifacts": [
+    "workspace_row_14.log"
+  ],
+  "measurements": {
+    "ok": true,
+    "same_document": true,
+    "all_in_history": true,
+    "cycles": [
+      {
+        "cycle": 1,
+        "pane_empty_before_start": true,
+        "meeting": "4_rRNvCD1-6bcHa9ApuYAVgy",
+        "active_phase": null,
+        "first_frame_sequence": 0,
+        "status_received": "completed",
+        "finalization_status": "final",
+        "history_present": true,
+        "export": null,
+        "export_filename": null,
+        "terminal_phase": null,
+        "screenshot": null,
+        "ok": true
+      },
+      {
+        "cycle": 2,
+        "pane_empty_before_start": true,
+        "meeting": "HaO63sT1DjumoQtWDaHr8PpH",
+        "active_phase": null,
+        "first_frame_sequence": 0,
+        "status_received": "completed",
+        "finalization_status": "final",
+        "history_present": true,
+        "export": null,
+        "export_filename": null,
+        "terminal_phase": null,
+        "screenshot": null,
+        "ok": true
+      },
+      {
+        "cycle": 3,
+        "pane_empty_before_start": true,
+        "meeting": "hfBDMrOfSb00wk6_9vl_U0wE",
+        "active_phase": null,
+        "first_frame_sequence": 0,
+        "status_received": "completed",
+        "finalization_status": "final",
+        "history_present": true,
+        "export": null,
+        "export_filename": null,
+        "terminal_phase": null,
+        "screenshot": null,
+        "ok": true
+      }
+    ],
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 42.919,
+    "network": null,
+    "row": 14
+  }
+}

@@ -1,0 +1,275 @@
+{
+  "name": "demo_lanes",
+  "status": "FAIL",
+  "exit_code": 1,
+  "denominators": {
+    "expected": 2,
+    "executed": 2,
+    "passed": 0,
+    "failed": 2,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 104.798,
+  "artifacts": [
+    "demo_lanes.log"
+  ],
+  "measurements": [
+    {
+      "case": null,
+      "meeting": "EBpwxu2a8PIV8YTqYEfOYc5g",
+      "passed": false,
+      "expected_failure": false,
+      "status": "completed",
+      "finalization_status": "final",
+      "seconds": 65.113,
+      "stop_seconds": 11.099,
+      "frames_per_lane": 108,
+      "microphone_gain": 0.03,
+      "surfaces": {
+        "pre_terminal": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 108,
+              "substitutions": 2,
+              "omissions": 6,
+              "additions": 8,
+              "wer": 0.1509433962264151,
+              "unique_reference_words": 60,
+              "unique_retained": 57,
+              "unique_retention": 0.95
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 55,
+              "substitutions": 1,
+              "omissions": 4,
+              "additions": 6,
+              "wer": 0.20754716981132076,
+              "unique_reference_words": 45,
+              "unique_retained": 41,
+              "unique_retention": 0.9111111111111111
+            }
+          },
+          "attribution_errors": 0,
+          "speaker_lane_conflicts": 0,
+          "boundary_attribution_words": 0,
+          "boundary_duplication_words": 0,
+          "attribution_segments": [],
+          "max_wer": 0.166655,
+          "ownership": null,
+          "duplication_count": 0,
+          "unresolved_words": 0,
+          "passed": false
+        },
+        "final": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 104,
+              "substitutions": 1,
+              "omissions": 5,
+              "additions": 3,
+              "wer": 0.08490566037735849,
+              "unique_reference_words": 60,
+              "unique_retained": 57,
+              "unique_retention": 0.95
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 5,
+              "wer": 0.09433962264150944,
+              "unique_reference_words": 45,
+              "unique_retained": 45,
+              "unique_retention": 1.0
+            }
+          },
+          "attribution_errors": 0,
+          "speaker_lane_conflicts": 0,
+          "boundary_attribution_words": 0,
+          "boundary_duplication_words": 0,
+          "attribution_segments": [],
+          "max_wer": 0.095074,
+          "ownership": null,
+          "duplication_count": 0,
+          "unresolved_words": 0,
+          "passed": true
+        },
+        "reopened": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 104,
+              "substitutions": 1,
+              "omissions": 5,
+              "additions": 3,
+              "wer": 0.08490566037735849,
+              "unique_reference_words": 60,
+              "unique_retained": 57,
+              "unique_retention": 0.95
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 5,
+              "wer": 0.09433962264150944,
+              "unique_reference_words": 45,
+              "unique_retained": 45,
+              "unique_retention": 1.0
+            }
+          },
+          "attribution_errors": 0,
+          "speaker_lane_conflicts": 0,
+          "boundary_attribution_words": 0,
+          "boundary_duplication_words": 0,
+          "attribution_segments": [],
+          "max_wer": 0.095074,
+          "ownership": null,
+          "duplication_count": 0,
+          "unresolved_words": 0,
+          "passed": true
+        }
+      },
+      "file_url_wer_bar": 0.15,
+      "file_url_wer_pass": {
+        "pre_terminal": false,
+        "final": true,
+        "reopened": true
+      }
+    },
+    {
+      "case": null,
+      "meeting": "JtoAj1_26jvZAJKjIlfJVPY5",
+      "passed": false,
+      "expected_failure": false,
+      "status": "completed",
+      "finalization_status": "final",
+      "seconds": 39.523,
+      "stop_seconds": 10.517,
+      "frames_per_lane": 58,
+      "microphone_gain": 0.03,
+      "surfaces": {
+        "pre_terminal": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 100,
+              "substitutions": 2,
+              "omissions": 14,
+              "additions": 8,
+              "wer": 0.22641509433962265,
+              "unique_reference_words": 60,
+              "unique_retained": 55,
+              "unique_retention": 0.9166666666666666
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 59,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 6,
+              "wer": 0.11320754716981132,
+              "unique_reference_words": 45,
+              "unique_retained": 45,
+              "unique_retention": 1.0
+            }
+          },
+          "attribution_errors": 0,
+          "speaker_lane_conflicts": 0,
+          "boundary_attribution_words": 0,
+          "boundary_duplication_words": 0,
+          "attribution_segments": [],
+          "max_wer": 0.166655,
+          "ownership": null,
+          "duplication_count": 0,
+          "unresolved_words": 0,
+          "passed": false
+        },
+        "final": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 105,
+              "substitutions": 2,
+              "omissions": 6,
+              "additions": 5,
+              "wer": 0.12264150943396226,
+              "unique_reference_words": 60,
+              "unique_retained": 56,
+              "unique_retention": 0.9333333333333333
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 5,
+              "wer": 0.09433962264150944,
+              "unique_reference_words": 45,
+              "unique_retained": 45,
+              "unique_retention": 1.0
+            }
+          },
+          "attribution_errors": 0,
+          "speaker_lane_conflicts": 0,
+          "boundary_attribution_words": 0,
+          "boundary_duplication_words": 0,
+          "attribution_segments": [],
+          "max_wer": 0.095074,
+          "ownership": null,
+          "duplication_count": 0,
+          "unresolved_words": 0,
+          "passed": false
+        },
+        "reopened": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 105,
+              "substitutions": 2,
+              "omissions": 6,
+              "additions": 5,
+              "wer": 0.12264150943396226,
+              "unique_reference_words": 60,
+              "unique_retained": 56,
+              "unique_retention": 0.9333333333333333
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 5,
+              "wer": 0.09433962264150944,
+              "unique_reference_words": 45,
+              "unique_retained": 45,
+              "unique_retention": 1.0
+            }
+          },
+          "attribution_errors": 0,
+          "speaker_lane_conflicts": 0,
+          "boundary_attribution_words": 0,
+          "boundary_duplication_words": 0,
+          "attribution_segments": [],
+          "max_wer": 0.095074,
+          "ownership": null,
+          "duplication_count": 0,
+          "unresolved_words": 0,
+          "passed": false
+        }
+      },
+      "file_url_wer_bar": 0.15,
+      "file_url_wer_pass": {
+        "pre_terminal": false,
+        "final": true,
+        "reopened": true
+      }
+    }
+  ]
+}

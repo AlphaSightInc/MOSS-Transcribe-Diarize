@@ -93,3 +93,11 @@ def test_identity_rejects_speaker_collapse_and_switching():
     row['score']['id_switches']['A']=1
     assert not identity_passed(row)
     assert not identity_passed({})
+
+
+def test_identity_cannot_pass_by_omitting_one_reference_voice():
+    from tools.qualify.run import identity_passed
+    row=dict(status='completed',finalization='final',failure=None,
+             score=dict(ids_by_truth={'A':{'one':8}},id_switches={'A':0},unresolved_segments=0))
+    assert identity_passed(row,expected_voices=1)
+    assert not identity_passed(row,expected_voices=2)

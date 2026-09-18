@@ -1,0 +1,27 @@
+{
+  "name": "workspace_row_1",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0.106,
+  "artifacts": [
+    "workspace_row_1.log"
+  ],
+  "measurements": {
+    "signed_in": true,
+    "boot_ready": true,
+    "fresh_profile": true,
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 0.106,
+    "network": null,
+    "row": 1
+  }
+}

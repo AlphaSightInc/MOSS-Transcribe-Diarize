@@ -27,3 +27,12 @@ Refined interface verdict: identity's fixed app port/output do not require new a
 choosing owned app port 17867 and restoring its checkout-local output permits unchanged
 invocation. Initial blanket identity UNRUNNABLE was too conservative. The corresponding
 real local HTTP readiness test and identity collapse/switch falsifiers pass before dispatch.
+
+Final reporting falsifier: an alternating result omitting one entire reference voice
+must not pass merely because all remaining voices are stable. Freeze reference count
+from the unchanged bench inputs (one for single/gap, two for alternating), then judge.
+Added direct missing-voice negative control; no audio rerun or product policy change.
+Re-scoring the retained dry observations under this stricter predicate leaves statuses
+unchanged: PASS/FAIL/FAIL. Fresh run uses this final helper. Runner code differs from
+the dry run in this predicate and added budget metadata, so status comparison alone
+must not be described as strict same-code determinism.
