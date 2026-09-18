@@ -5,8 +5,9 @@ A segment has time, words, speaker identity, and optional `source_lane` (`system
 separate speaker ID on each lane, and both may eventually share a voiceprint/name.
 An absent lane means a legacy document, not an inferred microphone/system label.
 
-Order is start, then system before microphone, then end. Legacy-only documents
-retain start/end order. If mixed, untagged segments follow tagged ones on tied starts.
+Order is committed before provisional, then start, then system before microphone,
+then end. The draft tail stays below committed text. Legacy-only documents
+retain provisional-last, then start/end order. If mixed, untagged segments follow tagged ones on tied starts.
 Turn composition never crosses lane or speaker identity, even with identical names.
 Time overlap never establishes identity. No-id row keys include lane and speaker.
 

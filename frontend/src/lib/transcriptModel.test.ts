@@ -20,7 +20,7 @@ function item(overrides: Partial<TranscriptItem> = {}): TranscriptItem {
 }
 
 describe("reference transcript model", () => {
-  it("preserves input order when the complete chronological key is tied", () => {
+  it("orders a committed segment before the provisional tail until the next snapshot", () => {
     const provisional = upsertTranscriptItems([], [
       item({
         state: "provisional",
@@ -34,8 +34,8 @@ describe("reference transcript model", () => {
     ]);
 
     expect(merged).toMatchObject([
-      { id: "prov:7:0", state: "provisional", text: "provisional words" },
-      { id: "span-1:0", state: "confirmed", text: "committed words" }
+      { id: "span-1:0", state: "confirmed", text: "committed words" },
+      { id: "prov:7:0", state: "provisional", text: "provisional words" }
     ]);
   });
 

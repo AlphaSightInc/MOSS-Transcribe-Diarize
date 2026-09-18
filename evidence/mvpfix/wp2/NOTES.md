@@ -30,3 +30,16 @@ Failed/intermediate attempts retained:
 
 Scope deviations: initial standard test/build invocation wrote transient Vite cache/config artifacts through the prescribed shared node_modules symlink; existing lifecycle tests briefly created /tmp socket files (self-cleaned). No shared source/service changed. Later tooling avoids shared caches/config bundles and routes all scratch/socket paths inside this worktree. No push/merge/GitHub/deploy, decoder, tunnel or persistent server. No changes to QUALITY_BOUNDS, identity policy, readiness thresholds, ingress frame keys, lifecycle checks, or two-Refresh sentinel.
 Limits: no live WP1 integration, real voiceprint recognition, external subtitle-player rendering, production SQLite runtime qualification, or human visual sign-off claimed. UI tests accept a shared voiceprint result for independent lane IDs; they do not measure encoder behavior.
+
+## Fresh-context lead correction
+Lead review identified the initial 204/206 frontend failures as an existing product
+contract, not assertions superseded by lane ordering. Rewriting those expectations
+was incorrect. Restored both original test files verbatim from 37979e53; retained
+all new lane tests. Restored committed-before-provisional as the FIRST comparator
+key, followed by start, system-before-microphone, then end. No new policy introduced.
+Fresh restored-test falsifier: 216/218 passed, exactly the two original tests failed
+(2.69 s). Corrected implementation: 218/218 across 25 files (2.33 s); typecheck passes.
+Native production builds twice, unchanged source: all 7 asset-file SHA-256 values
+identical. Hashes are retained solely for the lead-requested byte comparison.
+The first hash glob included two directories and exited 1; corrected to file-only
+recursive enumeration, then compared successfully. Both builds themselves passed.

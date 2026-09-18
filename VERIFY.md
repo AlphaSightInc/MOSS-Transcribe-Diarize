@@ -5,7 +5,7 @@ User explicitly requires a fresh session in pane MOSS:3.2. This is the remaining
 Worktree: `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp2-lane-consumers`
 Expected branch: `mvpfix/wp2-lane-consumers`; base `37979e53`.
 Question: do published overlapping lane segments survive persistence, history, UI/search/rename, all exports, and summary input while legacy remains usable?
-Contract: order start → system before microphone → end; preserve each speaker/lane, no cross-lane merging; no shifted subtitle times. Two speakers per lane can share a person's display name/voiceprint across lanes. No SQLite migration needed: schema v2 stores arbitrary JSON exactly.
+Contract: order committed before provisional → start → system before microphone → end; preserve each speaker/lane, no cross-lane merging; no shifted subtitle times. Two speakers per lane can share a person's display name/voiceprint across lanes. No SQLite migration needed: schema v2 stores arbitrary JSON exactly.
 
 ## Execute
 Always cwd = this worktree. Python must resolve this checkout; otherwise STOP verification and report the import mismatch.
