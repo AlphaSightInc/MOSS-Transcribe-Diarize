@@ -1,0 +1,520 @@
+........................................................................ [  3%]
+......EEE............................................................... [  7%]
+........................................................................ [ 11%]
+...........................................................F............ [ 15%]
+....................................................E................... [ 19%]
+........................................................................ [ 23%]
+...............................EE..EEEEE...EEEEE.E...................EEE [ 27%]
+EEEE..............EE..............EE.................................... [ 31%]
+..................................F..................................... [ 35%]
+........................................................................ [ 39%]
+........................................................................ [ 43%]
+.................................................EEEEEEEEEEEEEEE........ [ 47%]
+........................................................................ [ 51%]
+.................................................................. [ 54%]
+..
+==================================== ERRORS ====================================
+_ ERROR at setup of test_status_capture_binds_each_rendering_to_its_own_response[None] _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_admin_status_capture.py, line 14
+  @pytest.mark.parametrize("corrupt", [None, "human", "json"])
+  def test_status_capture_binds_each_rendering_to_its_own_response(monkeypatch, corrupt):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_admin_status_capture.py:14
+_ ERROR at setup of test_status_capture_binds_each_rendering_to_its_own_response[human] _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_admin_status_capture.py, line 14
+  @pytest.mark.parametrize("corrupt", [None, "human", "json"])
+  def test_status_capture_binds_each_rendering_to_its_own_response(monkeypatch, corrupt):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_admin_status_capture.py:14
+_ ERROR at setup of test_status_capture_binds_each_rendering_to_its_own_response[json] _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_admin_status_capture.py, line 14
+  @pytest.mark.parametrize("corrupt", [None, "human", "json"])
+  def test_status_capture_binds_each_rendering_to_its_own_response(monkeypatch, corrupt):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_admin_status_capture.py:14
+_ ERROR at setup of test_revoke_between_file_audio_and_finish_preserves_bytes_as_partial _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_file_mp3_artifact.py, line 261
+  def test_revoke_between_file_audio_and_finish_preserves_bytes_as_partial(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_file_mp3_artifact.py:261
+_ ERROR at setup of test_failed_operator_command_projects_bounded_safe_error_context _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py, line 492
+  def test_failed_operator_command_projects_bounded_safe_error_context(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py:492
+_ ERROR at setup of test_failed_active_live_revoke_keeps_uds_status_and_shutdown_snapshot_safe _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py, line 548
+  def test_failed_active_live_revoke_keeps_uds_status_and_shutdown_snapshot_safe(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py:548
+_ ERROR at setup of test_runtime_exception_class_code_keeps_uds_status_available_and_safe _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py, line 685
+  def test_runtime_exception_class_code_keeps_uds_status_available_and_safe(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py:685
+_ ERROR at setup of test_post_mutation_observation_failure_does_not_rewrite_account_result _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py, line 747
+  def test_post_mutation_observation_failure_does_not_rewrite_account_result(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py:747
+_ ERROR at setup of test_status_uses_existing_private_socket_and_cli_human_json _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py, line 773
+  def test_status_uses_existing_private_socket_and_cli_human_json(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py:773
+_ ERROR at setup of test_shutdown_journal_observes_service_owned_revoke_after_handler_cancellation _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py, line 801
+  def test_shutdown_journal_observes_service_owned_revoke_after_handler_cancellation(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py:801
+_ ERROR at setup of test_lifespan_observes_held_live_shutdown_failure_before_final_status _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py, line 875
+  def test_lifespan_observes_held_live_shutdown_failure_before_final_status(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_operator_status.py:875
+_ ERROR at setup of test_host_revoke_waits_for_file_quiescence_and_fences_late_result _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py, line 200
+  def test_host_revoke_waits_for_file_quiescence_and_fences_late_result(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py:200
+_ ERROR at setup of test_operator_interrupt_claims_one_file_task_and_leaves_peer_running _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py, line 264
+  def test_operator_interrupt_claims_one_file_task_and_leaves_peer_running(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py:264
+__ ERROR at setup of test_control_shutdown_joins_service_owned_file_interrupt __
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py, line 334
+  def test_control_shutdown_joins_service_owned_file_interrupt(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py:334
+_ ERROR at setup of test_operator_interrupt_downgrades_file_audio_at_finish_boundary _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py, line 405
+  def test_operator_interrupt_downgrades_file_audio_at_finish_boundary(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py:405
+_ ERROR at setup of test_control_shutdown_joins_service_owned_file_revoke_and_runner _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py, line 462
+  def test_control_shutdown_joins_service_owned_file_revoke_and_runner(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py:462
+_______ ERROR at setup of test_revocation_fences_late_file_result_commit _______
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py, line 567
+  def test_revocation_fences_late_file_result_commit(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_file_meeting.py:567
+_ ERROR at setup of test_revoke_fences_all_live_before_first_settlement_await __
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 1099
+  def test_revoke_fences_all_live_before_first_settlement_await(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:1099
+_ ERROR at setup of test_revoke_joins_admitted_commit_and_skips_queued_second_publication _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 1199
+  def test_revoke_joins_admitted_commit_and_skips_queued_second_publication(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:1199
+_ ERROR at setup of test_operator_interrupt_joins_admitted_live_commit_and_skips_late_result _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 1285
+  def test_operator_interrupt_joins_admitted_live_commit_and_skips_late_result(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:1285
+_ ERROR at setup of test_operator_interrupt_returns_durable_while_held_live_inference_is_later_discarded _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 1486
+  def test_operator_interrupt_returns_durable_while_held_live_inference_is_later_discarded(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:1486
+_ ERROR at setup of test_operator_interrupt_downgrades_verified_complete_live_audio_without_reencoding _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 1592
+  def test_operator_interrupt_downgrades_verified_complete_live_audio_without_reencoding(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:1592
+_ ERROR at setup of test_revoke_joins_real_commit_before_binding_coroutine_resumes _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 1639
+  def test_revoke_joins_real_commit_before_binding_coroutine_resumes(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:1639
+_ ERROR at setup of test_control_revoke_returns_after_durable_interrupt_and_fresh_generation _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 1739
+  def test_control_revoke_returns_after_durable_interrupt_and_fresh_generation(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:1739
+_ ERROR at setup of test_account_result_fence_joins_terminal_audio_thread_instead_of_cancelling _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 2321
+  def test_account_result_fence_joins_terminal_audio_thread_instead_of_cancelling(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:2321
+_ ERROR at setup of test_control_shutdown_joins_service_owned_revoke_and_terminal_audio _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 2403
+  def test_control_shutdown_joins_service_owned_revoke_and_terminal_audio(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:2403
+_ ERROR at setup of test_revoke_recovers_unregistered_live_row_after_transient_create_cleanup_refusal _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 2996
+  def test_revoke_recovers_unregistered_live_row_after_transient_create_cleanup_refusal(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:2996
+_ ERROR at setup of test_persistent_unregistered_live_cleanup_blocks_revoke_until_restart_retry _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py, line 3060
+  def test_persistent_unregistered_live_cleanup_blocks_revoke_until_restart_retry(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_owner_bound_live_meeting.py:3060
+_ ERROR at setup of test_request_reads_wait_for_terminal_transaction_commit_or_rollback _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 41
+  def test_request_reads_wait_for_terminal_transaction_commit_or_rollback(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:41
+_ ERROR at setup of test_schema_v2_contains_exact_ownership_tables_and_settings _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 134
+  def test_schema_v2_contains_exact_ownership_tables_and_settings(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:134
+_ ERROR at setup of test_existing_non_v2_database_is_refused_without_mutating_its_bytes_or_creating_sidecars _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 169
+  def test_existing_non_v2_database_is_refused_without_mutating_its_bytes_or_creating_sidecars(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:169
+_ ERROR at setup of test_wrong_sqlite_runtime_is_refused_before_database_or_parent_creation _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 194
+  def test_wrong_sqlite_runtime_is_refused_before_database_or_parent_creation(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:194
+_ ERROR at setup of test_composite_ownership_foreign_keys_reject_cross_account_children _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 207
+  def test_composite_ownership_foreign_keys_reject_cross_account_children(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:207
+_ ERROR at setup of test_product_app_startup_interrupts_existing_active_meetings _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 231
+  def test_product_app_startup_interrupts_existing_active_meetings(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:231
+_ ERROR at setup of test_control_socket_is_private_single_owner_and_removed_on_shutdown _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 254
+  def test_control_socket_is_private_single_owner_and_removed_on_shutdown(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:254
+_ ERROR at setup of test_control_socket_refuses_non_socket_path_without_mutation _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 272
+  def test_control_socket_refuses_non_socket_path_without_mutation(tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:272
+_ ERROR at setup of test_control_shutdown_cancels_held_command_and_removes_socket _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 284
+  def test_control_shutdown_cancels_held_command_and_removes_socket() -> None:
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:284
+_ ERROR at setup of test_mtd_admin_account_commands_share_the_product_default_control_socket _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 313
+  def test_mtd_admin_account_commands_share_the_product_default_control_socket():
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:313
+_ ERROR at setup of test_mtd_admin_meeting_interrupt_uses_one_content_free_control_command _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 324
+  def test_mtd_admin_meeting_interrupt_uses_one_content_free_control_command():
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:324
+_ ERROR at setup of test_active_meeting_without_process_owner_fails_interrupt_instead_of_claiming_no_change _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 353
+  def test_active_meeting_without_process_owner_fails_interrupt_instead_of_claiming_no_change():
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:353
+_ ERROR at setup of test_mtd_admin_help_does_not_import_optional_model_runtime _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 379
+  def test_mtd_admin_help_does_not_import_optional_model_runtime():
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:379
+_ ERROR at setup of test_packaged_phase2_tls_entrypoint_constructs_the_account_app _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 409
+  def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, tmp_path: Path):
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:409
+_ ERROR at setup of test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_finalizer _
+file /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py, line 509
+  def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_finalizer(
+E       The fixture value for "monkeypatch" is not available during teardown because it was not previously requested.
+>       Only fixtures that were already active can be retrieved during teardown.
+>       Request the fixture before teardown begins by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/tests/phase2/test_workspace_lifecycle.py:509
+=================================== FAILURES ===================================
+____________ test_reader_retires_draft_by_audio_boundary[multiple] _____________
+
+replacement = 'multiple'
+
+    @pytest.mark.parametrize('replacement', ['preview', 'multiple', 'empty', 'abort'])
+    def test_reader_retires_draft_by_audio_boundary(replacement):
+        r, _, sid = runtime(RecordingDecoder())
+        r.accept_frame(sid, _frame(0)); finished(r)
+        first = r.snapshot(sid).to_dict()
+        import copy
+        second = copy.deepcopy(first)
+        # Even a stale transport draft cannot survive the reader's canonical boundary.
+        if replacement == 'preview':
+            second['session']['provisional'] = dict(generation=1, start_sample=0,
+                                                   end_sample=1000, transcript='[0][S00]confirmed preview[0.0625]')
+        elif replacement == 'abort':
+            second['session']['status'] = 'aborted'
+        else:
+            second['session']['committed_samples'] = 1000
+            second['session']['committed'] = [dict(span_id=0, start_sample=0, end_sample=1000,
+                transcript='[0][S00]one[0.03][0.03][S00]two[0.0625]' if replacement == 'multiple' else '',
+                revised_transcript=None)]
+        rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
+        assert len(rows[0]) == 1
+>       assert len(rows[1]) == {'preview': 1, 'multiple': 2, 'empty': 0, 'abort': 0}[replacement]
+E       assert 0 == 2
+E        +  where 0 = len([])
+
+tests/phase2/test_draft_lane.py:159: AssertionError
+__________ test_launcher_without_prompt_finalizer_builds_http_request __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11caeb290>
+
+    def test_launcher_without_prompt_finalizer_builds_http_request(monkeypatch):
+        import io
+        import json
+        from moss_transcribe_diarize.app.phase2_web_cli import parse_args, _build_file_runner
+        from moss_transcribe_diarize.app.live_transcript_convergence import TerminalDecodePlan, RollingStatus
+        from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
+    
+        # Mirrors account-web-launcher.sh: deliberately no --prompt.
+        args = parse_args([
+            '--database', '/tmp/account.sqlite', '--control-socket', '/tmp/control.sock',
+            '--tls-certfile', '/tmp/cert.pem', '--tls-keyfile', '/tmp/key.pem',
+            '--backend', 'vllm', '--model', '/tmp/model',
+            '--vllm-base-url', 'http://127.0.0.1:8000/v1',
+            '--vllm-model', 'OpenMOSS-Team/MOSS-Transcribe-Diarize', '--vllm-timeout', '1800',
+            '--file-work-root', '/tmp/file-work', '--meeting-audio-root', '/tmp/audio',
+            '--live-provider-manifest', '/tmp/provider.json', '--live-helper-lease-seconds', '30',
+            '--host', '0.0.0.0', '--port', '7861', '--max-len', '16384', '--max-new-tokens', '12000',
+        ])
+        assert args.prompt is None
+        requests = []
+        class Response(io.BytesIO):
+            headers = {'Content-Type': 'application/json'}
+        def fake_urlopen(request, **kwargs):
+            requests.append(request)
+            return Response(json.dumps({'text': '[0][S01]test[2.5]',
+                            'usage': {'completion_tokens': 12, 'prompt_tokens': 10}}).encode())
+        monkeypatch.setattr('urllib.request.urlopen', fake_urlopen)
+        finalizer = runner_composition.build_terminal_finalizer(
+            runner=_build_file_runner(args), prompt=args.prompt, max_length=args.max_len,
+            max_new_tokens=args.max_new_tokens, decoding=args.decoding,
+            temperature=args.temperature, max_length_cap=args.max_len,
+        )
+        class Tape:
+            def gaps(self, end_sample): return ()
+            def read(self, *, start_sample, end_sample): return b'\0\0' * (end_sample-start_sample)
+        finalizer.finalize(
+            plan=TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0,
+                rolling_status=RollingStatus.ROLLING, windows_completed=0, windows_failed=0),
+            tape=Tape(), base_text_revision_version=0,
+        )
+>       assert len(requests) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/phase2/test_runner_composition.py:153: AssertionError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/phase2/test_admin_status_capture.py::test_status_capture_binds_each_rendering_to_its_own_response[None]
+tests/phase2/test_admin_status_capture.py::test_status_capture_binds_each_rendering_to_its_own_response[human]
+tests/phase2/test_admin_status_capture.py::test_status_capture_binds_each_rendering_to_its_own_response[json]
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/evidence/mvpfix/wp11/local_scratch.py:25: PytestRemovedIn10Warning: Calling request.getfixturevalue("monkeypatch") during teardown is deprecated.
+  Please request the fixture before teardown begins, either by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+  See https://docs.pytest.org/en/stable/deprecations.html#dynamic-fixture-request-during-teardown
+    patch = item._request.getfixturevalue('monkeypatch')
+
+tests/phase2/test_atomic_cutover.py: 17 warnings
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/moss_transcribe_diarize/phase2_cutover.py:1410: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    source.extractall(extraction)
+
+tests/phase2/test_file_mp3_artifact.py: 1 warning
+tests/phase2/test_operator_status.py: 7 warnings
+tests/phase2/test_owner_bound_file_meeting.py: 6 warnings
+tests/phase2/test_owner_bound_live_meeting.py: 11 warnings
+tests/phase2/test_workspace_lifecycle.py: 15 warnings
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/evidence/mvpfix/wp11/local_scratch.py:20: PytestRemovedIn10Warning: Calling request.getfixturevalue("monkeypatch") during teardown is deprecated.
+  Please request the fixture before teardown begins, either by declaring it in the fixture signature or by calling request.getfixturevalue() before the fixture yields.
+  See https://docs.pytest.org/en/stable/deprecations.html#dynamic-fixture-request-during-teardown
+    patch = item._request.getfixturevalue('monkeypatch')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_draft_lane.py::test_reader_retires_draft_by_audio_boundary[multiple]
+FAILED tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+ERROR tests/phase2/test_admin_status_capture.py::test_status_capture_binds_each_rendering_to_its_own_response[None]
+ERROR tests/phase2/test_admin_status_capture.py::test_status_capture_binds_each_rendering_to_its_own_response[human]
+ERROR tests/phase2/test_admin_status_capture.py::test_status_capture_binds_each_rendering_to_its_own_response[json]
+ERROR tests/phase2/test_file_mp3_artifact.py::test_revoke_between_file_audio_and_finish_preserves_bytes_as_partial
+ERROR tests/phase2/test_operator_status.py::test_failed_operator_command_projects_bounded_safe_error_context
+ERROR tests/phase2/test_operator_status.py::test_failed_active_live_revoke_keeps_uds_status_and_shutdown_snapshot_safe
+ERROR tests/phase2/test_operator_status.py::test_runtime_exception_class_code_keeps_uds_status_available_and_safe
+ERROR tests/phase2/test_operator_status.py::test_post_mutation_observation_failure_does_not_rewrite_account_result
+ERROR tests/phase2/test_operator_status.py::test_status_uses_existing_private_socket_and_cli_human_json
+ERROR tests/phase2/test_operator_status.py::test_shutdown_journal_observes_service_owned_revoke_after_handler_cancellation
+ERROR tests/phase2/test_operator_status.py::test_lifespan_observes_held_live_shutdown_failure_before_final_status
+ERROR tests/phase2/test_owner_bound_file_meeting.py::test_host_revoke_waits_for_file_quiescence_and_fences_late_result
+ERROR tests/phase2/test_owner_bound_file_meeting.py::test_operator_interrupt_claims_one_file_task_and_leaves_peer_running
+ERROR tests/phase2/test_owner_bound_file_meeting.py::test_control_shutdown_joins_service_owned_file_interrupt
+ERROR tests/phase2/test_owner_bound_file_meeting.py::test_operator_interrupt_downgrades_file_audio_at_finish_boundary
+ERROR tests/phase2/test_owner_bound_file_meeting.py::test_control_shutdown_joins_service_owned_file_revoke_and_runner
+ERROR tests/phase2/test_owner_bound_file_meeting.py::test_revocation_fences_late_file_result_commit
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_revoke_fences_all_live_before_first_settlement_await
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_revoke_joins_admitted_commit_and_skips_queued_second_publication
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_operator_interrupt_joins_admitted_live_commit_and_skips_late_result
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_operator_interrupt_returns_durable_while_held_live_inference_is_later_discarded
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_operator_interrupt_downgrades_verified_complete_live_audio_without_reencoding
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_revoke_joins_real_commit_before_binding_coroutine_resumes
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_control_revoke_returns_after_durable_interrupt_and_fresh_generation
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_account_result_fence_joins_terminal_audio_thread_instead_of_cancelling
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_control_shutdown_joins_service_owned_revoke_and_terminal_audio
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_revoke_recovers_unregistered_live_row_after_transient_create_cleanup_refusal
+ERROR tests/phase2/test_owner_bound_live_meeting.py::test_persistent_unregistered_live_cleanup_blocks_revoke_until_restart_retry
+ERROR tests/phase2/test_workspace_lifecycle.py::test_request_reads_wait_for_terminal_transaction_commit_or_rollback
+ERROR tests/phase2/test_workspace_lifecycle.py::test_schema_v2_contains_exact_ownership_tables_and_settings
+ERROR tests/phase2/test_workspace_lifecycle.py::test_existing_non_v2_database_is_refused_without_mutating_its_bytes_or_creating_sidecars
+ERROR tests/phase2/test_workspace_lifecycle.py::test_wrong_sqlite_runtime_is_refused_before_database_or_parent_creation
+ERROR tests/phase2/test_workspace_lifecycle.py::test_composite_ownership_foreign_keys_reject_cross_account_children
+ERROR tests/phase2/test_workspace_lifecycle.py::test_product_app_startup_interrupts_existing_active_meetings
+ERROR tests/phase2/test_workspace_lifecycle.py::test_control_socket_is_private_single_owner_and_removed_on_shutdown
+ERROR tests/phase2/test_workspace_lifecycle.py::test_control_socket_refuses_non_socket_path_without_mutation
+ERROR tests/phase2/test_workspace_lifecycle.py::test_control_shutdown_cancels_held_command_and_removes_socket
+ERROR tests/phase2/test_workspace_lifecycle.py::test_mtd_admin_account_commands_share_the_product_default_control_socket
+ERROR tests/phase2/test_workspace_lifecycle.py::test_mtd_admin_meeting_interrupt_uses_one_content_free_control_command
+ERROR tests/phase2/test_workspace_lifecycle.py::test_active_meeting_without_process_owner_fails_interrupt_instead_of_claiming_no_change
+ERROR tests/phase2/test_workspace_lifecycle.py::test_mtd_admin_help_does_not_import_optional_model_runtime
+ERROR tests/phase2/test_workspace_lifecycle.py::test_packaged_phase2_tls_entrypoint_constructs_the_account_app
+ERROR tests/phase2/test_workspace_lifecycle.py::test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_finalizer
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/shutil.py:674: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+2 failed, 959 passed, 61 warnings, 43 errors, 6 subtests passed in 124.98s (0:02:04)

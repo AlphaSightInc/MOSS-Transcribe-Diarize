@@ -1,0 +1,42 @@
+.................F.......................F......                         [100%]
+=================================== FAILURES ===================================
+_______________ test_download_corruptions_fail[legacy-time-json] _______________
+
+fmt = 'json', mutation = 'time'
+real_exports = {'md': "## [00:00:00] Bill Ackman\n\nAnd the key is to figure out what something's worth and you have to kind of weigh...e speculators. They didn't know what things were worth, they just knew they were going up. That's speculation.\n", ...}
+meeting = {'transcript': {'segments': [{'start': 0.0, 'end': 29.0, 'text': "And the key is to figure out what something's worth ... didn't know what things were worth, they just knew they were going up. That's speculation.", 'id': 'system-4', ...}]}}
+
+    @pytest.mark.parametrize('fmt', FORMATS)
+    @pytest.mark.parametrize('mutation', ['words','label','time'])
+    def test_download_corruptions_fail(fmt,mutation,real_exports,meeting):
+        text=real_exports[fmt]
+        if mutation=='words': text=text.replace('And the key','Unrelated invented transcript.')
+        if mutation=='label': text=text.replace('Bill Ackman','Wrong speaker')
+        if mutation=='time':
+            text=text.replace('0.0','8.0').replace('00:00:00','00:00:08')
+>       assert not compare_export(fmt,text,meeting)['ok']
+E       assert not True
+
+tests/phase2/test_export_oracle.py:47: AssertionError
+______________ test_download_corruptions_fail[overlap-time-json] _______________
+
+fmt = 'json', mutation = 'time'
+real_exports = {'md': "## [00:00:00] Bill Ackman\n\nAnd the key is to figure out what something's worth and you have to kind of weigh...\n\n9\n00:00:55,000 --> 00:01:00,000\nLex Fridman: Is there still a young kid in China that's able to dream to\n", ...}
+meeting = {'transcript': {'schema_version': 2, 'segments': [{'start': 0.0, 'end': 29.0, 'text': "And the key is to figure out wh...ies, you look for opportunities, you drive opportunities, it's all self-motivated.", 'id': 'microphone-2', ...}, ...]}}
+
+    @pytest.mark.parametrize('fmt', FORMATS)
+    @pytest.mark.parametrize('mutation', ['words','label','time'])
+    def test_download_corruptions_fail(fmt,mutation,real_exports,meeting):
+        text=real_exports[fmt]
+        if mutation=='words': text=text.replace('And the key','Unrelated invented transcript.')
+        if mutation=='label': text=text.replace('Bill Ackman','Wrong speaker')
+        if mutation=='time':
+            text=text.replace('0.0','8.0').replace('00:00:00','00:00:08')
+>       assert not compare_export(fmt,text,meeting)['ok']
+E       assert not True
+
+tests/phase2/test_export_oracle.py:47: AssertionError
+=========================== short test summary info ============================
+FAILED tests/phase2/test_export_oracle.py::test_download_corruptions_fail[legacy-time-json]
+FAILED tests/phase2/test_export_oracle.py::test_download_corruptions_fail[overlap-time-json]
+2 failed, 46 passed in 0.26s
