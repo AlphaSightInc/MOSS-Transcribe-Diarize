@@ -1,0 +1,1315 @@
+{
+  "saved_and_pre_edit_metrics_recomputed": 52,
+  "saved_vocabulary_metrics_recomputed": 52,
+  "saved_final_matches": 26,
+  "cross_lane_disjoint_speaker_sets": 26,
+  "cases": [
+    {
+      "run_id": "fixed-v1-zero",
+      "case": "zero",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 24,
+      "saved_words_system_microphone": [
+        86,
+        0
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": []
+      },
+      "stop_to_final_seconds": 4.999513749993639,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_exact_surface_correspondence": 86,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 84,
+            "substitutions": 1,
+            "omissions": 111,
+            "additions": 7,
+            "wer": 0.6329787234042553
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 49,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 50,
+          "pre_vocabulary_retained_at_final": 49,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 0,
+          "saved_words_via_exact_surface_correspondence": 0,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 0,
+            "hypothesis_words": 0,
+            "substitutions": 0,
+            "omissions": 0,
+            "additions": 0,
+            "wer": null
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 0,
+            "hypothesis_words": 0,
+            "substitutions": 0,
+            "omissions": 0,
+            "additions": 0,
+            "wer": null
+          },
+          "reference_boundary_crossing_rows": 0,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 0,
+            "hypothesis_words": 0,
+            "substitutions": 0,
+            "omissions": 0,
+            "additions": 0,
+            "wer": null
+          },
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 0,
+          "pre_retained_unique_vocabulary_vs_control": 0,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 0,
+          "pre_vocabulary_retained_at_final": 0,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 494,
+        "last": 506,
+        "count": 13,
+        "per_capture_minute": 32.5,
+        "assignment": "measured cumulative request counters before and after single meeting"
+      },
+      "queue": {
+        "samples": 241,
+        "canonical_max": 1,
+        "pending_signals_samples": 241,
+        "pending_signals_max": 1
+      },
+      "individual_2_5s_decodes": {
+        "count": 9,
+        "median_seconds": 0.25647133401071187,
+        "max_seconds": 1.133293874998344
+      }
+    },
+    {
+      "run_id": "resume-v5-stop_mid",
+      "case": "stop_mid",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 12,
+      "saved_words_system_microphone": [
+        38,
+        31
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": [
+          "speaker-0002"
+        ]
+      },
+      "stop_to_final_seconds": 8.729191791993799,
+      "lanes": {
+        "system": {
+          "final_words": 38,
+          "saved_words_via_exact_surface_correspondence": 38,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 38,
+            "substitutions": 1,
+            "omissions": 150,
+            "additions": 0,
+            "wer": 0.8031914893617021
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 37,
+            "substitutions": 1,
+            "omissions": 152,
+            "additions": 1,
+            "wer": 0.8191489361702128
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 38,
+            "substitutions": 1,
+            "omissions": 150,
+            "additions": 0,
+            "wer": 0.8031914893617021
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 32,
+          "pre_retained_unique_vocabulary_vs_control": 31,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": false,
+          "pre_unique_vocabulary": 31,
+          "pre_vocabulary_retained_at_final": 31,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 31,
+          "saved_words_via_exact_surface_correspondence": 31,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 31,
+            "substitutions": 0,
+            "omissions": 122,
+            "additions": 8,
+            "wer": 0.896551724137931
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 28,
+            "substitutions": 3,
+            "omissions": 124,
+            "additions": 7,
+            "wer": 0.9241379310344827
+          },
+          "reference_boundary_crossing_rows": 4,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 31,
+            "substitutions": 0,
+            "omissions": 122,
+            "additions": 8,
+            "wer": 0.896551724137931
+          },
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 26,
+          "pre_retained_unique_vocabulary_vs_control": 22,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": false,
+          "pre_unique_vocabulary": 24,
+          "pre_vocabulary_retained_at_final": 24,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 294,
+        "last": 307,
+        "count": 14,
+        "per_capture_minute": 70.0,
+        "assignment": "measured cumulative request counters before and after single meeting"
+      },
+      "queue": {
+        "samples": 121,
+        "canonical_max": 0,
+        "pending_signals_samples": 121,
+        "pending_signals_max": 1
+      },
+      "individual_2_5s_decodes": {
+        "count": 8,
+        "median_seconds": 0.20329829199909,
+        "max_seconds": 1.0060411669983296
+      }
+    },
+    {
+      "run_id": "fixed-v1-mic-10",
+      "case": "mic-10",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 24,
+      "saved_words_system_microphone": [
+        86,
+        56
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": [
+          "speaker-0002"
+        ]
+      },
+      "stop_to_final_seconds": 11.572018499995465,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_exact_surface_correspondence": 86,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 71,
+            "substitutions": 5,
+            "omissions": 120,
+            "additions": 3,
+            "wer": 0.6808510638297872
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 46,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 56,
+          "saved_words_via_exact_surface_correspondence": 56,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 6,
+            "wer": 0.696551724137931
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 52,
+            "substitutions": 1,
+            "omissions": 103,
+            "additions": 10,
+            "wer": 0.7862068965517242
+          },
+          "reference_boundary_crossing_rows": 4,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 6,
+            "wer": 0.696551724137931
+          },
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 40,
+          "pre_vocabulary_retained_at_final": 37,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 533,
+        "last": 558,
+        "count": 26,
+        "per_capture_minute": 65.0,
+        "assignment": "measured cumulative request counters before and after single meeting"
+      },
+      "queue": {
+        "samples": 241,
+        "canonical_max": 1,
+        "pending_signals_samples": 241,
+        "pending_signals_max": 1
+      },
+      "individual_2_5s_decodes": {
+        "count": 18,
+        "median_seconds": 0.14304514549439773,
+        "max_seconds": 1.0937379579991102
+      }
+    },
+    {
+      "run_id": "resume-v5-alternation",
+      "case": "alternation",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 48,
+      "saved_words_system_microphone": [
+        86,
+        69
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": [
+          "speaker-0002",
+          "speaker-0003"
+        ]
+      },
+      "stop_to_final_seconds": 10.315231082990067,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_exact_surface_correspondence": 86,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 89,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 7,
+            "wer": 0.6117021276595744
+          },
+          "reference_boundary_crossing_rows": 1,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 49,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": false,
+          "pre_unique_vocabulary": 50,
+          "pre_vocabulary_retained_at_final": 49,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 69,
+          "saved_words_via_exact_surface_correspondence": 69,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 69,
+            "substitutions": 2,
+            "omissions": 76,
+            "additions": 0,
+            "wer": 0.5379310344827586
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 62,
+            "substitutions": 1,
+            "omissions": 85,
+            "additions": 2,
+            "wer": 0.6068965517241379
+          },
+          "reference_boundary_crossing_rows": 2,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 69,
+            "substitutions": 2,
+            "omissions": 76,
+            "additions": 0,
+            "wer": 0.5379310344827586
+          },
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 13,
+          "pre_retained_unique_vocabulary_vs_control": 13,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": false,
+          "pre_unique_vocabulary": 43,
+          "pre_vocabulary_retained_at_final": 40,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 266,
+        "last": 293,
+        "count": 28,
+        "per_capture_minute": 35.0,
+        "assignment": "measured cumulative request counters before and after single meeting"
+      },
+      "queue": {
+        "samples": 481,
+        "canonical_max": 1,
+        "pending_signals_samples": 481,
+        "pending_signals_max": 1
+      },
+      "individual_2_5s_decodes": {
+        "count": 20,
+        "median_seconds": 0.25409635449614143,
+        "max_seconds": 1.0344880000047851
+      }
+    },
+    {
+      "run_id": "fixed-v1-system-10",
+      "case": "system-10",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 24,
+      "saved_words_system_microphone": [
+        84,
+        56
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": [
+          "speaker-0002"
+        ]
+      },
+      "stop_to_final_seconds": 11.763543958004448,
+      "lanes": {
+        "system": {
+          "final_words": 84,
+          "saved_words_via_exact_surface_correspondence": 84,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 84,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 2,
+            "wer": 0.5851063829787234
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 71,
+            "substitutions": 4,
+            "omissions": 120,
+            "additions": 3,
+            "wer": 0.675531914893617
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 84,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 2,
+            "wer": 0.5851063829787234
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 49,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 45,
+          "pre_vocabulary_retained_at_final": 43,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 56,
+          "saved_words_via_exact_surface_correspondence": 56,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 6,
+            "wer": 0.696551724137931
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 51,
+            "substitutions": 1,
+            "omissions": 103,
+            "additions": 9,
+            "wer": 0.7793103448275862
+          },
+          "reference_boundary_crossing_rows": 4,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 6,
+            "wer": 0.696551724137931
+          },
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 40,
+          "pre_vocabulary_retained_at_final": 37,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 585,
+        "last": 610,
+        "count": 26,
+        "per_capture_minute": 65.0,
+        "assignment": "measured cumulative request counters before and after single meeting"
+      },
+      "queue": {
+        "samples": 241,
+        "canonical_max": 1,
+        "pending_signals_samples": 241,
+        "pending_signals_max": 1
+      },
+      "individual_2_5s_decodes": {
+        "count": 18,
+        "median_seconds": 0.1512836249967222,
+        "max_seconds": 1.0094865840073908
+      }
+    },
+    {
+      "run_id": "fixed-v1-mic-15",
+      "case": "mic-15",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 24,
+      "saved_words_system_microphone": [
+        86,
+        60
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": [
+          "speaker-0002"
+        ]
+      },
+      "stop_to_final_seconds": 11.63974120898638,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_exact_surface_correspondence": 86,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 71,
+            "substitutions": 5,
+            "omissions": 120,
+            "additions": 3,
+            "wer": 0.6808510638297872
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 46,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 60,
+          "saved_words_via_exact_surface_correspondence": 60,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 60,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 10,
+            "wer": 0.7241379310344828
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 52,
+            "substitutions": 1,
+            "omissions": 103,
+            "additions": 10,
+            "wer": 0.7862068965517242
+          },
+          "reference_boundary_crossing_rows": 4,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 60,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 10,
+            "wer": 0.7241379310344828
+          },
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 40,
+          "pre_vocabulary_retained_at_final": 39,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 559,
+        "last": 584,
+        "count": 26,
+        "per_capture_minute": 65.0,
+        "assignment": "measured cumulative request counters before and after single meeting"
+      },
+      "queue": {
+        "samples": 241,
+        "canonical_max": 1,
+        "pending_signals_samples": 241,
+        "pending_signals_max": 1
+      },
+      "individual_2_5s_decodes": {
+        "count": 18,
+        "median_seconds": 0.12963339599809842,
+        "max_seconds": 0.7828703330014832
+      }
+    },
+    {
+      "run_id": "resume-v5-reshare",
+      "case": "reshare",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 24,
+      "saved_words_system_microphone": [
+        86,
+        56
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": [
+          "speaker-0002"
+        ]
+      },
+      "stop_to_final_seconds": 11.849154625000665,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_exact_surface_correspondence": 86,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 71,
+            "substitutions": 5,
+            "omissions": 120,
+            "additions": 3,
+            "wer": 0.6808510638297872
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 46,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 56,
+          "saved_words_via_exact_surface_correspondence": 56,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 6,
+            "wer": 0.696551724137931
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 51,
+            "substitutions": 1,
+            "omissions": 103,
+            "additions": 9,
+            "wer": 0.7793103448275862
+          },
+          "reference_boundary_crossing_rows": 4,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 6,
+            "wer": 0.696551724137931
+          },
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 40,
+          "pre_vocabulary_retained_at_final": 37,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 308,
+        "last": 333,
+        "count": 26,
+        "per_capture_minute": 65.0,
+        "assignment": "measured cumulative request counters before and after single meeting"
+      },
+      "queue": {
+        "samples": 241,
+        "canonical_max": 1,
+        "pending_signals_samples": 241,
+        "pending_signals_max": 1
+      },
+      "individual_2_5s_decodes": {
+        "count": 18,
+        "median_seconds": 0.18955935450503603,
+        "max_seconds": 1.0265616249962477
+      }
+    },
+    {
+      "run_id": "system-15",
+      "case": "system-15",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 24,
+      "saved_words_system_microphone": [
+        86,
+        56
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": [
+          "speaker-0002"
+        ]
+      },
+      "stop_to_final_seconds": 11.268786917004036,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_exact_surface_correspondence": 86,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 72,
+            "substitutions": 4,
+            "omissions": 120,
+            "additions": 4,
+            "wer": 0.6808510638297872
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 45,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 56,
+          "saved_words_via_exact_surface_correspondence": 56,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 6,
+            "wer": 0.696551724137931
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 51,
+            "substitutions": 1,
+            "omissions": 103,
+            "additions": 9,
+            "wer": 0.7793103448275862
+          },
+          "reference_boundary_crossing_rows": 4,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 6,
+            "wer": 0.696551724137931
+          },
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 40,
+          "pre_vocabulary_retained_at_final": 37,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 157,
+        "last": 182,
+        "count": 26,
+        "per_capture_minute": 65.0,
+        "assignment": "serial case boundaries; checked against request log"
+      }
+    },
+    {
+      "run_id": "resume-v6-noise",
+      "case": "noise",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 24,
+      "saved_words_system_microphone": [
+        86,
+        0
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": []
+      },
+      "stop_to_final_seconds": 6.107974375001504,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_exact_surface_correspondence": 86,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 71,
+            "substitutions": 2,
+            "omissions": 119,
+            "additions": 2,
+            "wer": 0.6542553191489362
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 43,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 45,
+          "pre_vocabulary_retained_at_final": 43,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 0,
+          "saved_words_via_exact_surface_correspondence": 0,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 0,
+            "hypothesis_words": 0,
+            "substitutions": 0,
+            "omissions": 0,
+            "additions": 0,
+            "wer": null
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 0,
+            "hypothesis_words": 0,
+            "substitutions": 0,
+            "omissions": 0,
+            "additions": 0,
+            "wer": null
+          },
+          "reference_boundary_crossing_rows": 0,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 0,
+            "hypothesis_words": 0,
+            "substitutions": 0,
+            "omissions": 0,
+            "additions": 0,
+            "wer": null
+          },
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 0,
+          "pre_retained_unique_vocabulary_vs_control": 0,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 0,
+          "pre_vocabulary_retained_at_final": 0,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 334,
+        "last": 363,
+        "count": 30,
+        "per_capture_minute": 75.0,
+        "assignment": "measured cumulative request counters before and after single meeting"
+      },
+      "queue": {
+        "samples": 241,
+        "canonical_max": 1,
+        "pending_signals_samples": 241,
+        "pending_signals_max": 1
+      },
+      "individual_2_5s_decodes": {
+        "count": 18,
+        "median_seconds": 0.1738997290012776,
+        "max_seconds": 1.2145610419975128
+      }
+    },
+    {
+      "run_id": "fixed-v1-same",
+      "case": "same",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 24,
+      "saved_words_system_microphone": [
+        86,
+        86
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": [
+          "speaker-0002"
+        ]
+      },
+      "stop_to_final_seconds": 11.640392208995763,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_exact_surface_correspondence": 86,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 71,
+            "substitutions": 5,
+            "omissions": 120,
+            "additions": 3,
+            "wer": 0.6808510638297872
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 46,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 86,
+          "saved_words_via_exact_surface_correspondence": 86,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 71,
+            "substitutions": 5,
+            "omissions": 120,
+            "additions": 3,
+            "wer": 0.6808510638297872
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 46,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 468,
+        "last": 493,
+        "count": 26,
+        "per_capture_minute": 65.0,
+        "assignment": "measured cumulative request counters before and after single meeting"
+      },
+      "queue": {
+        "samples": 241,
+        "canonical_max": 1,
+        "pending_signals_samples": 241,
+        "pending_signals_max": 1
+      },
+      "individual_2_5s_decodes": {
+        "count": 18,
+        "median_seconds": 0.15219735400023637,
+        "max_seconds": 0.8410969159886008
+      }
+    },
+    {
+      "run_id": "fixed-v1-parity",
+      "case": "parity",
+      "verdict": "PASS named architectural falsifiers; no numerical acceptance inferred",
+      "capture_seconds": 24,
+      "saved_words_system_microphone": [
+        86,
+        56
+      ],
+      "speakers": {
+        "system": [
+          "speaker-0001"
+        ],
+        "microphone": [
+          "speaker-0002"
+        ]
+      },
+      "stop_to_final_seconds": 11.395471374999033,
+      "lanes": {
+        "system": {
+          "final_words": 86,
+          "saved_words_via_exact_surface_correspondence": 86,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 71,
+            "substitutions": 5,
+            "omissions": 120,
+            "additions": 3,
+            "wer": 0.6808510638297872
+          },
+          "reference_boundary_crossing_rows": 5,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 188,
+            "hypothesis_words": 86,
+            "substitutions": 2,
+            "omissions": 106,
+            "additions": 4,
+            "wer": 0.5957446808510638
+          },
+          "control_unique_vocabulary": 50,
+          "retained_unique_vocabulary": 50,
+          "pre_retained_unique_vocabulary_vs_control": 44,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 46,
+          "pre_vocabulary_retained_at_final": 44,
+          "unattributed_words": 0
+        },
+        "microphone": {
+          "final_words": 56,
+          "saved_words_via_exact_surface_correspondence": 56,
+          "attribution_method": "ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance",
+          "final_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 6,
+            "wer": 0.696551724137931
+          },
+          "pre_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 51,
+            "substitutions": 1,
+            "omissions": 103,
+            "additions": 9,
+            "wer": 0.7793103448275862
+          },
+          "reference_boundary_crossing_rows": 4,
+          "wer_limitation": "full reference includes unplayed audio; omissions are not all decoder loss",
+          "saved_vs_full_reference": {
+            "reference_words": 145,
+            "hypothesis_words": 56,
+            "substitutions": 0,
+            "omissions": 95,
+            "additions": 6,
+            "wer": 0.696551724137931
+          },
+          "control_unique_vocabulary": 45,
+          "retained_unique_vocabulary": 45,
+          "pre_retained_unique_vocabulary_vs_control": 37,
+          "control_gain": 1.0,
+          "control_capture_seconds": 24,
+          "same_capture_extent": true,
+          "pre_unique_vocabulary": 40,
+          "pre_vocabulary_retained_at_final": 37,
+          "unattributed_words": 0
+        }
+      },
+      "request_accounting": {
+        "first": 507,
+        "last": 532,
+        "count": 26,
+        "per_capture_minute": 65.0,
+        "assignment": "measured cumulative request counters before and after single meeting"
+      },
+      "queue": {
+        "samples": 241,
+        "canonical_max": 2,
+        "pending_signals_samples": 241,
+        "pending_signals_max": 1
+      },
+      "individual_2_5s_decodes": {
+        "count": 18,
+        "median_seconds": 0.14490958350506844,
+        "max_seconds": 0.8389782500016736
+      }
+    }
+  ],
+  "queue_samples": 6523,
+  "queue_sample_example_keys": [
+    "time",
+    "batch",
+    "live_canonical",
+    "live_refinement",
+    "live_provisional",
+    "worker_busy"
+  ],
+  "pending_signals_max": 1,
+  "canonical_queue_max": 3,
+  "baseline": "No retained matched mono per-span, queue, Stop-to-final or requests/minute control. Prior 24s whole-clip comparison: mono 1.420s vs serial 1.432s median of 3; not comparable to 2.5s per-lane decode latency."
+}

@@ -1,0 +1,11 @@
+$ git diff --check
+exit: 0
+
+$ lsof -nP -iTCP:17871 -sTCP:LISTEN
+exit: 1
+
+$ lsof -nP -iTCP:18101 -sTCP:LISTEN
+exit: 1
+
+frontend/node_modules restored: /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/frontend/node_modules
+No live stack, SSH forward, or decoder requests started in this fresh session. All started test processes exited. Scratch base retained at user-requested /private/tmp/claude-501/wp1base.
