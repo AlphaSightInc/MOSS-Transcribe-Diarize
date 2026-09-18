@@ -27,7 +27,12 @@ if (historyRoot) {
 }
 
 const voiceprintRoot = document.getElementById("voiceprint-bank-app");
-if (voiceprintRoot) render(<VoiceprintBank />, voiceprintRoot);
+const voiceprintSection = voiceprintRoot?.closest('[data-workspace-section="voiceprints"]');
+const historyBody = historyRoot?.querySelector(".history-panel .panel-body");
+if (voiceprintRoot) {
+  if (voiceprintSection && historyBody) historyBody.append(voiceprintSection);
+  render(<VoiceprintBank />, voiceprintRoot);
+}
 
 if (!root && !historyRoot && !voiceprintRoot) {
   throw new Error("Missing MOSS application root");

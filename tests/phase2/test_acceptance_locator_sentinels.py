@@ -65,10 +65,10 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
             action.evaluate("button => button.textContent = 'Different wording'")
             expect(_summary_action(page)).to_have_count(1)
 
-            page.get_by_role('button', name='Voiceprints', exact=True).click()
+            page.get_by_role('region', name='Meeting history', exact=True).get_by_role('tab', name='Voiceprints', exact=True).click()
             assert page.get_by_role('button', name='Refresh', exact=True).count() == 2
             history = page.get_by_role('region', name='Meeting history', exact=True)
-            history.get_by_role('button', name='Refresh', exact=True).click()
+            history.locator('.history-panel-actions').get_by_role('button', name='Refresh', exact=True).click()
         finally:
             browser.close()
 

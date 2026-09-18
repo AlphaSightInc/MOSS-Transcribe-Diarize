@@ -16,6 +16,7 @@ export const view = signal<AppView>("transcript");
 export const displayMode = signal<DisplayMode>("formatted");
 export const controlPanelCollapsed = signal(false);
 export const historyPanelCollapsed = signal(false);
+export const historyView = signal<"sessions" | "voiceprints">("sessions");
 export const autoscroll = signal(false);
 export const llmModalOpen = signal(false);
 export const toastQueue = signal<ToastItem[]>([]);
@@ -75,6 +76,7 @@ export function resetUiState(): void {
   displayMode.value = "formatted";
   controlPanelCollapsed.value = false;
   historyPanelCollapsed.value = false;
+  historyView.value = "sessions";
   autoscroll.value = false;
   llmModalOpen.value = false;
   clearToasts();

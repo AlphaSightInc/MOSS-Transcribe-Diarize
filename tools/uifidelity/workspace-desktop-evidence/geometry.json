@@ -1,0 +1,65 @@
+{
+  "viewport": [
+    1440,
+    900
+  ],
+  "scrollHeight": 900,
+  "bodyScrollHeight": 900,
+  "viewportMeta": "width=device-width, initial-scale=1",
+  "panels": [
+    {
+      "section": "file",
+      "x": 18,
+      "y": 14,
+      "width": 280,
+      "height": 281.5,
+      "top": 14,
+      "right": 298,
+      "bottom": 295.5,
+      "left": 18
+    },
+    {
+      "section": "live",
+      "x": 18,
+      "y": 307.5,
+      "width": 1112,
+      "height": 574.5,
+      "top": 307.5,
+      "right": 1130,
+      "bottom": 882,
+      "left": 18
+    },
+    {
+      "section": "history",
+      "x": 1142,
+      "y": 307.5,
+      "width": 280,
+      "height": 574.5,
+      "top": 307.5,
+      "right": 1422,
+      "bottom": 882,
+      "left": 1142
+    },
+    {
+      "section": "voiceprints",
+      "x": 1142,
+      "y": 14,
+      "width": 280,
+      "height": 281.5,
+      "top": 14,
+      "right": 1422,
+      "bottom": 295.5,
+      "left": 1142
+    }
+  ],
+  "history": {
+    "x": 1142,
+    "y": 307.5,
+    "width": 280,
+    "height": 574.5,
+    "top": 307.5,
+    "right": 1422,
+    "bottom": 882,
+    "left": 1142
+  }
+}

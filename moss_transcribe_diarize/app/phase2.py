@@ -2275,8 +2275,8 @@ def _workspace_html(
 <button type=\"submit\" class="btn btn-primary" style="align-self: flex-start">Transcribe files and URLs</button></form><p data-file-upload=\"status\" role=\"status\"></p><ul data-file-upload=\"results\"></ul></section>
 {live_body}
 <section id=\"workspace-history\" data-workspace-section=\"history\"><h2 class=\"phase2-workspace-heading\">Meeting history</h2>
-<div id=\"meeting-history-app\" data-history-root>{empty}{history}</div></section>
-<section id="workspace-voiceprints" data-workspace-section="voiceprints"><h2 class="phase2-workspace-heading">Private voice bank</h2><div id="voiceprint-bank-app"></div></section>
+<div id=\"meeting-history-app\" data-history-root>{empty}{history}</div>
+<section id="workspace-voiceprints" data-workspace-section="voiceprints"><h2 class="phase2-workspace-heading">Private voice bank</h2><div id="voiceprint-bank-app"></div></section></section>
 </section></main>
 <script type="module" src="{app_url}"></script>
 </body></html>"""

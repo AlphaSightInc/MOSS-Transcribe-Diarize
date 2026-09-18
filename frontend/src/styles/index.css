@@ -1480,9 +1480,14 @@ textarea:focus {
     background 0.15s ease;
 }
 
-.legend-chip:hover {
+.legend-chip:hover:not(:disabled) {
   border-color: var(--line-2);
   background: rgba(255, 255, 255, 0.9);
+}
+
+button.legend-chip:disabled {
+  opacity: 0.58;
+  cursor: default;
 }
 
 .legend-chip-dot {
@@ -2093,7 +2098,8 @@ textarea:focus {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--sp) 14%, transparent);
 }
 
-.speaker-popover .sp-voiceprint {
+.speaker-popover .sp-voiceprint,
+.history-dialog .sp-voiceprint {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2108,7 +2114,12 @@ textarea:focus {
   letter-spacing: normal;
 }
 
-.speaker-popover .sp-voiceprint input[type="checkbox"] {
+.history-dialog .sp-voiceprint {
+  white-space: nowrap;
+}
+
+.speaker-popover .sp-voiceprint input[type="checkbox"],
+.history-dialog .sp-voiceprint input[type="checkbox"] {
   width: auto;
   min-height: 0;
   accent-color: var(--accent);
@@ -3530,3 +3541,155 @@ textarea:focus {
 .phase2-workspace [data-workspace-section] { scroll-margin-top: 70px; }
 .phase2-workspace [data-workspace-section="file"],
 .phase2-workspace [data-workspace-section="voiceprints"] { padding: 18px; }
+
+/* Desktop account workspace: one viewport, with scrolling inside its panels. */
+@media (min-width: 1025px) {
+  body.phase2-workspace {
+    overflow: hidden;
+  }
+
+  .phase2-workspace [data-workspace="account"] {
+    display: grid;
+    grid-template-columns: var(--side-col) minmax(0, 1fr) var(--side-col);
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100dvh;
+    gap: 12px;
+    padding: 14px 18px 18px;
+    box-sizing: border-box;
+  }
+
+  .phase2-workspace [data-workspace-section="file"] {
+    grid-column: 1 / span 2;
+    grid-row: 1;
+    padding: 14px 18px;
+    max-height: 72px;
+  }
+
+  .phase2-workspace [data-workspace-section="live"] {
+    grid-column: 1 / span 2;
+    grid-row: 2;
+    min-height: 0;
+  }
+
+  .phase2-workspace [data-workspace-section="history"] {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .phase2-workspace [data-live-capture="account"] #app {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .phase2-workspace [data-live-capture="account"] .app {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .phase2-workspace [data-authority="account"] .main {
+    grid-template-columns: var(--side-col) minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .phase2-workspace [data-history-root] {
+    margin: 0;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .phase2-workspace .account-history-panel {
+    max-height: none;
+    height: 100%;
+    min-height: 0;
+  }
+
+  .phase2-workspace [data-file-upload="form"] .field:has(input[type="file"]) .field-label,
+  .workspace-nav,
+  .phase2-workspace [data-workspace="account"] > h1,
+  .phase2-workspace-heading,
+  .phase2-workspace main[data-auth-state] > header {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .phase2-workspace [data-workspace-section="file"] {
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: color-mix(in srgb, var(--surface) 92%, var(--paper));
+    overflow: auto;
+    min-height: 0;
+  }
+
+  .phase2-workspace [data-file-upload="form"] {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    /* The server template supplies an inline gap. */
+    gap: 10px !important;
+    max-width: none !important;
+  }
+
+  .phase2-workspace [data-file-upload="form"] .field {
+    display: inline-flex;
+    align-items: center;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .phase2-workspace [data-file-upload="form"] .field:has(textarea[name="urls"]) {
+    gap: 8px;
+  }
+
+  .phase2-workspace [data-file-upload="form"] .field:has(textarea[name="urls"]) .field-label {
+    flex: 0 0 auto;
+    letter-spacing: 0.06em;
+    text-transform: none;
+    white-space: nowrap;
+  }
+
+  .phase2-workspace [data-file-upload="form"] input,
+  .phase2-workspace [data-file-upload="form"] textarea {
+    min-width: 0;
+    min-height: 34px;
+    height: 34px;
+    padding: 4px 8px;
+  }
+
+  .phase2-workspace [data-file-upload="form"] textarea {
+    resize: none;
+    white-space: pre;
+    overflow-x: auto;
+    overflow-y: auto;
+  }
+
+  .phase2-workspace [data-file-upload="form"] button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .phase2-workspace [data-file-upload="status"],
+  .phase2-workspace [data-file-upload="results"] {
+    margin-block: 0;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .phase2-workspace [data-workspace="account"] {
+    grid-template-columns: 240px minmax(0, 1fr) 240px;
+  }
+
+  .phase2-workspace [data-authority="account"] .main {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+}

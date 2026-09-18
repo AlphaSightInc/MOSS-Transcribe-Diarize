@@ -338,7 +338,7 @@ export function TranscriptPane() {
             <label htmlFor="speaker-name-input">Display name</label>
             <input ref={namingInputRef} id="speaker-name-input" value={speakerName} required
               disabled={savingName} onInput={(event) => setSpeakerName(event.currentTarget.value)} />
-            <label><input type="checkbox" checked={saveVoiceprint} onChange={event => setSaveVoiceprint(event.currentTarget.checked)} disabled={savingName} /> Save voiceprint</label>
+            <label className="sp-voiceprint"><input type="checkbox" checked={saveVoiceprint} onChange={event => setSaveVoiceprint(event.currentTarget.checked)} disabled={savingName} /><span>Save voiceprint</span></label>
             <p className="hint">Applies to this speaker throughout the active meeting. When checked, enough clear speech also saves a private voiceprint. People may share the same name.</p>
             {namingError ? <p role="alert">{namingError}</p> : null}
             <div className="history-dialog-actions">

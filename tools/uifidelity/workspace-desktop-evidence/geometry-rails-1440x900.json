@@ -1,0 +1,87 @@
+{
+  "viewport": [
+    1440,
+    900
+  ],
+  "scrollHeight": 900,
+  "bodyScrollHeight": 900,
+  "viewportMeta": "width=device-width, initial-scale=1",
+  "panels": [
+    {
+      "section": "file",
+      "x": 18,
+      "y": 14,
+      "width": 1112,
+      "height": 72,
+      "top": 14,
+      "right": 1130,
+      "bottom": 86,
+      "left": 18
+    },
+    {
+      "section": "live",
+      "x": 18,
+      "y": 98,
+      "width": 1112,
+      "height": 784,
+      "top": 98,
+      "right": 1130,
+      "bottom": 882,
+      "left": 18
+    },
+    {
+      "section": "history",
+      "x": 1142,
+      "y": 98,
+      "width": 280,
+      "height": 784,
+      "top": 98,
+      "right": 1422,
+      "bottom": 882,
+      "left": 1142
+    },
+    {
+      "section": "voiceprints",
+      "x": 1142,
+      "y": 14,
+      "width": 280,
+      "height": 66,
+      "top": 14,
+      "right": 1422,
+      "bottom": 80,
+      "left": 1142
+    }
+  ],
+  "components": {
+    ".control-panel": {
+      "x": 18,
+      "y": 153.5,
+      "width": 280,
+      "height": 728.5,
+      "top": 153.5,
+      "right": 298,
+      "bottom": 882,
+      "left": 18
+    },
+    ".transcript-shell": {
+      "x": 310,
+      "y": 97.5,
+      "width": 820,
+      "height": 784.5,
+      "top": 97.5,
+      "right": 1130,
+      "bottom": 882,
+      "left": 310
+    },
+    ".history-panel": {
+      "x": 1142,
+      "y": 98,
+      "width": 280,
+      "height": 784,
+      "top": 98,
+      "right": 1422,
+      "bottom": 882,
+      "left": 1142
+    }
+  }
+}

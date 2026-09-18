@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { changeVoiceprint, listVoiceprints, type Voiceprint } from "../api/speakers";
+import { historyView } from "../state/ui";
 
 export function VoiceprintBank() {
-  const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Voiceprint[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,11 +26,12 @@ export function VoiceprintBank() {
   }
 
   useEffect(() => {
-    if (!open) return;
+    if (historyView.value !== "voiceprints") return;
+    void refresh();
     const changed = () => void refresh();
     document.addEventListener(SPEAKER_NAMED_EVENT, changed);
     return () => document.removeEventListener(SPEAKER_NAMED_EVENT, changed);
-  }, [open]);
+  }, [historyView.value]);
 
   async function save(event: Event) {
     event.preventDefault();
@@ -48,12 +49,9 @@ export function VoiceprintBank() {
     }
   }
 
-  return <section className="control-section" aria-label="Private voiceprints">
-    <button type="button" className="history-toolbar-btn" aria-expanded={open} onClick={() => {
-      setOpen(!open);
-      if (!open) void refresh();
-    }}>Voiceprints</button>
-    {open ? <div>
+  if (historyView.value !== "voiceprints") return null;
+
+  return <section className="control-section" aria-label="Private voiceprints"><div>
       <p className="hint">Private to this browser workspace. Name a speaker during capture to save their voiceprint; no separate recording needed.</p>
       <button type="button" className="history-toolbar-btn" disabled={busy} onClick={() => void refresh()}>Refresh</button>
       {error ? <p role="alert">{error}</p> : null}
@@ -75,6 +73,6 @@ export function VoiceprintBank() {
           <button type="submit" className="history-toolbar-btn" disabled={busy || (!target.deleting && !label.trim())}>{target.deleting ? "Confirm delete" : "Save name"}</button>
         </div>
       </form> : null}
-    </div> : null}
+    </div>
   </section>;
 }

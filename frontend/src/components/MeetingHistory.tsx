@@ -28,6 +28,7 @@ import {
   sessionStatus,
   sessionTitle
 } from "../state/session";
+import { historyView } from "../state/ui";
 
 export function MeetingHistory() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -172,7 +173,27 @@ export function MeetingHistory() {
   return (
     <section className="panel history-panel account-history-panel" aria-label="Meeting history">
       <div className="panel-body">
-        <FinalSummarySettings />
+        <div className="seg history-tabs" role="tablist" aria-label="History views">
+          <button
+            type="button"
+            role="tab"
+            className={`seg-btn${historyView.value === "sessions" ? " is-active" : ""}`}
+            aria-selected={historyView.value === "sessions"}
+            onClick={() => { historyView.value = "sessions"; }}
+          >
+            Sessions
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className={`seg-btn${historyView.value === "voiceprints" ? " is-active" : ""}`}
+            aria-selected={historyView.value === "voiceprints"}
+            onClick={() => { historyView.value = "voiceprints"; }}
+          >
+            Voiceprints
+          </button>
+        </div>
+
         <div className="history-panel-actions">
           <label className="history-search">
             <span className="sr-only">Search meetings</span>
@@ -194,6 +215,8 @@ export function MeetingHistory() {
           </button>
         </div>
 
+        {historyView.value === "sessions" ? <>
+        <FinalSummarySettings />
         {error ? <p className="history-state-card is-error" role="alert">{error}</p> : null}
         {selected ? <p className="hint" role="status">Selected: {meetingTitle(selected)}. <a href="#transcript-panel">View selected transcript and export</a></p> : null}
         {selected?.status === "completed" && <FinalSummary key={selected.id} meeting={selected} />}
@@ -269,6 +292,7 @@ export function MeetingHistory() {
             </section>
           ))}
         </div>
+        </> : null}
       </div>
 
       {renameTarget ? (

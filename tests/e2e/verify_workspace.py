@@ -441,7 +441,8 @@ class Harness:
         await self.page.close()
         self.page=self.attach(await self.context.new_page())
         await self.open()
-        bank=self.page.locator('[aria-label="Private voiceprints"]'); await bank.get_by_role('button',name='Voiceprints',exact=True).click()
+        history=self.page.get_by_role('region',name='Meeting history',exact=True); await history.get_by_role('tab',name='Voiceprints',exact=True).click()
+        bank=self.page.locator('[aria-label="Private voiceprints"]')
         await asyncio.sleep(.3)
         name=self.state.get('named','E2E Rowan'); enrolled=await bank.locator('[data-voiceprint-id]').filter(has_text=name).count()>0
         await self.snapshot(10,'-bank')
