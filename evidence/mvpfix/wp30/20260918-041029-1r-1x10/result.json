@@ -1,0 +1,1116 @@
+{
+  "sessions": 1,
+  "seconds": 10,
+  "clean": true,
+  "quality_bounds": {
+    "immediate_wer": [
+      "max",
+      0.166655
+    ],
+    "settled_wer": [
+      "max",
+      0.140442
+    ],
+    "recall": [
+      "min",
+      0.929636
+    ],
+    "time_speaker_attribution": [
+      "min",
+      0.87697
+    ],
+    "diarization_error_rate": [
+      "max",
+      0.16143
+    ],
+    "matched_speaker_accuracy": [
+      "min",
+      0.911512
+    ],
+    "reference_speech_der": [
+      "max",
+      0.134804
+    ],
+    "final_wer": [
+      "max",
+      0.095074
+    ]
+  },
+  "resources": [
+    {
+      "kind": "resource",
+      "time": 103578.281390541,
+      "app_rss_bytes": 662470656,
+      "own_active": 0,
+      "own_sent": 0,
+      "shared_completions": null,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "foreign_streak": 0,
+      "paused": false,
+      "metrics": {
+        "num_requests_running": 0,
+        "num_requests_waiting": 0,
+        "request_success_total": 0,
+        "kv_cache_usage_perc": null,
+        "gpu_cache_usage_perc": null
+      },
+      "gpu_memory_mib": null
+    },
+    {
+      "kind": "resource",
+      "time": 103601.968234208,
+      "app_rss_bytes": 938557440,
+      "own_active": 0,
+      "own_sent": 12,
+      "shared_completions": 0,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": false,
+      "foreign_streak": 0,
+      "paused": false,
+      "metrics": {
+        "num_requests_running": 0,
+        "num_requests_waiting": 0,
+        "request_success_total": 0,
+        "kv_cache_usage_perc": null,
+        "gpu_cache_usage_perc": null
+      },
+      "gpu_memory_mib": null
+    }
+  ],
+  "failures": [],
+  "session_results": [
+    {
+      "ordinal": 1,
+      "repeat": 1,
+      "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+      "clip": "two-public-lanes",
+      "acknowledged_frames": 40,
+      "retries": 0,
+      "foreign_probes": 40,
+      "wrong_owner_failures": 0,
+      "updates": [
+        {
+          "at_seconds": 0.018269749998580664,
+          "words": 0,
+          "newest_audio_age_seconds": 0.018269749998580664
+        },
+        {
+          "at_seconds": 7.272058500006096,
+          "words": 6,
+          "newest_audio_age_seconds": 4.772058500006096
+        },
+        {
+          "at_seconds": 9.269209125006455,
+          "words": 12,
+          "newest_audio_age_seconds": 4.269209125006455
+        },
+        {
+          "at_seconds": 19.495801416996983,
+          "words": 24,
+          "newest_audio_age_seconds": 9.495801416996983
+        }
+      ],
+      "coverage_lags": [
+        6.772058500006096,
+        6.272058500006096,
+        5.772058500006096,
+        5.272058500006096,
+        4.772058500006096,
+        6.269209125006455,
+        5.769209125006455,
+        5.269209125006455,
+        4.769209125006455,
+        4.269209125006455,
+        13.995801416996983,
+        13.495801416996983,
+        12.995801416996983,
+        12.495801416996983,
+        11.995801416996983,
+        11.495801416996983,
+        10.995801416996983,
+        10.495801416996983,
+        9.995801416996983,
+        9.495801416996983
+      ],
+      "events": [
+        {
+          "kind": "session_created",
+          "seq": 0,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 1,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 2,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 3,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 4,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 5,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 6,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 7,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103583802882916,
+            "item_id": 0
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 8,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103583803321375,
+            "item_id": 0,
+            "queue_wait_ms": 0.438459
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 9,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 10,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 11,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 12,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 13,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 14,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 15,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103586335466583,
+            "item_id": 1
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 16,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 17,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 18,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 19,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 20,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 21,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 22,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 23,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103588811778833,
+            "item_id": 2
+          }
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 24,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103588838567208,
+            "item_id": 0,
+            "submitted": true,
+            "committed_samples": 40000,
+            "canonical_decode_elapsed_sec": 4.164592165994691,
+            "frozen_span_duration_sec": 2.5,
+            "queue_wait_ms": 0.438459
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 25,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103588839090625,
+            "item_id": 1,
+            "queue_wait_ms": 2503.624042
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 26,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 27,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 28,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 29,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 30,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 31,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103591310554041,
+            "item_id": 1,
+            "submitted": true,
+            "committed_samples": 80000,
+            "canonical_decode_elapsed_sec": 1.2049113740067696,
+            "frozen_span_duration_sec": 2.5,
+            "queue_wait_ms": 2503.624042
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 32,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103591311240958,
+            "item_id": 2,
+            "queue_wait_ms": 2499.462125
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 33,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 34,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 35,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103591320352333,
+            "item_id": 3
+          }
+        },
+        {
+          "kind": "stop_requested",
+          "seq": 36,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103591321807000
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 37,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 38,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103593361472666,
+            "item_id": 2,
+            "submitted": true,
+            "committed_samples": 120000,
+            "canonical_decode_elapsed_sec": 1.2151989590056473,
+            "frozen_span_duration_sec": 2.5,
+            "queue_wait_ms": 2499.462125
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 39,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103593362146833,
+            "item_id": 3,
+            "queue_wait_ms": 2041.7945
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 40,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 41,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103595414448416,
+            "item_id": 3,
+            "submitted": true,
+            "committed_samples": 160000,
+            "canonical_decode_elapsed_sec": 1.2112933330208762,
+            "frozen_span_duration_sec": 2.5,
+            "queue_wait_ms": 2041.7945
+          }
+        },
+        {
+          "kind": "rolling_decode_queued",
+          "seq": 42,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103595415164500,
+            "item_id": 4,
+            "admitted": true
+          }
+        },
+        {
+          "kind": "rolling_decode_completed",
+          "seq": 43,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103599788201500,
+            "item_id": 4,
+            "rolling_decode_elapsed_sec": 1.217281124991132,
+            "windows_failed": 0,
+            "stale_completions": 0,
+            "outcome": "applied",
+            "decode_failure": null,
+            "queue_wait_ms": 0.718666
+          }
+        },
+        {
+          "kind": "text_revision_applied",
+          "seq": 44,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "item_id": 4,
+            "finalization_status": "not_started"
+          }
+        },
+        {
+          "kind": "identity_finalized",
+          "seq": 45,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {}
+        },
+        {
+          "kind": "session_closed",
+          "seq": 46,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103599797123208,
+            "accepted_samples": 160000
+          }
+        },
+        {
+          "kind": "terminal_finalization_started",
+          "seq": 47,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "runtime_monotonic_ns": 103599797845583,
+            "finalization_status": "running"
+          }
+        },
+        {
+          "kind": "text_revision_applied",
+          "seq": 48,
+          "session_id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+          "payload": {
+            "item_id": null,
+            "finalization_status": "final"
+          }
+        }
+      ],
+      "started_monotonic": 103581.053860958,
+      "last_observed_identity_counts": {
+        "identities_born_count": 2,
+        "album_admitted_count": 2,
+        "provisional_only_count": 0,
+        "abstention_count": 0
+      },
+      "last_observed_session_counters": {
+        "accepted_samples": 160000,
+        "accounted_samples": 160000
+      },
+      "first_text_seconds": 7.272058500006096,
+      "stop_requested_monotonic": 103591.060515958,
+      "status": "closed",
+      "finalization_status": "final",
+      "stop_to_final_seconds": 9.494712375002564,
+      "stop_to_outcome_seconds": 9.494712375002564,
+      "accepted_samples": 160000,
+      "accounted_samples": 160000,
+      "word_count": 24,
+      "reference_word_count": 0,
+      "partial_reference_rows": 0,
+      "words_per_minute": 144.0,
+      "unique_vocabulary_retention": null,
+      "wer": null,
+      "speakers": 2,
+      "unassigned_segments": 0,
+      "identities_born_count": 2,
+      "p95_coverage_lag": 13.520801416996983,
+      "covered_buckets": 20,
+      "expected_buckets": 20,
+      "reopened_status": "completed",
+      "saved_words": 24,
+      "saved_text_equal": true,
+      "max_live_update_gap_seconds": 7.272058500006096,
+      "p95_live_update_gap_seconds": 6.744567712505522,
+      "capture_elapsed_seconds": 10.006655000004685,
+      "acknowledged_lane_samples": 320000,
+      "unaccounted_acknowledged_samples": 0,
+      "word_loss_vs_audio_acknowledgement": null,
+      "canonical_lags": [
+        5.28470625000773,
+        5.2566930830071215,
+        4.807611708005425,
+        4.360587458009832
+      ],
+      "p95_canonical_lag": 5.2805042749576385,
+      "final_wer_bound_comparison": null,
+      "first_text_api_comparison_4s": false,
+      "clean": true
+    }
+  ],
+  "repeat": 1,
+  "stub_latency": 0.6,
+  "source_revision": "9e58205b9a9b825ade3eeae73866b6c1880ceda4",
+  "contention_policy": "record_only_no_pause",
+  "checkpoints": [
+    {
+      "time": 103580.677082541,
+      "checkpoint": "startup",
+      "pid": 85078,
+      "runtimes": [
+        {
+          "pending_signals": 0,
+          "in_flight": false,
+          "ready": 0,
+          "sessions": []
+        }
+      ],
+      "replay_acks": [],
+      "rss_bytes": 662470656,
+      "python_bytes": 18019867,
+      "python_peak": 18304497,
+      "allocations": [
+        {
+          "location": "<frozen importlib._bootstrap_external>:757",
+          "bytes": 6201187,
+          "count": 43589
+        },
+        {
+          "location": "<frozen importlib._bootstrap>:488",
+          "bytes": 1601973,
+          "count": 13489
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/scipy/_lib/_array_api.py:934",
+          "bytes": 947556,
+          "count": 158
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/dataclasses.py:473",
+          "bytes": 597935,
+          "count": 5477
+        },
+        {
+          "location": "<frozen abc>:106",
+          "bytes": 316222,
+          "count": 1118
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/typing.py:2906",
+          "bytes": 273639,
+          "count": 1123
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/sslproto.py:278",
+          "bytes": 262201,
+          "count": 2
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/typing.py:904",
+          "bytes": 256071,
+          "count": 2619
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/dataclasses.py:1233",
+          "bytes": 245397,
+          "count": 1122
+        },
+        {
+          "location": "<frozen importlib._bootstrap>:947",
+          "bytes": 207552,
+          "count": 1
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/scipy/_lib/doccer.py:79",
+          "bytes": 164679,
+          "count": 24
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py:4350",
+          "bytes": 139760,
+          "count": 1964
+        },
+        {
+          "location": "<string>:2",
+          "bytes": 122360,
+          "count": 966
+        },
+        {
+          "location": "<frozen importlib._bootstrap_external>:128",
+          "bytes": 117802,
+          "count": 590
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/pydantic/fields.py:567",
+          "bytes": 92424,
+          "count": 523
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/scipy/_lib/_array_api.py:910",
+          "bytes": 85992,
+          "count": 375
+        },
+        {
+          "location": "<frozen abc>:123",
+          "bytes": 84950,
+          "count": 1040
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/typing.py:171",
+          "bytes": 84336,
+          "count": 810
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/click/core.py:3023",
+          "bytes": 79200,
+          "count": 100
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/dataclasses.py:424",
+          "bytes": 65520,
+          "count": 546
+        },
+        {
+          "location": "<frozen abc>:107",
+          "bytes": 56008,
+          "count": 350
+        },
+        {
+          "location": "<frozen importlib._bootstrap_external>:1677",
+          "bytes": 54111,
+          "count": 465
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/typing.py:395",
+          "bytes": 50832,
+          "count": 329
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/typing.py:2961",
+          "bytes": 46152,
+          "count": 163
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/routing.py:1033",
+          "bytes": 45920,
+          "count": 84
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/typing_inspection/introspection.py:444",
+          "bytes": 44496,
+          "count": 206
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/enum.py:595",
+          "bytes": 43757,
+          "count": 138
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/typing.py:2137",
+          "bytes": 43168,
+          "count": 664
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/typing.py:1273",
+          "bytes": 41224,
+          "count": 717
+        },
+        {
+          "location": "<frozen importlib._bootstrap_external>:842",
+          "bytes": 40872,
+          "count": 567
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/dataclasses.py:861",
+          "bytes": 38741,
+          "count": 591
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/pydantic/fields.py:237",
+          "bytes": 38176,
+          "count": 380
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/dataclasses.py:474",
+          "bytes": 37632,
+          "count": 588
+        },
+        {
+          "location": "<frozen importlib._bootstrap>:49",
+          "bytes": 36808,
+          "count": 541
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/pydantic/v1/types.py:159",
+          "bytes": 35336,
+          "count": 129
+        },
+        {
+          "location": "<frozen importlib._bootstrap_external>:1660",
+          "bytes": 32432,
+          "count": 59
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py:38",
+          "bytes": 29488,
+          "count": 345
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/dataclasses.py:870",
+          "bytes": 29376,
+          "count": 67
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/dataclasses.py:253",
+          "bytes": 27432,
+          "count": 127
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/dataclasses.py:256",
+          "bytes": 26872,
+          "count": 244
+        }
+      ]
+    },
+    {
+      "time": 103601.152778541,
+      "checkpoint": "post-final-1",
+      "pid": 85078,
+      "runtimes": [
+        {
+          "pending_signals": 0,
+          "in_flight": false,
+          "ready": 0,
+          "sessions": [
+            {
+              "id": "cuy7ixJFuUSjfKLfHKrsG4OU",
+              "status": "closed",
+              "finalization": "final",
+              "accepted": 160000,
+              "accounted": 160000,
+              "queues": {
+                "batch": 0,
+                "live_canonical": 0,
+                "live_provisional": 0,
+                "live_refinement": 0,
+                "live_refinement_running": 0
+              },
+              "owners": {
+                "system": {
+                  "album_entries": 4,
+                  "pending_vectors": 0,
+                  "sweep_spans": 4
+                },
+                "microphone": {
+                  "album_entries": 4,
+                  "pending_vectors": 0,
+                  "sweep_spans": 4
+                }
+              },
+              "events": 51,
+              "frames": 0,
+              "spans": 0,
+              "tapes": {
+                "mixed": 0,
+                "system": 0,
+                "microphone": 0
+              }
+            }
+          ]
+        }
+      ],
+      "replay_acks": [],
+      "rss_bytes": 895664128,
+      "python_bytes": 55191118,
+      "python_peak": 60075721,
+      "allocations": [
+        {
+          "location": "<frozen importlib._bootstrap_external>:757",
+          "bytes": 17198495,
+          "count": 129954
+        },
+        {
+          "location": "<frozen abc>:106",
+          "bytes": 5191117,
+          "count": 16138
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/sslproto.py:278",
+          "bytes": 4981819,
+          "count": 38
+        },
+        {
+          "location": "<frozen importlib._bootstrap>:488",
+          "bytes": 1689854,
+          "count": 14189
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/linecache.py:142",
+          "bytes": 1155014,
+          "count": 11888
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/scipy/_lib/_array_api.py:934",
+          "bytes": 947556,
+          "count": 158
+        },
+        {
+          "location": "<frozen abc>:107",
+          "bytes": 757368,
+          "count": 4994
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/dataclasses.py:473",
+          "bytes": 624966,
+          "count": 5728
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/typing/templates.py:1184",
+          "bytes": 611960,
+          "count": 2131
+        },
+        {
+          "location": "<frozen posixpath>:417",
+          "bytes": 563884,
+          "count": 2845
+        },
+        {
+          "location": "<frozen abc>:123",
+          "bytes": 538295,
+          "count": 4786
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/typing/context.py:548",
+          "bytes": 399048,
+          "count": 2558
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/typing/templates.py:898",
+          "bytes": 318560,
+          "count": 5399
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/typing/context.py:585",
+          "bytes": 300440,
+          "count": 3219
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/typing/templates.py:896",
+          "bytes": 287104,
+          "count": 3955
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/typing.py:2906",
+          "bytes": 281234,
+          "count": 1157
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp30-overload-semantics/moss_transcribe_diarize/app/live_mixer.py:289",
+          "bytes": 272180,
+          "count": 4
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/typing.py:904",
+          "bytes": 262255,
+          "count": 2680
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/dataclasses.py:1233",
+          "bytes": 247549,
+          "count": 1134
+        },
+        {
+          "location": "<frozen importlib._bootstrap_external>:128",
+          "bytes": 247412,
+          "count": 1239
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/types/abstract.py:67",
+          "bytes": 233304,
+          "count": 3633
+        },
+        {
+          "location": "<frozen importlib._bootstrap>:947",
+          "bytes": 207552,
+          "count": 1
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/inspect.py:1015",
+          "bytes": 207552,
+          "count": 1
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/extending.py:131",
+          "bytes": 206816,
+          "count": 2248
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/np/npyimpl.py:710",
+          "bytes": 196504,
+          "count": 818
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/caching.py:618",
+          "bytes": 174796,
+          "count": 514
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/scipy/_lib/doccer.py:79",
+          "bytes": 164679,
+          "count": 24
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/types/functions.py:261",
+          "bytes": 151454,
+          "count": 1697
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/types/abstract.py:51",
+          "bytes": 145840,
+          "count": 1823
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/typing/templates.py:897",
+          "bytes": 143872,
+          "count": 2248
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/pydantic_core/core_schema.py:4350",
+          "bytes": 139760,
+          "count": 1964
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/typing/context.py:614",
+          "bytes": 136376,
+          "count": 2249
+        },
+        {
+          "location": "<string>:2",
+          "bytes": 132600,
+          "count": 1039
+        },
+        {
+          "location": "<frozen importlib._bootstrap_external>:1677",
+          "bytes": 113771,
+          "count": 1007
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/collections/__init__.py:508",
+          "bytes": 111910,
+          "count": 549
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/types/functions.py:260",
+          "bytes": 108608,
+          "count": 1697
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/inspect.py:1012",
+          "bytes": 103792,
+          "count": 1
+        },
+        {
+          "location": "/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/ctypes/__init__.py:399",
+          "bytes": 102144,
+          "count": 608
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/msgpack/__init__.py:47",
+          "bytes": 96360,
+          "count": 1142
+        },
+        {
+          "location": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/numba/core/typing/context.py:552",
+          "bytes": 95472,
+          "count": 612
+        }
+      ]
+    }
+  ],
+  "measurement_bounds": {
+    "before": {
+      "frame_samples": 8000,
+      "hard_cap_samples": 40000,
+      "max_events": 1000,
+      "max_frame_samples": 16000,
+      "max_identity_speakers": 16,
+      "max_queue_depth": 16,
+      "max_retained_samples": 960000,
+      "max_tape_bytes": 9600000,
+      "stop_drain_deadline_seconds": 5.0
+    },
+    "after": {
+      "frame_samples": 8000,
+      "hard_cap_samples": 40000,
+      "max_events": 1000,
+      "max_frame_samples": 16000,
+      "max_identity_speakers": 16,
+      "max_queue_depth": 16,
+      "max_retained_samples": 960000,
+      "max_tape_bytes": 9600000,
+      "stop_drain_deadline_seconds": 5.0
+    }
+  },
+  "fairness": {
+    "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+    "lifecycle_event_counts": {
+      "canonical_queued": 4,
+      "canonical_started": 4,
+      "canonical_processed": 4
+    },
+    "contended_pair_dispatch_observations": 0,
+    "maximum_contended_pair_dispatch_skew": 0,
+    "fairness_gate": 1,
+    "applicability": "not_applicable",
+    "errors": [],
+    "passes": null
+  },
+  "app_rss_growth_bytes": 276086784,
+  "prestop_inference": {
+    "canonical_processed_items": 4,
+    "rolling_completed_items": 1,
+    "stop_items": 0,
+    "canonical_decode_seconds": 7.795995832027984,
+    "rolling_decode_seconds": 1.217281124991132,
+    "decode_seconds": 9.013276957019116,
+    "accepted_audio_seconds": 10,
+    "rtf": 0.9013276957019116
+  },
+  "maximum_refinement_queue_depth": 1,
+  "maximum_gpu_cache_use": null,
+  "foreign_load_detected": false,
+  "decoder_calls": 12,
+  "maximum_own_inflight": 2,
+  "overload_backpressure_observed": false,
+  "campaign_completed": true,
+  "qualification": "local baseline only; remote process-tree RSS, host journals and six-case quality corpus unmeasured",
+  "scratch": ".wp30/20260918-041029"
+}

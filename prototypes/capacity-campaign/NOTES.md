@@ -176,3 +176,48 @@ subsequent wrappers use wp6_test_status. No test result is inferred from that wr
 Short-temp full-suite result: **1 failed, 1701 passed, 2 skipped, 21 warnings,
 37 subtests passed in 158.38s**. Only the documented WP4 fixture failure remains.
 Both environment hypotheses were confirmed without changing source or tests.
+
+## WP30 — repeated sessions and safe overload (in progress)
+
+Q1: does finalized-session ownership accumulate in a single process?
+Q2: does one process-scoped canonical worker fairly serve 8/16 active lanes?
+Primitives: workspace authority, acknowledged PCM, pending canonical work,
+immutable published result, mutable identity evidence and process memory.
+Invariants: frame schema, policies, queue capacity, leases, lane separation,
+acknowledged accounting and saved words must survive unchanged.
+Hypothesis: bounded work makes overload retryable; final releases expendable
+session evidence. Falsifiers: non-404 foreign reads, acknowledged/accounted loss,
+terminal failures, unfair dispatch, or retained mutable owners after final.
+Unknowns: residual native allocation, recognition accuracy, deployment capacity.
+
+Tool decision: timed stub at the real decoder boundary preserves production VAD,
+ONNX identity, HTTP, scheduler, persistence and lifecycle. Tracemalloc plus native
+RSS distinguishes Python owners from process totals. Full speech on BOTH lanes;
+Ackman system / Keyu Jin microphone, looped at original amplitude. Workspace
+isolation uses distinct cookies even though the speech inputs are identical.
+Stub words are synthetic: PCM acknowledgements do not label words, so a word-loss
+count versus acknowledged audio is unknown. Saved/final ordered word equality
+and accepted/accounted samples are measured separately. No synthetic WER claim.
+
+One-command runs (COMMON Python; PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.):
+```
+python prototypes/capacity-campaign/run.py --sessions 1 --seconds 600 --repeat 6 --stub-latency .6
+python prototypes/capacity-campaign/run.py --sessions 4 --seconds 600 --stub-latency .6
+python prototypes/capacity-campaign/run.py --sessions 8 --seconds 300 --stub-latency .6
+python prototypes/capacity-campaign/run.py --sessions 4 --seconds 300 --wp30
+```
+The first command uses one unchanged server process for all six sessions.
+The real command owns 18130/17890, hard caps requests at 600 and own concurrency
+at two. Contention is recorded without pauses. No real calls during stub work.
+The copied measurement manifest retains the whole requested duration; only its
+max_tape_bytes increases if necessary, preserving other bounds/policies.
+Local SQLite runtime pin bypass inherited from the existing bench.
+Scratch/audio/certificates/databases stay ignored under .wp30, inside this tree.
+Telemetry prints checkpoints and records all owner/queue samples every five seconds.
+Scripted actions replace the prototype skill's interactive TUI, per WP30's exact
+campaign requirement. Benchmark instrumentation is retained in the shared bench.
+
+Smoke 1x10 s, 0.6 s stub: final/completed, 40 acknowledged frames, 160000 accepted
+and accounted samples, saved words identical, 12 stub requests. All tapes empty;
+lane albums and sweep ledgers remain reachable after final. This is a witness of
+ownership, not yet evidence of a material repeated-session leak.

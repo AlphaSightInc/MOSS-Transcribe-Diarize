@@ -1,5 +1,9 @@
 """PROTOTYPE ONLY: local recipe, decoder accounting and two-request ceiling."""
 import importlib.util
+import io
+import math
+import os
+import wave
 import json
 import sys
 import threading
@@ -14,6 +18,10 @@ from moss_transcribe_diarize.app.live_coordinator import LiveCoordinator
 state = Path(sys.argv[sys.argv.index('--state') + 1])
 state.mkdir(parents=True, exist_ok=True)
 original = VllmRunner._post_multipart
+stub_latency = os.environ.get('WP30_STUB_LATENCY')
+if os.environ.get('WP30_TELEMETRY'):
+    from telemetry import install
+    install(state)
 slots = threading.BoundedSemaphore(2)
 lock = threading.Lock()
 active = 0
@@ -42,6 +50,13 @@ def counted(self, *args, **kwargs):
             record('start', ordinal=ordinal)
         started = time.monotonic()
         try:
+            if stub_latency is not None:
+                time.sleep(float(stub_latency))
+                with wave.open(io.BytesIO(kwargs['file_bytes'])) as wav:
+                    seconds = wav.getnframes()/wav.getframerate()
+                text = ''.join(f'[{start:g}][S01]memory probe words[{min(start+2.5, seconds):g}]'
+                    for start in (i*2.5 for i in range(math.ceil(seconds/2.5))))
+                return {'text':text, 'usage':{'completion_tokens':10}}
             return original(self, *args, **kwargs)
         finally:
             with lock:
