@@ -1,0 +1,334 @@
+## quality: git blame -L 246,255 HEAD -- moss_transcribe_diarize/phase2_acceptance.py
+
+3f3018076 (AlphaSightInc 2026-08-28 15:24:11 -0400 246) QUALITY_BOUNDS = {
+3f3018076 (AlphaSightInc 2026-08-28 15:24:11 -0400 247)     "immediate_wer": ("max", 0.166655),
+3f3018076 (AlphaSightInc 2026-08-28 15:24:11 -0400 248)     "settled_wer": ("max", 0.140442),
+3f3018076 (AlphaSightInc 2026-08-28 15:24:11 -0400 249)     "recall": ("min", 0.929636),
+3f3018076 (AlphaSightInc 2026-08-28 15:24:11 -0400 250)     "time_speaker_attribution": ("min", 0.876970),
+3f3018076 (AlphaSightInc 2026-08-28 15:24:11 -0400 251)     "diarization_error_rate": ("max", 0.161430),
+3f3018076 (AlphaSightInc 2026-08-28 15:24:11 -0400 252)     "matched_speaker_accuracy": ("min", 0.911512),
+3f3018076 (AlphaSightInc 2026-08-28 15:24:11 -0400 253)     "reference_speech_der": ("max", 0.134804),
+3f3018076 (AlphaSightInc 2026-08-28 15:24:11 -0400 254)     "final_wer": ("max", 0.095074),
+3f3018076 (AlphaSightInc 2026-08-28 15:24:11 -0400 255) }
+
+## identity-defaults: git blame -L 1370,1380 HEAD -- moss_transcribe_diarize/app/live_provider_bundle.py
+
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1370)     )
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1371) 
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1372) 
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1373) def _identity_config(payload: Mapping[str, Any]) -> LiveIdentityConfig:
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1374)     return LiveIdentityConfig(
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1375)         max_speakers=_positive_int(payload.get("max_speakers"), "identity_config.max_speakers"),
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1376)         min_match_score=float(payload.get("min_match_score", 0.0)),
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1377)         min_match_margin=float(payload.get("min_match_margin", 0.0)),
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1378)     )
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1379) 
+b70ec0e5e (AlphaSightInc 2026-07-24 06:25:57 -0400 1380) 
+
+## album-policy: git blame -L 41,49 HEAD -- moss_transcribe_diarize/app/live_identity_album.py
+
+97ec4d1cd (AlphaSightInc 2026-07-30 03:03:14 -0400 41) # Phase N's real-encoder duration curve separates matching from enrollment: the deployed
+97ec4d1cd (AlphaSightInc 2026-07-30 03:03:14 -0400 42) # 8,000-sample (0.5 s) evidence floor remains matchable, but only 32,000 samples (2.0 s)
+97ec4d1cd (AlphaSightInc 2026-07-30 03:03:14 -0400 43) # may enter the canonical album. Birth has its own, lower floor because the real 9-clip
+97ec4d1cd (AlphaSightInc 2026-07-30 03:03:14 -0400 44) # corpus shows that coupling birth to 2.0 s collapses one cold-start clip to 49.4 %.
+97ec4d1cd (AlphaSightInc 2026-07-30 03:03:14 -0400 45) ALBUM_ADMISSION_SECONDS = 2.0
+97ec4d1cd (AlphaSightInc 2026-07-30 03:03:14 -0400 46) ALBUM_BIRTH_MIN_SECONDS = 1.0
+64d9d609e (AlphaSightInc 2026-07-29 01:50:28 -0400 47) ALBUM_EXEMPLARS_PER_SPEAKER = 10
+64d9d609e (AlphaSightInc 2026-07-29 01:50:28 -0400 48) 
+78b44d191 (AlphaSightInc 2026-07-29 02:20:59 -0400 49) # The matcher thresholds ADR-0002 §7 measured *against album centroid statistics*. Nothing in
+
+## readiness: git blame -L 65,73 HEAD -- frontend/src/components/ControlPanel.tsx
+
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 65)   const updateMeter = (lane: CaptureLane, rms: number) => {
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 66)     const next = { ...metersRef.current, [lane]: rms };
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 67)     metersRef.current = next;
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 68)     setMeters(next);
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 69)     if (next.microphone > 0 && next.system > 0 && phaseRef.current === "configuring") {
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 70)       transition("ready");
+24b48395a (AlphaSightInc 2026-09-11 17:19:59 -0400 71)       setMessage("Both sources are receiving sound. Start capture when ready.");
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 72)     }
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 73)   };
+
+## silence: git blame -L 169,177 HEAD -- frontend/src/capture/captureClient.ts
+
+4b9ceb903 (AlphaSightInc 2026-08-14 16:28:45 -0400 169)   degradedCode: BrowserDegradedCode | null;
+4b9ceb903 (AlphaSightInc 2026-08-14 16:28:45 -0400 170)   clippedFrameRun: number;
+4b9ceb903 (AlphaSightInc 2026-08-14 16:28:45 -0400 171)   silentFrameRun: number;
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 172) };
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 173) 
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 174) const SILENCE_RMS = 1e-4;
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 175) const LANE_CAPACITY_FAILURE_CODE = "v2_lane_retention_capacity_reached";
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 176) const TERMINAL_REQUEST_TIMEOUT_MS = 1_000;
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 177) 
+
+## silence-frame: git blame -L 348,357 HEAD -- frontend/src/capture/captureClient.ts
+
+2844f1556 (AlphaSightInc 2026-08-14 14:51:43 -0400 348)     capture_timestamp_ns: Math.round((startFrame / captureSampleRate) * 1e9),
+905eadbb3 (AlphaSightInc 2026-09-11 22:59:43 -0400 349)     capture_end_timestamp_ns: Math.round(((startFrame + samples.length) / captureSampleRate) * 1e9),
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 350)     device_epoch: deviceEpoch,
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 351)     pcm_base64: pcm16Base64(samples),
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 352)     sample_count: samples.length,
+2844f1556 (AlphaSightInc 2026-08-14 14:51:43 -0400 353)     sample_rate: captureSampleRate,
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 354)     silent: rms(samples) < SILENCE_RMS,
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 355)     discontinuity,
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 356)   };
+770c39a17 (AlphaSightInc 2026-08-14 14:25:33 -0400 357) }
+
+## lease: git blame -L 147,168 HEAD -- moss_transcribe_diarize/app/live_helper_failure.py
+
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 147)     def __init__(
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 148)         self,
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 149)         *,
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 150)         live_helper_lease_seconds: float,
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 151)         timer: LiveHelperTimer | None = None,
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 152)         monotonic_ns: Callable[[], int] | None = None,
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 153)         on_expire: Callable[[str, int], None] | None = None,
+c3dfc32a0 (AlphaSightInc 2026-07-26 08:04:22 -0400 154)         v2_sessions: _V2SessionRegistry | None = None,
+c3dfc32a0 (AlphaSightInc 2026-07-26 08:04:22 -0400 155)         v2_mixers: _SessionReleaseRegistry | None = None,
+16b4e5385 (AlphaSightInc 2026-07-29 02:53:42 -0400 156)         tapes: _SessionReleaseRegistry | None = None,
+c3dfc32a0 (AlphaSightInc 2026-07-26 08:04:22 -0400 157)         helper_presence: _SessionReleaseRegistry | None = None,
+77f29a16a (AlphaSightInc 2026-07-28 14:46:28 -0400 158)         abort_mono: _MonoAbort | None = None,
+77f29a16a (AlphaSightInc 2026-07-28 14:46:28 -0400 159)         on_terminal: Callable[[LiveHelperTerminalRecord], None] | None = None,
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 160)     ) -> None:
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 161)         self._lease_ns = _positive_lease_ns(live_helper_lease_seconds)
+e35186247 (AlphaSightInc 2026-08-27 21:35:21 -0400 162)         self._monotonic_ns = monotonic_ns or time.monotonic_ns
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 163)         self._timer = timer or AsyncioLiveHelperTimer(monotonic_ns=monotonic_ns)
+1f17def65 (AlphaSightInc 2026-07-26 07:55:37 -0400 164)         self._on_expire = on_expire or (lambda _session_id, _sequence: None)
+c3dfc32a0 (AlphaSightInc 2026-07-26 08:04:22 -0400 165)         self._v2_sessions = v2_sessions
+c3dfc32a0 (AlphaSightInc 2026-07-26 08:04:22 -0400 166)         self._v2_mixers = v2_mixers
+16b4e5385 (AlphaSightInc 2026-07-29 02:53:42 -0400 167)         self._tapes = tapes
+c3dfc32a0 (AlphaSightInc 2026-07-26 08:04:22 -0400 168)         self._helper_presence = helper_presence
+
+## stop: git blame -L 241,253 HEAD -- frontend/src/components/ControlPanel.tsx
+
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 241)     const client = clientRef.current;
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 242)     if (!client || phase !== "active") return;
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 243)     transition("stopping");
+e621f071d (AlphaSightInc 2026-09-10 02:25:40 -0400 244)     captureMeetingId.value = null;
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 245)     setMessage("Stopping capture and finalizing transcript...");
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 246)     try {
+b76b5b5c4 (AlphaSightInc 2026-09-11 19:22:04 -0400 247)       // Five seconds bounds local frame delivery and this request's wait only.
+b76b5b5c4 (AlphaSightInc 2026-09-11 19:22:04 -0400 248)       // A 202 leaves the existing poller running while the server finishes draining.
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 249)       await client.stop(5);
+b76b5b5c4 (AlphaSightInc 2026-09-11 19:22:04 -0400 250)       if (phaseRef.current === "stopping") setMessage("Capture stopped. Waiting for the transcript to finish…");
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 251)     } catch (error) {
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 252)       transition("error");
+ec7cdcbb4 (AlphaSightInc 2026-08-15 02:03:43 -0400 253)       setMessage(errorMessage(error));
+
+## queue: git blame -L 710,750 HEAD -- moss_transcribe_diarize/app/live_service_runtime.py
+
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 710)             queue_depth = self._pending_work_items(state)
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 711)             required_work_items = 0
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 712)             if (
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 713)                 retryable_queue_backpressure
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 714)                 and queue_depth < state.descriptor.bounds.max_queue_depth
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 715)             ):
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 716)                 required_work_items = state.coordinator.preview_frame_work_items(frame)
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 717)             if (
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 718)                 retryable_queue_backpressure
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 719)                 and required_work_items > state.descriptor.bounds.max_queue_depth
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 720)             ):
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 721)                 failure = LiveServiceTransportPacingFailure(
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 722)                     "frame canonical work exceeds total queue capacity.",
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 723)                     code="frame_work_exceeds_queue_capacity",
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 724)                     retryable=False,
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 725)                     detail={
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 726)                         "queue_depth": queue_depth,
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 727)                         "required_work_items": required_work_items,
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 728)                         "max_queue_depth": state.descriptor.bounds.max_queue_depth,
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 729)                     },
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 730)                 )
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 731)                 self._fail(state, failure.failure)
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 732)                 raise failure
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 733)             # V2 retains the staged lane frame for an identical retry. Refuse before mono
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 734)             # admission mutates the session; legacy mono leaves this terminal policy disabled.
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 735)             if (
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 736)                 retryable_queue_backpressure
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 737)                 and (
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 738)                     queue_depth >= state.descriptor.bounds.max_queue_depth
+2a31c6f3d (AlphaSightInc 2026-08-17 08:52:15 -0400 739)                     or queue_depth + required_work_items > state.descriptor.bounds.max_queue_depth
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 740)                 )
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 741)             ):
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 742)                 raise LiveServiceTransportPacingFailure(
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 743)                     "live canonical queue is full.",
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 744)                     code="canonical_queue_full",
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 745)                     retryable=True,
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 746)                     detail={
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 747)                         "queue_depth": queue_depth,
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 748)                         "required_work_items": required_work_items,
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 749)                         "max_queue_depth": state.descriptor.bounds.max_queue_depth,
+4752e3d2c (AlphaSightInc 2026-08-13 02:32:53 -0400 750)                     },
+
+## tape: git blame -L 270,310 HEAD -- moss_transcribe_diarize/app/live_tape.py
+
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 270)             if len(pcm) % PCM16_BYTES_PER_SAMPLE:
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 271)                 self._refused_samples += samples
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 272)                 return self._degrade(
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 273)                     TAPE_FRAME_NOT_ADMISSIBLE,
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 274)                     {"condition": "pcm length", "bytes": len(pcm)},
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 275)                 )
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 276)             if start_sample != self._sample_count:
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 277)                 # The one placement rule: audio goes where the tape ends. A frame that
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 278)                 # claims a later sample would leave a hole no reader may decode, and one
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 279)                 # that claims an earlier sample would rewrite audio already digested.
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 280)                 self._refused_samples += samples
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 281)                 return self._degrade(
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 282)                     TAPE_FRAME_NOT_ADMISSIBLE,
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 283)                     {
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 284)                         "condition": "non-contiguous",
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 285)                         "expected_start_sample": self._sample_count,
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 286)                         "received_start_sample": int(start_sample),
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 287)                     },
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 288)                 )
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 289)             if not samples:
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 290)                 return LiveTapeAppendResult(taping=True, written=False, duplicate=False)
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 291)             if len(self._buffer) + len(pcm) > self.capacity_bytes:
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 292)                 self._refused_samples += samples
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 293)                 return self._degrade(
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 294)                     TAPE_CAPACITY_EXHAUSTED,
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 295)                     {
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 296)                         "capacity_bytes": self.capacity_bytes,
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 297)                         "retained_bytes": len(self._buffer),
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 298)                         "requested_bytes": len(pcm),
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 299)                     },
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 300)                 )
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 301)             self._buffer.extend(pcm)
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 302)             self._digest.update(pcm)
+f369f2187 (AlphaSightInc 2026-09-18 00:28:50 -0400 303)             # Established while the audio is in hand and never recomputed. The alternative is
+f369f2187 (AlphaSightInc 2026-09-18 00:28:50 -0400 304)             # scanning tens of megabytes on the stop path of a meeting that is being polled,
+f369f2187 (AlphaSightInc 2026-09-18 00:28:50 -0400 305)             # and -- worse -- scanning audio that has already been released, which would make
+f369f2187 (AlphaSightInc 2026-09-18 00:28:50 -0400 306)             # the answer depend on when it was asked.
+f369f2187 (AlphaSightInc 2026-09-18 00:28:50 -0400 307)             self._has_signal = self._has_signal or not is_digital_silence(pcm)
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 308)             self._covered = _merge(self._covered, self._sample_count, self._sample_count + samples)
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 309)             self._sample_count += samples
+bc8d973de (AlphaSightInc 2026-08-25 08:26:42 -0400 310)             self._peak_retained_bytes = max(self._peak_retained_bytes, len(self._buffer))
+
+## lane-cap: git blame -L 513,525 HEAD -- moss_transcribe_diarize/app/live_coordinator.py
+
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 513)             if dict(frame.lane_silent).get(lane, False):
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 514)                 pcm = bytes(len(pcm))
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 515)             self._lane_pcm.setdefault(lane, _PcmRetention()).append(
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 516)                 ack.start_sample, ack.end_sample, pcm
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 517)             )
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 518)             if self._tape_capacity is not None:
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 519)                 if lane not in self.lane_tapes:
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 520)                     self.lane_tapes[lane] = CompleteMixedTape(
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 521)                         epoch=self.session.epoch, capacity_bytes=self._tape_capacity
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 522)                     )
+2cb9d0142 (AlphaSightInc 2026-09-17 23:57:49 -0400 523)                 self.lane_tapes[lane].append(start_sample=ack.start_sample, pcm=pcm)
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 524)         staged = self._staged_frame
+1db447c44 (AlphaSightInc 2026-08-15 23:44:46 -0400 525)         if staged is not None:
+
+## wire: git blame -L 260,281 HEAD -- moss_transcribe_diarize/app/live_lane_contract.py
+
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 260)     @classmethod
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 261)     def from_dict(cls, payload: Mapping[str, Any]) -> "LiveV2Frame":
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 262)         _assert_exact_keys(
+905eadbb3 (AlphaSightInc 2026-09-11 22:59:43 -0400 263)             {key: value for key, value in payload.items() if key != "capture_end_timestamp_ns"},
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 264)             {
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 265)                 "lane",
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 266)                 "sequence",
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 267)                 "capture_timestamp_ns",
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 268)                 "device_epoch",
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 269)                 "silent",
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 270)                 "discontinuity",
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 271)                 "sample_rate",
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 272)                 "sample_count",
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 273)                 "pcm_base64",
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 274)             },
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 275)             "v2 frame",
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 276)         )
+85cafd85d (AlphaSightInc 2026-07-25 00:39:00 -0400 277)         return cls(
+905eadbb3 (AlphaSightInc 2026-09-11 22:59:43 -0400 278)             capture_end_timestamp_ns=(
+905eadbb3 (AlphaSightInc 2026-09-11 22:59:43 -0400 279)                 _required_int(payload["capture_end_timestamp_ns"], "capture_end_timestamp_ns")
+905eadbb3 (AlphaSightInc 2026-09-11 22:59:43 -0400 280)                 if "capture_end_timestamp_ns" in payload else None
+905eadbb3 (AlphaSightInc 2026-09-11 22:59:43 -0400 281)             ),
+
+## refresh: git blame -L 60,73 HEAD -- tests/phase2/test_acceptance_locator_sentinels.py
+
+169a6dfb6 (AlphaSightInc    2026-09-11 17:32:14 -0400 60)                 }))""", state)
+169a6dfb6 (AlphaSightInc    2026-09-11 17:32:14 -0400 61)                 expect(action).to_have_count(1)
+169a6dfb6 (AlphaSightInc    2026-09-11 17:32:14 -0400 62)                 expect(action).to_have_text(label)
+169a6dfb6 (AlphaSightInc    2026-09-11 17:32:14 -0400 63)                 expect(action).to_be_enabled()
+169a6dfb6 (AlphaSightInc    2026-09-11 17:32:14 -0400 64)             # Wording is not part of the predicate contract.
+169a6dfb6 (AlphaSightInc    2026-09-11 17:32:14 -0400 65)             action.evaluate("button => button.textContent = 'Different wording'")
+169a6dfb6 (AlphaSightInc    2026-09-11 17:32:14 -0400 66)             expect(_summary_action(page)).to_have_count(1)
+169a6dfb6 (AlphaSightInc    2026-09-11 17:32:14 -0400 67) 
+37979e539 (Fable (MOSS:2.1) 2026-09-17 22:53:47 -0400 68)             page.get_by_role('region', name='Meeting history', exact=True).get_by_role('tab', name='Voiceprints', exact=True).click()
+f484c6356 (AlphaSightInc    2026-09-11 14:57:03 -0400 69)             assert page.get_by_role('button', name='Refresh', exact=True).count() == 2
+f484c6356 (AlphaSightInc    2026-09-11 14:57:03 -0400 70)             history = page.get_by_role('region', name='Meeting history', exact=True)
+37979e539 (Fable (MOSS:2.1) 2026-09-17 22:53:47 -0400 71)             history.locator('.history-panel-actions').get_by_role('button', name='Refresh', exact=True).click()
+f484c6356 (AlphaSightInc    2026-09-11 14:57:03 -0400 72)         finally:
+f484c6356 (AlphaSightInc    2026-09-11 14:57:03 -0400 73)             browser.close()
+
+## tokens: git blame -L 91,159 HEAD -- frontend/src/styles/index.css
+
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400  91)    ============================================================ */
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400  92) 
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400  93) :root {
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400  94)   --paper: #f6f5f1;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400  95)   --paper-2: #eeece4;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400  96)   --ink: #14161c;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400  97)   --ink-2: #2a2d36;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400  98)   --muted: #6b7180;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400  99)   --muted-2: #9aa0ad;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 100)   --line: rgba(20, 22, 28, 0.08);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 101)   --line-2: rgba(20, 22, 28, 0.14);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 102)   --surface: #ffffff;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 103)   --surface-2: #fafaf7;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 104)   --surface-3: #f2f1ec;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 105)   --surface-sunk: #ecece4;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 106) 
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 107)   --accent: #1a1d24;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 108)   --accent-2: #0c0e13;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 109)   --accent-soft: rgba(26, 29, 36, 0.08);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 110)   --accent-ring: rgba(26, 29, 36, 0.2);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 111)   --accent-ink: #ffffff;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 112) 
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 113)   --live: #d7503a;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 114)   --live-soft: rgba(215, 80, 58, 0.12);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 115)   --ok: #1f7a4d;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 116)   --warn: #b5791e;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 117)   --danger: #9f3f33;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 118) 
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 119)   --f-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 120)   --f-display: "Fraunces", Georgia, serif;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 121)   --f-serif: "Source Serif 4", Georgia, serif;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 122)   --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 123) 
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 124)   --r-sm: 8px;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 125)   --r: 12px;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 126)   --r-lg: 18px;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 127)   --r-xl: 24px;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 128) 
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 129)   --shadow-xs: 0 1px 0 rgba(20, 22, 28, 0.04);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 130)   --shadow-s: 0 1px 2px rgba(20, 22, 28, 0.05), 0 1px 0 rgba(20, 22, 28, 0.04);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 131)   --shadow-m: 0 2px 6px rgba(20, 22, 28, 0.06), 0 10px 24px rgba(20, 22, 28, 0.06);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 132)   --shadow-pop: 0 12px 40px rgba(20, 22, 28, 0.12), 0 2px 6px rgba(20, 22, 28, 0.06);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 133) 
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 134)   --pad-card: 14px;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 135)   --pad-card-y: 12px;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 136)   --gap-stack: 8px;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 137)   --side-col: 280px;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 138) 
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 139)   --sp-1: #3d5aef;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 140)   --sp-2: #b73c7d;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 141)   --sp-3: #0f9d74;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 142)   --sp-4: #c26a2a;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 143)   --sp-5: #7551c9;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 144)   --sp-6: #1f8fb8;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 145)   --sp-7: #6c855a;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 146)   --sp-8: #a63a3a;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 147) 
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 148)   --status-idle: var(--muted);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 149)   --status-processing: var(--warn);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 150)   --status-success: var(--ok);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 151)   --status-error: var(--danger);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 152)   --panel-bg: var(--surface-2);
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 153) }
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 154) 
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 155) *,
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 156) *::before,
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 157) *::after {
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 158)   box-sizing: border-box;
+7f23aa223 (AlphaSightInc 2026-08-13 02:18:33 -0400 159) }

@@ -1,0 +1,14 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run --configLoader runner src/components/WP32prototype.test.tsx -t WP32 prototype
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp32-final-crossreview/frontend
+
+{"step":"pre-session mic ended","phase":"configuring","status":"Shared audio connected. Play sound in the shared tab and speak into the microphone.","reset":false,"buttons":["Switch mic","Reshare audio"],"trackStops":[[0],[0],[0]]}
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 23 skipped (24)
+   Start at  04:40:41
+   Duration  492ms (transform 58ms, setup 0ms, import 77ms, tests 24ms, environment 288ms)
+
