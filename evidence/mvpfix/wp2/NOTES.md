@@ -39,7 +39,7 @@ all new lane tests. Restored committed-before-provisional as the FIRST comparato
 key, followed by start, system-before-microphone, then end. No new policy introduced.
 Fresh restored-test falsifier: 216/218 passed, exactly the two original tests failed
 (2.69 s). Corrected implementation: 218/218 across 25 files (2.33 s); typecheck passes.
-Native production builds twice, unchanged source: all 7 asset-file SHA-256 values
+Native production builds twice, unchanged source: all 17 asset-file SHA-256 values
 identical. Hashes are retained solely for the lead-requested byte comparison.
 The first hash glob included two directories and exited 1; corrected to file-only
 recursive enumeration, then compared successfully. Both builds themselves passed.
