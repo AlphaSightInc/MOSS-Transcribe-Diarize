@@ -400,6 +400,7 @@ class LiveCoordinator:
         self._lane_pcm: dict[str, _PcmRetention] = {}
         self.lane_tapes: dict[str, CompleteMixedTape] = {}
         self._lane_preparers = {}
+        self._lane_match_observations = (-1, ())
         self._stopped_refinement_lanes: set[str] = set()
         self._lane_speakers: dict[str, set[str]] = {}
         self._tape_capacity = tape_capacity_bytes
@@ -699,6 +700,14 @@ class LiveCoordinator:
             for speaker, lane in work.new_speaker_lanes:
                 self._lane_speakers.setdefault(lane, set()).add(speaker)
             self._abstention_count += int(identity_status == "abstain")
+            if self._lane_preparers:
+                # Reconcile consumes pending vectors into the enrollment album. Freeze
+                # the original causal units first: recognition also accepts units
+                # shorter than the album's enrollment floor.
+                self._lane_match_observations = (
+                    snapshot.identity_snapshot.version,
+                    self._read_match_observations(snapshot.identity_snapshot),
+                )
             for preparer in self._lane_preparers.values():
                 reconcile = getattr(
                     getattr(preparer, "evidence_provider", None),
@@ -809,6 +818,12 @@ class LiveCoordinator:
 
     def match_observations(self):
         base = self.session.snapshot().identity_snapshot
+        if self._lane_preparers:
+            version, observations = self._lane_match_observations
+            return observations if version == base.version else ()
+        return self._read_match_observations(base)
+
+    def _read_match_observations(self, base):
         preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
         return tuple(
             observation
