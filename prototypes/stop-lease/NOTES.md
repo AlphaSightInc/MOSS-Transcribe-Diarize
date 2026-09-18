@@ -94,3 +94,6 @@ byte-for-byte equivalent saved document after reopening SQLite.
 GPU read-only preflight: waiting=0 in 3/3 samples, running=1 in 1/3, shared
 completions +16 across 10.0466 s; own inference requests 0. Tunnel closed.
 600/1800-second metrics remain UNMEASURED pending explicit budget clarification.
+
+Evidence text logs preserve messages/counts; trailing whitespace and trailing blank
+lines normalized after git diff --check flagged captured tool output formatting.

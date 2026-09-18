@@ -8,46 +8,46 @@ request = <starlette.middleware.base._CachedRequest object at 0x116d75af0>
         async def receive_or_disconnect() -> Message:
             if response_sent.is_set():
                 return {"type": "http.disconnect"}
-    
+
             async with anyio.create_task_group() as task_group:
-    
+
                 async def wrap(func: Callable[[], Awaitable[T]]) -> T:
                     result = await func()
                     task_group.cancel_scope.cancel()
                     return result
-    
+
                 task_group.start_soon(wrap, response_sent.wait)
                 message = await wrap(wrapped_receive)
-    
+
             if response_sent.is_set():
                 return {"type": "http.disconnect"}
-    
+
             return message
-    
+
         async def send_no_error(message: Message) -> None:
             try:
                 await send_stream.send(message)
             except anyio.BrokenResourceError:
                 # recv_stream has been closed, i.e. response_sent has been set.
                 return
-    
+
         async def coro() -> None:
             nonlocal app_exc
-    
+
             with send_stream:
                 try:
                     await self.app(scope, receive_or_disconnect, send_no_error)
                 except Exception as exc:
                     app_exc = exc
-    
+
         task_group.start_soon(coro)
-    
+
         try:
 >           message = await recv_stream.receive()
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/middleware/base.py:151: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/middleware/base.py:151:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = MemoryObjectReceiveStream(_state=_MemoryObjectStreamState(max_buffer_size=0, buffer=deque([]), open_send_channels=0, open_receive_channels=0, waiting_receivers=OrderedDict(), waiting_senders=OrderedDict()), _closed=True)
 
@@ -60,12 +60,12 @@ self = MemoryObjectReceiveStream(_state=_MemoryObjectStreamState(max_buffer_size
             receive_event = Event()
             receiver = _MemoryObjectItemReceiver[T_co]()
             self._state.waiting_receivers[receive_event] = receiver
-    
+
             try:
                 await receive_event.wait()
             finally:
                 self._state.waiting_receivers.pop(receive_event, None)
-    
+
             try:
                 return receiver.item
             except AttributeError:
@@ -85,8 +85,8 @@ case = 'disconnect', stage = 'drain'
 >       measured = bench.exercise(tmp_path, case, delay=90, stage=stage, emit=lambda _: None)
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/phase2/test_accepted_stop_lease.py:13: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/phase2/test_accepted_stop_lease.py:13:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 prototypes/stop-lease/run.py:136: in exercise
     response=stop.result(10)
              ^^^^^^^^^^^^^^^
@@ -146,7 +146,7 @@ prototypes/stop-lease/run.py:136: in exercise
 moss_transcribe_diarize/app/phase2.py:1851: in workspace_request_boundary
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 request = <starlette.middleware.base._CachedRequest object at 0x116d75af0>
 
@@ -154,40 +154,40 @@ request = <starlette.middleware.base._CachedRequest object at 0x116d75af0>
         async def receive_or_disconnect() -> Message:
             if response_sent.is_set():
                 return {"type": "http.disconnect"}
-    
+
             async with anyio.create_task_group() as task_group:
-    
+
                 async def wrap(func: Callable[[], Awaitable[T]]) -> T:
                     result = await func()
                     task_group.cancel_scope.cancel()
                     return result
-    
+
                 task_group.start_soon(wrap, response_sent.wait)
                 message = await wrap(wrapped_receive)
-    
+
             if response_sent.is_set():
                 return {"type": "http.disconnect"}
-    
+
             return message
-    
+
         async def send_no_error(message: Message) -> None:
             try:
                 await send_stream.send(message)
             except anyio.BrokenResourceError:
                 # recv_stream has been closed, i.e. response_sent has been set.
                 return
-    
+
         async def coro() -> None:
             nonlocal app_exc
-    
+
             with send_stream:
                 try:
                     await self.app(scope, receive_or_disconnect, send_no_error)
                 except Exception as exc:
                     app_exc = exc
-    
+
         task_group.start_soon(coro)
-    
+
         try:
             message = await recv_stream.receive()
             info = message.get("info", None)
@@ -219,46 +219,46 @@ request = <starlette.middleware.base._CachedRequest object at 0x116c191f0>
         async def receive_or_disconnect() -> Message:
             if response_sent.is_set():
                 return {"type": "http.disconnect"}
-    
+
             async with anyio.create_task_group() as task_group:
-    
+
                 async def wrap(func: Callable[[], Awaitable[T]]) -> T:
                     result = await func()
                     task_group.cancel_scope.cancel()
                     return result
-    
+
                 task_group.start_soon(wrap, response_sent.wait)
                 message = await wrap(wrapped_receive)
-    
+
             if response_sent.is_set():
                 return {"type": "http.disconnect"}
-    
+
             return message
-    
+
         async def send_no_error(message: Message) -> None:
             try:
                 await send_stream.send(message)
             except anyio.BrokenResourceError:
                 # recv_stream has been closed, i.e. response_sent has been set.
                 return
-    
+
         async def coro() -> None:
             nonlocal app_exc
-    
+
             with send_stream:
                 try:
                     await self.app(scope, receive_or_disconnect, send_no_error)
                 except Exception as exc:
                     app_exc = exc
-    
+
         task_group.start_soon(coro)
-    
+
         try:
 >           message = await recv_stream.receive()
                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/middleware/base.py:151: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/middleware/base.py:151:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 self = MemoryObjectReceiveStream(_state=_MemoryObjectStreamState(max_buffer_size=0, buffer=deque([]), open_send_channels=0, open_receive_channels=0, waiting_receivers=OrderedDict(), waiting_senders=OrderedDict()), _closed=True)
 
@@ -271,12 +271,12 @@ self = MemoryObjectReceiveStream(_state=_MemoryObjectStreamState(max_buffer_size
             receive_event = Event()
             receiver = _MemoryObjectItemReceiver[T_co]()
             self._state.waiting_receivers[receive_event] = receiver
-    
+
             try:
                 await receive_event.wait()
             finally:
                 self._state.waiting_receivers.pop(receive_event, None)
-    
+
             try:
                 return receiver.item
             except AttributeError:
@@ -296,8 +296,8 @@ case = 'disconnect', stage = 'terminal'
 >       measured = bench.exercise(tmp_path, case, delay=90, stage=stage, emit=lambda _: None)
                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-tests/phase2/test_accepted_stop_lease.py:13: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/phase2/test_accepted_stop_lease.py:13:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 prototypes/stop-lease/run.py:136: in exercise
     response=stop.result(10)
              ^^^^^^^^^^^^^^^
@@ -357,7 +357,7 @@ prototypes/stop-lease/run.py:136: in exercise
 moss_transcribe_diarize/app/phase2.py:1851: in workspace_request_boundary
     response = await call_next(request)
                ^^^^^^^^^^^^^^^^^^^^^^^^
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 request = <starlette.middleware.base._CachedRequest object at 0x116c191f0>
 
@@ -365,40 +365,40 @@ request = <starlette.middleware.base._CachedRequest object at 0x116c191f0>
         async def receive_or_disconnect() -> Message:
             if response_sent.is_set():
                 return {"type": "http.disconnect"}
-    
+
             async with anyio.create_task_group() as task_group:
-    
+
                 async def wrap(func: Callable[[], Awaitable[T]]) -> T:
                     result = await func()
                     task_group.cancel_scope.cancel()
                     return result
-    
+
                 task_group.start_soon(wrap, response_sent.wait)
                 message = await wrap(wrapped_receive)
-    
+
             if response_sent.is_set():
                 return {"type": "http.disconnect"}
-    
+
             return message
-    
+
         async def send_no_error(message: Message) -> None:
             try:
                 await send_stream.send(message)
             except anyio.BrokenResourceError:
                 # recv_stream has been closed, i.e. response_sent has been set.
                 return
-    
+
         async def coro() -> None:
             nonlocal app_exc
-    
+
             with send_stream:
                 try:
                     await self.app(scope, receive_or_disconnect, send_no_error)
                 except Exception as exc:
                     app_exc = exc
-    
+
         task_group.start_soon(coro)
-    
+
         try:
             message = await recv_stream.receive()
             info = message.get("info", None)

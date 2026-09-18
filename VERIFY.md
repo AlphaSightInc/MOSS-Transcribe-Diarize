@@ -58,7 +58,8 @@ Prescribed frontend/node_modules symlink already exists; do not npm install.
    that generated screenshot with `git show HEAD:evidence/mvpfix/wp2/production-1280.png > evidence/mvpfix/wp2/production-1280.png`.
    Existing suite fixtures create and remove short /tmp sockets; all WP15 scratch
    stays in .wp15. No authored file outside this worktree was modified.
-   `git diff --check`; confirm no owned 18115/17875 listener, no probe process.
+   Normalize trailing whitespace/blank EOF in newly captured .txt logs only,
+   preserving messages and counts. `git diff --check`; confirm no owned 18115/17875 listener, no probe process.
 
 ## Finish
 
