@@ -1,0 +1,31 @@
+{
+  "case": "missing",
+  "source": "missing",
+  "duration_seconds": null,
+  "started_monotonic": 92760.931397,
+  "queue_before": [
+    "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 1.0",
+    "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+  ],
+  "http_status": 201,
+  "accepted_seconds": 0.07514100000844337,
+  "meeting_id": "YM2hieji4Pnu2BUSdJ0WQBJ7",
+  "first_status_seconds": 0.08478600000671577,
+  "elapsed_seconds": 0.08478658300009556,
+  "status": "failed",
+  "failure_code": "acquisition_http_404",
+  "failure_reason": "The media was not found (404).",
+  "notice": null,
+  "audio": null,
+  "segments": 0,
+  "saved_words": 0,
+  "speakers": 0,
+  "last_segment_end": null,
+  "history_reason": true,
+  "header_reason": false,
+  "reason_content_free": true,
+  "reload_status": "failed",
+  "exports": {},
+  "mp3_link": false,
+  "foreign_read_status": 401
+}

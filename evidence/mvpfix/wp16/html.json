@@ -1,0 +1,31 @@
+{
+  "case": "html",
+  "source": "html",
+  "duration_seconds": null,
+  "started_monotonic": 92761.947129666,
+  "queue_before": [
+    "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 2.0",
+    "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+  ],
+  "http_status": 201,
+  "accepted_seconds": 0.07795149998855777,
+  "meeting_id": "tJdC1MGnl1PHLsrgr0vy1K8o",
+  "first_status_seconds": 0.08903633400041144,
+  "elapsed_seconds": 0.0890369999979157,
+  "status": "failed",
+  "failure_code": "acquisition_failed",
+  "failure_reason": "The URL returned a web page instead of direct media.",
+  "notice": null,
+  "audio": null,
+  "segments": 0,
+  "saved_words": 0,
+  "speakers": 0,
+  "last_segment_end": null,
+  "history_reason": true,
+  "header_reason": false,
+  "reason_content_free": true,
+  "reload_status": "failed",
+  "exports": {},
+  "mp3_link": false,
+  "foreign_read_status": 401
+}

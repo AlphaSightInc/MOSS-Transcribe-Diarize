@@ -1,0 +1,88 @@
+{
+  "case": "silence-before",
+  "source": "silence.wav",
+  "duration_seconds": null,
+  "started_monotonic": 92747.278860375,
+  "queue_before": [
+    "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 1.0",
+    "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+  ],
+  "http_status": 201,
+  "accepted_seconds": 0.07957220800744835,
+  "meeting_id": "4_WC0rYaiGOLcyZDt9_h9B9U",
+  "first_status_seconds": 0.08985016601218376,
+  "elapsed_seconds": 2.0955903330032015,
+  "status": "completed",
+  "failure_code": null,
+  "failure_reason": null,
+  "notice": null,
+  "audio": {
+    "state": "available",
+    "relative_path": "ACNHtsJ_XYqP6RDfCo4OUuaG2bEpAWEl/4_WC0rYaiGOLcyZDt9_h9B9U/audio.mp3",
+    "byte_count": 60741,
+    "duration_ms": 10000,
+    "format": "mp3",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bit_rate_bps": 48000
+  },
+  "segments": 1,
+  "saved_words": 32,
+  "speakers": 1,
+  "last_segment_end": 10,
+  "history_reason": true,
+  "header_reason": true,
+  "reason_content_free": true,
+  "reload_status": "completed",
+  "exports": {
+    "md": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    },
+    "txt": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    },
+    "json": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true,
+      "lane": true
+    },
+    "srt": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    },
+    "vtt": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    }
+  },
+  "mp3_link": true,
+  "mp3_bytes": 60741,
+  "foreign_read_status": 401
+}

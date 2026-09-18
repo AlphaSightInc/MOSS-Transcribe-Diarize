@@ -1,0 +1,88 @@
+{
+  "case": "long.m4a",
+  "source": "long.m4a",
+  "duration_seconds": 1800,
+  "started_monotonic": 93716.776440083,
+  "queue_before": [
+    "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+    "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+  ],
+  "http_status": 201,
+  "accepted_seconds": 0.1598244169872487,
+  "meeting_id": "1t3uiO5ixRcbDrxJmoMGUqIn",
+  "first_status_seconds": 0.16887924999173265,
+  "elapsed_seconds": 84.44158729199262,
+  "status": "completed",
+  "failure_code": null,
+  "failure_reason": null,
+  "notice": null,
+  "audio": {
+    "state": "available",
+    "relative_path": "VeaotH4G4IQv3_mDOC_Ur6xsMBFRcLET/1t3uiO5ixRcbDrxJmoMGUqIn/audio.mp3",
+    "byte_count": 10800693,
+    "duration_ms": 1800000,
+    "format": "mp3",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bit_rate_bps": 48000
+  },
+  "segments": 464,
+  "saved_words": 4989,
+  "speakers": 31,
+  "last_segment_end": 1799.85,
+  "history_reason": true,
+  "header_reason": true,
+  "reason_content_free": true,
+  "reload_status": "completed",
+  "exports": {
+    "md": {
+      "ok": true,
+      "expected_turns": 135,
+      "downloaded_turns": 135,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    },
+    "txt": {
+      "ok": true,
+      "expected_turns": 135,
+      "downloaded_turns": 135,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    },
+    "json": {
+      "ok": true,
+      "expected_turns": 135,
+      "downloaded_turns": 135,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true,
+      "lane": true
+    },
+    "srt": {
+      "ok": true,
+      "expected_turns": 135,
+      "downloaded_turns": 135,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    },
+    "vtt": {
+      "ok": true,
+      "expected_turns": 135,
+      "downloaded_turns": 135,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    }
+  },
+  "mp3_link": true,
+  "mp3_bytes": 10800693,
+  "foreign_read_status": 404
+}
