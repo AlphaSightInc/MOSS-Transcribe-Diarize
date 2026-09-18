@@ -81,3 +81,7 @@ evidence/mvpfix/*/raw/
 .wp16runtime/
 
 .wp18runtime/
+
+# WP21 local qualification private runtime and content-bearing command output.
+.wp21runtime/
+!evidence/qualify/**/*.log
