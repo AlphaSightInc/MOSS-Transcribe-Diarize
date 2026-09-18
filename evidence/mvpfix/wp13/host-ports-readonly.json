@@ -1,0 +1,22 @@
+[
+  {
+    "pid": 232625,
+    "tls_arguments": {
+      "--port": "7861"
+    },
+    "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/moss-live-web.service",
+    "unit": "moss-live-web.service",
+    "unit_properties": "ActiveState=active\nFragmentPath=/home/devcontainers/.config/systemd/user/moss-live-web.service"
+  },
+  {
+    "pid": 291600,
+    "tls_arguments": {
+      "--tls-certfile": "/home/devcontainers/.local/share/moss-transcribe-diarize/acme/production/certificates/ga0-alienware-rtx4070ti.tailnet.aisight.us.crt",
+      "--tls-keyfile": "/home/devcontainers/.local/share/moss-transcribe-diarize/acme/production/certificates/ga0-alienware-rtx4070ti.tailnet.aisight.us.key",
+      "--port": "7862"
+    },
+    "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/moss-internal.service",
+    "unit": "moss-internal.service",
+    "unit_properties": "ExecReload={ path=/bin/kill ; argv[]=/bin/kill -HUP $MAINPID ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }\nActiveState=active\nFragmentPath=/home/devcontainers/.config/systemd/user/moss-internal.service"
+  }
+]

@@ -1,1 +1,16 @@
-{"spans": 17640, "near_spans": 12960, "false_suppress": 80, "echo_suspect": 653}
+{
+  "source_bytes": 3396624,
+  "raw_path": "evidence/mvpfix/wp3/raw/chunks.json",
+  "cases": 147,
+  "near_spans": 12960,
+  "false_suppress": 80,
+  "echo_suspect": 653,
+  "decisions": {
+    "skip-zero": 136,
+    "decode": 16771,
+    "leak-suspect": 733
+  },
+  "regenerate": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <venv-python> prototypes/streaming-diarization/capture-guards/chunks.py",
+  "requires_decoder": false,
+  "spans": 17640
+}

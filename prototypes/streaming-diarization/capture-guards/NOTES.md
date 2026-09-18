@@ -65,3 +65,11 @@ across 27 mixtures, against ONLY the near-speaker reference. Playback words ther
 as insertions/substitutions; this is not a clean near-alone accuracy score or a 60/24 mismatch.
 No scoring correction justified by retained evidence. Numeric audit: reference-audit.json.
 No decoder requests or suppression-prototype rerun for this review.
+
+## WP13 raw-log hygiene
+
+The 3,396,624-byte, 17,640-row per-chunk log now lives in ignored
+`evidence/mvpfix/wp3/raw/chunks.json`. Committed `chunks-summary.json` retains exact
+aggregate counts. This NOTES file cited no individual raw line numbers. Recreate
+the raw log offline with `chunks.py` (same corpus, no decoder) before `falsify.py`.
+Only paths changed; no experimental statistics, threshold, corpus or verdict changed.

@@ -1,0 +1,7 @@
+{"action": "initial", "file": 1, "served": [1, 1], "pending_ports": []}
+{"action": "dry-run", "file": 1, "served": [1, 1], "pending_ports": []}
+{"action": "renew", "file": 2, "served": [1, 1], "pending_ports": [7861, 7862]}
+{"action": "reload-web", "file": 2, "served": [2, 1], "pending_ports": [7862]}
+{"action": "reconcile", "file": 2, "served": [2, 2], "pending_ports": []}
+{"action": "reconcile", "file": 2, "served": [2, 2], "pending_ports": []}
+{"action": "invalid", "file": 2, "served": [2, 2], "pending_ports": []}
