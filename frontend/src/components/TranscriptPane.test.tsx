@@ -26,6 +26,12 @@ describe("TranscriptPane", () => {
     vi.useRealTimers();
   });
 
+  it("uses the product name for an untitled transcript", () => {
+    act(() => render(<TranscriptPane />, root));
+    expect(root.querySelector(".tr-title")?.textContent).toContain("MOSS");
+    expect(root.querySelector(".tr-title")?.textContent).not.toContain("LiveTranscribe");
+  });
+
   it("renders display names and a provisional row without exposing canonical IDs", () => {
     act(() => {
       render(<TranscriptPane />, root);
