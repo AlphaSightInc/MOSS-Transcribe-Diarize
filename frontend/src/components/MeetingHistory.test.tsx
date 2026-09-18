@@ -68,6 +68,21 @@ describe("MeetingHistory", () => {
     await vi.waitFor(() => expect([...root.querySelectorAll('[role="status"]')].some(node => node.textContent === reason)).toBe(true));
   });
 
+  it("shows retained words notice and partial audio after tape exhaustion", async () => {
+    const notice = "Final transcript refinement was unavailable for some audio. Previously committed words were kept.";
+    const selected = meeting({ notice, audio: {
+      state: "partial", relative_path: "audio.partial.mp3", byte_count: 360693,
+      duration_ms: 60000, format: "mp3", sample_rate_hz: 16000, channels: 1, bit_rate_bps: 48000
+    } });
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [selected] } : selected)));
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector(".history-card-subtitle")?.textContent).toBe(notice));
+    expect(root.querySelector("[data-audio-download]")?.textContent).toBe("Download partial audio");
+    await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: selected.id } })); });
+    await vi.waitFor(() => expect([...root.querySelectorAll('[role="status"]')].some(node => node.textContent === notice)).toBe(true));
+    expect(transcript.value.map(segment => segment.text)).toEqual(["first words"]);
+  });
+
   it("brings an explicitly opened import into view but leaves background refresh in place", async () => {
     const selected = meeting({ id: "imported", title: "Imported review" });
     vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [selected] } : selected)));

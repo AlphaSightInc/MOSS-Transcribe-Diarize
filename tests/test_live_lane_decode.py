@@ -785,3 +785,45 @@ def test_lane_album_survives_silent_peer_spans_and_matches_returning_voice():
     )
     assert {s.canonical_speaker for s in session.snapshot().effective_transcript
             if s.source_lane == 'microphone'} == {'speaker-0002'}
+
+
+@pytest.mark.parametrize("exhausted", [("system", "microphone"), ("system",), ("microphone",), ()])
+def test_terminal_exhausted_lane_keeps_words_and_reports_tape_gaps(tmp_path, exhausted):
+    c, _, session, arbiter = make(capacity=80000)
+    c.accept_frame(frame())
+    commit(c, arbiter)
+    for lane, tape in c.lane_tapes.items():
+        if lane not in exhausted:
+            tape.capacity_bytes = 160000
+    c.accept_frame(frame(seq=1))
+    commit(c, arbiter)
+    before = session.snapshot().effective_transcript
+    runner = Runner()
+    result = finalize_lanes(
+        c, TerminalTranscriptFinalizer(runner=runner, scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, 80000, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0, base_surface=before,
+        canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers,
+    )
+    assert result.accounting.tape_gaps == len(exhausted)
+    assert len(runner.calls) == 2 - len(exhausted)
+    if len(exhausted) == 2:
+        assert result.proposal is None
+        assert result.accounting.outcome.finalization_status == "unavailable"
+    else:
+        assert session.apply_text_revision(result.proposal).applied
+    after = session.snapshot().effective_transcript
+    assert all(s in after for s in before if s.source_lane in exhausted)
+
+
+def test_terminal_all_zero_lanes_has_named_refusal(tmp_path):
+    c, _, session, _ = make()
+    c.accept_frame(frame(system=0, mic=0))
+    result = finalize_lanes(
+        c, TerminalTranscriptFinalizer(runner=Runner(), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0, base_surface=(), canonical_speakers=(),
+    )
+    assert result.proposal is None
+    assert result.accounting.reason == "all_lanes_zero"
+    assert result.accounting.tape_gaps == 0

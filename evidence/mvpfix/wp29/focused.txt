@@ -1,0 +1,88 @@
+......................................................FF..               [100%]
+=================================== FAILURES ===================================
+_______________ test_exhaustion_finishes_truthfully[system_only] _______________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp29-tape-exhaustion/.wp29/t/pytest-of-gao/pytest-1/test_exhaustion_finishes_truth4')
+case = 'system_only'
+
+    @pytest.mark.parametrize('case', probe.CASES)
+    def test_exhaustion_finishes_truthfully(tmp_path, case):
+        output = probe.exercise(tmp_path, case, emit=lambda _: None)
+        for r in output['results']:
+            interrupted = case == 'lease_expiry'
+            assert r['saved_status'] == ('interrupted' if interrupted else 'completed')
+            assert r['reopened_status'] == r['saved_status']
+            assert r['reopened_segments'] == r['saved_segments'] > 0
+            assert r['saved_equal'] and r['prefix_preserved']
+            assert r['audio']['state'] == 'partial'
+            assert r['audio']['duration_ms'] == 60000
+            assert float(r['mp3']['format']['duration']) == 60.0
+            assert not r['state']['lease_armed']
+            assert r['state']['queue'] == 0
+            assert all(t['released'] and t['retained_bytes'] == 0 for t in r['state']['tapes'].values())
+            if interrupted:
+                assert r['finalization'] == 'not_started'
+                continue
+            assert r['terminal_failure'] is None
+            assert r['state']['accepted'] == r['state']['accounted'] == 90*16000
+            expected = 'final' if case.endswith('_only') else 'unavailable'
+            assert r['finalization'] == expected
+            payload = r['events'][-1]['payload']
+            assert payload['tape_gaps'] == (0 if case == 'mixed_only' else 1 if case.endswith('_only') else 2)
+            assert {'outcome', 'tape_samples', 'reason', 'applied', 'finalization_status'} <= payload.keys()
+            if case != 'mixed_only':
+>               assert r['notice'] == ('Final transcript refinement was unavailable for some audio. '
+                                       'Previously committed words were kept.')
+E               AssertionError: assert None == 'Final transcript refinement was unavailable for some audio. Previously committed words were kept.'
+
+tests/phase2/test_tape_exhaustion.py:39: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  moss_transcribe_diarize.live.tape:live_tape.py:345 live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 1920000, 'retained_bytes': 1920000, 'requested_bytes': 16000}
+_____________ test_exhaustion_finishes_truthfully[microphone_only] _____________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp29-tape-exhaustion/.wp29/t/pytest-of-gao/pytest-1/test_exhaustion_finishes_truth5')
+case = 'microphone_only'
+
+    @pytest.mark.parametrize('case', probe.CASES)
+    def test_exhaustion_finishes_truthfully(tmp_path, case):
+        output = probe.exercise(tmp_path, case, emit=lambda _: None)
+        for r in output['results']:
+            interrupted = case == 'lease_expiry'
+            assert r['saved_status'] == ('interrupted' if interrupted else 'completed')
+            assert r['reopened_status'] == r['saved_status']
+            assert r['reopened_segments'] == r['saved_segments'] > 0
+            assert r['saved_equal'] and r['prefix_preserved']
+            assert r['audio']['state'] == 'partial'
+            assert r['audio']['duration_ms'] == 60000
+            assert float(r['mp3']['format']['duration']) == 60.0
+            assert not r['state']['lease_armed']
+            assert r['state']['queue'] == 0
+            assert all(t['released'] and t['retained_bytes'] == 0 for t in r['state']['tapes'].values())
+            if interrupted:
+                assert r['finalization'] == 'not_started'
+                continue
+            assert r['terminal_failure'] is None
+            assert r['state']['accepted'] == r['state']['accounted'] == 90*16000
+            expected = 'final' if case.endswith('_only') else 'unavailable'
+            assert r['finalization'] == expected
+            payload = r['events'][-1]['payload']
+            assert payload['tape_gaps'] == (0 if case == 'mixed_only' else 1 if case.endswith('_only') else 2)
+            assert {'outcome', 'tape_samples', 'reason', 'applied', 'finalization_status'} <= payload.keys()
+            if case != 'mixed_only':
+>               assert r['notice'] == ('Final transcript refinement was unavailable for some audio. '
+                                       'Previously committed words were kept.')
+E               AssertionError: assert None == 'Final transcript refinement was unavailable for some audio. Previously committed words were kept.'
+
+tests/phase2/test_tape_exhaustion.py:39: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  moss_transcribe_diarize.live.tape:live_tape.py:345 live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 1920000, 'retained_bytes': 1920000, 'requested_bytes': 16000}
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_tape_exhaustion.py::test_exhaustion_finishes_truthfully[system_only]
+FAILED tests/phase2/test_tape_exhaustion.py::test_exhaustion_finishes_truthfully[microphone_only]
+2 failed, 56 passed, 1 warning in 28.75s

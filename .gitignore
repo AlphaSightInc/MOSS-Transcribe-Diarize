@@ -99,3 +99,5 @@ evidence/mvpfix/*/raw/
 >>>>>>> mvpfix/wp24-visual-copy-pack
 
 .wp28runtime/
+# WP29 isolated audio/database/test scratch; never commit meeting audio.
+.wp29/

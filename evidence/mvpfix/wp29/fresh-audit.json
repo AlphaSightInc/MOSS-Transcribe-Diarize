@@ -1,0 +1,10 @@
+{
+  "exhaustion_sessions_passed": 9,
+  "exhaustion_sessions_total": 9,
+  "rss_sessions_finalized": 2,
+  "rss_sessions_measured": 2,
+  "rss_bytes_baseline": 147259392,
+  "rss_bytes_after_first": 624230400,
+  "rss_bytes_after_second": 651165696,
+  "rss_bytes_second_minus_first": 26935296
+}
