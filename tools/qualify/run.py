@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.qualify.decoder import Decoder
 from tests.e2e.verify_workspace import retained_metadata
+from tests.e2e.verify_demo_lanes import Client
 
 PY = sys.executable
 HOST = 'gyauo@ga0-alienware-rtx4070ti.tailnet.aisight.us'
@@ -37,6 +38,12 @@ def counts(statuses):
     c = Counter(statuses)
     return dict(expected=len(statuses), executed=sum(v for k, v in c.items() if k not in ('UNRUNNABLE', 'SKIP')),
                 passed=c['PASS'], failed=c['FAIL'], skipped=c['SKIP'], unrunnable=c['UNRUNNABLE'])
+
+
+def ready_descriptor(base):
+    client = Client(base, ssl._create_unverified_context())
+    client.call('POST', '/api/workspace/bootstrap')
+    return client.call('GET', '/api/live/descriptor')['descriptor']
 
 
 def compare(first, second):
@@ -76,7 +83,7 @@ class Bundle:
                                        decoder_tunnel_url='http://127.0.0.1:18121', decoder_base_url='http://127.0.0.1:18122/v1'),
                          gates=[], request_budget=args.budget)
         self.current = None
-        self.flush()
+        self.gate('tree_clean', 'PASS' if not dirty else 'FAIL', measurements={'dirty_files':dirty})
 
     def flush(self):
         self.data['duration_seconds'] = round(time.monotonic()-self.started, 3)
@@ -84,11 +91,12 @@ class Bundle:
         lines = ['# Local qualification', '', f"Candidate `{self.sha}`; clean at start: {self.data['identity']['tree_clean']}.",
                  'Local measurement only; no deployment or attended-capture acceptance.', '',
                  '| Gate | Status | Counts | Seconds |', '|---|---|---|---|']
+        reasons = []
         for g in self.data['gates']:
             lines.append(f"| {g['name']} | {g['status']} | {json.dumps(g['denominators'], separators=(',', ':'))} | {g['duration_seconds']} |")
             if g.get('reason'):
-                lines.append(f"\n{g['name']}: {g['reason']}\n")
-        lines += ['', f"Runtime: {self.data['duration_seconds']} s.", f"Decoder: {json.dumps(self.data.get('decoder', {}))}",
+                reasons.append(f"{g['name']}: {g['reason']}")
+        lines += ['', *reasons, '', f"Runtime: {self.data['duration_seconds']} s.", f"Decoder: {json.dumps(self.data.get('decoder', {}))}",
                   'Raw content-bearing stdout stays in ignored runtime scratch. Retained logs contain only status/count projections.']
         (self.out/'summary.md').write_text('\n'.join(lines)+'\n')
 
@@ -183,8 +191,13 @@ class Bundle:
                           failed=len(failed), skipped=skipped,
                           failure_names=[c.get('classname','')+'::'+c.get('name','') for c in failed])
         self.gate('frontend', 'PASS' if code == 0 and result.get('collected',0)>0 else 'FAIL', result, elapsed, code)
-        for name, cmd in [('bundle_helpers',[PY,'-m','pytest','-q','-p','no:cacheprovider','--basetemp='+str(self.work/'helpers'),'tools/qualify/test_bundle.py']),
-                          ('typecheck',['npm','--prefix','frontend','run','typecheck']),
+        helper_counts = self.work/'helper-counts.json'
+        code, elapsed, _ = self.command('bundle_helpers', [PY,'-m','pytest','-q','-p','no:cacheprovider',
+            '-p','tools.qualify.pytest_counts','--basetemp='+str(self.work/'helpers'),'tools/qualify/test_bundle.py'],
+            env=dict(self.env, MOSS_QUALIFY_COUNTS=str(helper_counts)))
+        result = json.loads(helper_counts.read_text()) if helper_counts.exists() else {}
+        self.gate('bundle_helpers', 'PASS' if code==0 and result.get('collected',0)>0 else 'FAIL', result, elapsed, code)
+        for name, cmd in [('typecheck',['npm','--prefix','frontend','run','typecheck']),
                           ('verify_layout',['bash','scripts/check_verify_layout.sh'])]:
             code, elapsed, _ = self.command(name, cmd)
             self.gate(name, 'PASS' if code == 0 else 'FAIL', duration=elapsed, code=code)
@@ -269,11 +282,10 @@ class Bundle:
             if app.poll() is not None:
                 break
             try:
-                with urllib.request.urlopen('https://127.0.0.1:17881/api/live/descriptor',context=ssl._create_unverified_context(),timeout=2) as r:
-                    descriptor = json.load(r)['descriptor']
-                    ready = bool(descriptor.get('source_revision'))
-                    if ready:
-                        break
+                descriptor = ready_descriptor('https://127.0.0.1:17881')
+                ready = bool(descriptor.get('source_revision'))
+                if ready:
+                    break
             except Exception:
                 time.sleep(1)
         self.gate('stack','PASS' if ready else 'FAIL',duration=time.monotonic()-start,
@@ -351,6 +363,7 @@ class Bundle:
         self.data['decoder'] = dict(requests=self.proxy.sent if self.proxy else 0,
                                     peak_in_flight=self.proxy.peak if self.proxy else 0,
                                     rejected_by_budget=self.proxy.rejected if self.proxy else 0,
+                                    active_at_teardown=self.proxy.active if self.proxy else 0,
                                     shared_metrics='sampled every 2 seconds; not own request attribution')
         alive = []
         for proc in self.processes:
@@ -404,13 +417,22 @@ def main():
         bundle.static()
         ready = bundle.stack()
         bundle.benches(ready)
-        bundle.unportable()
     except (Exception,KeyboardInterrupt) as exc:
         bundle.gate('runner','FAIL',reason=type(exc).__name__+'; inspect private runtime log')
         # Preserve details privately, never copy exception strings into the bundle.
         import traceback
         (bundle.work/'runner-error.raw').write_text(traceback.format_exc())
     finally:
+        bundle.unportable()
+        recorded = {gate['name'] for gate in bundle.data['gates']}
+        required = dict(python_import=1, asset_parity=17, pytest=0, frontend=0,
+                        bundle_helpers=0, typecheck=1, verify_layout=1, stack=1,
+                        workspace=14, demo_lanes=2, lifecycle=7, reshare=6, level_ladder=6)
+        required.update({'workspace_row_'+str(n):1 for n in range(1,15)})
+        for name, expected in required.items():
+            if name not in recorded:
+                bundle.gate(name, 'UNRUNNABLE', counts(['UNRUNNABLE']*expected),
+                            reason='Prerequisite failed or runner interrupted; no observation')
         bundle.cleanup()
     return 0 if bundle.data['qualified'] and bundle.data.get('determinism',{}).get('status','PASS')=='PASS' else 1
 

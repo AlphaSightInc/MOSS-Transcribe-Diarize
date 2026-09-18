@@ -56,3 +56,27 @@ def test_proxy_caps_real_dispatch_and_records_no_body(tmp_path):
         assert [json.loads(line)['kind'] for line in log.splitlines()]==['start','end','start','end']
     finally:
         proxy.close(); upstream.shutdown(); upstream.server_close(); thread.join()
+
+
+def test_readiness_bootstraps_authenticated_workspace():
+    from tools.qualify.run import ready_descriptor
+    calls=[]
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self,*args): pass
+        def do_POST(self):
+            calls.append(self.path)
+            self.send_response(200); self.send_header('Set-Cookie','workspace=test'); self.end_headers()
+            self.wfile.write(b'{}')
+        def do_GET(self):
+            calls.append(self.path)
+            if self.headers.get('Cookie') != 'workspace=test':
+                self.send_error(401); return
+            self.send_response(200); self.end_headers()
+            self.wfile.write(b'{"descriptor":{"source_revision":"test"}}')
+    server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
+    thread=threading.Thread(target=server.serve_forever,daemon=True); thread.start()
+    try:
+        assert ready_descriptor(f'http://127.0.0.1:{server.server_port}')=={'source_revision':'test'}
+        assert calls==['/api/workspace/bootstrap','/api/live/descriptor']
+    finally:
+        server.shutdown(); server.server_close(); thread.join()

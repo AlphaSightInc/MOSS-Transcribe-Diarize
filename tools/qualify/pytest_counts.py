@@ -39,7 +39,8 @@ def pytest_runtest_logreport(report):
 
 
 def pytest_sessionfinish(session, exitstatus):
-    state['executed'] = len(seen)
+    state['reported'] = len(seen)
+    state['executed'] = len(seen) - sum(value == 'skipped' for value in outcomes.values())
     for status in ('passed', 'failed', 'skipped'):
         state[status] = sum(value == status for value in outcomes.values())
     state['failure_names'] += sorted(k for k, v in outcomes.items() if v == 'failed')

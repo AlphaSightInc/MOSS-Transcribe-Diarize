@@ -11,3 +11,12 @@ leakage and actual HTTP budget overshoot; full Python/frontend gates detect regr
 outside the helper tests. Asset rebuild compares bytes and restores original assets.
 Failures are retained information, not permission to repair unrelated product code.
 Fresh rerun procedure/result will live under docs/verify/wp21/.
+
+Attempt 1 (33112b07): full Python 1877 passed / 2 skipped / 37 subtests, frontend
+244 passed, helper 4 passed, typecheck/layout passed, asset bytes 17/17 equal.
+Readiness incorrectly sent unauthenticated GET: observed descriptor HTTP 401 while
+root HTTP 200 and server service_ready. Stopped owned runner with SIGTERM; teardown
+passed, decoder calls 0. Retained aborted bundle is not the determinism baseline.
+Fixed readiness to bootstrap with existing Client; real local HTTP regression checks
+cookie propagation. Counts now distinguish reported tests from executed non-skips;
+helper gate records individual tests. Tree cleanliness is an explicit gate.
