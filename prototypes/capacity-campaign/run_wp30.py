@@ -1,12 +1,11 @@
-"""WP30 variant of the capacity campaign runner (stub latency / repeat batches / port 18130).
-Kept beside the bundle-integrated run.py so WP30 evidence stays reproducible; the qualification bundle uses run.py.
-"""
 """PROTOTYPE: capacity/lifecycle baseline, metadata only. See NOTES.md.
 
 One command: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. python prototypes/capacity-campaign/run.py --sessions 1 --seconds 120
 This command makes real decoder calls. --prepare-only performs no network I/O.
 """
 from __future__ import annotations
+# WP30 variant of the capacity campaign runner (stub latency / repeat batches / port 18130).
+# Kept beside the bundle-integrated run.py so WP30 evidence stays reproducible; the bundle uses run.py.
 
 import argparse
 import base64
