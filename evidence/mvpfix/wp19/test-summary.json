@@ -1,0 +1,43 @@
+{
+  "initial_album_and_oracle": {
+    "passed": 82,
+    "seconds": 2.92
+  },
+  "initial_a4": {
+    "failed": 1,
+    "passed": 22,
+    "seconds": 5.64,
+    "cause": "test author used nonexistent server export route; export is frontend-generated"
+  },
+  "a4_and_existing_bank": {
+    "passed": 23,
+    "seconds": 5.6,
+    "warnings": 1
+  },
+  "initial_frontend": {
+    "failed": 1,
+    "passed": 248,
+    "cause": "test author counted JSON text again inside target keys; corrected to parsed turn text"
+  },
+  "focused": {
+    "passed": 98,
+    "warnings": 4,
+    "seconds": 4.58
+  },
+  "full_python": {
+    "passed": 1889,
+    "skipped": 2,
+    "subtests": 37,
+    "warnings": 21,
+    "seconds": 152.64,
+    "failed": 0
+  },
+  "frontend": {
+    "passed": 249,
+    "files": 28,
+    "seconds": 2.57,
+    "failed": 0
+  },
+  "typecheck": "PASS",
+  "lease": "20/20 consecutive independent pytest processes"
+}

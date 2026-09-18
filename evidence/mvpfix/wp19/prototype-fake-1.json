@@ -1,0 +1,90 @@
+{
+  "states": [
+    {
+      "window": 0,
+      "reason": "ok",
+      "mapping": {
+        "S01": "S01"
+      },
+      "durations": {
+        "S01": 5
+      },
+      "admissions": {
+        "S01": "admitted"
+      },
+      "album": {
+        "S01": {
+          "exemplars": 1,
+          "provisional": false
+        }
+      },
+      "scores": []
+    },
+    {
+      "window": 1,
+      "reason": "ok",
+      "mapping": {
+        "S01": "S01"
+      },
+      "durations": {
+        "S01": 5
+      },
+      "admissions": {
+        "S01": "admitted"
+      },
+      "album": {
+        "S01": {
+          "exemplars": 2,
+          "provisional": false
+        }
+      },
+      "scores": [
+        {
+          "local_speaker": "S01",
+          "canonical_speaker": "S01",
+          "score": 1.0,
+          "evidence_id": ""
+        }
+      ]
+    },
+    {
+      "window": 2,
+      "reason": "ok",
+      "mapping": {
+        "S01": "S01"
+      },
+      "durations": {
+        "S01": 5
+      },
+      "admissions": {
+        "S01": "admitted"
+      },
+      "album": {
+        "S01": {
+          "exemplars": 3,
+          "provisional": false
+        }
+      },
+      "scores": [
+        {
+          "local_speaker": "S01",
+          "canonical_speaker": "S01",
+          "score": 1.0,
+          "evidence_id": ""
+        }
+      ]
+    }
+  ],
+  "sweep": {
+    "corrections": [],
+    "merges": [],
+    "swept_spans": 3,
+    "swept_units": 3,
+    "dispositions": {
+      "kept": 3
+    }
+  },
+  "identities": 1,
+  "expected": 1,
+  "text_time_unchanged": true
+}

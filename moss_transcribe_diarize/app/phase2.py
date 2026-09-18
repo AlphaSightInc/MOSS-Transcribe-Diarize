@@ -1749,7 +1749,12 @@ def create_phase2_app(
             app.state.phase2_store = store
             app.state.phase2_file_tasks = file_tasks
             app.state.phase2_audio_archive = audio_archive
-            speaker_identity = AccountSpeakerIdentity(store, phase2_live)
+            speaker_identity = AccountSpeakerIdentity(
+                store, phase2_live,
+                file_evidence=getattr(getattr(file_runner, "identity_resolver", None),
+                                      "enrollment_observation", None),
+                audio_archive=audio_archive,
+            )
             app.state.phase2_speaker_identity = speaker_identity
             if phase2_live is not None:
                 phase2_live.bind_speaker_identity(speaker_identity)

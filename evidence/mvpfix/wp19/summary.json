@@ -1,0 +1,55 @@
+{
+  "base": "c2e458676cf27b9e4da69bea20a1612152f1516a",
+  "prototype": {
+    "fake": [
+      1,
+      2
+    ],
+    "real_identities": 3,
+    "real_seconds": 62.86399887499283
+  },
+  "A1": "PASS",
+  "A2": "PASS",
+  "A3": [
+    {
+      "window_count": 3,
+      "identities": 3,
+      "segments": 92,
+      "correct_segments": 84,
+      "segment_accuracy": 0.9130434782608695,
+      "truth_overlap_seconds": 338.0399999999998,
+      "correct_seconds": 322.10999999999984,
+      "duration_accuracy": 0.9528753993610225,
+      "unattributed_segments": 0,
+      "resolver_seconds": 62.89442808399326,
+      "text_time_unchanged": true
+    },
+    {
+      "window_count": 15,
+      "identities": 3,
+      "segments": 464,
+      "correct_segments": 420,
+      "segment_accuracy": 0.9051724137931034,
+      "truth_overlap_seconds": 1684.9800000000082,
+      "correct_seconds": 1592.9700000000073,
+      "duration_accuracy": 0.9453940106114016,
+      "unattributed_segments": 0,
+      "resolver_seconds": 332.00792645898764,
+      "text_time_unchanged": true
+    }
+  ],
+  "A4": "PASS: real file/archive/restart/naming/bank path with perfect-vector fake decoder; five frontend export serializers consume its saved artifact",
+  "A5": "PASS: full Python and frontend suites; 15-window resolver measured",
+  "decoder": {
+    "requests": 18,
+    "max_in_flight": 1,
+    "port": 18119,
+    "elapsed_seconds": 93.56177241601108,
+    "generated_tokens": 21176
+  },
+  "lease": {
+    "passed": 20,
+    "total": 20
+  },
+  "fresh_context": "PENDING /new"
+}

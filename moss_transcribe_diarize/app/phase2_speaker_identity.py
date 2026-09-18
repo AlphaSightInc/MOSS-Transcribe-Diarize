@@ -82,9 +82,11 @@ class _PendingEnrollment:
 class AccountSpeakerIdentity:
     """One deep module for owner-bound naming, private listing, and pending enrollment."""
 
-    def __init__(self, store: Any, active_meetings: Any):
+    def __init__(self, store: Any, active_meetings: Any, *, file_evidence=None, audio_archive=None):
         self._store = store
         self._active_meetings = active_meetings
+        self._file_evidence = file_evidence
+        self._audio_archive = audio_archive
         self._pending: dict[tuple[str, int, str, str], _PendingEnrollment] = {}
         self._lock = asyncio.Lock()
         self._naming_tasks: set[asyncio.Task[ManualNameResult]] = set()
@@ -243,6 +245,12 @@ class AccountSpeakerIdentity:
             for segment in addressed:
                 segment["speaker"] = normalized
             evidence = None
+            if save_voiceprint and meeting.mode == 'file' and self._file_evidence is not None:
+                audio = await handle.audio()
+                path = None if audio is None else handle.resolve_audio(self._audio_archive, audio)
+                if path is not None:
+                    observation = await asyncio.to_thread(self._file_evidence, path, addressed)
+                    evidence = _eligible_evidence(observation)
             live_naming = False
             voiceprint_id, transcript_version, was_linked = await self._persist_manual_name(
                 owner_key, handle.meeting_id, speaker_id, normalized, document, evidence,
