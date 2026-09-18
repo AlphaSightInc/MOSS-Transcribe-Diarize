@@ -1,0 +1,192 @@
+[
+  {
+    "kind": "result",
+    "case": "24-alternation",
+    "meeting": "6qj8qKJjmm63Bba87YunW2LS",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 29.423,
+    "stop_seconds": 5.411,
+    "identity": {
+      "version": 10,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "9"
+        ],
+        [
+          "assignments",
+          "S201->speaker-0002"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "24-overlap",
+    "meeting": "Zj8yZ-CAiR4ajRQS8j0TXBnT",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 35.397,
+    "stop_seconds": 11.389,
+    "identity": {
+      "version": 10,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "9"
+        ],
+        [
+          "assignments",
+          "S101->speaker-0001,S201->speaker-0002"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "48-alternation",
+    "meeting": "Vwu8iw50EqEX6sJYndRopDjx",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 58.505,
+    "stop_seconds": 10.501,
+    "identity": {
+      "version": 20,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "21"
+        ],
+        [
+          "assignments",
+          ""
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02",
+      "S03"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "48-overlap",
+    "meeting": "7-JoCcLxhMLnI21OnKiNL3uv",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 66.706,
+    "stop_seconds": 18.697,
+    "identity": {
+      "version": 20,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0004"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "19"
+        ],
+        [
+          "assignments",
+          ""
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02",
+      "S03",
+      "S04"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  }
+]

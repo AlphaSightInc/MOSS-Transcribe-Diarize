@@ -1,0 +1,26 @@
+{
+  "evidence_consistency": "PASS",
+  "prototype_promotion": "REJECTED_NO_OVERLAP_WIN",
+  "product_quality": "FAIL",
+  "captures": 6,
+  "lanes": 12,
+  "standalone_replays": {
+    "canonical": {
+      "windows": 137,
+      "changed": 0
+    },
+    "rolling": {
+      "windows": 30,
+      "changed": 0
+    },
+    "terminal": {
+      "windows": 12,
+      "changed": 1
+    }
+  },
+  "requests": 390,
+  "request_budget": 500,
+  "canonical_hard_cap_samples": 40000,
+  "local_scheduling": "UNMEASURED",
+  "per_span_ground_truth_wer": "UNMEASURED"
+}
