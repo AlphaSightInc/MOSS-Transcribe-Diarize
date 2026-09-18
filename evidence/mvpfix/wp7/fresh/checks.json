@@ -1,0 +1,32 @@
+{
+  "passed": 25,
+  "total": 25,
+  "checks": {
+    "import_exit": true,
+    "own_import": true,
+    "phase2_exit": true,
+    "phase2_811": true,
+    "frontend_exit": true,
+    "frontend_5": true,
+    "policy-diff_exit": true,
+    "policies_unchanged": true,
+    "13_completed": true,
+    "149_identity_calls": true,
+    "20_part0_calls": true,
+    "single_one": true,
+    "gap_falsifier_retained": true,
+    "two_voices_stable": true,
+    "namespace_falsifier_retained": true,
+    "api_recognition_only": true,
+    "unknown_abstains": true,
+    "deleted_profile_abstains": true,
+    "short_pending_not_falsely_enrolled": true,
+    "repeat_upserts_sample": true,
+    "same_profile": true,
+    "cpu_4_matches": true,
+    "cpu_floor": true,
+    "saved_names_and_5_exports": true,
+    "interior_attribution_kept_failing": true
+  },
+  "live_rerun": false
+}
