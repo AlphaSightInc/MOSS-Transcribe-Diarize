@@ -1,0 +1,280 @@
+{
+  "1": {
+    "meeting": "bsAJzJqQc6uY7CD6ToJNyPuQ",
+    "click_gap_ms": 0.29999999701976776,
+    "terminal_status": "completed",
+    "ok": true,
+    "status": "PASS",
+    "seconds": 11.936,
+    "predicate": "Two Stop events within 200ms yield one terminal meeting, no UI error.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-01.png"
+  },
+  "8": {
+    "variants": [
+      {
+        "variant": "mp3",
+        "statuses": [
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open.",
+        "ok": true
+      },
+      {
+        "variant": "non-audio",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": false
+      },
+      {
+        "variant": "empty",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": false
+      },
+      {
+        "variant": "long-name",
+        "statuses": [
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open.",
+        "ok": true
+      },
+      {
+        "variant": "concurrent",
+        "statuses": [
+          "completed",
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open. Completed \u2014 ready to open.",
+        "ok": true
+      }
+    ],
+    "concurrent_start_gap_ms": 0.24220900377258658,
+    "ok": false,
+    "status": "FAIL",
+    "seconds": 15.775,
+    "predicate": "MP3 and long name succeed; invalid/empty files visibly fail; two uploads complete.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-08.png"
+  },
+  "9": {
+    "variants": [
+      {
+        "variant": "unreachable",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": false
+      },
+      {
+        "variant": "404",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": false
+      },
+      {
+        "variant": "non-media",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": false
+      }
+    ],
+    "ok": false,
+    "status": "FAIL",
+    "seconds": 9.192,
+    "predicate": "Unreachable, 404, non-media URLs visibly explain failure.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-09.png"
+  },
+  "10": {
+    "checks": [
+      {
+        "mode": "live",
+        "format": "md",
+        "bytes": 176,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "txt",
+        "bytes": 173,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "json",
+        "bytes": 570,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "srt",
+        "bytes": 195,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "vtt",
+        "bytes": 203,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "audio_bytes": 48861,
+        "expected_bytes": 48861,
+        "cancelled_after": 1500,
+        "retry_failure": null,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "md",
+        "bytes": 229,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "txt",
+        "bytes": 226,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "json",
+        "bytes": 754,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "srt",
+        "bytes": 248,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "vtt",
+        "bytes": 256,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "audio_bytes": 72837,
+        "expected_bytes": 72837,
+        "cancelled_after": 1500,
+        "retry_failure": null,
+        "ok": true
+      }
+    ],
+    "ok": true,
+    "status": "PASS",
+    "seconds": 1.711,
+    "predicate": "Five nonempty exports from live and file; audio decodes; interrupted download retries.",
+    "console_errors": [],
+    "network_failures": [
+      {
+        "path": "/api/meetings/bsAJzJqQc6uY7CD6ToJNyPuQ/audio/download",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "path": "/api/meetings/bsAJzJqQc6uY7CD6ToJNyPuQ/audio/download",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "path": "/api/meetings/hmTTN4BNKuwSWRrOHz_Atg00/audio/download",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "path": "/api/meetings/hmTTN4BNKuwSWRrOHz_Atg00/audio/download",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "screenshot": "case-10.png"
+  },
+  "11": {
+    "voiceprints_after_reload": 1,
+    "http": 200,
+    "enrollment": "enrolled",
+    "matched_turns": 1,
+    "labels_persisted": true,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 11.51,
+    "predicate": "Rename updates all selected-speaker labels, enrolls voiceprint, persists through reload/export.",
+    "console_errors": [],
+    "network_failures": [
+      {
+        "path": "/api/live/sessions/X6Eib-wzXjHQkn2AH9VBcftW/snapshot",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "path": "/api/live/sessions/X6Eib-wzXjHQkn2AH9VBcftW/events",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "screenshot": "case-11.png"
+  },
+  "12": {
+    "rendered": 60,
+    "refresh": 2,
+    "sessions_refresh_including_hidden": 1,
+    "width": 400,
+    "scroll": 400,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 0.249,
+    "predicate": "60 history fixtures render after reload at 400px, two Refresh controls, no overflow.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-12.png"
+  },
+  "13": {
+    "explained": true,
+    "provider_posts": 0,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 0.665,
+    "predicate": "No-provider summary is disabled or explains setup, with zero provider POSTs.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-13.png"
+  },
+  "14": {
+    "before": 60,
+    "after": 60,
+    "cookies_equal": true,
+    "transcripts_equal": true,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 34.658,
+    "predicate": "Own idle server restart preserves credential, history and transcripts.",
+    "console_errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "network_failures": [],
+    "screenshot": "case-14.png"
+  }
+}

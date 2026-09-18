@@ -1,0 +1,245 @@
+{
+  "1": {
+    "meeting": "lngCfHJfWye4RQBoiNh5_yDV",
+    "click_gap_ms": 0.09999999403953552,
+    "status": "PASS",
+    "ok": true,
+    "seconds": 11.954,
+    "predicate": "Two Stop events within 200ms yield one terminal meeting, no UI error.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-01.png"
+  },
+  "2": {
+    "meeting": "8DynrNBQWCLGCcYhmqqxJjZR",
+    "stop_at_seconds": 1.0020777090103365,
+    "words_before_stop": 0,
+    "terminal_status": "completed",
+    "recovery_status": "completed",
+    "ok": true,
+    "status": "PASS",
+    "seconds": 7.255,
+    "predicate": "Stop at 1s before text yields terminal truth and permits a new capture.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-02.png"
+  },
+  "8": {
+    "variants": [
+      {
+        "variant": "mp3",
+        "statuses": [
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open.",
+        "ok": true
+      },
+      {
+        "variant": "non-audio",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": true,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": true
+      },
+      {
+        "variant": "empty",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": true,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": true
+      },
+      {
+        "variant": "long-name",
+        "statuses": [
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open.",
+        "ok": true
+      },
+      {
+        "variant": "concurrent",
+        "statuses": [
+          "completed",
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open. Completed \u2014 ready to open.",
+        "ok": true
+      }
+    ],
+    "ok": true,
+    "status": "PASS",
+    "seconds": 15.463,
+    "predicate": "MP3 and long name succeed; invalid/empty files visibly fail; two uploads complete.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-08.png"
+  },
+  "9": {
+    "variants": [
+      {
+        "variant": "unreachable",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": false
+      },
+      {
+        "variant": "404",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": false
+      },
+      {
+        "variant": "non-media",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": false
+      }
+    ],
+    "ok": false,
+    "status": "FAIL",
+    "seconds": 9.254,
+    "predicate": "Unreachable, 404, non-media URLs visibly explain failure.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-09.png"
+  },
+  "10": {
+    "checks": [
+      {
+        "mode": "live",
+        "format": "md",
+        "bytes": 39,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "txt",
+        "bytes": 36,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "json",
+        "bytes": 416,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "srt",
+        "bytes": 58,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "vtt",
+        "bytes": 66,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "audio_bytes": 6741,
+        "cancelled_after": 6741,
+        "retry_status": 200,
+        "ok": false
+      },
+      {
+        "mode": "file",
+        "format": "md",
+        "bytes": 229,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "txt",
+        "bytes": 226,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "json",
+        "bytes": 754,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "srt",
+        "bytes": 248,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "vtt",
+        "bytes": 256,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "audio_bytes": 72837,
+        "cancelled_after": 72837,
+        "retry_status": 200,
+        "ok": false
+      }
+    ],
+    "ok": false,
+    "status": "FAIL",
+    "seconds": 1.002,
+    "predicate": "Five nonempty exports from live and file; audio decodes; interrupted download retries.",
+    "console_errors": [],
+    "network_failures": [
+      {
+        "path": "/api/meetings/Y5iC4mn1iQobEqljIow0DX0N/audio/download",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "path": "/api/meetings/FEBWobZNZvjJSNTpZ0zO4aJi/audio/download",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "screenshot": "case-10.png"
+  },
+  "12": {
+    "rendered": 60,
+    "refresh": 1,
+    "refresh_including_hidden": 1,
+    "width": 400,
+    "scroll": 400,
+    "ok": false,
+    "status": "FAIL",
+    "seconds": 0.176,
+    "predicate": "60 history fixtures render after reload at 400px, two Refresh controls, no overflow.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-12.png"
+  },
+  "14": {
+    "status": "FAIL",
+    "exception": "Error",
+    "error": "Page.reload: net::ERR_CONNECTION_REFUSED\nCall log:\n  - waiting for navigation until \"load\"\n",
+    "seconds": 40.567,
+    "predicate": "Own idle server restart preserves credential, history and transcripts.",
+    "console_errors": [],
+    "network_failures": [
+      {
+        "path": "/",
+        "failure": "net::ERR_CONNECTION_REFUSED"
+      }
+    ],
+    "screenshot_error": "Error"
+  }
+}

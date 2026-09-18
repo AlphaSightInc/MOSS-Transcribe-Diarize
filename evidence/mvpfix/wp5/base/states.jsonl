@@ -1,0 +1,3 @@
+{"case": 1, "action": "case-end", "t": 86915.71609625, "phase": "idle", "history": [], "rendered_rows": 0, "transcript_words": 0, "snapshots": [], "console_errors": [], "network_failures": [], "accepted_frames": 0}
+{"case": 2, "action": "case-end", "t": 86927.899221458, "phase": "idle", "history": [], "rendered_rows": 0, "transcript_words": 0, "snapshots": [], "console_errors": [], "network_failures": [], "accepted_frames": 0}
+{"case": 3, "action": "case-end", "t": 86940.082476416, "phase": "idle", "history": [], "rendered_rows": 0, "transcript_words": 0, "snapshots": [], "console_errors": [], "network_failures": [], "accepted_frames": 0}
