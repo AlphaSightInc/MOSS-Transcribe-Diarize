@@ -1,0 +1,29 @@
+{
+  "verdict": "PASS",
+  "snapshots": 41,
+  "error_snapshots_with_reset_and_zero_meters": 15,
+  "cleanup_snapshots_idle_stopped_closed_no_handlers": 11,
+  "genuine_microphone_success_snapshots": 2,
+  "steps": {
+    "descriptor pending": 2,
+    "early share rejected": 4,
+    "microphone succeeded": 2,
+    "late meter": 2,
+    "reset": 7,
+    "microphone pending": 2,
+    "microphone failed": 2,
+    "reset while pending": 2,
+    "old setup settled": 2,
+    "mic receiving": 2,
+    "share reject": 1,
+    "retry ready": 2,
+    "share missing": 1,
+    "mic denied first": 1,
+    "both attached": 1,
+    "mic sound": 1,
+    "both sound": 1,
+    "retired rejection after fresh ready": 2,
+    "second chooser rejected with first pending": 2,
+    "late chooser settled": 2
+  }
+}

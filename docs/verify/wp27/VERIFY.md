@@ -25,10 +25,10 @@ No push/merge/rebase/deploy/GitHub, no shared services/ports 7861 or 7862, no GP
    Review the retained event traces in fresh-frontend-full.txt against these conditions.
    Fourteen WP27 cases are appended to the existing nine capture-failure cases.
 5. Record actual fresh session identity (`CODEX_THREAD_ID`, if available), verified
-   source SHA, pass/fail, exact counts/timings and observations in `VERIFY-RESULT.md`.
+   source SHA, pass/fail, exact counts/timings and observations in `docs/verify/wp27/VERIFY-RESULT.md`.
    Do not label an in-context rerun fresh. If any check fails, diagnose within scope;
    retain failed attempts, fix, rerun affected and required full gates before reporting.
-6. Commit VERIFY-RESULT.md and fresh evidence locally after success. Confirm clean
+6. Commit docs/verify/wp27/VERIFY-RESULT.md and fresh evidence locally after success. Confirm clean
    status and final SHA, then deliver <=60-line report in THIS pane: branch/SHA,
    prototype question/verdict, files changed, exact tests/measurements, remaining
    limits and deviations. Physical devices unmeasured. Report the separately observed

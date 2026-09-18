@@ -40,3 +40,18 @@ First focused run: **73 passed, 2 failed / 75**. Two new tests assumed a track-e
 - Scope diff: ControlPanel, its existing real-client failure tests, rebuilt JS/map, design note and WP27 evidence only. No shared service, network decoder, push, merge, deploy, or GitHub operation.
 - Fresh-context instructions written only after both full-suite gates passed. Fresh results belong in root VERIFY-RESULT.md.
 - Implementation session: `01a0b378-4e04-72c2-808a-98ad350f5fc5`, pane `%27` = MOSS:3.4. Fresh verification must use a different session after the requested `/new`.
+
+## Fresh verification corrections (2026-09-18)
+
+Fresh session `01a0b381-b854-77c0-b04c-09c2a80acdb4` started at clean `7f4051a8a71e86bdb82b606bd990079a265625b8`.
+The literal first `sh evidence/mvpfix/wp27/verify.sh` run failed: **1916 passed, 1 failed, 2 skipped, 37 subtests passed**, 21 warnings, 157.13 s.
+`test_verify_layout_current_tree` rejected the root VERIFY.md added after the implementation gate. Moved it into `docs/verify/wp27/`, where VERIFY-RESULT.md also belongs. No Python source/test change or exception to the layout check.
+
+Trace review found a second issue in the evidence: both deferred descriptor-success fixtures omitted the required `preflight_status_lines`. The trace labelled "microphone succeeded" actually contained `preflight_status_lines must be an object`; the reset case never acquired its late context. The historical prototype's 9/10 and 10/10 counts above are literal runner counts, not proof of those descriptor-success paths.
+
+Added assertions requiring an attached microphone without a microphone error in the success case, and a nonempty context list in the late-resolution case. Against the original fixtures: **2 failed, 21 passed / 23**, 749 ms (`fresh-fixture-red.txt`). Supplied the same valid descriptor status field already used by the normal fixture: **23 passed / 23**, 733 ms (`fresh-fixture-green.txt`). Production code unchanged.
+
+Independently replayed all 14 corrected WP27 cases with only ControlPanel.tsx temporarily replaced by `git show d3ca29dc:frontend/src/components/ControlPanel.tsx`; restored candidate bytes in `finally`. **13 failed, 1 passed / 14 selected**, 9 existing cases excluded, 609 ms (`fresh-baseline-control.txt`). Only successful two-lane readiness passed. This control uses the real CaptureClient and the current corrected tests; it is not a full-suite run of the base checkout.
+
+Control command: `npm --prefix frontend test -- --run src/components/ControlPanel.captureFailure.test.tsx -t 'early Share|Reset before pending|admitted Share|mic failure before Share|successful setup still|old .* rejection after Reset|Reset while chooser pending'`.
+The final full-gate rerun and trace adjudication are recorded in `docs/verify/wp27/VERIFY-RESULT.md`. This is a rerun after corrections within the fresh verification session, not a second fresh session.

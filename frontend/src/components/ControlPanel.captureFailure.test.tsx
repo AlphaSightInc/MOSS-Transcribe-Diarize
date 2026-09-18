@@ -199,8 +199,10 @@ it.each(["descriptor", "microphone"] as const)("early Share while %s pending ret
   await click("Share audio"); snapshot("early share rejected");
   expect(vi.mocked(navigator.mediaDevices.getDisplayMedia)).not.toHaveBeenCalled();
   await settle(() => gate.resolve(pending === "descriptor"
-    ? { ok: true, json: async () => ({ descriptor }) } as Response : new FakeStream() as unknown as MediaStream));
+    ? { ok: true, json: async () => ({ descriptor, preflight_status_lines: { browser_microphone_silent: "silent remedy" } }) } as Response : new FakeStream() as unknown as MediaStream));
   snapshot("microphone succeeded");
+  expect(nodes.has("microphone")).toBe(true);
+  expect(status()).not.toContain("Microphone:");
   expect(status()).toContain("start microphone before display capture");
   expect(status()).toContain("Shared audio");
   expect(status()).toContain("Reset capture");
@@ -228,7 +230,8 @@ it.each(["descriptor", "microphone"] as const)("Reset before pending %s resolves
   await click("Enable microphone"); await click("Share audio");
   await click("Reset capture"); snapshot("reset while pending");
   await settle(() => gate.resolve(pending === "descriptor"
-    ? { ok: true, json: async () => ({ descriptor }) } as Response : new FakeStream() as unknown as MediaStream)); snapshot("old setup settled");
+    ? { ok: true, json: async () => ({ descriptor, preflight_status_lines: { browser_microphone_silent: "silent remedy" } }) } as Response : new FakeStream() as unknown as MediaStream)); snapshot("old setup settled");
+  expect(contexts.length).toBeGreaterThan(0);
   expect(phase()).toBe("idle");
   expect(status()).toContain("Live capture requires both");
   expect(contexts.every(c => c.state === "closed")).toBe(true);
