@@ -21,7 +21,8 @@ No installation/download/update is performed. Own ports: app 17867, tunnel 18121
 accounting forward 18122. Occupied ports cause UNRUNNABLE; never reuse a listener.
 `--ladder PATH` supplies the original lead probe without modifying or copying its logic.
 Budget default/maximum 300; `--budget N` lowers it. Maximum two own requests in flight.
-Busy shared decoder before load yields UNRUNNABLE; subsequent contention is retained.
+Sibling decoder load does not delay or refuse dispatch; initial and subsequent contention
+are retained. Unavailable required decoder metrics still yield UNRUNNABLE.
 
 Isolated state uses a short relative Unix socket path inside `.wp21runtime/`. Existing
 manifest copier writes `.wp6-tmp/` in this checkout; its admitted 57,600,000-byte copy is

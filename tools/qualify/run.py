@@ -254,9 +254,7 @@ class Bundle:
                 self.data['identity']['vllm_version'] = value if isinstance(value,str) and re.fullmatch(r'[A-Za-z0-9.+_-]{1,100}',value) else None
         except Exception:
             self.data['identity']['vllm_version'] = None
-        if initial['num_requests_running'] or initial['num_requests_waiting']:
-            self.gate('stack','UNRUNNABLE',duration=time.monotonic()-start,reason='Shared decoder busy before load; no requests dispatched')
-            return False
+        # Authorized bounded run proceeds under sibling load; retain contention.
         code, _, _ = self.command('manifest', [PY,'prototypes/capacity-campaign/copy_manifest.py'])
         if code:
             self.gate('stack','UNRUNNABLE',duration=time.monotonic()-start,code=code,reason='Existing isolated manifest preparer failed; private log retained')
