@@ -733,10 +733,16 @@ class TerminalFinalization:
 class CompleteAudioTape(Protocol):
     """The whole seam between a meeting's retained audio and its last listener.
 
-    Two methods, and the finalizer knows nothing else about where the audio lives -- memory
-    (ADR-0003 D8) or a declared disk root (ADR-0003 D2) are the same tape from here. `read`
-    refuses rather than returning short, which is why the adapter has no completeness check
-    of its own; `gaps` is what turns that refusal into evidence a reader can act on.
+    Two methods and one optional observation, and the finalizer knows nothing else about where
+    the audio lives -- memory (ADR-0003 D8) or a declared disk root (ADR-0003 D2) are the same
+    tape from here. `read` refuses rather than returning short, which is why the adapter has
+    no completeness check of its own; `gaps` is what turns that refusal into evidence a reader
+    can act on.
+
+    `has_signal` is read through `_tape_holds_signal` and is optional in the same sense, and
+    for the same reason, as `InferenceTranscript.empty_cause`: a tape that does not track it
+    is not lying, it simply has nothing to say, and a tape that has nothing to say must not be
+    treated as a silent meeting.
     """
 
     def gaps(self, through_sample: int) -> tuple[Any, ...]:
@@ -744,6 +750,17 @@ class CompleteAudioTape(Protocol):
 
     def read(self, *, start_sample: int = 0, end_sample: int | None = None) -> bytes:
         ...
+
+
+def _tape_holds_signal(tape: CompleteAudioTape) -> bool:
+    """Did this tape ever accept a sample that was not an exact digital zero?
+
+    `True` from a tape that does not answer. Silence has to be *established* before a decode
+    is withheld -- withholding the meeting's last pass on a tape that never claimed to be
+    silent would lose real transcripts to a missing attribute.
+    """
+
+    return bool(getattr(tape, "has_signal", True))
 
 
 class WholeMeetingRunner(Protocol):
@@ -891,9 +908,15 @@ class TerminalTranscriptFinalizer:
             return self._refused(plan, TerminalOutcome.TAPE_UNAVAILABLE, str(exc), gaps=gaps)
 
         tape_samples = len(pcm) // PCM16_BYTES_PER_SAMPLE
-        if not any(pcm):
+        if not _tape_holds_signal(tape):
+            # A meeting of exact digital zeros is refused here rather than decoded, because a
+            # decoder asked for words about silence invents them (WP3 measured ~40 on one
+            # span) and this pass is the *last* listener: what it proposes replaces the
+            # rolling surface for good. The tape is asked rather than the bytes -- it saw
+            # every sample once, on the way in -- so the question costs nothing and cannot
+            # mistake a fixture's placeholder PCM for a silent meeting.
             return self._refused(
-                plan, TerminalOutcome.NO_TRANSCRIPT, "all_zero_pcm",
+                plan, TerminalOutcome.NO_TRANSCRIPT, "digital_silence",
                 gaps=gaps, tape_samples=tape_samples, decode_elapsed_sec=0.0,
             )
         started = time.monotonic()

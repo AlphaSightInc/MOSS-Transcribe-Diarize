@@ -1279,7 +1279,7 @@ def _run_terminal_replay(
     descriptor = runtime.descriptor
     clock = TerminalScriptedClock(scheduler, delay_polls=delay_polls)
     audio = root / "audio.wav"
-    _write_wav(audio, samples=_TERMINAL_MEETING_SAMPLES)
+    _write_wav(audio, samples=_TERMINAL_MEETING_SAMPLES, sample=b"\x11\x22")
     live_service_replay.run_service_replay(
         service=live_service_replay.InMemoryLiveReplayService(runtime),
         audio_path=audio,
@@ -1306,8 +1306,17 @@ def _one_trace_record(case: unittest.TestCase, trace: list[dict], kind: str) -> 
     return records[0]
 
 
-def _write_wav(path: Path, *, samples: int) -> None:
-    pcm = b"\0\0" * samples
+def _write_wav(path: Path, *, samples: int, sample: bytes = b"\0\0") -> None:
+    """Replayed audio. `sample` is silence by default and audible where the run needs audio.
+
+    Digital zeros are the cheapest thing to write and the only PCM most of these runs care
+    about -- they measure pacing, framing and event order, never words. The terminal run is
+    the exception: its last listener refuses to decode a meeting that never held a nonzero
+    sample (`live_silence`), so a zero-filled meeting there would measure the refusal instead
+    of the surface the test is about.
+    """
+
+    pcm = sample * samples
     with wave.open(str(path), "wb") as wav:
         wav.setnchannels(1)
         wav.setsampwidth(2)

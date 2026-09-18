@@ -1205,6 +1205,11 @@ _EMPTY_REASON_BY_CAUSE: dict[EmptyTranscriptCause, str] = {
     EmptyTranscriptCause.NO_GENERATED_TOKENS: "decoder_returned_no_transcript",
     EmptyTranscriptCause.EMPTY_TEXT: "decoder_returned_no_transcript",
     EmptyTranscriptCause.UNPARSEABLE_TEXT: "decoder_returned_unparseable_transcript",
+    # Its own name, not `decoder_returned_no_transcript`, because no decoder was involved: the
+    # span was exact digital zeros and was never dispatched. A reader who sees a run of these
+    # is looking at a muted or absent capture lane, which is the operator's problem to fix and
+    # is invisible if it reports as a model that had nothing to say.
+    EmptyTranscriptCause.DIGITAL_SILENCE: "span_was_digital_silence",
 }
 
 

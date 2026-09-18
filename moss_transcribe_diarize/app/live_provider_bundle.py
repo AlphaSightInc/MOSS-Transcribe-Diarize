@@ -15,7 +15,11 @@ from typing import Any, Callable, Mapping, Sequence
 
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
-from .live_adapters import BoundedWavInference, RunnerBoundedWavInference
+from .live_adapters import (
+    BoundedWavInference,
+    DigitalSilenceGuardedInference,
+    RunnerBoundedWavInference,
+)
 from .live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
 from .live_identity import BoundedCausalIdentityPreparer, LiveIdentityConfig, LiveSpeakerEvidence
 from .live_identity_album import (
@@ -275,9 +279,18 @@ def bounded_live_inference(
     audio to" has to be true of all three or it is not true at all. Stated as one function so
     that a policy which belongs to *dispatch* -- rather than to the seam that reads a runner's
     answer -- has a single seat, and so that a lane added later cannot quietly opt out of it.
+
+    The policy is the digital-silence guard (WP3's measurement, WP10's placement): a span of
+    exact zeros is answered here, from the audio, and no request reaches the model. It wraps
+    rather than being folded into `RunnerBoundedWavInference` because that class is the seam
+    which reports what a runner *said*, and a seam that answers before asking can report
+    nothing -- see `DigitalSilenceGuardedInference` for the nineteen contracts that depend on
+    it. WP1's per-lane producer builds its decoders through this function for the same reason.
     """
 
-    return RunnerBoundedWavInference(runner, max_samples=max_samples, **transcribe_kwargs)
+    return DigitalSilenceGuardedInference(
+        RunnerBoundedWavInference(runner, max_samples=max_samples, **transcribe_kwargs)
+    )
 
 
 def build_live_runtime_factory(
