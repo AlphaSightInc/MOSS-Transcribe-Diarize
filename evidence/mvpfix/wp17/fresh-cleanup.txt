@@ -1,0 +1,3 @@
+assets_exit=0
+diff_exit=0
+listener_exit=1

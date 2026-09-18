@@ -39,3 +39,12 @@ def test_neither_interruption_nor_quality_failure_is_accepted():
     assert not accepted_case(dict(status='interrupted',finalization_status='failed',passed=False,expected_failure=True))
     assert not accepted_case(dict(status='completed',finalization_status='final',passed=False,expected_failure=True))
     assert accepted_case(dict(status='completed',finalization_status='final',passed=True,expected_failure=False))
+
+
+def test_microphone_window_includes_source_sentence_tail_and_still_scores_additions():
+    from moss_transcribe_diarize.lane_word_oracle import words, distance
+    row = reference_inputs(1)['microphone']
+    assert len(row['pcm']) == 25 * 16000 * 2
+    assert row['reference'].startswith('Kind of the same thing.')
+    assert len(words(row['reference'])) == 53
+    assert distance(words(row['reference']), words(row['reference'] + ' invented words'))['additions'] == 2

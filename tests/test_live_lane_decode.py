@@ -410,3 +410,44 @@ def test_terminal_zero_lane_never_calls_decoder(tmp_path):
     )
     assert runner.calls == [1]
     assert {s.source_lane for s in result.proposal.segments} == {"system"}
+
+@pytest.mark.parametrize('enrolled_lane', ['system', 'microphone'])
+def test_lane_commit_preserves_causal_voiceprint_matches_across_lane_namespaces(enrolled_lane):
+    from moss_transcribe_diarize.app.live_provider_bundle import WeSpeakerLiveEvidenceProvider
+    from moss_transcribe_diarize.app.live_identity_album import FingerprintAlbum
+    from moss_transcribe_diarize.app.phase2_voiceprint_match import VoiceprintProfile, match_voiceprint
+
+    class Encoder:
+        spec = SimpleNamespace(provider='wespeaker', revision='test', state_sha256='test')
+        calls = 0
+        def embed(self, *args):
+            self.calls += 1
+            return (1., 0.)
+
+    encoder = Encoder()
+    def factory():
+        return BoundedCausalIdentityPreparer(
+            config=LiveIdentityConfig(16, .35, .1),
+            evidence_provider=WeSpeakerLiveEvidenceProvider(encoder=encoder, album=FingerprintAlbum()),
+            lane_factory=factory,
+        )
+    c, _, session, arbiter = make()
+    c.identity_preparer = factory()
+    c.accept_frame(frame(system=1 if enrolled_lane == 'system' else 0,
+                         mic=2 if enrolled_lane == 'microphone' else 0))
+    assert commit(c, arbiter)[1].submitted
+    album = c.journal_observations()
+    assert len(album) == 1
+    profile = VoiceprintProfile('enrolled', 'Alex', album[0].embedder_id, album[0].centroid)
+
+    c, _, session, arbiter = make()
+    c.identity_preparer = factory()
+    for sequence in range(2):
+        c.accept_frame(frame(sequence))
+        assert commit(c, arbiter)[1].submitted
+        observed = c.match_observations()
+        assert {o.speaker_label for o in observed} == {'speaker-0001', 'speaker-0002'}
+        assert all(match_voiceprint(o, (profile,)) == profile for o in observed)
+        assert c.match_observations() == observed
+        assert len(c.journal_observations()) == 2
+    assert encoder.calls == 5  # Recognition must not re-embed.

@@ -1,0 +1,9 @@
+{
+  "evidence_consistency": "PASS",
+  "product_acceptance": "FAIL: residual quality",
+  "recognition_routes": 4,
+  "recognition_max_seconds": 3.528290541988099,
+  "duration_cases": 12,
+  "lane_differentials": 8,
+  "decoder_requests": 431
+}

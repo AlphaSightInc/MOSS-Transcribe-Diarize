@@ -62,6 +62,9 @@ def reference_inputs(mic_gain):
     result={}
     for lane,path in [('system',SHARED_TAB_VOICE),('microphone',MICROPHONE_VOICE)]:
         first=json.loads(path.with_name('reference.jsonl').read_text().splitlines()[0])
+        if lane == 'microphone':
+            # The corpus row omits an audible sentence tail inside this exact window.
+            first=json.loads((REPO/'tests/e2e/fixtures/lane-microphone-reference.json').read_text())
         with wave.open(str(path)) as source:
             assert source.getframerate()==16000 and source.getnchannels()==1 and source.getsampwidth()==2
             source.setpos(round(first['start']*16000))

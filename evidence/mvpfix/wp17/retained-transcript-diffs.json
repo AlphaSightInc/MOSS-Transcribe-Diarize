@@ -1,0 +1,393 @@
+[
+  {
+    "meeting": "89hHaEzSiQcjC156NIjqj0Ul",
+    "lanes": {
+      "system": {
+        "diff": [
+          {
+            "operation": "delete",
+            "reference": [
+              "and",
+              "the",
+              "key",
+              "is"
+            ],
+            "observed": []
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "you",
+              "know"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "you're"
+            ]
+          },
+          {
+            "operation": "replace",
+            "reference": [
+              "define"
+            ],
+            "observed": [
+              "divine"
+            ]
+          },
+          {
+            "operation": "delete",
+            "reference": [
+              "book"
+            ],
+            "observed": []
+          }
+        ],
+        "spans": [
+          {
+            "start": 0.57,
+            "end": 2.23,
+            "source_lane": "system"
+          },
+          {
+            "start": 2.23,
+            "end": 4.08,
+            "source_lane": "system"
+          },
+          {
+            "start": 4.08,
+            "end": 6.68,
+            "source_lane": "system"
+          },
+          {
+            "start": 6.68,
+            "end": 9.55,
+            "source_lane": "system"
+          },
+          {
+            "start": 9.55,
+            "end": 12.54,
+            "source_lane": "system"
+          },
+          {
+            "start": 12.54,
+            "end": 15.32,
+            "source_lane": "system"
+          },
+          {
+            "start": 15.32,
+            "end": 18.32,
+            "source_lane": "system"
+          },
+          {
+            "start": 18.32,
+            "end": 19.69,
+            "source_lane": "system"
+          },
+          {
+            "start": 19.69,
+            "end": 21.38,
+            "source_lane": "system"
+          },
+          {
+            "start": 21.38,
+            "end": 24.21,
+            "source_lane": "system"
+          },
+          {
+            "start": 24.21,
+            "end": 25.99,
+            "source_lane": "system"
+          },
+          {
+            "start": 25.99,
+            "end": 28.05,
+            "source_lane": "system"
+          },
+          {
+            "start": 28.05,
+            "end": 28.99,
+            "source_lane": "system"
+          }
+        ]
+      },
+      "microphone": {
+        "diff": [
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "kind",
+              "of",
+              "the",
+              "same",
+              "thing"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "uh"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "um"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "deference"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "uh"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "uh"
+            ]
+          }
+        ],
+        "spans": [
+          {
+            "start": 28.96,
+            "end": 31.22,
+            "source_lane": "microphone"
+          },
+          {
+            "start": 31.65,
+            "end": 34.28,
+            "source_lane": "microphone"
+          },
+          {
+            "start": 34.61,
+            "end": 40.94,
+            "source_lane": "microphone"
+          },
+          {
+            "start": 41.04,
+            "end": 48.24,
+            "source_lane": "microphone"
+          },
+          {
+            "start": 48.68,
+            "end": 53.66,
+            "source_lane": "microphone"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "meeting": "LiwoWY9HKclo7peyMYPXW3ia",
+    "lanes": {
+      "system": {
+        "diff": [
+          {
+            "operation": "delete",
+            "reference": [
+              "and",
+              "the",
+              "key",
+              "is"
+            ],
+            "observed": []
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "you",
+              "know"
+            ]
+          },
+          {
+            "operation": "replace",
+            "reference": [
+              "market's"
+            ],
+            "observed": [
+              "market",
+              "is"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "you're"
+            ]
+          },
+          {
+            "operation": "replace",
+            "reference": [
+              "define"
+            ],
+            "observed": [
+              "divine"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "to"
+            ]
+          },
+          {
+            "operation": "delete",
+            "reference": [
+              "the",
+              "book"
+            ],
+            "observed": []
+          }
+        ],
+        "spans": [
+          {
+            "start": 0.54,
+            "end": 3.27,
+            "source_lane": "system"
+          },
+          {
+            "start": 4.08,
+            "end": 8.88,
+            "source_lane": "system"
+          },
+          {
+            "start": 8.88,
+            "end": 9.57,
+            "source_lane": "system"
+          },
+          {
+            "start": 9.57,
+            "end": 14.88,
+            "source_lane": "system"
+          },
+          {
+            "start": 14.88,
+            "end": 15.33,
+            "source_lane": "system"
+          },
+          {
+            "start": 15.33,
+            "end": 17.67,
+            "source_lane": "system"
+          },
+          {
+            "start": 18.36,
+            "end": 19.38,
+            "source_lane": "system"
+          },
+          {
+            "start": 19.68,
+            "end": 21.12,
+            "source_lane": "system"
+          },
+          {
+            "start": 21.36,
+            "end": 25.41,
+            "source_lane": "system"
+          },
+          {
+            "start": 25.41,
+            "end": 27.81,
+            "source_lane": "system"
+          },
+          {
+            "start": 28.02,
+            "end": 28.98,
+            "source_lane": "system"
+          }
+        ]
+      },
+      "microphone": {
+        "diff": [
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "kind",
+              "of",
+              "the",
+              "same",
+              "thing"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "uh"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "um"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "deference"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "uh"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference": [],
+            "observed": [
+              "uh"
+            ]
+          }
+        ],
+        "spans": [
+          {
+            "start": 0.05,
+            "end": 5.32,
+            "source_lane": "microphone"
+          },
+          {
+            "start": 5.65,
+            "end": 11.92,
+            "source_lane": "microphone"
+          },
+          {
+            "start": 12.06,
+            "end": 19.24,
+            "source_lane": "microphone"
+          },
+          {
+            "start": 19.71,
+            "end": 24.68,
+            "source_lane": "microphone"
+          }
+        ]
+      }
+    }
+  }
+]

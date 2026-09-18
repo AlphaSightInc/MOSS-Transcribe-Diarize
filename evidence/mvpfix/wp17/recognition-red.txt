@@ -1,0 +1,102 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_lane_commit_preserves_causal_voiceprint_matches_across_lane_namespaces[system] _
+
+enrolled_lane = 'system'
+
+    @pytest.mark.parametrize('enrolled_lane', ['system', 'microphone'])
+    def test_lane_commit_preserves_causal_voiceprint_matches_across_lane_namespaces(enrolled_lane):
+        from moss_transcribe_diarize.app.live_provider_bundle import WeSpeakerLiveEvidenceProvider
+        from moss_transcribe_diarize.app.live_identity_album import FingerprintAlbum
+        from moss_transcribe_diarize.app.phase2_voiceprint_match import VoiceprintProfile, match_voiceprint
+    
+        class Encoder:
+            spec = SimpleNamespace(provider='wespeaker', revision='test', state_sha256='test')
+            calls = 0
+            def embed(self, *args):
+                self.calls += 1
+                return (1., 0.)
+    
+        encoder = Encoder()
+        def factory():
+            return BoundedCausalIdentityPreparer(
+                config=LiveIdentityConfig(16, .35, .1),
+                evidence_provider=WeSpeakerLiveEvidenceProvider(encoder=encoder, album=FingerprintAlbum()),
+                lane_factory=factory,
+            )
+        c, _, session, arbiter = make()
+        c.identity_preparer = factory()
+        c.accept_frame(frame(system=1 if enrolled_lane == 'system' else 0,
+                             mic=2 if enrolled_lane == 'microphone' else 0))
+        assert commit(c, arbiter)[1].submitted
+        album = c.journal_observations()
+        assert len(album) == 1
+        profile = VoiceprintProfile('enrolled', 'Alex', album[0].embedder_id, album[0].centroid)
+    
+        c, _, session, arbiter = make()
+        c.identity_preparer = factory()
+        for sequence in range(2):
+            c.accept_frame(frame(sequence))
+            assert commit(c, arbiter)[1].submitted
+            observed = c.match_observations()
+>           assert {o.speaker_label for o in observed} == {'speaker-0001', 'speaker-0002'}
+E           AssertionError: assert set() == {'speaker-000...speaker-0002'}
+E             
+E             Extra items in the right set:
+E             'speaker-0002'
+E             'speaker-0001'
+E             Use -v to get more diff
+
+tests/test_live_lane_decode.py:449: AssertionError
+_ test_lane_commit_preserves_causal_voiceprint_matches_across_lane_namespaces[microphone] _
+
+enrolled_lane = 'microphone'
+
+    @pytest.mark.parametrize('enrolled_lane', ['system', 'microphone'])
+    def test_lane_commit_preserves_causal_voiceprint_matches_across_lane_namespaces(enrolled_lane):
+        from moss_transcribe_diarize.app.live_provider_bundle import WeSpeakerLiveEvidenceProvider
+        from moss_transcribe_diarize.app.live_identity_album import FingerprintAlbum
+        from moss_transcribe_diarize.app.phase2_voiceprint_match import VoiceprintProfile, match_voiceprint
+    
+        class Encoder:
+            spec = SimpleNamespace(provider='wespeaker', revision='test', state_sha256='test')
+            calls = 0
+            def embed(self, *args):
+                self.calls += 1
+                return (1., 0.)
+    
+        encoder = Encoder()
+        def factory():
+            return BoundedCausalIdentityPreparer(
+                config=LiveIdentityConfig(16, .35, .1),
+                evidence_provider=WeSpeakerLiveEvidenceProvider(encoder=encoder, album=FingerprintAlbum()),
+                lane_factory=factory,
+            )
+        c, _, session, arbiter = make()
+        c.identity_preparer = factory()
+        c.accept_frame(frame(system=1 if enrolled_lane == 'system' else 0,
+                             mic=2 if enrolled_lane == 'microphone' else 0))
+        assert commit(c, arbiter)[1].submitted
+        album = c.journal_observations()
+        assert len(album) == 1
+        profile = VoiceprintProfile('enrolled', 'Alex', album[0].embedder_id, album[0].centroid)
+    
+        c, _, session, arbiter = make()
+        c.identity_preparer = factory()
+        for sequence in range(2):
+            c.accept_frame(frame(sequence))
+            assert commit(c, arbiter)[1].submitted
+            observed = c.match_observations()
+>           assert {o.speaker_label for o in observed} == {'speaker-0001', 'speaker-0002'}
+E           AssertionError: assert set() == {'speaker-000...speaker-0002'}
+E             
+E             Extra items in the right set:
+E             'speaker-0002'
+E             'speaker-0001'
+E             Use -v to get more diff
+
+tests/test_live_lane_decode.py:449: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_lane_decode.py::test_lane_commit_preserves_causal_voiceprint_matches_across_lane_namespaces[system]
+FAILED tests/test_live_lane_decode.py::test_lane_commit_preserves_causal_voiceprint_matches_across_lane_namespaces[microphone]
+2 failed, 19 deselected in 0.36s

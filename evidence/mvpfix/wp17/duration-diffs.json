@@ -1,0 +1,2385 @@
+[
+  {
+    "seconds": 24,
+    "case": "alternation",
+    "lane": "system",
+    "comparison": "paired vs identical lane PCM alone; NOT ground-truth WER",
+    "surfaces": {
+      "pre": {
+        "edit_counts": {
+          "reference_words": 38,
+          "observed_words": 38,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      "final": {
+        "edit_counts": {
+          "reference_words": 37,
+          "observed_words": 37,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      "saved": {
+        "edit_counts": {
+          "reference_words": 37,
+          "observed_words": 37,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    },
+    "producers": [
+      {
+        "producer": "canonical",
+        "start_sample": 0,
+        "end_sample": 40000,
+        "paired_words": 9,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 40000,
+        "end_sample": 80000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 80000,
+        "end_sample": 120000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 120000,
+        "end_sample": 160000,
+        "paired_words": 11,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 0,
+        "end_sample": 160000,
+        "paired_words": 35,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 35,
+          "observed_words": 35,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 160000,
+        "end_sample": 200000,
+        "paired_words": 3,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 160000,
+        "end_sample": 320000,
+        "paired_words": 3,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "terminal",
+        "start_sample": 0,
+        "end_sample": 384000,
+        "paired_words": 37,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 37,
+          "observed_words": 37,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    ],
+    "control_window_count": 8
+  },
+  {
+    "seconds": 24,
+    "case": "alternation",
+    "lane": "microphone",
+    "comparison": "paired vs identical lane PCM alone; NOT ground-truth WER",
+    "surfaces": {
+      "pre": {
+        "edit_counts": {
+          "reference_words": 25,
+          "observed_words": 23,
+          "substitutions": 0,
+          "omissions": 3,
+          "additions": 1,
+          "wer": 0.16
+        },
+        "diff": [
+          {
+            "operation": "delete",
+            "reference_range": [
+              7,
+              9
+            ],
+            "observed_range": [
+              7,
+              7
+            ],
+            "reference": [
+              "act",
+              "uh"
+            ],
+            "observed": []
+          },
+          {
+            "operation": "delete",
+            "reference_range": [
+              13,
+              14
+            ],
+            "observed_range": [
+              11,
+              11
+            ],
+            "reference": [
+              "that"
+            ],
+            "observed": []
+          },
+          {
+            "operation": "insert",
+            "reference_range": [
+              21,
+              21
+            ],
+            "observed_range": [
+              18,
+              19
+            ],
+            "reference": [],
+            "observed": [
+              "uh"
+            ]
+          }
+        ]
+      },
+      "final": {
+        "edit_counts": {
+          "reference_words": 26,
+          "observed_words": 26,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      "saved": {
+        "edit_counts": {
+          "reference_words": 26,
+          "observed_words": 26,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    },
+    "producers": [
+      {
+        "producer": "canonical",
+        "start_sample": 160000,
+        "end_sample": 200000,
+        "paired_words": 1,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 200000,
+        "end_sample": 240000,
+        "paired_words": 6,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 240000,
+        "end_sample": 280000,
+        "paired_words": 8,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 280000,
+        "end_sample": 320000,
+        "paired_words": 5,
+        "identical_control_window": false
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 160000,
+        "end_sample": 320000,
+        "paired_words": 18,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 18,
+          "observed_words": 18,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 320000,
+        "end_sample": 360000,
+        "paired_words": 5,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 360000,
+        "end_sample": 384000,
+        "paired_words": 5,
+        "identical_control_window": false
+      },
+      {
+        "producer": "terminal",
+        "start_sample": 0,
+        "end_sample": 384000,
+        "paired_words": 26,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 26,
+          "observed_words": 26,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    ],
+    "control_window_count": 7
+  },
+  {
+    "seconds": 24,
+    "case": "overlap",
+    "lane": "system",
+    "comparison": "paired vs identical lane PCM alone; NOT ground-truth WER",
+    "surfaces": {
+      "pre": {
+        "edit_counts": {
+          "reference_words": 79,
+          "observed_words": 67,
+          "substitutions": 1,
+          "omissions": 14,
+          "additions": 2,
+          "wer": 0.21518987341772153
+        },
+        "diff": [
+          {
+            "operation": "delete",
+            "reference_range": [
+              38,
+              40
+            ],
+            "observed_range": [
+              38,
+              38
+            ],
+            "reference": [
+              "you",
+              "know"
+            ],
+            "observed": []
+          },
+          {
+            "operation": "replace",
+            "reference_range": [
+              61,
+              62
+            ],
+            "observed_range": [
+              59,
+              62
+            ],
+            "reference": [
+              "you're"
+            ],
+            "observed": [
+              "mean",
+              "you",
+              "know"
+            ]
+          },
+          {
+            "operation": "delete",
+            "reference_range": [
+              67,
+              79
+            ],
+            "observed_range": [
+              67,
+              67
+            ],
+            "reference": [
+              "to",
+              "tell",
+              "you",
+              "what",
+              "something",
+              "is",
+              "worth",
+              "and",
+              "so",
+              "if",
+              "you",
+              "can"
+            ],
+            "observed": []
+          }
+        ]
+      },
+      "final": {
+        "edit_counts": {
+          "reference_words": 81,
+          "observed_words": 81,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      "saved": {
+        "edit_counts": {
+          "reference_words": 81,
+          "observed_words": 81,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    },
+    "producers": [
+      {
+        "producer": "canonical",
+        "start_sample": 0,
+        "end_sample": 40000,
+        "paired_words": 9,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 40000,
+        "end_sample": 80000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 80000,
+        "end_sample": 120000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 120000,
+        "end_sample": 160000,
+        "paired_words": 11,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 0,
+        "end_sample": 160000,
+        "paired_words": 35,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 35,
+          "observed_words": 35,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 160000,
+        "end_sample": 200000,
+        "paired_words": 3,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 200000,
+        "end_sample": 240000,
+        "paired_words": 9,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 240000,
+        "end_sample": 280000,
+        "paired_words": 12,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 12,
+          "observed_words": 12,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 280000,
+        "end_sample": 320000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 160000,
+        "end_sample": 320000,
+        "paired_words": 34,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 33,
+          "observed_words": 34,
+          "substitutions": 1,
+          "omissions": 0,
+          "additions": 1,
+          "wer": 0.06060606060606061
+        },
+        "diff": [
+          {
+            "operation": "replace",
+            "reference_range": [
+              26,
+              27
+            ],
+            "observed_range": [
+              26,
+              28
+            ],
+            "reference": [
+              "you're"
+            ],
+            "observed": [
+              "you",
+              "know"
+            ]
+          }
+        ]
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 320000,
+        "end_sample": 360000,
+        "paired_words": 11,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 360000,
+        "end_sample": 384000,
+        "paired_words": 4,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 4,
+          "observed_words": 4,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "terminal",
+        "start_sample": 0,
+        "end_sample": 384000,
+        "paired_words": 81,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 81,
+          "observed_words": 81,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    ],
+    "control_window_count": 13
+  },
+  {
+    "seconds": 24,
+    "case": "overlap",
+    "lane": "microphone",
+    "comparison": "paired vs identical lane PCM alone; NOT ground-truth WER",
+    "surfaces": {
+      "pre": {
+        "edit_counts": {
+          "reference_words": 53,
+          "observed_words": 49,
+          "substitutions": 0,
+          "omissions": 5,
+          "additions": 1,
+          "wer": 0.11320754716981132
+        },
+        "diff": [
+          {
+            "operation": "insert",
+            "reference_range": [
+              44,
+              44
+            ],
+            "observed_range": [
+              44,
+              45
+            ],
+            "reference": [],
+            "observed": [
+              "change"
+            ]
+          },
+          {
+            "operation": "delete",
+            "reference_range": [
+              48,
+              53
+            ],
+            "observed_range": [
+              49,
+              49
+            ],
+            "reference": [
+              "uh",
+              "we",
+              "are",
+              "given",
+              "stability"
+            ],
+            "observed": []
+          }
+        ]
+      },
+      "final": {
+        "edit_counts": {
+          "reference_words": 57,
+          "observed_words": 57,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      "saved": {
+        "edit_counts": {
+          "reference_words": 57,
+          "observed_words": 57,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    },
+    "producers": [
+      {
+        "producer": "canonical",
+        "start_sample": 0,
+        "end_sample": 40000,
+        "paired_words": 7,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 7,
+          "observed_words": 7,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 40000,
+        "end_sample": 80000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 80000,
+        "end_sample": 120000,
+        "paired_words": 4,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 4,
+          "observed_words": 4,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 120000,
+        "end_sample": 160000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 0,
+        "end_sample": 160000,
+        "paired_words": 25,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 25,
+          "observed_words": 25,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 160000,
+        "end_sample": 200000,
+        "paired_words": 5,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 200000,
+        "end_sample": 240000,
+        "paired_words": 6,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 240000,
+        "end_sample": 280000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 280000,
+        "end_sample": 320000,
+        "paired_words": 5,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 160000,
+        "end_sample": 320000,
+        "paired_words": 23,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 23,
+          "observed_words": 23,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 320000,
+        "end_sample": 360000,
+        "paired_words": 5,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 360000,
+        "end_sample": 384000,
+        "paired_words": 5,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "terminal",
+        "start_sample": 0,
+        "end_sample": 384000,
+        "paired_words": 57,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 57,
+          "observed_words": 57,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    ],
+    "control_window_count": 13
+  },
+  {
+    "seconds": 48,
+    "case": "alternation",
+    "lane": "system",
+    "comparison": "paired vs identical lane PCM alone; NOT ground-truth WER",
+    "surfaces": {
+      "pre": {
+        "edit_counts": {
+          "reference_words": 83,
+          "observed_words": 83,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      "final": {
+        "edit_counts": {
+          "reference_words": 81,
+          "observed_words": 81,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      "saved": {
+        "edit_counts": {
+          "reference_words": 81,
+          "observed_words": 81,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    },
+    "producers": [
+      {
+        "producer": "canonical",
+        "start_sample": 0,
+        "end_sample": 40000,
+        "paired_words": 9,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 40000,
+        "end_sample": 80000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 80000,
+        "end_sample": 120000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 120000,
+        "end_sample": 160000,
+        "paired_words": 11,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 0,
+        "end_sample": 160000,
+        "paired_words": 35,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 35,
+          "observed_words": 35,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 160000,
+        "end_sample": 200000,
+        "paired_words": 3,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 200000,
+        "end_sample": 240000,
+        "paired_words": 9,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 240000,
+        "end_sample": 280000,
+        "paired_words": 12,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 12,
+          "observed_words": 12,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 280000,
+        "end_sample": 320000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 160000,
+        "end_sample": 320000,
+        "paired_words": 33,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 33,
+          "observed_words": 33,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 320000,
+        "end_sample": 360000,
+        "paired_words": 11,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 360000,
+        "end_sample": 400000,
+        "paired_words": 4,
+        "identical_control_window": false
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 320000,
+        "end_sample": 480000,
+        "paired_words": 15,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 15,
+          "observed_words": 15,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "terminal",
+        "start_sample": 0,
+        "end_sample": 768000,
+        "paired_words": 81,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 81,
+          "observed_words": 81,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    ],
+    "control_window_count": 14
+  },
+  {
+    "seconds": 48,
+    "case": "alternation",
+    "lane": "microphone",
+    "comparison": "paired vs identical lane PCM alone; NOT ground-truth WER",
+    "surfaces": {
+      "pre": {
+        "edit_counts": {
+          "reference_words": 63,
+          "observed_words": 65,
+          "substitutions": 6,
+          "omissions": 4,
+          "additions": 6,
+          "wer": 0.25396825396825395
+        },
+        "diff": [
+          {
+            "operation": "replace",
+            "reference_range": [
+              19,
+              20
+            ],
+            "observed_range": [
+              19,
+              20
+            ],
+            "reference": [
+              "that"
+            ],
+            "observed": [
+              "the"
+            ]
+          },
+          {
+            "operation": "replace",
+            "reference_range": [
+              33,
+              36
+            ],
+            "observed_range": [
+              33,
+              36
+            ],
+            "reference": [
+              "deference",
+              "to",
+              "authority"
+            ],
+            "observed": [
+              "difference",
+              "of",
+              "already"
+            ]
+          },
+          {
+            "operation": "insert",
+            "reference_range": [
+              38,
+              38
+            ],
+            "observed_range": [
+              38,
+              39
+            ],
+            "reference": [],
+            "observed": [
+              "uh"
+            ]
+          },
+          {
+            "operation": "replace",
+            "reference_range": [
+              41,
+              42
+            ],
+            "observed_range": [
+              42,
+              43
+            ],
+            "reference": [
+              "can"
+            ],
+            "observed": [
+              "could"
+            ]
+          },
+          {
+            "operation": "replace",
+            "reference_range": [
+              47,
+              48
+            ],
+            "observed_range": [
+              48,
+              54
+            ],
+            "reference": [
+              "entrepreneur"
+            ],
+            "observed": [
+              "entrepreneurialism",
+              "them",
+              "you",
+              "see",
+              "in",
+              "china"
+            ]
+          },
+          {
+            "operation": "delete",
+            "reference_range": [
+              59,
+              63
+            ],
+            "observed_range": [
+              65,
+              65
+            ],
+            "reference": [
+              "uh",
+              "the",
+              "fact",
+              "that"
+            ],
+            "observed": []
+          }
+        ]
+      },
+      "final": {
+        "edit_counts": {
+          "reference_words": 71,
+          "observed_words": 71,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      "saved": {
+        "edit_counts": {
+          "reference_words": 71,
+          "observed_words": 71,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    },
+    "producers": [
+      {
+        "producer": "canonical",
+        "start_sample": 360000,
+        "end_sample": 400000,
+        "paired_words": 2,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 400160,
+        "end_sample": 440160,
+        "paired_words": 11,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 440160,
+        "end_sample": 480160,
+        "paired_words": 6,
+        "identical_control_window": false
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 320000,
+        "end_sample": 480000,
+        "paired_words": 20,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 20,
+          "observed_words": 20,
+          "substitutions": 1,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.05
+        },
+        "diff": [
+          {
+            "operation": "replace",
+            "reference_range": [
+              19,
+              20
+            ],
+            "observed_range": [
+              19,
+              20
+            ],
+            "reference": [
+              "that"
+            ],
+            "observed": [
+              "the"
+            ]
+          }
+        ]
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 480160,
+        "end_sample": 520160,
+        "paired_words": 8,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 524480,
+        "end_sample": 564480,
+        "paired_words": 7,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 564480,
+        "end_sample": 604480,
+        "paired_words": 8,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 604480,
+        "end_sample": 644480,
+        "paired_words": 6,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 644480,
+        "end_sample": 684480,
+        "paired_words": 8,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 684480,
+        "end_sample": 724480,
+        "paired_words": 8,
+        "identical_control_window": false
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 480000,
+        "end_sample": 640000,
+        "paired_words": 28,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 28,
+          "observed_words": 28,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 724480,
+        "end_sample": 764480,
+        "paired_words": 8,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 764480,
+        "end_sample": 768000,
+        "paired_words": 1,
+        "identical_control_window": false
+      },
+      {
+        "producer": "terminal",
+        "start_sample": 0,
+        "end_sample": 768000,
+        "paired_words": 71,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 71,
+          "observed_words": 71,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    ],
+    "control_window_count": 14
+  },
+  {
+    "seconds": 48,
+    "case": "overlap",
+    "lane": "system",
+    "comparison": "paired vs identical lane PCM alone; NOT ground-truth WER",
+    "surfaces": {
+      "pre": {
+        "edit_counts": {
+          "reference_words": 145,
+          "observed_words": 144,
+          "substitutions": 1,
+          "omissions": 1,
+          "additions": 0,
+          "wer": 0.013793103448275862
+        },
+        "diff": [
+          {
+            "operation": "replace",
+            "reference_range": [
+              61,
+              63
+            ],
+            "observed_range": [
+              61,
+              62
+            ],
+            "reference": [
+              "you",
+              "know"
+            ],
+            "observed": [
+              "you're"
+            ]
+          }
+        ]
+      },
+      "final": {
+        "edit_counts": {
+          "reference_words": 149,
+          "observed_words": 149,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      "saved": {
+        "edit_counts": {
+          "reference_words": 149,
+          "observed_words": 149,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    },
+    "producers": [
+      {
+        "producer": "canonical",
+        "start_sample": 0,
+        "end_sample": 40000,
+        "paired_words": 9,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 40000,
+        "end_sample": 80000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 80000,
+        "end_sample": 120000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 120000,
+        "end_sample": 160000,
+        "paired_words": 11,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 0,
+        "end_sample": 160000,
+        "paired_words": 35,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 35,
+          "observed_words": 35,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 160000,
+        "end_sample": 200000,
+        "paired_words": 3,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 200000,
+        "end_sample": 240000,
+        "paired_words": 9,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 240000,
+        "end_sample": 280000,
+        "paired_words": 12,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 12,
+          "observed_words": 12,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 280000,
+        "end_sample": 320000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 160000,
+        "end_sample": 320000,
+        "paired_words": 33,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 34,
+          "observed_words": 33,
+          "substitutions": 1,
+          "omissions": 1,
+          "additions": 0,
+          "wer": 0.058823529411764705
+        },
+        "diff": [
+          {
+            "operation": "replace",
+            "reference_range": [
+              26,
+              28
+            ],
+            "observed_range": [
+              26,
+              27
+            ],
+            "reference": [
+              "you",
+              "know"
+            ],
+            "observed": [
+              "you're"
+            ]
+          }
+        ]
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 320000,
+        "end_sample": 360000,
+        "paired_words": 11,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 360000,
+        "end_sample": 400000,
+        "paired_words": 9,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 400000,
+        "end_sample": 440000,
+        "paired_words": 11,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 440000,
+        "end_sample": 480000,
+        "paired_words": 12,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 12,
+          "observed_words": 12,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 320000,
+        "end_sample": 480000,
+        "paired_words": 43,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 43,
+          "observed_words": 43,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 480000,
+        "end_sample": 520000,
+        "paired_words": 9,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 520000,
+        "end_sample": 560000,
+        "paired_words": 5,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 560000,
+        "end_sample": 600000,
+        "paired_words": 7,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 7,
+          "observed_words": 7,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 600000,
+        "end_sample": 640000,
+        "paired_words": 3,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 480000,
+        "end_sample": 640000,
+        "paired_words": 23,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 23,
+          "observed_words": 23,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 640000,
+        "end_sample": 680000,
+        "paired_words": 5,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 680000,
+        "end_sample": 720000,
+        "paired_words": 5,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 720000,
+        "end_sample": 760000,
+        "paired_words": 9,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 760000,
+        "end_sample": 768000,
+        "paired_words": 1,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 1,
+          "observed_words": 1,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "terminal",
+        "start_sample": 0,
+        "end_sample": 768000,
+        "paired_words": 149,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 149,
+          "observed_words": 149,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    ],
+    "control_window_count": 25
+  },
+  {
+    "seconds": 48,
+    "case": "overlap",
+    "lane": "microphone",
+    "comparison": "paired vs identical lane PCM alone; NOT ground-truth WER",
+    "surfaces": {
+      "pre": {
+        "edit_counts": {
+          "reference_words": 120,
+          "observed_words": 119,
+          "substitutions": 1,
+          "omissions": 1,
+          "additions": 0,
+          "wer": 0.016666666666666666
+        },
+        "diff": [
+          {
+            "operation": "replace",
+            "reference_range": [
+              104,
+              105
+            ],
+            "observed_range": [
+              104,
+              105
+            ],
+            "reference": [
+              "them"
+            ],
+            "observed": [
+              "oralism"
+            ]
+          },
+          {
+            "operation": "delete",
+            "reference_range": [
+              109,
+              110
+            ],
+            "observed_range": [
+              109,
+              109
+            ],
+            "reference": [
+              "if"
+            ],
+            "observed": []
+          }
+        ]
+      },
+      "final": {
+        "edit_counts": {
+          "reference_words": 126,
+          "observed_words": 126,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      "saved": {
+        "edit_counts": {
+          "reference_words": 126,
+          "observed_words": 126,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    },
+    "producers": [
+      {
+        "producer": "canonical",
+        "start_sample": 0,
+        "end_sample": 40000,
+        "paired_words": 7,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 7,
+          "observed_words": 7,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 40000,
+        "end_sample": 80000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 80000,
+        "end_sample": 120000,
+        "paired_words": 4,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 4,
+          "observed_words": 4,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 120000,
+        "end_sample": 160000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 0,
+        "end_sample": 160000,
+        "paired_words": 25,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 25,
+          "observed_words": 25,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 160000,
+        "end_sample": 200000,
+        "paired_words": 5,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 200000,
+        "end_sample": 240000,
+        "paired_words": 6,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 240000,
+        "end_sample": 280000,
+        "paired_words": 8,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 280000,
+        "end_sample": 320000,
+        "paired_words": 5,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 160000,
+        "end_sample": 320000,
+        "paired_words": 23,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 23,
+          "observed_words": 23,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 320000,
+        "end_sample": 360000,
+        "paired_words": 5,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 360000,
+        "end_sample": 400000,
+        "paired_words": 6,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 400000,
+        "end_sample": 440000,
+        "paired_words": 11,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 440000,
+        "end_sample": 480000,
+        "paired_words": 6,
+        "identical_control_window": false
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 320000,
+        "end_sample": 480000,
+        "paired_words": 28,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 28,
+          "observed_words": 28,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 480000,
+        "end_sample": 520000,
+        "paired_words": 8,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 520000,
+        "end_sample": 560000,
+        "paired_words": 6,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 560000,
+        "end_sample": 600000,
+        "paired_words": 7,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 600000,
+        "end_sample": 640000,
+        "paired_words": 8,
+        "identical_control_window": false
+      },
+      {
+        "producer": "rolling",
+        "start_sample": 480000,
+        "end_sample": 640000,
+        "paired_words": 28,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 28,
+          "observed_words": 28,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 640000,
+        "end_sample": 680000,
+        "paired_words": 5,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 680000,
+        "end_sample": 720000,
+        "paired_words": 10,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 720000,
+        "end_sample": 760000,
+        "paired_words": 8,
+        "identical_control_window": false
+      },
+      {
+        "producer": "canonical",
+        "start_sample": 760000,
+        "end_sample": 768000,
+        "paired_words": 2,
+        "identical_control_window": false
+      },
+      {
+        "producer": "terminal",
+        "start_sample": 0,
+        "end_sample": 768000,
+        "paired_words": 126,
+        "identical_control_window": true,
+        "edit_counts": {
+          "reference_words": 126,
+          "observed_words": 126,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "diff": []
+      }
+    ],
+    "control_window_count": 25
+  }
+]

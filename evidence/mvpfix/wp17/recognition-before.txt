@@ -1,0 +1,2 @@
+prepared 2 ['speaker-0001', 'speaker-0002']
+committed 0 [] album 2 embeddings 2

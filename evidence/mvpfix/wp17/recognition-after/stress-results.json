@@ -1,0 +1,392 @@
+[
+  {
+    "kind": "result",
+    "case": "enroll-system",
+    "meeting": "Cnm0gCV-mMFgVHVFTEJ_FgZw",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 15.506,
+    "stop_seconds": 3.501,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "assignments",
+          "S101->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP17 Adam"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 4
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [
+      {
+        "kind": "enroll",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "Cnm0gCV-mMFgVHVFTEJ_FgZw",
+            "speaker_id": "speaker-0001",
+            "label": "WP17 Adam",
+            "voiceprint_id": null,
+            "enrollment": "pending",
+            "transcript_version": 2
+          }
+        }
+      }
+    ],
+    "bank": [
+      {
+        "id": "XpD2_zcMcOK0GOsxHG-rTrN8",
+        "label": "WP17 Adam",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 1,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "recognize-system-to-system",
+    "meeting": "xt-nAATtajIS7kbA4b_8aNzr",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 15.097,
+    "stop_seconds": 3.09,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "assignments",
+          "S101->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP17 Adam"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 3
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": 3.5264644999988377,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [
+      {
+        "id": "XpD2_zcMcOK0GOsxHG-rTrN8",
+        "label": "WP17 Adam",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 1,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "recognize-system-to-microphone",
+    "meeting": "vMj6ZLTEliZfgNGpHlp2nWxY",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 15.416,
+    "stop_seconds": 3.403,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "assignments",
+          "S201->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP17 Adam"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 3
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": 3.527691750001395,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [
+      {
+        "id": "XpD2_zcMcOK0GOsxHG-rTrN8",
+        "label": "WP17 Adam",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 1,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "enroll-microphone",
+    "meeting": "Nhf4UHkQa45puRkMG_I42tdB",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 15.581,
+    "stop_seconds": 3.568,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "assignments",
+          "S201->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP17 Adam"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 4
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [
+      {
+        "kind": "enroll",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "Nhf4UHkQa45puRkMG_I42tdB",
+            "speaker_id": "speaker-0001",
+            "label": "WP17 Adam",
+            "voiceprint_id": null,
+            "enrollment": "pending",
+            "transcript_version": 2
+          }
+        }
+      }
+    ],
+    "bank": [
+      {
+        "id": "vTtOP5B5omfZEShRT-KGzmVz",
+        "label": "WP17 Adam",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 1,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "recognize-microphone-to-system",
+    "meeting": "xYpkA-FGaJ8abPrcrF6oRppV",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 15.334,
+    "stop_seconds": 3.321,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "assignments",
+          "S101->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP17 Adam"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 3
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": 3.528290541988099,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [
+      {
+        "id": "vTtOP5B5omfZEShRT-KGzmVz",
+        "label": "WP17 Adam",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 1,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "recognize-microphone-to-microphone",
+    "meeting": "Un_iEsXsHb0w-7bibUP4D4aq",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 15.371,
+    "stop_seconds": 3.365,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "assignments",
+          "S201->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP17 Adam"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 3
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": 3.526378541995655,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [
+      {
+        "id": "vTtOP5B5omfZEShRT-KGzmVz",
+        "label": "WP17 Adam",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 1,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "speaker": "Keyu Jin",
+  "text": "Kind of the same thing. There's paternalism, they think that they're responsible for you. But a certain amount of deference to authority is not blind submission. It's been written implicitly in our contract for thousands of years that in exchange for some deference, we are given stability, security, and peace and hopefully prosperity.",
+  "start": 0.0,
+  "end": 25.0,
+  "matched": true,
+  "match_score": 100.0,
+  "provenance": "WP17: first 25 seconds include tail of preceding sentence. Longer source reference and independent lane-only decode confirm five missing words. Remaining fillers/repetitions remain errors. See evidence/mvpfix/wp17/reference-adjudication.md."
+}
