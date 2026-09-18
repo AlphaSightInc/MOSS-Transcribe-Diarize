@@ -23,6 +23,7 @@ from urllib.parse import urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tests.phase2.browser_support import browser_executable, BrowserExecutableMissing
+from tests.e2e.export_oracle import compare_export
 
 
 # First eligible canonical span (2.5s) + decode/identity allowance (1.0s)
@@ -353,18 +354,12 @@ class Harness:
             disabled=await self.page.get_by_role('button',name='Export transcript',exact=True).is_disabled()
             return {'ok':disabled, 'scope':'empty_workspace', 'export_disabled':disabled, 'populated_export_not_exercised':True}
         await self.select(ident)
+        meeting=(await self.api('/api/meetings/'+ident))['body']
         results={}
         for fmt in ('md','txt','json','srt','vtt'):
-            path=await self.export(fmt); text=path.read_text(); result={'bytes':path.stat().st_size,'artifact':path.name,'ok':bool(text.strip())}
-            if fmt=='json':
-                body=json.loads(text); result['turns']=len(body['turns']); result['ok'] &= bool(body['turns']) and json.loads(json.dumps(body))==body
-            if fmt in ('srt','vtt'):
-                cues=re.findall(r'(\d\d:\d\d:\d\d[.,]\d{3}) --> (\d\d:\d\d:\d\d[.,]\d{3})\n([^\n]+)',text)
-                def seconds(t):
-                    h,m,s=t.replace(',','.').split(':'); return int(h)*3600+int(m)*60+float(s)
-                result.update(cues=len(cues),monotonic=all(seconds(a)<seconds(b) for a,b,_ in cues) and all(seconds(cues[i][0])<=seconds(cues[i+1][0]) for i in range(len(cues)-1)),speaker_prefixes=all(':' in s for _,_,s in cues))
-                result['ok'] &= bool(cues) and result['monotonic'] and result['speaker_prefixes'] and (fmt!='vtt' or text.startswith('WEBVTT'))
-            results[fmt]=result
+            path=await self.export(fmt)
+            results[fmt]={**compare_export(fmt,path.read_text(),meeting),
+                          'bytes':path.stat().st_size,'artifact':path.name}
         return {'ok':all(r['ok'] for r in results.values()),'formats':results}
 
     async def audio(self, ident, partial=False):
