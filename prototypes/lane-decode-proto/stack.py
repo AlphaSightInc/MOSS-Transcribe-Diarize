@@ -15,12 +15,13 @@ def measured(self,*args,**kwargs):
     global count
     with lock:
         count += 1
-        if count > 200: raise RuntimeError('WP1 request budget exhausted')
+        if count > 650: raise RuntimeError('WP1 request budget exhausted')
+        request_id=count
     start=time.monotonic()
     try:return original(self,*args,**kwargs)
     finally:
         with lock, (HERE/'scratch/latencies.jsonl').open('a') as f:
-            f.write(json.dumps({'request':count,'start':start,'seconds':time.monotonic()-start,'thread':threading.current_thread().name})+'\n')
+            f.write(json.dumps({'request':request_id,'start':start,'seconds':time.monotonic()-start,'thread':threading.current_thread().name})+'\n')
 VllmRunner._post_multipart=measured
 from moss_transcribe_diarize.app.live_service_runtime import LiveServiceRuntime
 original_snapshot=LiveServiceRuntime.snapshot
@@ -37,7 +38,7 @@ def span_measured(self,*,span,pcm):
     try:return original_decode(self,span=span,pcm=pcm)
     finally:
         with (HERE/'scratch/spans.jsonl').open('a') as f:
-            f.write(json.dumps({'start':started,'seconds':time.monotonic()-started,'samples':span.sample_count,'reason':span.reason})+'\n')
+            f.write(json.dumps({'start':started,'seconds':time.monotonic()-started,'samples':span.sample_count,'reason':span.reason,'all_zero':not any(pcm)})+'\n')
 RunnerBoundedWavInference.transcribe_pcm=span_measured
 source=(ROOT/'prototypes/streaming-diarization/draft-lane/run_local_stack.py').read_text().replace('127.0.0.1:18000','127.0.0.1:18101')
 exec(compile(source,str(ROOT/'prototypes/streaming-diarization/draft-lane/run_local_stack.py'),'exec'),{'__name__':'__main__','__file__':str(ROOT/'prototypes/streaming-diarization/draft-lane/run_local_stack.py')})

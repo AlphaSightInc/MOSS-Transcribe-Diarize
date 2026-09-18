@@ -1,0 +1,2128 @@
+{
+  "case": "alternation",
+  "run_id": "resume-v5-alternation",
+  "prototype": "v5",
+  "input_levels": {
+    "system": {
+      "dbfs": -20.11338706479976,
+      "all_zero": false
+    },
+    "microphone": {
+      "dbfs": -19.29736719289663,
+      "all_zero": false
+    }
+  },
+  "first_request": 266,
+  "last_request": 293,
+  "request_count": 28,
+  "capture_start_monotonic": 86321.713215958,
+  "capture_stop_monotonic": 86369.719180083,
+  "seconds": 48,
+  "pre": {
+    "system": {
+      "words": 89,
+      "speakers": [
+        "speaker-0001"
+      ],
+      "unattributed_words": 6
+    },
+    "microphone": {
+      "words": 62,
+      "speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unattributed_words": 1
+    }
+  },
+  "final": {
+    "system": {
+      "words": 86,
+      "speakers": [
+        "speaker-0001"
+      ],
+      "unattributed_words": 0
+    },
+    "microphone": {
+      "words": 69,
+      "speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unattributed_words": 0
+    }
+  },
+  "finalization": "final",
+  "stop_to_final_seconds": 10.315231082990067,
+  "meeting_top_keys": [
+    "id",
+    "mode",
+    "title",
+    "title_source",
+    "status",
+    "created_at_ms",
+    "transcript",
+    "transcript_version",
+    "audio"
+  ],
+  "queue_frames": [
+    {
+      "case": "alternation",
+      "frame": 0,
+      "accepted": 0,
+      "committed": 0,
+      "pending": [],
+      "surface": {},
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 1,
+      "accepted": 8000,
+      "committed": 0,
+      "pending": [],
+      "surface": {},
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 2,
+      "accepted": 16000,
+      "committed": 0,
+      "pending": [],
+      "surface": {},
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 3,
+      "accepted": 24000,
+      "committed": 0,
+      "pending": [],
+      "surface": {},
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 4,
+      "accepted": 32000,
+      "committed": 0,
+      "pending": [],
+      "surface": {},
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 5,
+      "accepted": 40000,
+      "committed": 0,
+      "pending": [
+        0
+      ],
+      "surface": {},
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 6,
+      "accepted": 48000,
+      "committed": 0,
+      "pending": [
+        0
+      ],
+      "surface": {},
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 7,
+      "accepted": 56000,
+      "committed": 0,
+      "pending": [
+        0
+      ],
+      "surface": {},
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 8,
+      "accepted": 64000,
+      "committed": 40000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 10,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 9,
+      "accepted": 72000,
+      "committed": 40000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 10,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 10,
+      "accepted": 80000,
+      "committed": 40000,
+      "pending": [
+        1
+      ],
+      "surface": {
+        "system": {
+          "words": 10,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 11,
+      "accepted": 88000,
+      "committed": 40000,
+      "pending": [
+        1
+      ],
+      "surface": {
+        "system": {
+          "words": 10,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 12,
+      "accepted": 96000,
+      "committed": 80000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 18,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 13,
+      "accepted": 104000,
+      "committed": 80000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 18,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 14,
+      "accepted": 112000,
+      "committed": 80000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 18,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 15,
+      "accepted": 120000,
+      "committed": 80000,
+      "pending": [
+        2
+      ],
+      "surface": {
+        "system": {
+          "words": 18,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 16,
+      "accepted": 128000,
+      "committed": 80000,
+      "pending": [
+        2
+      ],
+      "surface": {
+        "system": {
+          "words": 18,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 17,
+      "accepted": 136000,
+      "committed": 120000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 26,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 18,
+      "accepted": 144000,
+      "committed": 120000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 26,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 19,
+      "accepted": 152000,
+      "committed": 120000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 26,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 20,
+      "accepted": 160000,
+      "committed": 120000,
+      "pending": [
+        3
+      ],
+      "surface": {
+        "system": {
+          "words": 26,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 21,
+      "accepted": 168000,
+      "committed": 120000,
+      "pending": [
+        3
+      ],
+      "surface": {
+        "system": {
+          "words": 26,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 22,
+      "accepted": 176000,
+      "committed": 160000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 37,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 23,
+      "accepted": 184000,
+      "committed": 160000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 37,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 24,
+      "accepted": 192000,
+      "committed": 160000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 37,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 25,
+      "accepted": 200000,
+      "committed": 160000,
+      "pending": [
+        4
+      ],
+      "surface": {
+        "system": {
+          "words": 37,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 0
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 26,
+      "accepted": 208000,
+      "committed": 160000,
+      "pending": [
+        4
+      ],
+      "surface": {
+        "system": {
+          "words": 36,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 27,
+      "accepted": 216000,
+      "committed": 200000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 39,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 28,
+      "accepted": 224000,
+      "committed": 200000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 39,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 29,
+      "accepted": 232000,
+      "committed": 200000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 39,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 30,
+      "accepted": 240000,
+      "committed": 200000,
+      "pending": [
+        5
+      ],
+      "surface": {
+        "system": {
+          "words": 39,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 31,
+      "accepted": 248000,
+      "committed": 200000,
+      "pending": [
+        5
+      ],
+      "surface": {
+        "system": {
+          "words": 39,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 32,
+      "accepted": 256000,
+      "committed": 240000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 48,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 33,
+      "accepted": 264000,
+      "committed": 240000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 48,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 34,
+      "accepted": 272000,
+      "committed": 240000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 48,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 35,
+      "accepted": 280000,
+      "committed": 240000,
+      "pending": [
+        6
+      ],
+      "surface": {
+        "system": {
+          "words": 48,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 36,
+      "accepted": 288000,
+      "committed": 240000,
+      "pending": [
+        6
+      ],
+      "surface": {
+        "system": {
+          "words": 48,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 37,
+      "accepted": 296000,
+      "committed": 280000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 62,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 38,
+      "accepted": 304000,
+      "committed": 280000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 62,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 39,
+      "accepted": 312000,
+      "committed": 280000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 62,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 40,
+      "accepted": 320000,
+      "committed": 280000,
+      "pending": [
+        7
+      ],
+      "surface": {
+        "system": {
+          "words": 62,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 41,
+      "accepted": 328000,
+      "committed": 280000,
+      "pending": [
+        7
+      ],
+      "surface": {
+        "system": {
+          "words": 62,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 42,
+      "accepted": 336000,
+      "committed": 320000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 71,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 43,
+      "accepted": 344000,
+      "committed": 320000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 71,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 44,
+      "accepted": 352000,
+      "committed": 320000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 71,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 45,
+      "accepted": 360000,
+      "committed": 320000,
+      "pending": [
+        8
+      ],
+      "surface": {
+        "system": {
+          "words": 71,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 46,
+      "accepted": 368000,
+      "committed": 320000,
+      "pending": [
+        8
+      ],
+      "surface": {
+        "system": {
+          "words": 73,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 47,
+      "accepted": 376000,
+      "committed": 360000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 84,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 48,
+      "accepted": 384000,
+      "committed": 360000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 84,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 49,
+      "accepted": 392000,
+      "committed": 360000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 84,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 50,
+      "accepted": 400000,
+      "committed": 360000,
+      "pending": [
+        9
+      ],
+      "surface": {
+        "system": {
+          "words": 84,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 51,
+      "accepted": 408000,
+      "committed": 360000,
+      "pending": [
+        9
+      ],
+      "surface": {
+        "system": {
+          "words": 84,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 52,
+      "accepted": 416000,
+      "committed": 400000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 2,
+          "speakers": [],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 53,
+      "accepted": 424000,
+      "committed": 400000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 2,
+          "speakers": [],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 54,
+      "accepted": 432000,
+      "committed": 400000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 2,
+          "speakers": [],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 55,
+      "accepted": 440000,
+      "committed": 400000,
+      "pending": [
+        10
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 2,
+          "speakers": [],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 56,
+      "accepted": 448000,
+      "committed": 400000,
+      "pending": [
+        10
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 2,
+          "speakers": [],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 57,
+      "accepted": 456000,
+      "committed": 440000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 13,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 58,
+      "accepted": 464000,
+      "committed": 440000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 13,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 59,
+      "accepted": 472000,
+      "committed": 440000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 13,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 60,
+      "accepted": 480000,
+      "committed": 440000,
+      "pending": [
+        11
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 13,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 61,
+      "accepted": 488000,
+      "committed": 440000,
+      "pending": [
+        11
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 13,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 62,
+      "accepted": 496000,
+      "committed": 480000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 19,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 63,
+      "accepted": 504000,
+      "committed": 480000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 19,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 64,
+      "accepted": 512000,
+      "committed": 480000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 19,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 65,
+      "accepted": 520000,
+      "committed": 480000,
+      "pending": [
+        12
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 19,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 2
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 66,
+      "accepted": 528000,
+      "committed": 480000,
+      "pending": [
+        12
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 18,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 67,
+      "accepted": 536000,
+      "committed": 520000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 26,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 68,
+      "accepted": 544000,
+      "committed": 520000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 26,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 69,
+      "accepted": 552000,
+      "committed": 520000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 26,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 70,
+      "accepted": 560000,
+      "committed": 520000,
+      "pending": [
+        13
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 26,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 71,
+      "accepted": 568000,
+      "committed": 520000,
+      "pending": [
+        13
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 26,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 72,
+      "accepted": 576000,
+      "committed": 560000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 32,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 73,
+      "accepted": 584000,
+      "committed": 560000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 32,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 74,
+      "accepted": 592000,
+      "committed": 560000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 32,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 75,
+      "accepted": 600000,
+      "committed": 560000,
+      "pending": [
+        14
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 32,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 76,
+      "accepted": 608000,
+      "committed": 560000,
+      "pending": [
+        14
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 32,
+          "speakers": [
+            "speaker-0002"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 77,
+      "accepted": 616000,
+      "committed": 600000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 37,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 78,
+      "accepted": 624000,
+      "committed": 600000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 37,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 79,
+      "accepted": 632000,
+      "committed": 600000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 37,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 80,
+      "accepted": 640000,
+      "committed": 600000,
+      "pending": [
+        15
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 37,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 81,
+      "accepted": 648000,
+      "committed": 600000,
+      "pending": [
+        15
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 37,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 82,
+      "accepted": 656000,
+      "committed": 640000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 45,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 83,
+      "accepted": 664000,
+      "committed": 640000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 45,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 84,
+      "accepted": 672000,
+      "committed": 640000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 45,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 85,
+      "accepted": 680000,
+      "committed": 640000,
+      "pending": [
+        16
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 45,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 86,
+      "accepted": 688000,
+      "committed": 640000,
+      "pending": [
+        16
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 46,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 87,
+      "accepted": 696000,
+      "committed": 680000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 51,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 88,
+      "accepted": 704000,
+      "committed": 680000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 51,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 89,
+      "accepted": 712000,
+      "committed": 680000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 51,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 90,
+      "accepted": 720000,
+      "committed": 680000,
+      "pending": [
+        17
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 51,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 91,
+      "accepted": 728000,
+      "committed": 680000,
+      "pending": [
+        17
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 51,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 92,
+      "accepted": 736000,
+      "committed": 720000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 62,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 93,
+      "accepted": 744000,
+      "committed": 720000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 62,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 94,
+      "accepted": 752000,
+      "committed": 720000,
+      "pending": [],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 62,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    },
+    {
+      "case": "alternation",
+      "frame": 95,
+      "accepted": 760000,
+      "committed": 720000,
+      "pending": [
+        18
+      ],
+      "surface": {
+        "system": {
+          "words": 89,
+          "speakers": [
+            "speaker-0001"
+          ],
+          "unattributed_words": 6
+        },
+        "microphone": {
+          "words": 62,
+          "speakers": [
+            "speaker-0002",
+            "speaker-0003"
+          ],
+          "unattributed_words": 1
+        }
+      },
+      "arbiter": null,
+      "pending_signals": null
+    }
+  ],
+  "falsifiers_failed": []
+}

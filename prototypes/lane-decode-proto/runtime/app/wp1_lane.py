@@ -75,19 +75,20 @@ def revision_segments(c, lane, span, pcm, text, authority):
     from .live_transcript_convergence import resolve_segment_overlaps
     from .live_session import EffectiveTranscriptSegment
     owner = c._lane_preparers.get(lane)
-    if owner is None:
-        return ()
-    evidence = owner.evidence_provider
-    # Read existing lane voice evidence without mutating causal pending observations.
-    reader = WeSpeakerLiveEvidenceProvider(encoder=evidence.encoder,
-        canonical_embedding=evidence._canonical_vector,
-        min_segment_samples=evidence.min_segment_samples,
-        birth_min_seconds=evidence.birth_min_seconds)
-    preparer = BoundedCausalIdentityPreparer(config=owner.config,evidence_provider=reader)
     base = c.session.snapshot().identity_snapshot
-    prep = preparer.prepare(span=span,pcm=pcm,transcript=text,base_snapshot=base,
-        allowed_speakers=tuple(c._lane_speakers.get(lane,())))
-    relabeled = prep.relabeled_transcript if prep.status=='prepared' else unattributed_transcript(text,sample_count=span.sample_count)
+    if owner is None:
+        # Identity may abstain; it must never erase a late producer's words.
+        relabeled = unattributed_transcript(text, sample_count=span.sample_count)
+    else:
+        evidence = owner.evidence_provider
+        reader = WeSpeakerLiveEvidenceProvider(encoder=evidence.encoder,
+            canonical_embedding=evidence._canonical_vector,
+            min_segment_samples=evidence.min_segment_samples,
+            birth_min_seconds=evidence.birth_min_seconds)
+        preparer = BoundedCausalIdentityPreparer(config=owner.config,evidence_provider=reader)
+        prep = preparer.prepare(span=span,pcm=pcm,transcript=text,base_snapshot=base,
+            allowed_speakers=tuple(c._lane_speakers.get(lane,())))
+        relabeled = prep.relabeled_transcript if prep.status=='prepared' else unattributed_transcript(text,sample_count=span.sample_count)
     parsed = span_segments(relabeled, sample_count=span.sample_count)
     normalized = resolve_segment_overlaps([(p.speaker,span.start_sample+round(p.start*16000),span.start_sample+round(p.end*16000),p.text) for p in parsed])
     segments=[]
@@ -103,27 +104,27 @@ def decode_refinement(c, request):
                       end_sample=request.end_sample, reason='rolling_window')
     placed = []
     elapsed = 0.0
-    base = c.session.snapshot().effective_transcript
+    revised_lanes = []
     for lane, tape in c.lane_tapes.items():
-        keep = [s for s in base if s.source_lane == lane and request.start_sample <= s.start_sample < request.end_sample]
+        if lane in c._stopped_refinement_lanes:
+            continue
         try:
             pcm = tape.read(start_sample=request.start_sample, end_sample=request.end_sample)
             if not any(pcm):
+                revised_lanes.append(lane)
                 continue
             outcome = c.rolling_decoder.transcribe_pcm(span=span, pcm=pcm)
             segments = revision_segments(c,lane,span,pcm,outcome.transcript,'rolling')
             if not segments:
-                placed.extend(keep)
+                c._stopped_refinement_lanes.add(lane)
                 continue
-            placed.extend(replace(s, source_lane=lane) for s in segments)
+            placed.extend(segments)
+            revised_lanes.append(lane)
             elapsed += outcome.elapsed_sec or 0
         except Exception:
-            placed.extend(keep)
-    # Existing converger owns lifecycle/frontier; this placeholder only advances its
-    # measured geometry, then the independently normalized lane segments replace it.
-    marker = '[0][S01]lane[0.1]'
-    return SimpleNamespace(request=request, outcome=InferenceTranscript(transcript=marker, elapsed_sec=elapsed),
-                           failure=None, lane_segments=tuple(sorted(placed,key=order)))
+            c._stopped_refinement_lanes.add(lane)
+    return SimpleNamespace(request=request, outcome=InferenceTranscript(transcript='', elapsed_sec=elapsed),
+                           failure=None, lane_segments=tuple(sorted(placed,key=order)), revision_lanes=tuple(revised_lanes))
 
 def finalize_lanes(c, finalizer, **kwargs):
     from .live_transcript_convergence import TerminalOutcome, resolve_segment_overlaps

@@ -3,7 +3,7 @@ Question: serial lane decode preserves lane words/speakers through Stop -> saved
 Falsifier: terminal removes a populated lane or same voice collapses into one identity.
 Full relevant state (counts, queue, attribution, timing) printed after every frame.
 """
-import sys,json,time,ssl,base64,re,array,math,random
+import sys,json,time,ssl,base64,re,array,math,random,os
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
@@ -34,6 +34,8 @@ def wer(ref,hyp):
     e,s,d,i=previous[-1]
     return {'reference_words':len(ref),'hypothesis_words':len(hyp),'substitutions':s,'omissions':d,'additions':i,'wer':e/len(ref) if ref else None}
 case=sys.argv[1] if len(sys.argv)>1 else 'same'
+run_id=os.environ.get('WP1_RUN_TAG','resume-v5')+'-'+case
+request_before=len((HERE/'scratch/latencies.jsonl').read_text().splitlines())
 seconds=48 if case=='alternation' else 12 if case=='stop_mid' else 24
 clips=['interview_bill_ackman_60s','interview_bill_ackman_60s' if case=='same' else 'interview_keyu_jin_60s']
 audios=[lane_pcm(CORPUS/x/'audio.wav',seconds) for x in clips]
@@ -44,6 +46,11 @@ if case in ('zero','system_control'):audios[1]=bytes(len(audios[1]))
 if case=='mic_control':audios[0]=bytes(len(audios[0]))
 if case=='noise':
     rng=random.Random(1);x=array.array('h',(round(rng.gauss(0,32768*10**(-45/20))) for _ in range(len(audios[1])//2)));audios[1]=x.tobytes()
+input_levels={}
+for lane,pcm in zip(('system','microphone'),audios):
+    samples=array.array('h');samples.frombytes(pcm)
+    rms=math.sqrt(sum(v*v for v in samples)/len(samples))/32768
+    input_levels[lane]={'dbfs':20*math.log10(rms) if rms else None,'all_zero':not any(pcm)}
 c=Client('https://127.0.0.1:17871',ssl._create_unverified_context())
 c.call('POST','/api/workspace/bootstrap')
 d=c.call('GET','/api/live/descriptor')['descriptor']
@@ -71,7 +78,30 @@ while True:
 final_seconds=time.monotonic()-stop
 meeting=c.call('GET',f'/api/meetings/{ident}')
 # Save API shapes privately for scorer development, never commit transcripts.
-(HERE/'scratch'/f'{case}-surfaces.json').write_text(json.dumps({'pre':pre,'final':ses,'meeting':meeting}))
-result={'case':case,'seconds':seconds,'pre':surface_summary(pre.get('effective_transcript',[])),'final':surface_summary(ses.get('effective_transcript',[])),'finalization':ses.get('finalization_status'),'stop_to_final_seconds':final_seconds,'meeting_top_keys':list(meeting),'queue_frames':depth}
-(OUT/f'{case}.json').write_text(json.dumps(result,indent=2))
+(HERE/'scratch'/f'{run_id}-surfaces.json').write_text(json.dumps({'pre':pre,'final':ses,'meeting':meeting}))
+request_after=len((HERE/'scratch/latencies.jsonl').read_text().splitlines())
+result={'case':case,'run_id':run_id,'prototype':'v6','input_levels':input_levels,'first_request':request_before+1,'last_request':request_after,'request_count':request_after-request_before,'capture_start_monotonic':start,'capture_stop_monotonic':stop,'seconds':seconds,'pre':surface_summary(pre.get('effective_transcript',[])),'final':surface_summary(ses.get('effective_transcript',[])),'finalization':ses.get('finalization_status'),'stop_to_final_seconds':final_seconds,'meeting_top_keys':list(meeting),'queue_frames':depth}
+(OUT/f'{run_id}.json').write_text(json.dumps(result,indent=2))
 print(json.dumps({k:v for k,v in result.items() if k!='queue_frames'}),flush=True)
+
+saved=meeting['transcript']['segments']
+final=ses.get('effective_transcript',[])
+failures=[]
+if ses.get('finalization_status')!='final':failures.append('not_finalized')
+if [(s['text'],s.get('speaker_entity_id')) for s in saved]!=[(s['text'],s.get('canonical_speaker')) for s in final]:failures.append('saved_final_mismatch')
+summary=surface_summary(final)
+for lane, earlier in surface_summary(pre.get('effective_transcript',[])).items():
+    if earlier['words'] and not summary.get(lane,{}).get('words',0):failures.append(lane+'_words_erased_at_terminal')
+    if earlier['speakers'] and not summary.get(lane,{}).get('speakers',[]):failures.append(lane+'_identity_erased_at_terminal')
+if case=='same':
+    system=set(summary.get('system',{}).get('speakers',[]))
+    mic=set(summary.get('microphone',{}).get('speakers',[]))
+    if len(system)!=1 or len(mic)!=1 or system&mic:failures.append('same_voice_not_two_lane_scoped_speakers')
+if case in ('zero','noise'):
+    mic=summary.get('microphone',{})
+    if mic.get('words',0) or mic.get('speakers',[]):failures.append('non_speech_mic_produced_words_or_speakers')
+    if any(row['surface'].get('microphone',{}).get('words',0) for row in depth):failures.append('non_speech_mic_produced_live_words')
+result['falsifiers_failed']=failures
+(OUT/f'{run_id}.json').write_text(json.dumps(result,indent=2))
+print(json.dumps({'run_id':run_id,'falsifiers_failed':failures,'request_count':request_after-request_before}),flush=True)
+if failures:sys.exit(2)

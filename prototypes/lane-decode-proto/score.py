@@ -20,26 +20,27 @@ def edits(ref,hyp):
     return dict(reference_words=len(ref),hypothesis_words=len(hyp),substitutions=sub,omissions=omit,additions=add,wer=total/len(ref) if ref else None)
 surfaces={p.name.removesuffix('-surfaces.json'):json.loads(p.read_text()) for p in (HERE/'scratch').glob('*-surfaces.json')}
 rows=[]
-for case,data in surfaces.items():
-    meta=json.loads((OUT/f'{case}.json').read_text())
+for run_id,data in surfaces.items():
+    meta=json.loads((OUT/f'{run_id}.json').read_text())
+    case=meta['case']
     final=data['final']['effective_transcript'];pre=data['pre']['effective_transcript']
     saved=data['meeting']['transcript']['segments']
     owners={}
     for s in final:
         if s.get('canonical_speaker'):owners.setdefault(s['canonical_speaker'],set()).add(s.get('source_lane'))
-    row={'case':case,'saved_words':sum(len(words(s['text'])) for s in saved),'saved_segments':len(saved),'saved_has_lane_tags':all('source_lane' in s for s in saved),'saved_matches_final_text_and_identity':[(s['text'],s.get('speaker_entity_id')) for s in saved]==[(s['text'],s.get('canonical_speaker')) for s in final],'lanes':{}}
+    row={'case':case,'run_id':run_id,'prototype':meta.get('prototype','historical-v1-v2-v4'),'saved_words':sum(len(words(s['text'])) for s in saved),'saved_segments':len(saved),'saved_has_lane_tags':all('source_lane' in s for s in saved),'saved_matches_final_text_and_identity':[(s['text'],s.get('speaker_entity_id')) for s in saved]==[(s['text'],s.get('canonical_speaker')) for s in final],'lanes':{}}
     for lane,clip in [('system','interview_bill_ackman_60s'),('microphone','interview_bill_ackman_60s' if case=='same' else 'interview_keyu_jin_60s')]:
         reference=[json.loads(x) for x in (CORPUS/clip/'reference.jsonl').read_text().splitlines()]
-        reference=[r for r in reference if r['start']<meta['seconds']]
+        # Full reference text required by Fable; omissions include unplayed audio.
         if (case=='system_control' and lane=='microphone') or (case=='mic_control' and lane=='system') or (case in ('zero','noise') and lane=='microphone'):
             reference=[]
         ref=words(' '.join(r['text'] for r in reference))
         final_words=words(' '.join(s['text'] for s in final if s.get('source_lane')==lane))
         pre_words=words(' '.join(s['text'] for s in pre if s.get('source_lane')==lane))
-        saved_words=words(' '.join(s['text'] for s in saved if owners.get(s.get('speaker_entity_id'))=={lane}))
+        saved_words=words(' '.join(s['text'] for s,f in zip(saved,final,strict=True) if f.get('source_lane')==lane)) if row['saved_matches_final_text_and_identity'] else []
         control=surfaces.get('system_control' if lane=='system' or case=='same' else 'mic_control')
         vocab=set(words(' '.join(s['text'] for s in control['final']['effective_transcript'] if s.get('source_lane')==('system' if lane=='system' or case=='same' else 'microphone')))) if control else set()
-        row['lanes'][lane]={'final_words':len(final_words),'saved_words_via_unique_speaker_owner':len(saved_words),'attribution_method':'unique speaker-to-lane map from final surface, not persisted lane provenance','final_vs_reference_overlapping_rows':edits(ref,final_words),'pre_vs_reference_overlapping_rows':edits(ref,pre_words),'reference_boundary_crossing_rows':sum(r['end']>meta['seconds'] for r in reference),'exact_clip_wer':'unmeasured: reference lacks word timestamps at clip boundary','control_unique_vocabulary':len(vocab) if control else None,'retained_unique_vocabulary':len(vocab&set(final_words)) if control else None,'pre_retained_unique_vocabulary_vs_control':len(vocab&set(pre_words)) if control else None,'control_gain':1.0,'control_capture_seconds':24,'same_capture_extent':meta['seconds']==24,'pre_unique_vocabulary':len(set(pre_words)),'pre_vocabulary_retained_at_final':len(set(pre_words)&set(final_words)),'unattributed_words':sum(len(words(s['text'])) for s in final if s.get('source_lane')==lane and not s.get('canonical_speaker'))}
+        row['lanes'][lane]={'final_words':len(final_words),'saved_words_via_exact_surface_correspondence':len(saved_words),'attribution_method':'ordered saved/final text-and-identity equality permits positional lane correspondence; not persisted lane provenance','final_vs_full_reference':edits(ref,final_words),'pre_vs_full_reference':edits(ref,pre_words),'reference_boundary_crossing_rows':sum(r['end']>meta['seconds'] for r in reference),'wer_limitation':'full reference includes unplayed audio; omissions are not all decoder loss','saved_vs_full_reference':edits(ref,saved_words),'control_unique_vocabulary':len(vocab) if control else None,'retained_unique_vocabulary':len(vocab&set(final_words)) if control else None,'pre_retained_unique_vocabulary_vs_control':len(vocab&set(pre_words)) if control else None,'control_gain':1.0,'control_capture_seconds':24,'same_capture_extent':meta['seconds']==24,'pre_unique_vocabulary':len(set(pre_words)),'pre_vocabulary_retained_at_final':len(set(pre_words)&set(final_words)),'unattributed_words':sum(len(words(s['text'])) for s in final if s.get('source_lane')==lane and not s.get('canonical_speaker'))}
     rows.append(row)
 lat=[json.loads(x) for x in (HERE/'scratch/latencies.jsonl').read_text().splitlines()]
 queuepath=HERE/'scratch/queues.jsonl';queues=[json.loads(x) for x in queuepath.read_text().splitlines()] if queuepath.exists() else []
@@ -56,6 +57,11 @@ for name,count in [('same',26),('parity',26),('system_control',13),('mic_control
     if name not in surfaces:continue
     summary['request_counts_by_case'][name]={'first':last+1,'last':last+count,'count':count,'per_capture_minute':count*60/json.loads((OUT/f'{name}.json').read_text())['seconds'],'assignment':'serial case boundaries; checked against request log'}
     last+=count
+for name,data in surfaces.items():
+    meta=json.loads((OUT/f'{name}.json').read_text())
+    if 'request_count' in meta:
+        summary['request_counts_by_case'][name]={'first':meta['first_request'],'last':meta['last_request'],'count':meta['request_count'],'per_capture_minute':meta['request_count']*60/meta['seconds'],'assignment':'measured cumulative request counters before and after single meeting'}
+        last+=meta['request_count']
 summary['request_case_count_agrees']=last==len(lat)
 (OUT/'requests.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in lat))
 (OUT/'spans.jsonl').write_text(''.join(json.dumps(x)+'\n' for x in spans))

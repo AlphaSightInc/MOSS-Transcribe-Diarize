@@ -60,3 +60,26 @@ p.write_text(s)
 p=OUT/"live_session.py"
 s=p.read_text().replace("if segment.canonical_speaker is not None\n", "if segment.canonical_speaker is not None or segment.source_lane is not None\n")
 p.write_text(s)
+# Reconcile at publication: a lane that becomes silent may have no following decode.
+p=OUT/'live_coordinator.py'
+s=p.read_text().replace('            self._capture_identity_counts()\n            self._pcm.prune_before', '            for preparer in self._lane_preparers.values():\n                preparer.evidence_provider._reconcile_committed_vectors(snapshot.identity_snapshot)\n            self._capture_identity_counts()\n            self._pcm.prune_before')
+p.write_text(s)
+# Independent rolling ownership after a lane stops refinement on failure.
+p=OUT/'live_session.py'
+s=p.read_text().replace('    normalization_displaced_samples: int = 0\n', '    normalization_displaced_samples: int = 0\n    revision_lanes: tuple[str, ...] = ()\n')
+s=s.replace('        self._revision_segments: tuple[EffectiveTranscriptSegment, ...] = ()', '        self._revision_segments: tuple[EffectiveTranscriptSegment, ...] = ()\n        self._lane_revision_frontiers: dict[str, int] = {}')
+s=s.replace('            self._revision_segments = segments\n            self._finalization_status', '            self._revision_segments = segments\n            if self._lane_revision_frontiers:\n                self._lane_revision_frontiers = {lane: proposal.end_sample for lane in self._lane_revision_frontiers}\n            self._finalization_status')
+s=s.replace('        else:\n            self._revision_segments = self._revision_segments + segments', '        else:\n            if proposal.revision_lanes:\n                if not self._lane_revision_frontiers:\n                    self._lane_revision_frontiers = {"system": 0, "microphone": 0}\n                for lane in proposal.revision_lanes:\n                    self._lane_revision_frontiers[lane] = proposal.end_sample\n            self._revision_segments = self._revision_segments + segments')
+s=s.replace('        suffix = tuple(segment for segment in base if segment.start_sample >= frontier)\n        return revised + suffix', '        suffix = tuple(segment for segment in base if segment.start_sample >= (self._lane_revision_frontiers.get(segment.source_lane, 0) if self._lane_revision_frontiers else frontier))\n        return tuple(sorted(revised + suffix, key=lambda s: (s.start_sample, {None: 0, "system": 0, "microphone": 1}[s.source_lane], s.end_sample)))')
+s=s.replace('        previous_ends = {}', '        if any(lane not in ("system", "microphone") for lane in proposal.revision_lanes):\n            return "unknown_source_lane"\n        if proposal.revision_lanes and any(s.source_lane not in proposal.revision_lanes for s in proposal.segments):\n            return "segment_outside_revision_lanes"\n        previous_ends = {}')
+p.write_text(s)
+# Retain original converger lifecycle and geometry; supplied segments replace only parsing.
+edit('live_transcript_convergence.py', [
+ ('        self, request_id: int, outcome: InferenceTranscript\n', '        self, request_id: int, outcome: InferenceTranscript, *,\n        segments: tuple[EffectiveTranscriptSegment, ...] | None = None,\n        revision_lanes: tuple[str, ...] = (),\n'),
+ ('        segments, normalization = self._segments_of(request, outcome)', '        if segments is None:\n            segments, normalization = self._segments_of(request, outcome)\n        else:\n            normalization = EMPTY_OVERLAP_RESOLUTION'),
+ ('            segments=segments,\n            decode_elapsed_sec=outcome.elapsed_sec,', '            segments=segments,\n            revision_lanes=revision_lanes,\n            decode_elapsed_sec=outcome.elapsed_sec,'),
+])
+p=OUT/'live_coordinator.py'
+s=p.read_text().replace('        self._lane_preparers = {}','        self._lane_preparers = {}\n        self._stopped_refinement_lanes = set()')
+s=s.replace('        proposal = converger.complete(decode.request.id, decode.outcome)\n        if proposal is not None and hasattr(decode, "lane_segments"):\n            proposal = replace(proposal, segments=decode.lane_segments)', '        proposal = converger.complete(decode.request.id, decode.outcome,\n            segments=getattr(decode, "lane_segments", None),\n            revision_lanes=getattr(decode, "revision_lanes", ()))')
+p.write_text(s)

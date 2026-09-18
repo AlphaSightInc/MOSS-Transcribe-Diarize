@@ -14,7 +14,7 @@ forward and HTTPS stack, uses the real corpus/decoder, prints state after each
 frame, scores the saved meeting, and stops its children. Generated modules,
 SQLite, certificates, audio, and raw surfaces remain ignored inside this tree.
 The request budget is cumulative across runs via scratch/latencies.jsonl; do not
-remove that file to reset the budget. Current hard limit: 200 requests for WP1.
+remove that file to reset the budget. Current hard limit: 650 total requests for WP1 (Fable/user raised it on resume; 196 were already consumed).
 
 Supported cases: same, parity, system_control, mic_control, mic-10, mic-15,
 system-10, system-15, alternation, zero, noise, stop_mid, reshare.
@@ -44,8 +44,9 @@ spurious split-word token can improve the transcript.
 
 Reference JSONL has sentence-level intervals that cross the 24-second cut:
 29 seconds for the first system sentence, 25 seconds for the first mic sentence.
-Scorer reports edits against overlapping reference rows and labels that boundary
-contamination. It does not invent word timestamps or call this exact clip WER.
+On resume, Fable requires edits against each full reference text; the scorer
+concatenates each lane transcript and reports substitutions, omissions, additions.
+Unplayed reference audio contributes omissions; this is explicitly labeled. It does not invent word timestamps or call this exact clip WER.
 Saved documents currently omit source_lane (WP2 owns that consumer). Lane counts
 from saved speaker IDs are derived attribution, not persisted lane provenance.
 
@@ -56,3 +57,7 @@ v2: parity and controls; lane final sweeps and voice-based terminal preparation.
 v4: quiet-lane ladder; read-only voice evidence for rolling and terminal
 attribution, no timestamp fallback for lane revisions; span/queue instrumentation.
 These versions are not pooled as one qualification result.
+
+v5: commit-time lane identity reconciliation before silent transitions. Falsifier
+reruns use fresh stack/tunnel per batch and retained queue admission measurements.
+New evidence IDs carry resume-v5 prefix; previous cases remain untouched.

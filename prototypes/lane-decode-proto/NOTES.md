@@ -1,4 +1,4 @@
-# WP1 verdict — INCOMPLETE, NOT ACCEPTED FOR PRODUCTION
+# WP1 initial checkpoint — INCOMPLETE, NOT ACCEPTED FOR PRODUCTION
 
 Question: does serial lane decode plus lane-scoped identity and lane revisions
 preserve lane words/speakers through Stop -> saved, at what span cost?
@@ -63,3 +63,40 @@ Failed attempts: generated overlay signature SyntaxError caught before server
 start; corrected. One ad hoc saved-count print command had SyntaxError; corrected.
 Initial snapshot queue fields were absent (null); v4 uses actual runtime arbiter
 and scheduler instrumentation. These absences are not reported as zero evidence.
+
+## Resume authorization
+
+Fable/user raised the total cap to 650, retaining <=2 in flight, one meeting,
+queue check before each batch, and tunnel teardown between paused batches.
+196 historical requests count against that total. Ordered WER now uses full
+reference text as instructed; no decoder requests spent on alignment.
+Falsifiers execute in order: same voice, zero mic, noise mic, alternation,
+mid-speech Stop, reshare. Any failure stops the production fix.
+
+## Resumed verdict — listed falsifiers passed; proceed to production implementation
+
+11 resumed real-stack experiments: same/zero/noise/alternation/Stop/reshare on v5;
+noise again after removing an identity-dependent word-erasure path (v6); parity,
+mic -10/-15, system -10 on v6. No listed falsifier failed. This is not a numeric
+accuracy acceptance bar. 467 requests total including the historical 196.
+Saved/final text and identity sequences agree in all 20 retained experiments.
+
+Same voice v5: 86/86 words, speaker-0001 vs speaker-0002. Zero/noise: no mic words
+or identities. Alternation: 86/69 words, one system and two mic identities.
+Stop: 38/31. Reshare: 86/56. v6 parity 86/56, mic -10 86/56, mic -15 86/60,
+system -10 84/56. System -10 Stop->final 33.139640 s, canonical queue max 3.
+All raw results remain separate by version/run ID. Source-lane provenance is
+still derived from exact saved/final positional correspondence, not persisted.
+Full-reference edit counts include omitted, unplayed reference audio, as directed.
+
+A further LOGIC prototype (failure_state.py; zero provider requests) exercised a
+system-lane failure at a rolling boundary with an existing segment crossing it.
+The failed lane's original words, identity and full timestamps survived while
+mic revisions applied in 2/2 successive windows. The system decoder was attempted
+once, mic twice. Per-lane publication frontiers are necessary: one global frontier
+would suppress the failed lane's committed suffix. The existing stop-on-refinement-
+failure rule now applies to its producing lane. See failure-state.json for all
+states; this policy/structure is measured before production absorption.
+
+The passing experiment can now be absorbed. Remaining implementation defects and
+unit/fault coverage must be resolved before any production acceptance claim.
