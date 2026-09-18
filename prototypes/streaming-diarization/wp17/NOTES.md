@@ -39,3 +39,23 @@ rolling windows differ. Recognition 4/4 lane routes 3.526–3.528 s. Total decod
 requests 431/600. See committed evidence/mvpfix/wp17/ for every count and limit.
 Verdict: recognition ordering fix verified; reported lane-addition premise falsified
 by lane-alone control; reference corrected narrowly; product quality acceptance FAIL.
+
+## Fresh-context verification — 2026-09-18
+
+Fresh session at 12b9e16337a2130584f94d68064ec07d847c7689, clean start. Literal
+VERIFY.md executed: audit PASS; initial Python 1 failed, 1868 passed, 2 skipped,
+37 subtests passed (143.76 s). Failure is test_verify_layout_current_tree:
+root VERIFY.md introduced by 12b9e163 violates the existing docs/verify/<wp>/ rule.
+Moved VERIFY.md unchanged to docs/verify/wp17/; VERIFY-RESULT.md lives alongside.
+No source, tests, assertions, thresholds or policy altered. Full Python rerun:
+1869 passed, 2 skipped, 21 warnings, 37 subtests passed in 140.20s (0:02:20), exit 0.
+Frontend 242 passed / 27 files; typecheck/build passed, assets identical.
+Fresh independent source check: 400000/400000 PCM samples equal at long-source
+115–140 s; fixture adds only five leading words. Recount confirms 8/8 saved
+lane pairs (628 words), 8/8 terminal windows, 3/20 rolling-window differences,
+28 unmatched canonical windows. Evidence audit PASS is not quality acceptance:
+0/2 full cases pass the unchanged immediate 16.6655% / final 9.5074% bars.
+Retained recognition API routes pass <=4 s; browser DOM latency unmeasured.
+Fresh decoder requests 0/100; historical 431/600. No service/tunnel started,
+no push/merge/deploy or other-worktree writes. Full failed and passing logs in
+evidence/mvpfix/wp17/fresh-*. Details: docs/verify/wp17/VERIFY-RESULT.md.

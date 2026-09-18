@@ -1,0 +1,490 @@
+{
+  "method": "Offline independent recount and PCM comparison; no new decoder requests",
+  "pcm_comparison": {
+    "samples": 400000,
+    "source_offset_seconds": 115,
+    "exact_equal": true,
+    "short_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp17-lane-quality-voiceprint/evidence/live-policy-sweep-20260825/corpus/interview_keyu_jin_60s/audio.wav",
+    "long_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/prototypes/streaming-diarization/data/real/benchmark_5m/lex_keyu_jin/audio.wav"
+  },
+  "fixture_change": "Exactly five leading words; remaining original tokens unchanged",
+  "source_reference_matches": 1,
+  "duration_counts": {
+    "canonical_matched": 64,
+    "rolling_matched": 20,
+    "terminal_matched": 8,
+    "canonical_unmatched": 28
+  },
+  "saved_words": 628,
+  "rolling_differences": [
+    {
+      "seconds": 24,
+      "case": "overlap",
+      "lane": "system",
+      "producer": "rolling",
+      "start_sample": 160000,
+      "end_sample": 320000,
+      "paired_words": 34,
+      "identical_control_window": true,
+      "edit_counts": {
+        "reference_words": 33,
+        "observed_words": 34,
+        "substitutions": 1,
+        "omissions": 0,
+        "additions": 1,
+        "wer": 0.06060606060606061
+      },
+      "diff": [
+        {
+          "operation": "replace",
+          "reference_range": [
+            26,
+            27
+          ],
+          "observed_range": [
+            26,
+            28
+          ],
+          "reference": [
+            "you're"
+          ],
+          "observed": [
+            "you",
+            "know"
+          ]
+        }
+      ]
+    },
+    {
+      "seconds": 48,
+      "case": "alternation",
+      "lane": "microphone",
+      "producer": "rolling",
+      "start_sample": 320000,
+      "end_sample": 480000,
+      "paired_words": 20,
+      "identical_control_window": true,
+      "edit_counts": {
+        "reference_words": 20,
+        "observed_words": 20,
+        "substitutions": 1,
+        "omissions": 0,
+        "additions": 0,
+        "wer": 0.05
+      },
+      "diff": [
+        {
+          "operation": "replace",
+          "reference_range": [
+            19,
+            20
+          ],
+          "observed_range": [
+            19,
+            20
+          ],
+          "reference": [
+            "that"
+          ],
+          "observed": [
+            "the"
+          ]
+        }
+      ]
+    },
+    {
+      "seconds": 48,
+      "case": "overlap",
+      "lane": "system",
+      "producer": "rolling",
+      "start_sample": 160000,
+      "end_sample": 320000,
+      "paired_words": 33,
+      "identical_control_window": true,
+      "edit_counts": {
+        "reference_words": 34,
+        "observed_words": 33,
+        "substitutions": 1,
+        "omissions": 1,
+        "additions": 0,
+        "wer": 0.058823529411764705
+      },
+      "diff": [
+        {
+          "operation": "replace",
+          "reference_range": [
+            26,
+            28
+          ],
+          "observed_range": [
+            26,
+            27
+          ],
+          "reference": [
+            "you",
+            "know"
+          ],
+          "observed": [
+            "you're"
+          ]
+        }
+      ]
+    }
+  ],
+  "quality": {
+    "before-alternation": {
+      "passed": false,
+      "surfaces": {
+        "pre_terminal": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 107,
+              "substitutions": 2,
+              "omissions": 6,
+              "additions": 7,
+              "wer": 0.14150943396226415
+            },
+            "microphone": {
+              "reference_words": 48,
+              "observed_words": 55,
+              "substitutions": 1,
+              "omissions": 4,
+              "additions": 11,
+              "wer": 0.3333333333333333
+            }
+          },
+          "attribution_errors": 2,
+          "duplication_count": 2,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.166655,
+          "passed": false
+        },
+        "final": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 104,
+              "substitutions": 1,
+              "omissions": 5,
+              "additions": 3,
+              "wer": 0.08490566037735849
+            },
+            "microphone": {
+              "reference_words": 48,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 10,
+              "wer": 0.20833333333333334
+            }
+          },
+          "attribution_errors": 2,
+          "duplication_count": 2,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.095074,
+          "passed": false
+        },
+        "reopened": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 104,
+              "substitutions": 1,
+              "omissions": 5,
+              "additions": 3,
+              "wer": 0.08490566037735849
+            },
+            "microphone": {
+              "reference_words": 48,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 10,
+              "wer": 0.20833333333333334
+            }
+          },
+          "attribution_errors": 2,
+          "duplication_count": 2,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.095074,
+          "passed": false
+        }
+      }
+    },
+    "before-overlap": {
+      "passed": false,
+      "surfaces": {
+        "pre_terminal": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 99,
+              "substitutions": 2,
+              "omissions": 14,
+              "additions": 7,
+              "wer": 0.2169811320754717
+            },
+            "microphone": {
+              "reference_words": 48,
+              "observed_words": 59,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 11,
+              "wer": 0.22916666666666666
+            }
+          },
+          "attribution_errors": 2,
+          "duplication_count": 1,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.166655,
+          "passed": false
+        },
+        "final": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 105,
+              "substitutions": 2,
+              "omissions": 6,
+              "additions": 5,
+              "wer": 0.12264150943396226
+            },
+            "microphone": {
+              "reference_words": 48,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 10,
+              "wer": 0.20833333333333334
+            }
+          },
+          "attribution_errors": 2,
+          "duplication_count": 1,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.095074,
+          "passed": false
+        },
+        "reopened": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 105,
+              "substitutions": 2,
+              "omissions": 6,
+              "additions": 5,
+              "wer": 0.12264150943396226
+            },
+            "microphone": {
+              "reference_words": 48,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 10,
+              "wer": 0.20833333333333334
+            }
+          },
+          "attribution_errors": 2,
+          "duplication_count": 1,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.095074,
+          "passed": false
+        }
+      }
+    },
+    "after-alternation": {
+      "passed": false,
+      "surfaces": {
+        "pre_terminal": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 107,
+              "substitutions": 2,
+              "omissions": 6,
+              "additions": 7,
+              "wer": 0.14150943396226415
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 55,
+              "substitutions": 1,
+              "omissions": 4,
+              "additions": 6,
+              "wer": 0.20754716981132076
+            }
+          },
+          "attribution_errors": 0,
+          "duplication_count": 0,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.166655,
+          "passed": false
+        },
+        "final": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 104,
+              "substitutions": 1,
+              "omissions": 5,
+              "additions": 3,
+              "wer": 0.08490566037735849
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 5,
+              "wer": 0.09433962264150944
+            }
+          },
+          "attribution_errors": 0,
+          "duplication_count": 0,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.095074,
+          "passed": true
+        },
+        "reopened": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 104,
+              "substitutions": 1,
+              "omissions": 5,
+              "additions": 3,
+              "wer": 0.08490566037735849
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 5,
+              "wer": 0.09433962264150944
+            }
+          },
+          "attribution_errors": 0,
+          "duplication_count": 0,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.095074,
+          "passed": true
+        }
+      }
+    },
+    "after-overlap": {
+      "passed": false,
+      "surfaces": {
+        "pre_terminal": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 89,
+              "substitutions": 2,
+              "omissions": 24,
+              "additions": 7,
+              "wer": 0.3113207547169811
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 59,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 6,
+              "wer": 0.11320754716981132
+            }
+          },
+          "attribution_errors": 0,
+          "duplication_count": 0,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.166655,
+          "passed": false
+        },
+        "final": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 105,
+              "substitutions": 2,
+              "omissions": 6,
+              "additions": 5,
+              "wer": 0.12264150943396226
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 5,
+              "wer": 0.09433962264150944
+            }
+          },
+          "attribution_errors": 0,
+          "duplication_count": 0,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.095074,
+          "passed": false
+        },
+        "reopened": {
+          "lanes": {
+            "system": {
+              "reference_words": 106,
+              "observed_words": 105,
+              "substitutions": 2,
+              "omissions": 6,
+              "additions": 5,
+              "wer": 0.12264150943396226
+            },
+            "microphone": {
+              "reference_words": 53,
+              "observed_words": 58,
+              "substitutions": 0,
+              "omissions": 0,
+              "additions": 5,
+              "wer": 0.09433962264150944
+            }
+          },
+          "attribution_errors": 0,
+          "duplication_count": 0,
+          "speaker_lane_conflicts": 0,
+          "max_wer": 0.095074,
+          "passed": false
+        }
+      }
+    }
+  },
+  "recognition_routes": [
+    {
+      "case": "recognize-system-to-system",
+      "recognition_seconds": 3.5264644999988377,
+      "recognition_bar_seconds": 4.0,
+      "saved_speakers": [
+        "WP17 Adam"
+      ]
+    },
+    {
+      "case": "recognize-system-to-microphone",
+      "recognition_seconds": 3.527691750001395,
+      "recognition_bar_seconds": 4.0,
+      "saved_speakers": [
+        "WP17 Adam"
+      ]
+    },
+    {
+      "case": "recognize-microphone-to-system",
+      "recognition_seconds": 3.528290541988099,
+      "recognition_bar_seconds": 4.0,
+      "saved_speakers": [
+        "WP17 Adam"
+      ]
+    },
+    {
+      "case": "recognize-microphone-to-microphone",
+      "recognition_seconds": 3.526378541995655,
+      "recognition_bar_seconds": 4.0,
+      "saved_speakers": [
+        "WP17 Adam"
+      ]
+    }
+  ]
+}
