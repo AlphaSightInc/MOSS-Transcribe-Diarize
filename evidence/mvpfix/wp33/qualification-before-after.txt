@@ -1,0 +1,4 @@
+BUNDLE evidence/mvpfix/wp33
+{"step": "before", "passed": 13, "skipped": 1, "expected": 14, "harness_exit": 0, "qualified": true, "verdict": null}
+BUNDLE evidence/mvpfix/wp33
+{"step": "after", "passed": 13, "skipped": 1, "expected": 14, "harness_exit": 2, "qualified": false, "verdict": "INCOMPLETE"}

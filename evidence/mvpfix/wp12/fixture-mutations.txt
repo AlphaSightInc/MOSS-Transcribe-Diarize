@@ -1,3 +1,7 @@
+WP33 qualification: historical log below retained unchanged. 3 valid assertion controls;
+2 INVALID terminal controls (missing required gaps), not 5/5 effective kills.
+Corrected terminal-only rerun: evidence/mvpfix/wp33/terminal-mutations.txt.
+
 FFFFF                                                                    [100%]
 =================================== FAILURES ===================================
 _ test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it __

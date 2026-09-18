@@ -21,7 +21,7 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from tools.qualify.decoder import Decoder
-from tests.e2e.verify_workspace import retained_metadata
+from tests.e2e.verify_workspace import retained_metadata, required_rows_verdict, verdict_exit_code
 from tests.e2e.verify_demo_lanes import Client
 
 PY = sys.executable
@@ -50,6 +50,14 @@ def compare(first, second):
     a = {g['name']: g['status'] for g in first['gates']}
     b = {g['name']: g['status'] for g in second['gates']}
     return [dict(name=k, before=a.get(k), after=b.get(k)) for k in sorted(a.keys() | b.keys()) if a.get(k) != b.get(k)]
+
+
+def bundle_verdict(gates):
+    if any(g['status'] == 'FAIL' for g in gates):
+        return 'FAIL'
+    if any(g['status'] != 'PASS' and g.get('required', True) for g in gates):
+        return 'INCOMPLETE'
+    return 'PASS' if gates else 'INCOMPLETE'
 
 
 class Bundle:
@@ -89,6 +97,7 @@ class Bundle:
         self.data['duration_seconds'] = round(time.monotonic()-self.started, 3)
         write(self.out/'summary.json', self.data)
         lines = ['# Local qualification', '', f"Candidate `{self.sha}`; clean at start: {self.data['identity']['tree_clean']}.",
+                 f"Verdict: {self.data.get('verdict', 'INCOMPLETE')}.",
                  'Local measurement only; no deployment or attended-capture acceptance.', '',
                  '| Gate | Status | Counts | Seconds |', '|---|---|---|---|']
         reasons = []
@@ -100,8 +109,8 @@ class Bundle:
                   'Raw content-bearing stdout stays in ignored runtime scratch. Retained logs contain only status/count projections.']
         (self.out/'summary.md').write_text('\n'.join(lines)+'\n')
 
-    def gate(self, name, status, denominators=None, duration=0, code=None, reason=None, measurements=None):
-        row = dict(name=name, status=status, exit_code=code, denominators=denominators or counts([status]),
+    def gate(self, name, status, denominators=None, duration=0, code=None, reason=None, measurements=None, required=True):
+        row = dict(name=name, status=status, required=required, exit_code=code, denominators=denominators or counts([status]),
                    duration_seconds=round(duration, 3), artifacts=[name+'.log'])
         if self.proxy:
             row['decoder_requests_at_record'] = self.proxy.sent
@@ -303,7 +312,7 @@ class Bundle:
         for name, expected, reason in [('file_30min',3,'WP16 probe has fixed decoder metrics 18116; no isolation arguments'),
                                       ('capacity_4x600',4,'capacity run owns tunnel 18106 and fixed WP6 output; no decoder-port/output arguments')]:
             status = 'UNRUNNABLE' if self.args.long else 'SKIP'
-            self.gate(name,status,counts([status]*expected),reason=reason if self.args.long else 'Default bounded run; --long requests this gate')
+            self.gate(name,status,counts([status]*expected),reason=reason if self.args.long else 'Default bounded run; --long requests this gate', required=self.args.long)
 
     def benches(self, ready):
         base = 'https://127.0.0.1:17867'
@@ -324,7 +333,9 @@ class Bundle:
                 rows['9'] = dict(status='SKIP', reason_code='no_key_in_environment')
             elif str(n) not in rows:
                 rows[str(n)] = dict(status='UNRUNNABLE', reason_code='bench_produced_no_row')
-        status = 'FAIL' if code not in (0,77) or any(v['status']=='FAIL' for v in rows.values()) else 'UNRUNNABLE' if code==77 or any(v['status']=='UNRUNNABLE' for v in rows.values()) else 'PASS'
+        status = ('FAIL' if code not in (0,2,77) or any(v['status']=='FAIL' for v in rows.values())
+                  else 'UNRUNNABLE' if code==77 or any(v['status']=='UNRUNNABLE' for v in rows.values())
+                  else 'INCOMPLETE' if code==2 else required_rows_verdict(rows))
         self.gate('workspace',status,counts([v['status'] for v in rows.values()]),elapsed,code,measurements=rows)
         for row, value in sorted(rows.items(), key=lambda kv:int(kv[0])):
             self.gate('workspace_row_'+row,value['status'],duration=value.get('seconds',0),reason=value.get('reason_code'),measurements=value)
@@ -407,7 +418,8 @@ class Bundle:
                 pass
         self.gate('teardown','FAIL' if alive else 'PASS',measurements={'owned_process_groups_remaining':alive})
         self.data['gate_counts'] = dict(Counter(g['status'] for g in self.data['gates']))
-        self.data['qualified'] = all(g['status'] in ('PASS','SKIP') for g in self.data['gates'])
+        self.data['verdict'] = bundle_verdict(self.data['gates'])
+        self.data['qualified'] = self.data['verdict'] == 'PASS'
         if self.args.compare:
             baseline = json.loads(self.args.compare.read_text())
             deltas = compare(baseline,self.data)
@@ -478,7 +490,9 @@ def main():
                 bundle.gate(name, 'UNRUNNABLE', counts(['UNRUNNABLE']*expected),
                             reason='Prerequisite failed or runner interrupted; no observation')
         bundle.cleanup()
-    return 0 if bundle.data['qualified'] and bundle.data.get('determinism',{}).get('status','PASS')=='PASS' else 1
+    if bundle.data.get('determinism',{}).get('status','PASS') != 'PASS':
+        return 1
+    return verdict_exit_code(bundle.data['verdict'])
 
 
 if __name__ == '__main__':

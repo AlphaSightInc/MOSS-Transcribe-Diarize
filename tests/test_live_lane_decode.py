@@ -827,3 +827,67 @@ def test_terminal_all_zero_lanes_has_named_refusal(tmp_path):
     assert result.proposal is None
     assert result.accounting.reason == "all_lanes_zero"
     assert result.accounting.tape_gaps == 0
+
+
+@pytest.mark.parametrize('truncated', [None, 1, 2])
+def test_terminal_retains_either_lane_truncation_and_still_finalizes(tmp_path, truncated):
+    c, _, session, arbiter = make()
+    c.accept_frame(frame())
+    commit(c, arbiter)
+
+    class Runner:
+        def transcribe(self, path, **kwargs):
+            with wave.open(str(path)) as audio:
+                marker = audio.readframes(1)[0]
+            return SimpleNamespace(text='[0][S01]fixture words[2.5]',
+                                   possibly_truncated=marker == truncated)
+
+    result = finalize_lanes(c, TerminalTranscriptFinalizer(runner=Runner(), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0,
+        base_surface=session.snapshot().effective_transcript,
+        canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers)
+    assert result.accounting.possibly_truncated is (truncated is not None)
+    assert session.apply_text_revision(result.proposal).applied
+    assert session.snapshot().finalization_status == 'final'
+    c.release_tape()
+
+
+@pytest.mark.parametrize('refused', [(), ('microphone',), ('system', 'microphone')])
+def test_terminal_combines_seams_and_lane_diagnostics_even_on_refusal(tmp_path, refused):
+    c, _, session, arbiter = make()
+    c.accept_frame(frame())
+    commit(c, arbiter)
+    from moss_transcribe_diarize.app.live_transcript_convergence import TerminalOutcome
+
+    class Finalizer(TerminalTranscriptFinalizer):
+        def finalize(self, **kwargs):
+            lane = next(lane for lane, tape in c.lane_tapes.items() if tape is kwargs['tape'])
+            marker = 1 if lane == 'system' else 2
+            result = super().finalize(**kwargs)
+            accounting = replace(result.accounting,
+                possibly_truncated=marker == 2,
+                seam_merged_segments=marker, seam_dropped_segments=marker * 2,
+                seam_displaced_samples=marker * 3,
+                window_diagnostics=[{'window_index': marker}],
+                window_failure={'window_index': marker} if lane in refused else None)
+            if lane in refused:
+                return replace(result, proposal=None, accounting=replace(accounting,
+                    outcome=TerminalOutcome.DECODE_FAILED))
+            return replace(result, accounting=accounting)
+
+    result = finalize_lanes(c, Finalizer(runner=SimpleNamespace(
+        transcribe=lambda *a, **kw: SimpleNamespace(text='[0][S01]words[2.5]')), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0,
+        base_surface=session.snapshot().effective_transcript,
+        canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers)
+    a = result.accounting
+    assert a.possibly_truncated
+    assert (a.seam_merged_segments, a.seam_dropped_segments, a.seam_displaced_samples) == (3, 6, 9)
+    assert a.window_diagnostics == [{'window_index': 1, 'source_lane': 'system'},
+                                    {'window_index': 2, 'source_lane': 'microphone'}]
+    assert a.window_failure == ({lane: {'window_index': 1 if lane == 'system' else 2}
+                                 for lane in refused} or None)
+    assert (result.proposal is None) == (len(refused) == 2)
+    c.release_tape()

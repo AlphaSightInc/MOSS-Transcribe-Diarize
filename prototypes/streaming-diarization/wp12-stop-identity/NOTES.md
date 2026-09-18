@@ -417,8 +417,10 @@ File-by-file contract:
   Fixture now updates both fields to the same two segments; assertions unchanged.
 
 Those five files then pass 147 tests + 9 subtests. Deliberate in-process empty
-adapter/terminal outcomes plus a temporarily empty published-surface reader kill
-5/5 representative tests (one per file). Frontend source restored in finally;
+adapter/terminal outcomes plus a temporarily empty published-surface reader made
+5/5 representative tests fail (one per file), but only **3 valid assertion controls**
+were demonstrated: **2 terminal controls were invalid**, omitting required `gaps`
+and raising TypeError. This is not 5/5 effective mutation kills. Frontend source restored in finally;
 Python mutations disappear with the process. Fault-control source retained in bench.
 No production silence guard or reader authority was changed to make tests pass.
 
@@ -454,3 +456,11 @@ rewrite three WP2 reference PNGs; those generated-only changes were restored to 
 Implementation commits: 33be55ec (terminal concurrency), 9d10e0d8 (adjudicated
 fixture corrections). Fresh `/new` verification follows VERIFY.md; do not call a
 same-context reread fresh verification.
+
+## WP33 correction of mutation evidence
+
+Original efficacy: 3 valid controls, 2 malformed terminal controls (missing `gaps`).
+Corrected `fault_controls.py --terminal-only` supplies `gaps=()` and reruns only
+those two tests. Both fail by assertions (missing HTTP request / failed vs final),
+zero TypeErrors. Evidence: `evidence/mvpfix/wp33/terminal-mutations.txt`.
+This adds 2/2 valid terminal controls; it does not rewrite the historical run.

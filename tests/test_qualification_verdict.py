@@ -1,0 +1,91 @@
+"""Required SKIP must remain visible and cannot grant CLI or bundle acceptance."""
+import asyncio
+import json
+import os
+from pathlib import Path
+import subprocess
+from types import SimpleNamespace
+
+import pytest
+from tests.e2e.verify_workspace import Harness, required_rows_verdict, verdict_exit_code, retained_metadata
+from tools.qualify.run import Bundle, bundle_verdict
+
+
+@pytest.mark.parametrize('statuses,verdict,code', [
+    (['PASS'], 'PASS', 0), (['SKIP'], 'INCOMPLETE', 2),
+    (['PASS', 'SKIP'], 'INCOMPLETE', 2), (['FAIL', 'SKIP'], 'FAIL', 1),
+    ([], 'INCOMPLETE', 2),
+])
+def test_required_workspace_rows(statuses, verdict, code):
+    rows = {str(i): {'status': status} for i, status in enumerate(statuses)}
+    assert required_rows_verdict(rows) == verdict
+    assert verdict_exit_code(verdict) == code
+    assert retained_metadata({'verdict': verdict}) == {'verdict': verdict}
+
+
+def test_missing_relay_runs_real_summary_check_and_retains_skip(tmp_path):
+    h = object.__new__(Harness)
+    h.out, h.row, h.state = tmp_path, None, {'rows': {}}
+    async def api(*args): return {'body': {'data': []}}
+    async def snapshot(*args): return None
+    h.api, h.snapshot = api, snapshot
+    asyncio.run(h.check(9, h.summaries))
+    assert h.state['rows']['9']['status'] == 'SKIP'
+    assert json.loads((tmp_path/'results.json').read_text())['rows']['9']['status'] == 'SKIP'
+    assert verdict_exit_code(required_rows_verdict(h.state['rows'])) == 2
+
+
+@pytest.mark.parametrize('gates,verdict', [
+    ([{'status': 'PASS'}, {'status': 'SKIP'}], 'INCOMPLETE'),
+    ([{'status': 'PASS'}, {'status': 'SKIP', 'required': False}], 'PASS'),
+    ([{'status': 'UNRUNNABLE'}], 'INCOMPLETE'),
+    ([{'status': 'FAIL'}, {'status': 'SKIP'}], 'FAIL'),
+])
+def test_bundle_required_and_optional(gates, verdict):
+    assert bundle_verdict(gates) == verdict
+
+
+def test_bundle_workspace_cannot_accept_missing_key(tmp_path):
+    b = object.__new__(Bundle)
+    b.work, b.has_summary_key = tmp_path, False
+    gates = []
+    b.gate = lambda name, status, *a, **kw: gates.append({'name': name, 'status': status, **kw})
+    class StopAfterWorkspace(Exception): pass
+    def command(name, *args, **kwargs):
+        if name != 'workspace': raise StopAfterWorkspace
+        output = tmp_path/'workspace'
+        output.mkdir()
+        (output/'results.json').write_text(json.dumps({'rows': {
+            str(i): {'status': 'PASS'} for i in range(1,15) if i != 9}}))
+        return 0, 0, None
+    b.command = command
+    with pytest.raises(StopAfterWorkspace): b.benches(True)
+    assert gates[0]['status'] == 'INCOMPLETE'
+    assert next(g for g in gates if g['name'] == 'workspace_row_9')['status'] == 'SKIP'
+    assert bundle_verdict(gates) == 'INCOMPLETE'
+
+
+def test_shell_preserves_incomplete_exit(tmp_path):
+    fake_python = tmp_path/'incomplete-python'
+    fake_python.write_text('#!/bin/sh\nexit 2\n')
+    fake_python.chmod(0o755)
+    result = subprocess.run(['bash', 'scripts/mvpfix-qualify.sh'],
+        env={**os.environ, 'MOSS_QUALIFY_PYTHON': str(fake_python)})
+    assert result.returncode == 2
+
+
+@pytest.mark.parametrize('status,verdict', [('PASS', 'PASS'), ('SKIP', 'INCOMPLETE'), ('FAIL', 'FAIL')])
+def test_real_bundle_cleanup_records_overall_verdict(tmp_path, status, verdict, monkeypatch):
+    import tools.qualify.run as module
+    monkeypatch.setattr(module, 'ROOT', tmp_path)
+    b = object.__new__(Bundle)
+    b.processes, b.handles, b.proxy, b.monitor = [], [], None, None
+    b.monitor_stop = SimpleNamespace(set=lambda: None)
+    b.args = SimpleNamespace(budget=1, compare=None)
+    b.out = tmp_path/'bundle'
+    b.data = {'gates': [{'name': 'summary', 'status': status}]}
+    b.gate = lambda name, status, **kw: b.data['gates'].append({'name': name, 'status': status})
+    b.flush = lambda: None
+    b.cleanup()
+    assert b.data['verdict'] == verdict
+    assert b.data['qualified'] is (verdict == 'PASS')

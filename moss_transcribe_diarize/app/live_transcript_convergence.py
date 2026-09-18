@@ -692,6 +692,7 @@ class TerminalFinalizationAccounting:
     rolling_status: str
     window_seconds: float | None
     stride_seconds: float | None
+    # Lane compositor keys failures by source lane; mono retains the runner dict.
     window_failure: dict[str, object] | None = None
     window_diagnostics: list[dict[str, object]] | None = None
 

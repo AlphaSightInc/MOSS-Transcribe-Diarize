@@ -238,6 +238,7 @@ def finalize_lanes(c, finalizer, **kwargs):
     from .live_transcript_convergence import TerminalOutcome
 
     results = []
+    lane_results_by_name = {}
     failures = []
     placed = []
     base = kwargs["base_surface"]
@@ -312,9 +313,11 @@ def finalize_lanes(c, finalizer, **kwargs):
     with ThreadPoolExecutor(
         max_workers=len(LANES), thread_name_prefix="moss-lane-terminal"
     ) as pool:
-        for lane_results, lane_failures, lane_segments in pool.map(
-            finish_lane, c.lane_tapes.items()
+        for lane, (lane_results, lane_failures, lane_segments) in zip(
+            c.lane_tapes, pool.map(finish_lane, c.lane_tapes.items())
         ):
+            if lane_results:
+                lane_results_by_name[lane] = lane_results[0]
             results.extend(lane_results)
             failures.extend(lane_failures)
             placed.extend(lane_segments)
@@ -337,37 +340,46 @@ def finalize_lanes(c, finalizer, **kwargs):
             tape_samples=tape_samples,
         )
     template = next((r for r in results if r.proposal is not None), results[0])
+    # These are meeting totals, including lanes that refused publication. Plan and
+    # runner geometry are shared; outcome still describes the assembled proposal.
+    accounting = replace(
+        template.accounting,
+        tape_gaps=len(gaps),
+        tape_samples=tape_samples,
+        possibly_truncated=any(r.accounting.possibly_truncated for r in results),
+        **{name: sum(getattr(r.accounting, name) for r in results) for name in (
+            "window_count", "completed_windows", "decoded_audio_samples",
+            "generated_tokens", "prompt_tokens", "local_speakers",
+            "seam_merged_segments", "seam_dropped_segments", "seam_displaced_samples",
+        )},
+        decode_elapsed_sec=sum(r.accounting.decode_elapsed_sec or 0 for r in results),
+        window_diagnostics=[
+            {**diagnostic, "source_lane": lane}
+            for lane, result in lane_results_by_name.items()
+            for diagnostic in result.accounting.window_diagnostics or []
+        ] or None,
+        window_failure={
+            lane: result.accounting.window_failure
+            for lane, result in lane_results_by_name.items()
+            if result.accounting.window_failure is not None
+        } or None,
+    )
     if template.proposal is None:
-        return replace(template, accounting=replace(
-            template.accounting, tape_gaps=len(gaps), tape_samples=tape_samples,
-        ))
+        return replace(template, accounting=accounting)
     return replace(
         template,
         proposal=replace(template.proposal, segments=tuple(sorted(placed, key=order))),
         accounting=replace(
-            template.accounting,
-            tape_gaps=len(gaps),
-            tape_samples=tape_samples,
+            accounting,
             segments=len(placed),
             reason=(
                 "lane_terminal_failed:" + ",".join(lane for lane, _ in failures)
                 if failures
                 else None
             ),
-            window_count=sum(r.accounting.window_count for r in results),
-            completed_windows=sum(r.accounting.completed_windows for r in results),
-            decoded_audio_samples=sum(
-                r.accounting.decoded_audio_samples for r in results
-            ),
-            generated_tokens=sum(r.accounting.generated_tokens for r in results),
-            prompt_tokens=sum(r.accounting.prompt_tokens for r in results),
-            local_speakers=sum(r.accounting.local_speakers for r in results),
             mapped_speakers=len(
                 {s.canonical_speaker for s in placed if s.canonical_speaker is not None}
             ),
             unattributed_segments=sum(s.canonical_speaker is None for s in placed),
-            decode_elapsed_sec=sum(
-                r.accounting.decode_elapsed_sec or 0 for r in results
-            ),
         ),
     )

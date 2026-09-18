@@ -1,0 +1,77 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_launcher_without_prompt_finalizer_builds_http_request __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a4a2180>
+
+    def test_launcher_without_prompt_finalizer_builds_http_request(monkeypatch):
+        import io
+        import json
+        from moss_transcribe_diarize.app.phase2_web_cli import parse_args, _build_file_runner
+        from moss_transcribe_diarize.app.live_transcript_convergence import TerminalDecodePlan, RollingStatus
+        from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
+    
+        # Mirrors account-web-launcher.sh: deliberately no --prompt.
+        args = parse_args([
+            '--database', '/tmp/account.sqlite', '--control-socket', '/tmp/control.sock',
+            '--tls-certfile', '/tmp/cert.pem', '--tls-keyfile', '/tmp/key.pem',
+            '--backend', 'vllm', '--model', '/tmp/model',
+            '--vllm-base-url', 'http://127.0.0.1:8000/v1',
+            '--vllm-model', 'OpenMOSS-Team/MOSS-Transcribe-Diarize', '--vllm-timeout', '1800',
+            '--file-work-root', '/tmp/file-work', '--meeting-audio-root', '/tmp/audio',
+            '--live-provider-manifest', '/tmp/provider.json', '--live-helper-lease-seconds', '30',
+            '--host', '0.0.0.0', '--port', '7861', '--max-len', '16384', '--max-new-tokens', '12000',
+        ])
+        assert args.prompt is None
+        requests = []
+        class Response(io.BytesIO):
+            headers = {'Content-Type': 'application/json'}
+        def fake_urlopen(request, **kwargs):
+            requests.append(request)
+            return Response(json.dumps({'text': '[0][S01]test[2.5]',
+                            'usage': {'completion_tokens': 12, 'prompt_tokens': 10}}).encode())
+        monkeypatch.setattr('urllib.request.urlopen', fake_urlopen)
+        finalizer = runner_composition.build_terminal_finalizer(
+            runner=_build_file_runner(args), prompt=args.prompt, max_length=args.max_len,
+            max_new_tokens=args.max_new_tokens, decoding=args.decoding,
+            temperature=args.temperature, max_length_cap=args.max_len,
+        )
+        class Tape:
+            def gaps(self, end_sample): return ()
+            def read(self, *, start_sample, end_sample): return b'\1\0' * (end_sample-start_sample)
+        finalizer.finalize(
+            plan=TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0,
+                rolling_status=RollingStatus.ROLLING, windows_completed=0, windows_failed=0),
+            tape=Tape(), base_text_revision_version=0,
+        )
+>       assert len(requests) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/phase2/test_runner_composition.py:153: AssertionError
+_ ReplayTerminalFinalizationWaitTest.test_the_run_reports_the_terminal_surface_and_the_events_that_made_it _
+
+self = <test_live_service_replay.ReplayTerminalFinalizationWaitTest testMethod=test_the_run_reports_the_terminal_surface_and_the_events_that_made_it>
+
+    def test_the_run_reports_the_terminal_surface_and_the_events_that_made_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            trace, summary = _run_terminal_replay(Path(tmp), finalizer=_terminal_finalizer())
+    
+        wait = _one_trace_record(self, trace, "terminal_finalization_wait")
+        terminal = _one_trace_record(self, trace, "terminal")
+        session = terminal["snapshot"]["session"]
+        kinds = [
+            record["event"]["kind"] for record in trace if record["kind"] == "service_event"
+        ]
+    
+        self.assertEqual(wait["stop_finalization_status"], "running")
+>       self.assertEqual(wait["finalization_status"], "final")
+E       AssertionError: 'failed' != 'final'
+E       - failed
+E       + final
+
+tests/test_live_service_replay.py:724: AssertionError
+=========================== short test summary info ============================
+FAILED tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+FAILED tests/test_live_service_replay.py::ReplayTerminalFinalizationWaitTest::test_the_run_reports_the_terminal_surface_and_the_events_that_made_it
+2 failed in 2.30s

@@ -122,7 +122,8 @@ export type PreSessionCaptureFailure = Readonly<{
   code:
     | "browser_microphone_permission_denied"
     | "browser_capture_request_rejected"
-    | "browser_surface_audio_missing";
+    | "browser_surface_audio_missing"
+    | BrowserFailureCode;
 }>;
 
 type LaneHealthState = "capturing" | "degraded" | "failed";
@@ -1114,6 +1115,10 @@ export class CaptureClient {
     state.failureCode = failureCode;
     state.degradedCode = null;
     state.frameQueue.length = 0;
+    if (!this.session) {
+      void this.failBeforeSession(lane, failureCode);
+      return;
+    }
     void this.scheduleHeartbeat(this.heartbeatState());
   }
 

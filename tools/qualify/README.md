@@ -6,8 +6,15 @@ From the checkout to measure:
 bash scripts/mvpfix-qualify.sh
 ```
 
-Exit 0 only when all requested runnable gates pass and no required gate is unrunnable.
-Exit 1 retains failed/partial evidence; it is expected while bench interfaces are missing.
+Exit 0 = PASS: every required gate passed. Exit 1 = FAIL (or determinism failure).
+Exit 2 = INCOMPLETE: no failed gates, but required evidence is SKIP/UNRUNNABLE.
+A failed gate takes precedence over incomplete evidence. `summary.json` records
+`verdict` and `qualified`; the shell wrapper preserves the exit code. Workspace
+summaries are required: missing relay/key remains a distinct SKIP row and makes
+the workspace/bundle INCOMPLETE, never accepted. Only unrequested `--long` gates
+are marked `required: false`; their default SKIP does not block a bounded run.
+Standalone `verify_workspace.py`: 0 all selected rows PASS; 1 FAIL; 2 required SKIP;
+77 browser unavailable.
 Results: `evidence/qualify/<candidate-sha>-<utc>/summary.{json,md}`. `--compare <first-summary>`
 adds an exact gate-name/status comparison (including added/missing gates). Runtime and
 numeric observations may vary. `--long` requests 30-minute files and 4x600 capacity;
