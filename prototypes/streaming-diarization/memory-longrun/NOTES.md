@@ -59,8 +59,19 @@ The base archive predates `bounded_live_inference`; selected its existing Runner
 Tracebacks retained. Automated scripted progression replaces the interactive TUI to measure
 long sessions reproducibly. Bench retained rather than shipping prototype logic.
 
-30-minute owner table, final full suites, and fresh verification: pending running profiles.
-Part C remains gated on the user's WP12 merge confirmation.
+All three uncached 30-minute profiles completed; the owner table is
+`evidence/mvpfix/wp22/OWNERS.md` and exact machine-readable results are in
+`profile-summary.json`. RSS at 5/15/30 minutes (bytes):
+- mono base: 572194816 / 626425856 / 647659520;
+- lanes before: 623689728 / 662274048 / 667467776;
+- lanes after: 569327616 / 617299968 / 623951872.
+All accepted/committed 28,800,000 samples; all PCM/tapes released after Stop.
+Before/after content matches exactly: 1,440 segments, 4,320 stub words.
+After-Stop RSS remains 641,908,736 bytes with runtime/model/profiler alive;
+this is native retention reduction, not a universal RSS or cold-baseline claim.
+The user has now confirmed WP12 and authorized merging integration tip 1745b96f
+before Part C, with 2,600 total requests and contention recorded without pausing.
+Fresh verification remains pending until the merged-tree real run and full suites.
 
 ## Test-attempt adjudication
 

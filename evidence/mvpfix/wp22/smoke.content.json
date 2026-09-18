@@ -1,0 +1,16 @@
+[
+  {
+    "start": 0,
+    "end": 480000,
+    "text": "memory probe words",
+    "speaker": "speaker-0001",
+    "lane": "system"
+  },
+  {
+    "start": 0,
+    "end": 480000,
+    "text": "memory probe words",
+    "speaker": "speaker-0002",
+    "lane": "microphone"
+  }
+]

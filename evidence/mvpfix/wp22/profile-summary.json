@@ -1,0 +1,103 @@
+{
+  "mono-base": {
+    "rss_5_15_30": [
+      572194816,
+      626425856,
+      647659520
+    ],
+    "python_5_15_30": [
+      68489408,
+      69206136,
+      70142839
+    ],
+    "rss_after": 658653184,
+    "python_after": 59405905,
+    "rss_warm_30s": 568262656,
+    "status": "closed",
+    "finalization": "unavailable",
+    "wall_seconds": 1170.9747598340036,
+    "decoder_calls": 900,
+    "sample_count": 63,
+    "rss_max_sampled": 658653184
+  },
+  "lanes-before": {
+    "rss_5_15_30": [
+      623689728,
+      662274048,
+      667467776
+    ],
+    "python_5_15_30": [
+      89857117,
+      90637124,
+      92232128
+    ],
+    "rss_after": 685572096,
+    "python_after": 60985607,
+    "rss_warm_30s": 598802432,
+    "status": "closed",
+    "finalization": "failed",
+    "wall_seconds": 1499.1090636660083,
+    "decoder_calls": 1500,
+    "sample_count": 63,
+    "rss_max_sampled": 685572096
+  },
+  "lanes-after": {
+    "rss_5_15_30": [
+      569327616,
+      617299968,
+      623951872
+    ],
+    "python_5_15_30": [
+      89855516,
+      90638705,
+      92229944
+    ],
+    "rss_after": 641908736,
+    "python_after": 60983771,
+    "rss_warm_30s": 552550400,
+    "status": "closed",
+    "finalization": "failed",
+    "wall_seconds": 1491.9518868330051,
+    "decoder_calls": 1500,
+    "sample_count": 63,
+    "rss_max_sampled": 641908736
+  },
+  "content": {
+    "exact_equal": true,
+    "segments": 1440,
+    "words": 4320
+  },
+  "album_entries": [
+    {
+      "seconds": 300,
+      "system": 15,
+      "microphone": 20
+    },
+    {
+      "seconds": 900,
+      "system": 20,
+      "microphone": 20
+    },
+    {
+      "seconds": 1800,
+      "system": 20,
+      "microphone": 20
+    }
+  ],
+  "publication": {
+    "final": {
+      "seconds": 1800,
+      "phase": "after_stop",
+      "wall_seconds": 63.09067545901053,
+      "rss_bytes": 514408448,
+      "max_queue_count": 0,
+      "queue_count": 0,
+      "queue_bytes": 760,
+      "public_snapshot_bytes": 608173,
+      "public_events_bytes": 62013,
+      "durable_document_bytes": 690248,
+      "terminal": true
+    },
+    "max_sampled_queue": 0
+  }
+}

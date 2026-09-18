@@ -1,0 +1,20 @@
+{"action": "loaded", "arena": "shrink", "rss_bytes": 265224192}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 468631552, "cycle": 0, "seconds": 2.5, "elapsed": 0.9349995410011616}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 622772224, "cycle": 0, "seconds": 10, "elapsed": 1.5621890830079792}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 622903296, "cycle": 0, "seconds": 2.5, "elapsed": 0.3949606250098441}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1020248064, "cycle": 0, "seconds": 30, "elapsed": 4.792554166997434}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1021313024, "cycle": 0, "seconds": 2.5, "elapsed": 0.3908146250032587}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1044807680, "cycle": 0, "seconds": 10, "elapsed": 1.5830692919989815}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1044807680, "cycle": 1, "seconds": 2.5, "elapsed": 0.39653416599321645}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1045315584, "cycle": 1, "seconds": 10, "elapsed": 1.6162363330076914}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1045413888, "cycle": 1, "seconds": 2.5, "elapsed": 0.3834824580117129}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1476657152, "cycle": 1, "seconds": 30, "elapsed": 4.804619332993752}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1476739072, "cycle": 1, "seconds": 2.5, "elapsed": 0.39621449999685865}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1480081408, "cycle": 1, "seconds": 10, "elapsed": 1.569922291993862}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1480097792, "cycle": 2, "seconds": 2.5, "elapsed": 0.39226350000535604}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1020870656, "cycle": 2, "seconds": 10, "elapsed": 1.5760192500019912}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1020887040, "cycle": 2, "seconds": 2.5, "elapsed": 0.3947785409982316}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1451360256, "cycle": 2, "seconds": 30, "elapsed": 4.838657957996475}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1451376640, "cycle": 2, "seconds": 2.5, "elapsed": 0.3930655000003753}
+{"action": "embedded", "arena": "shrink", "rss_bytes": 1453588480, "cycle": 2, "seconds": 10, "elapsed": 1.5619110420084326}
+{"action": "session_destroyed", "arena": "shrink", "rss_bytes": 1453654016}
