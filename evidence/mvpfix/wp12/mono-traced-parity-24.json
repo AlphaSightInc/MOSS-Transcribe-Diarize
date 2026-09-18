@@ -1,0 +1,30 @@
+{
+  "arm": "mono-traced",
+  "case": "parity",
+  "seconds": 24,
+  "start": 91733.65888775,
+  "stop": 91757.668912,
+  "stop_to_final": 1.8807020410022233,
+  "status": "final",
+  "requests": 13,
+  "pre": {
+    "mono": {
+      "words": 89,
+      "speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003"
+      ]
+    }
+  },
+  "final": {
+    "mono": {
+      "words": 112,
+      "speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ]
+    }
+  },
+  "saved_equal": true
+}

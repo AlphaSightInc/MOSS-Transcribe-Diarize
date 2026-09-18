@@ -1,0 +1,43 @@
+{
+  "arm": "overlap-shadow-p60",
+  "case": "parity",
+  "seconds": 60,
+  "start": 92470.964144625,
+  "stop": 92530.97118075,
+  "stop_to_final": 16.457955000005313,
+  "status": "final",
+  "requests": 62,
+  "pre": {
+    "microphone": {
+      "words": 148,
+      "speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ]
+    },
+    "system": {
+      "words": 189,
+      "speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ]
+    }
+  },
+  "final": {
+    "microphone": {
+      "words": 154,
+      "speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ]
+    },
+    "system": {
+      "words": 197,
+      "speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ]
+    }
+  },
+  "saved_equal": true
+}

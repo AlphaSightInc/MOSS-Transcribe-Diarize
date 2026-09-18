@@ -1,0 +1,27 @@
+{
+  "exact_saved_segments_equal": false,
+  "serial_segments": 28,
+  "parallel_segments": 28,
+  "speakers": {
+    "speaker-0001": {
+      "ordered_words_equal": true,
+      "serial_words": 181,
+      "parallel_words": 181
+    },
+    "speaker-0002": {
+      "ordered_words_equal": true,
+      "serial_words": 106,
+      "parallel_words": 106
+    },
+    "speaker-0003": {
+      "ordered_words_equal": true,
+      "serial_words": 48,
+      "parallel_words": 48
+    },
+    "speaker-0004": {
+      "ordered_words_equal": true,
+      "serial_words": 16,
+      "parallel_words": 16
+    }
+  }
+}

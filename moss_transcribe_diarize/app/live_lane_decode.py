@@ -1,7 +1,7 @@
-"""Serial source-lane decoding and voice attribution on the shared meeting clock."""
+"""Source-lane decoding; concurrent terminal jobs reuse lane-scoped voice evidence."""
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-from copy import copy
 from .live_span_bounds import span_segments, render_segments
 from .live_session import LiveIdentityPreparation, LiveIdentitySnapshot, FrozenSpan
 from .live_adapters import (
@@ -234,41 +234,38 @@ def decode_refinement(c, request):
 
 
 def finalize_lanes(c, finalizer, **kwargs):
+    """Finalize each lane through mono's overlap mapper, probing only uncovered audio."""
     from .live_transcript_convergence import TerminalOutcome
 
     results = []
     failures = []
     placed = []
     base = kwargs["base_surface"]
-    for lane, tape in c.lane_tapes.items():
+
+    def finish_lane(item):
+        lane, tape = item
+        results, failures, placed = [], [], []
         lane_base = tuple(s for s in base if s.source_lane == lane)
         try:
             pcm = tape.read(end_sample=kwargs["plan"].end_sample)
         except Exception as exc:
             failures.append((lane, type(exc).__name__))
             placed.extend(lane_base)
-            continue
+            return results, failures, placed
         if not any(pcm):
-            continue
-        captured = []
-
-        class CaptureRunner:
-            def transcribe(self, *args, **options):
-                result = finalizer.runner.transcribe(*args, **options)
-                captured.append(result)
-                return result
-
-        listener = copy(finalizer)
-        listener.runner = CaptureRunner()
-        result = listener.finalize(
+            return results, failures, placed
+        own = c._lane_speakers.get(lane, set())
+        # Reuse mono's speaker-level overlap assignment, with both evidence and
+        # candidates scoped to this lane. The finalizer preserves its partition.
+        result = finalizer.finalize(
             **{
                 **kwargs,
                 "tape": tape,
-                "base_surface": (),
+                "base_surface": lane_base,
                 "canonical_speakers": tuple(
                     s
                     for s in kwargs["canonical_speakers"]
-                    if s in c._lane_speakers.get(lane, set())
+                    if s in own
                 ),
             }
         )
@@ -277,22 +274,48 @@ def finalize_lanes(c, finalizer, **kwargs):
             failures.append((lane, result.accounting.outcome.value))
             placed.extend(lane_base)
         else:
-            # Terminal identity is voice evidence, never timestamp overlap.
-            raw = str(captured[0].text)
             base_snapshot = c.session.snapshot().identity_snapshot
-            span = FrozenSpan(
-                id=int(dict(base_snapshot.diagnostics).get("span_id", "0")) + 1,
-                epoch=kwargs["plan"].epoch,
-                start_sample=0,
-                end_sample=kwargs["plan"].end_sample,
-                reason="terminal",
-            )
-            try:
-                revised = revision_segments(c, lane, span, pcm, raw, "terminal")
-            except Exception as exc:
-                failures.append((lane, type(exc).__name__))
-                revised = ()
-            placed.extend(revised or lane_base)
+            for index, segment in enumerate(result.proposal.segments):
+                covered = any(
+                    s.canonical_speaker in own
+                    and min(segment.end_sample, s.end_sample)
+                    > max(segment.start_sample, s.start_sample)
+                    for s in lane_base
+                )
+                speaker = segment.canonical_speaker
+                if not covered:
+                    # No labelled overlap: probe only this uncovered segment.
+                    # Existing evidence floors and matching thresholds still apply.
+                    span = FrozenSpan(
+                        id=int(dict(base_snapshot.diagnostics).get("span_id", "0")) + 1 + index,
+                        epoch=kwargs["plan"].epoch,
+                        start_sample=segment.start_sample,
+                        end_sample=segment.end_sample,
+                        reason="terminal_uncovered",
+                    )
+                    try:
+                        probe = revision_segments(
+                            c, lane, span, pcm[span.start_sample * 2:span.end_sample * 2],
+                            f"[0][S01]{segment.text}[{span.sample_count / 16000}]", "terminal",
+                        )
+                        speaker = probe[0].canonical_speaker if probe else None
+                    except Exception as exc:
+                        failures.append((lane, type(exc).__name__))
+                        speaker = None
+                placed.append(replace(segment, source_lane=lane, canonical_speaker=speaker))
+        return results, failures, placed
+
+    # Stop has drained causal work. Each lane reads its own tape and settled voice
+    # evidence; results are assembled in lane order before the single publication.
+    with ThreadPoolExecutor(
+        max_workers=len(LANES), thread_name_prefix="moss-lane-terminal"
+    ) as pool:
+        for lane_results, lane_failures, lane_segments in pool.map(
+            finish_lane, c.lane_tapes.items()
+        ):
+            results.extend(lane_results)
+            failures.extend(lane_failures)
+            placed.extend(lane_segments)
     if not results:
         return finalizer._refused(
             kwargs["plan"],

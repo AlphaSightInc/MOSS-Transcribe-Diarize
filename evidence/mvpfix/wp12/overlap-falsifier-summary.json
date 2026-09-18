@@ -1,0 +1,28 @@
+{
+  "verdict": "FALSIFIED",
+  "case": "180 s parity supplementary same-input comparison",
+  "system_segments": 56,
+  "changed_system_segments": 54,
+  "changed_words_by_new_speaker": {
+    "speaker-0001": 543,
+    "speaker-0004": 32
+  },
+  "unchanged_unattributed_system_segments": 2,
+  "microphone_segments": 30,
+  "microphone_differences": 0,
+  "word_differences": 0,
+  "boundary_differences": 0,
+  "cross_lane_assignments": 0,
+  "acoustic_refusal": "same_span_cannot_link_conflict",
+  "local_system_speakers": [
+    "S01",
+    "S02",
+    "S03"
+  ],
+  "known_system_speakers": [
+    "speaker-0001",
+    "speaker-0004"
+  ],
+  "acoustic_terminal_embedding_audio_seconds": 335.52,
+  "candidate_terminal_embedding_audio_seconds": 0
+}

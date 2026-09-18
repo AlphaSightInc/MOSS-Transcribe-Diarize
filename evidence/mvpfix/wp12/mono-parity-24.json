@@ -1,0 +1,30 @@
+{
+  "arm": "mono",
+  "case": "parity",
+  "seconds": 24,
+  "start": 90135.941168291,
+  "stop": 90159.951188833,
+  "stop_to_final": 1.969647541991435,
+  "status": "final",
+  "requests": 13,
+  "pre": {
+    "mono": {
+      "words": 90,
+      "speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003"
+      ]
+    }
+  },
+  "final": {
+    "mono": {
+      "words": 112,
+      "speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ]
+    }
+  },
+  "saved_equal": true
+}

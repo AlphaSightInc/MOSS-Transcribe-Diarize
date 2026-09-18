@@ -1,0 +1,43 @@
+{
+  "arm": "overlap-fixed",
+  "case": "parity",
+  "seconds": 60,
+  "start": 93307.602095375,
+  "stop": 93367.612123708,
+  "stop_to_final": 7.49013816700608,
+  "status": "final",
+  "requests": 62,
+  "pre": {
+    "microphone": {
+      "words": 148,
+      "speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ]
+    },
+    "system": {
+      "words": 189,
+      "speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ]
+    }
+  },
+  "final": {
+    "microphone": {
+      "words": 154,
+      "speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ]
+    },
+    "system": {
+      "words": 197,
+      "speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ]
+    }
+  },
+  "saved_equal": true
+}

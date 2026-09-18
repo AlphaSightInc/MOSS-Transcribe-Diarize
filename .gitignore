@@ -82,7 +82,8 @@ evidence/mvpfix/*/raw/
 
 # WP15 private scratch; no audio or credentials in evidence.
 .wp15/
-=======
 
 .wp19runtime/
->>>>>>> mvpfix/wp19-file-identity-album
+
+# WP12 private runtime and baseline scratch.
+.wp12/

@@ -1,0 +1,77 @@
+[
+  {
+    "duration": 24,
+    "comparison": "independent decoder runs; see shadow comparison for same-input attribution falsifier",
+    "lanes": [
+      {
+        "lane": "system",
+        "acoustic_segments": 9,
+        "overlap_segments": 9,
+        "exact_segments_equal": true,
+        "ordered_words_and_speakers_equal": true,
+        "word_counts": [
+          86,
+          86
+        ],
+        "segment_differences": []
+      },
+      {
+        "lane": "microphone",
+        "acoustic_segments": 4,
+        "overlap_segments": 4,
+        "exact_segments_equal": true,
+        "ordered_words_and_speakers_equal": true,
+        "word_counts": [
+          56,
+          56
+        ],
+        "segment_differences": []
+      }
+    ]
+  },
+  {
+    "duration": 60,
+    "comparison": "independent decoder runs; see shadow comparison for same-input attribution falsifier",
+    "lanes": [
+      {
+        "lane": "system",
+        "acoustic_segments": 18,
+        "overlap_segments": 18,
+        "exact_segments_equal": true,
+        "ordered_words_and_speakers_equal": true,
+        "word_counts": [
+          197,
+          197
+        ],
+        "segment_differences": []
+      },
+      {
+        "lane": "microphone",
+        "acoustic_segments": 10,
+        "overlap_segments": 10,
+        "exact_segments_equal": false,
+        "ordered_words_and_speakers_equal": true,
+        "word_counts": [
+          154,
+          154
+        ],
+        "segment_differences": [
+          {
+            "index": 9,
+            "acoustic": {
+              "start_sample": 879360,
+              "end_sample": 958080,
+              "canonical_speaker": "speaker-0003"
+            },
+            "overlap": {
+              "start_sample": 879040,
+              "end_sample": 958080,
+              "canonical_speaker": "speaker-0003"
+            },
+            "text_equal": true
+          }
+        ]
+      }
+    ]
+  }
+]

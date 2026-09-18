@@ -434,7 +434,7 @@ class RollingRuntimeWiringTest(unittest.TestCase):
             span=FrozenSpan(
                 id=1, epoch=0, start_sample=0, end_sample=HARD_CAP_SAMPLES, reason=HARD_CAP_REASON
             ),
-            pcm=b"\0" * HARD_CAP_SAMPLES * 2,
+            pcm=b"\1\0" * HARD_CAP_SAMPLES,
         )
         refused = adapter.transcribe_pcm(
             span=FrozenSpan(
@@ -444,7 +444,7 @@ class RollingRuntimeWiringTest(unittest.TestCase):
                 end_sample=WINDOW_SAMPLES,
                 reason=ROLLING_WINDOW_REASON,
             ),
-            pcm=b"\0" * WINDOW_SAMPLES * 2,
+            pcm=b"\1\0" * WINDOW_SAMPLES,
         )
 
         self.assertIn("stock market", salvaged.transcript)

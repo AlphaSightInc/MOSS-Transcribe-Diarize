@@ -144,7 +144,7 @@ def test_launcher_without_prompt_finalizer_builds_http_request(monkeypatch):
     )
     class Tape:
         def gaps(self, end_sample): return ()
-        def read(self, *, start_sample, end_sample): return b'\0\0' * (end_sample-start_sample)
+        def read(self, *, start_sample, end_sample): return b'\1\0' * (end_sample-start_sample)
     finalizer.finalize(
         plan=TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0,
             rolling_status=RollingStatus.ROLLING, windows_completed=0, windows_failed=0),

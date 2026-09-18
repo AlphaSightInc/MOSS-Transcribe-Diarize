@@ -1,0 +1,95 @@
+...............FF....................................................... [ 97%]
+..                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_draft_uses_separate_pcm_skips_zero_and_isolates_failure[0] ________
+
+mic = 0
+
+    @pytest.mark.parametrize("mic", [0, 2])
+    def test_draft_uses_separate_pcm_skips_zero_and_isolates_failure(mic):
+>       from tests.phase2.test_draft_lane import runtime, finished
+
+tests/test_live_lane_decode.py:346: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+tests/phase2/test_draft_lane.py:15: in <module>
+    from tests.phase2.test_canonical_preview import read_snapshots
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+tests/phase2/test_canonical_preview.py:10: in <module>
+    from tests.phase2 import test_owner_bound_live_meeting as fixture
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    from __future__ import annotations
+    
+    import asyncio
+    import base64
+    import json
+    import os
+    import sqlite3
+    import stat
+    import threading
+    import time
+    import wave
+    from dataclasses import dataclass
+    from pathlib import Path
+    from types import SimpleNamespace
+    
+>   from _browser_workspace_fixtures import seed_workspace
+E   ModuleNotFoundError: No module named '_browser_workspace_fixtures'
+
+tests/phase2/test_owner_bound_live_meeting.py:16: ModuleNotFoundError
+_______ test_draft_uses_separate_pcm_skips_zero_and_isolates_failure[2] ________
+
+mic = 2
+
+    @pytest.mark.parametrize("mic", [0, 2])
+    def test_draft_uses_separate_pcm_skips_zero_and_isolates_failure(mic):
+>       from tests.phase2.test_draft_lane import runtime, finished
+
+tests/test_live_lane_decode.py:346: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+tests/phase2/test_draft_lane.py:15: in <module>
+    from tests.phase2.test_canonical_preview import read_snapshots
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+tests/phase2/test_canonical_preview.py:10: in <module>
+    from tests.phase2 import test_owner_bound_live_meeting as fixture
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/_pytest/assertion/rewrite.py:188: in exec_module
+    exec(co, module.__dict__)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    from __future__ import annotations
+    
+    import asyncio
+    import base64
+    import json
+    import os
+    import sqlite3
+    import stat
+    import threading
+    import time
+    import wave
+    from dataclasses import dataclass
+    from pathlib import Path
+    from types import SimpleNamespace
+    
+>   from _browser_workspace_fixtures import seed_workspace
+E   ModuleNotFoundError: No module named '_browser_workspace_fixtures'
+
+tests/phase2/test_owner_bound_live_meeting.py:16: ModuleNotFoundError
+=============================== warnings summary ===============================
+tests/test_live_lane_decode.py::test_draft_uses_separate_pcm_skips_zero_and_isolates_failure[0]
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_live_lane_decode.py::test_draft_uses_separate_pcm_skips_zero_and_isolates_failure[0]
+FAILED tests/test_live_lane_decode.py::test_draft_uses_separate_pcm_skips_zero_and_isolates_failure[2]
+2 failed, 72 passed, 1 warning in 3.61s

@@ -1,4 +1,6 @@
 from dataclasses import replace
+import json
+from pathlib import Path
 from types import SimpleNamespace
 import wave
 
@@ -28,9 +30,10 @@ from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
     EffectiveTranscriptSegment,
     LiveSession,
+    LiveIdentitySnapshot,
     TextRevisionProposal,
 )
-from moss_transcribe_diarize.app.live_tape import CompleteMixedTapeUnavailable
+from moss_transcribe_diarize.app.live_tape import CompleteMixedTape, CompleteMixedTapeUnavailable
 from moss_transcribe_diarize.app.live_transcript_convergence import (
     RollingStatus,
     TerminalDecodePlan,
@@ -296,7 +299,7 @@ class Runner:
 
 
 @pytest.mark.parametrize("fail", [None, 1, 2])
-def test_terminal_serial_lane_decode_and_failure_preserves_committed_lane(
+def test_terminal_lane_decode_and_failure_preserves_committed_lane(
     fail, tmp_path
 ):
     c, _, session, arbiter = make()
@@ -322,7 +325,7 @@ def test_terminal_serial_lane_decode_and_failure_preserves_committed_lane(
         base_surface=before,
         canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers,
     )
-    assert runner.calls == [1, 2]
+    assert sorted(runner.calls) == [1, 2]
     assert session.apply_text_revision(result.proposal).applied
     after = session.snapshot().effective_transcript
     assert {s.canonical_speaker for s in after} == {"speaker-0001", "speaker-0002"}
@@ -332,6 +335,180 @@ def test_terminal_serial_lane_decode_and_failure_preserves_committed_lane(
             s for s in before if s.source_lane == lane
         )
         assert result.accounting.reason == "lane_terminal_failed:" + lane
+
+
+@pytest.mark.parametrize("same_voice", [False, True])
+def test_terminal_overlap_uses_own_lane_without_acoustic_probes(tmp_path, monkeypatch, same_voice):
+    import moss_transcribe_diarize.app.live_lane_decode as lanes
+
+    c, _, session, arbiter = make()
+    c.accept_frame(frame(mic=1 if same_voice else 2))
+    commit(c, arbiter)
+    snapshot = session.snapshot()
+    calls = []
+    original = lanes.revision_segments
+
+    def recorded(*args):
+        calls.append(args[1])
+        return original(*args)
+
+    monkeypatch.setattr(lanes, "revision_segments", recorded)
+    result = finalize_lanes(
+        c, TerminalTranscriptFinalizer(runner=Runner(None), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0,
+        base_surface=snapshot.effective_transcript,
+        canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+    )
+    assert calls == []
+    assert {(s.source_lane, s.canonical_speaker) for s in result.proposal.segments} == {
+        ("system", "speaker-0001"), ("microphone", "speaker-0002")}
+    assert session.apply_text_revision(result.proposal).applied
+
+
+@pytest.mark.parametrize("abstain", [False, True])
+def test_terminal_acoustic_fallback_only_reads_uncovered_lane_segment(tmp_path, monkeypatch, abstain):
+    import moss_transcribe_diarize.app.live_lane_decode as lanes
+
+    c, _, session, arbiter = make()
+    for sequence in range(2):
+        c.accept_frame(frame(sequence))
+        commit(c, arbiter)
+    snapshot = session.snapshot()
+    prepare_revision = BoundedCausalIdentityPreparer.prepare_revision
+
+    def possibly_abstain(self, **kwargs):
+        preparation = prepare_revision(self, **kwargs)
+        # Inject the preparer's legitimate abstention outcome; the lane adapter
+        # must preserve words and ignore the otherwise successful relabeling.
+        return replace(preparation, status="abstain") if abstain else preparation
+
+    monkeypatch.setattr(BoundedCausalIdentityPreparer, "prepare_revision", possibly_abstain)
+    # The system surface lacks a later interval; microphone evidence at the same
+    # time must neither cover it nor provide its speaker identity.
+    base = tuple(s for s in snapshot.effective_transcript
+                 if s.source_lane == "microphone" or s.end_sample <= 40000)
+    calls = []
+    original = lanes.revision_segments
+
+    def recorded(c, lane, span, pcm, text, authority):
+        calls.append((lane, span.start_sample, span.end_sample, len(pcm), pcm[0]))
+        return original(c, lane, span, pcm, text, authority)
+
+    class GapRunner:
+        def transcribe(self, *args, **kwargs):
+            return SimpleNamespace(text="[0][S01]covered words[2.5][3][S01]new words[5]")
+
+    monkeypatch.setattr(lanes, "revision_segments", recorded)
+    result = finalize_lanes(
+        c, TerminalTranscriptFinalizer(runner=GapRunner(), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, 80000, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0, base_surface=base,
+        canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+    )
+    assert calls == [("system", 48000, 80000, 64000, 1)]
+    assert [(s.source_lane, s.start_sample, s.end_sample, s.text, s.canonical_speaker)
+            for s in result.proposal.segments] == [
+        ("system", 0, 40000, "covered words", "speaker-0001"),
+        ("microphone", 0, 40000, "covered words", "speaker-0002"),
+        ("system", 48000, 80000, "new words", None if abstain else "speaker-0001"),
+        ("microphone", 48000, 80000, "new words", "speaker-0002"),
+    ]
+    assert session.apply_text_revision(result.proposal).applied
+    assert session.snapshot().effective_transcript == result.proposal.segments
+
+
+def test_long_single_voice_lane_keeps_all_covered_terminal_words(tmp_path, monkeypatch):
+    import moss_transcribe_diarize.app.live_lane_decode as lanes
+
+    seconds = 180
+    c, _, session, arbiter = make(capacity=seconds * RATE * 2)
+    for sequence in range(seconds * RATE // 40000):
+        c.accept_frame(frame(sequence, mic=0))
+        assert commit(c, arbiter)[1].submitted
+    snapshot = session.snapshot()
+    expected = tuple(EffectiveTranscriptSegment(
+        start * RATE, (start + 5) * RATE, f"terminal words {start}",
+        "speaker-0001", "terminal", "system",
+    ) for start in range(0, seconds, 5))
+
+    class LongRunner:
+        def transcribe(self, *args, **kwargs):
+            return SimpleNamespace(text="".join(
+                f"[{s.start_sample / RATE}][S07]{s.text}[{s.end_sample / RATE}]"
+                for s in expected))
+
+    probes = []
+    original = lanes.revision_segments
+
+    def recorded(*args):
+        probes.append(args[1])
+        return original(*args)
+
+    monkeypatch.setattr(lanes, "revision_segments", recorded)
+    result = finalize_lanes(
+        c, TerminalTranscriptFinalizer(runner=LongRunner(), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, seconds * RATE, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0, base_surface=snapshot.effective_transcript,
+        canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+    )
+    assert probes == []
+    assert result.accounting.unattributed_segments == 0
+    assert result.proposal.segments == expected
+    assert session.apply_text_revision(result.proposal).applied
+    assert session.snapshot().effective_transcript == expected
+
+
+@pytest.mark.parametrize("seconds", [24, 60])
+def test_terminal_parity_segment_equality_from_accepted_geometry(tmp_path, monkeypatch, seconds):
+    """Replay accepted acoustic row geometry through the production finalizer.
+
+    Synthetic text/causal subdivisions avoid retaining meeting words. Real-input
+    equality remains independently measured by the 135-row shadow experiment.
+    """
+    import moss_transcribe_diarize.app.live_lane_decode as lanes
+
+    fixture = json.loads((Path(__file__).parent / "fixtures/wp12_terminal_parity.json").read_text())
+    expected = tuple(EffectiveTranscriptSegment(**row) for row in fixture[str(seconds)])
+    speakers = tuple(sorted({s.canonical_speaker for s in expected}))
+    base = tuple(replace(s, end_sample=(s.start_sample + s.end_sample) // 2,
+                         text="causal evidence", authority="causal") for s in expected)
+    tapes = {}
+    own = {}
+    for marker, lane in enumerate(("system", "microphone"), 1):
+        tapes[lane] = CompleteMixedTape(epoch=0, capacity_bytes=seconds * RATE * 2)
+        assert tapes[lane].append(start_sample=0, pcm=bytes([marker]) * seconds * RATE * 2).written
+        own[lane] = {s.canonical_speaker for s in expected if s.source_lane == lane}
+    snapshot = SimpleNamespace(identity_snapshot=LiveIdentitySnapshot(canonical_speakers=speakers))
+    c = SimpleNamespace(lane_tapes=tapes, _lane_speakers=own,
+                        session=SimpleNamespace(snapshot=lambda: snapshot))
+
+    class ParityRunner:
+        def transcribe(self, path, **kwargs):
+            with wave.open(str(path)) as audio:
+                lane = ("system", "microphone")[audio.readframes(1)[0] - 1]
+            # Reversed, lane-local decoder labels deliberately differ from the
+            # canonical IDs and collide across lanes.
+            labels = {speaker: f"S{i:02d}" for i, speaker in enumerate(sorted(own[lane], reverse=True), 1)}
+            return SimpleNamespace(text="".join(
+                f"[{s.start_sample / RATE}][{labels[s.canonical_speaker]}]{s.text}[{s.end_sample / RATE}]"
+                for s in expected if s.source_lane == lane))
+
+    probes = []
+
+    def unexpected_probe(*args):
+        probes.append(args[1])
+        return ()
+
+    monkeypatch.setattr(lanes, "revision_segments", unexpected_probe)
+    result = finalize_lanes(
+        c, TerminalTranscriptFinalizer(runner=ParityRunner(), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(0, seconds * RATE, 0, RollingStatus.STOPPED, 0, 0),
+        tape=None, base_text_revision_version=0, base_surface=base,
+        canonical_speakers=speakers,
+    )
+    assert probes == []
+    assert result.proposal.segments == expected
 
 
 def test_legacy_frame_uses_only_mixed_pcm():
@@ -451,3 +628,85 @@ def test_lane_commit_preserves_causal_voiceprint_matches_across_lane_namespaces(
         assert c.match_observations() == observed
         assert len(c.journal_observations()) == 2
     assert encoder.calls == 5  # Recognition must not re-embed.
+
+
+def test_terminal_jobs_overlap_and_publish_only_after_both_lanes(tmp_path):
+    """Two Stop listeners must overlap; each keeps its own captured decoder result."""
+    from threading import Barrier, Lock
+
+    c, _, session, arbiter = make()
+    c.accept_frame(frame())
+    commit(c, arbiter)
+    before = session.snapshot().effective_transcript
+    barrier = Barrier(2, timeout=2)
+    lock = Lock()
+
+    class ConcurrentRunner(Runner):
+        peak = 0
+        active = 0
+
+        def transcribe(self, path, **kwargs):
+            with lock:
+                self.active += 1
+                self.peak = max(self.peak, self.active)
+            try:
+                barrier.wait()
+                assert session.snapshot().effective_transcript == before
+                with wave.open(str(path)) as f:
+                    marker = f.readframes(1)[0]
+                self.calls.append(marker)
+                return SimpleNamespace(text=f"[0][S01]terminal lane {marker}[2.5]")
+            finally:
+                with lock:
+                    self.active -= 1
+
+    runner = ConcurrentRunner()
+    result = finalize_lanes(
+        c, TerminalTranscriptFinalizer(runner=runner, scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0, base_surface=before,
+        canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers,
+    )
+    assert runner.peak == 2
+    assert sorted(runner.calls) == [1, 2]
+    assert session.snapshot().effective_transcript == before
+    assert session.apply_text_revision(result.proposal).applied
+    assert [(s.source_lane, s.text, s.canonical_speaker)
+            for s in session.snapshot().effective_transcript] == [
+        ('system', 'terminal lane 1', 'speaker-0001'),
+        ('microphone', 'terminal lane 2', 'speaker-0002'),
+    ]
+
+
+def test_lane_album_survives_silent_peer_spans_and_matches_returning_voice():
+    """Real evidence/album lifecycle: a microphone voice returns after a silent gap."""
+    from moss_transcribe_diarize.app.live_identity_album import FingerprintAlbum
+    from moss_transcribe_diarize.app.live_provider_bundle import WeSpeakerLiveEvidenceProvider
+
+    class Encoder:
+        spec = SimpleNamespace(provider='wespeaker', revision='test', state_sha256='test')  # WP17 provider contract
+        def embed(self, path, intervals):
+            return [1.0, 0.0]
+
+    def preparer():
+        return BoundedCausalIdentityPreparer(
+            config=LiveIdentityConfig(16, 0.35, 0.1),
+            evidence_provider=WeSpeakerLiveEvidenceProvider(
+                encoder=Encoder(), album=FingerprintAlbum(admission_seconds=2.0),
+                birth_min_seconds=1.0, min_segment_samples=8000,
+            ), lane_factory=preparer,
+        )
+
+    c, _, session, arbiter = make()
+    c.identity_preparer = preparer()
+    for seq, mic in enumerate((2, 0, 0, 2)):
+        c.accept_frame(frame(seq=seq, mic=mic))
+        assert commit(c, arbiter)[1].submitted
+        provider = c._lane_preparers['microphone'].evidence_provider
+        assert provider._album.speakers() == ('speaker-0002',)
+        assert provider._album.reference('speaker-0002') is not None
+    assert session.snapshot().identity_snapshot.canonical_speakers == (
+        'speaker-0001', 'speaker-0002',
+    )
+    assert {s.canonical_speaker for s in session.snapshot().effective_transcript
+            if s.source_lane == 'microphone'} == {'speaker-0002'}
