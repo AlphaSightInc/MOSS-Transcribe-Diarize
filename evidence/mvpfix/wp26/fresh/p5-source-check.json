@@ -1,0 +1,7 @@
+{
+  "verdict": "PASS",
+  "source": "/Users/gao/Documents/Codex/2026-09-17/new-realtime-voice-chat-2/moss-mvp-review/evidence/parallel-lanes-assessment/pl-arms-results.json",
+  "matched_rows": 3,
+  "witness_matches": true,
+  "scope": "Historical mixed-waveform measurements only; no new request"
+}
