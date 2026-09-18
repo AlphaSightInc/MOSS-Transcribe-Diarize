@@ -22,3 +22,8 @@ Raw command output lives only in ignored scratch: tests/errors can contain trans
 Retained logs are counts/status projections; this deliberately qualifies the request for
 raw logs to satisfy the stronger no-transcript/no-secret requirement. Manifest SHA is
 explicitly required identity evidence. Shared metrics are sampled, own proxy counts exact.
+
+Refined interface verdict: identity's fixed app port/output do not require new arguments;
+choosing owned app port 17867 and restoring its checkout-local output permits unchanged
+invocation. Initial blanket identity UNRUNNABLE was too conservative. The corresponding
+real local HTTP readiness test and identity collapse/switch falsifiers pass before dispatch.

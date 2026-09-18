@@ -80,3 +80,16 @@ def test_readiness_bootstraps_authenticated_workspace():
         assert calls==['/api/workspace/bootstrap','/api/live/descriptor']
     finally:
         server.shutdown(); server.server_close(); thread.join()
+
+
+def test_identity_rejects_speaker_collapse_and_switching():
+    from tools.qualify.run import identity_passed
+    row=dict(status='completed',finalization='final',failure=None,
+             score=dict(ids_by_truth={'A':{'one':8},'B':{'two':9}},id_switches={'A':0,'B':0},unresolved_segments=0))
+    assert identity_passed(row)
+    row['score']['ids_by_truth']['B']={'one':9}
+    assert not identity_passed(row)
+    row['score']['ids_by_truth']['B']={'two':9}
+    row['score']['id_switches']['A']=1
+    assert not identity_passed(row)
+    assert not identity_passed({})

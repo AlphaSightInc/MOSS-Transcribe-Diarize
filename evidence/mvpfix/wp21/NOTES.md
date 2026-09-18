@@ -20,3 +20,11 @@ passed, decoder calls 0. Retained aborted bundle is not the determinism baseline
 Fixed readiness to bootstrap with existing Client; real local HTTP regression checks
 cookie propagation. Counts now distinguish reported tests from executed non-skips;
 helper gate records individual tests. Tree cleanliness is an explicit gate.
+
+Attempt 2: preparation interrupted before decoder load to correct an overly broad
+UNRUNNABLE classification. WP7 needs no new argument if the owned stack uses its fixed
+17867 app port; its fixed evidence paths resolve inside this checkout and can be restored.
+The bundle now runs single/gap/alternating unchanged; writes to its two historical evidence
+files are backed up and restored byte-for-byte. Local prototype invariants judge saved
+identity count per reference voice, distinct voices, switches and unresolved segments.
+This adds no product policy. Browser all/WP16/capacity remain incompatible with own tunnel.

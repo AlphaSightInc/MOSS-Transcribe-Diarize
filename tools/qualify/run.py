@@ -224,7 +224,7 @@ class Bundle:
 
     def stack(self):
         start = time.monotonic()
-        for port in (18121,18122,17881):
+        for port in (18121,18122,17867):
             with socket.socket() as sock:
                 if sock.connect_ex(('127.0.0.1',port)) == 0:
                     self.gate('stack', 'UNRUNNABLE', reason=f'Own required port {port} already occupied; no reuse or termination')
@@ -275,14 +275,14 @@ class Bundle:
         self.monitor.start()
         state = (self.work/'state').relative_to(ROOT)
         app = self.start('stack', [PY,'prototypes/streaming-diarization/draft-lane/run_local_stack.py',
-            '--state',str(state),'--cert',str(cert),'--key',str(key),'--port','17881',
+            '--state',str(state),'--cert',str(cert),'--key',str(key),'--port','17867',
             '--manifest',str(manifest),'--vllm-base-url','http://127.0.0.1:18122/v1', '--max-requests',str(self.args.budget)])
         ready = False
         for _ in range(120):
             if app.poll() is not None:
                 break
             try:
-                descriptor = ready_descriptor('https://127.0.0.1:17881')
+                descriptor = ready_descriptor('https://127.0.0.1:17867')
                 ready = bool(descriptor.get('source_revision'))
                 if ready:
                     break
@@ -296,7 +296,6 @@ class Bundle:
     def unportable(self):
         for name, expected, reason in [
             ('browser_stress_all',16,'run.py all includes case 14 restart with fixed WP5 paths/port and stack.py tunnel 18105; no restart/decoder arguments'),
-            ('identity_stress',3,'single/gap/alternating require fixed 17867 base and fixed WP7 output; no --base/--output arguments'),
             ('file_6min',1,'WP16 probe fixes app at 17876, metrics at 18116, output under WP16; no base/metrics/output arguments'),
             ('file_failures',5,'WP16 failure cases share fixed 18116 metrics and fixed source ports; no isolation arguments')]:
             self.gate(name,'UNRUNNABLE',counts(['UNRUNNABLE']*expected),reason=reason)
@@ -306,8 +305,8 @@ class Bundle:
             self.gate(name,status,counts([status]*expected),reason=reason if self.args.long else 'Default bounded run; --long requests this gate')
 
     def benches(self, ready):
-        base = 'https://127.0.0.1:17881'
-        expected = [('workspace',14),('demo_lanes',2),('lifecycle',7),('reshare',6),('level_ladder',6)]
+        base = 'https://127.0.0.1:17867'
+        expected = [('workspace',14),('demo_lanes',2),('lifecycle',7),('reshare',6),('level_ladder',6),('identity_stress',3)]
         if not ready:
             for name,n in expected:
                 self.gate(name,'UNRUNNABLE',counts(['UNRUNNABLE']*n),reason='Isolated stack unavailable')
@@ -339,6 +338,7 @@ class Bundle:
             matches = re.findall(r'^\s*(PASS|FAIL)\s+',log.read_text(),re.M)
             statuses = matches+['UNRUNNABLE']*max(0,n-len(matches))
             self.gate(name,'PASS' if code==0 and matches==['PASS']*n else 'FAIL',counts(statuses),elapsed,code)
+        self.identity()
         if not LADDER.is_file():
             self.gate('level_ladder','UNRUNNABLE',counts(['UNRUNNABLE']*6),reason='Lead ladder script absent; supply --ladder path')
             return
@@ -349,6 +349,37 @@ class Bundle:
         statuses = ['PASS' if r.get('finalization')=='final' else 'FAIL' for r in raw]+['UNRUNNABLE']*(6-len(raw))
         self.gate('level_ladder','PASS' if code==0 and statuses==['PASS']*6 else 'FAIL',counts(statuses),elapsed,code,
                   reason='PASS means six finalized measurements; retention has no supplied acceptance threshold. Unique vocabulary is not transcript accuracy.',measurements=scores)
+
+    def identity(self):
+        # Fixed paths are checkout-local; restore inherited evidence byte for byte.
+        output = ROOT/'evidence/mvpfix/wp7'
+        targets = [output/'stress-events.jsonl', output/'stress-results.json']
+        backups = {p: p.read_bytes() if p.exists() else None for p in targets}
+        (ROOT/'.wp7runtime').mkdir(exist_ok=True)
+        output.mkdir(parents=True, exist_ok=True)
+        statuses, results, codes = [], [], []
+        started = time.monotonic()
+        try:
+            for case in ('single','gap','alternating'):
+                targets[1].unlink(missing_ok=True)
+                code, elapsed, _ = self.command('identity_'+case,[PY,'prototypes/identity-stress/run.py',case])
+                rows = json.loads(targets[1].read_text()) if targets[1].exists() else []
+                row = rows[-1] if rows else {}
+                passed = code == 0 and identity_passed(row)
+                statuses.append('PASS' if passed else 'FAIL')
+                codes.append(code)
+                results.append(dict(case=case, status=statuses[-1], exit_code=code, seconds=elapsed,
+                                    measurements=retained_metadata(row)))
+        finally:
+            for path, original in backups.items():
+                if original is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    path.write_bytes(original)
+        self.gate('identity_stress','PASS' if statuses == ['PASS']*3 else 'FAIL',counts(statuses),
+                  time.monotonic()-started, 0 if all(code==0 for code in codes) else 1,
+                  reason='One saved identity per reference voice, distinct across voices, zero within-voice switches/unresolved segments; unused births reported separately',
+                  measurements=results)
 
     def cleanup(self):
         for proc in reversed(self.processes):
@@ -382,6 +413,17 @@ class Bundle:
                                            same_candidate=baseline['identity']['git_sha']==self.sha)
         self.flush()
         print('BUNDLE '+str(self.out.relative_to(ROOT)),flush=True)
+
+
+def identity_passed(row):
+    score = row.get('score', {})
+    identities = score.get('ids_by_truth', {})
+    return (row.get('status') == 'completed' and row.get('finalization') == 'final'
+            and row.get('failure') is None and bool(identities)
+            and all(len(ids) == 1 for ids in identities.values())
+            and len({speaker for ids in identities.values() for speaker in ids}) == len(identities)
+            and not any(score.get('id_switches', {}).values())
+            and score.get('unresolved_segments') == 0)
 
 
 def score_ladder(rows):
@@ -427,7 +469,7 @@ def main():
         recorded = {gate['name'] for gate in bundle.data['gates']}
         required = dict(python_import=1, asset_parity=17, pytest=0, frontend=0,
                         bundle_helpers=0, typecheck=1, verify_layout=1, stack=1,
-                        workspace=14, demo_lanes=2, lifecycle=7, reshare=6, level_ladder=6)
+                        workspace=14, demo_lanes=2, lifecycle=7, reshare=6, level_ladder=6, identity_stress=3)
         required.update({'workspace_row_'+str(n):1 for n in range(1,15)})
         for name, expected in required.items():
             if name not in recorded:
