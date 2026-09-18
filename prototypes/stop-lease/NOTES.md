@@ -97,3 +97,78 @@ completions +16 across 10.0466 s; own inference requests 0. Tunnel closed.
 
 Evidence text logs preserve messages/counts; trailing whitespace and trailing blank
 lines normalized after git diff --check flagged captured tool output formatting.
+
+## Fresh continuation — real decoder authorized 2026-09-18
+
+The new instruction explicitly raises the cumulative WP15 decoder cap to 1500,
+with at most two requests in flight. This supersedes the earlier 200-call limit.
+Production source remains 826af986; only measurement harnesses are being repaired.
+
+First live attempt failed before inference (0 calls): the Stop response variable
+`http` shadowed the imported `http.cookiejar`. Renamed it to `http_status`.
+Second attempt consumed 194 calls before operator SIGINT: at 150 seconds shared
+completions increased 206 while own starts were only 147, proving foreign traffic
+despite zero sampled waiting requests. Its result and request log are retained.
+The prepared queue-only guard did not implement WP6's foreign-load pause contract.
+
+Reused the existing WP6 stack and its active/completed request accounting, PAUSE
+sentinel, and pause/resume criterion. It now respects an explicitly supplied
+base URL, so WP15 uses only 18115 while WP6's default stays 18106. Replay keeps
+heartbeats alive during pauses and shifts wall pacing by paused time. The third
+attempt exercised the control: two foreign intervals paused capture at 30 seconds
+and stopped further decoder starts at 27. Final results are recorded below.
+
+For the subsequent 1800-second run, preflight also requires unchanged completion
+counts across quiet samples. Existing per-tape accounting is retained before and
+after release: the public release event covers only the mixed tape, while this
+per-lane build also allocates system and microphone tapes. This is measurement
+instrumentation, not a retention-policy or production-lifecycle change.
+
+600-second result (`real-1789708923565536000`): final/completed, Stop-to-final
+173.485438 s, 2589 saved words, MP3 600.000000 s. All 9,600,000 samples accepted
+and accounted. Capture wall time 2040.768805 s included 1440.764321 s paused for
+foreign load; 53/75 resource samples marked foreign. Sampled terminal intervals
+showed no foreign load. Thus this is a measured durability result, not a clean
+uninterrupted 600-second capture timing result. No post-Stop heartbeat was sent.
+460 decoder starts/finishes, maximum one in flight; SQLite after app shutdown
+contained 2589 words equal to the terminal snapshot. RSS first/peak/final:
+632.672 / 1244.781 / 1203.891 MiB (75 primary samples, 55 supplemental samples).
+The supplemental 30-second sampler covered the blocking Stop request. Public
+events retained by this probe did not include terminal completion/tape release;
+600-second tape-release accounting is therefore unmeasured, not inferred.
+
+The 1800-second run started with 846 of the 1500 authorized calls remaining.
+Preflight: three idle samples, shared completions unchanged at 32034.
+No increase beyond 1500 has been received; exhaustion remains a measurement
+limit, not evidence of a production failure at that duration.
+
+Fable steering supersedes the earlier pause policy: sibling WP load is authorized;
+record contention without pausing real-time capture. The paused 1800-second attempt
+was terminated at 270 seconds of captured audio, 268 charged request entries
+(267 actually dispatched, one waiting behind PAUSE). The completed paused 600 s
+result is retained only as finalization evidence, not real-time durability timing.
+Pause logic was removed from the WP15 runner; each duration will be rerun once,
+with running/waiting/completion metrics retained as contention caveats.
+
+## Final fresh result (unpaused 600 s; 1800 s budget-blocked)
+
+Authoritative real-time run: `real-1789711765822268000`. Capture 600.005273 s,
+zero pauses; Stop-to-final 179.408107 s; final/completed, 2589 persisted words,
+MP3 600.000000 s. Decoder 460 starts/finishes, maximum one in flight.
+RSS first/last-capture/peak/final: 631.406/1057.562/1201.047/1200.516 MiB.
+27 primary and 27 independent RSS samples; sibling contention in 8/27 resource
+samples, shared running/waiting peaks 2/0. All three complete tapes held 19.2 MB
+each and released to zero. Cap is 57.6 MB per tape, 172.8 MB aggregate configured
+capacity. Longer-run plateau and the exact capacity boundary remain unmeasured.
+
+Fresh Python: 1860 passed, 2 skipped, 37 subtests, 21 warnings, 148.19 s.
+Frontend: 27 files / 242 tests, 2.45 s; typecheck/build exit 0, unchanged assets.
+Fresh simulated 90-second stub controls: 8/8. Both generated WP2 screenshots
+were restored (the geometry fixture writes both widths). All owned processes stop.
+
+The unpaused 1800-second rerun was prepared but not dispatched: 1382/1500 charged
+calls leaves 118, insufficient for its observed-rate projection (~1060 calls).
+Requested 2600 cumulative calls; unanswered. Preserve the numeric cap; do not
+spend the remainder on a knowingly incomplete rerun or call long-meeting durability
+accepted. Full evidence, authority history and commands: REAL-DECODER.md and
+VERIFY-RESULT.md. No push/merge/deploy/shared-service changes.

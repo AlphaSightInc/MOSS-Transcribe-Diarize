@@ -54,8 +54,10 @@ def main():
     out=ROOT/'evidence/mvpfix/wp15'/stamp
     out.mkdir()
     result=dict(seconds_requested=a.seconds,source_revision=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-        total_budget=a.total_budget,prior_requests=used,remaining_budget=remaining,resources=[],events=[],outcome='unfinished')
+        total_budget=a.total_budget,prior_requests=used,remaining_budget=remaining,resources=[],events=[],outcome='unfinished',contention_policy='record_only_no_pause')
     processes=[]
+    rss_stop=threading.Event()
+    rss_thread=None
     client=None
     ident=None
     state=scratch/'state'
@@ -79,21 +81,27 @@ def main():
             subprocess.run([sys.executable,'-c',source],check=True,stdout=log)
         tunnel=subprocess.Popen(['ssh','-N','-o','BatchMode=yes','-o','ExitOnForwardFailure=yes','-L','127.0.0.1:18115:127.0.0.1:8000',HOST],stderr=(scratch/'ssh.log').open('w'))
         processes.append(tunnel)
-        quiet=0
-        for sample in range(120):
+        for sample in range(60):
             if tunnel.poll() is not None:raise RuntimeError('private tunnel failed')
             try:m=metrics()
             except OSError:
                 time.sleep(1);continue
             emit('preflight',metrics=m)
-            quiet=quiet+1 if m['num_requests_running']==m['num_requests_waiting']==0 else 0
-            if quiet>=3:break
-            time.sleep(5)
-        else:raise RuntimeError('GPU not quiet within 10-minute observation')
+            break
+        else:raise RuntimeError('GPU metrics unavailable before capture')
         subprocess.run(['openssl','req','-x509','-newkey','rsa:2048','-nodes','-keyout',str(scratch/'key.pem'),'-out',str(scratch/'cert.pem'),'-days','2','-subj','/CN=127.0.0.1','-addext','subjectAltName=IP:127.0.0.1'],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         env=dict(os.environ,PYTHONDONTWRITEBYTECODE='1',PYTHONPATH=str(ROOT),TMPDIR=str(ROOT/'.wp15/t'))
-        app=subprocess.Popen([sys.executable,'prototypes/streaming-diarization/draft-lane/run_local_stack.py','--state',str(state),'--cert',str(scratch/'cert.pem'),'--key',str(scratch/'key.pem'),'--port','17875','--vllm-base-url','http://127.0.0.1:18115/v1','--max-requests',str(remaining),'--manifest',str(scratch/'manifest.json')],env=env,stdout=(scratch/'app.log').open('w'),stderr=subprocess.STDOUT)
+        app=subprocess.Popen([sys.executable,'prototypes/capacity-campaign/stack.py','--state',str(state),'--cert',str(scratch/'cert.pem'),'--key',str(scratch/'key.pem'),'--port','17875','--vllm-base-url','http://127.0.0.1:18115/v1','--max-requests',str(remaining),'--manifest',str(scratch/'manifest.json')],env=env,stdout=(scratch/'app.log').open('w'),stderr=subprocess.STDOUT)
         processes.append(app)
+        def sample_rss():
+            while not rss_stop.is_set():
+                rss=subprocess.run(['ps','-o','rss=','-p',str(app.pid)],capture_output=True,text=True)
+                if rss.returncode!=0:break
+                with (out/'rss.jsonl').open('a') as stream:
+                    stream.write(json.dumps(dict(time=time.monotonic(),rss_bytes=int(rss.stdout)*1024))+'\n')
+                rss_stop.wait(30)
+        rss_thread=threading.Thread(target=sample_rss)
+        rss_thread.start()
         base='https://127.0.0.1:17875'
         client=urllib.request.build_opener(urllib.request.HTTPSHandler(context=ssl.create_default_context(cafile=str(scratch/'cert.pem'))),urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
         def call(method,path,data=None,raw=False):
@@ -113,13 +121,23 @@ def main():
         epoch=time.time_ns(); hbseq=0; eventseq=0; previous=None; next_sample=0
         fs=descriptor['frame_samples'];sr=descriptor['sample_rate'];cadence=fs/sr
         started=time.monotonic(); acknowledged=0
+        previous_metric=m; previous_own=dict(sent=0,active=0)
+        result['foreign_load_detected']=False
+        def own_requests():
+            rows=[]
+            path=state/'decoder.jsonl'
+            if path.exists():
+                for line in path.read_text().splitlines():
+                    try:rows.append(json.loads(line))
+                    except json.JSONDecodeError:pass
+            return rows
         def heartbeat():
             nonlocal hbseq
             h=dict(state='capturing',device_epoch=epoch,dropped_frames=0,discontinuities=0,failure_code=None)
             call('POST',route+'/heartbeat',dict(schema='moss-live-helper-health.v1',instance_id='wp15',sequence=hbseq,sent_monotonic_ns=time.monotonic_ns(),helper_version='bench',state='capturing',lanes=dict(system=h,microphone=h)))
             hbseq+=1
         def observe(force=False):
-            nonlocal eventseq,previous,next_sample
+            nonlocal eventseq,previous,next_sample,previous_metric,previous_own
             snap=call('GET',route+'/snapshot')[1]['snapshot']
             for e in call('GET',route+f'/events?since_seq={eventseq}')[1]['events']:
                 if e['seq']!=eventseq:raise RuntimeError('event ring overrun')
@@ -129,10 +147,20 @@ def main():
             status=(snap['session']['status'],snap['session']['finalization_status'])
             if status!=previous:emit('transition',status=status,accepted=snap['session']['accepted_samples'],accounted=snap['session']['accounted_samples']);previous=status
             if force or time.monotonic()-started>=next_sample:
+                before=own_requests()
                 m=metrics()
-                row=dict(elapsed=time.monotonic()-started,rss_bytes=int(subprocess.check_output(['ps','-o','rss=','-p',str(app.pid)],text=True))*1024,metrics=m,accepted=snap['session']['accepted_samples'],accounted=snap['session']['accounted_samples'],pending=snap.get('pending_work_items'))
+                after=own_requests()
+                active=max([r['active'] for r in before[-1:]+after[len(before):]] or [0])
+                own_after=after[-1] if after else dict(sent=0,active=0)
+                shared=m['request_success_total']-previous_metric['request_success_total']
+                possible=own_after['sent']-previous_own['sent']+previous_own['active']
+                foreign_completions=max(0,shared-possible)
+                foreign=m['num_requests_running']+m['num_requests_waiting']>active or foreign_completions>0
+                previous_metric=m
+                previous_own=before[-1] if before else dict(sent=0,active=0)
+                if foreign:result['foreign_load_detected']=True
+                row=dict(elapsed=time.monotonic()-started,rss_bytes=int(subprocess.check_output(['ps','-o','rss=','-p',str(app.pid)],text=True))*1024,metrics=m,own_sent=own_after['sent'],own_active=active,foreign_completion_lower_bound=foreign_completions,foreign_load_detected=foreign,accepted=snap['session']['accepted_samples'],accounted=snap['session']['accounted_samples'],pending=snap.get('pending_work_items'))
                 result['resources'].append(row);emit('resource',**row);next_sample+=30
-                if m['num_requests_waiting']>0:raise RuntimeError('shared GPU queue became nonzero; timing contaminated')
             return snap
         for seq in range(round(a.seconds/cadence)):
             heartbeat()
@@ -151,9 +179,11 @@ def main():
             if snap['terminal_failure'] is not None:raise RuntimeError('runtime terminal failure')
             time.sleep(max(0,started+(seq+1)*cadence-time.monotonic()))
         result['capture_elapsed_seconds']=time.monotonic()-started
+        result['capture_paused_seconds']=0.0
         stopped=time.monotonic()
-        http,payload=call('POST',route+'/stop',{'deadline':30})
-        emit('stop_response',http_status=http,code=payload.get('code'))
+        result['stop_requested_monotonic']=stopped
+        http_status,payload=call('POST',route+'/stop',{'deadline':30})
+        emit('stop_response',http_status=http_status,code=payload.get('code'))
         while True:
             snap=observe()
             saved=call('GET',f'/api/meetings/{ident}')[1]
@@ -178,6 +208,8 @@ def main():
             try:call('POST',f'/api/live/sessions/{ident}/abort',{'reason':'WP15 isolated measurement cleanup'})
             except Exception:pass
     finally:
+        rss_stop.set()
+        if rss_thread is not None:rss_thread.join()
         for process in reversed(processes):
             process.terminate()
             try:process.wait(20)

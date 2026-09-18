@@ -1,0 +1,12 @@
+{
+  "sqlite_saved_words": 2589,
+  "sqlite_words_equal_terminal": true,
+  "primary_rss_samples": 75,
+  "independent_rss_samples": 55,
+  "peak_rss_bytes": 1305247744,
+  "max_decoder_in_flight": 1,
+  "decoder_started": 460,
+  "decoder_finished": 460,
+  "foreign_resource_samples": 53,
+  "resource_samples": 75
+}

@@ -1,0 +1,20 @@
+{
+  "sqlite_saved_words": 2589,
+  "sqlite_words_equal_terminal": true,
+  "primary_rss_samples": 27,
+  "independent_rss_samples": 27,
+  "peak_rss_bytes": 1259388928,
+  "capture_first_rss_bytes": 662077440,
+  "capture_last_rss_bytes": 1108934656,
+  "capture_last_rss_elapsed": 570.055622083004,
+  "final_rss_bytes": 1258831872,
+  "max_decoder_in_flight": 1,
+  "decoder_started": 460,
+  "decoder_finished": 460,
+  "foreign_resource_samples": 8,
+  "resource_samples": 27,
+  "max_shared_running": 2.0,
+  "max_shared_waiting": 0.0,
+  "total_tape_bytes_before_release": 57600000,
+  "total_tape_bytes_after_release": 0
+}

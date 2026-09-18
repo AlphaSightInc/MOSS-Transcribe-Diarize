@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
+from moss_transcribe_diarize.app.live_coordinator import LiveCoordinator
 
 state = Path(sys.argv[sys.argv.index('--state') + 1])
 state.mkdir(parents=True, exist_ok=True)
@@ -50,6 +51,28 @@ def counted(self, *args, **kwargs):
 
 
 VllmRunner._post_multipart = counted
+
+# Keep each tape's existing accounting, since the public release event names
+# only the mixed tape while per-lane decoding also retains two lane tapes.
+original_release = LiveCoordinator.release_tape
+
+
+def measured_release(self):
+    through = self.session.snapshot().accepted_samples
+    tapes = dict(self.lane_tapes)
+    if self.tape is not None:
+        tapes['mixed'] = self.tape
+    before = {name: tape.accounting(through_sample=through).to_dict()
+              for name, tape in tapes.items()}
+    result = original_release(self)
+    after = {name: tape.accounting(through_sample=through).to_dict()
+             for name, tape in tapes.items()}
+    with (state / 'tape-release.jsonl').open('a') as stream:
+        stream.write(json.dumps(dict(time=time.monotonic(), before=before, after=after)) + '\n')
+    return result
+
+
+LiveCoordinator.release_tape = measured_release
 spec = importlib.util.spec_from_file_location('wp6_local_stack', ROOT / 'prototypes/streaming-diarization/draft-lane/run_local_stack.py')
 recipe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(recipe)
@@ -59,7 +82,8 @@ cli_main = phase2_web_cli.main
 
 
 def local_main(argv):
-    argv[argv.index('--vllm-base-url') + 1] = 'http://127.0.0.1:18106/v1'
+    if '--vllm-base-url' not in sys.argv:
+        argv[argv.index('--vllm-base-url') + 1] = 'http://127.0.0.1:18106/v1'
     return cli_main(argv)
 
 
