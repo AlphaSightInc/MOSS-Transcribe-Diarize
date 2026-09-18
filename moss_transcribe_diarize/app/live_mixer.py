@@ -90,7 +90,7 @@ class _StagedMix:
 class LiveCompatibilityMixer:
     """Transactional retained-v2-lane to mono-runtime compatibility mixer."""
 
-    def __init__(self, *, max_output_samples: int = LIVE_SAMPLE_RATE):
+    def __init__(self, *, max_output_samples: int = LIVE_SAMPLE_RATE, capture_correlation: bool = False):
         if (
             not isinstance(max_output_samples, int)
             or isinstance(max_output_samples, bool)
@@ -98,6 +98,7 @@ class LiveCompatibilityMixer:
         ):
             raise ValueError("max_output_samples must be a positive integer.")
         self._max_output_samples = max_output_samples
+        self._capture_correlation = capture_correlation
         self._cursor_ns: int | None = None
         self.last_capture_guard: dict[str, object] | None = None
         self._lock = threading.RLock()
@@ -141,7 +142,7 @@ class LiveCompatibilityMixer:
                 "start_timestamp_ns": staged.diagnostics.start_timestamp_ns,
                 "end_timestamp_ns": staged.diagnostics.end_timestamp_ns,
                 **staged.diagnostics.capture_guard,
-            }
+            } if self._capture_correlation else None
             # A bounded output chunk may end inside every retained lane frame.
             # Keep those source frames until a later chunk consumes them completely.
             if staged.diagnostics.source_watermarks:
@@ -306,7 +307,7 @@ class LiveCompatibilityMixer:
             source_watermarks=watermarks,
             capture_guard=observe_capture_span(
                 lane_values[LiveLane.SYSTEM], lane_values[LiveLane.MICROPHONE],
-                sample_rate=LIVE_SAMPLE_RATE,
+                sample_rate=LIVE_SAMPLE_RATE, correlation=self._capture_correlation,
             ),
         )
         frame = AudioFrame(
@@ -449,7 +450,7 @@ class LiveCompatibilityMixer:
 
 
 class LiveCompatibilityMixerRegistry:
-    def __init__(self, *, max_output_samples: int = LIVE_SAMPLE_RATE):
+    def __init__(self, *, max_output_samples: int = LIVE_SAMPLE_RATE, capture_correlation: bool = False):
         if (
             not isinstance(max_output_samples, int)
             or isinstance(max_output_samples, bool)
@@ -457,6 +458,7 @@ class LiveCompatibilityMixerRegistry:
         ):
             raise ValueError("max_output_samples must be a positive integer.")
         self._max_output_samples = max_output_samples
+        self._capture_correlation = capture_correlation
         self._mixers: dict[str, LiveCompatibilityMixer] = {}
         self._lock = threading.RLock()
 
@@ -466,7 +468,8 @@ class LiveCompatibilityMixerRegistry:
             if session_id in self._mixers:
                 raise ValueError(f"compatibility mixer {session_id} already exists.")
             mixer = LiveCompatibilityMixer(
-                max_output_samples=self._max_output_samples
+                max_output_samples=self._max_output_samples,
+                capture_correlation=self._capture_correlation,
             )
             self._mixers[session_id] = mixer
             return mixer

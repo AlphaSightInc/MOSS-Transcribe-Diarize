@@ -47,6 +47,6 @@ def main():
         text=' '.join(s.text for s in parse_transcript(out.transcript))
         result['decodes'][name]={'seconds':time.monotonic()-started,'vs_playback':score(playback,text),'vs_printed_phrase':score(PHRASE,text)}
     for start in range(0,n,8000):
-        result['spans'].append(dict(start_sample=start,**observe_capture_span(lane['system'][start:start+8000],lane['microphone'][start:start+8000],sample_rate=16000)))
+        result['spans'].append(dict(start_sample=start,**observe_capture_span(lane['system'][start:start+8000],lane['microphone'][start:start+8000],sample_rate=16000,correlation=True)))
     print(json.dumps(result,indent=2))
 if __name__=='__main__':main()

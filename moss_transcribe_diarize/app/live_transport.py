@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import binascii
+import os
 from dataclasses import dataclass
 from typing import Any, Mapping, Protocol
 
@@ -312,7 +313,8 @@ def attach_live_routes(
     capture_observations = LiveCaptureObservationRegistry()
     v2_sessions = _ObservedLiveV2SessionRegistry(raw_v2_sessions, capture_observations)
     v2_mixers = LiveCompatibilityMixerRegistry(
-        max_output_samples=runtime.descriptor.bounds.max_frame_samples
+        max_output_samples=runtime.descriptor.bounds.max_frame_samples,
+        capture_correlation=os.environ.get("MOSS_CAPTURE_CORRELATION") == "1",
     )
     # The tape's lifecycle is the mixed track's lifecycle, so it is released wherever the
     # mixer is: once the mixer is gone no further mixed audio can exist for that session,

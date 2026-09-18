@@ -17,7 +17,7 @@ Read `evidence/mvpfix/wp3/IMPLEMENTATION.md` and
    rate rejection/no sequence advance, runtime/lifecycle accounting, frontend behaviour,
    typecheck/build, stable bundled assets and kit syntax. A failure blocks PASS; inspect and
    fix only WP3-owned issues, retain failed log, rerun affected checks. Never weaken assertions.
-   Expected Python: 452 passed, 19 subtests. Frontend: 25 files, 215 passed.
+   Expected Python after lead follow-up: 457 passed, 19 subtests. Frontend: 25 files, 215 passed.
    Expected typecheck/build/syntax exit 0; rebuilt assets match committed assets.
 3. Independently inspect the relevant source/tests for these falsifiers:
    a. zero or fully silent fixture reaches a model; or low-bit nonzero audio gets discarded;
@@ -45,3 +45,9 @@ pytest scratch directory outside worktree. No external publication permitted.
 
 Memory navigation in prior context used MEMORY.md:587-588 only, no unverified historical
 claim. If reporting its use, append one memory citation with those lines and empty rollout_ids.
+
+
+Lead follow-up: correlation is default OFF (MOSS_CAPTURE_CORRELATION=1 opts in);
+snapshot.capture_guard is null while disabled. Verify the new no-correlation/default
+and one-nonzero-sample cases. Initial literal run exposed two SQLite/order failures;
+retain that FAIL even if those cases pass in isolation. See VERIFY-RESULT.md.

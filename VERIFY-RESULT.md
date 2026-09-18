@@ -106,3 +106,55 @@ other WPs, integrated runtime, deployment and full product remain unqualified he
 
 Raw captured logs contain pytest trailing whitespace and a frontend trailing blank
 line: staged whitespace check reports these; logs intentionally preserved verbatim.
+
+## F6 — Lead-requested follow-up (same session)
+
+Overall verdict remains **FAIL**. Starting point for review edits: `cf866016`
+(initial verification record), production base inspected `fb73b30e`. This is a
+same-session follow-up, not a second `/new` verification.
+
+All four lead requests addressed:
+1. Production correlation measured before edits over 300 x 8000-sample real-speech
+   chunks: process CPU median/max **440/5121 microseconds**. After edits, enabled
+   **447/4581 us**, disabled **1/17 us**, each 300 chunks. Inputs cycle 120 distinct
+   retained-corpus chunks, represented as mixer lists; cost includes conversion.
+   Bench command: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <COMMON venv-python> prototypes/streaming-diarization/capture-guards/cost.py`
+   (add `--correlation` for enabled). Full state/times in correlation-cost-*.json.
+   Default mixer only evaluates exact-zero decisions; no FFT, snapshot.capture_guard
+   null. Constructor/registry flag or process env `MOSS_CAPTURE_CORRELATION=1` opts
+   in. Standalone attended scorer explicitly enables correlation. Suppression absent.
+2. HTTP regression now asserts exact 400 detail and before/after lane next_sequence,
+   accepted_samples, accounted_samples, retained_samples; also runtime
+   next_frame_sequence and accepted_samples. Rejected frame leaves each at zero;
+   subsequent valid frames reach lane sequence 2 / accepted_samples 4. Tested with
+   correlation both off and on.
+3. One signed nonzero sample among 7999 zeros still reaches the runner (two cases).
+   IMPLEMENTATION.md explicitly states current mixed-span guard and WP1's required
+   per-lane rolling/terminal exact-zero guard. No claim of capture-level quiet-audio
+   preservation through pre-existing silence marking/quantization.
+4. WER audited, annotated in NOTES.md and reference-audit.json: 960000 samples /
+   16000 Hz = 60 seconds for each retained clip; reference ranges 0–60 seconds.
+   Source sends len(x), not 24 seconds. Quiet baselines 9/145 = 0.062069 WER;
+   27 mixtures 91–227/145 = 0.627586–1.565517 against near-only reference, so playback
+   words also incur errors. No source/reference duration mismatch found. Actual
+   wire duration cannot be independently recovered because request WAVs were not
+   retained. No new model requests; suppression experiment not repeated.
+
+Follow-up exact checks:
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. TMPDIR="$PWD/evidence/mvpfix/wp3/tmp" /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python -m pytest -q -p no:cacheprovider --basetemp=evidence/mvpfix/wp3/tmp/review-targeted tests/test_live_capture_guard.py tests/phase2/test_owner_bound_live_meeting.py -k 'capture_guard or nonzero or opt_in' > evidence/mvpfix/wp3/review-targeted.log 2>&1
+bash evidence/mvpfix/wp3/verify.sh > evidence/mvpfix/wp3/review-verification.log 2>&1
+{ sed -n '1,8p' evidence/mvpfix/wp3/verify.sh; sed -n '10,$p' evidence/mvpfix/wp3/verify.sh; } | bash > evidence/mvpfix/wp3/review-remaining.log 2>&1
+```
+Targeted: **14 passed, 62 deselected, 1 warning, 1.37 s**, exit 0.
+Final literal Python: **455 passed, 2 failed, 19 subtests passed, 1 warning,
+13.19 s**, exit 1. Includes both touched phase2 files and all new WP3 cases.
+Failures are the same two SQLite/runtime-pin failures in F1; no new failure.
+Remaining checks: **25 frontend files, 215 passed, 2.59 s**; typecheck exit 0;
+build exit 0 (**92 ms**); bundled assets unchanged; attended Python/JS syntax PASS;
+working diff whitespace check exit 0. Raw logs retain tool-generated whitespace.
+All logs force-added. No changes outside worktree, shared services, deployment,
+push/merge, physical capture, or decoder requests. CPU benchmark is the only new
+prototype measurement authorized in the lead follow-up. P4 and WP1 integration
+boundaries remain as F5. Fixing the unresolved test-order interaction is still
+required before claiming the literal combined verification passes.

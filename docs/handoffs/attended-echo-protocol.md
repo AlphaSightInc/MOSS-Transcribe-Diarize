@@ -1,7 +1,7 @@
 # Attended speakers/AEC measurement — UNMEASURED
 
 **Decision P4 remains open.** Synthetic correlation did not safely separate quiet local
-speech from playback. Production reports statistics; it never suppresses suspected leakage.
+speech from playback. Production correlation is off by default; it never suppresses suspected leakage.
 No physical microphone was available to WP3. This kit has not been run with a microphone.
 
 1. **A1 — Prepare.** Human operator uses physical speakers and Chrome on their own machine.
@@ -32,7 +32,11 @@ No physical microphone was available to WP3. This kit has not been run with a mi
    call a low WER a physical qualification of other devices. Stop server with Ctrl-C and
    close the page/tunnel. Keep P4 open if quiet speech or leakage remains unresolved.
 
-There is **no detector switch to enable**: WP3's candidate failed, so only telemetry ships.
-A later attended result may justify a new prototype/policy; it does not authorize suppression.
-Production `/snapshot.capture_guard` reports the latest committed aligned span; polling can
-miss intermediate spans. The kit records every audio block for the attended measurement.
+There is **no suppression switch**: WP3's candidate failed. Correlation telemetry requires
+explicit opt-in: launch an authorized attended MOSS process with `MOSS_CAPTURE_CORRELATION=1`.
+Unset (default), `/snapshot.capture_guard` is null; mixer diagnostics still compute exact-zero
+decisions, with null correlation fields and no FFT. With opt-in, the snapshot reports only
+the latest committed aligned span; polling can miss intermediate spans. The standalone kit's
+explicit `score` command enables correlation for its saved blocks. No shared-service restart
+is authorized by this protocol. A later attended result may justify a new prototype/policy;
+it does not authorize suppression.

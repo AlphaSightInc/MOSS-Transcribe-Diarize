@@ -9,25 +9,27 @@ import numpy as np
 from scipy.signal import correlate
 
 
-def observe_capture_span(system, microphone, *, sample_rate: int) -> dict[str, object]:
+def observe_capture_span(system, microphone, *, sample_rate: int, correlation: bool = False) -> dict[str, object]:
     """Observe already aligned lane samples; search the bench's measured 0–60 ms lag.
 
     Each span is independent. Echo arriving from before its left edge is unmodelled;
     this and nonlinear AEC can reduce the fraction. Neither value proves leakage.
     """
-    system = np.asarray(system, dtype=np.float64)
-    microphone = np.asarray(microphone, dtype=np.float64)
-    energy = float(np.dot(microphone, microphone))
+    system_nonzero = any(system)
+    microphone_nonzero = any(microphone)
     result: dict[str, object] = {
-        "system": {"decision": "decode" if np.any(system) else "skip-zero"},
-        "microphone": {"decision": "decode" if energy else "skip-zero"},
+        "system": {"decision": "decode" if system_nonzero else "skip-zero"},
+        "microphone": {"decision": "decode" if microphone_nonzero else "skip-zero"},
         "playback_explained_fraction": None,
         "playback_delay_samples": None,
         "playback_gain": None,
         "leak_suppression": False,
     }
-    if not energy or not np.any(system):
+    if not correlation or not microphone_nonzero or not system_nonzero:
         return result
+    system = np.asarray(system, dtype=np.float64)
+    microphone = np.asarray(microphone, dtype=np.float64)
+    energy = float(np.dot(microphone, microphone))
     max_delay = min(len(system) - 1, sample_rate * 60 // 1000)
     covariance = correlate(microphone, system, mode="full", method="fft")[
         len(system) - 1:len(system) + max_delay
