@@ -1294,6 +1294,8 @@ def _transcript_document(
                     else published_speaker_label(segment.canonical_speaker, canonical)
                 ),
                 "text": segment.text,
+                **({"source_lane": segment.source_lane}
+                   if segment.source_lane is not None else {}),
             }
             for index, segment in enumerate(snapshot.session.effective_transcript, start=1)
         ]

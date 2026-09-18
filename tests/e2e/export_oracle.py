@@ -1,7 +1,7 @@
 """Compare downloaded words, labels and represented times with the selected API meeting.
 
 Text/Markdown expose start seconds only; subtitle formats expose milliseconds;
-JSON additionally exposes end times and canonical identity. Do not claim precision
+JSON additionally exposes end times, canonical identity and optional source lane. Do not claim precision
 or fields a format does not carry. No renderer imports or generated expected text.
 """
 import html
@@ -38,7 +38,7 @@ def downloaded_rows(fmt,text):
     if fmt=='json':
         body=json.loads(text)
         return [dict(start=r['start'],end=r['end'],label=r['speaker_label'],identity=r['speaker_entity_id'],
-                     tokens=words(r['text'])) for r in body['turns']]
+                     tokens=words(r['text']),lane=r.get('source_lane')) for r in body['turns']]
     if fmt in ('txt','md'):
         pattern = r'^## \[(\d{2}:\d{2}:\d{2})\] (.+)\n\n' if fmt=='md' else r'^\[(\d{2}:\d{2}:\d{2})\] (.+):\n'
         matches=list(re.finditer(pattern,text,re.M))
@@ -62,6 +62,7 @@ def compare_export(fmt,text,meeting):
         return dict(ok=False,expected_turns=len(expected),parse_error=True)
     same_count=len(actual)==len(expected) and bool(expected)
     checks=dict(words=same_count,labels=same_count,timing=same_count,identity=same_count)
+    if fmt=='json': checks['lane']=same_count
     for a,b in zip(actual,expected):
         checks['words'] &= a['tokens']==b['tokens']
         checks['labels'] &= a['label']==b['label']
@@ -72,5 +73,7 @@ def compare_export(fmt,text,meeting):
             end=max(start+0.001,math.floor(end*1000+0.5)/1000)
         checks['timing'] &= math.isclose(a['start'],start,abs_tol=1e-9)
         if 'end' in a: checks['timing'] &= math.isclose(a['end'],end,abs_tol=1e-9)
-        if fmt=='json': checks['identity'] &= a['identity']==b['identity']
+        if fmt=='json':
+            checks['identity'] &= a['identity']==b['identity']
+            checks['lane'] &= a['lane']==b['lane']
     return dict(ok=all(checks.values()),expected_turns=len(expected),downloaded_turns=len(actual),**checks)

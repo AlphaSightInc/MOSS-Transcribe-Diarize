@@ -19,8 +19,9 @@ are consumed directly by the live browser; the legacy text grammar has no lane f
 
 Display uses one chronological column and a lane badge beside the speaker. A name
 click/enrollment still targets the canonical speaker ID; lane is not an enrollment
-uniqueness constraint. Markdown/text/subtitles append the lane beside the name;
-JSON carries `source_lane`; legacy output has no lane decoration. SRT/VTT keep separate
+uniqueness constraint. Markdown/text/subtitles show the resolved speaker label only;
+JSON carries `source_lane` separately and uses the same undecorated `speaker_label`.
+Legacy output has no lane decoration. SRT/VTT keep separate
 speaker-labelled overlapping cues without clipping or shifting either interval.
 Summary input uses chronological segments with speaker display labels and lane context.
 No provider call is required to validate body construction.
@@ -31,3 +32,15 @@ overlap; five legacy segments exercise absence. Three UI alternatives were compa
 at 390/400/1280 px; chronological rows preserve mobile width and one reading order.
 This consumer evidence does not qualify WP1's producer, real subtitle players,
 voiceprint recognition, or deployed live operation.
+
+
+## WP11 export label reconciliation
+
+The speaker display name (or existing ID fallback) remains the export label. Lane
+is a namespace, represented by the UI badge and JSON `source_lane`, not by changing
+the name. This supersedes WP2's export decoration chosen to match its UI option A;
+WP2 recorded no additional user-facing requirement for decorated export labels.
+Text/subtitle formats deliberately omit lane metadata; JSON retains it separately.
+The independent export oracle projects identical labels and verifies JSON lane
+metadata as well as words, identity and represented times. Overlapping cues remain
+separate, without time shifts. Evidence: `evidence/mvpfix/wp11/NOTES.md`.

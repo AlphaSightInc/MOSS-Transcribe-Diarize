@@ -637,8 +637,8 @@ def test_saved_live_transcript_keeps_attributed_id_and_omits_unattributed_id():
         session=SimpleNamespace(
             identity_snapshot=SimpleNamespace(canonical_speakers=("canonical-a",)),
             effective_transcript=(
-                SimpleNamespace(start_sample=0, end_sample=16000, canonical_speaker="canonical-a", text="Named speech"),
-                SimpleNamespace(start_sample=16000, end_sample=32000, canonical_speaker=None, text="Unattributed speech"),
+                SimpleNamespace(start_sample=0, end_sample=16000, canonical_speaker="canonical-a", text="Named speech", source_lane=None),
+                SimpleNamespace(start_sample=16000, end_sample=32000, canonical_speaker=None, text="Unattributed speech", source_lane=None),
             ),
         ),
     )

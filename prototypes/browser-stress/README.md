@@ -33,3 +33,12 @@ The wrapper limits real decoder submissions to 200 across restarts and two concu
 The UI's actual Stop wait remains 5 seconds; the browser waits for durable completion separately. This tests the shipped UI rather than replacing its Stop request with an API request.
 
 Read `NOTES.md` for measured verdicts and limitations. Base attempt failures remain retained; later runs never overwrite them.
+
+WP11 integrated export re-check uses the same bench on a private `--base` and
+`--microphone-file` (public Keyu Jin WAV) for genuine two-lane input. Run cases
+`8,11,10,12`: case 11 supplies the live meeting before case 10. Exports now compare
+against the selected API meeting with the independent oracle, including JSON lane;
+rename compares all five formats and reuses its initial JSON download. Audio and
+400px history checks remain. See `evidence/mvpfix/wp11/NOTES.md` for exact commands,
+42/60 decoder accounting and retained failed attempts. This is local integration,
+not an attended microphone, echo or deployment qualification.
