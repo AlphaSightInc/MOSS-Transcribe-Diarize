@@ -55,6 +55,9 @@ class _Decoder:
 
 
 class _Identity:
+    def fork_lane(self):
+        return _Identity()
+
     def prepare(
         self,
         *,
@@ -62,6 +65,7 @@ class _Identity:
         pcm: bytes,
         transcript: str,
         base_snapshot: LiveIdentitySnapshot,
+        allowed_speakers: tuple[str, ...] | None = None,
     ) -> LiveIdentityPreparation:
         del pcm, transcript
         return LiveIdentityPreparation(
@@ -125,7 +129,8 @@ def _v2_frame(sequence: int, lane: str) -> dict[str, object]:
         "sequence": sequence,
         "capture_timestamp_ns": sequence * samples * 1_000_000_000 // LIVE_SAMPLE_RATE,
         "device_epoch": 0,
-        "pcm_base64": base64.b64encode(b"\0" * samples * 2).decode("ascii"),
+        # One real decoder input; the other lane is deliberately digital silence.
+        "pcm_base64": base64.b64encode((b"\x01\x00" if lane == "system" else b"\0\0") * samples).decode("ascii"),
         "sample_count": samples,
         "sample_rate": LIVE_SAMPLE_RATE,
         "silent": False,

@@ -922,6 +922,7 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
                 prefix_hash=_digest("commit"),
                 identity_snapshot_version=2,
                 revised_transcript="[0][S01]hello[2.49]",
+                source_lanes=("system",),
             ),
         ),
         provisional=ProvisionalSuffix(
@@ -944,6 +945,7 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
                 text="hello there",
                 canonical_speaker="speaker-0002",
                 authority="rolling",
+                source_lane="microphone",
             ),
             EffectiveTranscriptSegment(
                 start_sample=32000,
@@ -951,6 +953,7 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
                 text="hello",
                 canonical_speaker=None,
                 authority="provisional",
+                source_lane="system",
             ),
         ),
         finalization_status="running",
