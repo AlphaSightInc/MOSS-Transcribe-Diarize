@@ -57,3 +57,9 @@ Before fresh rerun: strengthened missing-reference-voice falsifier and added bud
 metadata; helper tests now 7/7. Re-scored retained identity metrics: 3/3 statuses unchanged.
 This reporting-only delta means a fresh gate-status comparison is not strict same-code
 runtime determinism, even with zero status deltas. No extra decoder calls were made.
+
+Re-score provenance: first attempted from content-filtered summary metadata and failed
+because that projection drops the legacy `finalization` string key. Repeated offline
+against the original private result events (one result per case), retaining only safe
+case/status/finalization fields in identity-rescore.json: three statuses unchanged.
+No acoustic rerun, no invented missing metadata, no content-bearing log committed.
