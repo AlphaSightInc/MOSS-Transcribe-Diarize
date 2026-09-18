@@ -1,0 +1,68 @@
+
+      SETUP    C _unittest_setUpClass_fixture_TerminalFinalizerTest
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_a_released_tape_is_unavailable_rather_than_a_shorter_meeting (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_a_runner_that_fails_reports_its_type_and_never_the_words_it_rejected (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_a_tape_that_cannot_serve_the_meeting_reports_unavailable_and_names_its_gaps (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_a_tape_that_is_merely_short_serves_nothing_rather_than_its_prefix (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_a_timestamp_past_the_end_of_the_meeting_is_clamped_into_it (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_an_answer_with_no_words_in_it_is_a_failed_pass_not_an_empty_meeting (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_the_accounting_reports_the_windowing_the_pass_actually_ran (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_the_runner_is_handed_the_tape_itself_as_the_meeting_s_own_wav (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerTest::test_the_whole_meeting_is_decoded_once_and_proposed_as_one_revision (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerTest, request) .
+      TEARDOWN C _unittest_setUpClass_fixture_TerminalFinalizerTest
+      SETUP    C _unittest_setUpClass_fixture_TerminalSpeakerMappingTest
+        tests/test_live_terminal_finalizer.py::TerminalSpeakerMappingTest::test_a_local_speaker_the_meeting_never_established_publishes_unattributed (fixtures used: _unittest_setUpClass_fixture_TerminalSpeakerMappingTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalSpeakerMappingTest::test_a_meeting_with_no_established_identity_publishes_every_word_unattributed (fixtures used: _unittest_setUpClass_fixture_TerminalSpeakerMappingTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalSpeakerMappingTest::test_a_speaker_whose_segments_straddle_base_turns_stays_one_speaker (fixtures used: _unittest_setUpClass_fixture_TerminalSpeakerMappingTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalSpeakerMappingTest::test_more_terminal_speakers_than_the_album_holds_leaves_the_extra_ones_unnamed (fixtures used: _unittest_setUpClass_fixture_TerminalSpeakerMappingTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalSpeakerMappingTest::test_the_finalizer_attributes_its_segments_through_that_mapping (fixtures used: _unittest_setUpClass_fixture_TerminalSpeakerMappingTest, request) .
+      TEARDOWN C _unittest_setUpClass_fixture_TerminalSpeakerMappingTest
+      SETUP    C _unittest_setUpClass_fixture_SegmentOverlapResolutionTest
+        tests/test_live_terminal_finalizer.py::SegmentOverlapResolutionTest::test_a_proposal_with_no_overlap_is_returned_unchanged (fixtures used: _unittest_setUpClass_fixture_SegmentOverlapResolutionTest, request) .
+        tests/test_live_terminal_finalizer.py::SegmentOverlapResolutionTest::test_a_second_speaker_with_no_interval_left_is_dropped_rather_than_given_one (fixtures used: _unittest_setUpClass_fixture_SegmentOverlapResolutionTest, request) .
+        tests/test_live_terminal_finalizer.py::SegmentOverlapResolutionTest::test_every_shape_a_window_seam_can_produce_becomes_a_publishable_surface (fixtures used: _unittest_setUpClass_fixture_SegmentOverlapResolutionTest, request) .
+        tests/test_live_terminal_finalizer.py::SegmentOverlapResolutionTest::test_one_speakers_two_decodings_of_one_stretch_become_one_segment_over_their_union (fixtures used: _unittest_setUpClass_fixture_SegmentOverlapResolutionTest, request) .
+        tests/test_live_terminal_finalizer.py::SegmentOverlapResolutionTest::test_the_order_the_decoder_emitted_its_segments_in_does_not_change_the_result (fixtures used: _unittest_setUpClass_fixture_SegmentOverlapResolutionTest, request) .
+        tests/test_live_terminal_finalizer.py::SegmentOverlapResolutionTest::test_two_speakers_over_one_interval_leave_the_later_one_the_audio_that_is_left (fixtures used: _unittest_setUpClass_fixture_SegmentOverlapResolutionTest, request) .
+      TEARDOWN C _unittest_setUpClass_fixture_SegmentOverlapResolutionTest
+      SETUP    C _unittest_setUpClass_fixture_TerminalSeamAndSpeakerNamesTest
+        tests/test_live_terminal_finalizer.py::TerminalSeamAndSpeakerNamesTest::test_a_stretch_decoded_twice_does_not_get_to_vote_twice_for_a_name (fixtures used: _unittest_setUpClass_fixture_TerminalSeamAndSpeakerNamesTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalSeamAndSpeakerNamesTest::test_the_corpus_seam_does_not_move_a_single_name (fixtures used: _unittest_setUpClass_fixture_TerminalSeamAndSpeakerNamesTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalSeamAndSpeakerNamesTest::test_the_finalizer_resolves_the_seam_before_it_asks_who_spoke (fixtures used: _unittest_setUpClass_fixture_TerminalSeamAndSpeakerNamesTest, request) .
+      TEARDOWN C _unittest_setUpClass_fixture_TerminalSeamAndSpeakerNamesTest
+      SETUP    C _unittest_setUpClass_fixture_TerminalFinalizerSessionTest
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerSessionTest::test_a_failed_terminal_pass_leaves_the_rolling_surface_exactly_where_it_was (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerSessionTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerSessionTest::test_a_terminal_pass_over_a_rolling_prefix_replaces_it_from_sample_zero (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerSessionTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerSessionTest::test_the_corpus_two_window_seam_is_refused_as_decoded_and_published_once_resolved (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerSessionTest, request) .
+        tests/test_live_terminal_finalizer.py::TerminalFinalizerSessionTest::test_the_proposal_replaces_the_whole_surface_and_a_second_one_is_refused (fixtures used: _unittest_setUpClass_fixture_TerminalFinalizerSessionTest, request) .
+      TEARDOWN C _unittest_setUpClass_fixture_TerminalFinalizerSessionTest
+SETUP    S tmp_path_factory
+        SETUP    F tmp_path (fixtures used: tmp_path_factory)
+        tests/test_live_terminal_finalizer.py::test_silent_tail_reaches_window_decoder_and_retains_speechless_condition (fixtures used: request, tmp_path, tmp_path_factory) .
+        TEARDOWN F tmp_path
+        SETUP    F monkeypatch
+        SETUP    F permit_test_runner_sqlite (fixtures used: monkeypatch)
+        SETUP    F tmp_path (fixtures used: tmp_path_factory)
+        SETUP    F ending['lease_expiry']
+        tests/phase2/test_pre_stop_terminal_boundary.py::test_late_stop_has_same_refusal_for_distinct_prior_endings[lease_expiry] (fixtures used: ending, monkeypatch, permit_test_runner_sqlite, request, tmp_path, tmp_path_factory) .
+        TEARDOWN F ending['lease_expiry']
+        TEARDOWN F tmp_path
+        TEARDOWN F permit_test_runner_sqlite
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F permit_test_runner_sqlite (fixtures used: monkeypatch)
+        SETUP    F tmp_path (fixtures used: tmp_path_factory)
+        SETUP    F ending['explicit_abort']
+        tests/phase2/test_pre_stop_terminal_boundary.py::test_late_stop_has_same_refusal_for_distinct_prior_endings[explicit_abort] (fixtures used: ending, monkeypatch, permit_test_runner_sqlite, request, tmp_path, tmp_path_factory) .
+        TEARDOWN F ending['explicit_abort']
+        TEARDOWN F tmp_path
+        TEARDOWN F permit_test_runner_sqlite
+        TEARDOWN F monkeypatch
+TEARDOWN S tmp_path_factory
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+30 passed, 1 warning, 19 subtests passed in 3.72s
