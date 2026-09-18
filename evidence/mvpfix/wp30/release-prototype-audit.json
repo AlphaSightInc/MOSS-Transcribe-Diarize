@@ -1,0 +1,160 @@
+{
+  "run": "20260918-054242-2r-1x10",
+  "source": "e5185fa26399e140b9f7930f08fc8e6b18085af6",
+  "sessions": 1,
+  "seconds": 10,
+  "repeat": 2,
+  "stub_latency": 0.15,
+  "campaign_completed": true,
+  "campaign_clean": true,
+  "requests": 24,
+  "peak_own_inflight": 2,
+  "contention_samples": null,
+  "resource_samples": 3,
+  "maximum_pending_signals": 0,
+  "maximum_ready_sessions": 0,
+  "maximum_session_canonical_queue": 0,
+  "maximum_session_refinement_queue": 0,
+  "maximum_aggregate_canonical_queue": 0,
+  "peak_rss_mib": 904.84375,
+  "checkpoints": [
+    {
+      "label": "startup",
+      "rss_mib": 634.015625,
+      "traced_mib": 17.19639015197754,
+      "retained_sessions": 0,
+      "retained_album_entries": 0,
+      "retained_sweep_spans": 0,
+      "retained_tape_bytes": 0,
+      "replay_acks": 0
+    },
+    {
+      "label": "post-final-1",
+      "rss_mib": 859.21875,
+      "traced_mib": 47.585798263549805,
+      "retained_sessions": 1,
+      "retained_album_entries": 0,
+      "retained_sweep_spans": 0,
+      "retained_tape_bytes": 0,
+      "replay_acks": 0
+    },
+    {
+      "label": "post-final-2",
+      "rss_mib": 901.875,
+      "traced_mib": 47.98221206665039,
+      "retained_sessions": 2,
+      "retained_album_entries": 0,
+      "retained_sweep_spans": 0,
+      "retained_tape_bytes": 0,
+      "replay_acks": 0
+    }
+  ],
+  "session_results": [
+    {
+      "repeat": 1,
+      "session": 1,
+      "acknowledged_frames": 40,
+      "retries": 0,
+      "wrong_owner_failures": 0,
+      "foreign_probes": 40,
+      "first_text_seconds": 5.749577124995994,
+      "max_update_gap_seconds": 5.749577124995994,
+      "p95_update_gap_seconds": 5.143486468746413,
+      "capture_seconds": 10.006044541994925,
+      "stop_to_final_seconds": 5.045252832991537,
+      "finalization": "final",
+      "error": null,
+      "failure_code": null,
+      "http_failure_code": null,
+      "saved_words": 24,
+      "before_cleanup": null,
+      "unaccounted_acknowledged_samples": 0,
+      "backpressure_codes": {},
+      "backpressure_declared_retryable": 0,
+      "sqlite_words_equal_terminal": true,
+      "saved_status": "completed",
+      "accepted_samples": 160000,
+      "accounted_samples": 160000,
+      "stub_expected_words": 24,
+      "stub_exact_lane_time_text": true,
+      "stub_missing_segments": 0,
+      "stub_added_or_changed_segments": 0,
+      "lanes": {
+        "system": {
+          "segments": 4,
+          "words": 12,
+          "first_sample": 0,
+          "last_sample": 160000
+        },
+        "microphone": {
+          "segments": 4,
+          "words": 12,
+          "first_sample": 0,
+          "last_sample": 160000
+        }
+      }
+    },
+    {
+      "repeat": 2,
+      "session": 1,
+      "acknowledged_frames": 40,
+      "retries": 0,
+      "wrong_owner_failures": 0,
+      "foreign_probes": 40,
+      "first_text_seconds": 3.2633245420001913,
+      "max_update_gap_seconds": 3.2633245420001913,
+      "p95_update_gap_seconds": 3.1519818169013885,
+      "capture_seconds": 10.00119712499145,
+      "stop_to_final_seconds": 5.032263083005091,
+      "finalization": "final",
+      "error": null,
+      "failure_code": null,
+      "http_failure_code": null,
+      "saved_words": 24,
+      "before_cleanup": null,
+      "unaccounted_acknowledged_samples": 0,
+      "backpressure_codes": {},
+      "backpressure_declared_retryable": 0,
+      "sqlite_words_equal_terminal": true,
+      "saved_status": "completed",
+      "accepted_samples": 160000,
+      "accounted_samples": 160000,
+      "stub_expected_words": 24,
+      "stub_exact_lane_time_text": true,
+      "stub_missing_segments": 0,
+      "stub_added_or_changed_segments": 0,
+      "lanes": {
+        "system": {
+          "segments": 4,
+          "words": 12,
+          "first_sample": 0,
+          "last_sample": 160000
+        },
+        "microphone": {
+          "segments": 4,
+          "words": 12,
+          "first_sample": 0,
+          "last_sample": 160000
+        }
+      }
+    }
+  ],
+  "failures": [],
+  "fairness": {
+    "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+    "lifecycle_event_counts": {
+      "canonical_queued": 8,
+      "canonical_started": 8,
+      "canonical_processed": 8
+    },
+    "contended_pair_dispatch_observations": 0,
+    "maximum_contended_pair_dispatch_skew": 0,
+    "fairness_gate": 1,
+    "applicability": "not_applicable",
+    "errors": [],
+    "passes": null
+  },
+  "tape_releases": 2,
+  "retained_bytes_after_release": 0,
+  "word_loss_vs_acknowledged_audio": "unmeasured: audio acknowledgements contain no word labels"
+}

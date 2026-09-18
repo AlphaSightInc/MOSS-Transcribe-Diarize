@@ -1,0 +1,246 @@
+{
+  "run": "20260918-055122-1r-4x600",
+  "source": "a565c23ae0f93323f0b16335cf04e8e8c32e80bb",
+  "sessions": 4,
+  "seconds": 600,
+  "repeat": 1,
+  "stub_latency": 0.15,
+  "campaign_completed": true,
+  "campaign_clean": true,
+  "requests": 2440,
+  "peak_own_inflight": 2,
+  "contention_samples": null,
+  "resource_samples": 110,
+  "maximum_pending_signals": 1,
+  "maximum_ready_sessions": 3,
+  "maximum_session_canonical_queue": 16,
+  "maximum_session_refinement_queue": 1,
+  "maximum_aggregate_canonical_queue": 62,
+  "peak_rss_mib": 1557.078125,
+  "checkpoints": [
+    {
+      "label": "startup",
+      "rss_mib": 628.0,
+      "traced_mib": 17.223648071289062,
+      "retained_sessions": 0,
+      "retained_album_entries": 0,
+      "retained_sweep_spans": 0,
+      "retained_tape_bytes": 0,
+      "replay_acks": 0
+    },
+    {
+      "label": "post-final-1",
+      "rss_mib": 1384.046875,
+      "traced_mib": 91.36231517791748,
+      "retained_sessions": 4,
+      "retained_album_entries": 0,
+      "retained_sweep_spans": 0,
+      "retained_tape_bytes": 0,
+      "replay_acks": 0
+    }
+  ],
+  "session_results": [
+    {
+      "repeat": 1,
+      "session": 1,
+      "acknowledged_frames": 2400,
+      "retries": 924,
+      "wrong_owner_failures": 0,
+      "foreign_probes": 2400,
+      "first_text_seconds": 17.84931950000464,
+      "max_update_gap_seconds": 17.84931950000464,
+      "p95_update_gap_seconds": 11.609381475392729,
+      "capture_seconds": 2240.0197844580107,
+      "stop_to_final_seconds": 1009.4015203750023,
+      "finalization": "final",
+      "error": null,
+      "failure_code": null,
+      "http_failure_code": null,
+      "saved_words": 1440,
+      "before_cleanup": null,
+      "unaccounted_acknowledged_samples": 0,
+      "backpressure_codes": {
+        "canonical_queue_full": 924
+      },
+      "backpressure_declared_retryable": 924,
+      "sqlite_words_equal_terminal": true,
+      "saved_status": "completed",
+      "accepted_samples": 9600000,
+      "accounted_samples": 9600000,
+      "stub_expected_words": 1440,
+      "stub_exact_lane_time_text": true,
+      "stub_missing_segments": 0,
+      "stub_added_or_changed_segments": 0,
+      "lanes": {
+        "system": {
+          "segments": 240,
+          "words": 720,
+          "first_sample": 0,
+          "last_sample": 9600000
+        },
+        "microphone": {
+          "segments": 240,
+          "words": 720,
+          "first_sample": 0,
+          "last_sample": 9600000
+        }
+      }
+    },
+    {
+      "repeat": 1,
+      "session": 2,
+      "acknowledged_frames": 2400,
+      "retries": 926,
+      "wrong_owner_failures": 0,
+      "foreign_probes": 2400,
+      "first_text_seconds": 15.863556625001365,
+      "max_update_gap_seconds": 15.863556625001365,
+      "p95_update_gap_seconds": 11.54137430799601,
+      "capture_seconds": 2238.458209250006,
+      "stop_to_final_seconds": 1007.4871310000017,
+      "finalization": "final",
+      "error": null,
+      "failure_code": null,
+      "http_failure_code": null,
+      "saved_words": 1440,
+      "before_cleanup": null,
+      "unaccounted_acknowledged_samples": 0,
+      "backpressure_codes": {
+        "canonical_queue_full": 926
+      },
+      "backpressure_declared_retryable": 926,
+      "sqlite_words_equal_terminal": true,
+      "saved_status": "completed",
+      "accepted_samples": 9600000,
+      "accounted_samples": 9600000,
+      "stub_expected_words": 1440,
+      "stub_exact_lane_time_text": true,
+      "stub_missing_segments": 0,
+      "stub_added_or_changed_segments": 0,
+      "lanes": {
+        "system": {
+          "segments": 240,
+          "words": 720,
+          "first_sample": 0,
+          "last_sample": 9600000
+        },
+        "microphone": {
+          "segments": 240,
+          "words": 720,
+          "first_sample": 0,
+          "last_sample": 9600000
+        }
+      }
+    },
+    {
+      "repeat": 1,
+      "session": 3,
+      "acknowledged_frames": 2400,
+      "retries": 911,
+      "wrong_owner_failures": 0,
+      "foreign_probes": 2400,
+      "first_text_seconds": 10.95729016700352,
+      "max_update_gap_seconds": 12.845646249988931,
+      "p95_update_gap_seconds": 11.497773291604243,
+      "capture_seconds": 2235.2098499590065,
+      "stop_to_final_seconds": 1003.6164191659918,
+      "finalization": "final",
+      "error": null,
+      "failure_code": null,
+      "http_failure_code": null,
+      "saved_words": 1440,
+      "before_cleanup": null,
+      "unaccounted_acknowledged_samples": 0,
+      "backpressure_codes": {
+        "canonical_queue_full": 911
+      },
+      "backpressure_declared_retryable": 911,
+      "sqlite_words_equal_terminal": true,
+      "saved_status": "completed",
+      "accepted_samples": 9600000,
+      "accounted_samples": 9600000,
+      "stub_expected_words": 1440,
+      "stub_exact_lane_time_text": true,
+      "stub_missing_segments": 0,
+      "stub_added_or_changed_segments": 0,
+      "lanes": {
+        "system": {
+          "segments": 240,
+          "words": 720,
+          "first_sample": 0,
+          "last_sample": 9600000
+        },
+        "microphone": {
+          "segments": 240,
+          "words": 720,
+          "first_sample": 0,
+          "last_sample": 9600000
+        }
+      }
+    },
+    {
+      "repeat": 1,
+      "session": 4,
+      "acknowledged_frames": 2400,
+      "retries": 915,
+      "wrong_owner_failures": 0,
+      "foreign_probes": 2400,
+      "first_text_seconds": 13.865207249997184,
+      "max_update_gap_seconds": 13.865207249997184,
+      "p95_update_gap_seconds": 11.549972974997944,
+      "capture_seconds": 2237.3111493329925,
+      "stop_to_final_seconds": 1005.7104594999983,
+      "finalization": "final",
+      "error": null,
+      "failure_code": null,
+      "http_failure_code": null,
+      "saved_words": 1440,
+      "before_cleanup": null,
+      "unaccounted_acknowledged_samples": 0,
+      "backpressure_codes": {
+        "canonical_queue_full": 915
+      },
+      "backpressure_declared_retryable": 915,
+      "sqlite_words_equal_terminal": true,
+      "saved_status": "completed",
+      "accepted_samples": 9600000,
+      "accounted_samples": 9600000,
+      "stub_expected_words": 1440,
+      "stub_exact_lane_time_text": true,
+      "stub_missing_segments": 0,
+      "stub_added_or_changed_segments": 0,
+      "lanes": {
+        "system": {
+          "segments": 240,
+          "words": 720,
+          "first_sample": 0,
+          "last_sample": 9600000
+        },
+        "microphone": {
+          "segments": 240,
+          "words": 720,
+          "first_sample": 0,
+          "last_sample": 9600000
+        }
+      }
+    }
+  ],
+  "failures": [],
+  "fairness": {
+    "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+    "lifecycle_event_counts": {
+      "canonical_queued": 960,
+      "canonical_started": 960,
+      "canonical_processed": 960
+    },
+    "contended_pair_dispatch_observations": 2871,
+    "maximum_contended_pair_dispatch_skew": 1,
+    "fairness_gate": 1,
+    "applicability": "measured",
+    "errors": [],
+    "passes": true
+  },
+  "tape_releases": 4,
+  "retained_bytes_after_release": 0,
+  "word_loss_vs_acknowledged_audio": "unmeasured: audio acknowledgements contain no word labels"
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "repeat": 1,
+    "exact_lane_time_text": true,
+    "saved_text_equal": true,
+    "segments": 480,
+    "words": 1440
+  },
+  {
+    "repeat": 2,
+    "exact_lane_time_text": true,
+    "saved_text_equal": true,
+    "segments": 480,
+    "words": 1440
+  },
+  {
+    "repeat": 3,
+    "exact_lane_time_text": true,
+    "saved_text_equal": true,
+    "segments": 480,
+    "words": 1440
+  },
+  {
+    "repeat": 4,
+    "exact_lane_time_text": true,
+    "saved_text_equal": true,
+    "segments": 480,
+    "words": 1440
+  }
+]

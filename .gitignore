@@ -110,3 +110,5 @@ evidence/mvpfix/*/raw/
 
 # WP35 private stop-drain scratch: stub bench temp files, TLS material, stack state.
 .wp35-tmp/
+# WP30 isolated load-campaign state, audio and credentials.
+.wp30/

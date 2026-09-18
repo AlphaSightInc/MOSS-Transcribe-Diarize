@@ -401,6 +401,7 @@ class LiveCoordinator:
         self.lane_tapes: dict[str, CompleteMixedTape] = {}
         self._lane_preparers = {}
         self._lane_match_observations = (-1, ())
+        self._final_identity_observations = None
         self._stopped_refinement_lanes: set[str] = set()
         self._lane_speakers: dict[str, set[str]] = {}
         self._tape_capacity = tape_capacity_bytes
@@ -817,6 +818,8 @@ class LiveCoordinator:
         )
 
     def match_observations(self):
+        if self._final_identity_observations is not None:
+            return self._final_identity_observations[0]
         base = self.session.snapshot().identity_snapshot
         if self._lane_preparers:
             version, observations = self._lane_match_observations
@@ -833,6 +836,8 @@ class LiveCoordinator:
         )
 
     def journal_observations(self):
+        if self._final_identity_observations is not None:
+            return self._final_identity_observations[1]
         preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
         return tuple(
             observation
@@ -840,6 +845,14 @@ class LiveCoordinator:
             if (read := getattr(preparer, "journal_observations", None)) is not None
             for observation in read()
         )
+
+    def release_finalized_identity(self) -> None:
+        """Keep final observations; release lane evidence after its last reader."""
+        if self._lane_preparers:
+            self._final_identity_observations = (
+                self.match_observations(), self.journal_observations()
+            )
+            self._lane_preparers.clear()
 
     def _publish_identity_revision(self) -> _AppliedRevision:
         """Apply any retrospective correction to the transcript a reader is being shown.

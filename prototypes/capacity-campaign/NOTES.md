@@ -176,3 +176,93 @@ subsequent wrappers use wp6_test_status. No test result is inferred from that wr
 Short-temp full-suite result: **1 failed, 1701 passed, 2 skipped, 21 warnings,
 37 subtests passed in 158.38s**. Only the documented WP4 fixture failure remains.
 Both environment hypotheses were confirmed without changing source or tests.
+
+## WP30 — repeated sessions and safe overload (in progress)
+
+Q1: does finalized-session ownership accumulate in a single process?
+Q2: does one process-scoped canonical worker fairly serve 8/16 active lanes?
+Primitives: workspace authority, acknowledged PCM, pending canonical work,
+immutable published result, mutable identity evidence and process memory.
+Invariants: frame schema, policies, queue capacity, leases, lane separation,
+acknowledged accounting and saved words must survive unchanged.
+Hypothesis: bounded work makes overload retryable; final releases expendable
+session evidence. Falsifiers: non-404 foreign reads, acknowledged/accounted loss,
+terminal failures, unfair dispatch, or retained mutable owners after final.
+Unknowns: residual native allocation, recognition accuracy, deployment capacity.
+
+Tool decision: timed stub at the real decoder boundary preserves production VAD,
+ONNX identity, HTTP, scheduler, persistence and lifecycle. Tracemalloc plus native
+RSS distinguishes Python owners from process totals. Full speech on BOTH lanes;
+Ackman system / Keyu Jin microphone, looped at original amplitude. Workspace
+isolation uses distinct cookies even though the speech inputs are identical.
+Stub words are synthetic: PCM acknowledgements do not label words, so a word-loss
+count versus acknowledged audio is unknown. Saved/final ordered word equality
+and accepted/accounted samples are measured separately. No synthetic WER claim.
+
+One-command runs (COMMON Python; PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.):
+```
+python prototypes/capacity-campaign/run.py --sessions 1 --seconds 600 --repeat 6 --stub-latency .6
+python prototypes/capacity-campaign/run.py --sessions 4 --seconds 600 --stub-latency .15
+python prototypes/capacity-campaign/run.py --sessions 8 --seconds 300 --stub-latency .15
+python prototypes/capacity-campaign/run.py --sessions 4 --seconds 300 --wp30
+```
+The first command uses one unchanged server process for all six sessions.
+The real command owns 18130/17890, hard caps requests at 600 and own concurrency
+at two. Contention is recorded without pauses. No real calls during stub work.
+The copied measurement manifest retains the whole requested duration; only its
+max_tape_bytes increases if necessary, preserving other bounds/policies.
+Local SQLite runtime pin bypass inherited from the existing bench.
+Scratch/audio/certificates/databases stay ignored under .wp30, inside this tree.
+Telemetry prints checkpoints and records all owner/queue samples every five seconds.
+Scripted actions replace the prototype skill's interactive TUI, per WP30's exact
+campaign requirement. Benchmark instrumentation is retained in the shared bench.
+
+Smoke 1x10 s, 0.6 s stub: final/completed, 40 acknowledged frames, 160000 accepted
+and accounted samples, saved words identical, 12 stub requests. All tapes empty;
+lane albums and sweep ledgers remain reachable after final. This is a witness of
+ownership, not yet evidence of a material repeated-session leak.
+
+Candidate release experiment (not production): final public snapshot, identity
+counts and immutable enrollment/match observations are the lasting contract;
+mutable per-lane preparers/album/sweep evidence is used only until terminal
+fallback completes. Cache the immutable observations, then drop preparers after
+`_run_terminal` returns final. Never release at Stop while the final decoder
+still needs lane evidence. Falsifier: changed snapshot/counts/observations, or
+weak references proving preparers survive. `release_prototype.py` records before
+and after traced bytes and all equality checks. Enable only in a subsequent
+stub process with `WP30_PROTOTYPE_RELEASE=1`; baseline stays unchanged.
+
+Baseline in-flight observation: the first 600 s session finished with all 2400
+frames accounted and exact saved text, but Stop-to-final was 313.107411 s.
+After capture the canonical queue drained, while rolling refinement continued
+through its ten-second windows before terminal finalization began. This is a
+measured slow-stub latency limit, not a crash or a canonical scheduling deadlock.
+First immediate final checkpoint: RSS 991.8125 MiB, traced 60.63 MiB, 480 retained
+lane sweep spans. SSL transport buffers also appear in traced allocations; these
+can await cyclic collection. Candidate before/after deltas collect already-dead
+cycles first, avoiding misattribution of that unrelated reclamation to lane release.
+
+Concurrent fixture choice: use the brief's 0.15 s endpoint for Q2/Q3. The
+measured single-session canonical rate is approximately 480 calls / 600 s;
+four sessions at 0.6 s require 1.92 decoder-seconds per wall second before
+identity work. That setting would overload four by construction. Q1 retains
+0.6 s unchanged; Q2/Q3 record 0.15 s explicitly, with production identity cost
+still present. No production threshold or dispatch policy changes.
+
+Release prototype verdict: PASS (20260918-054242-2r-1x10). Two final sessions,
+four lane preparers, zero surviving weak references; snapshot, journal, matches
+and counts unchanged in both. Traced release deltas 75,697 / 70,726 bytes on
+these short meetings after removing unrelated dead cycles. This establishes
+ownership release, not a native RSS promise. Production regression reproduces
+retention on all three endings: final, failed terminal, no terminal listener
+(3 failures at the weak-reference assertion on the unchanged production code).
+Absorb by freezing final observations and releasing lane preparers after the
+last reader; retain final session/history and the shared encoder.
+
+Production gate after release fix: 1923 passed, 2 skipped, 37 subtests passed
+(full Python tests, 147.08 s); frontend 264/264, typecheck and build passed.
+The earlier subset recorded 87 passed / 2 failed: both failures were imports of
+`_browser_workspace_fixtures` from phase2 tests without collecting that test
+directory. Full collection resolves the fixture import; both pass. No fixture or
+production change was made for those invocation failures. New lifecycle tests
+all pass for final, failed terminal and absent terminal reader.
