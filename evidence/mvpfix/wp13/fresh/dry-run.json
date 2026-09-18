@@ -1,0 +1,1 @@
+{"event": "dry_run", "host": "ga0-alienware-rtx4070ti.tailnet.aisight.us", "ports": [7861, 7862], "actions": ["lego_due_renewal", "reload_mismatched_listeners", "verify_both"], "effects": 0, "prerequisites_checked": false}

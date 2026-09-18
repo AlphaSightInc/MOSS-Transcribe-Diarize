@@ -1,0 +1,124 @@
+{
+  "tested_sha": "38b35eeac099f70470d5ac6378125eec3fb91394",
+  "branch": "mvpfix/wp13-tls-hygiene",
+  "recorded_at": "2026-09-18T05:00:54.808890+00:00",
+  "worktree": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp13-tls-hygiene",
+  "import_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp13-tls-hygiene/moss_transcribe_diarize/__init__.py",
+  "starting_tree_clean": true,
+  "focused": {
+    "status": "PASS",
+    "passed": 27,
+    "seconds": 7.5,
+    "exit_code": 0,
+    "warnings": []
+  },
+  "python": {
+    "status": "FAIL",
+    "passed": 1809,
+    "failed": 19,
+    "skipped": 2,
+    "subtests_passed": 37,
+    "warnings": 21,
+    "seconds": 147.32,
+    "exit_code": 1,
+    "failed_nodes": [
+      "tests/phase2/test_draft_lane.py::test_reader_retires_draft_by_audio_boundary[multiple]",
+      "tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request",
+      "tests/test_live_pipeline_seams.py::test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_which_it_was",
+      "tests/test_live_pipeline_seams.py::test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it",
+      "tests/test_live_pipeline_seams.py::test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence",
+      "tests/test_live_pipeline_seams.py::test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with_it",
+      "tests/test_live_pipeline_seams.py::test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say",
+      "tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer0-True]",
+      "tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer1-True]",
+      "tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer2-True]",
+      "tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer3-True]",
+      "tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer4-True]",
+      "tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer5-False]",
+      "tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer6-False]",
+      "tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer7-False]",
+      "tests/test_live_pipeline_seams.py::test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span",
+      "tests/test_live_pipeline_seams.py::test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire",
+      "tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate",
+      "tests/test_live_service_replay.py::ReplayTerminalFinalizationWaitTest::test_the_run_reports_the_terminal_surface_and_the_events_that_made_it"
+    ],
+    "failed_by_file": {
+      "tests/phase2/test_draft_lane.py": 1,
+      "tests/phase2/test_runner_composition.py": 1,
+      "tests/test_live_pipeline_seams.py": 15,
+      "tests/test_live_rolling_wiring.py": 1,
+      "tests/test_live_service_replay.py": 1
+    },
+    "warning_summary": [
+      "Starlette httpx TestClient deprecation (1)",
+      "tarfile extraction default change (17)",
+      "audioread aifc/audioop/sunau deprecations (3)"
+    ]
+  },
+  "frontend": {
+    "status": "PASS",
+    "passed": 239,
+    "files_passed": 27,
+    "seconds": 2.48,
+    "exit_code": 0,
+    "warnings": [
+      "Node --localstorage-file provided without valid path (3)"
+    ],
+    "notice": "npm update notice; no update performed"
+  },
+  "baseline_comparison": {
+    "source": "evidence/mvpfix/wp13/test-summary.json:base-qualified.txt",
+    "base_sha": "d8ee6f4109f277a22bfbca298da9ebdf85b218c8",
+    "exact_same_19": true,
+    "new_failures": [],
+    "missing_failures": [],
+    "fresh_baseline_rerun": false
+  },
+  "dry_run": {
+    "exit_code": 0,
+    "effects": 0,
+    "prerequisites_checked": false
+  },
+  "live_tls": {
+    "7861": {
+      "exit_code": 1,
+      "evidence": "live-7861.json"
+    },
+    "7862": {
+      "exit_code": 0,
+      "evidence": "live-7862.json"
+    }
+  },
+  "hygiene": {
+    "verify_layout_exit": 0,
+    "wp2_diff_exit": 0,
+    "raw_log_ignored": true,
+    "numeric_rows_equal": 17640,
+    "numeric_rows_total": 17640,
+    "decoder_calls": 0,
+    "chunk_summary": {
+      "spans": 17640,
+      "near_spans": 12960,
+      "false_suppress": 80,
+      "echo_suspect": 653
+    },
+    "regenerated_raw_bytes": 3396624,
+    "wp1_fix_broad_bytes": 258059,
+    "git_diff_check_exit": 0
+  },
+  "operator_docs": {
+    "overlap_expected": true,
+    "never_overlap_workaround_obsolete_for_per_lane_build": true,
+    "attended_proof_claimed": false,
+    "runbook_authority_rollback_chrome_and_7861_blocker_present": true
+  },
+  "limitations": [
+    "Live unit inventory and baseline reproduction are retained evidence, not rerun in this fresh session.",
+    "No issuance, host installation, reload/restart, timer activation, attended Chrome/overlap proof, decoder work, push, merge or deploy.",
+    "Isolated test fixtures create local certificates and mock issuance commands; no public issuer or host mutation."
+  ],
+  "deviations": [
+    "WP-specific verification layout docs/verify/wp13 as expressly instructed.",
+    "Temporary frontend/.npmrc routed npm cache into .wp13runtime/npm-cache; removed after suite."
+  ]
+}
