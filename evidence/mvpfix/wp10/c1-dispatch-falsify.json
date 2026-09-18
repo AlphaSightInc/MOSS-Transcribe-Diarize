@@ -1,0 +1,85 @@
+[
+  {
+    "check": "R1 no model request for an all-zero canonical span",
+    "requirement": "(a) no model request is made for digital silence",
+    "pass": true,
+    "state": {
+      "model_requests": []
+    }
+  },
+  {
+    "check": "R2 no identity birth from an all-zero span",
+    "requirement": "(d) the identity path births no speaker from it",
+    "pass": true,
+    "state": {
+      "identity_prepare_calls": [],
+      "identity_version": 0,
+      "canonical_speakers": []
+    }
+  },
+  {
+    "check": "R6 the span is still accounted for, and says why it is empty",
+    "requirement": "(c) accounting/timeline/sequence continue",
+    "pass": true,
+    "state": {
+      "committed_samples": 4000,
+      "committed_spans": 1,
+      "transcripts": [
+        ""
+      ],
+      "empty_reasons": [
+        "decoder_returned_no_transcript"
+      ]
+    }
+  },
+  {
+    "check": "R7 quiet speech still reaches the decoder",
+    "requirement": "WP3's kept contract: one nonzero sample among zeros still decodes",
+    "pass": true,
+    "state": {
+      "model_requests": 1,
+      "transcript": "[0][S01]stable[0.25]"
+    }
+  },
+  {
+    "check": "R4 no model request for an all-zero draft window",
+    "requirement": "(a) holds for every lane that dispatches a decode, not only the canonical one",
+    "pass": true,
+    "state": {
+      "model_requests": [],
+      "draft_stats": {
+        "lane_seconds": 0.0625,
+        "ticks": 1,
+        "started": 1,
+        "skipped": 0,
+        "published": 1,
+        "stale": 0,
+        "errors": 0
+      }
+    }
+  },
+  {
+    "check": "R5 no model request for an all-zero terminal tape",
+    "requirement": "(a) the last listener decodes minutes of audio; zeros there are the worst case",
+    "pass": true,
+    "state": {
+      "model_requests": 0,
+      "outcome": "no_transcript",
+      "finalization_status": "failed",
+      "reason": "all_zero_pcm",
+      "proposal": false
+    }
+  },
+  {
+    "check": "R8 a meeting with signal still reaches a terminal surface",
+    "requirement": "(b) the terminal contract ('failed' != 'final') survives the guard",
+    "pass": true,
+    "state": {
+      "model_requests": 1,
+      "outcome": "finalized",
+      "finalization_status": "running",
+      "reason": null,
+      "proposal": true
+    }
+  }
+]

@@ -1,28 +1,96 @@
-# WP5 — execute in a NEW context, in MOSS:3.2
+# VERIFY — WP10, relocating the all-zero span guard
 
-First cd `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp5-browser-stress`.
-Read this file, `prototypes/browser-stress/NOTES.md` and `README.md`. Modify nothing outside this worktree.
-The user requires actual `/new` in this pane before these steps; do not substitute a same-context reread.
-No push/merge/deploy/GitHub/shared-service changes. Read-only shared Python/node_modules/corpus reuse is authorized.
+Verify that digital silence is decided at dispatch and that no decoder-seam contract depends
+on it. Everything below is offline: no decoder, no tunnel, no network, no shared service.
 
-## What to run, literally
+## Setup
 
-1. `git status --short; git branch --show-current; git rev-parse HEAD`
-   Expected branch `mvpfix/wp5-browser-stress`, clean at handoff. Check no owned old processes still listen on 17865/18105 before running.
-2. `bash prototypes/browser-stress/verify.sh`
-   Runs frontend, typecheck, build, exact existing locator sentinel tests, then real headless browser subset with own stack/tunnel. All runtime writes use ignored `runs/wp5`. The bench keeps a cumulative <=200 decoder request budget, already 113 used; do not reset it. Trap stops the tunnel; case14 stops its replacement server.
-3. Read `evidence/mvpfix/wp5/fresh/{frontend.txt,typecheck.txt,build.txt,sentinels.txt,verification.json}` and `fresh/browser/campaign-results.json`.
-   Expected frontend **206/206**, locator **3/3**, typecheck/build success. Browser **6 PASS / 2 known FAIL out of 8** (cases 1,10,11,12,13,14 PASS; 8/9 FAIL solely because N1 lacks causes). Compare exact counts to logs, not the script's summary labels.
-4. Confirm no processes started by verification remain. Inspect `git diff --stat`; build should not change tracked assets. Confirm no audio, database, credentials or private transcripts are staged.
-5. Write `VERIFY-RESULT.md` with actual pass/fail, exact denominators, command, commit verified, decoder count, remaining N1 and hidden-tab limitations, and **actual fresh-context status**. If any expectation fails, retain it and report; do not self-retry to erase failure.
-6. Commit only this worktree's verification evidence and VERIFY-RESULT.md locally (no pushes). Report <=60 lines in this pane: branch + final SHA, question/verdict, changed files, exact tests, measurements, limits/deviations. Final baseline is `evidence/mvpfix/wp5/verdict.json`: **11 PASS / 2 FAIL / 1 BLOCKED of 14**. New 8-case verification does not replace that population.
+```
+WT=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp10-zero-guard-seams
+PY=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python
+cd "$WT"
+export PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
+```
 
-## Falsifiers
+`frontend/node_modules` must be a symlink to the dev tree's (`tests/phase2` shells out to
+node). Create it if missing:
+`ln -s /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/frontend/node_modules frontend/node_modules`
 
-Any different browser status population; generic N1 failure called explained; hidden=false called hidden evidence; incomplete download accepted as complete; cookie values/transcripts lost; 60 rows/two-Refresh/400px invariant fails; frontend/sentinel/typecheck/build fails; real decoder cap exceeded; other-tree mutation.
+## 1 — the package under test is this worktree
 
-## Scope and outcome
+```
+$PY -c "import moss_transcribe_diarize as m; print(m.__file__)"
+```
+**Expect** a path under `…-wt-wp10-zero-guard-seams/`. Anything else invalidates every result
+below.
 
-No production changes were justified. All apparent additional failures were corrected measurement errors; originals remain under `base`, `base-02`, `base-corrected`. N1 belongs to WP4, so this branch adds a standing bench and reports its reproduction. Case3 is BLOCKED: real headless Chrome stayed visible, including a separate CDP minimization probe. It needs a browser configuration that genuinely enters hidden state; never spoof visibility. No microphone fidelity, quality, deployment, or paid-provider claim.
+## 2 — the nineteen decoder-seam contracts WP3 broke
 
-Read `NOTES.md` for caveats: synthetic microphone readiness signal, system-tab corpus speech, scratch history fixtures, shipped UI 5-second Stop, expected abort/retired-session-404 errors. The protected production policies and exact two-Refresh sentinel remain untouched.
+```
+$PY -m pytest -q -p no:cacheprovider \
+  tests/test_live_pipeline_seams.py tests/phase2/test_draft_lane.py \
+  tests/phase2/test_runner_composition.py tests/test_live_rolling_wiring.py \
+  tests/test_live_service_replay.py
+```
+**Expect** `147 passed` (plus 9 subtests), 0 failed. On `integration/mvp-fix-20260917` the
+same command gives `19 failed, 128 passed`.
+
+## 3 — WP3's guard contracts, at their relocated seam
+
+```
+$PY -m pytest -q -p no:cacheprovider \
+  tests/test_live_capture_guard.py tests/test_live_terminal_finalizer.py
+```
+**Expect** `40 passed` (plus 19 subtests), 0 failed.
+
+## 4 — the WP10 guarantees
+
+```
+$PY -m pytest -q -p no:cacheprovider tests/test_live_zero_span_dispatch.py
+```
+**Expect** `9 passed`. These are the load-bearing ones: an all-zero span makes no model
+request and no identity birth while its audio stays accounted for; every deployed lane is
+built through the guarded dispatch; the terminal surface still reaches `final`; a meeting that
+never held a nonzero sample is refused by name rather than decoded.
+
+## 5 — the requirements falsifier (real runtime, real tape)
+
+```
+$PY prototypes/zero-guard-seams/falsify.py
+```
+**Expect** `verdict 7/7 requirements met` and exit status 0. It drives the real
+`LiveServiceRuntime`, `LiveCoordinator` and `CompleteMixedTape` with a runner that raises if
+it is ever asked to decode.
+
+## 6 — full Python suite
+
+```
+$PY -m pytest -q -p no:cacheprovider tests
+```
+**Expect** `1792 passed, 2 skipped` (37 subtests), **0 failed**. Zero tolerated failures on
+this branch: WP4's latency fixture fix is already merged here.
+
+## 7 — frontend
+
+```
+npm --prefix frontend test -- --run
+npm --prefix frontend run typecheck
+git status --short
+```
+**Expect** `26 passed (26)` / `230 passed (230)`, a clean typecheck, and a clean working tree.
+(The frontend suite rewrites `evidence/mvpfix/wp2/production-*.png`; if `git status` shows
+them modified, `git checkout -- evidence/mvpfix/wp2/` — they belong to another WP and this
+branch must not change them.) No frontend source changed in WP10, so
+`moss_transcribe_diarize/app/frontend_assets/*` must be untouched.
+
+## What would falsify this work
+
+* Any failure in steps 2–4, or fewer than 7/7 in step 5.
+* A model request reaching a runner for exact digital zeros on any lane — canonical, rolling
+  witness, draft or terminal. `falsify.py`'s `MustNotDecode` records and raises on one.
+* An identity preparation offered evidence from an all-zero span (a speaker born from silence).
+* A span of zeros that stalls the timeline instead of committing empty and named
+  (`empty_reason == "span_was_digital_silence"`, `committed_samples` advancing).
+* Quiet speech — one nonzero least-significant bit among zeros — failing to reach the decoder.
+* A deployed lane constructed with `RunnerBoundedWavInference` directly rather than through
+  `live_provider_bundle.bounded_live_inference`.
