@@ -16,7 +16,8 @@ def test_name_latency_is_independent_of_observer_polling_delay(tmp_path):
                 context = await browser.new_context()
                 page = await context.new_page()
                 html = '''<div data-auth-state="signed-in" data-boot="ready" data-history-boot="ready">Ready</div>
-                  <section aria-label="Private voiceprints"><button>Voiceprints</button>
+                  <section aria-label="Meeting history"><button role="tab">Voiceprints</button></section>
+                  <section aria-label="Private voiceprints">
                     <div data-voiceprint-id="saved">E2E Rowan</div></section>
                   <button onclick="setTimeout(() => {
                     const label = document.createElement('span');

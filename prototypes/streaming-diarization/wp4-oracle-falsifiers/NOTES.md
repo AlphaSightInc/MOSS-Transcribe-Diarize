@@ -57,3 +57,14 @@ No keys searched, services touched, or production sources changed.
 A/B/C implementation, export comparison, F6, frontend/full Phase-2 suites and live
 alternation/overlap remain unexecuted. COMMON's post-fix /new stage was not reached.
 This is a prototype stop, NOT completed WP4 implementation.
+
+## Continuation: lane-unique predicate accepted
+User clarified that the failed assumption must not stop independent work.
+Duplication now counts only system-reference tokens ABSENT from the microphone
+reference, under the microphone owner and within the specified 2-second window.
+Same corpus counterexample: 0 duplicates, both WERs 0, accepted. Injected playback:
+5 duplicates, rejected. Small controls: 2/2 positives accepted, 4/4 negatives rejected.
+This deliberately cannot detect copies consisting entirely of shared vocabulary;
+ordered WER still measures resulting omissions/additions. It is a lexical witness,
+not a physical echo detector. Threshold and accepted reference scope stay explicit.
+Fix work resumes for A/B/C. The earlier stop is superseded, retained as failed history.
