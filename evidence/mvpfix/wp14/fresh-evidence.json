@@ -1,0 +1,160 @@
+{
+  "evidence_consistency": "PASS",
+  "acceptance": "FAIL / INCOMPLETE",
+  "rows": {
+    "1": "PASS",
+    "2": "PASS",
+    "3": "PASS",
+    "4": "FAIL",
+    "5": "PASS",
+    "6": "PASS",
+    "7": "PASS",
+    "8": "PASS",
+    "9": "SKIP",
+    "10": "FAIL",
+    "11": "PASS",
+    "12": "PASS",
+    "13": "PASS",
+    "14": "PASS"
+  },
+  "counts": {
+    "PASS": 11,
+    "FAIL": 2,
+    "SKIP": 1
+  },
+  "lane_quality": [
+    {
+      "case": "alternation",
+      "final": {
+        "system": {
+          "reference_words": 106,
+          "observed_words": 104,
+          "substitutions": 1,
+          "omissions": 5,
+          "additions": 3,
+          "wer": 0.08490566037735849,
+          "unique_reference_words": 60,
+          "unique_retained": 57,
+          "unique_retention": 0.95
+        },
+        "microphone": {
+          "reference_words": 48,
+          "observed_words": 58,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 10,
+          "wer": 0.20833333333333334,
+          "unique_reference_words": 41,
+          "unique_retained": 41,
+          "unique_retention": 1.0
+        }
+      }
+    },
+    {
+      "case": "overlap",
+      "final": {
+        "system": {
+          "reference_words": 106,
+          "observed_words": 105,
+          "substitutions": 2,
+          "omissions": 6,
+          "additions": 5,
+          "wer": 0.12264150943396226,
+          "unique_reference_words": 60,
+          "unique_retained": 56,
+          "unique_retention": 0.9333333333333333
+        },
+        "microphone": {
+          "reference_words": 48,
+          "observed_words": 58,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 10,
+          "wer": 0.20833333333333334,
+          "unique_reference_words": 41,
+          "unique_retained": 41,
+          "unique_retention": 1.0
+        }
+      }
+    }
+  ],
+  "voiceprint": {
+    "meeting": "m-YLIyV17vTeUxfNa-DAkXiO",
+    "bank_contains_name": true,
+    "visible_name_within_30_seconds": false,
+    "durable_speaker_links": 0,
+    "root_cause": "not isolated",
+    "owner": "WP12",
+    "production_match_entry": "moss_transcribe_diarize/app/live_provider_bundle.py:774",
+    "publication_entry": "moss_transcribe_diarize/app/phase2_live.py:623"
+  },
+  "hidden": "UNMEASURED",
+  "lease_25": {
+    "seconds": 25,
+    "actual_seconds": 25.004010083008325,
+    "meeting": "M6MI_GEmdL1s9jeP17FVBris",
+    "blocked_requests": 166,
+    "blocked_routes": [
+      "events",
+      "frames",
+      "heartbeat",
+      "snapshot"
+    ],
+    "phase_after_restore": "active",
+    "ui_status": "Connection restored. Recording microphone and shared audio.",
+    "resumed_frames": {
+      "system": true,
+      "microphone": true
+    },
+    "terminal": "completed",
+    "failure_reason": null,
+    "accepted_samples_before": 158848,
+    "accepted_samples_after": 720000,
+    "published_words_before": 27,
+    "stop_seconds": 76.95158437499776,
+    "acknowledged_commits_before": 3,
+    "acknowledged_commits_preserved": true,
+    "saved_words_after": 253,
+    "ordered_words_retained": 26,
+    "words_removed_or_revised": 1,
+    "ok": true
+  },
+  "lease_35": {
+    "seconds": 35,
+    "actual_seconds": 35.00415687500208,
+    "meeting": "kK9zXhjf5qi0Aapi4EKiunHc",
+    "blocked_requests": 230,
+    "blocked_routes": [
+      "events",
+      "frames",
+      "heartbeat",
+      "snapshot"
+    ],
+    "phase_after_restore": "terminal",
+    "ui_status": "Recording interrupted: the connection was lost for too long. Reset capture to start again.",
+    "resumed_frames": {
+      "system": false,
+      "microphone": false
+    },
+    "terminal": "interrupted",
+    "failure_reason": "helper_lease_expired",
+    "accepted_samples_before": 159232,
+    "accepted_samples_after": 159232,
+    "published_words_before": 30,
+    "stop_seconds": 0.01485970799694769,
+    "acknowledged_commits_before": 3,
+    "acknowledged_commits_preserved": true,
+    "saved_words_after": 30,
+    "ordered_words_retained": 30,
+    "words_removed_or_revised": 0,
+    "truthful_failure": true,
+    "new_capture_status": "completed",
+    "ok": true
+  },
+  "lifecycle": "7/7",
+  "reshare": "3/6; BUDGET_BLOCKED; cause not independently adjudicated",
+  "decoder_starts": 400,
+  "additional_requests": 0,
+  "gpu_waiting_samples": 10,
+  "all_sampled_waiting_zero": true
+}

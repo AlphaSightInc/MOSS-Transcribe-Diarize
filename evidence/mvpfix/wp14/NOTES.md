@@ -144,3 +144,18 @@ Final pre-/new gate, after all source changes: Python 1849 passed / 2 skipped /
 across 27 files (frontend-final.txt); typecheck/build pass. Owned service PID 53582
 and tunnel PID 53245 terminated; ports 17874/18114 have no listeners. Source/full
 assets fixes are committed; fresh-context verification will record a separate result.
+
+## Fresh-context verification (2026-09-18)
+
+Tested b30ea628, no production/test-fixture changes and no new decoder requests.
+Retained evidence consistency PASS; product acceptance remains FAIL / INCOMPLETE.
+First literal full Python run: 1848 passed, 1 failed, 2 skipped, 37 subtests.
+F5: tests/phase2/test_owner_bound_live_meeting.py:2091 uses a 30 ms lease; it expired
+before first system frame (sequence 0; 409 at line 474). This fixture and production
+lease implementation are unchanged from 8068afce. Unchanged isolated retry: 1 pass;
+unchanged full repeat: 1849 passed, 2 skipped, 37 subtests (142.49 s). Timing
+sensitivity is the leading explanation, precise scheduling cause unmeasured; no
+assertion relaxed or lease widened. Original failure retained in fresh-python.txt.
+Both skips are ordinary missing real-corpus exclusions. Frontend 242/242 in 27
+files; typecheck/build pass, rebuilt assets identical. Full commands, evidence
+references, budget/coverage qualifications and cleanup: ../../../../VERIFY-RESULT.md.

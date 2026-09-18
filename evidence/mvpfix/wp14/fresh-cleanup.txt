@@ -1,0 +1,14 @@
+asset_diff_exit=0
+diff_check_exit=0
+listeners_exit=1 (expected 1 with no output)
+ M evidence/mvpfix/wp14/NOTES.md
+?? VERIFY-RESULT.md
+?? evidence/mvpfix/wp14/fresh-build.txt
+?? evidence/mvpfix/wp14/fresh-cleanup.txt
+?? evidence/mvpfix/wp14/fresh-evidence.json
+?? evidence/mvpfix/wp14/fresh-frontend.txt
+?? evidence/mvpfix/wp14/fresh-lease-targeted.txt
+?? evidence/mvpfix/wp14/fresh-python-repeat.txt
+?? evidence/mvpfix/wp14/fresh-python.txt
+?? evidence/mvpfix/wp14/fresh-typecheck.txt
+?? evidence/mvpfix/wp14/fresh_evidence.py
