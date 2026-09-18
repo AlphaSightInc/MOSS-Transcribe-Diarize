@@ -1,8 +1,10 @@
+import type { SourceLane } from "../lib/transcriptOrder";
 export type MeetingMode = "live" | "file";
 export type MeetingStatus = "active" | "completed" | "failed" | "interrupted";
 export type MeetingTitleSource = "automatic" | "manual";
 
 export interface MeetingSegment {
+  source_lane?: SourceLane;
   id?: string;
   start: number;
   end: number;
@@ -132,12 +134,14 @@ function parseTranscript(value: unknown): Meeting["transcript"] {
         typeof segment.end !== "number" ||
         typeof segment.speaker !== "string" ||
         (segment.speaker_entity_id !== undefined && typeof segment.speaker_entity_id !== "string") ||
+        (segment.source_lane !== undefined && segment.source_lane !== "system" && segment.source_lane !== "microphone") ||
         typeof segment.text !== "string"
       ) {
         throw new Error("Meeting transcript segment is invalid.");
       }
       return {
         ...(typeof segment.id === "string" ? { id: segment.id } : {}),
+        ...(segment.source_lane ? { source_lane: segment.source_lane } : {}),
         start: segment.start,
         end: segment.end,
         speaker: segment.speaker,

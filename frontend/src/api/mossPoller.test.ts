@@ -949,3 +949,44 @@ it("reports reader recovery once, including an unchanged snapshot, preserving cu
     expect(recovered).toHaveBeenCalledOnce();
   } finally {poller.stop();vi.useRealTimers();}
 });
+
+it.each([false, true])("consumes published overlapping lane segments with finalization=%s without reparsing mono text", async finalized => {
+  resetSessionState();
+  const onError = vi.fn();
+  const poller = createMossSessionPoller({sessionId:"lane-meeting",onError,dispatch:dispatchWsEvent,
+    fetch: vi.fn(async input => jsonResponse(String(input).includes('/events') ? {events: finalized ? [{seq:1,session_id:'lane-meeting',kind:'identity_finalized',payload:{}}] : []} : {
+      speaker_labels:{"speaker-0001":"Alex","speaker-0002":"Alex"},
+      snapshot:{session_id:"lane-meeting",descriptor:{sample_rate:16000},session:{
+        committed_samples:48000,status:"active",version:1,failure_reason:null,
+        identity_snapshot:{canonical_speakers:["speaker-0001","speaker-0002"]},
+        committed:[{span_id:1,start_sample:0,transcript:"[0][S01]Obsolete mono words[3]",revised_transcript:null}],
+        effective_transcript:[
+          {start_sample:0,end_sample:16000,text:"Microphone words",canonical_speaker:"speaker-0002",source_lane:"microphone",authority:"terminal"},
+          {start_sample:0,end_sample:48000,text:"System words",canonical_speaker:"speaker-0001",source_lane:"system",authority:"terminal"}
+        ],provisional:null
+      }}
+    })) as typeof fetch});
+  await poller.poll();
+  expect(onError).not.toHaveBeenCalled();
+  expect(transcript.value.map(s=>[s.source_lane,s.speaker_entity_id,s.display_name,s.start,s.end,s.text])).toEqual([
+    ["system","speaker-0001","Alex",0,3,"System words"],
+    ["microphone","speaker-0002","Alex",0,1,"Microphone words"]
+  ]);
+  resetSessionState();
+});
+
+
+it("an empty published surface clears previous mono words", async () => {
+  resetSessionState();
+  const onError=vi.fn();
+  const poller=createMossSessionPoller({sessionId:"empty",onError,dispatch:dispatchWsEvent,
+    fetch:vi.fn(async input=>jsonResponse(String(input).includes('/events')?{events:[]}:{snapshot:{
+      session_id:"empty",descriptor:{sample_rate:16000},session:{committed_samples:16000,status:"active",version:2,
+      identity_snapshot:{canonical_speakers:["speaker-0001"]},
+      committed:[{span_id:1,start_sample:0,transcript:"[0][S01]Removed words[1]",revised_transcript:null}],
+      effective_transcript:[],provisional:null}
+    }})) as typeof fetch});
+  await poller.poll();
+  expect(onError).not.toHaveBeenCalled();
+  expect(transcript.value).toEqual([]);
+});

@@ -18,7 +18,7 @@ it.each([[".utt-speaker", true], [".legend-chip", false]] as const)("renames fro
   let name = "Before";
   const meeting = () => ({ id: "m", title: "Meeting", title_source: "manual", mode: "live", status: "active", created_at_ms: 1,
     transcript_version: name === "Before" ? 1 : 2, audio: null, transcript: { segments: ["a", "b", "a"].map((id, i) => ({
-      id: String(i), start: i, end: i + 1, speaker_entity_id: id, speaker: id === "a" ? name : "Other", text: `Words ${i}`
+      id: String(i), start: i === 1 ? 0 : i, end: i + 1, source_lane: id === "a" ? "system" as const : "microphone" as const, speaker_entity_id: id, speaker: id === "a" ? name : "Other", text: `Words ${i}`
     })) } });
   vi.stubGlobal("fetch", vi.fn(async (url, init) => {
     if (String(url).endsWith("/speakers/a/name")) {
@@ -45,6 +45,7 @@ it.each([[".utt-speaker", true], [".legend-chip", false]] as const)("renames fro
   });
   await act(async () => { root.querySelector('dialog form')!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   const assertNames = () => {
+    expect([...root.querySelectorAll('.utt-lane')].map(n => n.textContent)).toEqual(["System", "Microphone", "System"]);
     expect([...root.querySelectorAll('.utt-speaker-label')].map(n => n.textContent)).toEqual(["After", "Other", "After"]);
     expect([...root.querySelectorAll('.legend-chip-name')].map(n => n.textContent)).toEqual(["After", "Other"]);
     for (const format of ["md", "txt", "json", "srt", "vtt"] as const) {
@@ -82,4 +83,31 @@ it("discards a pre-rename poll response and fetches the acknowledged labels", as
     await vi.waitFor(() => expect(JSON.stringify(dispatched)).toContain('"display_name":"After"'));
     expect(JSON.stringify(dispatched)).not.toContain('"display_name":"Before"');
   } finally { poller.stop(); }
+});
+
+
+it("allows the same voiceprint result for independent speakers on both lanes", async () => {
+  const named: string[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+    const id = String(url).includes("/speakers/system-person/") ? "system-person" : "mic-person";
+    named.push(id);
+    expect(JSON.parse(init.body)).toEqual({label:"Alex"});
+    return Response.json({meeting_id:"m",speaker_id:id,label:"Alex",voiceprint_id:"shared-person",enrollment:"enrolled"});
+  }));
+  await act(async () => {
+    sessionId.value = captureMeetingId.value = "m"; sessionStatus.value = "active";
+    replaceTranscript([
+      {start:0,end:3,text:"System speech",source_lane:"system",speaker:"S01",speaker_entity_id:"system-person",display_name:"Alex",state:"confirmed"},
+      {start:0,end:2,text:"Mic speech",source_lane:"microphone",speaker:"S02",speaker_entity_id:"mic-person",display_name:"Alex",state:"confirmed"}
+    ]);
+    render(<TranscriptPane />,root);
+  });
+  for (const index of [0,1]) {
+    act(()=>root.querySelectorAll<HTMLButtonElement>('.utt-speaker')[index].click());
+    await act(async()=>{ root.querySelector('dialog form')!.dispatchEvent(new Event("submit",{bubbles:true,cancelable:true})); });
+    await vi.waitFor(()=>expect(root.querySelector('dialog')).toBeNull());
+  }
+  expect(named).toEqual(["system-person","mic-person"]);
+  expect(transcript.value.map(s=>s.speaker_entity_id)).toEqual(["system-person","mic-person"]);
+  expect(root.querySelectorAll('.legend-chip')).toHaveLength(2);
 });

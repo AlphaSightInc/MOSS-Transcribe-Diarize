@@ -1,0 +1,86 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:7:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp2-lane-consumers/frontend
+
+ ❯ src/lib/mergeTranscript.test.ts (14 tests | 1 failed) 9ms
+     × keeps provisional items sorted after committed rows 4ms
+ ❯ src/lib/transcriptModel.test.ts (4 tests | 1 failed) 7ms
+     × orders a committed segment before the provisional tail until the next snapshot 5ms
+(node:2527) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2529) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2533) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/mergeTranscript.test.ts > mergeTranscript > keeps provisional items sorted after committed rows
+AssertionError: expected [ 'provisional', 'final' ] to deeply equal [ 'final', 'provisional' ]
+
+- Expected
++ Received
+
+  [
+-   "final",
+    "provisional",
++   "final",
+  ]
+
+ ❯ src/lib/mergeTranscript.test.ts:295:45
+    293|     ].sort(compareSegments);
+    294|
+    295|     expect(items.map((item) => item.state)).toEqual(["final", "provisi…
+       |                                             ^
+    296|   });
+    297|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/lib/transcriptModel.test.ts > reference transcript model > orders a committed segment before the provisional tail until the next snapshot
+AssertionError: expected [ { start: +0, end: 1, …(15) }, …(1) ] to match object [ { id: 'span-1:0', …(2) }, …(1) ]
+(28 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  [
+    {
+-     "id": "span-1:0",
+-     "state": "confirmed",
+-     "text": "committed words",
+-   },
+-   {
+      "id": "prov:7:0",
+      "state": "provisional",
+      "text": "provisional words",
++   },
++   {
++     "id": "span-1:0",
++     "state": "confirmed",
++     "text": "committed words",
+    },
+  ]
+
+ ❯ src/lib/transcriptModel.test.ts:36:20
+     34|     ]);
+     35|
+     36|     expect(merged).toMatchObject([
+       |                    ^
+     37|       { id: "span-1:0", state: "confirmed", text: "committed words" },
+     38|       { id: "prov:7:0", state: "provisional", text: "provisional words…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 22 passed (24)
+      Tests  2 failed | 204 passed (206)
+   Start at  23:03:55
+   Duration  2.70s (transform 2.13s, setup 0ms, import 2.93s, tests 5.74s, environment 7.71s)
+

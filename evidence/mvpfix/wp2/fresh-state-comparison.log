@@ -1,0 +1,4 @@
+fresh-consumer.log overlap PASS exact document readback; ordered times/text/lanes/canonical IDs and segment IDs agree; 9 rows
+fresh-consumer.log legacy PASS exact document readback; ordered times/text/lanes/canonical IDs and segment IDs agree; 5 rows
+correction-consumer.log overlap PASS exact document readback; ordered times/text/lanes/canonical IDs and segment IDs agree; 9 rows
+correction-consumer.log legacy PASS exact document readback; ordered times/text/lanes/canonical IDs and segment IDs agree; 5 rows

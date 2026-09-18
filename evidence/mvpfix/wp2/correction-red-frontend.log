@@ -1,0 +1,83 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run --configLoader native --cache=false
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp2-lane-consumers/frontend
+
+ ❯ src/lib/mergeTranscript.test.ts (14 tests | 1 failed) 8ms
+     × keeps provisional items sorted after committed rows 3ms
+ ❯ src/lib/transcriptModel.test.ts (4 tests | 1 failed) 7ms
+     × orders a committed segment before the provisional tail until the next snapshot 5ms
+(node:19499) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19493) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19495) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/mergeTranscript.test.ts > mergeTranscript > keeps provisional items sorted after committed rows
+AssertionError: expected [ 'provisional', 'final' ] to deeply equal [ 'final', 'provisional' ]
+
+- Expected
++ Received
+
+  [
+-   "final",
+    "provisional",
++   "final",
+  ]
+
+ ❯ src/lib/mergeTranscript.test.ts:295:45
+    293|     ].sort(compareSegments);
+    294|
+    295|     expect(items.map((item) => item.state)).toEqual(["final", "provisi…
+       |                                             ^
+    296|   });
+    297|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/lib/transcriptModel.test.ts > reference transcript model > orders a committed segment before the provisional tail until the next snapshot
+AssertionError: expected [ { start: +0, end: 1, …(15) }, …(1) ] to match object [ { id: 'span-1:0', …(2) }, …(1) ]
+(28 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  [
+    {
+-     "id": "span-1:0",
+-     "state": "confirmed",
+-     "text": "committed words",
+-   },
+-   {
+      "id": "prov:7:0",
+      "state": "provisional",
+      "text": "provisional words",
++   },
++   {
++     "id": "span-1:0",
++     "state": "confirmed",
++     "text": "committed words",
+    },
+  ]
+
+ ❯ src/lib/transcriptModel.test.ts:36:20
+     34|     ]);
+     35|
+     36|     expect(merged).toMatchObject([
+       |                    ^
+     37|       { id: "span-1:0", state: "confirmed", text: "committed words" },
+     38|       { id: "prov:7:0", state: "provisional", text: "provisional words…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 23 passed (25)
+      Tests  2 failed | 216 passed (218)
+   Start at  23:22:53
+   Duration  2.69s (transform 2.20s, setup 0ms, import 3.15s, tests 5.82s, environment 7.92s)
+

@@ -1,3 +1,4 @@
+import { transcriptLaneLabel } from "../lib/transcriptOrder";
 import { Fragment, type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { requestMeetingHistoryRefresh, SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
@@ -515,10 +516,11 @@ export function TranscriptPane() {
                 <article
                   key={`${turn.segment_ids.join(",")}-${turn.start}-${index}`}
                   className="utt"
-                  data-continuation={String(previousTurn?.speaker_entity_id === turn.speaker_entity_id)}
-                  data-new-speaker={String(index === 0 || previousTurn?.speaker_entity_id !== turn.speaker_entity_id)}
+                  data-continuation={String(previousTurn?.speaker_entity_id === turn.speaker_entity_id && previousTurn?.source_lane === turn.source_lane)}
+                  data-new-speaker={String(index === 0 || previousTurn?.speaker_entity_id !== turn.speaker_entity_id || previousTurn?.source_lane !== turn.source_lane)}
                   data-preview-stale={String(turn.state === "provisional" && turn.provisional_stale)}
                   data-state={turn.state}
+                  data-source-lane={turn.source_lane}
                   style={{ "--sp": colorToken } as JSX.CSSProperties}
                 >
                   <div className="utt-meta">
@@ -528,6 +530,7 @@ export function TranscriptPane() {
                         {renderSearchParts(speakerParts, activeSearchMatchId)}
                       </span>
                     </button>
+                    {turn.source_lane && <span className="utt-lane">{transcriptLaneLabel(turn.source_lane)}</span>}
                     <div className="utt-time">{formatTranscriptClockTime(turn.start)}</div>
                   </div>
                   <p className="utt-text">

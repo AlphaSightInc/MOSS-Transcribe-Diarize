@@ -1,3 +1,5 @@
+import { compareTranscriptOrder } from "./transcriptOrder";
+import type { SourceLane } from "./transcriptOrder";
 import type { TranscriptItem, TranscriptUpdateMetadata } from "../api/types";
 import { buildTranscriptTargetKey } from "./transcriptKeys";
 import { normalizeInlineWhitespace, trimString } from "./text";
@@ -15,6 +17,7 @@ export interface MergedTranscriptItem extends TranscriptItem {
 }
 
 export interface TranscriptTurn {
+  source_lane?: SourceLane;
   start: number;
   end: number;
   speaker: string;
@@ -38,29 +41,18 @@ export function isCommittedState(
 }
 
 export function buildTranscriptIdentity(
-  item: Pick<TranscriptItem, "segment_id" | "start" | "end" | "text">
+  item: Pick<TranscriptItem, "segment_id" | "start" | "end" | "text"> & Partial<Pick<TranscriptItem, "source_lane" | "speaker" | "speaker_entity_id">>
 ): string {
   const segmentId = trimString(item.segment_id);
   if (segmentId) {
     return segmentId;
   }
 
-  return `${item.start}:${item.end}:${item.text}`;
+  return `${item.start}:${item.end}:${item.text}:${item.source_lane ?? ""}:${item.speaker_entity_id ?? item.speaker ?? ""}`;
 }
 
 export function compareSegments(left: TranscriptLike, right: TranscriptLike): number {
-  const leftProvisional = left.state === "provisional";
-  const rightProvisional = right.state === "provisional";
-  if (leftProvisional !== rightProvisional) {
-    return leftProvisional ? 1 : -1;
-  }
-  if (left.start !== right.start) {
-    return left.start - right.start;
-  }
-  if (left.end !== right.end) {
-    return left.end - right.end;
-  }
-  return left.text.localeCompare(right.text);
+  return compareTranscriptOrder(left, right);
 }
 
 export function upsertTranscriptItems(
@@ -94,9 +86,6 @@ export function upsertTranscriptItems(
   const incomingProvisionalItems = normalizedIncomingItems.filter(
     (item) => item.state === "provisional"
   );
-  const hasIncomingCommittedItems = normalizedIncomingItems.some(
-    (item) => item.state !== "provisional"
-  );
 
   nextItems = nextItems.filter((candidate) => {
     if (incomingIdentities.has(buildTranscriptIdentity(candidate))) {
@@ -111,7 +100,7 @@ export function upsertTranscriptItems(
     }
 
     if (
-      hasIncomingCommittedItems &&
+      normalizedIncomingItems.some(item => item.state !== "provisional" && item.source_lane === candidate.source_lane) &&
       candidate.state === "provisional" &&
       trimString(candidate.segment_id) === LIVE_PROVISIONAL_SEGMENT_ID
     ) {
@@ -133,7 +122,8 @@ function isClearDirective(
 }
 
 function provisionalRowsConflict(left: TranscriptLike, right: TranscriptItem): boolean {
-  if (left.state !== "provisional" || right.state !== "provisional") {
+  if (left.source_lane !== right.source_lane || left.speaker_entity_id !== right.speaker_entity_id ||
+      left.state !== "provisional" || right.state !== "provisional") {
     return false;
   }
 
@@ -168,10 +158,10 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
   const resolveText = options.resolveText ?? ((segment: T) => segment.text);
   const turns: TranscriptTurn[] = [];
 
-  for (const segment of segments) {
+  for (const segment of [...segments].sort(compareTranscriptOrder)) {
     const last = turns.at(-1) ?? null;
     const sameTranscriptLane =
-      last !== null &&
+      last !== null && last.source_lane === segment.source_lane &&
       ((last.state === "provisional" && segment.state === "provisional") ||
         (isCommittedState(last) && isCommittedState(segment)));
     const sameEntity =
@@ -185,7 +175,7 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
       normalizeTurnDisplayName(last.display_name) === normalizeTurnDisplayName(segment.display_name);
 
     if (last !== null && sameEntity && sameTranscriptLane && sameDisplayName) {
-      last.end = segment.end;
+      last.end = Math.max(last.end, segment.end);
       last.state = segment.state;
       if (preserveResolvedWhitespace) {
         last.text = joinPreservedTurnText(last.text, resolveText(segment));
@@ -210,6 +200,7 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
     }
 
     turns.push({
+      ...(segment.source_lane ? { source_lane: segment.source_lane } : {}),
       start: segment.start,
       end: segment.end,
       speaker: segment.speaker,
@@ -232,6 +223,7 @@ function normalizeTurnDisplayName(value: string): string {
 
 function stripDecorations(item: TranscriptLike): TranscriptItem {
   return {
+    ...(item.source_lane ? { source_lane: item.source_lane } : {}),
     start: item.start,
     end: item.end,
     text: item.text,
@@ -262,6 +254,7 @@ function normalizeTranscriptItem(rawItem: TranscriptItem): TranscriptItem | null
   const speakerEntityId = trimString(rawItem.speaker_entity_id) || speaker;
 
   return {
+    ...(rawItem.source_lane ? { source_lane: rawItem.source_lane } : {}),
     start,
     end,
     text,
@@ -307,7 +300,7 @@ function decorateTranscript(items: readonly TranscriptItem[]): MergedTranscriptI
 
   return sorted.map((item, index) => {
     const previous = index > 0 ? sorted[index - 1] : null;
-    const isNewSpeaker = previous ? previous.speaker !== item.speaker : true;
+    const isNewSpeaker = previous ? previous.speaker_entity_id !== item.speaker_entity_id || previous.source_lane !== item.source_lane : true;
 
     return {
       ...item,

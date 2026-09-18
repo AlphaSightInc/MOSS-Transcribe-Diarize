@@ -54,6 +54,7 @@ interface MossSnapshot {
   labelRevisionVersion: number;
   canonicalSpeakers: string[];
   committed: MossCanonicalCommit[];
+  publishedSegments: TranscriptItem[] | null;
   provisional: MossProvisionalSuffix | null;
   draft: (MossProvisionalSuffix & { endSample: number }) | null;
 }
@@ -416,7 +417,7 @@ function renderSnapshot(
   previouslyRevisedSpanIds: ReadonlySet<number>,
   previousProvisional: { generation: number; items: TranscriptItem[] } | null
 ): SnapshotRender {
-  const committed = snapshot.committed.flatMap((commit) =>
+  const committed = snapshot.publishedSegments?.map(item => ({ ...item, state: finalized ? "final" as const : "confirmed" as const })) ?? snapshot.committed.flatMap((commit) =>
     transcriptItemsFromMossText(
       commit.revisedTranscript ?? commit.transcript,
       commit.startSample,
@@ -522,7 +523,7 @@ function mapRuntimeEvent(
         session_id: event.sessionId,
         seq: event.seq,
         timestamp: new Date().toISOString(),
-        items: snapshot.committed.flatMap((commit) =>
+        items: snapshot.publishedSegments?.map(item => ({ ...item, state: identityFinalized ? "final" as const : "confirmed" as const })) ?? snapshot.committed.flatMap((commit) =>
           transcriptItemsFromMossText(
             commit.revisedTranscript ?? commit.transcript,
             commit.startSample,
@@ -656,6 +657,7 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
       "label revision version"
     ),
     canonicalSpeakers: stringList(identity.canonical_speakers),
+    publishedSegments: parsePublishedSegments(session.effective_transcript, descriptor.sample_rate, stringList(identity.canonical_speakers)),
     committed: Array.isArray(session.committed)
       ? session.committed.map(parseCanonicalCommit)
       : fail("snapshot committed"),
@@ -669,6 +671,29 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
       ? null
       : parseProvisionalSuffix(session.provisional)
   };
+}
+
+/** Published segments are authoritative, including an empty surface; old snapshots omit them. */
+function parsePublishedSegments(value: unknown, sampleRate: unknown, speakers: string[]): TranscriptItem[] | null {
+  if (value === undefined) return null;
+  if (!Array.isArray(value)) return fail("effective transcript");
+  const rate = requiredPositiveNumber(sampleRate, "snapshot sample_rate");
+  return value.map((raw, index) => {
+    const segment = record(raw, "effective transcript segment");
+    const lane = segment.source_lane;
+    if (lane !== undefined && lane !== "system" && lane !== "microphone") return fail("source lane");
+    const entity = optionalString(segment.canonical_speaker) ?? "S00";
+    const speakerIndex = speakers.indexOf(entity);
+    const speaker = speakerIndex < 0 ? "S00" : `S${String(speakerIndex + 1).padStart(2, "0")}`;
+    return {
+      ...(lane ? { source_lane: lane } : {}),
+      start: requiredNonNegativeNumber(segment.start_sample, "segment start") / rate,
+      end: requiredNonNegativeNumber(segment.end_sample, "segment end") / rate,
+      text: requiredString(segment.text, "segment text"),
+      speaker, speaker_entity_id: entity, display_name: speaker,
+      state: "confirmed", segment_id: `effective:${index}`
+    };
+  });
 }
 
 function parseCaptureHealth(payload: unknown): { phase: string | null; statusLine: string | null } {

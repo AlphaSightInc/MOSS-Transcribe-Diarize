@@ -1,0 +1,17 @@
+
+> livetranscribe-frontend@0.0.0 typecheck
+> tsc --noEmit
+
+src/components/speakerRename.test.tsx(34,23): error TS2345: Argument of type '{ speaker: string; display_name: string; state: "confirmed"; id: string; start: number; end: number; source_lane: string; speaker_entity_id: string; text: string; }[]' is not assignable to parameter of type 'TranscriptItem[]'.
+  Type '{ speaker: string; display_name: string; state: "confirmed"; id: string; start: number; end: number; source_lane: string; speaker_entity_id: string; text: string; }' is not assignable to type 'TranscriptItem'.
+    Types of property 'source_lane' are incompatible.
+      Type 'string' is not assignable to type 'SourceLane | undefined'.
+src/lib/laneConsumers.test.ts(12,244): error TS2339: Property 'segments' does not exist on type '{ segments: MeetingSegment[]; } | null'.
+src/lib/laneConsumers.test.ts(22,41): error TS2345: Argument of type '{ segment_id: string | undefined; speaker: string; display_name: string; state: "final"; source_lane?: SourceLane | undefined; id?: string | undefined; start: number; end: number; speaker_entity_id?: string | undefined; text: string; }[]' is not assignable to parameter of type 'readonly TranscriptItem[]'.
+  Type '{ segment_id: string | undefined; speaker: string; display_name: string; state: "final"; source_lane?: SourceLane; id?: string; start: number; end: number; speaker_entity_id?: string; text: string; }' is not assignable to type 'TranscriptItem'.
+    Types of property 'speaker_entity_id' are incompatible.
+      Type 'string | undefined' is not assignable to type 'string'.
+        Type 'undefined' is not assignable to type 'string'.
+src/lib/laneConsumers.test.ts(38,31): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/lib/laneConsumers.test.ts(39,31): error TS7006: Parameter 's' implicitly has an 'any' type.
+src/lib/laneConsumers.test.ts(40,31): error TS7006: Parameter 's' implicitly has an 'any' type.

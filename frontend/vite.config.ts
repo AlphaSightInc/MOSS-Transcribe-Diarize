@@ -4,17 +4,18 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [preact()],
-  root: __dirname,
-  cacheDir: path.resolve(__dirname, ".vite-cache"),
+  root: import.meta.dirname,
   base: "/static/",
+  // Dependencies may be shared by worktrees; caches must remain checkout-local.
+  cacheDir: path.resolve(import.meta.dirname, ".vite"),
   build: {
-    outDir: path.resolve(__dirname, "../moss_transcribe_diarize/app/frontend_assets"),
+    outDir: path.resolve(import.meta.dirname, "../moss_transcribe_diarize/app/frontend_assets"),
     emptyOutDir: true,
     target: "es2022",
     cssCodeSplit: false,
     sourcemap: true,
     rolldownOptions: {
-      input: path.resolve(__dirname, "src/main.tsx"),
+      input: path.resolve(import.meta.dirname, "src/main.tsx"),
       output: {
         // Map identities belong to the frontend, not the checkout or a symlink target.
         sourcemapPathTransform: (sourcePath, sourcemapPath) => {
@@ -23,7 +24,7 @@ export default defineConfig({
           const dependency = portable.indexOf("/node_modules/");
           return dependency >= 0
             ? portable.slice(dependency + 1)
-            : path.relative(__dirname, source).split(path.sep).join("/");
+            : path.relative(import.meta.dirname, source).split(path.sep).join("/");
         },
         codeSplitting: false,
         entryFileNames: "app.js",
