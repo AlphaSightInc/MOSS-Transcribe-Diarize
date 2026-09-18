@@ -1,74 +1,82 @@
-# WP12 same-lane terminal overlap verification
+# WP12 accepted production verification
 
-**STOP / SECOND VOICE CONFIRMED:** the user replaced baseline equivalence with
-reference adjudication. All 54 restored assignments agree with the reference:
-50 Bill Ackman and 4 Lex Fridman. speaker-0004 is legitimate; two later Lex turns
-remain unassigned. The user's second-voice branch requires reporting and stopping
-acceptance/tuning. Candidate retained for review, NOT accepted. The separately
-requested mono-180 measurement is complete; no more decoder runs are needed.
+Lead decision: ACCEPTED after reference adjudication. Same-lane overlap mapping
+with cropped acoustic fallback is already the production lane path, introduced
+in c410db8f; no shadow flag or prototype import is involved. Concurrent terminal
+lane jobs remain. Legacy mono finalization and identity policy values, sampling,
+thresholds and QUALITY_BOUNDS are unchanged.
 
 Worktree: `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity`.
-Branch: `mvpfix/wp12-stop-latency-identity`; implementation starts from accepted
-latency diagnosis `60b3b584`. All writes stay in this tree. No push, merge, deploy,
-shared-service changes, or messages to other agents. User-authorized total decoder
-budget: 1200, max two in flight, own tunnel 18112, check waiting before each batch.
-The commands below make no decoder calls. See VERIFY-RESULT.md for actual counts.
+Branch: `mvpfix/wp12-stop-latency-identity`; continuation starts at a2ee97eb.
+Only this tree may be modified. No push/merge/deploy/shared-service changes.
+1165/1200 decoder calls already used. Conditional 1300 cap is authorized only if
+a final confirmation is needed; these checks make no decoder calls.
 
-Question: can mono's existing terminal overlap assignment replace full-tape lane
-probes while preserving attribution? Primitives: lane-filtered settled surface,
-terminal speaker partition, overlap assignment, cropped uncovered-segment probe.
-Invariants: preserved words, zero cross-lane assignments, unchanged policy
-values/thresholds/QUALITY_BOUNDS, complete final publication. Reference labels,
-not acoustic abstention, now adjudicate attribution. A second voice triggers the
-user's stop branch. Unknown outside the measured inputs remains unmeasured.
+Question: does the accepted lane path preserve covered identities and all terminal
+words while limiting new acoustic work to uncovered same-lane segments?
+Primitives: lane-owned canonical identities, settled lane spans, terminal speaker
+partition, cropped probe. Invariants: lane isolation, terminal words/times retained,
+unchanged one-to-one speaker mapping and acoustic policy, single publication after
+both concurrent lane jobs. Reference truth overrides the old acoustic baseline's
+blanket abstention. Unknown: larger-duration accuracy/capacity outside measured runs.
+Falsifiers: covered single-voice regression loses identity; an uncovered probe reads
+outside its segment; abstention loses words; 24/60 row equality or lane isolation
+breaks; any existing suite fails. These checks require a fix before final reporting.
 
-Implementation: `moss_transcribe_diarize/app/live_lane_decode.py` passes each lane's
-surface/candidates to the existing mono finalizer. Only terminal segments lacking
-labelled overlap use the existing acoustic preparer, on cropped PCM. Regression
-coverage: `tests/test_live_lane_decode.py`; three new tests fail on the old code.
-The six shadow comparisons use identical decoder output/session state and retain
-acoustic publication: 24/60 parity, mic -10 dB, same voice in both lanes. They are
-comparison evidence, not optimized Stop timings. Production timing arms are named
-`overlap-fixed`. Frozen comparator source is 60b3b584 under `.wp12/base-acoustic`.
+Regression coverage in tests/test_live_lane_decode.py:
+- 180 s single-voice lane: real causal commits and terminal publication, 36 terminal
+  segments keep their words and identity; zero acoustic probes.
+- 3–5 s uncovered system segment: exactly 2 s of system PCM reaches preparation;
+  success and injected legitimate abstention both preserve words; simultaneous mic
+  evidence cannot cover the gap.
+- 24/60 s: 13/28 full segment dictionaries equal accepted acoustic row geometry,
+  with synthetic text and causal subdivisions. Reversed local labels collide across
+  lanes. This is deterministic production-finalizer coverage, not another live run.
+- Existing concurrent-terminal and lifecycle tests remain in the full suite.
 
-Run from this worktree, without installs:
+Known residual: the 180 s two-voice interview leaves Lex's 149.61–153.75 and
+160.68–161.40 s turns unassigned (16 words). These HAVE same-lane causal overlap;
+three terminal local labels compete for two canonical speakers, leaving one local
+unmapped. Zero fallback audio was used. Do not relabel this as an uncovered-tail
+acoustic abstention. Cropped fallback may independently abstain for a true gap.
+
+Run in a NEW shell process, from the worktree (no installs):
 
 ```bash
+bash --noprofile --norc <<'SH'
+set -euo pipefail
 export PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
 WP12_PY=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python
-git status --short
-git branch --show-current
-git rev-parse HEAD
-"$WP12_PY" -c 'import moss_transcribe_diarize as m; print(m.__file__)'
-bash prototypes/streaming-diarization/wp12-stop-identity/check-python.sh > evidence/mvpfix/wp12/adjudication-full-python.txt 2>&1
-bash prototypes/streaming-diarization/wp12-stop-identity/check-frontend.sh > evidence/mvpfix/wp12/adjudication-full-frontend.txt 2>&1
-"$WP12_PY" prototypes/streaming-diarization/wp12-stop-identity/audit.py > evidence/mvpfix/wp12/adjudication-audit.json
+{
+  pwd
+  git branch --show-current
+  git rev-parse HEAD
+  "$WP12_PY" -c 'import moss_transcribe_diarize as m; print(m.__file__)'
+} > evidence/mvpfix/wp12/accepted-shell.txt
+bash prototypes/streaming-diarization/wp12-stop-identity/check-python.sh > evidence/mvpfix/wp12/accepted-full-python.txt 2>&1
+bash prototypes/streaming-diarization/wp12-stop-identity/check-frontend.sh > evidence/mvpfix/wp12/accepted-full-frontend.txt 2>&1
+"$WP12_PY" prototypes/streaming-diarization/wp12-stop-identity/audit.py > evidence/mvpfix/wp12/accepted-audit.json
 "$WP12_PY" prototypes/streaming-diarization/wp12-stop-identity/analyze_overlap.py > evidence/mvpfix/wp12/overlap-comparison.json
 "$WP12_PY" prototypes/streaming-diarization/wp12-stop-identity/analyze_fixed.py > evidence/mvpfix/wp12/overlap-timings.json
 "$WP12_PY" prototypes/streaming-diarization/wp12-stop-identity/adjudicate_reference.py > evidence/mvpfix/wp12/reference-adjudication.json
 "$WP12_PY" prototypes/streaming-diarization/wp12-stop-identity/analyze_180.py > evidence/mvpfix/wp12/stop-180-breakdown.json
+git restore -- evidence/mvpfix/wp2/production-1280.png evidence/mvpfix/wp2/production-390.png evidence/mvpfix/wp2/production-400.png
+git diff --check
+if lsof -nP -iTCP:18112 -iTCP:17872 -sTCP:LISTEN; then exit 1; fi
+SH
 ```
 
-Expected: package resolves inside this tree; full Python 1805 passed / 2 skipped /
-37 subtests; frontend 230 tests / 26 files; typecheck/build succeed. Comparison:
-6/6 PASS, 135/135 exact segment dictionaries, zero cross-lane assignments.
-Supplementary 180 s: historical equivalence FALSIFIED, 54 changed system segments /
-575 words; reference now confirms 50 Bill / 4 Lex. 30/30 mic segments equal,
-no word/boundary or cross-lane differences. Two later Lex turns / 16 words remain
-unassigned. Ledger: 1165/1200 calls = 1151 across 22 completed runs + 14 invalidated
-control calls. Mono 180: 12.717313 s, 92 calls, zero terminal embeddings. This
-source adjudication and stop condition must remain visible even with green tests.
-The timing
-report must contain all 24/60/180 s production runs with final/saved agreement.
-Audit: no more than 1200 calls, peak at most two, all completed requests accounted.
-Existing historical equivalence assertions remain; do not weaken assertions.
-Private scratch SQLite is read ONLY; never commit it, transcripts, or audio.
+Expected: local package path, 1809 Python tests / 2 skips / 37 subtests;
+230 frontend tests / 26 files, typecheck/build pass. Ledger 1165 calls, max two
+in flight, 22 completed final/saved agreements, 14 previously invalidated calls
+included. Six real-input 24/60 shadow cases: 135 exact segments, zero cross-lane
+assignments. 180 s: 54 reference-correct restorations, 16 unassigned Lex words.
+Timing analyzers retain previous measurements; no new GPU confirmation required
+because production behavior has not changed since those runs.
 
-The full suite rewrites WP2 screenshots. Restore only these generated files:
-`git restore -- evidence/mvpfix/wp2/production-1280.png evidence/mvpfix/wp2/production-390.png evidence/mvpfix/wp2/production-400.png`.
-Check `git diff --check`. Check owned listeners are gone:
-`lsof -nP -iTCP:18112 -iTCP:17872 -sTCP:LISTEN` (empty/exit 1 expected).
-Update VERIFY-RESULT.md with exact counts, timings, compared source and context,
-limitations, and deviations. Do not call same-context verification a fresh /new.
-Commit locally, report in <=60 lines. Preserve the falsified two-mic-ID finding:
-the fixture contains two voices; no identity continuity or threshold repair.
+Historical comparison artifacts still label the old baseline-equality criterion
+FALSIFIED; this is not rejection of the now reference-adjudicated implementation.
+The current verdict is in NOTES.md and VERIFY-RESULT.md. Verify no production
+behavior/policy drift, no generated assets outside scope, and clean owned ports.
+Record actual counts and any failures in VERIFY-RESULT.md, then commit locally.
+Fresh shell is not a new /new model context; do not claim the latter.

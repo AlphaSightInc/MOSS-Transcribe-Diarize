@@ -1,132 +1,134 @@
-# WP12 — second reference voice confirmed; acceptance stopped
+# WP12 — ACCEPTED; production lane mapping verified
 
-2026-09-18. Branch `mvpfix/wp12-stop-latency-identity`; clean start c410db8f.
-User replaced baseline-equivalence adjudication with source-reference truth.
-No production, test, identity-policy, sampling, threshold or QUALITY_BOUNDS changes
-in this continuation. Candidate remains on the isolated branch for review only.
+2026-09-18. Branch `mvpfix/wp12-stop-latency-identity`; continuation starts clean
+at a2ee97eb. Lead explicitly accepted the source-adjudicated implementation.
+No deployment, push or merge. This report supersedes the earlier acceptance stop.
 
-## F4 — source adjudication
+## F1 — production behavior and regression coverage
 
-The looped Bill Ackman reference contains TWO voices. All 54 restored assignments
-agree with reference words: 50 segments / 543 words belong to Bill Ackman
-(speaker-0001); 4 segments / 32 words belong to Lex Fridman (speaker-0004).
-The acoustic baseline's blanket `same_span_cannot_link_conflict` abstention was
-wrong to leave those 575 words unassigned. speaker-0004 is legitimate.
+`LiveServiceRuntime` already routes lane sessions to `finalize_lanes`; c410db8f
+implemented the accepted behavior in production, not merely in the shadow bench.
+Each lane passes only its own settled surface/canonical identities to the existing
+mono overlap mapper. Only segments without labelled same-lane overlap use a fresh
+acoustic probe cropped to that segment. Both terminal lane jobs remain concurrent;
+results are assembled before one publication. Legacy mono behavior is untouched.
+No policy values, sampling, thresholds, QUALITY_BOUNDS or decoder windows changed.
 
-| System segment index (zero-based) | Meeting interval | Reference voice / row |
-| ---: | --- | --- |
-| 9 | 29.61–33.75 s | Lex Fridman / 2 |
-| 12 | 40.68–41.40 s | Lex Fridman / 4 |
-| 28 | 89.61–93.75 s | Lex Fridman / 2, second loop |
-| 31 | 100.68–101.40 s | Lex Fridman / 4, second loop |
+Productionization therefore adds regression coverage and acceptance records; the
+only production-source edits in this continuation clarify two docstrings.
 
-Two third-loop Lex turns still lack identity: indices 47 and 50,
-149.61–153.75 and 160.68–161.40 s, 16 words. The user's second-voice condition
-therefore requires reporting and stopping acceptance/tuning. The requested
-single-voice acceptance/regression condition does not apply to this fixture.
-No new regression test claiming a single voice was added.
+- Long covered single-voice lane: 180 s of real causal commits, 36 terminal segments;
+  exact words/times/identity survive publication, zero acoustic probes.
+- Uncovered system 3–5 s segment: exactly 64000 bytes / 2 s of system PCM reaches
+  preparation. Both successful mapping and an injected legitimate preparer
+  abstention preserve words. Concurrent microphone evidence cannot fill the gap.
+- 24/60 s: all 13/28 segment dictionaries equal accepted acoustic row geometry,
+  including times, text, speaker, lane and authority. Fixture retains real timings
+  and identities; words and causal subdivisions are synthetic. Reversed local
+  labels deliberately collide across lanes. This deterministic production-seam
+  test complements, rather than replaces, the measured real-input comparison.
+- Existing concurrency test still requires peak two lane jobs and publication
+  only after both; all existing identity/lifecycle tests are included below.
 
-`evidence/mvpfix/wp12/reference-adjudication.json` records every one of the 56
-system segments, including all 54 differences, with reference labels/row numbers,
-loop offsets, original sample-derived times and word counts. Reference intervals
-are coarse. Manual word-to-reference-row adjudication is recorded separately
-from all raw time overlaps: several Bill/Lex turns cross reference boundaries,
-and Bill's short continuation after 40 s belongs to reference row 3 despite
-falling inside row 4's coarse time interval. No word-level timing or new audio
-listening claimed. No transcript/audio committed. Reproducer: `adjudicate_reference.py`.
+Files: `tests/test_live_lane_decode.py`, `tests/fixtures/wp12_terminal_parity.json`,
+production docstrings in `moss_transcribe_diarize/app/live_lane_decode.py`, bench
+adjudication verdict, NOTES/design/verification docs and retained evidence.
 
-Six earlier same-input 24/60 s cases remain PASS: parity, mic -10 dB, same voice
-on both lanes; 135/135 segment dictionaries equal the acoustic control. At 180 s,
-all words and boundaries remain equal; zero cross-lane assignments, 30/30 mic
-segments equal. Historical FALSIFIED labels in comparison artifacts describe
-baseline equivalence, not source correctness; current adjudication supersedes it.
+## F4 — reference acceptance and known limitation
 
-## F1 / F3 — remaining Stop cost
+All 54 restored system assignments match the reference: **50 Bill Ackman segments /
+543 words → speaker-0001; 4 Lex Fridman segments / 32 words → speaker-0004**.
+The old acoustic path's blanket `same_span_cannot_link_conflict` abstention was
+wrong for those 575 words. No attribution tuning was involved. All 56 system rows,
+reference labels, loop offsets and reviewed word-to-reference associations are in
+`evidence/mvpfix/wp12/reference-adjudication.json`; no transcripts/audio committed.
 
-| Measurement | Candidate lanes, 180 s | Base mono, 180 s |
-| --- | ---: | ---: |
-| Stop→observed final | 16.964282 s | 12.717313 s |
-| Stop→terminal start | 4.794547 s | 1.282284 s |
-| Drain wait itself | 4.769188 s | 1.262668 s |
-| Pending causal tail job | 1.088189 s | 0.675147 s |
-| Pending rolling refinement | 3.681203 s | 0.587704 s |
-| Final identity sweep | 0.008471 s | 0.006496 s |
-| Terminal decode, system / mono | 11.783398 s | 11.025424 s |
-| Terminal decode, microphone | 9.257648 s | — |
-| Terminal start→publication event | 11.791761 s | 11.031425 s |
-| Publication event→client observes final | 0.377974 s | 0.403604 s |
-| Terminal decoder windows / audio-seconds | 4 / 360 | 2 / 180 |
-| Whole run decoder calls | 184 | 92 |
+**Known residual:** Lex's **149.61–153.75 s and 160.68–161.40 s** turns remain
+unassigned, **16 words**. These segments HAVE causal overlap: the unchanged
+one-to-one speaker assignment leaves a third terminal local label unmatched
+against two canonical voices. Zero fallback samples/terminal embeddings occurred.
+This is not evidence of cropped-fallback abstention. A truly uncovered segment can
+independently receive a cropped acoustic probe and abstain, now regression-tested.
+Both paths preserve words. No promise that every decoder-created local partition
+will fit the known canonical set is made.
 
-Lane terminal jobs run concurrently; their durations must not be summed into
-Stop latency. Drain is actual pending causal/rolling work, not a fixed timer,
-poll or lease delay. Decode stage includes WAV/window handling.
+The six measured 24/60 s cases (parity, mic -10 dB, same voice both lanes) retain
+**135/135 exact segment dictionaries**, zero cross-lane assignments. At 180 s,
+all words/boundaries remain equal; 30/30 mic segments equal. Historical comparison
+artifacts retain FALSIFIED for baseline equality; lead's reference adjudication
+supersedes that acceptance criterion. The current reference report says ACCEPTED.
 
-Mapping/publication precision: the retained candidate trace bounds mapping plus
-all other non-decode finalizer work to **<3.45 ms system / <2.97 ms microphone**.
-It does not isolate mapping calls. Last terminal return→publication event is
-**2.875 ms**, including lane aggregation and publication to that event; exact
-publication-method duration and persistence time were not separately measured.
-Mono's new instrumentation directly measures **0.692 ms mapping** and
-**2.557 ms publication-method wall time**. The event-to-client residual includes
-observation/persistence work and is not assigned to any one component.
+## F2 / F3 — retained Stop timing and embedding work
 
-**Whole-meeting terminal decode dominates both:** the critical decoder stage is
-69.5% of lane Stop→final and 86.7% of mono. Removing embeddings does not remove
-that full-meeting decode. No extrapolated 30-minute guarantee. Both 180 s runs
-exceed the 10 s bar. These are single observations on the shared GPU; mono mixes
-the same two input clips and is a timing reference, not a transcript parity claim.
+All values below are already measured; no new GPU run was needed because runtime
+behavior has not changed since the accepted measurements.
 
-Mono used base archive **37979e53**: 86/86 Python files byte-equal to Git; loaded
-package path recorded in `mono180-source-audit.json`. One run, idle admission
-running=0/waiting=0, no retry. Command:
-`WP12_ARM=mono180-traced bash prototypes/streaming-diarization/wp12-stop-identity/experiment.sh 180 parity`.
-Timing data/reproducer: `stop-180-breakdown.json`, `analyze_180.py`.
+| Parity input | Lane before: acoustic control | Lane after: overlap | Mono reference | Terminal embedded audio before → after |
+| --- | ---: | ---: | ---: | ---: |
+| 24 s | 7.479681 s | 3.788534 s | 1.880702 s | 43.08 s → 0 |
+| 60 s | 16.457955 s | 7.490138 s | — | 111.90 s → 0 |
+| 180 s | 44.972440 s * | 16.964282 s | 12.717313 s | 335.52 s → 0 |
 
-## F2 — embedding work and retained shorter timings
+Before rows use the frozen 60b3b584 acoustic shadow controls p24/p60/p180-clean;
+acoustic output was published. The after rows use the production overlap path.
+*The 180 s acoustic control used one request slot with another workload present;
+the after run used the normal two-slot cap and idle admission. Its observed
+44.972440 s is NOT a matched throughput baseline or a causal speedup estimate.
+No two-slot 180 s acoustic baseline was measured. No invented substitute.
+Earlier pure concurrent-acoustic observations: 6.839325 s at 24 s and 16.174951 s
+at 60 s; original serial-lane observations: 11.803096 / 26.635716 s respectively.
 
-| Parity duration | Candidate Stop→final | Acoustic terminal embedded audio | Candidate |
-| --- | ---: | ---: | ---: |
-| 24 s | 3.788534 s | 43.08 s | 0 |
-| 60 s | 7.490138 s | 111.90 s | 0 |
-| 180 s | 16.964282 s | 335.52 s | 0 |
+Candidate terminal embeddings: zero calls/intervals/audio-seconds at all three
+lengths. Mono terminal embeddings: zero at both reference lengths. The mono-180
+run used verified base archive 37979e53 (86/86 Python files byte-equal to Git),
+exactly one run / 92 calls. Mono mixes the same two input clips; it is a timing
+reference, not a transcript parity claim. All measured final surfaces equal their
+saved text/identity. Independent after-vs-control saved comparison: 24 s 13/13
+exact rows; 60 s all 28 text/speaker pairs exact, one start differs by 20 ms.
 
-Mono 24 s reference: 1.880702 s. Mono 180 s terminal embeddings: zero calls,
-zero audio-seconds. Candidate terminal calls/intervals also zero at all lengths.
-All measured final surfaces equal their saved text/identity. Earlier independent
-24 s comparison: 13/13 saved dictionaries exact; 60 s: all 28 text/speaker pairs
-exact, one start differs by 20 ms (54.96→54.94 s). Same-input shadow rows all equal.
+180 s after breakdown: **4.794547 s** before terminal (causal tail 1.088189 s,
+rolling refinement 3.681203 s, final identity sweep 0.008471 s plus handoff), then
+concurrent terminal decoder stages **11.783398 s system / 9.257648 s mic**.
+Mapping plus other non-decode finalizer work is bounded by **<3.45 / <2.97 ms**;
+old trace did not isolate mapping calls. Last terminal return→publication event
+**2.875 ms**, including lane aggregation/publication; event→client final **0.378 s**.
+Mono: **1.282284 s** before terminal, **11.025424 s** decode, directly measured
+**0.692 ms** mapping and **2.557 ms** publication-method wall time.
 
-## F5 — full verification
+Whole-meeting decode dominates remaining Stop: **69.5% lane / 86.7% mono** at
+180 s. Lane decodes four windows / 360 audio-seconds; mono two / 180. Decode-stage
+wall time includes WAV/window handling. Both 180 s runs exceed the 10 s bar;
+these single observations do not qualify 30-minute capacity. Full breakdown:
+`stop-180-breakdown.json`. No fixed Stop sleep or lease wait was identified.
 
-Executed root VERIFY.md checks in this continuation, worktree-local imports:
+## F5 — fresh-shell verification
 
-- `check-python.sh`: **1805 passed, 2 skipped, 21 warnings, 37 subtests passed**,
-  139.91 s. Log: `evidence/mvpfix/wp12/adjudication-full-python.txt`.
-- `check-frontend.sh`: **26 files / 230 tests passed**, typecheck and build pass.
-  Log: `evidence/mvpfix/wp12/adjudication-full-frontend.txt`.
+Executed root VERIFY.md literally in a new `bash --noprofile --norc` process,
+with worktree-local imports; shell/branch/base SHA recorded in `accepted-shell.txt`.
+This is fresh-shell execution, not a new /new model context.
+
+- Focused lane suite: **28 passed**, 1 warning, 3.25 s (`accepted-lane-tests.txt`).
+- Full Python: **1809 passed, 2 skipped, 21 warnings, 37 subtests passed**, 142.12 s
+  (`accepted-full-python.txt`).
+- Full frontend: **26 files / 230 tests passed**, typecheck/build pass
+  (`accepted-full-frontend.txt`).
 - `audit.py`, `analyze_overlap.py`, `analyze_fixed.py`, `adjudicate_reference.py`,
-  `analyze_180.py`: pass their retained-data assertions; no decoder calls.
-- Existing three overlap regressions and lane/identity/lifecycle suites included;
-  historical focused gate: 191 passed. No assertions weakened.
-- Generated WP2 screenshots restored, frontend assets unchanged, diff whitespace
-  check passes. Owned ports 18112/17872 have no listeners.
+  `analyze_180.py`: retained-data assertions pass; no provider calls.
+- Generated WP2 screenshots restored, frontend assets unchanged; diff whitespace
+  check passes; no owned listeners on 18112/17872. No existing assertion weakened.
 
-Bench changes only: unique base-mono arm, mapping/publication timers, offline
-reference and timing reports. This is current-context verification; no new /new
-fresh acceptance is claimed. No second lane run was made after the reference
-stop condition; its mapping/publication timing limitations are explicit above.
+No production behavior or test edits followed the full-suite run. One documentation
+patch had an invalid context, made no changes, then was corrected. No test failures.
 
 ## F6 — accounting and boundaries
 
-**1165/1200 calls**, peak own concurrency **2**; 1151 across 22 completed runs,
-all 22 final/saved agreements, plus the previously recorded 14 invalidated calls.
-Mono added exactly 92 calls. Conditional 1350 cap was unnecessary and not used.
-Prior twelve busy admission refusals and invalidated overlapping-launch incident
-remain recorded; this continuation has no admission refusal or failed decoder run.
-One documentation patch had a context mismatch, made no changes, and was corrected.
+**1165/1200 decoder calls**, unchanged this continuation; conditional 1300 cap
+unused. Peak own concurrency **2**; 1151 calls across 22 completed runs, all 22
+final/saved agreements, plus the previously recorded 14 invalidated control calls.
+Prior twelve admission refusals and invalidated-launch incident remain recorded;
+no new decoder experiment, admission, tunnel or measurement server was started here.
 
-No production acceptance, tuning, push, merge, deployment, shared-service change,
-or writes outside the worktree. Earlier two-mic-ID allegation remains falsified:
-that fixture also contains two voices. Stop/report condition honored; no identity
-policy repair or single-voice claim made.
+No push, merge, deployment, shared-service change or writes outside the worktree.
+Earlier two-mic-ID allegation remains falsified: that fixture contains two voices.
+The accepted production optimization removes redundant terminal embedding work;
+remaining decode cost and 16 unassigned Lex words are explicit limitations.

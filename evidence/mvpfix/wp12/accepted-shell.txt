@@ -1,0 +1,4 @@
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity
+mvpfix/wp12-stop-latency-identity
+a2ee97eb4461c7c2d035635a696319b5385b2712
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/moss_transcribe_diarize/__init__.py

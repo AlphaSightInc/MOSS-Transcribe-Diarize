@@ -637,10 +637,12 @@ inherent-cost instruction; 180 s remains unmeasured, not budget-blocked.
 
 ### WP12 follow-up: reuse mono's terminal mapping within each lane
 
-**Current status: second reference voice confirmed; acceptance stopped.** The
+**Current status: ACCEPTED by the lead after reference adjudication.** The
 six requested 24/60 s comparisons pass. The 180 s attribution-equivalence failure
 was adjudicated against the reference after the user rejected the premise that
-the acoustic baseline was necessarily correct. See the source adjudication below.
+the acoustic baseline was necessarily correct. All 54 restored assignments are
+source-correct. The implementation has been the production lane path since
+c410db8f; concurrent jobs and legacy mono behavior remain unchanged.
 
 The user subsequently authorized changing the terminal evidence source to
 mono's existing time-overlap assignment. The diagnosis above describes the old
@@ -693,8 +695,15 @@ Lex; speaker-0004 is legitimate at 29.61–33.75, 40.68–41.40, 89.61–93.75 a
 unassigned (16 words). Reference timestamps are coarse: reviewed word-to-reference
 associations and raw time overlaps are retained separately for every system row
 in `reference-adjudication.json`. The acoustic whole-lane abstention was wrong;
-this is not a single-voice fixture. Per the user's second-voice branch, acceptance
-and tuning stop. No single-voice regression is asserted on this two-voice input.
+this is not a single-voice fixture. The lead subsequently accepted the improvement
+without tuning. The two remaining Lex turns have causal overlap but their third
+terminal local label loses the unchanged one-to-one assignment against two known
+voices. No fallback runs for those covered turns. Truly uncovered segments use
+cropped acoustic probes and may separately abstain. Both limitations preserve words.
+An independent 180 s single-voice regression now keeps all 36 terminal segments
+attributed without probing. The uncovered-tail regression covers both successful
+preparation and abstention; 24/60 s deterministic tests preserve all 13/28 accepted
+row geometries with synthetic words, supplementing the real 135-row comparison.
 
 One authorized mono-180 run on verified base archive 37979e53 takes **12.717313 s**:
 1.282284 s before terminal, 11.025424 s decode, 0.000692 s overlap mapping,
@@ -705,5 +714,6 @@ of observed lane/mono Stop time. Old lane instrumentation bounds mapping plus
 other non-decode work to 3.45 ms/system and 2.97 ms/mic; it does not separately
 measure those calls. Last terminal return to publication event is 2.875 ms.
 These are single observations, not a 30-minute capacity claim. Current total
-1165/1200 calls, including the original 14 invalidated calls; peak two. Candidate
-remains review-only, not accepted/deployed. Current full gates: VERIFY-RESULT.md.
+1165/1200 calls, including the original 14 invalidated calls; peak two. Production
+behavior is accepted locally, not deployed. Current fresh-shell full gates:
+VERIFY-RESULT.md. No new decoder runs were needed for productionization.

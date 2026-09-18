@@ -1,10 +1,10 @@
 {
-  "verdict": "SECOND_VOICE_CONFIRMED_STOP_ACCEPTANCE",
+  "verdict": "REFERENCE_CONFIRMED_ACCEPTED_BY_LEAD",
   "reference": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/reference.jsonl",
   "source_arm": "overlap-shadow-p180-clean",
   "source_lane": "system",
   "method": "Manual word-to-reference-row adjudication; raw time overlaps retained separately. No audio re-listening or word-level reference timestamps claimed.",
-  "conclusion": "All 54 restored assignments agree with reference voices: 50 Bill Ackman, 4 Lex Fridman. speaker-0004 is legitimate. Two later Lex turns remain unassigned; candidate not accepted under the user stop condition.",
+  "conclusion": "All 54 restored assignments agree with reference voices: 50 Bill Ackman, 4 Lex Fridman. speaker-0004 is legitimate. Lead accepted this improvement after the initial second-voice stop; two later Lex turns remain unassigned as a known limitation.",
   "changed_segments": 54,
   "changed_words": 575,
   "changed_reference_labels": {

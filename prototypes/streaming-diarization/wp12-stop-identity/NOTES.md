@@ -1,4 +1,48 @@
-# WP12 — reference adjudication: second voice confirmed; acceptance stopped
+# WP12 — ACCEPTED: production lane overlap mapping
+
+## Current acceptance / productionization (2026-09-18)
+
+Lead explicitly ACCEPTED the reference-adjudicated implementation after a2ee97eb:
+all 54 restored assignments are correct; no tuning was involved. This supersedes
+the historical stop below. The production runtime already calls `finalize_lanes`
+for lane sessions; c410db8f absorbed the implementation, not just the shadow bench.
+No new wiring or behavior change is necessary. Concurrent terminal jobs from
+33be55ec remain; the legacy mono branch remains untouched. Production edits this
+turn only clarify the module/function documentation. No policy values, sampling,
+thresholds, QUALITY_BOUNDS, decoder windows or lifecycle contracts changed.
+
+Question: preserve covered lane identities and terminal words without recomputing
+whole-tape voice evidence? Primitives remain the lane-owned settled surface,
+terminal speaker partition and cropped uncovered-segment probe. Invariants:
+same-lane attribution, original terminal words/times, unchanged acoustic policy,
+one publication after both terminal jobs. No new algorithm is introduced.
+Regressions detect unnecessary re-probing, lost words/identity, cross-lane evidence
+leaks or changed segment geometry; any failure blocks final reporting.
+
+New regression coverage: a 180 s single-voice causal lane preserves all 36 terminal
+segments and uses no probes; the existing 3–5 s uncovered-system test now exercises
+successful mapping AND an injected preparer abstention, preserving words and exact
+PCM crop; 24/60 s tests replay all 13/28 accepted acoustic segment geometries with
+synthetic text and causal subdivisions, reversed local labels and cross-lane local
+label collisions. These deterministic tests complement the earlier real-input
+135/135 segment equality experiment; they do not claim a new live experiment.
+The lane suite passes 28 tests. Full fresh-shell gates: root VERIFY-RESULT.md.
+
+**Known limitation:** the two late Lex turns at 149.61–153.75 and
+160.68–161.40 s remain unassigned (16 words). They DO overlap same-lane causal
+evidence; the unchanged speaker-level one-to-one assignment leaves the third
+terminal local label unmatched against two canonical voices. No cropped fallback
+ran in that measurement (zero fallback samples and zero terminal embeddings).
+This residual is distinct from a truly uncovered segment, whose cropped acoustic
+probe can independently abstain. Neither case drops words. No identity tuning.
+
+No new decoder calls: 1165/1200 retained, conditional 1300 cap unused. Before/after
+timings are retained measurements. The 180 s acoustic control used one request
+slot while another workload was present, so its 44.972 s Stop measurement is NOT
+a matched throughput baseline for the 16.964 s accepted two-slot run. Preserve
+that qualification in tables; no invented 180 s two-slot baseline or speedup claim.
+
+## Historical reference adjudication and stop
 
 ## Current adjudication (2026-09-18, starting at c410db8f)
 

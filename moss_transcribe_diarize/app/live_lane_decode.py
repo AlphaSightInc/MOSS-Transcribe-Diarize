@@ -1,4 +1,4 @@
-"""Serial source-lane decoding and voice attribution on the shared meeting clock."""
+"""Source-lane decoding; concurrent terminal jobs reuse lane-scoped voice evidence."""
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
@@ -234,6 +234,7 @@ def decode_refinement(c, request):
 
 
 def finalize_lanes(c, finalizer, **kwargs):
+    """Finalize each lane through mono's overlap mapper, probing only uncovered audio."""
     from .live_transcript_convergence import TerminalOutcome
 
     results = []

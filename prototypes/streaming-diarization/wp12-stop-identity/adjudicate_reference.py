@@ -63,10 +63,10 @@ for index, segment in enumerate(surface):
 changed = [r for r in records if r['changed']]
 assert Counter(r['overlap_speaker'] for r in changed) == {'speaker-0001': 50, 'speaker-0004': 4}
 assert sum(r['words'] for r in changed) == 575
-print(json.dumps(dict(verdict='SECOND_VOICE_CONFIRMED_STOP_ACCEPTANCE',
+print(json.dumps(dict(verdict='REFERENCE_CONFIRMED_ACCEPTED_BY_LEAD',
     reference=str(reference_path), source_arm=run['arm'], source_lane='system',
     method='Manual word-to-reference-row adjudication; raw time overlaps retained separately. No audio re-listening or word-level reference timestamps claimed.',
-    conclusion='All 54 restored assignments agree with reference voices: 50 Bill Ackman, 4 Lex Fridman. speaker-0004 is legitimate. Two later Lex turns remain unassigned; candidate not accepted under the user stop condition.',
+    conclusion='All 54 restored assignments agree with reference voices: 50 Bill Ackman, 4 Lex Fridman. speaker-0004 is legitimate. Lead accepted this improvement after the initial second-voice stop; two later Lex turns remain unassigned as a known limitation.',
     changed_segments=len(changed), changed_words=sum(r['words'] for r in changed),
     changed_reference_labels=dict(Counter(r['reviewed_reference_labels'][0] for r in changed)),
     unchanged_unassigned_words=sum(r['words'] for r in records if not r['changed']),
