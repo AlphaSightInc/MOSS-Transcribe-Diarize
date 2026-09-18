@@ -52,14 +52,19 @@ not `npm install` (`frontend/node_modules` is already a symlink).
 
 ## The behaviour itself
 
-5. Red/green, to prove the new tests actually bind:
-   `git stash push moss_transcribe_diarize/app/live_service_runtime.py`
-   then `python -m pytest -q -p no:cacheprovider tests/test_live_stop_drain.py`
+5. Red/green, to prove the new tests actually bind. The change is committed, so put the file
+   back to its pre-WP35 content rather than stashing (a stash of a clean tree is a no-op and
+   would silently report green as red):
+   `git checkout integration/mvp-fix-20260917 -- moss_transcribe_diarize/app/live_service_runtime.py`
+   — this branch changed no other commit in that file, so this is exactly the fix reverted.
+   Then `python -m pytest -q -p no:cacheprovider tests/test_live_stop_drain.py`
    → expect **3 failed, 4 passed**: `..._decodes_no_rolling_window_after_stop`,
    `..._never_mutates_the_surface_after_stop` and
-   `..._four_concurrent_stops_all_reach_final_with_no_post_stop_rolling` fail; the three
-   "unchanged behaviour" guards and the accounting guard pass either way.
-   Then `git stash pop` and re-run → **7 passed**. Leave the tree clean.
+   `..._four_concurrent_stops_all_reach_final_with_no_post_stop_rolling` fail; the two
+   "unchanged behaviour" guards, the WP15 accepted-Stop guard and the §7.4 accounting guard
+   pass either way. Then
+   `git checkout HEAD -- moss_transcribe_diarize/app/live_service_runtime.py` and re-run
+   → **7 passed**, and `git status --short` empty.
 
 ## Measurements (read the retained evidence; do not re-measure)
 
