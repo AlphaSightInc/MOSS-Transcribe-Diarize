@@ -1,0 +1,22 @@
+cwd=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/base-a92bb4aa
+command=['/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python', '-m', 'pytest', '-q', '-p', 'no:cacheprovider', 'tests/phase2/test_admin_status_capture.py']
+PYTEST_ADDOPTS=--basetemp=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/base-a92bb4aa/.wp9runtime/pytest-fresh-base-admin --junitxml=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/evidence/mvpfix/wp9/fresh-base-admin.xml --tb=short
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+______ test_status_capture_binds_each_rendering_to_its_own_response[None] ______
+tests/phase2/test_admin_status_capture.py:39: in test_status_capture_binds_each_rendering_to_its_own_response
+    server.bind(str(path))
+E   OSError: AF_UNIX path too long
+_____ test_status_capture_binds_each_rendering_to_its_own_response[human] ______
+tests/phase2/test_admin_status_capture.py:39: in test_status_capture_binds_each_rendering_to_its_own_response
+    server.bind(str(path))
+E   OSError: AF_UNIX path too long
+______ test_status_capture_binds_each_rendering_to_its_own_response[json] ______
+tests/phase2/test_admin_status_capture.py:39: in test_status_capture_binds_each_rendering_to_its_own_response
+    server.bind(str(path))
+E   OSError: AF_UNIX path too long
+=========================== short test summary info ============================
+FAILED tests/phase2/test_admin_status_capture.py::test_status_capture_binds_each_rendering_to_its_own_response[None]
+FAILED tests/phase2/test_admin_status_capture.py::test_status_capture_binds_each_rendering_to_its_own_response[human]
+FAILED tests/phase2/test_admin_status_capture.py::test_status_capture_binds_each_rendering_to_its_own_response[json]
+3 failed in 0.41s

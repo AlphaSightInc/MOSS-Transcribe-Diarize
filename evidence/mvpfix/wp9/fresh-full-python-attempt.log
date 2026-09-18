@@ -1,0 +1,12 @@
+cwd=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity
+command=['/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python', '-m', 'pytest', '-q', '-p', 'no:cacheprovider', 'tests']
+PYTEST_ADDOPTS=--basetemp=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/.wp9runtime/pytest-fresh-full-python --junitxml=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/evidence/mvpfix/wp9/fresh-full-python.xml --tb=short
+........................................................................ [  4%]
+......FFF............................................................... [  8%]
+........................................................................ [ 12%]
+...........................................................F.....EEEEEEE [ 16%]
+EEEEEEEEEEEEEEE......................................................... [ 20%]
+........................................................................ [ 24%]
+........................................................................ [ 28%]
+........................................................................ [ 32%]
+........F.................

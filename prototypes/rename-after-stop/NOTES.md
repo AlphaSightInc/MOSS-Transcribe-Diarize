@@ -52,7 +52,8 @@ integrated base. No identity change needed. Full 60 s acoustic rerun unmeasured;
 this measurement isolates the exact previously observed bad span.
 Run: python prototypes/rename-after-stop/silence.py (same interpreter/environment).
 
-Full Python suite: 805 passed, 2 failed, 22 errors (829 total), 109.74 s.
+Prior phase2-only suite (not the full tests tree): 805 passed, 2 failed, 22 errors
+(829 total), 109.74 s.
 All 24 failures reproduce with original production files at a92bb4aa:
 - draft reader multiple replacement fixture: expects 2 rows, receives 0;
 - runner composition fixture: zero PCM expects 1 request, receives 0 (WP3 guard);
@@ -67,3 +68,30 @@ suite uncontained; fresh verification uses the affected naming suites (which kee
 all temporary files inside this worktree) and rereads retained full-suite failures.
 Existing UI tests regenerated WP2 screenshots here; restored those bytes from base.
 Not deployment, acoustic qualification, or an attended browser acceptance claim.
+
+## Fresh-context verification, 2026-09-18
+
+Verified 97f09c3a from a clean fresh-context start. Full Python `tests`: 1,753 passed,
+19 failed, 22 errors, 2 skipped (1,796 items), plus 37 passed subtests, 137.99 s.
+This corrects the earlier phase2-only denominator. Full frontend: 239/239 in 27 files,
+including a second run consuming fresh route documents; typecheck/build pass.
+Fresh route matrix: base 1/5, WP9 5/5; 25/25 exports, 4/4 completed summary inputs.
+Exact silence span: 0 nonzero bytes, decoder calls, identity preparations or births.
+
+All failing whole files rerun on scratch archive a92bb4aa, from its own cwd:
+- tests/phase2/test_draft_lane.py: 14 passed, 1 failed (zero PCM yields no rows).
+- tests/phase2/test_runner_composition.py: 12 passed, 1 failed (zero PCM: no request).
+- tests/phase2/test_export_oracle.py: 22 errors (extensionless Node import).
+- tests/test_live_pipeline_seams.py: 52 passed, 15 failed (zero guard bypasses fixtures).
+- tests/test_live_rolling_wiring.py: 27 passed, 1 failed (salvage fixture bypassed).
+- tests/test_live_service_replay.py: 23 passed, 1 failed, 9 passed subtests (failed vs final).
+All 41 node IDs/outcomes/normalized tracebacks match WP9; 0 introduced failures.
+WP10/79467f08 integration repairs remain separate; full suite is not green.
+
+User explicitly required the full suite. Retained containment helper temporarily
+relocates hardcoded /tmp destinations inside this tree and restores source files and
+three screenshots. Initial relocation hit the macOS socket path limit (3 failures,
+also reproduced on base); relative socket spelling resolves it, 3/3 base/full run.
+Stopped initial full attempt retained, followed by the completed full run above.
+No production fix made during verification. Full commands, counts, source review,
+per-node classification and deviations: root VERIFY-RESULT.md and fresh-* evidence.

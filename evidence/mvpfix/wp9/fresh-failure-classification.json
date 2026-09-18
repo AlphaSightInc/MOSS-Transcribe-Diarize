@@ -1,0 +1,419 @@
+{
+  "verified_sha": "97f09c3a82801910531b43536472c8dd7ba7cf65",
+  "base_sha": "a92bb4aa88f9581b46cefcafae98c80e911a1d3b",
+  "failure_nodes": 41,
+  "pre_existing": 41,
+  "introduced_by_wp9": 0,
+  "nodes": [
+    {
+      "classname": "tests.phase2.test_draft_lane",
+      "test": "test_reader_retires_draft_by_audio_boundary[multiple]",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "assert 0 == 2\n +  where 0 = len([])",
+      "base_reason": "assert 0 == 2\n +  where 0 = len([])"
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_real_exports_match_api[md]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_real_exports_match_api[txt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_real_exports_match_api[json]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_real_exports_match_api[srt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_real_exports_match_api[vtt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[words-md]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[words-txt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[words-json]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[words-srt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[words-vtt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[label-md]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[label-txt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[label-json]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[label-srt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[label-vtt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[time-md]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[time-txt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[time-json]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[time-srt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_download_corruptions_fail[time-vtt]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_harness_all_five_downloads[True]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_export_oracle",
+      "test": "test_harness_all_five_downloads[False]",
+      "outcome": "error",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\"",
+      "base_reason": "failed on setup with \"subprocess.CalledProcessError: Command '['node', '--experimental-strip-types', '--input-type=module', '-e', \"import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';\\nconst turn = {start:1.125,end:3.75,speaker:'speaker-0001',speaker_entity_id:'speaker-0001',display_name:'Named speaker',state:'final',text:'Actual meeting words.',segment_ids:['s1'],target_segment_keys:['s1'],provisional_stale:false};\\nconsole.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,[turn],()=> 'Named speaker',{sessionId:'meeting',exportedAt:new Date(0)}).content]))));\"]' returned non-zero exit status 1.\""
+    },
+    {
+      "classname": "tests.phase2.test_runner_composition",
+      "test": "test_launcher_without_prompt_finalizer_builds_http_request",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "assert 0 == 1\n +  where 0 = len([])",
+      "base_reason": "assert 0 == 1\n +  where 0 = len([])"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_which_it_was",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "AssertionError: zero generated tokens\nassert None is <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'>\n +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause",
+      "base_reason": "AssertionError: zero generated tokens\nassert None is <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'>\n +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "AssertionError: assert '' == '[0][S01]The ... market.[2.5]'\n  \n  - [0][S01]The difference between, you said the stock market.[2.5]",
+      "base_reason": "AssertionError: assert '' == '[0][S01]The ... market.[2.5]'\n  \n  - [0][S01]The difference between, you said the stock market.[2.5]"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "AssertionError: assert None is <EmptyTranscriptCause.UNPARSEABLE_TEXT: 'unparseable_text'>\n +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause\n +  and   <EmptyTranscriptCause.UNPARSEABLE_TEXT: 'unparseable_text'> = EmptyTranscriptCause.UNPARSEABLE_TEXT",
+      "base_reason": "AssertionError: assert None is <EmptyTranscriptCause.UNPARSEABLE_TEXT: 'unparseable_text'>\n +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause\n +  and   <EmptyTranscriptCause.UNPARSEABLE_TEXT: 'unparseable_text'> = EmptyTranscriptCause.UNPARSEABLE_TEXT"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with_it",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "AssertionError: assert None is <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'>\n +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause\n +  and   <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'> = EmptyTranscriptCause.NO_GENERATED_TOKENS",
+      "base_reason": "AssertionError: assert None is <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'>\n +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause\n +  and   <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'> = EmptyTranscriptCause.NO_GENERATED_TOKENS"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "Failed: DID NOT RAISE LiveProviderError",
+      "base_reason": "Failed: DID NOT RAISE LiveProviderError"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer0-True]",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "Failed: DID NOT RAISE LiveProviderError",
+      "base_reason": "Failed: DID NOT RAISE LiveProviderError"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer1-True]",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "Failed: DID NOT RAISE LiveProviderError",
+      "base_reason": "Failed: DID NOT RAISE LiveProviderError"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer2-True]",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "Failed: DID NOT RAISE LiveProviderError",
+      "base_reason": "Failed: DID NOT RAISE LiveProviderError"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer3-True]",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "Failed: DID NOT RAISE LiveProviderError",
+      "base_reason": "Failed: DID NOT RAISE LiveProviderError"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer4-True]",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "Failed: DID NOT RAISE LiveProviderError",
+      "base_reason": "Failed: DID NOT RAISE LiveProviderError"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer5-False]",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "Failed: DID NOT RAISE LiveProviderError",
+      "base_reason": "Failed: DID NOT RAISE LiveProviderError"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer6-False]",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "Failed: DID NOT RAISE LiveProviderError",
+      "base_reason": "Failed: DID NOT RAISE LiveProviderError"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer7-False]",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "Failed: DID NOT RAISE LiveProviderError",
+      "base_reason": "Failed: DID NOT RAISE LiveProviderError"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "AssertionError: assert 'hello there' in ''\n +  where '' = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).transcript",
+      "base_reason": "AssertionError: assert 'hello there' in ''\n +  where '' = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).transcript"
+    },
+    {
+      "classname": "tests.test_live_pipeline_seams",
+      "test": "test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "AssertionError: assert None == 286\n +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).token_cap",
+      "base_reason": "AssertionError: assert None == 286\n +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).token_cap"
+    },
+    {
+      "classname": "tests.test_live_rolling_wiring.RollingRuntimeWiringTest",
+      "test": "test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-failure-files.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "AssertionError: 'stock market' not found in ''",
+      "base_reason": "AssertionError: 'stock market' not found in ''"
+    },
+    {
+      "classname": "tests.test_live_service_replay.ReplayTerminalFinalizationWaitTest",
+      "test": "test_the_run_reports_the_terminal_surface_and_the_events_that_made_it",
+      "outcome": "failure",
+      "classification": "pre-existing-on-base",
+      "base_evidence": "fresh-base-service-replay.xml",
+      "same_normalized_traceback": true,
+      "wp9_reason": "AssertionError: 'failed' != 'final'\n- failed\n+ final",
+      "base_reason": "AssertionError: 'failed' != 'final'\n- failed\n+ final"
+    }
+  ]
+}
