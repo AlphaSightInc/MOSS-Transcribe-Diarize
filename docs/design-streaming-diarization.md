@@ -807,3 +807,28 @@ These are single observations, not a 30-minute capacity claim. Current total
 1165/1200 calls, including the original 14 invalidated calls; peak two. Production
 behavior is accepted locally, not deployed. Current fresh-shell full gates:
 VERIFY-RESULT.md. No new decoder runs were needed for productionization.
+
+### WP28: file album interval scheduling (2026-09-18)
+
+The file resolver's dominant cost was independent ONNX inference, not album
+matching, session creation, or audio loading. On the same retained WP19 inputs,
+the unchanged resolver took 60.177873 s / 313.204362 s for 3 / 15 windows;
+107 / 575 interval probes embedded 391.32 / 2059.98 audio seconds including overlap.
+Inference alone took 59.470240 s / 310.204913 s. One session was already reused.
+
+The measured prototype ran four interval probes concurrently through that same
+single-thread ONNX session: 17.715150 s / 91.808717 s, complete serialized output
+byte-identical on both fixtures. Two workers took 30.714614 s on three windows.
+Four perfect-vector controls (1/2 voices over 3/15 windows) were also byte-equal.
+Four workers therefore become a file-encoder scheduling choice; live and legacy
+encoders remain serial by default. Each call closes its pool before returning or
+raising. Interval normalization and averaging retain input order. Album matching,
+admission and sweep remain serial and unchanged. Every observation is retained;
+`album_admission_seconds` remains eligibility, not a cap on embedding evidence.
+
+This changes wall time, not required acoustic work or identity policy. Measured
+four-worker process peak was 1.35 GB. Multi-file capacity and other hosts remain
+unmeasured; these repeated public clips establish equality and cost, not a wider
+accuracy or deployment claim. Regression includes exact pre-change result oracles
+with transcript words replaced by synthetic placeholders. Evidence and command:
+`evidence/mvpfix/wp28/`, `prototypes/streaming-diarization/wp28-file-resolver-perf/`.

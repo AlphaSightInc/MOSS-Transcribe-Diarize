@@ -87,7 +87,8 @@ def _load_fake_silero(**kwargs):
 class _FakeWeSpeakerAdapter:
     actual_dimension = 2
 
-    def __init__(self, state_path, *, spec, device):
+    def __init__(self, state_path, *, spec, device, interval_workers=1):
+        assert interval_workers == 1  # File scheduling must not change live defaults.
         self.state_path = state_path
         self.spec = spec
         self.device = device

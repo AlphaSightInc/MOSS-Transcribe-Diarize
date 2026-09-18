@@ -971,7 +971,7 @@ def _reject_removed_static_provider(payload: Mapping[str, Any]):
     )
 
 
-def _identity_encoder(config: LiveProviderBundleConfig):
+def _identity_encoder(config: LiveProviderBundleConfig, *, interval_workers: int = 1):
     payload = config.identity_provider
     kind = _required_str(payload, "kind")
     if kind != "wespeaker_resnet152_lm":
@@ -994,7 +994,9 @@ def _identity_encoder(config: LiveProviderBundleConfig):
         embedding_dimension=embedding_dimension,
         frontend_version=_required_str(payload, "frontend_version"),
     )
-    return WeSpeakerResNet152LmAdapter(state_asset.path, spec=spec, device=config.runtime.device)
+    return WeSpeakerResNet152LmAdapter(
+        state_asset.path, spec=spec, device=config.runtime.device, interval_workers=interval_workers
+    )
 
 
 def _identity_preparer(
