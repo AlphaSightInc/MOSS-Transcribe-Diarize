@@ -1,0 +1,161 @@
+{
+  "verified_at": "2026-09-18T05:40:01.937649+00:00",
+  "fresh_context": true,
+  "branch": "mvpfix/wp16-file-url-long",
+  "tested_sha": "d36f0be3279c5385e1ab917123cdcc3dfddd25cb",
+  "product_sha": "76665702adfcab6214191f0d373d68abadbfd144",
+  "verdict": "FAIL",
+  "reason": "Literal stopped-port gate fails: another worktree WP17 owns listener 17877; left untouched.",
+  "gates": {
+    "initial_branch_sha_clean": {
+      "status": "PASS"
+    },
+    "worktree_import": {
+      "status": "PASS",
+      "exit_code": 0
+    },
+    "python": {
+      "status": "PASS",
+      "exit_code": 0,
+      "passed": 1870,
+      "skipped": 2,
+      "subtests_passed": 37,
+      "warnings": 21,
+      "seconds": 136.26
+    },
+    "frontend": {
+      "status": "PASS",
+      "exit_code": 0,
+      "passed": 244,
+      "files": 27,
+      "seconds": 2.52,
+      "node_localstorage_path_warnings": 3
+    },
+    "typecheck": {
+      "status": "PASS",
+      "exit_code": 0
+    },
+    "build": {
+      "status": "PASS",
+      "exit_code": 0,
+      "assets_unchanged": true
+    },
+    "evidence": {
+      "status": "PASS",
+      "exit_code": 0,
+      "cases": 16,
+      "typed_failures": 5,
+      "long_cases": 5,
+      "exports_passed": 50,
+      "exports_total": 50,
+      "retained_downloads_recompared": 50
+    },
+    "verify_layout": {
+      "status": "PASS",
+      "exit_code": 0
+    },
+    "assets_diff": {
+      "status": "PASS",
+      "exit_code": 0
+    },
+    "diff_check": {
+      "status": "PASS",
+      "exit_code": 0
+    },
+    "scope_diff": {
+      "status": "PASS",
+      "base_sha": "5179368e671623e60f8eee67bbcaeb13f0d49204"
+    },
+    "stopped_ports": {
+      "status": "FAIL",
+      "exit_code": 1,
+      "listener": {
+        "pid": 9630,
+        "port": 17877,
+        "cwd": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp17-lane-quality-voiceprint",
+        "script": "prototypes/streaming-diarization/wp17/stack.py",
+        "decoder_port": 18117
+      },
+      "other_checked_ports_without_listeners": [
+        17876,
+        17878,
+        18116
+      ],
+      "action": "Read-only ps/lsof attribution; no process stopped."
+    }
+  },
+  "decoder": {
+    "retained_requests": 158,
+    "retained_budget": 200,
+    "additional_requests": 0,
+    "additional_budget": 100
+  },
+  "measurements": "Retained prior browser campaign, freshly checked offline; no fresh live timing or GPU claim.",
+  "long_cases": [
+    {
+      "case": "long.wav",
+      "accepted_seconds": 0.39226520800730214,
+      "first_status_seconds": 0.40821954200509936,
+      "elapsed_seconds": 88.69410570799664,
+      "sampled_rss_max_kib": 742944,
+      "rss_samples": 3,
+      "speakers": 31,
+      "saved_words": 4994
+    },
+    {
+      "case": "long.mp3",
+      "accepted_seconds": 0.13087729200196918,
+      "first_status_seconds": 0.14109037500747945,
+      "elapsed_seconds": 86.43763008400856,
+      "sampled_rss_max_kib": 669616,
+      "rss_samples": 3,
+      "speakers": 31,
+      "saved_words": 4980
+    },
+    {
+      "case": "long.m4a",
+      "accepted_seconds": 0.1598244169872487,
+      "first_status_seconds": 0.16887924999173265,
+      "elapsed_seconds": 84.44158729199262,
+      "sampled_rss_max_kib": 672512,
+      "rss_samples": 3,
+      "speakers": 31,
+      "saved_words": 4989
+    },
+    {
+      "case": "concurrent-a",
+      "accepted_seconds": 0.26251708299969323,
+      "first_status_seconds": 0.2748029999929713,
+      "elapsed_seconds": 94.61467574999551,
+      "sampled_rss_max_kib": 692976,
+      "rss_samples": 3,
+      "speakers": 31,
+      "saved_words": 4994
+    },
+    {
+      "case": "concurrent-b",
+      "accepted_seconds": 0.28230508300475776,
+      "first_status_seconds": 0.2926688750012545,
+      "elapsed_seconds": 94.58936662500491,
+      "sampled_rss_max_kib": 692976,
+      "rss_samples": 3,
+      "speakers": 31,
+      "saved_words": 4994
+    }
+  ],
+  "limitations": [
+    "31 saved identities versus 3 reference voices from 2 distinct clips repeated 30 times.",
+    "M4A AAC audio-only measured; video-bearing .mp4 not measured.",
+    "60%-byte truncated MP3 completes 7.167 seconds of original 12 seconds without notice.",
+    "50 exports cover 10 nonempty transcripts, not silent or failed meetings.",
+    "Timings are browser acceptance/status polling with 2-second cadence, not paint latency.",
+    "RSS is sampled server-process residency; no process-tree/system/GPU peak claim.",
+    "Natural 30-minute diversity, attended capture, deployment and general quality acceptance unmeasured.",
+    "Prior transient transcode failure root cause unmeasured; not waived in fresh suite."
+  ],
+  "deviations": [
+    "No fresh command omitted or retried. Read-only ps/lsof added to diagnose port mismatch.",
+    "VERIFY requires retained ignored downloads/API snapshots in .wp16runtime; not reproducible from a clean clone alone.",
+    "Prior documented Vite shared-symlink temp write is historical; fresh commands used native loader."
+  ]
+}
