@@ -34,7 +34,8 @@ class AlbumIdentityResolver:
         if self._config is None:
             self._config = LiveProviderBundleConfig.from_manifest(self.manifest_path)
         if self._encoder is None:
-            self._encoder = _identity_encoder(self._config)
+            # WP28 measured four independent probes at once; identity stays serial.
+            self._encoder = _identity_encoder(self._config, interval_workers=4)
         return self._config, self._encoder
 
     def contract(self) -> dict[str, Any]:

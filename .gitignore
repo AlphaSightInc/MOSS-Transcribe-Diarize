@@ -97,3 +97,5 @@ evidence/mvpfix/*/raw/
 # WP24 isolated capture/test runtime; TLS, cookies and audio never committed.
 .wp24/
 >>>>>>> mvpfix/wp24-visual-copy-pack
+
+.wp28runtime/

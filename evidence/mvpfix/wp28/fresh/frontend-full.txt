@@ -1,0 +1,18 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run --configLoader runner
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp28-file-resolver-perf/frontend
+
+(node:99373) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99374) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99379) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  28 passed (28)
+      Tests  250 passed (250)
+   Start at  04:22:53
+   Duration  2.70s (transform 2.02s, setup 0ms, import 2.97s, tests 6.79s, environment 6.58s)

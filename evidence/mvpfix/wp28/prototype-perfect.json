@@ -1,0 +1,1408 @@
+[
+  {
+    "windows": 3,
+    "voices": 1,
+    "byte_identical": true,
+    "summary": {
+      "resolver": "album",
+      "canonical_speakers": 1,
+      "unattributed_segments": 0
+    },
+    "states": [
+      {
+        "window": 0,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [],
+        "album": {
+          "S01": {
+            "exemplars": 1,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 1,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 2,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 2,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 3,
+            "provisional": false
+          }
+        }
+      }
+    ]
+  },
+  {
+    "windows": 3,
+    "voices": 2,
+    "byte_identical": true,
+    "summary": {
+      "resolver": "album",
+      "canonical_speakers": 2,
+      "unattributed_segments": 0
+    },
+    "states": [
+      {
+        "window": 0,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [],
+        "album": {
+          "S01": {
+            "exemplars": 1,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 1,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 1,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 2,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 2,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 2,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 3,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 3,
+            "provisional": false
+          }
+        }
+      }
+    ]
+  },
+  {
+    "windows": 15,
+    "voices": 1,
+    "byte_identical": true,
+    "summary": {
+      "resolver": "album",
+      "canonical_speakers": 1,
+      "unattributed_segments": 0
+    },
+    "states": [
+      {
+        "window": 0,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [],
+        "album": {
+          "S01": {
+            "exemplars": 1,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 1,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 2,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 2,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 3,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 3,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 4,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 4,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 5,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 5,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 6,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 6,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 7,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 7,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 8,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 8,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 9,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 9,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 10,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 11,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 12,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 13,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 14,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01"
+        },
+        "durations": {
+          "S01": 4
+        },
+        "admissions": {
+          "S01": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      }
+    ]
+  },
+  {
+    "windows": 15,
+    "voices": 2,
+    "byte_identical": true,
+    "summary": {
+      "resolver": "album",
+      "canonical_speakers": 2,
+      "unattributed_segments": 0
+    },
+    "states": [
+      {
+        "window": 0,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [],
+        "album": {
+          "S01": {
+            "exemplars": 1,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 1,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 1,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 2,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 2,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 2,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 3,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 3,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 3,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 4,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 4,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 4,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 5,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 5,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 5,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 6,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 6,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 6,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 7,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 7,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 7,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 8,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 8,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 8,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 9,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 9,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 9,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 10,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 11,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 12,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 13,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      },
+      {
+        "window": 14,
+        "reason": "ok",
+        "mapping": {
+          "S01": "S01",
+          "S02": "S02"
+        },
+        "durations": {
+          "S01": 4,
+          "S02": 4
+        },
+        "admissions": {
+          "S01": "admitted",
+          "S02": "admitted"
+        },
+        "scores": [
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S01",
+            "score": 1.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S01",
+            "canonical_speaker": "S02",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S01",
+            "score": 0.0,
+            "evidence_id": ""
+          },
+          {
+            "local_speaker": "S02",
+            "canonical_speaker": "S02",
+            "score": 1.0,
+            "evidence_id": ""
+          }
+        ],
+        "album": {
+          "S01": {
+            "exemplars": 10,
+            "provisional": false
+          },
+          "S02": {
+            "exemplars": 10,
+            "provisional": false
+          }
+        }
+      }
+    ]
+  }
+]

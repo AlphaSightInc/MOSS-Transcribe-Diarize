@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import math
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -469,7 +470,9 @@ class WeSpeakerResNet152LmAdapter:
         loader: Callable[[], Any] | None = None,
         spec: TierBAssetSpec | None = None,
         device: str = "cpu",
+        interval_workers: int = 1,
     ):
+        self._interval_workers = interval_workers
         self.state_path = Path(state_path)
         self.embedder = embedder
         self._loader = loader
@@ -527,6 +530,7 @@ class WeSpeakerResNet152LmAdapter:
                 lambda: _OnnxWeSpeakerEmbedder(
                     self.state_path,
                     device=self.device,
+                    interval_workers=self._interval_workers,
                 )
             )
             self.embedder = loader()
@@ -581,12 +585,14 @@ class _OnnxWeSpeakerEmbedder:
         session_factory: Callable[..., Any] | None = None,
         fbank: Callable[[Any], Any] | None = None,
         audio_loader: Callable[[str | Path], tuple[Any, int]] | None = None,
+        interval_workers: int = 1,
     ):
         self.state_path = state_path
         self.device = device
         self._session_factory = session_factory
         self._fbank = fbank
         self._audio_loader = audio_loader
+        self._interval_workers = interval_workers
         self._session = None
 
     def load(self) -> dict[str, Any]:
@@ -598,17 +604,29 @@ class _OnnxWeSpeakerEmbedder:
         samples, sample_rate = self._load_audio(wav_path)
         if sample_rate != 16000:
             raise ValueError("Tier B ONNX input WAV must be 16 kHz mono.")
-        vectors = []
+        clips = []
         for start, end in intervals:
             if end <= start:
                 continue
             interval_samples = _slice_interval(samples, sample_rate, start, end)
-            if len(interval_samples) == 0:
-                continue
-            features = self._features(interval_samples)
-            vectors.append(_normalized_vector(_run_onnx_embedding(session, features)))
-        if not vectors:
+            if len(interval_samples):
+                clips.append(interval_samples)
+        if not clips:
             raise ValueError("Tier B embedding intervals are empty.")
+
+        def embed_interval(interval_samples):
+            features = self._features(interval_samples)
+            return _normalized_vector(_run_onnx_embedding(session, features))
+
+        if self._interval_workers == 1:
+            vectors = [embed_interval(clip) for clip in clips]
+        else:
+            # map retains interval order, including the floating-point reduction
+            # order. Only independent probes run together; album updates do not.
+            with ThreadPoolExecutor(
+                max_workers=self._interval_workers, thread_name_prefix="moss-file-embedding"
+            ) as pool:
+                vectors = list(pool.map(embed_interval, clips))
         return _mean_unit_vector(vectors)
 
     def _load_session(self) -> Any:

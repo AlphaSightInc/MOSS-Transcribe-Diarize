@@ -1,0 +1,257 @@
+{
+  "arm": "parallel-2",
+  "minutes": 6,
+  "windows": 3,
+  "counts": {
+    "asset_hash": 9,
+    "session_creation": 1,
+    "intervals": 107,
+    "audio_load": 9,
+    "features": 107,
+    "onnx": 107,
+    "embedding": 9
+  },
+  "seconds": {
+    "requested_audio": 391.31999999999994
+  },
+  "times": {
+    "asset_hash": 0.2945374580012867,
+    "session_creation": 0.035599791997810826,
+    "audio_load": 0.035846208993461914,
+    "features": 0.2591502948489506,
+    "onnx": 59.334935670980485,
+    "embedding": 30.380790416995296,
+    "resolver": 30.714613500007545
+  },
+  "duplicate_intervals": 0,
+  "summary": {
+    "resolver": "album",
+    "canonical_speakers": 3,
+    "unattributed_segments": 0
+  },
+  "process_peak_rss_bytes": 1006338048,
+  "window_states": [
+    {
+      "window": 0,
+      "reason": "ok",
+      "mapping": {
+        "S01": "S01",
+        "S02": "S02",
+        "S03": "S03"
+      },
+      "durations": {
+        "S01": 76.16999999999999,
+        "S02": 23.429999999999993,
+        "S03": 39.569999999999986
+      },
+      "admissions": {
+        "S01": "admitted",
+        "S02": "admitted",
+        "S03": "admitted"
+      },
+      "scores": [],
+      "album": {
+        "S01": {
+          "exemplars": 1,
+          "provisional": false
+        },
+        "S02": {
+          "exemplars": 1,
+          "provisional": false
+        },
+        "S03": {
+          "exemplars": 1,
+          "provisional": false
+        }
+      }
+    },
+    {
+      "window": 1,
+      "reason": "ok",
+      "mapping": {
+        "S01": "S01",
+        "S02": "S02",
+        "S03": "S03"
+      },
+      "durations": {
+        "S01": 76.16999999999999,
+        "S02": 23.429999999999993,
+        "S03": 39.569999999999986
+      },
+      "admissions": {
+        "S01": "admitted",
+        "S02": "admitted",
+        "S03": "admitted"
+      },
+      "scores": [
+        {
+          "local_speaker": "S01",
+          "canonical_speaker": "S01",
+          "score": 1.0,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S01",
+          "canonical_speaker": "S02",
+          "score": 0.08661394912638842,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S01",
+          "canonical_speaker": "S03",
+          "score": 0.07907853117279297,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S02",
+          "canonical_speaker": "S01",
+          "score": 0.08661394912638842,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S02",
+          "canonical_speaker": "S02",
+          "score": 1.0,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S02",
+          "canonical_speaker": "S03",
+          "score": 0.08514658843828968,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S03",
+          "canonical_speaker": "S01",
+          "score": 0.07907853117279297,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S03",
+          "canonical_speaker": "S02",
+          "score": 0.08514658843828968,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S03",
+          "canonical_speaker": "S03",
+          "score": 1.0,
+          "evidence_id": ""
+        }
+      ],
+      "album": {
+        "S01": {
+          "exemplars": 2,
+          "provisional": false
+        },
+        "S02": {
+          "exemplars": 2,
+          "provisional": false
+        },
+        "S03": {
+          "exemplars": 2,
+          "provisional": false
+        }
+      }
+    },
+    {
+      "window": 2,
+      "reason": "ok",
+      "mapping": {
+        "S01": "S01",
+        "S02": "S02",
+        "S03": "S03"
+      },
+      "durations": {
+        "S01": 52.980000000000004,
+        "S02": 20.129999999999995,
+        "S03": 39.87
+      },
+      "admissions": {
+        "S01": "admitted",
+        "S02": "admitted",
+        "S03": "admitted"
+      },
+      "scores": [
+        {
+          "local_speaker": "S01",
+          "canonical_speaker": "S01",
+          "score": 0.9948079151393098,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S01",
+          "canonical_speaker": "S02",
+          "score": 0.11531105122298531,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S01",
+          "canonical_speaker": "S03",
+          "score": 0.0885091857107002,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S02",
+          "canonical_speaker": "S01",
+          "score": 0.0,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S02",
+          "canonical_speaker": "S02",
+          "score": 0.9583919043128422,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S02",
+          "canonical_speaker": "S03",
+          "score": 0.07962400640050896,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S03",
+          "canonical_speaker": "S01",
+          "score": 0.07689813885071999,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S03",
+          "canonical_speaker": "S02",
+          "score": 0.08477438426269342,
+          "evidence_id": ""
+        },
+        {
+          "local_speaker": "S03",
+          "canonical_speaker": "S03",
+          "score": 0.9994358911364226,
+          "evidence_id": ""
+        }
+      ],
+      "album": {
+        "S01": {
+          "exemplars": 3,
+          "provisional": false
+        },
+        "S02": {
+          "exemplars": 3,
+          "provisional": false
+        },
+        "S03": {
+          "exemplars": 3,
+          "provisional": false
+        }
+      }
+    }
+  ],
+  "sweep": {
+    "corrections": [],
+    "merges": [],
+    "swept_spans": 3,
+    "swept_units": 9,
+    "dispositions": {
+      "kept": 9
+    }
+  },
+  "byte_identical": true
+}
