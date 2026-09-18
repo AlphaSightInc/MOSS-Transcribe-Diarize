@@ -1,0 +1,726 @@
+[
+  {
+    "case": "reference-alternation",
+    "meeting": "KZNlZdo2G44SoZVeFUxg-vBz",
+    "lane": "system",
+    "stop_seconds": 11.466,
+    "max_observed_pending_work_items": 0,
+    "mixed_nonzero_spans": 12,
+    "local_nonzero_spans": 12,
+    "same_nonzero_boundaries": false,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 107,
+      "observed_words": 107,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 12,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 3,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 1,
+        "edits": 2
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention",
+    "pre_snapshot": {
+      "accepted_samples": 856000,
+      "committed_samples": 840000,
+      "frozen_until_sample": 840000,
+      "canonical_through_sample": 800000
+    },
+    "wer": {
+      "published_immediate": {
+        "reference_words": 106,
+        "observed_words": 108,
+        "substitutions": 2,
+        "omissions": 6,
+        "additions": 8,
+        "wer": 0.1509433962264151,
+        "unique_reference_words": 60,
+        "unique_retained": 57,
+        "unique_retention": 0.95
+      },
+      "published_final": {
+        "reference_words": 106,
+        "observed_words": 104,
+        "substitutions": 1,
+        "omissions": 5,
+        "additions": 3,
+        "wer": 0.08490566037735849,
+        "unique_reference_words": 60,
+        "unique_retained": 57,
+        "unique_retention": 0.95
+      },
+      "canonical_all": {
+        "reference_words": 106,
+        "observed_words": 107,
+        "substitutions": 3,
+        "omissions": 7,
+        "additions": 8,
+        "wer": 0.16981132075471697
+      },
+      "canonical_pre_committed": {
+        "reference_words": 106,
+        "observed_words": 107,
+        "substitutions": 3,
+        "omissions": 7,
+        "additions": 8,
+        "wer": 0.16981132075471697
+      },
+      "same_boundary_alone_canonical_all": {
+        "reference_words": 106,
+        "observed_words": 107,
+        "substitutions": 3,
+        "omissions": 7,
+        "additions": 8,
+        "wer": 0.16981132075471697
+      },
+      "local_canonical_all": {
+        "reference_words": 106,
+        "observed_words": 107,
+        "substitutions": 3,
+        "omissions": 7,
+        "additions": 8,
+        "wer": 0.16981132075471697
+      },
+      "terminal_alone": {
+        "reference_words": 106,
+        "observed_words": 105,
+        "substitutions": 2,
+        "omissions": 5,
+        "additions": 4,
+        "wer": 0.10377358490566038
+      }
+    }
+  },
+  {
+    "case": "reference-alternation",
+    "meeting": "KZNlZdo2G44SoZVeFUxg-vBz",
+    "lane": "microphone",
+    "stop_seconds": 11.466,
+    "max_observed_pending_work_items": 0,
+    "mixed_nonzero_spans": 11,
+    "local_nonzero_spans": 10,
+    "same_nonzero_boundaries": false,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 62,
+      "observed_words": 62,
+      "substitutions": 3,
+      "omissions": 2,
+      "additions": 2,
+      "wer": 0.11290322580645161
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 11,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 3,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention",
+    "pre_snapshot": {
+      "accepted_samples": 856000,
+      "committed_samples": 840000,
+      "frozen_until_sample": 840000,
+      "canonical_through_sample": 800000
+    },
+    "wer": {
+      "published_immediate": {
+        "reference_words": 53,
+        "observed_words": 55,
+        "substitutions": 1,
+        "omissions": 4,
+        "additions": 6,
+        "wer": 0.20754716981132076,
+        "unique_reference_words": 45,
+        "unique_retained": 41,
+        "unique_retention": 0.9111111111111111
+      },
+      "published_final": {
+        "reference_words": 53,
+        "observed_words": 58,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 5,
+        "wer": 0.09433962264150944,
+        "unique_reference_words": 45,
+        "unique_retained": 45,
+        "unique_retention": 1.0
+      },
+      "canonical_all": {
+        "reference_words": 53,
+        "observed_words": 62,
+        "substitutions": 2,
+        "omissions": 0,
+        "additions": 9,
+        "wer": 0.20754716981132076
+      },
+      "canonical_pre_committed": {
+        "reference_words": 53,
+        "observed_words": 58,
+        "substitutions": 2,
+        "omissions": 4,
+        "additions": 9,
+        "wer": 0.2830188679245283
+      },
+      "same_boundary_alone_canonical_all": {
+        "reference_words": 53,
+        "observed_words": 62,
+        "substitutions": 2,
+        "omissions": 0,
+        "additions": 9,
+        "wer": 0.20754716981132076
+      },
+      "local_canonical_all": {
+        "reference_words": 53,
+        "observed_words": 62,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 9,
+        "wer": 0.16981132075471697
+      },
+      "terminal_alone": {
+        "reference_words": 53,
+        "observed_words": 58,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 5,
+        "wer": 0.09433962264150944
+      }
+    }
+  },
+  {
+    "case": "reference-overlap",
+    "meeting": "Iegwd8cX2q3pia7lxgDX79gG",
+    "lane": "system",
+    "stop_seconds": 10.851,
+    "max_observed_pending_work_items": 0,
+    "mixed_nonzero_spans": 12,
+    "local_nonzero_spans": 12,
+    "same_nonzero_boundaries": true,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 107,
+      "observed_words": 107,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 12,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 2,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention",
+    "pre_snapshot": {
+      "accepted_samples": 456000,
+      "committed_samples": 440000,
+      "frozen_until_sample": 440000,
+      "canonical_through_sample": 320000
+    },
+    "wer": {
+      "published_immediate": {
+        "reference_words": 106,
+        "observed_words": 100,
+        "substitutions": 2,
+        "omissions": 14,
+        "additions": 8,
+        "wer": 0.22641509433962265,
+        "unique_reference_words": 60,
+        "unique_retained": 55,
+        "unique_retention": 0.9166666666666666
+      },
+      "published_final": {
+        "reference_words": 106,
+        "observed_words": 105,
+        "substitutions": 2,
+        "omissions": 6,
+        "additions": 5,
+        "wer": 0.12264150943396226,
+        "unique_reference_words": 60,
+        "unique_retained": 56,
+        "unique_retention": 0.9333333333333333
+      },
+      "canonical_all": {
+        "reference_words": 106,
+        "observed_words": 107,
+        "substitutions": 3,
+        "omissions": 7,
+        "additions": 8,
+        "wer": 0.16981132075471697
+      },
+      "canonical_pre_committed": {
+        "reference_words": 106,
+        "observed_words": 99,
+        "substitutions": 3,
+        "omissions": 15,
+        "additions": 8,
+        "wer": 0.24528301886792453
+      },
+      "same_boundary_alone_canonical_all": {
+        "reference_words": 106,
+        "observed_words": 107,
+        "substitutions": 3,
+        "omissions": 7,
+        "additions": 8,
+        "wer": 0.16981132075471697
+      },
+      "local_canonical_all": {
+        "reference_words": 106,
+        "observed_words": 107,
+        "substitutions": 3,
+        "omissions": 7,
+        "additions": 8,
+        "wer": 0.16981132075471697
+      },
+      "terminal_alone": {
+        "reference_words": 106,
+        "observed_words": 105,
+        "substitutions": 2,
+        "omissions": 6,
+        "additions": 5,
+        "wer": 0.12264150943396226
+      }
+    }
+  },
+  {
+    "case": "reference-overlap",
+    "meeting": "Iegwd8cX2q3pia7lxgDX79gG",
+    "lane": "microphone",
+    "stop_seconds": 10.851,
+    "max_observed_pending_work_items": 0,
+    "mixed_nonzero_spans": 10,
+    "local_nonzero_spans": 10,
+    "same_nonzero_boundaries": true,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 62,
+      "observed_words": 62,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 10,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 2,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention",
+    "pre_snapshot": {
+      "accepted_samples": 456000,
+      "committed_samples": 440000,
+      "frozen_until_sample": 440000,
+      "canonical_through_sample": 320000
+    },
+    "wer": {
+      "published_immediate": {
+        "reference_words": 53,
+        "observed_words": 59,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 6,
+        "wer": 0.11320754716981132,
+        "unique_reference_words": 45,
+        "unique_retained": 45,
+        "unique_retention": 1.0
+      },
+      "published_final": {
+        "reference_words": 53,
+        "observed_words": 58,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 5,
+        "wer": 0.09433962264150944,
+        "unique_reference_words": 45,
+        "unique_retained": 45,
+        "unique_retention": 1.0
+      },
+      "canonical_all": {
+        "reference_words": 53,
+        "observed_words": 62,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 9,
+        "wer": 0.16981132075471697
+      },
+      "canonical_pre_committed": {
+        "reference_words": 53,
+        "observed_words": 62,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 9,
+        "wer": 0.16981132075471697
+      },
+      "same_boundary_alone_canonical_all": {
+        "reference_words": 53,
+        "observed_words": 62,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 9,
+        "wer": 0.16981132075471697
+      },
+      "local_canonical_all": {
+        "reference_words": 53,
+        "observed_words": 62,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 9,
+        "wer": 0.16981132075471697
+      },
+      "terminal_alone": {
+        "reference_words": 53,
+        "observed_words": 58,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 5,
+        "wer": 0.09433962264150944
+      }
+    }
+  },
+  {
+    "case": "24-alternation",
+    "meeting": "6qj8qKJjmm63Bba87YunW2LS",
+    "lane": "system",
+    "stop_seconds": 5.411,
+    "max_observed_pending_work_items": 1,
+    "mixed_nonzero_spans": 5,
+    "local_nonzero_spans": 5,
+    "same_nonzero_boundaries": true,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 39,
+      "observed_words": 39,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 5,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 2,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention"
+  },
+  {
+    "case": "24-alternation",
+    "meeting": "6qj8qKJjmm63Bba87YunW2LS",
+    "lane": "microphone",
+    "stop_seconds": 5.411,
+    "max_observed_pending_work_items": 1,
+    "mixed_nonzero_spans": 6,
+    "local_nonzero_spans": 5,
+    "same_nonzero_boundaries": false,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 30,
+      "observed_words": 31,
+      "substitutions": 1,
+      "omissions": 2,
+      "additions": 3,
+      "wer": 0.2
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 6,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention"
+  },
+  {
+    "case": "24-overlap",
+    "meeting": "Zj8yZ-CAiR4ajRQS8j0TXBnT",
+    "lane": "system",
+    "stop_seconds": 11.389,
+    "max_observed_pending_work_items": 2,
+    "mixed_nonzero_spans": 10,
+    "local_nonzero_spans": 10,
+    "same_nonzero_boundaries": true,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 83,
+      "observed_words": 83,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 10,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 2,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention"
+  },
+  {
+    "case": "24-overlap",
+    "meeting": "Zj8yZ-CAiR4ajRQS8j0TXBnT",
+    "lane": "microphone",
+    "stop_seconds": 11.389,
+    "max_observed_pending_work_items": 2,
+    "mixed_nonzero_spans": 10,
+    "local_nonzero_spans": 10,
+    "same_nonzero_boundaries": true,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 61,
+      "observed_words": 61,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 10,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 2,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention"
+  },
+  {
+    "case": "48-alternation",
+    "meeting": "Vwu8iw50EqEX6sJYndRopDjx",
+    "lane": "system",
+    "stop_seconds": 10.501,
+    "max_observed_pending_work_items": 2,
+    "mixed_nonzero_spans": 10,
+    "local_nonzero_spans": 10,
+    "same_nonzero_boundaries": false,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 83,
+      "observed_words": 83,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 10,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 3,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention"
+  },
+  {
+    "case": "48-alternation",
+    "meeting": "Vwu8iw50EqEX6sJYndRopDjx",
+    "lane": "microphone",
+    "stop_seconds": 10.501,
+    "max_observed_pending_work_items": 2,
+    "mixed_nonzero_spans": 11,
+    "local_nonzero_spans": 11,
+    "same_nonzero_boundaries": false,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 73,
+      "observed_words": 75,
+      "substitutions": 7,
+      "omissions": 2,
+      "additions": 4,
+      "wer": 0.1780821917808219
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 11,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 2,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention"
+  },
+  {
+    "case": "48-overlap",
+    "meeting": "7-JoCcLxhMLnI21OnKiNL3uv",
+    "lane": "system",
+    "stop_seconds": 18.697,
+    "max_observed_pending_work_items": 2,
+    "mixed_nonzero_spans": 20,
+    "local_nonzero_spans": 20,
+    "same_nonzero_boundaries": true,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 155,
+      "observed_words": 155,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 20,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 4,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention"
+  },
+  {
+    "case": "48-overlap",
+    "meeting": "7-JoCcLxhMLnI21OnKiNL3uv",
+    "lane": "microphone",
+    "stop_seconds": 18.697,
+    "max_observed_pending_work_items": 2,
+    "mixed_nonzero_spans": 20,
+    "local_nonzero_spans": 20,
+    "same_nonzero_boundaries": false,
+    "local_vs_mixed_text_difference": {
+      "reference_words": 133,
+      "observed_words": 133,
+      "substitutions": 8,
+      "omissions": 1,
+      "additions": 1,
+      "wer": 0.07518796992481203
+    },
+    "same_boundary_alone": {
+      "canonical": {
+        "windows": 20,
+        "changed": 0,
+        "edits": 0
+      },
+      "rolling": {
+        "windows": 4,
+        "changed": 0,
+        "edits": 0
+      },
+      "terminal": {
+        "windows": 1,
+        "changed": 0,
+        "edits": 0
+      }
+    },
+    "per_span_ground_truth_wer": "unmeasured: no word-level reference timestamps",
+    "local_runtime_latency": "unmeasured: shadow replay is not a scheduling intervention"
+  }
+]

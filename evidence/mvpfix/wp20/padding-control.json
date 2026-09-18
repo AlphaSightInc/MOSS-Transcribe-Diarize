@@ -1,0 +1,58 @@
+{
+  "speech_prefix_equal_samples": 464000,
+  "alternation_extra_zero_samples": 400000,
+  "records": [
+    {
+      "trial": 1,
+      "case": "alternation",
+      "samples": 864000,
+      "score": {
+        "reference_words": 106,
+        "observed_words": 104,
+        "substitutions": 1,
+        "omissions": 5,
+        "additions": 3,
+        "wer": 0.08490566037735849
+      }
+    },
+    {
+      "trial": 1,
+      "case": "overlap",
+      "samples": 464000,
+      "score": {
+        "reference_words": 106,
+        "observed_words": 105,
+        "substitutions": 2,
+        "omissions": 6,
+        "additions": 5,
+        "wer": 0.12264150943396226
+      }
+    },
+    {
+      "trial": 2,
+      "case": "alternation",
+      "samples": 864000,
+      "score": {
+        "reference_words": 106,
+        "observed_words": 105,
+        "substitutions": 2,
+        "omissions": 5,
+        "additions": 4,
+        "wer": 0.10377358490566038
+      }
+    },
+    {
+      "trial": 2,
+      "case": "overlap",
+      "samples": 464000,
+      "score": {
+        "reference_words": 106,
+        "observed_words": 105,
+        "substitutions": 2,
+        "omissions": 6,
+        "additions": 5,
+        "wer": 0.12264150943396226
+      }
+    }
+  ]
+}

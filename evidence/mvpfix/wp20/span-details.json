@@ -1,0 +1,6612 @@
+[
+  {
+    "case": "reference-alternation",
+    "lane": "system",
+    "mixed": [
+      {
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3
+      },
+      {
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 12
+      },
+      {
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 440000,
+          "end_sample": 480000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 12,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 440000,
+          "end_sample": 468480,
+          "reason": "end_silence"
+        },
+        "words": 8,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 468480,
+          "end_sample": 508480,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 508480,
+          "end_sample": 548480,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 548480,
+          "end_sample": 588480,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 588480,
+          "end_sample": 628480,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 628480,
+          "end_sample": 668480,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 668480,
+          "end_sample": 708480,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 708480,
+          "end_sample": 748480,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 748480,
+          "end_sample": 788480,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 788480,
+          "end_sample": 828480,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 828480,
+          "end_sample": 864000,
+          "reason": "stop_flush"
+        },
+        "words": 0,
+        "reused": false
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 1.24723449999874
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11912633400061168
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.08810979199188296
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1289595420093974
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 160000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 35,
+          "observed_words": 35,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.40408470800321084
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.08924204199865926
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11344904200814199
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 12,
+          "observed_words": 12,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.13492954200773966
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12465929200698156
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 320000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 34,
+          "observed_words": 34,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.3578398749959888
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11710950000269804
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11863570900459308
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12287333299173042
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 440000,
+          "end_sample": 480000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.13591420800366905
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 480000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 39,
+          "observed_words": 39,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.4817773329996271
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 22,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 864000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 104,
+          "observed_words": 105,
+          "substitutions": 1,
+          "omissions": 0,
+          "additions": 1,
+          "wer": 0.019230769230769232
+        },
+        "elapsed": 1.3507744999951683
+      }
+    ]
+  },
+  {
+    "case": "reference-alternation",
+    "lane": "microphone",
+    "mixed": [
+      {
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 440000,
+          "end_sample": 480000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 12,
+          "epoch": 0,
+          "start_sample": 480000,
+          "end_sample": 520000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 13,
+          "epoch": 0,
+          "start_sample": 520000,
+          "end_sample": 560000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 14,
+          "epoch": 0,
+          "start_sample": 560000,
+          "end_sample": 600000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 15,
+          "epoch": 0,
+          "start_sample": 600000,
+          "end_sample": 640000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 16,
+          "epoch": 0,
+          "start_sample": 640000,
+          "end_sample": 680000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 17,
+          "epoch": 0,
+          "start_sample": 680000,
+          "end_sample": 720000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 18,
+          "epoch": 0,
+          "start_sample": 720000,
+          "end_sample": 760000,
+          "reason": "hard_cap"
+        },
+        "words": 7
+      },
+      {
+        "span": {
+          "id": 19,
+          "epoch": 0,
+          "start_sample": 760000,
+          "end_sample": 800000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 20,
+          "epoch": 0,
+          "start_sample": 800000,
+          "end_sample": 840000,
+          "reason": "hard_cap"
+        },
+        "words": 4
+      },
+      {
+        "span": {
+          "id": 21,
+          "epoch": 0,
+          "start_sample": 840000,
+          "end_sample": 864000,
+          "reason": "stop_flush"
+        },
+        "words": 4
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 440000,
+          "end_sample": 464000,
+          "reason": "leading_silence"
+        },
+        "words": 0,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 464000,
+          "end_sample": 504000,
+          "reason": "hard_cap"
+        },
+        "words": 7,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 504000,
+          "end_sample": 544000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 544000,
+          "end_sample": 584000,
+          "reason": "hard_cap"
+        },
+        "words": 4,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 584000,
+          "end_sample": 624000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 624000,
+          "end_sample": 664000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 664000,
+          "end_sample": 704000,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 704000,
+          "end_sample": 744000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 744000,
+          "end_sample": 784000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 784000,
+          "end_sample": 824000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 824000,
+          "end_sample": 864000,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": true
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 440000,
+          "end_sample": 480000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11508041599881835
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 480000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1283559589937795
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 12,
+          "epoch": 0,
+          "start_sample": 480000,
+          "end_sample": 520000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12283320800634101
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 13,
+          "epoch": 0,
+          "start_sample": 520000,
+          "end_sample": 560000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1257538750069216
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 14,
+          "epoch": 0,
+          "start_sample": 560000,
+          "end_sample": 600000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11955670799943618
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 15,
+          "epoch": 0,
+          "start_sample": 600000,
+          "end_sample": 640000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1362408750137547
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 480000,
+          "end_sample": 640000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 22,
+          "observed_words": 22,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.27369462499336805
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 16,
+          "epoch": 0,
+          "start_sample": 640000,
+          "end_sample": 680000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1337327500077663
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 17,
+          "epoch": 0,
+          "start_sample": 680000,
+          "end_sample": 720000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11932245800562669
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 18,
+          "epoch": 0,
+          "start_sample": 720000,
+          "end_sample": 760000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 7,
+          "observed_words": 7,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12188929198600817
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 19,
+          "epoch": 0,
+          "start_sample": 760000,
+          "end_sample": 800000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12210404200595804
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 640000,
+          "end_sample": 800000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 24,
+          "observed_words": 24,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.2038895000005141
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 20,
+          "epoch": 0,
+          "start_sample": 800000,
+          "end_sample": 840000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 4,
+          "observed_words": 4,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12888912500056904
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 21,
+          "epoch": 0,
+          "start_sample": 840000,
+          "end_sample": 864000,
+          "reason": "stop_flush"
+        },
+        "difference": {
+          "reference_words": 4,
+          "observed_words": 4,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1359929999889573
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 22,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 864000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 58,
+          "observed_words": 58,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.7191527079994557
+      }
+    ]
+  },
+  {
+    "case": "reference-overlap",
+    "lane": "system",
+    "mixed": [
+      {
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3
+      },
+      {
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 12
+      },
+      {
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 440000,
+          "end_sample": 464000,
+          "reason": "stop_flush"
+        },
+        "words": 8
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 12,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 440000,
+          "end_sample": 464000,
+          "reason": "stop_flush"
+        },
+        "words": 8,
+        "reused": true
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.2005998329987051
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11055445800593589
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.08573958300985396
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12211520799610298
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 160000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 35,
+          "observed_words": 35,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.40584550000494346
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09012612501101103
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11040574999060482
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 12,
+          "observed_words": 12,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.13444170799630228
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12127270799828693
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 320000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 34,
+          "observed_words": 34,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.3489281660004053
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12129595800070092
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11653208399366122
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1318475000007311
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 440000,
+          "end_sample": 464000,
+          "reason": "stop_flush"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.13419983298808802
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 12,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 464000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 105,
+          "observed_words": 105,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 1.1687570409994805
+      }
+    ]
+  },
+  {
+    "case": "reference-overlap",
+    "lane": "microphone",
+    "mixed": [
+      {
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 7
+      },
+      {
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 4
+      },
+      {
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 7,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 4,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 440000,
+          "end_sample": 464000,
+          "reason": "stop_flush"
+        },
+        "words": 0,
+        "reused": false
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 7,
+          "observed_words": 7,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11114220799936447
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11550850000639912
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 4,
+          "observed_words": 4,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09255933400709182
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11528025000006892
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 160000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 25,
+          "observed_words": 25,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.2745135000004666
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10358341700339224
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.0970334589947015
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10628941700269934
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10129737500392366
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 320000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 23,
+          "observed_words": 23,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.23875604099885095
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09224316698964685
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.0981672080088174
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 12,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 464000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 58,
+          "observed_words": 58,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.5855504589999327
+      }
+    ]
+  },
+  {
+    "case": "24-alternation",
+    "lane": "system",
+    "mixed": [
+      {
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 384000,
+          "reason": "stop_flush"
+        },
+        "words": 0,
+        "reused": true
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1712912079965463
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1606270000047516
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1529352499928791
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11799562499800231
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 160000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 35,
+          "observed_words": 35,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.3902942079876084
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10677404199668672
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 320000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11547020899888594
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 384000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 37,
+          "observed_words": 37,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.4899855420080712
+      }
+    ]
+  },
+  {
+    "case": "24-alternation",
+    "lane": "microphone",
+    "mixed": [
+      {
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 1
+      },
+      {
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 384000,
+          "reason": "stop_flush"
+        },
+        "words": 5
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 190400,
+          "reason": "leading_silence"
+        },
+        "words": 0,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 190400,
+          "end_sample": 230400,
+          "reason": "hard_cap"
+        },
+        "words": 7,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 230400,
+          "end_sample": 270400,
+          "reason": "hard_cap"
+        },
+        "words": 7,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 270400,
+          "end_sample": 310400,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 310400,
+          "end_sample": 350400,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 350400,
+          "end_sample": 384000,
+          "reason": "stop_flush"
+        },
+        "words": 6,
+        "reused": false
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 1,
+          "observed_words": 1,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1070319999998901
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12615875000483356
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.13135024999792222
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12188258300011512
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 320000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 18,
+          "observed_words": 18,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.23993670800700784
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11711741700128186
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 384000,
+          "reason": "stop_flush"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11099524999735877
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 384000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 26,
+          "observed_words": 26,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.36647612499655224
+      }
+    ]
+  },
+  {
+    "case": "24-overlap",
+    "lane": "system",
+    "mixed": [
+      {
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3
+      },
+      {
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 12
+      },
+      {
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 384000,
+          "reason": "stop_flush"
+        },
+        "words": 4
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 12,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 384000,
+          "reason": "stop_flush"
+        },
+        "words": 4,
+        "reused": true
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.16803012500167824
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11111333400185686
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.08489325000846293
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12066783399495762
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 160000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 35,
+          "observed_words": 35,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.3939069589978317
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09024783299537376
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11041375000786502
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 12,
+          "observed_words": 12,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1404347919888096
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12189350000699051
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 320000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 34,
+          "observed_words": 34,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.34370558299997356
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12711633399885613
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 384000,
+          "reason": "stop_flush"
+        },
+        "difference": {
+          "reference_words": 4,
+          "observed_words": 4,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11687087499012705
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 384000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 81,
+          "observed_words": 81,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.9445872910000617
+      }
+    ]
+  },
+  {
+    "case": "24-overlap",
+    "lane": "microphone",
+    "mixed": [
+      {
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 7
+      },
+      {
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 4
+      },
+      {
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 384000,
+          "reason": "stop_flush"
+        },
+        "words": 5
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 7,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 4,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 384000,
+          "reason": "stop_flush"
+        },
+        "words": 5,
+        "reused": true
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 7,
+          "observed_words": 7,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11889933299971744
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11561616699327715
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 4,
+          "observed_words": 4,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09492774998943787
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11604725000506733
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 160000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 25,
+          "observed_words": 25,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.27350858300633263
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10334608300763648
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11324008299561683
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10378825000952929
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10076466600003187
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 320000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 23,
+          "observed_words": 23,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.24526333399990108
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09491591699770652
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 384000,
+          "reason": "stop_flush"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10995979100698605
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 384000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 57,
+          "observed_words": 57,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.6068436660134466
+      }
+    ]
+  },
+  {
+    "case": "48-alternation",
+    "lane": "system",
+    "mixed": [
+      {
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3
+      },
+      {
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 12
+      },
+      {
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 4
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 12,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 386080,
+          "reason": "end_silence"
+        },
+        "words": 4,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 386080,
+          "end_sample": 426080,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 426080,
+          "end_sample": 466080,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 466080,
+          "end_sample": 506080,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 506080,
+          "end_sample": 546080,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 546080,
+          "end_sample": 586080,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 586080,
+          "end_sample": 626080,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 626080,
+          "end_sample": 666080,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 666080,
+          "end_sample": 706080,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 706080,
+          "end_sample": 746080,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 746080,
+          "end_sample": 768000,
+          "reason": "stop_flush"
+        },
+        "words": 0,
+        "reused": false
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.2331888339977013
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12502458300150465
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11391916699358262
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1200732919969596
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 160000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 35,
+          "observed_words": 35,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.4166850420006085
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10745099998894148
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1275908329989761
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 12,
+          "observed_words": 12,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.14944399999512825
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.143571124994196
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 320000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 34,
+          "observed_words": 34,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.36762854098924436
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.16521029199066106
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 4,
+          "observed_words": 4,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11235129200213123
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 480000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 15,
+          "observed_words": 15,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.16946575000474695
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 22,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 768000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 81,
+          "observed_words": 81,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 1.0535940410045441
+      }
+    ]
+  },
+  {
+    "case": "48-alternation",
+    "lane": "microphone",
+    "mixed": [
+      {
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 2
+      },
+      {
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 400160,
+          "end_sample": 440160,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 12,
+          "epoch": 0,
+          "start_sample": 440160,
+          "end_sample": 480160,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 13,
+          "epoch": 0,
+          "start_sample": 480160,
+          "end_sample": 520160,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 15,
+          "epoch": 0,
+          "start_sample": 524480,
+          "end_sample": 564480,
+          "reason": "hard_cap"
+        },
+        "words": 7
+      },
+      {
+        "span": {
+          "id": 16,
+          "epoch": 0,
+          "start_sample": 564480,
+          "end_sample": 604480,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 17,
+          "epoch": 0,
+          "start_sample": 604480,
+          "end_sample": 644480,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 18,
+          "epoch": 0,
+          "start_sample": 644480,
+          "end_sample": 684480,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 19,
+          "epoch": 0,
+          "start_sample": 684480,
+          "end_sample": 724480,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 20,
+          "epoch": 0,
+          "start_sample": 724480,
+          "end_sample": 764480,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 21,
+          "epoch": 0,
+          "start_sample": 764480,
+          "end_sample": 768000,
+          "reason": "stop_flush"
+        },
+        "words": 1
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 0,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 382400,
+          "reason": "leading_silence"
+        },
+        "words": 0,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 382400,
+          "end_sample": 422400,
+          "reason": "hard_cap"
+        },
+        "words": 7,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 422400,
+          "end_sample": 462400,
+          "reason": "hard_cap"
+        },
+        "words": 10,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 462400,
+          "end_sample": 502400,
+          "reason": "hard_cap"
+        },
+        "words": 10,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 502400,
+          "end_sample": 506240,
+          "reason": "leading_silence"
+        },
+        "words": 0,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 506240,
+          "end_sample": 546240,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 546240,
+          "end_sample": 586240,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 586240,
+          "end_sample": 626240,
+          "reason": "hard_cap"
+        },
+        "words": 10,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 626240,
+          "end_sample": 666240,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 666240,
+          "end_sample": 706240,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 706240,
+          "end_sample": 746240,
+          "reason": "hard_cap"
+        },
+        "words": 7,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 746240,
+          "end_sample": 768000,
+          "reason": "stop_flush"
+        },
+        "words": 4,
+        "reused": false
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 2,
+          "observed_words": 2,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10679820900259074
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 400160,
+          "end_sample": 440160,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1358692079957109
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 12,
+          "epoch": 0,
+          "start_sample": 440160,
+          "end_sample": 480160,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12444112499360926
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 480000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 20,
+          "observed_words": 20,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.23479937500087544
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 13,
+          "epoch": 0,
+          "start_sample": 480160,
+          "end_sample": 520160,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12982383300550282
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 15,
+          "epoch": 0,
+          "start_sample": 524480,
+          "end_sample": 564480,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 7,
+          "observed_words": 7,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1256304580019787
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 16,
+          "epoch": 0,
+          "start_sample": 564480,
+          "end_sample": 604480,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1911820420064032
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 17,
+          "epoch": 0,
+          "start_sample": 604480,
+          "end_sample": 644480,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12520983300055377
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 480000,
+          "end_sample": 640000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 28,
+          "observed_words": 28,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.2872369589895243
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 18,
+          "epoch": 0,
+          "start_sample": 644480,
+          "end_sample": 684480,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.14126779198704753
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 19,
+          "epoch": 0,
+          "start_sample": 684480,
+          "end_sample": 724480,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1490327920037089
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 20,
+          "epoch": 0,
+          "start_sample": 724480,
+          "end_sample": 764480,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12305245900643058
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 21,
+          "epoch": 0,
+          "start_sample": 764480,
+          "end_sample": 768000,
+          "reason": "stop_flush"
+        },
+        "difference": {
+          "reference_words": 1,
+          "observed_words": 1,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09731408399238717
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 22,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 768000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 71,
+          "observed_words": 71,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.7604694579931675
+      }
+    ]
+  },
+  {
+    "case": "48-overlap",
+    "lane": "system",
+    "mixed": [
+      {
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3
+      },
+      {
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 12
+      },
+      {
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 440000,
+          "end_sample": 480000,
+          "reason": "hard_cap"
+        },
+        "words": 12
+      },
+      {
+        "span": {
+          "id": 12,
+          "epoch": 0,
+          "start_sample": 480000,
+          "end_sample": 520000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 13,
+          "epoch": 0,
+          "start_sample": 520000,
+          "end_sample": 560000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 14,
+          "epoch": 0,
+          "start_sample": 560000,
+          "end_sample": 600000,
+          "reason": "hard_cap"
+        },
+        "words": 7
+      },
+      {
+        "span": {
+          "id": 15,
+          "epoch": 0,
+          "start_sample": 600000,
+          "end_sample": 640000,
+          "reason": "hard_cap"
+        },
+        "words": 3
+      },
+      {
+        "span": {
+          "id": 16,
+          "epoch": 0,
+          "start_sample": 640000,
+          "end_sample": 680000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 17,
+          "epoch": 0,
+          "start_sample": 680000,
+          "end_sample": 720000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 18,
+          "epoch": 0,
+          "start_sample": 720000,
+          "end_sample": 760000,
+          "reason": "hard_cap"
+        },
+        "words": 9
+      },
+      {
+        "span": {
+          "id": 19,
+          "epoch": 0,
+          "start_sample": 760000,
+          "end_sample": 768000,
+          "reason": "stop_flush"
+        },
+        "words": 1
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 3,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 12,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 440000,
+          "end_sample": 480000,
+          "reason": "hard_cap"
+        },
+        "words": 12,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 480000,
+          "end_sample": 520000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 520000,
+          "end_sample": 560000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 560000,
+          "end_sample": 600000,
+          "reason": "hard_cap"
+        },
+        "words": 7,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 600000,
+          "end_sample": 640000,
+          "reason": "hard_cap"
+        },
+        "words": 3,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 640000,
+          "end_sample": 680000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 680000,
+          "end_sample": 720000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 720000,
+          "end_sample": 760000,
+          "reason": "hard_cap"
+        },
+        "words": 9,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 760000,
+          "end_sample": 768000,
+          "reason": "stop_flush"
+        },
+        "words": 1,
+        "reused": true
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.16838762500265148
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10841729100502562
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.08939275000011548
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12016058400331531
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 160000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 35,
+          "observed_words": 35,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.44614845799515024
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.08783874999789987
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11382008298824076
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 12,
+          "observed_words": 12,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.13522854199982248
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12053366699547041
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 320000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 34,
+          "observed_words": 34,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.3493823339958908
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12265816700528376
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11526270899048541
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12695533399528358
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 440000,
+          "end_sample": 480000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 12,
+          "observed_words": 12,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.20394483300333377
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 480000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 43,
+          "observed_words": 43,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.5022510830021929
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 12,
+          "epoch": 0,
+          "start_sample": 480000,
+          "end_sample": 520000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.13551666699640919
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 13,
+          "epoch": 0,
+          "start_sample": 520000,
+          "end_sample": 560000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.22699908399954438
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 14,
+          "epoch": 0,
+          "start_sample": 560000,
+          "end_sample": 600000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 7,
+          "observed_words": 7,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.13167699999758042
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 15,
+          "epoch": 0,
+          "start_sample": 600000,
+          "end_sample": 640000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1638927500025602
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 480000,
+          "end_sample": 640000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 23,
+          "observed_words": 23,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.3666378329944564
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 16,
+          "epoch": 0,
+          "start_sample": 640000,
+          "end_sample": 680000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.2429871250060387
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 17,
+          "epoch": 0,
+          "start_sample": 680000,
+          "end_sample": 720000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11744995799381286
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 18,
+          "epoch": 0,
+          "start_sample": 720000,
+          "end_sample": 760000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 9,
+          "observed_words": 9,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.15245341700210702
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 19,
+          "epoch": 0,
+          "start_sample": 760000,
+          "end_sample": 768000,
+          "reason": "stop_flush"
+        },
+        "difference": {
+          "reference_words": 1,
+          "observed_words": 1,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09977037500357255
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 20,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 768000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 149,
+          "observed_words": 149,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 1.6865165829949547
+      }
+    ]
+  },
+  {
+    "case": "48-overlap",
+    "lane": "microphone",
+    "mixed": [
+      {
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 7
+      },
+      {
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 4
+      },
+      {
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "words": 11
+      },
+      {
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 440000,
+          "end_sample": 480000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 12,
+          "epoch": 0,
+          "start_sample": 480000,
+          "end_sample": 520000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 13,
+          "epoch": 0,
+          "start_sample": 520000,
+          "end_sample": 560000,
+          "reason": "hard_cap"
+        },
+        "words": 6
+      },
+      {
+        "span": {
+          "id": 14,
+          "epoch": 0,
+          "start_sample": 560000,
+          "end_sample": 600000,
+          "reason": "hard_cap"
+        },
+        "words": 7
+      },
+      {
+        "span": {
+          "id": 15,
+          "epoch": 0,
+          "start_sample": 600000,
+          "end_sample": 640000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 16,
+          "epoch": 0,
+          "start_sample": 640000,
+          "end_sample": 680000,
+          "reason": "hard_cap"
+        },
+        "words": 5
+      },
+      {
+        "span": {
+          "id": 17,
+          "epoch": 0,
+          "start_sample": 680000,
+          "end_sample": 720000,
+          "reason": "hard_cap"
+        },
+        "words": 10
+      },
+      {
+        "span": {
+          "id": 18,
+          "epoch": 0,
+          "start_sample": 720000,
+          "end_sample": 760000,
+          "reason": "hard_cap"
+        },
+        "words": 8
+      },
+      {
+        "span": {
+          "id": 19,
+          "epoch": 0,
+          "start_sample": 760000,
+          "end_sample": 768000,
+          "reason": "stop_flush"
+        },
+        "words": 2
+      }
+    ],
+    "local": [
+      {
+        "span": {
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "words": 7,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "words": 4,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "words": 5,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": true
+      },
+      {
+        "span": {
+          "start_sample": 400000,
+          "end_sample": 400160,
+          "reason": "leading_silence"
+        },
+        "words": 0,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 400160,
+          "end_sample": 440160,
+          "reason": "hard_cap"
+        },
+        "words": 11,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 440160,
+          "end_sample": 480160,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 480160,
+          "end_sample": 520160,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 520160,
+          "end_sample": 524480,
+          "reason": "leading_silence"
+        },
+        "words": 0,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 524480,
+          "end_sample": 564480,
+          "reason": "hard_cap"
+        },
+        "words": 7,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 564480,
+          "end_sample": 604480,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 604480,
+          "end_sample": 644480,
+          "reason": "hard_cap"
+        },
+        "words": 6,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 644480,
+          "end_sample": 684480,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 684480,
+          "end_sample": 724480,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 724480,
+          "end_sample": 764480,
+          "reason": "hard_cap"
+        },
+        "words": 8,
+        "reused": false
+      },
+      {
+        "span": {
+          "start_sample": 764480,
+          "end_sample": 768000,
+          "reason": "stop_flush"
+        },
+        "words": 1,
+        "reused": false
+      }
+    ],
+    "replay": [
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 40000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 7,
+          "observed_words": 7,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11507962500036228
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 40000,
+          "end_sample": 80000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.11588316599954851
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 80000,
+          "end_sample": 120000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 4,
+          "observed_words": 4,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09106574999168515
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 120000,
+          "end_sample": 160000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12259033299051225
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 0,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 160000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 25,
+          "observed_words": 25,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.26983975000621285
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 4,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 200000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10185770799580496
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 5,
+          "epoch": 0,
+          "start_sample": 200000,
+          "end_sample": 240000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.0993049999960931
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 6,
+          "epoch": 0,
+          "start_sample": 240000,
+          "end_sample": 280000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10412545800500084
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 7,
+          "epoch": 0,
+          "start_sample": 280000,
+          "end_sample": 320000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.10214133399131242
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 1,
+          "epoch": 0,
+          "start_sample": 160000,
+          "end_sample": 320000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 23,
+          "observed_words": 23,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.24703545900410973
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 8,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 360000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09405075000540819
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 9,
+          "epoch": 0,
+          "start_sample": 360000,
+          "end_sample": 400000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.09718124999199063
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 10,
+          "epoch": 0,
+          "start_sample": 400000,
+          "end_sample": 440000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 11,
+          "observed_words": 11,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1715309159917524
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 11,
+          "epoch": 0,
+          "start_sample": 440000,
+          "end_sample": 480000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.14333737498964183
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 2,
+          "epoch": 0,
+          "start_sample": 320000,
+          "end_sample": 480000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 28,
+          "observed_words": 28,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.27123279200168326
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 12,
+          "epoch": 0,
+          "start_sample": 480000,
+          "end_sample": 520000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1246424169949023
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 13,
+          "epoch": 0,
+          "start_sample": 520000,
+          "end_sample": 560000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 6,
+          "observed_words": 6,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12016420799773186
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 14,
+          "epoch": 0,
+          "start_sample": 560000,
+          "end_sample": 600000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 7,
+          "observed_words": 7,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.17857320800249
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 15,
+          "epoch": 0,
+          "start_sample": 600000,
+          "end_sample": 640000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.13566762499976903
+      },
+      {
+        "stage": "rolling",
+        "span": {
+          "id": 3,
+          "epoch": 0,
+          "start_sample": 480000,
+          "end_sample": 640000,
+          "reason": "rolling_window"
+        },
+        "difference": {
+          "reference_words": 28,
+          "observed_words": 28,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.28945829199801665
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 16,
+          "epoch": 0,
+          "start_sample": 640000,
+          "end_sample": 680000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 5,
+          "observed_words": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.12698558399279136
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 17,
+          "epoch": 0,
+          "start_sample": 680000,
+          "end_sample": 720000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 10,
+          "observed_words": 10,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.16945795899664517
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 18,
+          "epoch": 0,
+          "start_sample": 720000,
+          "end_sample": 760000,
+          "reason": "hard_cap"
+        },
+        "difference": {
+          "reference_words": 8,
+          "observed_words": 8,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.13446741699590348
+      },
+      {
+        "stage": "canonical",
+        "span": {
+          "id": 19,
+          "epoch": 0,
+          "start_sample": 760000,
+          "end_sample": 768000,
+          "reason": "stop_flush"
+        },
+        "difference": {
+          "reference_words": 2,
+          "observed_words": 2,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 0.1048055419960292
+      },
+      {
+        "stage": "terminal",
+        "span": {
+          "id": 20,
+          "epoch": 0,
+          "start_sample": 0,
+          "end_sample": 768000,
+          "reason": "terminal"
+        },
+        "difference": {
+          "reference_words": 127,
+          "observed_words": 127,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "elapsed": 1.2141498330020113
+      }
+    ]
+  }
+]

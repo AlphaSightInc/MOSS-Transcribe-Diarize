@@ -599,3 +599,13 @@ Stitching preserved the resolver's labels. No threshold or identity algorithm ch
 Wiring-only repair is falsified; album integration requires a separate measured design.
 Reproduction and decisions: `prototypes/streaming-diarization/wp18-file-identity/NOTES.md`
 and `evidence/mvpfix/wp18/`. This is a local diagnosis, not deployment acceptance.
+### WP20 measurement — 2026-09-18: lane endpoint ownership is not the overlap remedy
+
+On integrated WP17 (`de35ef36`), the full-reference overlap's nonzero boundaries
+are identical under mixed and lane-local WebRTC endpointing (system 12/12, mic
+10/10); canonical WER stays 18/106 and 9/53. Its immediate system gap is the
+uncommitted tail, while the final 13/106 persists in a standalone lane decode.
+Identical speech plus alternation's 25 s zero padding gives 9–11/106 instead.
+No production endpoint/policy change promoted. The standing bench retains the
+failed hypothesis, 24/48 s controls, exact stage counts, and limitations in
+`evidence/mvpfix/wp20/NOTES.md`; lane-local scheduler timing remains unmeasured.
