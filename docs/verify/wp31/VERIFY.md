@@ -47,7 +47,7 @@ instrument repair. No additional live decoder runs are needed or authorized here
 
 ## Record / report
 
-Write `VERIFY-RESULT.md`: tested SHA, commands, PASS/FAIL and exact counts, known limits.
+Write `docs/verify/wp31/VERIFY-RESULT.md`: tested SHA, commands, PASS/FAIL and exact counts, known limits.
 Retain only content-free numeric test summaries under `evidence/mvpfix/wp31/` (raw logs
 remain `.wp31/`). Commit verification results locally on this branch; no amend needed.
 Then report here in <=60 lines: branch + final SHA; prototype question/verdict; changed
@@ -60,3 +60,11 @@ All processes started by the implementation session were stopped before `/new`.
 
 Read `evidence/mvpfix/wp31/NOTES.md` only after running the checks, for final report
 context. Do not turn a local journey into deployed production qualification.
+
+## Fresh-session correction (2026-09-18)
+
+The literal run at `40ac0f13` found the root `VERIFY.md` violates the existing
+`scripts/check_verify_layout.sh` contract: 1 failed, 1944 passed, 4 skipped,
+37 subtests passed. Verification documents now live under `docs/verify/wp31/`.
+Preserve the original failure; use distinct private log/basetemp names for the full
+suite rerun. Do not rerun the single-use retained-store verifier on its used copies.

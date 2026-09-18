@@ -101,3 +101,14 @@ refusal assertions from store-only to the production startup lifespan.
 Final full Python: 1945 passed, 4 skipped, 37 subtests, 21 warnings (152.58 s).
 Total real decoder requests: 107/200, including both failed instruments; maximum
 in-flight enforced at 2. Fresh-context result belongs in VERIFY-RESULT.md.
+
+## Fresh-session finding (2026-09-18)
+
+F1: The literal full suite at `40ac0f13` failed the existing verification-layout
+regression: root `VERIFY.md` conflicts with `scripts/check_verify_layout.sh:6`.
+This is a documentation packaging defect, not a store defect. Move the instructions
+and new result under `docs/verify/wp31/`; retain the initial 1-failed/1944-passed run.
+The prior 1945-pass preflight did not certify the subsequently added root document.
+Fresh retained reopening passed: 13 stores, 60 meetings, 47 preserved old transcripts,
+13 new meetings, 60 referenced audio files. No additional decoder requests.
+Final suite counts and complete verification scope: `docs/verify/wp31/VERIFY-RESULT.md`.
