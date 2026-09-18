@@ -162,7 +162,7 @@ def main():
             paused.set()
             (state / 'PAUSE').touch()
             emit(dict(kind='pause', time=time.monotonic(), foreign_streak=foreign_streak))
-        elif paused.is_set() and not foreign and metric['num_requests_running'] + metric['num_requests_waiting'] == 0:
+        elif paused.is_set() and metric['num_requests_running'] + metric['num_requests_waiting'] == 0:
             (state / 'PAUSE').unlink(missing_ok=True)
             paused.clear()
             emit(dict(kind='resume', time=time.monotonic()))

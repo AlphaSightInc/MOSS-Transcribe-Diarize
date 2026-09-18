@@ -135,26 +135,14 @@ def main():
         return rows
 
     foreign_streak = 0
-    previous_metric = None
-    previous_own = dict(sent=0, active=0)
 
     def sample(pid):
-        nonlocal foreign_streak, previous_metric, previous_own
+        nonlocal foreign_streak
         before = own_requests()
         metric = metrics()
         after = own_requests()
         active = max([r['active'] for r in before[-1:]+after[len(before):]] or [0])
-        queue_excess = metric['num_requests_running'] + metric['num_requests_waiting'] > active
-        own_after = after[-1] if after else dict(sent=0, active=0)
-        shared_completions = None
-        foreign_completion_lower_bound = 0
-        if previous_metric is not None and metric['request_success_total'] is not None and previous_metric['request_success_total'] is not None:
-            shared_completions = metric['request_success_total'] - previous_metric['request_success_total']
-            own_possible = own_after['sent'] - previous_own['sent'] + previous_own['active']
-            foreign_completion_lower_bound = max(0, shared_completions-own_possible)
-        previous_metric = metric
-        previous_own = before[-1] if before else dict(sent=0, active=0)
-        foreign = queue_excess or foreign_completion_lower_bound > 0
+        foreign = metric['num_requests_running'] + metric['num_requests_waiting'] > active
         foreign_streak = foreign_streak + 1 if foreign else 0
         if foreign:
             contaminated.set()
@@ -162,7 +150,7 @@ def main():
             paused.set()
             (state / 'PAUSE').touch()
             emit(dict(kind='pause', time=time.monotonic(), foreign_streak=foreign_streak))
-        elif paused.is_set() and not foreign and metric['num_requests_running'] + metric['num_requests_waiting'] == 0:
+        elif paused.is_set() and metric['num_requests_running'] + metric['num_requests_waiting'] == 0:
             (state / 'PAUSE').unlink(missing_ok=True)
             paused.clear()
             emit(dict(kind='resume', time=time.monotonic()))
@@ -171,15 +159,13 @@ def main():
                              capture_output=True, text=True, timeout=10)
         rss = subprocess.check_output(['ps', '-o', 'rss=', '-p', str(pid)], text=True).strip()
         row = dict(kind='resource', time=time.monotonic(), app_rss_bytes=int(rss)*1024,
-                   own_active=active, own_sent=own_after["sent"], shared_completions=shared_completions, foreign_completion_lower_bound=foreign_completion_lower_bound, foreign_load_detected=foreign, foreign_streak=foreign_streak, paused=paused.is_set(), metrics=metric,
+                   own_active=active, foreign_load_detected=foreign, foreign_streak=foreign_streak, paused=paused.is_set(), metrics=metric,
                    gpu_memory_mib=gpu.stdout.strip() if gpu.returncode == 0 else None)
         resources.append(row)
         emit(row)
 
     def monitor(pid):
-        next_sample = time.monotonic()+30
-        while not stop_monitor.wait(max(0, next_sample-time.monotonic())):
-            next_sample += 30
+        while not stop_monitor.wait(30):
             try:
                 sample(pid)
             except Exception as exc:
@@ -436,8 +422,7 @@ def main():
         result['decoder_calls'] = sum(r['kind']=='start' for r in own_requests())
         result['maximum_own_inflight'] = max([r['active'] for r in own_requests()] or [0])
         result['clean'] = (all(r.get('clean') for r in outputs) and len(outputs)==args.sessions and not failures
-                           and not contaminated.is_set() and (result['fairness'].get('passes') is True
-                               or (args.sessions==1 and result['fairness'].get('applicability')=='not_applicable'))
+                           and not contaminated.is_set() and result['fairness'].get('passes') is True
                            and result['app_rss_growth_bytes']<=4*1024**3
                            and result.get('prestop_inference',{}).get('rtf',float('inf'))<1
                            and depth<=1 and result['maximum_gpu_cache_use'] is not None

@@ -1,0 +1,1 @@
+Harness attempt interrupted: resume must require no foreign queue excess AND no foreign completion excess. Before correction, queue-only clear could resume prematurely. Local app terminated to release worker calls; no production defect inferred. All generated decoder calls retained.

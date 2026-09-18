@@ -1,0 +1,2996 @@
+{
+  "sessions": 2,
+  "seconds": 300,
+  "clean": false,
+  "quality_bounds": {
+    "immediate_wer": [
+      "max",
+      0.166655
+    ],
+    "settled_wer": [
+      "max",
+      0.140442
+    ],
+    "recall": [
+      "min",
+      0.929636
+    ],
+    "time_speaker_attribution": [
+      "min",
+      0.87697
+    ],
+    "diarization_error_rate": [
+      "max",
+      0.16143
+    ],
+    "matched_speaker_accuracy": [
+      "min",
+      0.911512
+    ],
+    "reference_speech_der": [
+      "max",
+      0.134804
+    ],
+    "final_wer": [
+      "max",
+      0.095074
+    ]
+  },
+  "resources": [
+    {
+      "kind": "resource",
+      "time": 87927.536335666,
+      "app_rss_bytes": 655523840,
+      "own_active": 0,
+      "own_sent": 0,
+      "shared_completions": null,
+      "foreign_completion_lower_bound": 0,
+      "foreign_load_detected": true,
+      "foreign_streak": 1,
+      "paused": false,
+      "metrics": {
+        "num_requests_running": 1.0,
+        "num_requests_waiting": 0.0,
+        "kv_cache_usage_perc": 0.015466983938132062,
+        "gpu_cache_usage_perc": null,
+        "request_success_total": 26161.0
+      },
+      "gpu_memory_mib": "14175, 16376"
+    },
+    {
+      "kind": "resource",
+      "time": 87957.78774275,
+      "app_rss_bytes": 880197632,
+      "own_active": 0,
+      "own_sent": 26,
+      "shared_completions": 34.0,
+      "foreign_completion_lower_bound": 8.0,
+      "foreign_load_detected": true,
+      "foreign_streak": 2,
+      "paused": true,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "kv_cache_usage_perc": 0.0,
+        "gpu_cache_usage_perc": null,
+        "request_success_total": 26195.0
+      },
+      "gpu_memory_mib": "14175, 16376"
+    },
+    {
+      "kind": "resource",
+      "time": 87987.788511125,
+      "app_rss_bytes": 880279552,
+      "own_active": 0,
+      "own_sent": 26,
+      "shared_completions": 2.0,
+      "foreign_completion_lower_bound": 2.0,
+      "foreign_load_detected": true,
+      "foreign_streak": 3,
+      "paused": false,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "kv_cache_usage_perc": 0.0,
+        "gpu_cache_usage_perc": null,
+        "request_success_total": 26197.0
+      },
+      "gpu_memory_mib": "14175, 16376"
+    },
+    {
+      "kind": "resource",
+      "time": 87996.889978541,
+      "app_rss_bytes": 881360896,
+      "own_active": 0,
+      "own_sent": 36,
+      "shared_completions": 15.0,
+      "foreign_completion_lower_bound": 5.0,
+      "foreign_load_detected": true,
+      "foreign_streak": 4,
+      "paused": true,
+      "metrics": {
+        "num_requests_running": 0.0,
+        "num_requests_waiting": 0.0,
+        "kv_cache_usage_perc": 0.0,
+        "gpu_cache_usage_perc": null,
+        "request_success_total": 26212.0
+      },
+      "gpu_memory_mib": "14175, 16376"
+    }
+  ],
+  "failures": [
+    "session_1:URLError",
+    "abort:URLError",
+    "session_2:URLError",
+    "abort:URLError"
+  ],
+  "session_results": [
+    {
+      "ordinal": 1,
+      "clip": "interview_bill_ackman_60s:0:960000",
+      "acknowledged_frames": 158,
+      "retries": 0,
+      "foreign_probes": 156,
+      "wrong_owner_failures": 0,
+      "updates": [
+        {
+          "at_seconds": 0.017345874992315657,
+          "words": 0,
+          "newest_audio_age_seconds": 0.017345874992315657
+        },
+        {
+          "at_seconds": 4.034671832996537,
+          "words": 9,
+          "newest_audio_age_seconds": 1.554671832996537
+        },
+        {
+          "at_seconds": 5.533645832998445,
+          "words": 17,
+          "newest_audio_age_seconds": 0.6936458329984454
+        },
+        {
+          "at_seconds": 8.040862791996915,
+          "words": 25,
+          "newest_audio_age_seconds": 0.5508627919969147
+        },
+        {
+          "at_seconds": 10.523377457997412,
+          "words": 36,
+          "newest_audio_age_seconds": 0.543377457997412
+        },
+        {
+          "at_seconds": 12.021377457989729,
+          "words": 35,
+          "newest_audio_age_seconds": 2.0413774579897286
+        },
+        {
+          "at_seconds": 13.039551124995342,
+          "words": 38,
+          "newest_audio_age_seconds": 0.649551124995341
+        },
+        {
+          "at_seconds": 16.03485520799586,
+          "words": 47,
+          "newest_audio_age_seconds": 1.0548552079958604
+        },
+        {
+          "at_seconds": 18.541758332998143,
+          "words": 59,
+          "newest_audio_age_seconds": 1.0517583329981441
+        },
+        {
+          "at_seconds": 20.53316958299547,
+          "words": 70,
+          "newest_audio_age_seconds": 0.613169582995468
+        },
+        {
+          "at_seconds": 22.039049582992448,
+          "words": 68,
+          "newest_audio_age_seconds": 2.0990495829924463
+        },
+        {
+          "at_seconds": 23.040099291989463,
+          "words": 79,
+          "newest_audio_age_seconds": 0.8800992919894632
+        },
+        {
+          "at_seconds": 25.537642124996637,
+          "words": 88,
+          "newest_audio_age_seconds": 0.5976421249966357
+        },
+        {
+          "at_seconds": 28.541566082989448,
+          "words": 101,
+          "newest_audio_age_seconds": 1.0415660829894478
+        },
+        {
+          "at_seconds": 61.59942845799378,
+          "words": 113,
+          "newest_audio_age_seconds": 31.649428457993782
+        },
+        {
+          "at_seconds": 62.59410304199264,
+          "words": 110,
+          "newest_audio_age_seconds": 32.614103041992635
+        },
+        {
+          "at_seconds": 63.59464320799452,
+          "words": 119,
+          "newest_audio_age_seconds": 31.114643207994526
+        },
+        {
+          "at_seconds": 66.08521387499059,
+          "words": 124,
+          "newest_audio_age_seconds": 31.14521387499059
+        },
+        {
+          "at_seconds": 68.59379849999095,
+          "words": 131,
+          "newest_audio_age_seconds": 31.113798499990956
+        }
+      ],
+      "coverage_lags": [
+        3.534671832996537,
+        3.034671832996537,
+        2.534671832996537,
+        2.034671832996537,
+        2.5336458329984453,
+        2.0336458329984453,
+        1.5336458329984453,
+        1.0336458329984453,
+        2.540862791996915,
+        2.040862791996915,
+        1.540862791996915,
+        1.040862791996915,
+        2.5233774579974124,
+        2.0233774579974124,
+        1.5233774579974124,
+        1.0233774579974124,
+        9.521377457989729,
+        7.021377457989729,
+        4.521377457989729,
+        2.5395511249953415,
+        2.0395511249953415,
+        1.5395511249953415,
+        1.0395511249953415,
+        3.034855207995861,
+        2.534855207995861,
+        2.034855207995861,
+        1.5348552079958608,
+        3.0417583329981426,
+        2.5417583329981426,
+        2.0417583329981426,
+        1.5417583329981426,
+        2.5331695829954697,
+        2.0331695829954697,
+        1.5331695829954697,
+        1.0331695829954697,
+        9.539049582992448,
+        7.0390495829924475,
+        4.5390495829924475,
+        2.5400992919894634,
+        2.0400992919894634,
+        1.5400992919894634,
+        1.0400992919894634,
+        2.537642124996637,
+        2.037642124996637,
+        1.537642124996637,
+        1.037642124996637,
+        3.0415660829894478,
+        2.5415660829894478,
+        2.0415660829894478,
+        1.5415660829894478,
+        1.0415660829894478,
+        33.59942845799378,
+        33.09942845799378,
+        32.59942845799378,
+        40.09410304199264,
+        37.59410304199264,
+        33.09410304199264,
+        33.09464320799452,
+        32.59464320799452,
+        32.09464320799452,
+        31.594643207994523,
+        33.085213874990586,
+        32.585213874990586,
+        32.085213874990586,
+        31.585213874990586,
+        33.09379849999095,
+        32.59379849999095,
+        32.09379849999095,
+        31.593798499990953
+      ],
+      "events": [
+        {
+          "kind": "session_created",
+          "seq": 0,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 1,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 2,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 3,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 4,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 5,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 6,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 7,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87930087077750,
+            "item_id": 0
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 8,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87930087315375,
+            "item_id": 0
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 9,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 10,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 11,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 12,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 13,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87931593407000,
+            "item_id": 0,
+            "submitted": true,
+            "committed_samples": 40000,
+            "canonical_decode_elapsed_sec": 1.1004712499998277,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 14,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 15,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 16,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 17,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87932579851916,
+            "item_id": 1
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 18,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87932580018875,
+            "item_id": 1
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 19,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 20,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 21,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87933120291625,
+            "item_id": 1,
+            "submitted": true,
+            "committed_samples": 80000,
+            "canonical_decode_elapsed_sec": 0.12542200001189485,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 22,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 23,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 24,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 25,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 26,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 27,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87935080912291,
+            "item_id": 2
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 28,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87935081094583,
+            "item_id": 2
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 29,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 30,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87935573818333,
+            "item_id": 2,
+            "submitted": true,
+            "committed_samples": 120000,
+            "canonical_decode_elapsed_sec": 0.11375512499944307,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 31,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 32,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 33,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 34,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 35,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 36,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 37,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87937582982416,
+            "item_id": 3
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 38,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87937583213500,
+            "item_id": 3
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 39,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 40,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 41,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87938250042666,
+            "item_id": 3,
+            "submitted": true,
+            "committed_samples": 160000,
+            "canonical_decode_elapsed_sec": 0.23752916700323112,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "rolling_decode_queued",
+          "seq": 42,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87938250133500,
+            "item_id": 4,
+            "admitted": true
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 43,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 44,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "rolling_decode_completed",
+          "seq": 45,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87939372949375,
+            "item_id": 4,
+            "rolling_decode_elapsed_sec": 0.46953570799087174,
+            "windows_failed": 0,
+            "stale_completions": 0,
+            "outcome": "applied",
+            "decode_failure": null
+          }
+        },
+        {
+          "kind": "text_revision_applied",
+          "seq": 46,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "item_id": 4
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 47,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 48,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 49,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 50,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87940084191500,
+            "item_id": 5
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 51,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87940084361500,
+            "item_id": 5
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 52,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 53,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 54,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87940709891416,
+            "item_id": 5,
+            "submitted": true,
+            "committed_samples": 200000,
+            "canonical_decode_elapsed_sec": 0.2152583749993937,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 55,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 56,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 57,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 58,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 59,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 60,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87942591550166,
+            "item_id": 6
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 61,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 62,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87943197280958,
+            "item_id": 6
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 63,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 64,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 65,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87943753678750,
+            "item_id": 6,
+            "submitted": true,
+            "committed_samples": 240000,
+            "canonical_decode_elapsed_sec": 0.11869379199924879,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 66,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 67,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 68,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 69,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 70,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87945093698250,
+            "item_id": 7
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 71,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 72,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87945745787250,
+            "item_id": 7
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 73,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 74,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 75,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87946350865791,
+            "item_id": 7,
+            "submitted": true,
+            "committed_samples": 280000,
+            "canonical_decode_elapsed_sec": 0.21798433401272632,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 76,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 77,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 78,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 79,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 80,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87947585368333,
+            "item_id": 8
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 81,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87947585613166,
+            "item_id": 8
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 82,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 83,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 84,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87948212964166,
+            "item_id": 8,
+            "submitted": true,
+            "committed_samples": 320000,
+            "canonical_decode_elapsed_sec": 0.20332775000133552,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "rolling_decode_queued",
+          "seq": 85,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87948213099250,
+            "item_id": 9,
+            "admitted": true
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 86,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 87,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "rolling_decode_completed",
+          "seq": 88,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87949122506166,
+            "item_id": 9,
+            "rolling_decode_elapsed_sec": 0.354360875004204,
+            "windows_failed": 0,
+            "stale_completions": 0,
+            "outcome": "applied",
+            "decode_failure": null
+          }
+        },
+        {
+          "kind": "text_revision_applied",
+          "seq": 89,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "item_id": 9
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 90,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 91,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 92,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 93,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87950080052416,
+            "item_id": 10
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 94,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87950080329916,
+            "item_id": 10
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 95,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 96,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 97,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87950595733583,
+            "item_id": 10,
+            "submitted": true,
+            "committed_samples": 360000,
+            "canonical_decode_elapsed_sec": 0.1343948330031708,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 98,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 99,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 100,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 101,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 102,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 103,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87952584139791,
+            "item_id": 11
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 104,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87952584383458,
+            "item_id": 11
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 105,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 106,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 107,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87953215637416,
+            "item_id": 11,
+            "submitted": true,
+            "committed_samples": 400000,
+            "canonical_decode_elapsed_sec": 0.2098462090070825,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 108,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 109,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 110,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 111,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 112,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 113,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87955095628875,
+            "item_id": 12
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 114,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 115,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87955654844666,
+            "item_id": 12
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 116,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 117,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 118,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87956278733083,
+            "item_id": 12,
+            "submitted": true,
+            "committed_samples": 440000,
+            "canonical_decode_elapsed_sec": 0.1887732080067508,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 119,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 120,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 121,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 122,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 123,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87987645700833,
+            "item_id": 13
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 124,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 125,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87988388335791,
+            "item_id": 13
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 126,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 127,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 128,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87988977133625,
+            "item_id": 13,
+            "submitted": true,
+            "committed_samples": 480000,
+            "canonical_decode_elapsed_sec": 0.27129708300344646,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "rolling_decode_queued",
+          "seq": 129,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87988977299083,
+            "item_id": 14,
+            "admitted": true
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 130,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 131,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "rolling_decode_completed",
+          "seq": 132,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87989856061625,
+            "item_id": 14,
+            "rolling_decode_elapsed_sec": 0.5379578330030199,
+            "windows_failed": 0,
+            "stale_completions": 0,
+            "outcome": "applied",
+            "decode_failure": null
+          }
+        },
+        {
+          "kind": "text_revision_applied",
+          "seq": 133,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "item_id": 14
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 134,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 135,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 136,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87990147741583,
+            "item_id": 15
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 137,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 138,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87990845796000,
+            "item_id": 15
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 139,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 140,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 141,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87991435789583,
+            "item_id": 15,
+            "submitted": true,
+            "committed_samples": 520000,
+            "canonical_decode_elapsed_sec": 0.15894904200104065,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 142,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 143,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 144,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 145,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 146,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87992647293458,
+            "item_id": 16
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 147,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 148,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87993146925375,
+            "item_id": 16
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 149,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 150,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 151,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87993723645208,
+            "item_id": 16,
+            "submitted": true,
+            "committed_samples": 560000,
+            "canonical_decode_elapsed_sec": 0.222605333008687,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 152,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 153,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 154,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 155,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 156,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87995148665375,
+            "item_id": 17
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 157,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 158,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {
+            "runtime_monotonic_ns": 87995851054291,
+            "item_id": 17
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 159,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 160,
+          "session_id": "pdAI495rpvzh5HCVuDKO3Pj9",
+          "payload": {}
+        }
+      ],
+      "first_text_seconds": 4.034671832996537,
+      "error": "URLError",
+      "failure_code": null,
+      "clean": false
+    },
+    {
+      "ordinal": 2,
+      "clip": "interview_keyu_jin_60s:0:960000",
+      "acknowledged_frames": 158,
+      "retries": 0,
+      "foreign_probes": 157,
+      "wrong_owner_failures": 0,
+      "updates": [
+        {
+          "at_seconds": 0.014950500000850298,
+          "words": 0,
+          "newest_audio_age_seconds": 0.014950500000850298
+        },
+        {
+          "at_seconds": 4.531972125012544,
+          "words": 7,
+          "newest_audio_age_seconds": 2.311972125012544
+        },
+        {
+          "at_seconds": 6.041956375003792,
+          "words": 15,
+          "newest_audio_age_seconds": 1.0719563750037926
+        },
+        {
+          "at_seconds": 8.53722275000473,
+          "words": 19,
+          "newest_audio_age_seconds": 1.1572227500047303
+        },
+        {
+          "at_seconds": 11.036780917012948,
+          "words": 27,
+          "newest_audio_age_seconds": 1.0767809170129468
+        },
+        {
+          "at_seconds": 12.539081375012756,
+          "words": 25,
+          "newest_audio_age_seconds": 2.549081375012756
+        },
+        {
+          "at_seconds": 13.521917167003267,
+          "words": 30,
+          "newest_audio_age_seconds": 1.081917167003267
+        },
+        {
+          "at_seconds": 15.524470750009641,
+          "words": 36,
+          "newest_audio_age_seconds": 0.8044707500096404
+        },
+        {
+          "at_seconds": 18.040455917012878,
+          "words": 44,
+          "newest_audio_age_seconds": 0.5604559170128773
+        },
+        {
+          "at_seconds": 21.0323433750018,
+          "words": 49,
+          "newest_audio_age_seconds": 1.0323433750018012
+        },
+        {
+          "at_seconds": 22.021622917003697,
+          "words": 46,
+          "newest_audio_age_seconds": 2.751622917003697
+        },
+        {
+          "at_seconds": 23.538766249999753,
+          "words": 51,
+          "newest_audio_age_seconds": 1.0787662499997523
+        },
+        {
+          "at_seconds": 26.033490375004476,
+          "words": 57,
+          "newest_audio_age_seconds": 1.3934903750044754
+        },
+        {
+          "at_seconds": 28.038736209011404,
+          "words": 68,
+          "newest_audio_age_seconds": 0.578736209011403
+        },
+        {
+          "at_seconds": 60.58310616700328,
+          "words": 74,
+          "newest_audio_age_seconds": 30.62310616700328
+        },
+        {
+          "at_seconds": 62.0688577920082,
+          "words": 73,
+          "newest_audio_age_seconds": 32.128857792008205
+        },
+        {
+          "at_seconds": 63.07383337500505,
+          "words": 81,
+          "newest_audio_age_seconds": 30.633833375005054
+        },
+        {
+          "at_seconds": 65.57208600000013,
+          "words": 87,
+          "newest_audio_age_seconds": 30.582086000000125
+        },
+        {
+          "at_seconds": 68.07045625000319,
+          "words": 92,
+          "newest_audio_age_seconds": 30.60045625000319
+        }
+      ],
+      "coverage_lags": [
+        4.031972125012544,
+        3.531972125012544,
+        3.031972125012544,
+        2.531972125012544,
+        3.0419563750037923,
+        2.5419563750037923,
+        2.0419563750037923,
+        1.5419563750037923,
+        3.03722275000473,
+        2.53722275000473,
+        2.03722275000473,
+        1.5372227500047302,
+        3.0367809170129476,
+        2.5367809170129476,
+        2.0367809170129476,
+        1.5367809170129476,
+        10.039081375012756,
+        7.539081375012756,
+        5.039081375012756,
+        3.0219171670032665,
+        2.5219171670032665,
+        2.0219171670032665,
+        1.5219171670032665,
+        2.524470750009641,
+        2.024470750009641,
+        1.524470750009641,
+        1.024470750009641,
+        2.5404559170128778,
+        2.0404559170128778,
+        1.5404559170128778,
+        1.0404559170128778,
+        3.032343375001801,
+        2.532343375001801,
+        2.032343375001801,
+        1.5323433750018012,
+        1.0323433750018012,
+        9.521622917003697,
+        7.021622917003697,
+        4.521622917003697,
+        3.038766249999753,
+        2.538766249999753,
+        2.038766249999753,
+        1.5387662499997532,
+        3.033490375004476,
+        2.533490375004476,
+        2.033490375004476,
+        1.533490375004476,
+        2.538736209011404,
+        2.038736209011404,
+        1.5387362090114038,
+        1.0387362090114038,
+        32.58310616700328,
+        32.08310616700328,
+        31.58310616700328,
+        31.08310616700328,
+        39.5688577920082,
+        34.5688577920082,
+        32.57383337500505,
+        32.07383337500505,
+        31.57383337500505,
+        31.07383337500505,
+        32.57208600000013,
+        32.07208600000013,
+        31.572086000000127,
+        31.072086000000127,
+        32.57045625000319,
+        32.07045625000319,
+        31.57045625000319,
+        31.07045625000319
+      ],
+      "events": [
+        {
+          "kind": "session_created",
+          "seq": 0,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 1,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 2,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 3,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 4,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 5,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 6,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 7,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87930096221000,
+            "item_id": 0
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 8,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 9,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 10,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 11,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87931593475666,
+            "item_id": 0
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 12,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 13,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 14,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87932129358166,
+            "item_id": 0,
+            "submitted": true,
+            "committed_samples": 40000,
+            "canonical_decode_elapsed_sec": 0.13630533299874514,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 15,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 16,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 17,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87932591533291,
+            "item_id": 1
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 18,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 19,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87933120381000,
+            "item_id": 1
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 20,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 21,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 22,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87933652122958,
+            "item_id": 1,
+            "submitted": true,
+            "committed_samples": 80000,
+            "canonical_decode_elapsed_sec": 0.11785179100115784,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 23,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 24,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 25,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 26,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 27,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87935092063583,
+            "item_id": 2
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 28,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87935573916458,
+            "item_id": 2
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 29,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 30,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 31,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 32,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87936285002208,
+            "item_id": 2,
+            "submitted": true,
+            "committed_samples": 120000,
+            "canonical_decode_elapsed_sec": 0.2924464999960037,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 33,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 34,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 35,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 36,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 37,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87937591632833,
+            "item_id": 3
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 38,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 39,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87938250213125,
+            "item_id": 3
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 40,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 41,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 42,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87938902117541,
+            "item_id": 3,
+            "submitted": true,
+            "committed_samples": 160000,
+            "canonical_decode_elapsed_sec": 0.22266533398942556,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "rolling_decode_queued",
+          "seq": 43,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87938902212000,
+            "item_id": 4,
+            "admitted": true
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 44,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 45,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "rolling_decode_completed",
+          "seq": 46,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87939706035250,
+            "item_id": 4,
+            "rolling_decode_elapsed_sec": 0.3318777499953285,
+            "windows_failed": 0,
+            "stale_completions": 0,
+            "outcome": "applied",
+            "decode_failure": null
+          }
+        },
+        {
+          "kind": "text_revision_applied",
+          "seq": 47,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "item_id": 4
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 48,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 49,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 50,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87940092721833,
+            "item_id": 5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 51,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 52,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87940710005625,
+            "item_id": 5
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 53,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 54,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 55,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87941270638041,
+            "item_id": 5,
+            "submitted": true,
+            "committed_samples": 200000,
+            "canonical_decode_elapsed_sec": 0.12757337499351706,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 56,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 57,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 58,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 59,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 60,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87942582347958,
+            "item_id": 6
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 61,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87942582578750,
+            "item_id": 6
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 62,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 63,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 64,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87943197163000,
+            "item_id": 6,
+            "submitted": true,
+            "committed_samples": 240000,
+            "canonical_decode_elapsed_sec": 0.22255108400713652,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 65,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 66,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 67,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 68,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 69,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 70,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87945079723208,
+            "item_id": 7
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 71,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87945079962583,
+            "item_id": 7
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 72,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 73,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 74,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87945745677541,
+            "item_id": 7,
+            "submitted": true,
+            "committed_samples": 280000,
+            "canonical_decode_elapsed_sec": 0.23293387499870732,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 75,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 76,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 77,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 78,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 79,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 80,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87947594383916,
+            "item_id": 8
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 81,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 82,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87948213210041,
+            "item_id": 8
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 83,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 84,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 85,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87948766897541,
+            "item_id": 8,
+            "submitted": true,
+            "committed_samples": 320000,
+            "canonical_decode_elapsed_sec": 0.12174270900140982,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "rolling_decode_queued",
+          "seq": 86,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87948767015375,
+            "item_id": 9,
+            "admitted": true
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 87,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "rolling_decode_completed",
+          "seq": 88,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87949380321000,
+            "item_id": 9,
+            "rolling_decode_elapsed_sec": 0.25635929199052043,
+            "windows_failed": 0,
+            "stale_completions": 0,
+            "outcome": "applied",
+            "decode_failure": null
+          }
+        },
+        {
+          "kind": "text_revision_applied",
+          "seq": 89,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "item_id": 9
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 90,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 91,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 92,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 93,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87950096386208,
+            "item_id": 10
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 94,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 95,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87950595850750,
+            "item_id": 10
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 96,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 97,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 98,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87951147727583,
+            "item_id": 10,
+            "submitted": true,
+            "committed_samples": 360000,
+            "canonical_decode_elapsed_sec": 0.12589320899860468,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 99,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 100,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 101,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 102,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 103,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87952592580083,
+            "item_id": 11
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 104,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 105,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87953215780875,
+            "item_id": 11
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 106,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 107,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 108,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87953725180083,
+            "item_id": 11,
+            "submitted": true,
+            "committed_samples": 400000,
+            "canonical_decode_elapsed_sec": 0.13081812499149237,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 109,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 110,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 111,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 112,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 113,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87955081809416,
+            "item_id": 12
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 114,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87955082043250,
+            "item_id": 12
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 115,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 116,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 117,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87955654698166,
+            "item_id": 12,
+            "submitted": true,
+            "committed_samples": 440000,
+            "canonical_decode_elapsed_sec": 0.1495715420023771,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 118,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 119,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 120,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 121,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 122,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 123,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87987629933416,
+            "item_id": 13
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 124,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87987630176833,
+            "item_id": 13
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 125,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 126,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 127,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87988387887750,
+            "item_id": 13,
+            "submitted": true,
+            "committed_samples": 480000,
+            "canonical_decode_elapsed_sec": 0.3254220420058118,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "rolling_decode_queued",
+          "seq": 128,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87988388127583,
+            "item_id": 14,
+            "admitted": true
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 129,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 130,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "rolling_decode_completed",
+          "seq": 131,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87989316789208,
+            "item_id": 14,
+            "rolling_decode_elapsed_sec": 0.3377456670132233,
+            "windows_failed": 0,
+            "stale_completions": 0,
+            "outcome": "applied",
+            "decode_failure": null
+          }
+        },
+        {
+          "kind": "text_revision_applied",
+          "seq": 132,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "item_id": 14
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 133,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 134,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 135,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 136,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87990124403916,
+            "item_id": 15
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 137,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87990124685541,
+            "item_id": 15
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 138,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 139,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 140,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87990845606583,
+            "item_id": 15,
+            "submitted": true,
+            "committed_samples": 520000,
+            "canonical_decode_elapsed_sec": 0.29017495800508186,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 141,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 142,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 143,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 144,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 145,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 146,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87992622544000,
+            "item_id": 16
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 147,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87992622853625,
+            "item_id": 16
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 148,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 149,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 150,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87993146760166,
+            "item_id": 16,
+            "submitted": true,
+            "committed_samples": 560000,
+            "canonical_decode_elapsed_sec": 0.1431051249965094,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 151,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 152,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 153,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 154,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "span_frozen",
+          "seq": 155,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "reason": "hard_cap"
+          }
+        },
+        {
+          "kind": "canonical_queued",
+          "seq": 156,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87995130551916,
+            "item_id": 17
+          }
+        },
+        {
+          "kind": "canonical_started",
+          "seq": 157,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87995130851375,
+            "item_id": 17
+          }
+        },
+        {
+          "kind": "canonical_preview",
+          "seq": 158,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 159,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "canonical_processed",
+          "seq": 160,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {
+            "runtime_monotonic_ns": 87995850860250,
+            "item_id": 17,
+            "submitted": true,
+            "committed_samples": 600000,
+            "canonical_decode_elapsed_sec": 0.3103623329952825,
+            "frozen_span_duration_sec": 2.5
+          }
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 161,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        },
+        {
+          "kind": "frame_accepted",
+          "seq": 162,
+          "session_id": "GUd5SayLcr9kDI7vBTqesV9y",
+          "payload": {}
+        }
+      ],
+      "first_text_seconds": 4.531972125012544,
+      "error": "URLError",
+      "failure_code": null,
+      "clean": false
+    }
+  ],
+  "fairness": {
+    "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+    "lifecycle_event_counts": {
+      "canonical_queued": 30,
+      "canonical_started": 30,
+      "canonical_processed": 29
+    },
+    "contended_pair_dispatch_observations": 0,
+    "maximum_contended_pair_dispatch_skew": 0,
+    "fairness_gate": 1,
+    "applicability": "not_applicable",
+    "errors": [],
+    "passes": null
+  },
+  "app_rss_growth_bytes": 225837056,
+  "prestop_inference": {
+    "canonical_processed_items": 29,
+    "rolling_completed_items": 6,
+    "stop_items": 0,
+    "canonical_decode_seconds": 6.467724836038542,
+    "rolling_decode_seconds": 2.287837124997168,
+    "decode_seconds": 8.75556196103571,
+    "accepted_audio_seconds": 600,
+    "rtf": 0.01459260326839285
+  },
+  "maximum_refinement_queue_depth": 1,
+  "maximum_gpu_cache_use": 0.015466983938132062,
+  "foreign_load_detected": true,
+  "decoder_calls": 36,
+  "maximum_own_inflight": 1,
+  "overload_backpressure_observed": false,
+  "qualification": "local baseline only; remote process-tree RSS, host journals and six-case quality corpus unmeasured"
+}

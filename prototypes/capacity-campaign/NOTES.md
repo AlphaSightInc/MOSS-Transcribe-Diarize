@@ -1,4 +1,4 @@
-# WP6 capacity prototype — NOT MEASURED
+# WP6 capacity prototype — campaign in progress
 
 ## Contract
 
@@ -21,11 +21,11 @@
 
 ## Verdict and authority
 
-BLOCKED / NOT MEASURED. Latest user instruction says shared services may be touched
-only for read-only metrics. Brief requires real decoder POSTs; an asynchronous
-clarification was issued, with no answer received before this handoff. No tunnel,
-local server, GPU query, or decoder call has been started. Decoder count: **0**.
-No campaign defect proven, hence no production fix authorized by campaign evidence.
+IN PROGRESS. User explicitly authorized the existing vLLM decoder through this
+lane's own 18106 forward, the 1x120 -> 2x300 -> 4x600 ladder, and conditional
+8-session overload. Shared vLLM restarts/reconfiguration and ports 7861/7862 remain
+forbidden. Pause after more than one consecutive foreign-load sample; resume when
+clear. Previous decoder-authorization block is superseded.
 
 Part 0 is complete; see evidence/mvpfix/wp6/PART0.md. The import-mutation premise
 was falsified; the defect is pytest directory-autouse registration across ordered
@@ -37,7 +37,7 @@ Use the COMMON.md Python, with PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
 
 ```sh
 python prototypes/capacity-campaign/run.py --sessions 4 --seconds 600 --prepare-only
-# Only after explicit shared-decoder authority:
+# Authorized ladder:
 python prototypes/capacity-campaign/run.py --sessions 1 --seconds 120
 python prototypes/capacity-campaign/run.py --sessions 2 --seconds 300
 python prototypes/capacity-campaign/run.py --sessions 4 --seconds 600
@@ -73,9 +73,13 @@ metadata to evidence. Local state/audio/certificates/logs remain in ignored
   cannot prove the charter's combined service/inference RSS bound.
 - Foreign-load detection compares shared running+waiting with observed own active
   calls. Excess proves contamination; absence cannot exclude brief/interleaved
-  foreign requests between 30-second samples. Detected foreign load pauses ingress
-  and decoder dispatch while heartbeats continue; resumed runs remain contaminated
-  and cannot pass. A preflight busy server causes zero dispatch and a failed result.
+  foreign requests between 30-second samples. From the two-session step onward,
+  shared completed-request deltas also detect calls exceeding the maximum our stack
+  could have completed in that interval. More than one consecutive foreign sample
+  pauses ingress and decoder dispatch while heartbeats continue. Resume requires a
+  zero queue AND no excess completions in the interval. Resumed runs stay contaminated
+  and cannot pass; audio cadence excludes the pause rather than catching up in a burst.
+  A busy preflight waits and resamples every 30 seconds without dispatch.
 - Reference-aligned halves supply distinct clips for eight sessions from six source
   files. WER with a cut final sentence is deliberately unmeasured, never fabricated.
 - Retryable 429 is retried byte-for-byte for up to the existing 30-second Stop
@@ -86,4 +90,4 @@ metadata to evidence. Local state/audio/certificates/logs remain in ignored
   subprocess. No production repair should follow a harness-only failure.
 
 Retain this explicitly provisional harness for the integrated-build rerun, per
-WP6 brief (exception to deleting the throwaway prototype). Live path is UNVERIFIED.
+WP6 brief (exception to deleting the throwaway prototype). Live results and failed harness attempts are retained under evidence/mvpfix/wp6/.
