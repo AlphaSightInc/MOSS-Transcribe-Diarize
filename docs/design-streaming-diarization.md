@@ -717,12 +717,38 @@ corrections, exactly as mono's caller does, but cannot use another lane's segmen
 or canonical speakers. The terminal decoder's local-speaker partition and the
 existing one-to-one overlap assignment are retained.
 
-Only a terminal segment with no labelled same-lane overlap receives a fresh
-acoustic probe. Its PCM is cropped to that segment; the existing revision reader,
+Initially only a terminal segment with no labelled same-lane overlap received a
+fresh acoustic probe. WP26 also probes an **unmapped** segment: overlap can exist
+while an extra terminal local label loses the one-to-one assignment. Its PCM is
+cropped to that segment; the existing revision reader,
 evidence floor, matching thresholds and birth rules apply unchanged. Other-lane
 evidence cannot cover this gap. A failed probe preserves the terminal words with
 unattributed identity. No changes to QUALITY_BOUNDS, identity/sampling policy
 values, decoder windows, causal/rolling preparation, or publication lifecycle.
+
+WP26's retained 180 s system-lane replay reconstructs the causal album using the
+original public PCM and recorded accepted intervals. Both previously unnamed Lex
+turns (149.61–153.75 s, 160.68–161.40 s; 16 words) match speaker-0004 with scores
+0.9405 / 0.4899 under unchanged 0.35 score / 0.1 margin. Production fallback replay
+changes only these 2/56 assignments, reading 4.86 s of cropped audio; all words,
+times and lanes remain identical. This is a replay of the retained post-mapping
+proposal with reconstructed voice references, not a new live Stop run. Already
+assigned overlap mappings remain authoritative; failed probes remain unattributed.
+See `prototypes/streaming-diarization/wp26/NOTES.md` and `evidence/mvpfix/wp26/`.
+
+**P5 scope decision remains open:** alternating remote voices within one system
+lane require attribution and are supported. Two voices speaking simultaneously
+inside that lane are already mixed into one waveform; this change cannot recover
+words the decoder omitted. Retained synthetic mono-mixture measurements emit 184
+words at parity but retain only 35/54 and 39/41 source-unique tokens. With the
+second source 10 dB quieter, output has 134 words and retains 45/54 and 1/41;
+with the first source quieter, 76 words and 0/54 and 36/41. These are historical
+decoder-content witnesses, not word error rates or same-tab conferencing trials.
+They demonstrate loss before speaker mapping. The live surface also permits one
+owner per interval within a lane; overlap normalization cannot represent both
+voices at once. Recommendation for P5: exclude reliable same-lane simultaneous
+speech recovery from MVP acceptance; retain alternating-speaker attribution.
+No separation model, new threshold, or change to overlap publication is introduced.
 
 Before production edits, matched shadow comparisons exercised both mappings on
 the SAME terminal decoder output and settled session state. All six cases passed:

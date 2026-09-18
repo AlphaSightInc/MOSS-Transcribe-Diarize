@@ -1,0 +1,84 @@
+{
+  "source": "/Users/gao/Documents/Codex/2026-09-17/new-realtime-voice-chat-2/moss-mvp-review/evidence/parallel-lanes-assessment/pl-arms-results.json",
+  "scope": "Opus (claude-opus-5) Loop-A direct paired-request probe. Real vLLM decoder via own loopback SSH forward to 127.0.0.1:18000. Production request construction reused (RunnerBoundedWavInference + VllmRunner, DEFAULT_PROMPT, greedy, temperature 0). Arm A applies live_mixer math 0.501187*(s+m) + tanh limiter then ONE request; arms B/C send each lane as its own request. No app runtime, no endpointing, no identity, no publication -- see opus-diagnosis.md E0 for the validation of this shortcut against the lead's runtime-path ladder. Counts and timings only.",
+  "witness": {
+    "system_unique_denominator": 54,
+    "microphone_unique_denominator": 41,
+    "note": "Built from this loop's own whole-clip single-lane controls; the lead's runtime-path ladder used 37/32 from runtime-path controls."
+  },
+  "rows": [
+    {
+      "case": "parity",
+      "arm": "A",
+      "rep": 0,
+      "window_samples": 0,
+      "wall_s": 1.396,
+      "requests": 1,
+      "req_latency_p50": 1.316,
+      "req_latency_s": [
+        1.316
+      ],
+      "max_running": 1.0,
+      "frac_running_ge2": 0.0,
+      "metric_samples": 14,
+      "words_by_lane": {
+        "mixed": 184
+      },
+      "sys_lane_dbfs": -20.4,
+      "mic_lane_dbfs": -19.0,
+      "sys_unique_hits": 35,
+      "sys_unique_denominator": 54,
+      "mic_unique_hits": 39,
+      "mic_unique_denominator": 41
+    },
+    {
+      "case": "mic_-10dB",
+      "arm": "A",
+      "rep": 0,
+      "window_samples": 0,
+      "wall_s": 1.071,
+      "requests": 1,
+      "req_latency_p50": 0.989,
+      "req_latency_s": [
+        0.989
+      ],
+      "max_running": 1.0,
+      "frac_running_ge2": 0.0,
+      "metric_samples": 10,
+      "words_by_lane": {
+        "mixed": 134
+      },
+      "sys_lane_dbfs": -20.4,
+      "mic_lane_dbfs": -29.0,
+      "sys_unique_hits": 45,
+      "sys_unique_denominator": 54,
+      "mic_unique_hits": 1,
+      "mic_unique_denominator": 41
+    },
+    {
+      "case": "sys_-10dB",
+      "arm": "A",
+      "rep": 0,
+      "window_samples": 0,
+      "wall_s": 0.643,
+      "requests": 1,
+      "req_latency_p50": 0.565,
+      "req_latency_s": [
+        0.565
+      ],
+      "max_running": 1.0,
+      "frac_running_ge2": 0.0,
+      "metric_samples": 7,
+      "words_by_lane": {
+        "mixed": 76
+      },
+      "sys_lane_dbfs": -30.4,
+      "mic_lane_dbfs": -19.0,
+      "sys_unique_hits": 0,
+      "sys_unique_denominator": 54,
+      "mic_unique_hits": 36,
+      "mic_unique_denominator": 41
+    }
+  ],
+  "interpretation": "Historical synthetic two-voice mono waveform, same decoder input form as two participants mixed in one system lane. Source labels system/microphone identify original recordings before mixing. Unique-token retention, not WER; no same-tab conferencing capture or raw speaker/timestamp emission claim."
+}
