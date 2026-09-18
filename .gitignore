@@ -61,13 +61,13 @@ evidence/mvpfix/wp4/.pytest*/
 evidence/mvpfix/wp4/.npm-cache/
 
 .wp7runtime/
-<<<<<<< HEAD
 # WP1 isolated prototype runtime state (audio, SQLite, local sockets).
 .wp1/
 
 .wp9runtime/
 !evidence/mvpfix/wp9/*.log
-=======
 # WP6 private measurement state, audio, TLS material, and test scratch.
 .wp6-tmp/
->>>>>>> mvpfix/wp6-capacity-baseline
+
+# WP15 private scratch; no audio or credentials in evidence.
+.wp15/

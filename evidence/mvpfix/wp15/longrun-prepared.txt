@@ -1,0 +1,1 @@
+{"prepared": true, "seconds": 1800, "system_samples": 960000, "microphone_samples": 960000, "microphone_db": -10, "microphone_active_seconds": 300, "used_requests": 0, "remaining_requests": 200}

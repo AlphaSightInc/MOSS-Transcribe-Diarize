@@ -32,3 +32,29 @@ from learning why the session ended.
 - Browser capture itself is not resumed; the operator must start a new capture session.
 - Terminal transcript visibility lasts only within the session-scoped token's existing security
   bounds.
+
+## 2026-09-18 — Accepted Stop ends helper-lease authority (WP15)
+
+An authorized Stop which successfully closes capture transfers completion to the
+server. Release the helper failure coordinator before awaiting the raw work drain;
+retain all other capture registries until their existing teardown. Later helper
+silence, failed heartbeats, or request cancellation cannot interrupt that Stop.
+A Stop refused for unconsumed frames has not transferred this authority. A lease
+expiry that already interrupted capture before Stop remains an interruption.
+
+The Stop `deadline` bounds only the caller's wait. HTTP 202 `stop_in_progress`
+means server work continues; it does not mean final or failed. Terminal decoding
+failure keeps the committed transcript and explicit failed finalization status.
+The durable meeting can be `completed` with failed refinement; these are distinct
+fields, not a claim that decoding succeeded.
+
+The browser sends its final stopped heartbeat, requests Stop, then closes local
+media. The five-second UI wait is followed by read-only polling, not heartbeats.
+No continuing browser presence is required once Stop is accepted. Closing a tab
+before Stop reaches acceptance still leaves the capture lease in charge.
+
+Measured basis: `prototypes/stop-lease/NOTES.md` and
+`evidence/mvpfix/wp15/`: baseline held-drain departure/outage interruption;
+fixed virtual 30-second lease ordering, genuine failure, cancelled request,
+45-second wall-clock drain and 90-second wall-clock terminal refinement.
+No change to the lease duration, wait deadlines, inference, or identity policy.
