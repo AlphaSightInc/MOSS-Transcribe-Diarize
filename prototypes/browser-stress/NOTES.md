@@ -48,3 +48,5 @@ Standing bench retained here; no product source changes. No novel policy/algorit
 - Fresh-context verification follows `VERIFY.md`; its result must be recorded separately before final report.
 
 Fresh verification additionally tightens two witnesses: case8 submits from two same-profile tabs together (the original base run used a two-file batch); case11 checks the actual voiceprint bank after reload. Their new measurements belong in VERIFY-RESULT.md, not the baseline totals. No baseline concurrency timing claim is made.
+
+Tooling caveat: COMMON prescribed symlinked node_modules and default npm commands. Default Vite/Vitest can write shared dependency caches/config-bundle temporaries through that symlink; no source outside this worktree was intentionally edited, but byte-for-byte external-tree isolation is not established. Fresh verification disables Vitest cache and uses Vite's runner config loader to avoid those writes. Shared caches were not cleaned or altered as a repair.
