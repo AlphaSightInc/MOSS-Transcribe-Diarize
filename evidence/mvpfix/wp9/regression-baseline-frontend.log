@@ -1,0 +1,93 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run src/components/speakerRename.test.tsx src/components/TranscriptPane.test.tsx
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp9-rename-identity/frontend
+
+(node:86292) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ src/components/TranscriptPane.test.tsx (16 tests | 2 failed) 217ms
+     × allows owned observers and terminal meetings but keeps provisional-only speakers read-only 4ms
+     × explains why a row cannot be named 3ms
+ ❯ src/components/speakerRename.test.tsx (8 tests | 6 failed) 612ms
+   × renames from .utt-speaker save=true status=active mode=live across history/export/summary 130ms
+   × renames from .legend-chip save=false status=active mode=live across history/export/summary 108ms
+   × renames from .utt-speaker save=true status=completed mode=live across history/export/summary 54ms
+   × renames from .legend-chip save=false status=completed mode=live across history/export/summary 53ms
+   × renames from .utt-speaker save=true status=completed mode=file across history/export/summary 54ms
+   × renames from .legend-chip save=false status=completed mode=file across history/export/summary 52ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/TranscriptPane.test.tsx > TranscriptPane > allows owned observers and terminal meetings but keeps provisional-only speakers read-only
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/components/TranscriptPane.test.tsx:120:109
+    118|   it("allows owned observers and terminal meetings but keeps provision…
+    119|     showSpeakers(false);
+    120|     expect([...root.querySelectorAll<HTMLButtonElement>(".legend-chip"…
+       |                                                                                                             ^
+    121|     act(() => {
+    122|       captureMeetingId.value = "meeting/one";
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  src/components/TranscriptPane.test.tsx > TranscriptPane > explains why a row cannot be named
+AssertionError: expected 'Speaker naming is available on the ac…' to contain 'Open a meeting'
+
+Expected: "Open a meeting"
+Received: "Speaker naming is available on the active capture page."
+
+ ❯ src/components/TranscriptPane.test.tsx:137:64
+    135|     act(() => { sessionId.value = null; });
+    136|     act(() => root.querySelector<HTMLButtonElement>(".utt-speaker")!.c…
+    137|     expect(root.querySelector('[role="status"]')?.textContent).toConta…
+       |                                                                ^
+    138|     expect(root.querySelector("dialog")).toBeNull();
+    139|     act(() => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  src/components/speakerRename.test.tsx > renames from .utt-speaker save=true status=active mode=live across history/export/summary
+ FAIL  src/components/speakerRename.test.tsx > renames from .legend-chip save=false status=active mode=live across history/export/summary
+Error: Finalized speech is required.
+ ❯ providerBody src/lib/finalSummary.ts:115:103
+    113|
+    114| export function providerBody(meeting: Meeting, settings: SummarySettin…
+    115|   if (meeting.status !== "completed" || !meeting.transcript?.segments.…
+       |                                                                                                       ^
+    116|   return JSON.stringify({ model: settings.model, max_tokens: 2048, ...…
+    117|     { role: "system", content: `${settings.prompt}${settings.language.…
+ ❯ assertNames src/components/speakerRename.test.tsx:59:18
+ ❯ src/components/speakerRename.test.tsx:68:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+ FAIL  src/components/speakerRename.test.tsx > renames from .utt-speaker save=true status=completed mode=live across history/export/summary
+ FAIL  src/components/speakerRename.test.tsx > renames from .legend-chip save=false status=completed mode=live across history/export/summary
+ FAIL  src/components/speakerRename.test.tsx > renames from .utt-speaker save=true status=completed mode=file across history/export/summary
+ FAIL  src/components/speakerRename.test.tsx > renames from .legend-chip save=false status=completed mode=file across history/export/summary
+TypeError: Cannot read properties of null (reading 'checked')
+ ❯ src/components/speakerRename.test.tsx:48:19
+     46|   act(() => root.querySelector<HTMLButtonElement>(selector)!.click());
+     47|   const checkbox = root.querySelector<HTMLInputElement>('dialog input[…
+     48|   expect(checkbox.checked).toBe(true);
+       |                   ^
+     49|   if (!saveVoiceprint) act(() => checkbox.click());
+     50|   act(() => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  8 failed | 16 passed (24)
+   Start at  00:13:51
+   Duration  1.15s (transform 170ms, setup 0ms, import 212ms, tests 830ms, environment 593ms)
+

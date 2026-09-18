@@ -63,3 +63,4 @@ evidence/mvpfix/wp4/.npm-cache/
 .wp7runtime/
 
 .wp9runtime/
+!evidence/mvpfix/wp9/*.log

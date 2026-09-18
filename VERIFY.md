@@ -45,7 +45,8 @@ wrong default enrollment state, or any new failure attributable to WP9.
    pass/fail and exact counts, expected integration failures/limits, any new findings.
    If a WP9 regression appears, fix only WP9, rerun its checks, report honestly whether
    any edited implementation still lacks a separate fresh-session check.
-6. Commit ONLY fresh verification evidence, result, and any relevant changes locally;
+6. Root VERIFY-RESULT.md initially says PENDING; overwrite it with the measured result.
+   Commit ONLY fresh verification evidence, result, and any relevant changes locally;
    no push. Do not commit scratch, audio, credentials or unrelated screenshots.
 7. Final response in THIS pane, <=60 lines: branch/final SHA; prototype question/verdict;
    changed files/behavior; exact test counts and measurements; remaining failures;
