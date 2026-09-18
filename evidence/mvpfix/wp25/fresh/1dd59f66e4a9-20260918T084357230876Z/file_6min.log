@@ -1,0 +1,113 @@
+{
+  "name": "file_6min",
+  "status": "PASS",
+  "exit_code": 0,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 78.524,
+  "artifacts": [
+    "file_6min.log"
+  ],
+  "decoder_requests_at_record": 724,
+  "decoder_budget_exhausted_at_record": false,
+  "reason": "Existing WP16 bars: durable outcome, five exact exports for speech, audio download, foreign read 404; failures typed and visible after reload",
+  "measurements": [
+    {
+      "case": "six.wav",
+      "status": "PASS",
+      "measurements": {
+        "case": null,
+        "source": null,
+        "duration_seconds": null,
+        "started_monotonic": 107265.418696666,
+        "queue_before": [
+          null,
+          null
+        ],
+        "http_status": 201,
+        "accepted_seconds": 0.16254833398852497,
+        "meeting_id": "cHWyNZHkK0hUY0tmLMQR8YIO",
+        "first_status_seconds": 0.17513866699300706,
+        "elapsed_seconds": 76.39878799999133,
+        "status": "completed",
+        "failure_code": null,
+        "failure_reason": null,
+        "notice": null,
+        "saved_words": 998,
+        "speakers": 3,
+        "last_segment_end": 359.85,
+        "history_reason": true,
+        "header_reason": true,
+        "reason_content_free": true,
+        "reload_status": null,
+        "exports": {
+          "md": {
+            "ok": true,
+            "expected_turns": 27,
+            "downloaded_turns": 27,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "txt": {
+            "ok": true,
+            "expected_turns": 27,
+            "downloaded_turns": 27,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "json": {
+            "ok": true,
+            "expected_turns": 27,
+            "downloaded_turns": 27,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true,
+            "lane": true
+          },
+          "srt": {
+            "ok": true,
+            "expected_turns": 27,
+            "downloaded_turns": 27,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "vtt": {
+            "ok": true,
+            "expected_turns": 27,
+            "downloaded_turns": 27,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          }
+        },
+        "mp3_link": true,
+        "mp3_bytes": 2160693,
+        "foreign_read_status": 404
+      },
+      "expected_failure_code": null,
+      "observed_failure_code": null,
+      "ordered_word_score": {
+        "reference_words": 945,
+        "observed_words": 998,
+        "substitutions": 28,
+        "omissions": 10,
+        "additions": 63,
+        "wer": 0.10687830687830688
+      }
+    }
+  ]
+}

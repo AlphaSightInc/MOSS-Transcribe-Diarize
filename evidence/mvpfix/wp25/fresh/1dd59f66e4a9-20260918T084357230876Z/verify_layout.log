@@ -1,0 +1,17 @@
+{
+  "name": "verify_layout",
+  "status": "PASS",
+  "exit_code": 0,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0.044,
+  "artifacts": [
+    "verify_layout.log"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "file_failures",
+  "status": "UNRUNNABLE",
+  "exit_code": null,
+  "denominators": {
+    "expected": 5,
+    "executed": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 5
+  },
+  "duration_seconds": 0,
+  "artifacts": [
+    "file_failures.log"
+  ],
+  "reason": "Prerequisite failed or runner interrupted; no observation"
+}

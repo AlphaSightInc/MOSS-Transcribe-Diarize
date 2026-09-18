@@ -1,0 +1,18 @@
+{
+  "name": "level_ladder",
+  "status": "UNRUNNABLE",
+  "exit_code": null,
+  "denominators": {
+    "expected": 6,
+    "executed": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 6
+  },
+  "duration_seconds": 0,
+  "artifacts": [
+    "level_ladder.log"
+  ],
+  "reason": "Prerequisite failed or runner interrupted; no observation"
+}
