@@ -1,0 +1,24 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run --configLoader runner
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp26-unassigned-terminal/frontend
+
+(node:31709) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31715) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:31711) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  28 passed (28)
+      Tests  249 passed (249)
+   Start at  03:33:58
+   Duration  2.50s (transform 2.04s, setup 0ms, import 2.88s, tests 6.69s, environment 5.37s)
+
+npm notice
+npm notice New minor version of npm available! 11.12.1 -> 11.19.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.19.1
+npm notice To update run: npm install -g npm@11.19.1
+npm notice

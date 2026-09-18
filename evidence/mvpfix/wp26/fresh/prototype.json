@@ -1,0 +1,133 @@
+{
+  "verdict": "PASS",
+  "seconds": 24.662728042007075,
+  "probes": [
+    {
+      "step": "probe",
+      "start": 149.61,
+      "end": 153.75,
+      "words": 14,
+      "causal_overlap_seconds": {
+        "speaker-0001": 0.0,
+        "speaker-0004": 2.48
+      },
+      "nearest_causal": {
+        "start": 2400000,
+        "end": 2439680,
+        "speaker": "speaker-0004"
+      },
+      "scores": {
+        "speaker-0001": 0.0,
+        "speaker-0004": 0.9404659565766158
+      },
+      "diagnostics": {
+        "schema_version": "1",
+        "status": "prepared",
+        "reason": "ok",
+        "span_id": "1000",
+        "span_samples": "2393760:2460000",
+        "local_speakers": "S01",
+        "assignments": "S01->speaker-0004",
+        "deferred_births": "",
+        "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004"
+      },
+      "assigned": "S01->speaker-0004",
+      "reference_speaker": "speaker-0004",
+      "correct": true
+    },
+    {
+      "step": "probe",
+      "start": 160.68,
+      "end": 161.4,
+      "words": 2,
+      "causal_overlap_seconds": {
+        "speaker-0001": 0.0,
+        "speaker-0004": 0.72
+      },
+      "nearest_causal": {
+        "start": 2570880,
+        "end": 2583040,
+        "speaker": "speaker-0004"
+      },
+      "scores": {
+        "speaker-0001": 0.0,
+        "speaker-0004": 0.48992724090500167
+      },
+      "diagnostics": {
+        "schema_version": "1",
+        "status": "prepared",
+        "reason": "ok",
+        "span_id": "1001",
+        "span_samples": "2570880:2582400",
+        "local_speakers": "S01",
+        "assignments": "S01->speaker-0004",
+        "deferred_births": "",
+        "canonical_speakers": "speaker-0001,speaker-0002,speaker-0003,speaker-0004"
+      },
+      "assigned": "S01->speaker-0004",
+      "reference_speaker": "speaker-0004",
+      "correct": true
+    }
+  ],
+  "causal_preparations": 69,
+  "album_support": {
+    "speaker-0001": [
+      {
+        "span": 26,
+        "seconds": 2.5
+      },
+      {
+        "span": 2,
+        "seconds": 2.5
+      },
+      {
+        "span": 50,
+        "seconds": 2.5
+      },
+      {
+        "span": 55,
+        "seconds": 2.48
+      },
+      {
+        "span": 51,
+        "seconds": 2.48
+      },
+      {
+        "span": 21,
+        "seconds": 2.5
+      },
+      {
+        "span": 53,
+        "seconds": 2.48
+      },
+      {
+        "span": 45,
+        "seconds": 2.5
+      },
+      {
+        "span": 69,
+        "seconds": 2.5
+      },
+      {
+        "span": 31,
+        "seconds": 2.48
+      }
+    ],
+    "speaker-0004": [
+      {
+        "span": 12,
+        "seconds": 2.48
+      },
+      {
+        "span": 36,
+        "seconds": 2.48
+      },
+      {
+        "span": 60,
+        "seconds": 2.48
+      }
+    ]
+  },
+  "provenance": "Re-embedded retained causal intervals and accepted assignments against original repeated PCM. Reconstructed album, not retained runtime vectors. No raw terminal local labels or pre-terminal surface retained.",
+  "decoder_calls": 0
+}

@@ -1,0 +1,2794 @@
+{
+  "totals": [
+    {
+      "package": "wp12",
+      "implementation": "accepted_overlap",
+      "sessions": 3,
+      "lane_rows": 6,
+      "affected_sessions": 1,
+      "segments": 127,
+      "words": 1546,
+      "seconds": 493.27,
+      "unassigned_segments": 2,
+      "unassigned_words": 16,
+      "unassigned_seconds": 4.86
+    },
+    {
+      "package": "wp12",
+      "implementation": "historical_control",
+      "sessions": 15,
+      "lane_rows": 27,
+      "affected_sessions": 2,
+      "segments": 423,
+      "words": 4811,
+      "seconds": 1419.78,
+      "unassigned_segments": 64,
+      "unassigned_words": 674,
+      "unassigned_seconds": 190.69
+    },
+    {
+      "package": "wp17",
+      "implementation": "accepted_overlap",
+      "sessions": 16,
+      "lane_rows": 24,
+      "affected_sessions": 0,
+      "segments": 178,
+      "words": 2010,
+      "seconds": 606.12,
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0
+    }
+  ],
+  "lanes": [
+    {
+      "package": "wp12",
+      "run": "concurrent-traced-parity-24-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 4,
+      "words": 56,
+      "seconds": 22.2,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "concurrent-traced-parity-24-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 8,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "fixed-parity-24-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 4,
+      "words": 56,
+      "seconds": 22.2,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "fixed-parity-24-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 9,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "lane-parity-60-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 10,
+      "words": 154,
+      "seconds": 55.96,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "lane-parity-60-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 18,
+      "words": 197,
+      "seconds": 56.89,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "mono-parity-60-surface",
+      "lane": "mono",
+      "implementation": "historical_control",
+      "segments": 24,
+      "words": 257,
+      "seconds": 58.36,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "mono-traced-parity-24-surface",
+      "lane": "mono",
+      "implementation": "historical_control",
+      "segments": 11,
+      "words": 112,
+      "seconds": 23.47,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "mono180-traced-parity-180-surface",
+      "lane": "mono",
+      "implementation": "historical_control",
+      "segments": 74,
+      "words": 709,
+      "seconds": 177.3,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 8,
+      "unassigned_words": 83,
+      "unassigned_seconds": 21.33,
+      "gaps": [
+        {
+          "start": 32.33,
+          "end": 35.61,
+          "words": 12
+        },
+        {
+          "start": 92.84,
+          "end": 95.62,
+          "words": 12
+        },
+        {
+          "start": 133.72,
+          "end": 139.25,
+          "words": 18
+        },
+        {
+          "start": 139.68,
+          "end": 141.31,
+          "words": 10
+        },
+        {
+          "start": 141.34,
+          "end": 144.65,
+          "words": 10
+        },
+        {
+          "start": 160.68,
+          "end": 161.45,
+          "words": 2
+        },
+        {
+          "start": 162.18,
+          "end": 162.45,
+          "words": 1
+        },
+        {
+          "start": 172.25,
+          "end": 176.01,
+          "words": 18
+        }
+      ]
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-fixed-parity-180-surface",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 30,
+      "words": 462,
+      "seconds": 168.07,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-fixed-parity-180-surface",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 56,
+      "words": 591,
+      "seconds": 169.42,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 2,
+      "unassigned_words": 16,
+      "unassigned_seconds": 4.86,
+      "gaps": [
+        {
+          "start": 149.61,
+          "end": 153.75,
+          "words": 14
+        },
+        {
+          "start": 160.68,
+          "end": 161.4,
+          "words": 2
+        }
+      ]
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-fixed-parity-24-surface",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 56,
+      "seconds": 22.2,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-fixed-parity-24-surface",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 9,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-fixed-parity-60-surface",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 10,
+      "words": 154,
+      "seconds": 55.96,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-fixed-parity-60-surface",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 18,
+      "words": 197,
+      "seconds": 56.29,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-p180-clean-parity-180-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 30,
+      "words": 462,
+      "seconds": 168.05,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-p180-clean-parity-180-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 56,
+      "words": 591,
+      "seconds": 169.36,
+      "assigned_speakers": [],
+      "unassigned_segments": 56,
+      "unassigned_words": 591,
+      "unassigned_seconds": 169.36,
+      "gaps": [
+        {
+          "start": 0.54,
+          "end": 3.27,
+          "words": 15
+        },
+        {
+          "start": 4.08,
+          "end": 8.88,
+          "words": 18
+        },
+        {
+          "start": 8.88,
+          "end": 9.54,
+          "words": 1
+        },
+        {
+          "start": 9.54,
+          "end": 15.33,
+          "words": 15
+        },
+        {
+          "start": 15.33,
+          "end": 19.38,
+          "words": 17
+        },
+        {
+          "start": 19.68,
+          "end": 21.12,
+          "words": 10
+        },
+        {
+          "start": 21.36,
+          "end": 25.5,
+          "words": 17
+        },
+        {
+          "start": 25.5,
+          "end": 27.81,
+          "words": 11
+        },
+        {
+          "start": 28.02,
+          "end": 29.25,
+          "words": 10
+        },
+        {
+          "start": 29.61,
+          "end": 33.75,
+          "words": 14
+        },
+        {
+          "start": 33.87,
+          "end": 40.08,
+          "words": 13
+        },
+        {
+          "start": 40.11,
+          "end": 40.44,
+          "words": 2
+        },
+        {
+          "start": 40.68,
+          "end": 41.4,
+          "words": 2
+        },
+        {
+          "start": 42.18,
+          "end": 46.71,
+          "words": 14
+        },
+        {
+          "start": 46.74,
+          "end": 55.08,
+          "words": 18
+        },
+        {
+          "start": 55.08,
+          "end": 58.29,
+          "words": 7
+        },
+        {
+          "start": 58.29,
+          "end": 59.37,
+          "words": 8
+        },
+        {
+          "start": 59.37,
+          "end": 62.79,
+          "words": 18
+        },
+        {
+          "start": 62.79,
+          "end": 63.24,
+          "words": 2
+        },
+        {
+          "start": 64.05,
+          "end": 68.45,
+          "words": 15
+        },
+        {
+          "start": 68.45,
+          "end": 69.33,
+          "words": 4
+        },
+        {
+          "start": 69.54,
+          "end": 74.67,
+          "words": 13
+        },
+        {
+          "start": 74.67,
+          "end": 75.18,
+          "words": 2
+        },
+        {
+          "start": 75.33,
+          "end": 79.38,
+          "words": 17
+        },
+        {
+          "start": 79.68,
+          "end": 81.09,
+          "words": 10
+        },
+        {
+          "start": 81.36,
+          "end": 85.41,
+          "words": 16
+        },
+        {
+          "start": 85.41,
+          "end": 87.81,
+          "words": 12
+        },
+        {
+          "start": 88.02,
+          "end": 89.25,
+          "words": 10
+        },
+        {
+          "start": 89.61,
+          "end": 93.75,
+          "words": 14
+        },
+        {
+          "start": 93.87,
+          "end": 100.08,
+          "words": 13
+        },
+        {
+          "start": 100.11,
+          "end": 100.44,
+          "words": 2
+        },
+        {
+          "start": 100.68,
+          "end": 101.4,
+          "words": 2
+        },
+        {
+          "start": 102.18,
+          "end": 106.71,
+          "words": 14
+        },
+        {
+          "start": 106.74,
+          "end": 115.08,
+          "words": 18
+        },
+        {
+          "start": 115.08,
+          "end": 118.29,
+          "words": 7
+        },
+        {
+          "start": 118.29,
+          "end": 119.37,
+          "words": 8
+        },
+        {
+          "start": 119.37,
+          "end": 122.79,
+          "words": 18
+        },
+        {
+          "start": 122.79,
+          "end": 123.24,
+          "words": 2
+        },
+        {
+          "start": 124.05,
+          "end": 128.46,
+          "words": 15
+        },
+        {
+          "start": 128.46,
+          "end": 129.33,
+          "words": 4
+        },
+        {
+          "start": 129.54,
+          "end": 134.66,
+          "words": 13
+        },
+        {
+          "start": 134.66,
+          "end": 135.18,
+          "words": 2
+        },
+        {
+          "start": 135.27,
+          "end": 139.38,
+          "words": 17
+        },
+        {
+          "start": 139.68,
+          "end": 141.12,
+          "words": 10
+        },
+        {
+          "start": 141.36,
+          "end": 145.5,
+          "words": 17
+        },
+        {
+          "start": 145.5,
+          "end": 147.81,
+          "words": 11
+        },
+        {
+          "start": 148.02,
+          "end": 149.25,
+          "words": 10
+        },
+        {
+          "start": 149.61,
+          "end": 153.75,
+          "words": 14
+        },
+        {
+          "start": 153.86,
+          "end": 160.08,
+          "words": 13
+        },
+        {
+          "start": 160.11,
+          "end": 160.44,
+          "words": 2
+        },
+        {
+          "start": 160.68,
+          "end": 161.4,
+          "words": 2
+        },
+        {
+          "start": 162.18,
+          "end": 166.71,
+          "words": 14
+        },
+        {
+          "start": 166.74,
+          "end": 175.08,
+          "words": 18
+        },
+        {
+          "start": 175.08,
+          "end": 178.29,
+          "words": 7
+        },
+        {
+          "start": 178.29,
+          "end": 179.37,
+          "words": 8
+        },
+        {
+          "start": 179.37,
+          "end": 179.94,
+          "words": 5
+        }
+      ]
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-p24-parity-24-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 4,
+      "words": 56,
+      "seconds": 22.2,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-p24-parity-24-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 9,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-p60-parity-60-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 10,
+      "words": 154,
+      "seconds": 55.94,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-p60-parity-60-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 18,
+      "words": 197,
+      "seconds": 56.29,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-q24-mic-minus10-24-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 4,
+      "words": 56,
+      "seconds": 22.08,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-q24-mic-minus10-24-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 9,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-q60-mic-minus10-60-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 10,
+      "words": 154,
+      "seconds": 56.2,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-q60-mic-minus10-60-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 18,
+      "words": 197,
+      "seconds": 56.29,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-s24-same-voice-24-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 8,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-s24-same-voice-24-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 9,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-s60-same-voice-60-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 18,
+      "words": 197,
+      "seconds": 56.29,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "overlap-shadow-s60-same-voice-60-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 18,
+      "words": 197,
+      "seconds": 56.29,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "parallel-parity-60-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 10,
+      "words": 154,
+      "seconds": 55.96,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "parallel-parity-60-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 18,
+      "words": 197,
+      "seconds": 56.94,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "serial-traced-parity-24-surface",
+      "lane": "microphone",
+      "implementation": "historical_control",
+      "segments": 4,
+      "words": 56,
+      "seconds": 22.2,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "serial-traced-parity-24-surface",
+      "lane": "system",
+      "implementation": "historical_control",
+      "segments": 8,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "gNRtmbKD2riqAtZS5a2-wcEr",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 5,
+      "words": 61,
+      "seconds": 23.4,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "gNRtmbKD2riqAtZS5a2-wcEr",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 13,
+      "words": 112,
+      "seconds": 28.42,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "Bz_FWeqXJ5TxwA5OqvtVo01W",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 61,
+      "seconds": 23.69,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "Bz_FWeqXJ5TxwA5OqvtVo01W",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 10,
+      "words": 112,
+      "seconds": 26.37,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "1xjAcYXxLz1MOkSTiWCUe63b",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 61,
+      "seconds": 23.94,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "1xjAcYXxLz1MOkSTiWCUe63b",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 13,
+      "words": 112,
+      "seconds": 28.42,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "ApX9KW2W1cHy6qSX3VXf8Ycv",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 61,
+      "seconds": 23.69,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "ApX9KW2W1cHy6qSX3VXf8Ycv",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 11,
+      "words": 112,
+      "seconds": 26.19,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "24-alternation-microphone-alone",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 3,
+      "words": 27,
+      "seconds": 11.02,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "24-alternation-paired",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 3,
+      "words": 27,
+      "seconds": 11.02,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "24-alternation-paired",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 5,
+      "words": 38,
+      "seconds": 11.5,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "24-alternation-system-alone",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 5,
+      "words": 38,
+      "seconds": 11.5,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "24-overlap-microphone-alone",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 60,
+      "seconds": 23.02,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "24-overlap-paired",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 60,
+      "seconds": 23.02,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "24-overlap-paired",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 8,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "24-overlap-system-alone",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 8,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "48-alternation-microphone-alone",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 5,
+      "words": 72,
+      "seconds": 22.3,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "48-alternation-paired",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 5,
+      "words": 72,
+      "seconds": 22.3,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "48-alternation-paired",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 10,
+      "words": 86,
+      "seconds": 23.07,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "48-alternation-system-alone",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 10,
+      "words": 86,
+      "seconds": 23.07,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "48-overlap-microphone-alone",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 8,
+      "words": 130,
+      "seconds": 45.41,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "48-overlap-paired",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 8,
+      "words": 130,
+      "seconds": 45.41,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "48-overlap-paired",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 14,
+      "words": 160,
+      "seconds": 43.35,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "48-overlap-system-alone",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 14,
+      "words": 160,
+      "seconds": 43.35,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    }
+  ],
+  "saved_store_totals": [
+    {
+      "package": "wp12",
+      "implementation": "accepted_overlap",
+      "sessions": 3,
+      "lane_rows": 3,
+      "affected_sessions": 1,
+      "segments": 127,
+      "words": 1546,
+      "seconds": 493.27,
+      "unassigned_segments": 2,
+      "unassigned_words": 16,
+      "unassigned_seconds": 4.86
+    },
+    {
+      "package": "wp12",
+      "implementation": "historical_control",
+      "sessions": 19,
+      "lane_rows": 19,
+      "affected_sessions": 2,
+      "segments": 476,
+      "words": 5362,
+      "seconds": 1576.01,
+      "unassigned_segments": 64,
+      "unassigned_words": 674,
+      "unassigned_seconds": 190.69
+    },
+    {
+      "package": "wp17",
+      "implementation": "accepted_overlap",
+      "sessions": 27,
+      "lane_rows": 35,
+      "affected_sessions": 0,
+      "segments": 212,
+      "words": 2370,
+      "seconds": 714.71,
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0
+    }
+  ],
+  "saved_store_lanes": [
+    {
+      "package": "wp12",
+      "run": "state-concurrent-traced/juD731PVKyDWLvgTNMtP858J",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 12,
+      "words": 142,
+      "seconds": 43.53,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-fixed/D8guSTDO5qDepWla6stx0sGp",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 13,
+      "words": 142,
+      "seconds": 43.53,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-lane/QZR3qm9ewLB-rMrDNl9SQkXA",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 13,
+      "words": 142,
+      "seconds": 43.53,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-lane/PgnoD_MjjvKqJ4VhECRy3xJ7",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 16,
+      "words": 155,
+      "seconds": 45.7,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-lane/tA-zIJyqUQBWG0HjV1l_5viy",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 28,
+      "words": 351,
+      "seconds": 112.85,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-mono/jPCiqkGtktwl2GNvMurUTApS",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 11,
+      "words": 112,
+      "seconds": 23.47,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-mono/UHku_eVkMbLJKzVi_o_XuCzz",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 24,
+      "words": 257,
+      "seconds": 58.36,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-mono-traced/fVfaeG0FXM9HGh0ZiFlX6708",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 11,
+      "words": 112,
+      "seconds": 23.47,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-mono180-traced/yANmz0_B6yga78V0_qBq7tQu",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 74,
+      "words": 709,
+      "seconds": 177.3,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 8,
+      "unassigned_words": 83,
+      "unassigned_seconds": 21.33,
+      "gaps": [
+        {
+          "start": 32.33,
+          "end": 35.61,
+          "words": 12
+        },
+        {
+          "start": 92.84,
+          "end": 95.62,
+          "words": 12
+        },
+        {
+          "start": 133.72,
+          "end": 139.25,
+          "words": 18
+        },
+        {
+          "start": 139.68,
+          "end": 141.31,
+          "words": 10
+        },
+        {
+          "start": 141.34,
+          "end": 144.65,
+          "words": 10
+        },
+        {
+          "start": 160.68,
+          "end": 161.45,
+          "words": 2
+        },
+        {
+          "start": 162.18,
+          "end": 162.45,
+          "words": 1
+        },
+        {
+          "start": 172.25,
+          "end": 176.01,
+          "words": 18
+        }
+      ]
+    },
+    {
+      "package": "wp12",
+      "run": "state-overlap-fixed/SuAdVH-bNAzIkZx1Q-j-rWna",
+      "lane": "not_persisted",
+      "implementation": "accepted_overlap",
+      "segments": 13,
+      "words": 142,
+      "seconds": 43.53,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-overlap-fixed/GlOcbHPZZxIBpz2ULXAuj65p",
+      "lane": "not_persisted",
+      "implementation": "accepted_overlap",
+      "segments": 28,
+      "words": 351,
+      "seconds": 112.25,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-overlap-fixed/yz9QmxwenCw6Xau1l6cBPx0v",
+      "lane": "not_persisted",
+      "implementation": "accepted_overlap",
+      "segments": 86,
+      "words": 1053,
+      "seconds": 337.49,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 2,
+      "unassigned_words": 16,
+      "unassigned_seconds": 4.86,
+      "gaps": [
+        {
+          "start": 149.61,
+          "end": 153.75,
+          "words": 14
+        },
+        {
+          "start": 160.68,
+          "end": 161.4,
+          "words": 2
+        }
+      ]
+    },
+    {
+      "package": "wp12",
+      "run": "state-overlap-shadow-p180-clean/v9B-6diixx7E4O0HJNN8J1h6",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 86,
+      "words": 1053,
+      "seconds": 337.41,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 56,
+      "unassigned_words": 591,
+      "unassigned_seconds": 169.36,
+      "gaps": [
+        {
+          "start": 0.54,
+          "end": 3.27,
+          "words": 15
+        },
+        {
+          "start": 4.08,
+          "end": 8.88,
+          "words": 18
+        },
+        {
+          "start": 8.88,
+          "end": 9.54,
+          "words": 1
+        },
+        {
+          "start": 9.54,
+          "end": 15.33,
+          "words": 15
+        },
+        {
+          "start": 15.33,
+          "end": 19.38,
+          "words": 17
+        },
+        {
+          "start": 19.68,
+          "end": 21.12,
+          "words": 10
+        },
+        {
+          "start": 21.36,
+          "end": 25.5,
+          "words": 17
+        },
+        {
+          "start": 25.5,
+          "end": 27.81,
+          "words": 11
+        },
+        {
+          "start": 28.02,
+          "end": 29.25,
+          "words": 10
+        },
+        {
+          "start": 29.61,
+          "end": 33.75,
+          "words": 14
+        },
+        {
+          "start": 33.87,
+          "end": 40.08,
+          "words": 13
+        },
+        {
+          "start": 40.11,
+          "end": 40.44,
+          "words": 2
+        },
+        {
+          "start": 40.68,
+          "end": 41.4,
+          "words": 2
+        },
+        {
+          "start": 42.18,
+          "end": 46.71,
+          "words": 14
+        },
+        {
+          "start": 46.74,
+          "end": 55.08,
+          "words": 18
+        },
+        {
+          "start": 55.08,
+          "end": 58.29,
+          "words": 7
+        },
+        {
+          "start": 58.29,
+          "end": 59.37,
+          "words": 8
+        },
+        {
+          "start": 59.37,
+          "end": 62.79,
+          "words": 18
+        },
+        {
+          "start": 62.79,
+          "end": 63.24,
+          "words": 2
+        },
+        {
+          "start": 64.05,
+          "end": 68.45,
+          "words": 15
+        },
+        {
+          "start": 68.45,
+          "end": 69.33,
+          "words": 4
+        },
+        {
+          "start": 69.54,
+          "end": 74.67,
+          "words": 13
+        },
+        {
+          "start": 74.67,
+          "end": 75.18,
+          "words": 2
+        },
+        {
+          "start": 75.33,
+          "end": 79.38,
+          "words": 17
+        },
+        {
+          "start": 79.68,
+          "end": 81.09,
+          "words": 10
+        },
+        {
+          "start": 81.36,
+          "end": 85.41,
+          "words": 16
+        },
+        {
+          "start": 85.41,
+          "end": 87.81,
+          "words": 12
+        },
+        {
+          "start": 88.02,
+          "end": 89.25,
+          "words": 10
+        },
+        {
+          "start": 89.61,
+          "end": 93.75,
+          "words": 14
+        },
+        {
+          "start": 93.87,
+          "end": 100.08,
+          "words": 13
+        },
+        {
+          "start": 100.11,
+          "end": 100.44,
+          "words": 2
+        },
+        {
+          "start": 100.68,
+          "end": 101.4,
+          "words": 2
+        },
+        {
+          "start": 102.18,
+          "end": 106.71,
+          "words": 14
+        },
+        {
+          "start": 106.74,
+          "end": 115.08,
+          "words": 18
+        },
+        {
+          "start": 115.08,
+          "end": 118.29,
+          "words": 7
+        },
+        {
+          "start": 118.29,
+          "end": 119.37,
+          "words": 8
+        },
+        {
+          "start": 119.37,
+          "end": 122.79,
+          "words": 18
+        },
+        {
+          "start": 122.79,
+          "end": 123.24,
+          "words": 2
+        },
+        {
+          "start": 124.05,
+          "end": 128.46,
+          "words": 15
+        },
+        {
+          "start": 128.46,
+          "end": 129.33,
+          "words": 4
+        },
+        {
+          "start": 129.54,
+          "end": 134.66,
+          "words": 13
+        },
+        {
+          "start": 134.66,
+          "end": 135.18,
+          "words": 2
+        },
+        {
+          "start": 135.27,
+          "end": 139.38,
+          "words": 17
+        },
+        {
+          "start": 139.68,
+          "end": 141.12,
+          "words": 10
+        },
+        {
+          "start": 141.36,
+          "end": 145.5,
+          "words": 17
+        },
+        {
+          "start": 145.5,
+          "end": 147.81,
+          "words": 11
+        },
+        {
+          "start": 148.02,
+          "end": 149.25,
+          "words": 10
+        },
+        {
+          "start": 149.61,
+          "end": 153.75,
+          "words": 14
+        },
+        {
+          "start": 153.86,
+          "end": 160.08,
+          "words": 13
+        },
+        {
+          "start": 160.11,
+          "end": 160.44,
+          "words": 2
+        },
+        {
+          "start": 160.68,
+          "end": 161.4,
+          "words": 2
+        },
+        {
+          "start": 162.18,
+          "end": 166.71,
+          "words": 14
+        },
+        {
+          "start": 166.74,
+          "end": 175.08,
+          "words": 18
+        },
+        {
+          "start": 175.08,
+          "end": 178.29,
+          "words": 7
+        },
+        {
+          "start": 178.29,
+          "end": 179.37,
+          "words": 8
+        },
+        {
+          "start": 179.37,
+          "end": 179.94,
+          "words": 5
+        }
+      ]
+    },
+    {
+      "package": "wp12",
+      "run": "state-overlap-shadow-p24/8ZlgTfmkoOXwg86b4SUkAGiE",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 13,
+      "words": 142,
+      "seconds": 43.53,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-overlap-shadow-p60/dpJmT9B_BAywf32vcLSlPagM",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 28,
+      "words": 351,
+      "seconds": 112.23,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-overlap-shadow-q24/gBwOtbkF3IYZPyTdO3dCtIOl",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 13,
+      "words": 142,
+      "seconds": 43.41,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-overlap-shadow-q60/hIXgEXk2oupKz30GbnjumxdJ",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 28,
+      "words": 351,
+      "seconds": 112.49,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-overlap-shadow-s24/hmTrjG9PDPjCnIA6ET3qSDlq",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 17,
+      "words": 172,
+      "seconds": 42.66,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-overlap-shadow-s60/4knvOxgXxw1hhDoXnMgbM0Um",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 36,
+      "words": 394,
+      "seconds": 112.58,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-parallel/NL0JuZcEQNrAqp6PxsxRmrOa",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 13,
+      "words": 142,
+      "seconds": 43.53,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-parallel/FEAPJvI_uGDutJ4t7e7YVAwB",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 28,
+      "words": 351,
+      "seconds": 112.9,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp12",
+      "run": "state-serial-traced/mzVCirKPA9apotezpbu2AcEZ",
+      "lane": "not_persisted",
+      "implementation": "historical_control",
+      "segments": 12,
+      "words": 142,
+      "seconds": 43.53,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/gNRtmbKD2riqAtZS5a2-wcEr",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 5,
+      "words": 61,
+      "seconds": 23.4,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/gNRtmbKD2riqAtZS5a2-wcEr",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 13,
+      "words": 112,
+      "seconds": 28.42,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/Bz_FWeqXJ5TxwA5OqvtVo01W",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 61,
+      "seconds": 23.69,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/Bz_FWeqXJ5TxwA5OqvtVo01W",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 10,
+      "words": 112,
+      "seconds": 26.37,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/kOvJJq6Gmc6YUxrzIIp3LXeN",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 39,
+      "seconds": 11.25,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/4iMvv3E8QeauPyUUbbqipBxD",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 3,
+      "words": 37,
+      "seconds": 11.22,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/SEiAmsTzB0yDALb6art5DMHb",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 3,
+      "words": 31,
+      "seconds": 11.12,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/hXF45fXkUG9CtGQIgAroV2To",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 2,
+      "words": 17,
+      "seconds": 5.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/0vPbUV_kZoL2J80uXW0d5zs-",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 2,
+      "words": 10,
+      "seconds": 2.35,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/Cnm0gCV-mMFgVHVFTEJ_FgZw",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 39,
+      "seconds": 11.22,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/xt-nAATtajIS7kbA4b_8aNzr",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 3,
+      "words": 37,
+      "seconds": 11.22,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/vMj6ZLTEliZfgNGpHlp2nWxY",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 3,
+      "words": 37,
+      "seconds": 11.22,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/Nhf4UHkQa45puRkMG_I42tdB",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 39,
+      "seconds": 11.22,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/xYpkA-FGaJ8abPrcrF6oRppV",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 3,
+      "words": 37,
+      "seconds": 11.22,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/Un_iEsXsHb0w-7bibUP4D4aq",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 3,
+      "words": 37,
+      "seconds": 11.22,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/H34F-GyK6TqQzijXVuEZWcR_",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 3,
+      "words": 27,
+      "seconds": 11.02,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/H34F-GyK6TqQzijXVuEZWcR_",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 5,
+      "words": 38,
+      "seconds": 11.5,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/ePLQFjOyoO4-nx9H2lAitt7S",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 5,
+      "words": 38,
+      "seconds": 11.5,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/2OuY657HE4_d2EknmwE-kX5T",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 3,
+      "words": 27,
+      "seconds": 11.02,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/O5OL2PnBVkQBQ8YkVZ-jj4Vf",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 60,
+      "seconds": 23.02,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/O5OL2PnBVkQBQ8YkVZ-jj4Vf",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 8,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/bEHmnyNnCMOT6zyyS_X54yL9",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 8,
+      "words": 86,
+      "seconds": 21.33,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/1xjAcYXxLz1MOkSTiWCUe63b",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 61,
+      "seconds": 23.94,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/1xjAcYXxLz1MOkSTiWCUe63b",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 13,
+      "words": 112,
+      "seconds": 28.42,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/A8q8QA5BbqS0EtZrBoKpSRvn",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 60,
+      "seconds": 23.02,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/6cCNf-yBCIH6rpIJArI6mqDh",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 5,
+      "words": 72,
+      "seconds": 22.3,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/6cCNf-yBCIH6rpIJArI6mqDh",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 10,
+      "words": 86,
+      "seconds": 23.07,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/ApX9KW2W1cHy6qSX3VXf8Ycv",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 4,
+      "words": 61,
+      "seconds": 23.69,
+      "assigned_speakers": [
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/ApX9KW2W1cHy6qSX3VXf8Ycv",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 11,
+      "words": 112,
+      "seconds": 26.19,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/z5vn4kjrpL3kip62YAwNQvg0",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 10,
+      "words": 86,
+      "seconds": 23.07,
+      "assigned_speakers": [
+        "speaker-0001"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/dhr6omGnWk_2q_FP8GUIrRuE",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 5,
+      "words": 72,
+      "seconds": 22.3,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/hmzHcpgNOYFlg3hnOOrQ-Xbq",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 8,
+      "words": 130,
+      "seconds": 45.41,
+      "assigned_speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/hmzHcpgNOYFlg3hnOOrQ-Xbq",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 14,
+      "words": 160,
+      "seconds": 43.35,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0004"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/AfzBVXJf9vpxS6Sqc9MOoUqC",
+      "lane": "system",
+      "implementation": "accepted_overlap",
+      "segments": 14,
+      "words": 160,
+      "seconds": 43.35,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    },
+    {
+      "package": "wp17",
+      "run": "state/CGTQtHE3tWJP8Ocgk8D6BMF_",
+      "lane": "microphone",
+      "implementation": "accepted_overlap",
+      "segments": 8,
+      "words": 130,
+      "seconds": 45.41,
+      "assigned_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "unassigned_segments": 0,
+      "unassigned_words": 0,
+      "unassigned_seconds": 0.0,
+      "gaps": []
+    }
+  ],
+  "databases": [
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-concurrent-traced/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-fixed/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-lane/phase2.sqlite",
+      "saved_documents": 3,
+      "statuses": {
+        "completed": 3
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-mono/phase2.sqlite",
+      "saved_documents": 2,
+      "statuses": {
+        "completed": 2
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-mono-traced/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-mono180-traced/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-overlap-fixed/phase2.sqlite",
+      "saved_documents": 3,
+      "statuses": {
+        "completed": 3
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-overlap-shadow-p180/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "interrupted": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-overlap-shadow-p180-clean/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-overlap-shadow-p24/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-overlap-shadow-p60/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-overlap-shadow-q24/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-overlap-shadow-q60/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-overlap-shadow-s24/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-overlap-shadow-s60/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-parallel/phase2.sqlite",
+      "saved_documents": 2,
+      "statuses": {
+        "completed": 2
+      }
+    },
+    {
+      "package": "wp12",
+      "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/state-serial-traced/phase2.sqlite",
+      "saved_documents": 1,
+      "statuses": {
+        "completed": 1
+      }
+    },
+    {
+      "package": "wp17",
+      "path": "/private/tmp/wp17/state/phase2.sqlite",
+      "saved_documents": 27,
+      "statuses": {
+        "completed": 27
+      }
+    }
+  ],
+  "population": "Surface census: all extant WP12 surface JSONs, distinct final WP17 quality snapshots plus all 12 duration sessions. Saved-store census separately includes all completed meetings from 17 WP12 state databases and the WP17 state database, including recognition. These populations overlap: do not add their denominators. WP12 saved documents lack lane metadata; no lane guessed. Historical acoustic controls separated from accepted overlap implementation. Durations sum segment intervals, not meeting time."
+}

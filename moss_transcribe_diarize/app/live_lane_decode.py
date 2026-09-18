@@ -234,7 +234,7 @@ def decode_refinement(c, request):
 
 
 def finalize_lanes(c, finalizer, **kwargs):
-    """Finalize each lane through mono's overlap mapper, probing only uncovered audio."""
+    """Finalize lanes by overlap, acoustically probing uncovered or unmapped segments."""
     from .live_transcript_convergence import TerminalOutcome
 
     results = []
@@ -283,15 +283,17 @@ def finalize_lanes(c, finalizer, **kwargs):
                     for s in lane_base
                 )
                 speaker = segment.canonical_speaker
-                if not covered:
-                    # No labelled overlap: probe only this uncovered segment.
+                if not covered or speaker is None:
+                    # Overlap alone is insufficient: extra terminal local labels can
+                    # lose the one-to-one assignment to an established lane speaker.
+                    # Probe only this segment, including when that mapping is absent.
                     # Existing evidence floors and matching thresholds still apply.
                     span = FrozenSpan(
                         id=int(dict(base_snapshot.diagnostics).get("span_id", "0")) + 1 + index,
                         epoch=kwargs["plan"].epoch,
                         start_sample=segment.start_sample,
                         end_sample=segment.end_sample,
-                        reason="terminal_uncovered",
+                        reason="terminal_uncovered" if not covered else "terminal_unassigned",
                     )
                     try:
                         probe = revision_segments(

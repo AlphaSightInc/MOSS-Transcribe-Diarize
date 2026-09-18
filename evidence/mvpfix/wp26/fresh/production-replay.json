@@ -1,0 +1,41 @@
+{
+  "verdict": "PASS",
+  "segments": 56,
+  "differences": [
+    {
+      "index": 47,
+      "start": 149.61,
+      "end": 153.75,
+      "before": null,
+      "after": "speaker-0004"
+    },
+    {
+      "index": 50,
+      "start": 160.68,
+      "end": 161.4,
+      "before": null,
+      "after": "speaker-0004"
+    }
+  ],
+  "unchanged_words_times_lanes": true,
+  "unassigned": 0,
+  "probes": [
+    {
+      "lane": "system",
+      "start": 149.61,
+      "end": 153.75,
+      "bytes": 132480,
+      "reason": "terminal_unassigned",
+      "seconds": 0.6336600839858875
+    },
+    {
+      "lane": "system",
+      "start": 160.68,
+      "end": 161.4,
+      "bytes": 23040,
+      "reason": "terminal_unassigned",
+      "seconds": 0.11724316600884777
+    }
+  ],
+  "provenance": "Production finalize_lanes, captured post-mapping terminal proposal, reconstructed album and causal coverage. No new decoder/API/Stop run."
+}

@@ -418,6 +418,56 @@ def test_terminal_acoustic_fallback_only_reads_uncovered_lane_segment(tmp_path, 
     assert session.snapshot().effective_transcript == result.proposal.segments
 
 
+@pytest.mark.parametrize("abstain", [False, True])
+def test_terminal_extra_local_voice_probes_covered_short_second_voice(tmp_path, monkeypatch, abstain):
+    """Three terminal labels compete for two system identities; the third is Lex again."""
+    import moss_transcribe_diarize.app.live_lane_decode as lanes
+
+    system = "system"
+    speakers = ("speaker-0001", "speaker-0002", "speaker-0003")
+    base = tuple(EffectiveTranscriptSegment(
+        round(start * RATE), round(end * RATE), "causal", speaker, "causal", lane,
+    ) for start, end, speaker, lane in (
+        (0, 2.5, speakers[0], system), (2.5, 5, speakers[2], system),
+        (5, 5.72, speakers[2], system), (0, 5.72, speakers[1], "microphone"),
+    ))
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=6 * RATE * 2)
+    assert tape.append(start_sample=0, pcm=bytes([7]) * 6 * RATE * 2).written
+    calls = []
+
+    class SecondVoiceEvidence(Evidence):
+        def revision_reader(self):
+            return self
+
+        def score(self, *, span, pcm, **kwargs):
+            calls.append((span.start_sample, span.end_sample, len(pcm), pcm[0]))
+            # A stronger same-time microphone candidate cannot compete in this lane.
+            return tuple(LiveSpeakerEvidence("S01", s, score) for s, score in (
+                (speakers[0], .1), (speakers[1], 1.), (speakers[2], .15 if abstain else .9),
+            ))
+
+    snapshot = SimpleNamespace(identity_snapshot=LiveIdentitySnapshot(canonical_speakers=speakers))
+    c = SimpleNamespace(lane_tapes={system:tape}, _lane_speakers={system:{speakers[0], speakers[2]}},
+        _lane_preparers={system:BoundedCausalIdentityPreparer(
+            config=LiveIdentityConfig(16, .35, .1), evidence_provider=SecondVoiceEvidence())},
+        session=SimpleNamespace(snapshot=lambda: snapshot))
+
+    class SplitLabelRunner:
+        def transcribe(self, *args, **kwargs):
+            return SimpleNamespace(text="[0][S01]first voice[2.5][2.5][S02]second voice[5][5][S03]short return[5.72]")
+
+    result = lanes.finalize_lanes(c, TerminalTranscriptFinalizer(runner=SplitLabelRunner(), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(0, 6 * RATE, 0, RollingStatus.STOPPED, 0, 0), tape=tape,
+        base_text_revision_version=0, base_surface=base, canonical_speakers=speakers)
+    assert calls == [(5 * RATE, round(5.72 * RATE), round(.72 * RATE) * 2, 7)]
+    assert [(s.text, s.canonical_speaker) for s in result.proposal.segments] == [
+        ("first voice", speakers[0]), ("second voice", speakers[2]),
+        ("short return", None if abstain else speakers[2]),
+    ]
+    assert result.accounting.unattributed_segments == int(abstain)
+    assert {s.source_lane for s in result.proposal.segments} == {system}
+
+
 def test_long_single_voice_lane_keeps_all_covered_terminal_words(tmp_path, monkeypatch):
     import moss_transcribe_diarize.app.live_lane_decode as lanes
 
