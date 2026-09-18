@@ -1,0 +1,99 @@
+{
+  "clean": false,
+  "failures": [
+    "session_3:RuntimeError",
+    "session_1:RuntimeError",
+    "session_4:RuntimeError",
+    "session_2:RuntimeError",
+    "inference_evidence:rolling admitted/completed accounting is incomplete"
+  ],
+  "decoder_calls": 1107,
+  "maximum_own_inflight": 1,
+  "foreign_load_detected": false,
+  "fairness": {
+    "method": "pairwise dispatch skew over each continuous jointly-ready interval",
+    "lifecycle_event_counts": {
+      "canonical_queued": 995,
+      "canonical_started": 995,
+      "canonical_processed": 1043
+    },
+    "contended_pair_dispatch_observations": 2210,
+    "maximum_contended_pair_dispatch_skew": 1,
+    "fairness_gate": 1,
+    "applicability": "measured",
+    "errors": [],
+    "passes": true
+  },
+  "app_rss_growth_bytes": 756072448,
+  "maximum_refinement_queue_depth": 1,
+  "maximum_gpu_cache_use": 0.010707911957168359,
+  "prestop_inference": null,
+  "source": "private capacity/result.json; metadata projection after run, no rerun",
+  "finalization_bar_seconds": 90,
+  "sessions": [
+    {
+      "ordinal": 1,
+      "failure_code": "finalization_timeout_90s",
+      "error": "RuntimeError",
+      "clean": false,
+      "acknowledged_frames": 2400,
+      "foreign_probes": 2400,
+      "wrong_owner_failures": 0,
+      "last_observed_session_counters": {
+        "accepted_samples": 9600000,
+        "accounted_samples": 9600000
+      },
+      "first_text_seconds": 3.572283667002921,
+      "stop_requested_monotonic": 105022.7496545,
+      "p95_canonical_lag": null
+    },
+    {
+      "ordinal": 2,
+      "failure_code": "finalization_timeout_90s",
+      "error": "RuntimeError",
+      "clean": false,
+      "acknowledged_frames": 2400,
+      "foreign_probes": 2400,
+      "wrong_owner_failures": 0,
+      "last_observed_session_counters": {
+        "accepted_samples": 9600000,
+        "accounted_samples": 9600000
+      },
+      "first_text_seconds": 3.0527287919976516,
+      "stop_requested_monotonic": 105022.753155833,
+      "p95_canonical_lag": null
+    },
+    {
+      "ordinal": 3,
+      "failure_code": "finalization_timeout_90s",
+      "error": "RuntimeError",
+      "clean": false,
+      "acknowledged_frames": 2400,
+      "foreign_probes": 2400,
+      "wrong_owner_failures": 0,
+      "last_observed_session_counters": {
+        "accepted_samples": 9600000,
+        "accounted_samples": 9600000
+      },
+      "first_text_seconds": 1.5703690829977859,
+      "stop_requested_monotonic": 105022.759615875,
+      "p95_canonical_lag": null
+    },
+    {
+      "ordinal": 4,
+      "failure_code": "finalization_timeout_90s",
+      "error": "RuntimeError",
+      "clean": false,
+      "acknowledged_frames": 2400,
+      "foreign_probes": 2400,
+      "wrong_owner_failures": 0,
+      "last_observed_session_counters": {
+        "accepted_samples": 9600000,
+        "accounted_samples": 9600000
+      },
+      "first_text_seconds": 2.0572647499939194,
+      "stop_requested_monotonic": 105022.753058625,
+      "p95_canonical_lag": null
+    }
+  ]
+}

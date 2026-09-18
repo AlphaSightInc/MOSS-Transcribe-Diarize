@@ -1,0 +1,295 @@
+{
+  "name": "file_30min",
+  "status": "PASS",
+  "exit_code": 0,
+  "denominators": {
+    "expected": 3,
+    "executed": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 1223.493,
+  "artifacts": [
+    "file_30min.log"
+  ],
+  "decoder_requests_at_record": 772,
+  "decoder_budget_exhausted_at_record": false,
+  "reason": "Existing WP16 bars: durable outcome, five exact exports for speech, audio download, foreign read 404; failures typed and visible after reload",
+  "measurements": [
+    {
+      "case": "long.wav",
+      "status": "PASS",
+      "measurements": {
+        "case": null,
+        "source": null,
+        "duration_seconds": 1800,
+        "started_monotonic": 103155.311307208,
+        "queue_before": [
+          null,
+          null
+        ],
+        "http_status": 201,
+        "accepted_seconds": 0.28536958299810067,
+        "meeting_id": "CLsP9f0IftCu-aZlQeNOwbFs",
+        "first_status_seconds": 0.2984911249950528,
+        "elapsed_seconds": 405.5366433750023,
+        "status": "completed",
+        "failure_code": null,
+        "failure_reason": null,
+        "notice": null,
+        "saved_words": 4994,
+        "speakers": 3,
+        "last_segment_end": 1799.85,
+        "history_reason": true,
+        "header_reason": true,
+        "reason_content_free": true,
+        "reload_status": null,
+        "exports": {
+          "md": {
+            "ok": true,
+            "expected_turns": 135,
+            "downloaded_turns": 135,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "txt": {
+            "ok": true,
+            "expected_turns": 135,
+            "downloaded_turns": 135,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "json": {
+            "ok": true,
+            "expected_turns": 135,
+            "downloaded_turns": 135,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true,
+            "lane": true
+          },
+          "srt": {
+            "ok": true,
+            "expected_turns": 135,
+            "downloaded_turns": 135,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "vtt": {
+            "ok": true,
+            "expected_turns": 135,
+            "downloaded_turns": 135,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          }
+        },
+        "mp3_link": true,
+        "mp3_bytes": 10800693,
+        "foreign_read_status": 404
+      },
+      "expected_failure_code": null,
+      "observed_failure_code": null,
+      "ordered_word_score": {
+        "reference_words": 4725,
+        "observed_words": 4994,
+        "substitutions": 148,
+        "omissions": 46,
+        "additions": 315,
+        "wer": 0.10772486772486772
+      }
+    },
+    {
+      "case": "long.mp3",
+      "status": "PASS",
+      "measurements": {
+        "case": null,
+        "source": null,
+        "duration_seconds": 1800,
+        "started_monotonic": 103563.277414458,
+        "queue_before": [
+          null,
+          null
+        ],
+        "http_status": 201,
+        "accepted_seconds": 0.18354774999897927,
+        "meeting_id": "xhQS2MjRp9xVVFeqro_L_qwi",
+        "first_status_seconds": 0.19451383299019653,
+        "elapsed_seconds": 403.3605045000004,
+        "status": "completed",
+        "failure_code": null,
+        "failure_reason": null,
+        "notice": null,
+        "saved_words": 4980,
+        "speakers": 3,
+        "last_segment_end": 1799.85,
+        "history_reason": true,
+        "header_reason": true,
+        "reason_content_free": true,
+        "reload_status": null,
+        "exports": {
+          "md": {
+            "ok": true,
+            "expected_turns": 130,
+            "downloaded_turns": 130,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "txt": {
+            "ok": true,
+            "expected_turns": 130,
+            "downloaded_turns": 130,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "json": {
+            "ok": true,
+            "expected_turns": 130,
+            "downloaded_turns": 130,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true,
+            "lane": true
+          },
+          "srt": {
+            "ok": true,
+            "expected_turns": 130,
+            "downloaded_turns": 130,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "vtt": {
+            "ok": true,
+            "expected_turns": 130,
+            "downloaded_turns": 130,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          }
+        },
+        "mp3_link": true,
+        "mp3_bytes": 10800693,
+        "foreign_read_status": 404
+      },
+      "expected_failure_code": null,
+      "observed_failure_code": null,
+      "ordered_word_score": {
+        "reference_words": 4725,
+        "observed_words": 4980,
+        "substitutions": 144,
+        "omissions": 46,
+        "additions": 301,
+        "wer": 0.10391534391534392
+      }
+    },
+    {
+      "case": "long.m4a",
+      "status": "PASS",
+      "measurements": {
+        "case": null,
+        "source": null,
+        "duration_seconds": 1800,
+        "started_monotonic": 103969.011569083,
+        "queue_before": [
+          null,
+          null
+        ],
+        "http_status": 201,
+        "accepted_seconds": 0.16643762499734294,
+        "meeting_id": "qUKT6l4kmp2JC_9ZVPp8rEog",
+        "first_status_seconds": 0.1803814169979887,
+        "elapsed_seconds": 407.4036616670055,
+        "status": "completed",
+        "failure_code": null,
+        "failure_reason": null,
+        "notice": null,
+        "saved_words": 4989,
+        "speakers": 3,
+        "last_segment_end": 1799.85,
+        "history_reason": true,
+        "header_reason": true,
+        "reason_content_free": true,
+        "reload_status": null,
+        "exports": {
+          "md": {
+            "ok": true,
+            "expected_turns": 135,
+            "downloaded_turns": 135,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "txt": {
+            "ok": true,
+            "expected_turns": 135,
+            "downloaded_turns": 135,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "json": {
+            "ok": true,
+            "expected_turns": 135,
+            "downloaded_turns": 135,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true,
+            "lane": true
+          },
+          "srt": {
+            "ok": true,
+            "expected_turns": 135,
+            "downloaded_turns": 135,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          },
+          "vtt": {
+            "ok": true,
+            "expected_turns": 135,
+            "downloaded_turns": 135,
+            "words": true,
+            "labels": true,
+            "timing": true,
+            "identity": true
+          }
+        },
+        "mp3_link": true,
+        "mp3_bytes": 10800693,
+        "foreign_read_status": 404
+      },
+      "expected_failure_code": null,
+      "observed_failure_code": null,
+      "ordered_word_score": {
+        "reference_words": 4725,
+        "observed_words": 4989,
+        "substitutions": 147,
+        "omissions": 49,
+        "additions": 313,
+        "wer": 0.10772486772486772
+      }
+    }
+  ]
+}

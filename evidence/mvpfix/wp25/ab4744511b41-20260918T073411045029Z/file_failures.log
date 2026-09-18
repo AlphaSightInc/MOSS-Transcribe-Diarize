@@ -1,0 +1,197 @@
+{
+  "name": "file_failures",
+  "status": "PASS",
+  "exit_code": 0,
+  "denominators": {
+    "expected": 5,
+    "executed": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 44.093,
+  "artifacts": [
+    "file_failures.log"
+  ],
+  "decoder_requests_at_record": 727,
+  "decoder_budget_exhausted_at_record": false,
+  "reason": "Existing WP16 bars: durable outcome, five exact exports for speech, audio download, foreign read 404; failures typed and visible after reload",
+  "measurements": [
+    {
+      "case": "empty.wav",
+      "status": "PASS",
+      "measurements": {
+        "case": null,
+        "source": null,
+        "duration_seconds": null,
+        "started_monotonic": 103111.395293208,
+        "queue_before": [
+          null,
+          null
+        ],
+        "http_status": 201,
+        "accepted_seconds": 0.15601612499449402,
+        "meeting_id": "p4bOaD7joxhIqIoPpUnORS9U",
+        "first_status_seconds": 0.17130149999866262,
+        "elapsed_seconds": 2.1752089579968015,
+        "status": "failed",
+        "failure_code": null,
+        "failure_reason": null,
+        "notice": null,
+        "saved_words": 0,
+        "speakers": 0,
+        "last_segment_end": null,
+        "history_reason": true,
+        "header_reason": true,
+        "reason_content_free": true,
+        "reload_status": null,
+        "exports": {},
+        "mp3_link": false,
+        "foreign_read_status": 404
+      },
+      "expected_failure_code": "transcode_failed",
+      "observed_failure_code": "transcode_failed"
+    },
+    {
+      "case": "text.mp3",
+      "status": "PASS",
+      "measurements": {
+        "case": null,
+        "source": null,
+        "duration_seconds": null,
+        "started_monotonic": 103115.396694666,
+        "queue_before": [
+          null,
+          null
+        ],
+        "http_status": 201,
+        "accepted_seconds": 0.3071396670129616,
+        "meeting_id": "TsWjMUgaPeadZj9RFds6ojxl",
+        "first_status_seconds": 0.3234189590002643,
+        "elapsed_seconds": 2.3287435840029502,
+        "status": "failed",
+        "failure_code": null,
+        "failure_reason": null,
+        "notice": null,
+        "saved_words": 0,
+        "speakers": 0,
+        "last_segment_end": null,
+        "history_reason": true,
+        "header_reason": true,
+        "reason_content_free": true,
+        "reload_status": null,
+        "exports": {},
+        "mp3_link": false,
+        "foreign_read_status": 404
+      },
+      "expected_failure_code": "transcode_failed",
+      "observed_failure_code": "transcode_failed"
+    },
+    {
+      "case": "missing",
+      "status": "PASS",
+      "measurements": {
+        "case": null,
+        "source": null,
+        "duration_seconds": null,
+        "started_monotonic": 103119.4721285,
+        "queue_before": [
+          null,
+          null
+        ],
+        "http_status": 201,
+        "accepted_seconds": 0.11235858300642576,
+        "meeting_id": "J1r-SIyg8AhwSr4klXUqGFQ0",
+        "first_status_seconds": 0.12146154099900741,
+        "elapsed_seconds": 0.12146241600567009,
+        "status": "failed",
+        "failure_code": null,
+        "failure_reason": null,
+        "notice": null,
+        "saved_words": 0,
+        "speakers": 0,
+        "last_segment_end": null,
+        "history_reason": true,
+        "header_reason": true,
+        "reason_content_free": true,
+        "reload_status": null,
+        "exports": {},
+        "mp3_link": false,
+        "foreign_read_status": 404
+      },
+      "expected_failure_code": "acquisition_http_404",
+      "observed_failure_code": "acquisition_http_404"
+    },
+    {
+      "case": "html",
+      "status": "PASS",
+      "measurements": {
+        "case": null,
+        "source": null,
+        "duration_seconds": null,
+        "started_monotonic": 103121.42357475,
+        "queue_before": [
+          null,
+          null
+        ],
+        "http_status": 201,
+        "accepted_seconds": 0.10783662500034552,
+        "meeting_id": "0Ao1YGA6YK8-FCmj9J28hwrD",
+        "first_status_seconds": 0.11738412499835249,
+        "elapsed_seconds": 0.11738587499712594,
+        "status": "failed",
+        "failure_code": null,
+        "failure_reason": null,
+        "notice": null,
+        "saved_words": 0,
+        "speakers": 0,
+        "last_segment_end": null,
+        "history_reason": true,
+        "header_reason": true,
+        "reason_content_free": true,
+        "reload_status": null,
+        "exports": {},
+        "mp3_link": false,
+        "foreign_read_status": 404
+      },
+      "expected_failure_code": "acquisition_failed",
+      "observed_failure_code": "acquisition_failed"
+    },
+    {
+      "case": "hang",
+      "status": "PASS",
+      "measurements": {
+        "case": null,
+        "source": null,
+        "duration_seconds": null,
+        "started_monotonic": 103123.306032833,
+        "queue_before": [
+          null,
+          null
+        ],
+        "http_status": 201,
+        "accepted_seconds": 0.11190170799090993,
+        "meeting_id": "atPEelxCLBLsYeQxN4_cPYxj",
+        "first_status_seconds": 0.12420029198983684,
+        "elapsed_seconds": 30.217506957997102,
+        "status": "failed",
+        "failure_code": null,
+        "failure_reason": null,
+        "notice": null,
+        "saved_words": 0,
+        "speakers": 0,
+        "last_segment_end": null,
+        "history_reason": true,
+        "header_reason": true,
+        "reason_content_free": true,
+        "reload_status": null,
+        "exports": {},
+        "mp3_link": false,
+        "foreign_read_status": 404
+      },
+      "expected_failure_code": "acquisition_timeout",
+      "observed_failure_code": "acquisition_timeout"
+    }
+  ]
+}

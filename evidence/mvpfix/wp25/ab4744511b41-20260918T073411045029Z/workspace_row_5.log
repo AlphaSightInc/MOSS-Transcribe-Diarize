@@ -1,0 +1,50 @@
+{
+  "name": "workspace_row_5",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0.061,
+  "artifacts": [
+    "workspace_row_5.log"
+  ],
+  "decoder_requests_at_record": 180,
+  "decoder_budget_exhausted_at_record": false,
+  "measurements": {
+    "ok": true,
+    "renames": [
+      {
+        "name": null,
+        "http": 200,
+        "speaker_id": "speaker-0002",
+        "enrollment": null,
+        "rows_legend_updated": true,
+        "history_updated": true,
+        "export_updated": null
+      },
+      {
+        "name": null,
+        "http": 200,
+        "speaker_id": "speaker-0002",
+        "enrollment": null,
+        "rows_legend_updated": true,
+        "history_updated": true,
+        "export_updated": true
+      }
+    ],
+    "meeting": "yWLyChpDnqaAdpC5BKKniRy-",
+    "export_after_stop_without_reload": true,
+    "export": null,
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 0.061,
+    "network": null,
+    "row": 5
+  }
+}
