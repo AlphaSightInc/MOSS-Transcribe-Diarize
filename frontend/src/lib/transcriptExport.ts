@@ -1,4 +1,4 @@
-import { compareTranscriptOrder, transcriptLaneLabel } from "./transcriptOrder.ts";
+import { compareTranscriptOrder } from "./transcriptOrder.ts";
 import type { SourceLane } from "./transcriptOrder.ts";
 import type { TranscriptTurn } from "./mergeTranscript";
 
@@ -166,8 +166,7 @@ function buildExportRows(
 }
 
 function resolveExportLabel(turn: TranscriptTurn, resolveLabel: (turn: TranscriptTurn) => string): string {
-  const label = resolveLabel(turn).trim() || turn.display_name.trim() || turn.speaker;
-  return turn.source_lane ? `${label} [${transcriptLaneLabel(turn.source_lane)}]` : label;
+  return resolveLabel(turn).trim() || turn.display_name.trim() || turn.speaker;
 }
 
 function hasProvisionalAttribution(turns: readonly TranscriptTurn[]): boolean {

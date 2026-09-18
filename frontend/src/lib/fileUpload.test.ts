@@ -59,3 +59,15 @@ describe('account file/URL feedback', () => {
     expect(document.querySelector('[data-file-upload="results"] button')).toBeNull();
   });
 });
+
+
+it('shows the saved failure reason in the upload result row', async () => {
+  const form = setup();
+  form.querySelector('textarea')!.value = 'https://example.test/bad.mp3';
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => response(
+    url === '/api/meetings/url' ? meeting('active') :
+      {...meeting('failed'),failure_code:'invalid_audio',failure_reason:'Invalid audio: cannot decode this file.'})));
+  form.dispatchEvent(new Event('submit', {cancelable:true}));
+  await vi.waitFor(() => expect(document.querySelector('[data-file-upload="results"] li span')!.textContent)
+    .toBe('Invalid audio: cannot decode this file.'));
+});

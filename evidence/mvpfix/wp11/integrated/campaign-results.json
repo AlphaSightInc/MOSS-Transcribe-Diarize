@@ -1,0 +1,146 @@
+{
+  "8": {
+    "variants": [
+      {
+        "variant": "mp3",
+        "statuses": [
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open.",
+        "ok": true
+      },
+      {
+        "variant": "non-audio",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": false
+      },
+      {
+        "variant": "empty",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Processing failed. Open the meeting to inspect its saved result.",
+        "ok": false
+      },
+      {
+        "variant": "long-name",
+        "statuses": [
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open.",
+        "ok": true
+      },
+      {
+        "variant": "concurrent",
+        "statuses": [
+          "completed",
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open. Completed \u2014 ready to open.",
+        "ok": true
+      }
+    ],
+    "concurrent_start_gap_ms": 0.19945799431297928,
+    "ok": false,
+    "status": "FAIL",
+    "seconds": 16.81,
+    "predicate": "MP3 and long name succeed; invalid/empty files visibly fail; two uploads complete.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-08.png"
+  },
+  "11": {
+    "export_checks": {
+      "md": {
+        "ok": true,
+        "expected_turns": 5,
+        "downloaded_turns": 5,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true
+      },
+      "txt": {
+        "ok": true,
+        "expected_turns": 5,
+        "downloaded_turns": 5,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true
+      },
+      "json": {
+        "ok": true,
+        "expected_turns": 5,
+        "downloaded_turns": 5,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true,
+        "lane": true
+      },
+      "srt": {
+        "ok": true,
+        "expected_turns": 5,
+        "downloaded_turns": 5,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true
+      },
+      "vtt": {
+        "ok": true,
+        "expected_turns": 5,
+        "downloaded_turns": 5,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true
+      }
+    },
+    "voiceprints_after_reload": 1,
+    "http": 200,
+    "enrollment": "enrolled",
+    "matched_turns": 3,
+    "labels_persisted": true,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 16.418,
+    "predicate": "Rename updates all selected-speaker labels, enrolls voiceprint, persists through reload/export.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-11.png"
+  },
+  "10": {
+    "status": "FAIL",
+    "exception": "AssertionError",
+    "error": "Expected two speech lanes, got []",
+    "seconds": 0.08,
+    "predicate": "Five oracle-equal exports from live and file; audio decodes; interrupted download retries.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-10.png"
+  },
+  "12": {
+    "rendered": 60,
+    "refresh": 2,
+    "sessions_refresh_including_hidden": 1,
+    "width": 400,
+    "scroll": 400,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 0.212,
+    "predicate": "60 history fixtures render after reload at 400px, two Refresh controls, no overflow.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-12.png"
+  }
+}

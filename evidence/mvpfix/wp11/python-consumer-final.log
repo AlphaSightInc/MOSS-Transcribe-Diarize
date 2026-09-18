@@ -1,0 +1,70 @@
+...................................................F.................... [ 64%]
+........................................                                 [100%]
+=================================== FAILURES ===================================
+___ test_saved_live_transcript_keeps_attributed_id_and_omits_unattributed_id ___
+
+    def test_saved_live_transcript_keeps_attributed_id_and_omits_unattributed_id():
+        from moss_transcribe_diarize.app.phase2_live import _transcript_document
+    
+        snapshot = SimpleNamespace(
+            descriptor=SimpleNamespace(sample_rate=16000),
+            session=SimpleNamespace(
+                identity_snapshot=SimpleNamespace(canonical_speakers=("canonical-a",)),
+                effective_transcript=(
+                    SimpleNamespace(start_sample=0, end_sample=16000, canonical_speaker="canonical-a", text="Named speech"),
+                    SimpleNamespace(start_sample=16000, end_sample=32000, canonical_speaker=None, text="Unattributed speech"),
+                ),
+            ),
+        )
+>       assert _transcript_document(snapshot, {"canonical-a": "Alex"}) == {"segments": [
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            {"id": "seg_0001", "start": 0.0, "end": 1.0, "speaker_entity_id": "canonical-a", "speaker": "Alex", "text": "Named speech"},
+            {"id": "seg_0002", "start": 1.0, "end": 2.0, "speaker": "S00", "text": "Unattributed speech"},
+        ]}
+
+tests/phase2/test_owner_bound_live_meeting.py:645: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+snapshot = namespace(descriptor=namespace(sample_rate=16000), session=namespace(identity_snapshot=namespace(canonical_speakers=('...'Named speech'), namespace(start_sample=16000, end_sample=32000, canonical_speaker=None, text='Unattributed speech'))))
+speaker_labels = {'canonical-a': 'Alex'}
+
+    def _transcript_document(
+        snapshot: LiveServiceSnapshot,
+        speaker_labels: Mapping[str, str] | None = None,
+    ) -> dict[str, object]:
+        canonical = snapshot.session.identity_snapshot.canonical_speakers
+        labels = {} if speaker_labels is None else speaker_labels
+        sample_rate = snapshot.descriptor.sample_rate
+        return {
+            "segments": [
+                {
+                    "id": f"seg_{index:04d}",
+                    "start": segment.start_sample / sample_rate,
+                    "end": segment.end_sample / sample_rate,
+                    **({"speaker_entity_id": segment.canonical_speaker}
+                       if segment.canonical_speaker is not None else {}),
+                    "speaker": (
+                        labels[segment.canonical_speaker]
+                        if segment.canonical_speaker in labels
+                        else published_speaker_label(segment.canonical_speaker, canonical)
+                    ),
+                    "text": segment.text,
+                    **({"source_lane": segment.source_lane}
+>                      if segment.source_lane is not None else {}),
+                          ^^^^^^^^^^^^^^^^^^^
+                }
+                for index, segment in enumerate(snapshot.session.effective_transcript, start=1)
+            ]
+        }
+E       AttributeError: 'types.SimpleNamespace' object has no attribute 'source_lane'
+
+moss_transcribe_diarize/app/phase2_live.py:1298: AttributeError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_owner_bound_live_meeting.py::test_saved_live_transcript_keeps_attributed_id_and_omits_unattributed_id
+1 failed, 111 passed, 1 warning in 8.03s

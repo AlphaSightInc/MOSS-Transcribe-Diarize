@@ -21,7 +21,7 @@ export function bindFileUpload(): () => void {
         if (disposed || current !== generation) return;
         message.textContent = meeting.status === "active" ? "Processing on the server…"
           : meeting.status === "completed" ? "Completed — ready to open."
-          : meeting.status === "failed" ? "Processing failed. Open the meeting to inspect its saved result."
+          : meeting.status === "failed" ? meeting.failure_reason || "Processing failed. Open the meeting to inspect its saved result."
           : "Processing interrupted. Open the meeting to inspect its saved result.";
         if (meeting.status !== "active") { requestMeetingHistoryRefresh(); return; }
         const timer = setTimeout(() => { timers.delete(timer); void refresh(); }, 1500);

@@ -1,0 +1,135 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run --configLoader native --cache=false
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp11-export-labels/frontend
+
+ ❯ src/lib/laneConsumers.test.ts (7 tests | 3 failed) 32ms
+     × preserves the overlap corpus across meeting parse, history, turns, search, exports and summary 28ms
+     × retains overlapping srt cue intervals and lane-labelled speakers exactly 1ms
+     × retains overlapping vtt cue intervals and lane-labelled speakers exactly 0ms
+(node:3566) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3573) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:3568) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/laneConsumers.test.ts > lane consumers > preserves the overlap corpus across meeting parse, history, turns, search, exports and summary
+AssertionError: expected '## [00:00:00] Bill Ackman\n\nAnd the …' to contain '[System]'
+
+- Expected
++ Received
+
+- [System]
++ ## [00:00:00] Bill Ackman
++
++ And the key is to figure out what something's worth and you have to kind of weigh it. He talked about the difference between… He said the stock market in the short term is a voting machine. It represents speculative interests, supply and demand of people in the short term. But in the long term, the stock market's a weighing machine, much more accurate. It's going to tell you what something's worth. And so if you can define what something's worth, then you can really take advantage of the market because it's really here to help you. And that's kind of the message of the book.
++
++ ## [00:00:00] Keyu Jin
++
++ There's paternalism, they think that they're responsible for you. But a certain amount of deference to authority is not blind submission. It's been written implicitly in our contract for thousands of years that in exchange for some deference, we are given stability, security, and peace and hopefully prosperity.
++
++ ## [00:00:25] Lex Fridman
++
++ So there is some element that we have in the West of freedom of the individual so that a little bit of the rebel is allowed in balance with the deference to authority.
++
++ ## [00:00:29] Lex Fridman
++
++ In that same way, there's a kind of difference between speculation and investing.
++
++ ## [00:00:33] Bill Ackman
++
++ Yeah, speculation is just a bit like trading crypto, right? You're-
++
++ ## [00:00:35] Keyu Jin
++
++ Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China? If you don't have a sense of self, a sense of the fact that you can find opportunities, you look for opportunities, you drive opportunities, it's all self-motivated.
++
++ ## [00:00:40] Lex Fridman
++
++ Strong words.
++
++ ## [00:00:42] Bill Ackman
++
++ Well, short-term trading crypto. Maybe in the long run there's intrinsic value, but many investors in a bubble going into the crash were really just pure speculators. They didn't know what things were worth, they just knew they were going up. That's speculation.
++
++ ## [00:00:55] Lex Fridman
++
++ Is there still a young kid in China that's able to dream to
+
+ ❯ src/lib/laneConsumers.test.ts:34:39
+     32|    const output=serializeTranscriptExport(format,[...turns].reverse(),…
+     33|    for(const s of expected) expect(output).toContain(s.text);
+     34|    if(key==="overlap") expect(output).toContain(format==="json"?'"sour…
+       |                                       ^
+     35|    else expect(output).not.toContain('source_lane');
+     36|   }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  src/lib/laneConsumers.test.ts > lane consumers > retains overlapping srt cue intervals and lane-labelled speakers exactly
+AssertionError: expected '1\n00:00:00,000 --> 00:00:03,000\nAle…' to be '1\n00:00:00,000 --> 00:00:03,000\nAle…' // Object.is equality
+
+- Expected
++ Received
+
+  1
+  00:00:00,000 --> 00:00:03,000
+- Alex [System]: System
++ Alex: System
+
+  2
+  00:00:00,000 --> 00:00:01,000
+- Alex [Microphone]: Mic
++ Alex: Mic
+
+
+ ❯ src/lib/laneConsumers.test.ts:65:86
+     63|   const turns=groupSegmentsIntoTurns([item({source_lane:"microphone",e…
+     64|   const sep=format==="srt"?",":".";
+     65|   expect(serializeTranscriptExport(format,turns,t=>t.display_name,iden…
+       |                                                                                      ^
+     66|    (format==="vtt"?"WEBVTT\n\n":"")+`1\n00:00:00${sep}000 --> 00:00:03…
+     67|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  src/lib/laneConsumers.test.ts > lane consumers > retains overlapping vtt cue intervals and lane-labelled speakers exactly
+AssertionError: expected 'WEBVTT\n\n1\n00:00:00.000 --> 00:00:0…' to be 'WEBVTT\n\n1\n00:00:00.000 --> 00:00:0…' // Object.is equality
+
+- Expected
++ Received
+
+  WEBVTT
+
+  1
+  00:00:00.000 --> 00:00:03.000
+- Alex [System]: System
++ Alex: System
+
+  2
+  00:00:00.000 --> 00:00:01.000
+- Alex [Microphone]: Mic
++ Alex: Mic
+
+
+ ❯ src/lib/laneConsumers.test.ts:65:86
+     63|   const turns=groupSegmentsIntoTurns([item({source_lane:"microphone",e…
+     64|   const sep=format==="srt"?",":".";
+     65|   expect(serializeTranscriptExport(format,turns,t=>t.display_name,iden…
+       |                                                                                      ^
+     66|    (format==="vtt"?"WEBVTT\n\n":"")+`1\n00:00:00${sep}000 --> 00:00:03…
+     67|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed | 25 passed (26)
+      Tests  3 failed | 229 passed (232)
+   Start at  00:26:21
+   Duration  2.44s (transform 2.12s, setup 0ms, import 3.09s, tests 6.15s, environment 5.53s)
+

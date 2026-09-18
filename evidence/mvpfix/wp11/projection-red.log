@@ -1,0 +1,31 @@
+................................................F.                       [100%]
+=================================== FAILURES ===================================
+_______ test_terminal_document_preserves_lane_and_renamed_identity[True] _______
+
+tagged = True
+
+    @pytest.mark.parametrize('tagged', [True, False])
+    def test_terminal_document_preserves_lane_and_renamed_identity(tagged):
+        from types import SimpleNamespace as N
+        from moss_transcribe_diarize.app.phase2_live import _transcript_document
+        lanes = ['system', 'microphone'] if tagged else [None, None]
+        segments = [N(start_sample=0,end_sample=16000,canonical_speaker=f'speaker-{i:04d}',
+                      source_lane=lane,text=f'Words {i}') for i,lane in enumerate(lanes,1)]
+        snapshot = N(descriptor=N(sample_rate=16000),session=N(
+            identity_snapshot=N(canonical_speakers=()),effective_transcript=segments))
+>       assert _transcript_document(snapshot,{'speaker-0001':'Renamed','speaker-0002':'Sam'}) == {
+            'segments': [dict(id=f'seg_{i:04d}',start=0.0,end=1.0,
+                              speaker_entity_id=f'speaker-{i:04d}',
+                              speaker='Renamed' if i==1 else 'Sam',text=f'Words {i}',
+                              **({'source_lane':lane} if lane is not None else {}))
+                         for i,lane in enumerate(lanes,1)]}
+E       AssertionError: assert {'segments': ...-0002', ...}]} == {'segments': ...-0002', ...}]}
+E         
+E         Differing items:
+E         {'segments': [{'id': 'seg_0001', 'start': 0.0, 'end': 1.0, 'speaker_entity_id': 'speaker-0001', ...}, {'id': 'seg_0002', 'start': 0.0, 'end': 1.0, 'speaker_entity_id': 'speaker-0002', ...}]} != {'segments': [{'id': 'seg_0001', 'start': 0.0, 'end': 1.0, 'speaker_entity_id': 'speaker-0001', ...}, {'id': 'seg_0002', 'start': 0.0, 'end': 1.0, 'speaker_entity_id': 'speaker-0002', ...}]}
+E         Use -v to get more diff
+
+tests/phase2/test_export_oracle.py:95: AssertionError
+=========================== short test summary info ============================
+FAILED tests/phase2/test_export_oracle.py::test_terminal_document_preserves_lane_and_renamed_identity[True]
+1 failed, 49 passed in 0.94s

@@ -1,0 +1,146 @@
+{
+  "8": {
+    "variants": [
+      {
+        "variant": "mp3",
+        "statuses": [
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open.",
+        "ok": true
+      },
+      {
+        "variant": "non-audio",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": true,
+        "ui_message": "Media could not be decoded. The format may be unsupported or damaged.",
+        "ok": true
+      },
+      {
+        "variant": "empty",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": true,
+        "ui_message": "Media could not be decoded. The format may be unsupported or damaged.",
+        "ok": true
+      },
+      {
+        "variant": "long-name",
+        "statuses": [
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open.",
+        "ok": true
+      },
+      {
+        "variant": "concurrent",
+        "statuses": [
+          "completed",
+          "completed"
+        ],
+        "visible_reason": false,
+        "ui_message": "Completed \u2014 ready to open. Completed \u2014 ready to open.",
+        "ok": true
+      }
+    ],
+    "concurrent_start_gap_ms": 0.28670899337157607,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 16.892,
+    "predicate": "MP3 and long name succeed; invalid/empty files visibly fail; two uploads complete.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-08.png"
+  },
+  "11": {
+    "export_checks": {
+      "md": {
+        "ok": true,
+        "expected_turns": 4,
+        "downloaded_turns": 4,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true
+      },
+      "txt": {
+        "ok": true,
+        "expected_turns": 4,
+        "downloaded_turns": 4,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true
+      },
+      "json": {
+        "ok": true,
+        "expected_turns": 4,
+        "downloaded_turns": 4,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true,
+        "lane": true
+      },
+      "srt": {
+        "ok": true,
+        "expected_turns": 4,
+        "downloaded_turns": 4,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true
+      },
+      "vtt": {
+        "ok": true,
+        "expected_turns": 4,
+        "downloaded_turns": 4,
+        "words": true,
+        "labels": true,
+        "timing": true,
+        "identity": true
+      }
+    },
+    "voiceprints_after_reload": 1,
+    "http": 200,
+    "enrollment": "enrolled",
+    "matched_turns": 2,
+    "labels_persisted": true,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 16.257,
+    "predicate": "Rename updates all selected-speaker labels, enrolls voiceprint, persists through reload/export.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-11.png"
+  },
+  "10": {
+    "status": "FAIL",
+    "exception": "TimeoutError",
+    "error": "Timeout 12000ms exceeded while waiting for event \"download\"\n=========================== logs ===========================\nwaiting for event \"download\"\n============================================================",
+    "seconds": 12.385,
+    "predicate": "Five oracle-equal exports from live and file; audio decodes; interrupted download retries.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-10.png"
+  },
+  "12": {
+    "rendered": 60,
+    "refresh": 2,
+    "sessions_refresh_including_hidden": 1,
+    "width": 400,
+    "scroll": 400,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 0.228,
+    "predicate": "60 history fixtures render after reload at 400px, two Refresh controls, no overflow.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-12.png"
+  }
+}

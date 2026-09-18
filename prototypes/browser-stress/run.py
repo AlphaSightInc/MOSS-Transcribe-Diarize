@@ -14,6 +14,7 @@ os.environ['TMPDIR']=str(ROOT/'runs/wp5')
 import tempfile
 tempfile.tempdir=os.environ['TMPDIR']
 from tests.e2e.verify_workspace import Harness, QuietHandler
+from tests.e2e.export_oracle import compare_export
 from tests.phase2.browser_support import browser_executable
 from playwright.async_api import async_playwright
 CORPUS=Path('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s')
@@ -27,14 +28,15 @@ PREDICATES={
 7:'Same-profile tabs converge to unique identical meeting IDs.',
 8:'MP3 and long name succeed; invalid/empty files visibly fail; two uploads complete.',
 9:'Unreachable, 404, non-media URLs visibly explain failure.',
-10:'Five nonempty exports from live and file; audio decodes; interrupted download retries.',
+10:'Five oracle-equal exports from live and file; audio decodes; interrupted download retries.',
 11:'Rename updates all selected-speaker labels, enrolls voiceprint, persists through reload/export.',
 12:'60 history fixtures render after reload at 400px, two Refresh controls, no overflow.',
 13:'No-provider summary is disabled or explains setup, with zero provider POSTs.',
 14:'Own idle server restart preserves credential, history and transcripts.'}
 class Bench(Harness):
-    def __init__(self,out):
-        super().__init__(SimpleNamespace(output=out,base='https://127.0.0.1:17865'))
+    def __init__(self,out,base='https://127.0.0.1:17865',microphone_file=None):
+        super().__init__(SimpleNamespace(output=out,base=base))
+        self.microphone_file=microphone_file
         self.errors=[];self.failures=[];self.frames=[];self.posts=[];self.results={};self.case=0
     def attach(self,page):
         super().attach(page)
@@ -174,8 +176,13 @@ class Bench(Harness):
             ident=next((r['id'] for r in rows if r['mode']==mode and r['status']=='completed'),None)
             assert ident,f'No completed {mode} fixture'
             await self.select(ident)
+            meeting=(await self.api('/api/meetings/'+ident))['body']
+            lanes=sorted({s.get('source_lane') for s in (meeting.get('transcript') or {}).get('segments',[]) if s.get('source_lane')})
+            if mode=='live' and self.microphone_file:
+                assert lanes==['microphone','system'],f'Expected two speech lanes, got {lanes}'
             for fmt in ('md','txt','json','srt','vtt'):
-                path=await self.export(fmt,mode);outcomes.append({'mode':mode,'format':fmt,'bytes':path.stat().st_size,'ok':path.stat().st_size>0})
+                path=await self.export(fmt,mode)
+                outcomes.append({'mode':mode,'format':fmt,'bytes':path.stat().st_size,'lanes':lanes,**compare_export(fmt,path.read_text(),meeting)})
             url=f'/api/meetings/{ident}/audio/download'
             # Streaming browser fetch cancellation, then full retry and ffmpeg decode.
             cdp=await self.context.new_cdp_session(self.page)
@@ -198,14 +205,17 @@ class Bench(Harness):
         async with self.page.expect_response(lambda r:'/speakers/' in r.url and r.request.method=='PUT') as pending:
             await self.page.get_by_role('button',name='Save name',exact=True).click()
         response=await pending.value;body=await response.json();await self.state_at('rename-enroll');await self.stop(ident);await self.page.reload();await self.open();await self.select(ident)
-        export=json.loads((await self.export('json','names')).read_text());matched=[t for t in export['turns'] if t['speaker_entity_id']==body.get('speaker_id')]
+        json_export=(await self.export('json','names')).read_text()
+        export=json.loads(json_export);matched=[t for t in export['turns'] if t['speaker_entity_id']==body.get('speaker_id')]
+        meeting=(await self.api('/api/meetings/'+ident))['body']
+        export_checks={fmt:compare_export(fmt,json_export if fmt=='json' else (await self.export(fmt,'renamed-'+fmt)).read_text(),meeting) for fmt in ('md','txt','json','srt','vtt')}
         labels=await self.page.locator('.utt-speaker-label,.legend-chip-name').all_text_contents()
         await self.page.get_by_role('region',name='Meeting history',exact=True).get_by_role('tab',name='Voiceprints',exact=True).click()
         await self.page.locator('[data-voiceprint-id]').filter(has_text='WP5 Speaker').first.wait_for()
         saved=await self.page.locator('[data-voiceprint-id]').filter(has_text='WP5 Speaker').count()
         await self.state_at('saved-voiceprint-after-reload')
         await self.page.get_by_role('region',name='Meeting history',exact=True).get_by_role('tab',name='Sessions',exact=True).click()
-        return {'voiceprints_after_reload':saved,'http':response.status,'enrollment':body.get('enrollment'),'matched_turns':len(matched),'labels_persisted':'WP5 Speaker' in labels,'ok':response.ok and bool(matched) and all(t['speaker_label']=='WP5 Speaker' for t in matched) and 'WP5 Speaker' in labels and body.get('enrollment') in ('enrolled','already_enrolled')}
+        return {'export_checks':export_checks,'voiceprints_after_reload':saved,'http':response.status,'enrollment':body.get('enrollment'),'matched_turns':len(matched),'labels_persisted':'WP5 Speaker' in labels,'ok':all(r['ok'] for r in export_checks.values()) and response.ok and bool(matched) and all(t['speaker_label']=='WP5 Speaker' for t in matched) and 'WP5 Speaker' in labels and body.get('enrollment') in ('enrolled','already_enrolled')}
     async def scale(self):
         # Explicit scratch DB fixture only: no decoder calls, no claim of 60 captures.
         rows=(await self.api('/api/meetings'))['body']['meetings'];ident=rows[0]['id']
@@ -248,7 +258,7 @@ class Bench(Harness):
         (self.private/'source.wav').symlink_to(self.wav);(self.private/'source.html').write_text('<title>MOSS E2E Audio Source</title><audio src="source.wav" controls autoplay loop></audio>')
         server=http.server.ThreadingHTTPServer(('127.0.0.1',0),functools.partial(QuietHandler,directory=str(self.private)));threading.Thread(target=server.serve_forever,daemon=True).start();self.media=f'http://127.0.0.1:{server.server_port}'
         async with async_playwright() as p:
-            browser=await p.chromium.launch(executable_path=str(browser_executable(p)),channel='chromium',headless=True,ignore_default_args=['--mute-audio'],args=['--use-fake-device-for-media-stream','--auto-accept-camera-and-microphone-capture','--auto-select-tab-capture-source-by-title=MOSS E2E Audio Source','--autoplay-policy=no-user-gesture-required'])
+            browser=await p.chromium.launch(executable_path=str(browser_executable(p)),channel='chromium',headless=True,ignore_default_args=['--mute-audio'],args=['--use-fake-device-for-media-stream','--auto-accept-camera-and-microphone-capture','--auto-select-tab-capture-source-by-title=MOSS E2E Audio Source','--autoplay-policy=no-user-gesture-required']+([f'--use-file-for-fake-audio-capture={self.microphone_file}'] if self.microphone_file else []))
             self.context=await browser.new_context(ignore_https_errors=True,accept_downloads=True,viewport={'width':1440,'height':1100});self.context.set_default_timeout(12000)
             self.page=self.attach(await self.context.new_page());self.source=await self.context.new_page();await self.source.goto(self.media+'/source.html');await self.source.locator('audio').evaluate('a=>a.play()');await self.open()
             try:
@@ -281,8 +291,8 @@ class Bench(Harness):
                 if getattr(self,'restarted',None):self.restarted.terminate();self.restarted.wait(timeout=30)
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('case');parser.add_argument('--output',default='evidence/mvpfix/wp5/base');args=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('case');parser.add_argument('--output',default='evidence/mvpfix/wp5/base');parser.add_argument('--base',default='https://127.0.0.1:17865');parser.add_argument('--microphone-file',type=Path);args=parser.parse_args()
     cases=list(range(1,15)) if args.case=='all' else [int(x) for x in args.case.split(',')]
-    bench=Bench(args.output)
+    bench=Bench(args.output,args.base,args.microphone_file)
     return asyncio.run(bench.run_cases(cases))
 if __name__=='__main__':raise SystemExit(main())
