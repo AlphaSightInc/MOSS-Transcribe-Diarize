@@ -1282,7 +1282,7 @@ def _run_terminal_replay(
     descriptor = runtime.descriptor
     clock = TerminalScriptedClock(scheduler, delay_polls=delay_polls)
     audio = root / "audio.wav"
-    _write_wav(audio, samples=_TERMINAL_MEETING_SAMPLES)
+    _write_wav(audio, samples=_TERMINAL_MEETING_SAMPLES, sample=1)
     live_service_replay.run_service_replay(
         service=live_service_replay.InMemoryLiveReplayService(runtime),
         audio_path=audio,
@@ -1309,8 +1309,8 @@ def _one_trace_record(case: unittest.TestCase, trace: list[dict], kind: str) -> 
     return records[0]
 
 
-def _write_wav(path: Path, *, samples: int) -> None:
-    pcm = b"\0\0" * samples
+def _write_wav(path: Path, *, samples: int, sample: int = 0) -> None:
+    pcm = sample.to_bytes(2, "little", signed=True) * samples
     with wave.open(str(path), "wb") as wav:
         wav.setnchannels(1)
         wav.setsampwidth(2)

@@ -611,6 +611,8 @@ def test_a_meeting_of_pure_silence_stops_with_exact_accounting():
 # What each of the three no-speech answers actually was, and what a reader must be told about
 # it. The publishing decision is identical for all three -- the span commits empty -- which is
 # precisely why the *observation* has to survive: it is the only thing that differs.
+# Transport-response fixtures must be nonzero: digital zeros intentionally bypass
+# the decoder before it can classify the mocked answer. VAD silence may be nonzero.
 NO_SPEECH_DISPOSITIONS = {
     "zero generated tokens": (EmptyTranscriptCause.NO_GENERATED_TOKENS, 0, "decoder_returned_no_transcript"),
     "empty transcript text": (EmptyTranscriptCause.EMPTY_TEXT, 4, "decoder_returned_no_transcript"),
@@ -633,7 +635,7 @@ def test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_
         decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
         span = _span(0, DEPLOYED_MIXED_FRAME_SAMPLES)
 
-        inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * DEPLOYED_MIXED_FRAME_SAMPLES)
+        inferred = decoder.transcribe_pcm(span=span, pcm=b"\x01\x00" * DEPLOYED_MIXED_FRAME_SAMPLES)
 
         assert inferred.transcript == "", label
         assert inferred.empty_cause is cause, label
@@ -675,7 +677,7 @@ def test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it(
     decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
     span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="hard_cap")
 
-    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
+    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x01\x00" * 40000)
 
     assert inferred.transcript == "[0][S01]The difference between, you said the stock market.[2.5]"
     assert inferred.empty_cause is None
@@ -690,7 +692,7 @@ def test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence():
     decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
     span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="leading_silence")
 
-    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
+    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x01\x00" * 40000)
 
     assert inferred.transcript == ""
     assert inferred.empty_cause is EmptyTranscriptCause.UNPARSEABLE_TEXT
@@ -709,7 +711,7 @@ def test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with
     decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
     span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="hard_cap")
 
-    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
+    inferred = decoder.transcribe_pcm(span=span, pcm=b"\x01\x00" * 40000)
 
     assert inferred.transcript == ""
     assert inferred.empty_cause is EmptyTranscriptCause.NO_GENERATED_TOKENS
@@ -810,7 +812,7 @@ def test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say():
     decoder = RunnerBoundedWavInference(BrokenRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
 
     with pytest.raises(LiveProviderError) as caught:
-        decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
+        decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x01\x00" * 8000)
 
     assert not isinstance(caught.value, LiveProviderTransientError)
     assert "ValueError" in str(caught.value)
@@ -856,7 +858,7 @@ def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_
     )
 
     with pytest.raises(LiveProviderError) as caught:
-        decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
+        decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x01\x00" * 8000)
 
     assert isinstance(caught.value, LiveProviderTransientError) is transient
 
@@ -1136,7 +1138,7 @@ def test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span():
 
     decoder = RunnerBoundedWavInference(NegativeElapsedRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
 
-    inferred = decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
+    inferred = decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x01\x00" * 8000)
 
     assert "hello there" in inferred.transcript
     assert inferred.elapsed_sec is not None and inferred.elapsed_sec >= 0.0
@@ -1265,7 +1267,7 @@ def test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire():
     decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
 
     for sample_count in (DEPLOYED_HARD_CAP_SAMPLES, DEPLOYED_MIXED_FRAME_SAMPLES):
-        inferred = decoder.transcribe_pcm(span=_span(0, sample_count), pcm=b"\x00\x00" * sample_count)
+        inferred = decoder.transcribe_pcm(span=_span(0, sample_count), pcm=b"\x01\x00" * sample_count)
         expected = canonical_decode_token_cap(sample_count=sample_count)
         assert inferred.token_cap == expected
         assert inferred.capped is False
@@ -1274,11 +1276,11 @@ def test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire():
     # A configured ceiling may only tighten the derived one -- a deployment cannot opt out
     # of the bound, and it can still ask for less.
     tight = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES, max_new_tokens=32)
-    tight.transcribe_pcm(span=_span(0, DEPLOYED_HARD_CAP_SAMPLES), pcm=b"\x00\x00" * DEPLOYED_HARD_CAP_SAMPLES)
+    tight.transcribe_pcm(span=_span(0, DEPLOYED_HARD_CAP_SAMPLES), pcm=b"\x01\x00" * DEPLOYED_HARD_CAP_SAMPLES)
     assert runner.request_fields[-1]["max_completion_tokens"] == "32"
 
     loose = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES, max_new_tokens=2048)
-    inferred = loose.transcribe_pcm(span=_span(0, DEPLOYED_HARD_CAP_SAMPLES), pcm=b"\x00\x00" * DEPLOYED_HARD_CAP_SAMPLES)
+    inferred = loose.transcribe_pcm(span=_span(0, DEPLOYED_HARD_CAP_SAMPLES), pcm=b"\x01\x00" * DEPLOYED_HARD_CAP_SAMPLES)
     assert inferred.token_cap == canonical_decode_token_cap(sample_count=DEPLOYED_HARD_CAP_SAMPLES)
     assert runner.request_fields[-1]["max_completion_tokens"] != "2048"
 

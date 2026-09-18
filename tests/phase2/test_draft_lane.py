@@ -154,6 +154,14 @@ def test_reader_retires_draft_by_audio_boundary(replacement):
         second['session']['committed'] = [dict(span_id=0, start_sample=0, end_sample=1000,
             transcript='[0][S00]one[0.03][0.03][S00]two[0.0625]' if replacement == 'multiple' else '',
             revised_transcript=None)]
+        # Current snapshots publish the authoritative surface as well as commits.
+        # Leaving the initial empty surface here correctly hides the commit text.
+        second['session']['effective_transcript'] = [
+            dict(start_sample=0, end_sample=480, text='one', canonical_speaker=None,
+                 authority='canonical'),
+            dict(start_sample=480, end_sample=1000, text='two', canonical_speaker=None,
+                 authority='canonical'),
+        ] if replacement == 'multiple' else []
     rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
     assert len(rows[0]) == 1
     assert len(rows[1]) == {'preview': 1, 'multiple': 2, 'empty': 0, 'abort': 0}[replacement]
