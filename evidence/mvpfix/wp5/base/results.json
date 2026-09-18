@@ -1,0 +1,32 @@
+{
+  "1": {
+    "status": "FAIL",
+    "exception": "TimeoutError",
+    "error": "Locator.click: Timeout 12000ms exceeded.\nCall log:\n  - waiting for get_by_role(\"link\", name=\"Live / Transcript & export\", exact=True)\n    - locator resolved to <a href=\"#workspace-live\">Live / Transcript & export</a>\n  - attempting click action\n    - waiting for element to be visible, enabled and stable\n    - element is visible, enabled and stable\n    - scrolling into view if needed\n    - done scrolling\n    - <section data-workspace=\"account\">\u2026</section> intercepts pointer events\n  - retrying click action\n    - waiting for element to be visible, enabled and stable\n    - element is visible, enabled and stable\n    - scrolling into view if needed\n    - done scrolling\n    - element is outside of the viewport\n  - retrying click action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <section data-workspace=\"account\">\u2026</section> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    5 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <section data-workspace=\"account\">\u2026</section> intercepts pointer events\n    - retrying click action\n      - waiting 500ms\n      - waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - element is outside of the viewport\n    - retrying click action\n      - waiting 500ms\n      - waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - ",
+    "seconds": 12.134,
+    "predicate": "Two Stop events within 200ms yield one terminal meeting, no UI error.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-01.png"
+  },
+  "2": {
+    "status": "FAIL",
+    "exception": "TimeoutError",
+    "error": "Locator.click: Timeout 12000ms exceeded.\nCall log:\n  - waiting for get_by_role(\"link\", name=\"Live / Transcript & export\", exact=True)\n    - locator resolved to <a href=\"#workspace-live\">Live / Transcript & export</a>\n  - attempting click action\n    - waiting for element to be visible, enabled and stable\n    - element is visible, enabled and stable\n    - scrolling into view if needed\n    - done scrolling\n    - <section data-workspace=\"account\">\u2026</section> intercepts pointer events\n  - retrying click action\n    - waiting for element to be visible, enabled and stable\n    - element is visible, enabled and stable\n    - scrolling into view if needed\n    - done scrolling\n    - element is outside of the viewport\n  - retrying click action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <section data-workspace=\"account\">\u2026</section> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    5 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <section data-workspace=\"account\">\u2026</section> intercepts pointer events\n    - retrying click action\n      - waiting 500ms\n      - waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - element is outside of the viewport\n    - retrying click action\n      - waiting 500ms\n      - waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - ",
+    "seconds": 12.134,
+    "predicate": "Stop at 1s before text yields terminal truth and permits a new capture.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-02.png"
+  },
+  "3": {
+    "status": "FAIL",
+    "exception": "TimeoutError",
+    "error": "Locator.click: Timeout 12000ms exceeded.\nCall log:\n  - waiting for get_by_role(\"link\", name=\"Live / Transcript & export\", exact=True)\n    - locator resolved to <a href=\"#workspace-live\">Live / Transcript & export</a>\n  - attempting click action\n    - waiting for element to be visible, enabled and stable\n    - element is visible, enabled and stable\n    - scrolling into view if needed\n    - done scrolling\n    - <section data-workspace=\"account\">\u2026</section> intercepts pointer events\n  - retrying click action\n    - waiting for element to be visible, enabled and stable\n    - element is visible, enabled and stable\n    - scrolling into view if needed\n    - done scrolling\n    - element is outside of the viewport\n  - retrying click action\n    - waiting 20ms\n    2 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <section data-workspace=\"account\">\u2026</section> intercepts pointer events\n    - retrying click action\n      - waiting 100ms\n    5 \u00d7 waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - <section data-workspace=\"account\">\u2026</section> intercepts pointer events\n    - retrying click action\n      - waiting 500ms\n      - waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - element is outside of the viewport\n    - retrying click action\n      - waiting 500ms\n      - waiting for element to be visible, enabled and stable\n      - element is visible, enabled and stable\n      - scrolling into view if needed\n      - done scrolling\n      - ",
+    "seconds": 12.133,
+    "predicate": "Actual hidden tab for 60s keeps accepted frames and text advancing.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-03.png"
+  }
+}

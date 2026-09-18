@@ -1,0 +1,84 @@
+{
+  "base": "37979e539f04d4ea740a1a94d021cd3bb894a0e2",
+  "cases": {
+    "1": {
+      "status": "PASS",
+      "evidence": "adjudicated/campaign-results.json",
+      "seconds": 11.956
+    },
+    "2": {
+      "status": "PASS",
+      "evidence": "base-corrected/campaign-results.json",
+      "seconds": 7.255
+    },
+    "3": {
+      "status": "BLOCKED",
+      "evidence": "base-02/results.json",
+      "seconds": 73.772,
+      "reason": "Headless document remained visible; foreground continuity is not hidden-tab evidence."
+    },
+    "4": {
+      "status": "PASS",
+      "evidence": "base-02/results.json",
+      "seconds": 62.552
+    },
+    "5": {
+      "status": "PASS",
+      "evidence": "base-02/results.json",
+      "seconds": 19.839
+    },
+    "6": {
+      "status": "PASS",
+      "evidence": "base-02/results.json",
+      "seconds": 39.917
+    },
+    "7": {
+      "status": "PASS",
+      "evidence": "base-02/results.json",
+      "seconds": 0.188
+    },
+    "8": {
+      "status": "FAIL",
+      "evidence": "adjudicated/campaign-results.json",
+      "seconds": 15.395
+    },
+    "9": {
+      "status": "FAIL",
+      "evidence": "adjudicated/campaign-results.json",
+      "seconds": 9.199
+    },
+    "10": {
+      "status": "PASS",
+      "evidence": "adjudicated/campaign-results.json",
+      "seconds": 1.74
+    },
+    "11": {
+      "status": "PASS",
+      "evidence": "base-02/results.json",
+      "seconds": 11.974
+    },
+    "12": {
+      "status": "PASS",
+      "evidence": "adjudicated/campaign-results.json",
+      "seconds": 0.192
+    },
+    "13": {
+      "status": "PASS",
+      "evidence": "base-02/results.json",
+      "seconds": 0.692
+    },
+    "14": {
+      "status": "PASS",
+      "evidence": "adjudicated/campaign-results.json",
+      "seconds": 34.647
+    }
+  },
+  "counts": {
+    "PASS": 11,
+    "FAIL": 2,
+    "BLOCKED": 1
+  },
+  "decoder_requests": 113,
+  "microphone_evidence": false,
+  "production_changes": false
+}

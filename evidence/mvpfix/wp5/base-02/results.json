@@ -1,0 +1,1109 @@
+{
+  "1": {
+    "meeting": "qtvYN8xJrq-FDNyVCt3-cX_F",
+    "click_gap_ms": 0.29999999701976776,
+    "status": "FAIL",
+    "ok": false,
+    "seconds": 11.736,
+    "predicate": "Two Stop events within 200ms yield one terminal meeting, no UI error.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-01.png"
+  },
+  "2": {
+    "meeting": "dhRcY-Yhg0AjHo4uIZuvCkaQ",
+    "stop_at_seconds": 1.0020684159972006,
+    "words_before_stop": 0,
+    "status": "PASS",
+    "ok": true,
+    "seconds": 3.691,
+    "predicate": "Stop at 1s before text yields terminal truth and permits a new capture.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-02.png"
+  },
+  "3": {
+    "meeting": "JTPR80y6VDkEFNomjdkLhAg8",
+    "hidden": false,
+    "seconds": 73.772,
+    "frames": 240,
+    "max_gap": 0.433799167003599,
+    "word_delta": 179,
+    "ok": false,
+    "status": "FAIL",
+    "predicate": "Actual hidden tab for 60s keeps accepted frames and text advancing.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-03.png"
+  },
+  "4": {
+    "variants": [
+      {
+        "seconds": 3,
+        "recovered_frames": true,
+        "phase": "active",
+        "visible_status": "Connection restored. Recording microphone and shared audio.",
+        "terminal": "completed",
+        "ok": true
+      },
+      {
+        "seconds": 20,
+        "recovered_frames": true,
+        "phase": "active",
+        "visible_status": "Connection restored. Recording microphone and shared audio.",
+        "terminal": "completed",
+        "ok": true
+      }
+    ],
+    "ok": true,
+    "status": "PASS",
+    "seconds": 62.552,
+    "predicate": "3s and 20s live-route outages recover or visibly fail; lease closes abandoned work.",
+    "console_errors": [
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED",
+      "Failed to load resource: net::ERR_INTERNET_DISCONNECTED"
+    ],
+    "network_failures": [
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/snapshot",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/events",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/snapshot",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/events",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/snapshot",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/events",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/NH2bHD7BZw3dY9Qqt0LCjvFZ/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/snapshot",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/events",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/snapshot",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/events",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/snapshot",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/events",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/snapshot",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/events",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/snapshot",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/events",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/snapshot",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/events",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/snapshot",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/events",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/heartbeat",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      },
+      {
+        "path": "/api/live/sessions/Zgq3cHAsWXb7NJdERlotH1T5/frames",
+        "failure": "net::ERR_INTERNET_DISCONNECTED"
+      }
+    ],
+    "screenshot": "case-04.png"
+  },
+  "5": {
+    "meeting": "Y_wEFrZ33am90QUXxLTo95E_",
+    "frames_after_reshare": 33,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 19.839,
+    "predicate": "Reshare replaces track, frames continue, exactly one meeting.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-05.png"
+  },
+  "6": {
+    "meeting": "XzZpjo687EvttrzKpn1_cK7K",
+    "status": "PASS",
+    "ok": true,
+    "seconds": 39.917,
+    "predicate": "Reload leaves same history row terminal after 30s lease; no active orphan.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-06.png"
+  },
+  "7": {
+    "rows": 7,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 0.188,
+    "predicate": "Same-profile tabs converge to unique identical meeting IDs.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-07.png"
+  },
+  "8": {
+    "status": "FAIL",
+    "exception": "Error",
+    "error": "File paths cannot be mixed with buffers",
+    "seconds": 4.384,
+    "predicate": "MP3 and long name succeed; invalid/empty files visibly fail; two uploads complete.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-08.png"
+  },
+  "9": {
+    "variants": [
+      {
+        "variant": "unreachable",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": true,
+        "ok": true
+      },
+      {
+        "variant": "404",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": true,
+        "ok": true
+      },
+      {
+        "variant": "non-media",
+        "statuses": [
+          "failed"
+        ],
+        "visible_reason": true,
+        "ok": true
+      }
+    ],
+    "ok": true,
+    "status": "PASS",
+    "seconds": 3.257,
+    "predicate": "Unreachable, 404, non-media URLs visibly explain failure.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-09.png"
+  },
+  "10": {
+    "checks": [
+      {
+        "mode": "live",
+        "format": "md",
+        "bytes": 333,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "txt",
+        "bytes": 330,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "json",
+        "bytes": 974,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "srt",
+        "bytes": 352,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "format": "vtt",
+        "bytes": 360,
+        "ok": true
+      },
+      {
+        "mode": "live",
+        "audio_bytes": 22,
+        "cancelled_after": 22,
+        "retry_status": 404,
+        "ok": false
+      },
+      {
+        "mode": "file",
+        "format": "md",
+        "bytes": 229,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "txt",
+        "bytes": 226,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "json",
+        "bytes": 754,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "srt",
+        "bytes": 248,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "format": "vtt",
+        "bytes": 256,
+        "ok": true
+      },
+      {
+        "mode": "file",
+        "audio_bytes": 22,
+        "cancelled_after": 22,
+        "retry_status": 404,
+        "ok": false
+      }
+    ],
+    "ok": false,
+    "status": "FAIL",
+    "seconds": 0.963,
+    "predicate": "Five nonempty exports from live and file; audio decodes; interrupted download retries.",
+    "console_errors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "network_failures": [
+      {
+        "path": "/api/meetings/Y_wEFrZ33am90QUXxLTo95E_/audio",
+        "failure": "net::ERR_ABORTED"
+      },
+      {
+        "path": "/api/meetings/Z_T8xriucVKkLbbkukx8qjO3/audio",
+        "failure": "net::ERR_ABORTED"
+      }
+    ],
+    "screenshot": "case-10.png"
+  },
+  "11": {
+    "http": 200,
+    "enrollment": "enrolled",
+    "matched_turns": 1,
+    "labels_persisted": true,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 11.974,
+    "predicate": "Rename updates all selected-speaker labels, enrolls voiceprint, persists through reload/export.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-11.png"
+  },
+  "12": {
+    "rendered": 60,
+    "refresh": 1,
+    "width": 400,
+    "scroll": 400,
+    "ok": false,
+    "status": "FAIL",
+    "seconds": 0.172,
+    "predicate": "60 history fixtures render after reload at 400px, two Refresh controls, no overflow.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-12.png"
+  },
+  "13": {
+    "explained": true,
+    "provider_posts": 0,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 0.692,
+    "predicate": "No-provider summary is disabled or explains setup, with zero provider POSTs.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-13.png"
+  },
+  "14": {
+    "before": 60,
+    "after": 60,
+    "cookies_equal": false,
+    "transcripts_equal": true,
+    "ok": false,
+    "status": "FAIL",
+    "seconds": 5.708,
+    "predicate": "Own idle server restart preserves credential, history and transcripts.",
+    "console_errors": [
+      "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+      "Failed to load resource: net::ERR_CONNECTION_REFUSED",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ],
+    "network_failures": [
+      {
+        "path": "/api/meetings/uWvkGcd8pCEGaDbgbYOIpNuJ/summary",
+        "failure": "net::ERR_CONNECTION_REFUSED"
+      },
+      {
+        "path": "/api/meetings/uWvkGcd8pCEGaDbgbYOIpNuJ/summary",
+        "failure": "net::ERR_CONNECTION_REFUSED"
+      }
+    ],
+    "screenshot": "case-14.png"
+  }
+}
