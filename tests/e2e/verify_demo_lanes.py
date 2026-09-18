@@ -122,17 +122,21 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
     final=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
     # A fresh GET is the reopened saved surface, independently of the live snapshot.
     reopened=client.call('GET',f'/api/meetings/{ident}')
+    switches=(offsets['microphone']*size/rate,) if case=='alternation' else ()
     surfaces={
-        'pre_terminal':score_lanes(snapshot_segments(pre),refs,max_wer=QUALITY_BOUNDS['immediate_wer'][1]),
-        'final':score_lanes(snapshot_segments(final),refs,max_wer=QUALITY_BOUNDS['final_wer'][1]),
-        'reopened':score_lanes((reopened.get('transcript') or {}).get('segments',[]),refs,max_wer=QUALITY_BOUNDS['final_wer'][1]),
+        'pre_terminal':score_lanes(snapshot_segments(pre),refs,max_wer=QUALITY_BOUNDS['immediate_wer'][1],lane_switches=switches),
+        'final':score_lanes(snapshot_segments(final),refs,max_wer=QUALITY_BOUNDS['final_wer'][1],lane_switches=switches),
+        'reopened':score_lanes((reopened.get('transcript') or {}).get('segments',[]),refs,max_wer=QUALITY_BOUNDS['final_wer'][1],lane_switches=switches),
     }
+    # The file/URL bar is reported separately; it does not override live QUALITY_BOUNDS.
+    file_url_bar = {name: all(v['wer'] is not None and v['wer'] <= .15 for v in result['lanes'].values())
+                    for name, result in surfaces.items()}
     finalization=(final.get('snapshot') or {}).get('session',{}).get('finalization_status')
     passed=saved['status']=='completed' and finalization=='final' and all(s['passed'] for s in surfaces.values())
     return dict(case=case,meeting=ident,passed=passed,expected_failure=case=='overlap',
                 status=saved['status'],finalization_status=finalization,seconds=round(time.monotonic()-started,3),
                 stop_seconds=round(time.monotonic()-stopped,3),frames_per_lane=total,
-                microphone_gain=mic_gain,surfaces=surfaces)
+                microphone_gain=mic_gain,surfaces=surfaces,file_url_wer_bar=.15,file_url_wer_pass=file_url_bar)
 
 
 def accepted_case(result):

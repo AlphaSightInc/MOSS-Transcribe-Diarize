@@ -41,3 +41,17 @@ def test_ordered_errors_are_not_unique_vocabulary():
     result=score_lanes(rows, REF)
     assert result['lanes']['system']['unique_retention']==1
     assert result['lanes']['system']['wer']>0 and not result['passed']
+
+
+def test_switch_tolerance_is_only_for_straddling_legacy_segments():
+    rows = [dict(speaker="tab", start=0, end=9, text=REF["system"]),
+            dict(speaker="mic", start=9, end=11, text=REF["microphone"] + " Copper")]
+    boundary = score_lanes(rows, REF, max_wer=1, lane_switches=(10,))
+    assert boundary["passed"]
+    assert boundary["boundary_attribution_words"] == 1
+    rows[1]["start"] = 10
+    inside = score_lanes(rows, REF, max_wer=1, lane_switches=(10,))
+    assert not inside["passed"] and inside["attribution_errors"] == 1
+    rows[1].update(start=9, source_lane="microphone")
+    explicit = score_lanes(rows, REF, max_wer=1, lane_switches=(10,))
+    assert not explicit["passed"] and explicit["attribution_errors"] == 1

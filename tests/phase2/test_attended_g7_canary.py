@@ -698,3 +698,23 @@ def test_phrase_witness_is_derived_from_final_transcript_not_counts():
     assert 'public tab fixture' not in json.dumps(witness)
     meeting['transcript']['segments'][0]['speaker']='tab'
     assert not g7._valid_operator_phrase(g7.operator_phrase_witness(meeting,g7.G7_OPERATOR_PHRASE,(0,3),(4,8)))
+
+
+@pytest.mark.parametrize("text,matched,accepted", [
+    ("Copper planets orbit distant stars above violet gardens", 8, True),
+    ("Copper planets orbit nearby stars above violet gardens", 7, True),
+    ("Copper planets orbit distant stars above", 6, False),
+    ("gardens violet above stars distant orbit planets Copper", 1, False),
+    ("Copper planets sometimes orbit distant stars above violet gardens", 8, True),
+])
+def test_phrase_subsequence_tolerates_one_asr_error(text, matched, accepted):
+    meeting = {"transcript": {"segments": [
+        dict(start=0, end=3, speaker="operator", text=text),
+        dict(start=4, end=8, speaker="tab", text="public tab fixture"),
+    ]}}
+    witness = g7.operator_phrase_witness(meeting, g7.G7_OPERATOR_PHRASE, (0, 3), (4, 8))
+    assert witness["matched_words"] == matched
+    assert g7._valid_operator_phrase(witness) is accepted
+    meeting["transcript"]["segments"][0]["speaker"] = "tab"
+    assert not g7._valid_operator_phrase(g7.operator_phrase_witness(
+        meeting, g7.G7_OPERATOR_PHRASE, (0, 3), (4, 8)))

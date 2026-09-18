@@ -59,3 +59,5 @@ prototypes/streaming-diarization/identity-floor-a2/results/*.npz
 frontend/.vite-cache/
 evidence/mvpfix/wp4/.pytest*/
 evidence/mvpfix/wp4/.npm-cache/
+
+.wp7runtime/

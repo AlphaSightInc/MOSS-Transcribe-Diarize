@@ -1,0 +1,27 @@
+[
+  {
+    "case": "exact",
+    "matched": 8,
+    "accepted": true
+  },
+  {
+    "case": "seven",
+    "matched": 7,
+    "accepted": true
+  },
+  {
+    "case": "six",
+    "matched": 6,
+    "accepted": false
+  },
+  {
+    "case": "reverse",
+    "matched": 1,
+    "accepted": false
+  },
+  {
+    "case": "inserted",
+    "matched": 8,
+    "accepted": true
+  }
+]
