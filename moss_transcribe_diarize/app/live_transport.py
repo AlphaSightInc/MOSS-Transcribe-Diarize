@@ -605,6 +605,7 @@ def attach_live_routes(
             return _transport_snapshot_response(
                 runtime=runtime,
                 view=view,
+                v2_mixers=v2_mixers,
                 v2_sessions=v2_sessions,
                 capture_observations=capture_observations,
                 helper_presence=helper_presence,
@@ -928,6 +929,7 @@ def _transport_snapshot_response(
     *,
     runtime: LiveServiceRuntime,
     view: LiveTransportSnapshotView,
+    v2_mixers: LiveCompatibilityMixerRegistry,
     v2_sessions: "_ObservedLiveV2SessionRegistry",
     capture_observations: LiveCaptureObservationRegistry,
     helper_presence: HelperPresenceRegistry,
@@ -944,9 +946,14 @@ def _transport_snapshot_response(
     presence = helper_presence.snapshot(session_id)
     v2_session = _v2_snapshot(v2_sessions, session_id)
     observations = _capture_observation_snapshot(capture_observations, session_id)
+    try:
+        capture_guard = v2_mixers.get(session_id).last_capture_guard
+    except KeyError:
+        capture_guard = None
     return {
         "snapshot": None if view.visible is None else view.visible.to_dict(),
         "unchanged": view.visible is None,
+        "capture_guard": capture_guard,
         "v2_session": None if v2_session is None else v2_session.to_dict(),
         "helper_presence": None if presence is None else presence.to_dict(),
         **view.fields,

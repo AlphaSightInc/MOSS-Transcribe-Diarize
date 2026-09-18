@@ -1,0 +1,750 @@
+..FFF...........................................................FFFFFF.. [ 19%]
+............................F........................ [ 34%]
+......F.......................F.....F................................... [ 54%]
+........................................................................ [ 74%]
+........................................................................ [ 94%]
+....................                                                     [100%]
+=================================== FAILURES ===================================
+_________________ test_terminal_zero_tape_never_calls_decoder __________________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_terminal_zero_tape_never_0')
+
+    def test_terminal_zero_tape_never_calls_decoder(tmp_path):
+>       result=TerminalTranscriptFinalizer(MustNotDecode(),scratch_dir=tmp_path).finalize(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            plan=plan_for(8000),tape=tape_of(8000,fill=b'\0\0'),base_text_revision_version=0)
+E       TypeError: TerminalTranscriptFinalizer.__init__() takes 1 positional argument but 2 positional arguments (and 1 keyword-only argument) were given
+
+tests/test_live_capture_guard.py:38: TypeError
+___________ test_one_lsb_quiet_audio_still_reaches_decoder[\x01\x00] ___________
+
+self = <test_live_capture_guard.MustNotDecode object at 0x10aed2630>
+a = (PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_one_lsb_quiet_audio_still0/mtd-live-51oyozsd/span-0001.wav'),)
+kw = {'max_new_tokens': 112}
+
+    def transcribe(self, *a, **kw):
+>       raise AssertionError('decoder invoked')
+E       AssertionError: decoder invoked
+
+tests/test_live_capture_guard.py:18: AssertionError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_one_lsb_quiet_audio_still0')
+value = b'\x01\x00'
+
+    @pytest.mark.parametrize('value',[b'\x01\0',b'\xff\xff'])
+    def test_one_lsb_quiet_audio_still_reaches_decoder(tmp_path,value):
+        adapter=RunnerBoundedWavInference(MustNotDecode(),max_samples=8000,scratch_dir=tmp_path)
+        with pytest.raises(AssertionError,match='decoder invoked'):
+>           adapter.transcribe_pcm(span=FrozenSpan(id=1,epoch=0,start_sample=0,end_sample=8000,reason='end_silence'),pcm=value*8000)
+
+tests/test_live_capture_guard.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_adapters.RunnerBoundedWavInference object at 0x10af06930>
+span = FrozenSpan(id=1, epoch=0, start_sample=0, end_sample=8000, reason='end_silence')
+pcm = b'\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01...01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00'
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        _validate_pcm_length(pcm, span.sample_count)
+        if span.sample_count > self.max_samples:
+            raise LiveProviderError("canonical span exceeds bounded inference capacity.")
+        # Keep span/timeline accounting, but never ask a model to invent words for
+        # digital zeros. The mixer already renders explicitly silent frames to zero.
+        if not any(pcm):
+            return InferenceTranscript(transcript="", generated_tokens=0, elapsed_sec=0.0)
+        token_cap = self._token_cap(span)
+        with tempfile.TemporaryDirectory(prefix="mtd-live-", dir=self.scratch_dir) as scratch:
+            wav_path = Path(scratch) / f"span-{span.id:04d}.wav"
+            write_pcm16_wav(wav_path, pcm)
+            started = time.monotonic()
+            try:
+                result = self.runner.transcribe(
+                    wav_path,
+                    **{**self.transcribe_kwargs, "max_new_tokens": token_cap},
+                )
+            except EmptyTranscriptionError as exc:
+                # Nothing publishable came back for this span. That is a transcript of "",
+                # not a failure: the span is committed empty upstream so the audio stays
+                # accounted for. What the decoder actually did -- said nothing, emitted no
+                # tokens, or answered in a grammar that does not parse -- travels with it,
+                # because those are three different meetings and only one of them is silence.
+                # The raw words stay on the exception and are not carried forward here; the
+                # one policy entitled to read them is `classify_live_transcript`, which is
+                # called right here and hands back either a publishable transcript or a
+                # refusal. Telemetry sees the decision, never the words.
+                #
+                # Only an answer the decoder actually produced is offered to that policy. The
+                # other two endings are the decoder reporting that it produced nothing, and a
+                # `text` arriving beside a zero token count is not this span's answer -- it is
+                # whatever the response payload happened to hold -- so there is nothing there
+                # to repair and it must not become a transcript.
+                outcome = (
+                    classify_live_transcript(
+                        exc.text,
+                        sample_count=span.sample_count,
+                        freeze_reason=span.reason,
+                    )
+                    if exc.cause is EmptyTranscriptCause.UNPARSEABLE_TEXT
+                    else None
+                )
+                if outcome is not None and outcome.publishes:
+                    return InferenceTranscript(
+                        transcript=outcome.transcript,
+                        generated_tokens=exc.generated_tokens,
+                        elapsed_sec=time.monotonic() - started,
+                        token_cap=token_cap,
+                        salvage_disposition=outcome.disposition,
+                    )
+                return InferenceTranscript(
+                    transcript="",
+                    generated_tokens=exc.generated_tokens,
+                    elapsed_sec=time.monotonic() - started,
+                    token_cap=token_cap,
+                    empty_cause=exc.cause,
+                    salvage_disposition=None if outcome is None else outcome.disposition,
+                )
+            except LiveProviderError:
+                raise
+            except (TransientTranscriptionError, ConnectionError, TimeoutError) as exc:
+                # The request never got an answer. The bare exception types are here so this
+                # holds for any runner, not only the one that types its own transport
+                # failures: a reset socket and an expired deadline mean the same thing
+                # whoever raises them.
+                raise LiveProviderTransientError(
+                    f"canonical decode did not answer: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
+                ) from exc
+            except Exception as exc:
+                # Nothing leaves this seam unclassified. A decoder that failed is not a span
+                # with nothing to say, and must stay distinguishable from one -- and from a
+                # decoder that merely blinked.
+>               raise LiveProviderError(
+                    f"canonical decode failed: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
+                ) from exc
+E               moss_transcribe_diarize.app.live_adapters.LiveProviderError: canonical decode failed: AssertionError: decoder invoked
+
+moss_transcribe_diarize/app/live_adapters.py:383: LiveProviderError
+___________ test_one_lsb_quiet_audio_still_reaches_decoder[\xff\xff] ___________
+
+self = <test_live_capture_guard.MustNotDecode object at 0x11ad66f00>
+a = (PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_one_lsb_quiet_audio_still1/mtd-live-h5k2vaqc/span-0001.wav'),)
+kw = {'max_new_tokens': 112}
+
+    def transcribe(self, *a, **kw):
+>       raise AssertionError('decoder invoked')
+E       AssertionError: decoder invoked
+
+tests/test_live_capture_guard.py:18: AssertionError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_one_lsb_quiet_audio_still1')
+value = b'\xff\xff'
+
+    @pytest.mark.parametrize('value',[b'\x01\0',b'\xff\xff'])
+    def test_one_lsb_quiet_audio_still_reaches_decoder(tmp_path,value):
+        adapter=RunnerBoundedWavInference(MustNotDecode(),max_samples=8000,scratch_dir=tmp_path)
+        with pytest.raises(AssertionError,match='decoder invoked'):
+>           adapter.transcribe_pcm(span=FrozenSpan(id=1,epoch=0,start_sample=0,end_sample=8000,reason='end_silence'),pcm=value*8000)
+
+tests/test_live_capture_guard.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.live_adapters.RunnerBoundedWavInference object at 0x11ad65d30>
+span = FrozenSpan(id=1, epoch=0, start_sample=0, end_sample=8000, reason='end_silence')
+pcm = b'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff...ff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff'
+
+    def transcribe_pcm(self, *, span: FrozenSpan, pcm: bytes) -> InferenceTranscript:
+        _validate_pcm_length(pcm, span.sample_count)
+        if span.sample_count > self.max_samples:
+            raise LiveProviderError("canonical span exceeds bounded inference capacity.")
+        # Keep span/timeline accounting, but never ask a model to invent words for
+        # digital zeros. The mixer already renders explicitly silent frames to zero.
+        if not any(pcm):
+            return InferenceTranscript(transcript="", generated_tokens=0, elapsed_sec=0.0)
+        token_cap = self._token_cap(span)
+        with tempfile.TemporaryDirectory(prefix="mtd-live-", dir=self.scratch_dir) as scratch:
+            wav_path = Path(scratch) / f"span-{span.id:04d}.wav"
+            write_pcm16_wav(wav_path, pcm)
+            started = time.monotonic()
+            try:
+                result = self.runner.transcribe(
+                    wav_path,
+                    **{**self.transcribe_kwargs, "max_new_tokens": token_cap},
+                )
+            except EmptyTranscriptionError as exc:
+                # Nothing publishable came back for this span. That is a transcript of "",
+                # not a failure: the span is committed empty upstream so the audio stays
+                # accounted for. What the decoder actually did -- said nothing, emitted no
+                # tokens, or answered in a grammar that does not parse -- travels with it,
+                # because those are three different meetings and only one of them is silence.
+                # The raw words stay on the exception and are not carried forward here; the
+                # one policy entitled to read them is `classify_live_transcript`, which is
+                # called right here and hands back either a publishable transcript or a
+                # refusal. Telemetry sees the decision, never the words.
+                #
+                # Only an answer the decoder actually produced is offered to that policy. The
+                # other two endings are the decoder reporting that it produced nothing, and a
+                # `text` arriving beside a zero token count is not this span's answer -- it is
+                # whatever the response payload happened to hold -- so there is nothing there
+                # to repair and it must not become a transcript.
+                outcome = (
+                    classify_live_transcript(
+                        exc.text,
+                        sample_count=span.sample_count,
+                        freeze_reason=span.reason,
+                    )
+                    if exc.cause is EmptyTranscriptCause.UNPARSEABLE_TEXT
+                    else None
+                )
+                if outcome is not None and outcome.publishes:
+                    return InferenceTranscript(
+                        transcript=outcome.transcript,
+                        generated_tokens=exc.generated_tokens,
+                        elapsed_sec=time.monotonic() - started,
+                        token_cap=token_cap,
+                        salvage_disposition=outcome.disposition,
+                    )
+                return InferenceTranscript(
+                    transcript="",
+                    generated_tokens=exc.generated_tokens,
+                    elapsed_sec=time.monotonic() - started,
+                    token_cap=token_cap,
+                    empty_cause=exc.cause,
+                    salvage_disposition=None if outcome is None else outcome.disposition,
+                )
+            except LiveProviderError:
+                raise
+            except (TransientTranscriptionError, ConnectionError, TimeoutError) as exc:
+                # The request never got an answer. The bare exception types are here so this
+                # holds for any runner, not only the one that types its own transport
+                # failures: a reset socket and an expired deadline mean the same thing
+                # whoever raises them.
+                raise LiveProviderTransientError(
+                    f"canonical decode did not answer: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
+                ) from exc
+            except Exception as exc:
+                # Nothing leaves this seam unclassified. A decoder that failed is not a span
+                # with nothing to say, and must stay distinguishable from one -- and from a
+                # decoder that merely blinked.
+>               raise LiveProviderError(
+                    f"canonical decode failed: {exc.__class__.__name__}: {exc}",
+                    detail={"span_id": span.id, "cause": exc.__class__.__name__},
+                ) from exc
+E               moss_transcribe_diarize.app.live_adapters.LiveProviderError: canonical decode failed: AssertionError: decoder invoked
+
+moss_transcribe_diarize/app/live_adapters.py:383: LiveProviderError
+_______ test_runner_bounded_wav_inference_writes_complete_16khz_pcm_wav ________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_runner_bounded_wav_infere0')
+
+    def test_runner_bounded_wav_inference_writes_complete_16khz_pcm_wav(tmp_path):
+        class InspectingRunner:
+            def __init__(self):
+                self.params = None
+    
+            def transcribe(self, audio_path, **kwargs):
+                del kwargs
+                with wave.open(str(audio_path), "rb") as wav:
+                    self.params = (wav.getnchannels(), wav.getsampwidth(), wav.getframerate(), wav.getnframes())
+                return TranscriptionResult(
+                    text="[0][S01]ok[0.25]",
+                    prompt_len=1,
+                    generated_tokens=2,
+                    elapsed_sec=0.01,
+                    model="fake",
+                    audio=str(audio_path),
+                    decoding="greedy",
+                    temperature=None,
+                )
+    
+        runner = InspectingRunner()
+        adapter = RunnerBoundedWavInference(runner, max_samples=4000, scratch_dir=tmp_path)
+        frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
+    
+        result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
+    
+>       assert result.transcript == "[0][S01]ok[0.25]"
+E       AssertionError: assert '' == '[0][S01]ok[0.25]'
+E         
+E         - [0][S01]ok[0.25]
+
+tests/test_live_vad.py:298: AssertionError
+_ test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports[None] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_runner_bounded_wav_infere1')
+elapsed_sec = None
+
+    @pytest.mark.parametrize("elapsed_sec", [None, -0.01, float("nan"), float("inf"), "slow"])
+    def test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports(tmp_path, elapsed_sec):
+        """Supersedes "rejects an invalid runner elapsed_sec", which was the shipped defect.
+    
+        A runner reports whatever clock it holds -- `VllmRunner` reported a *wall* clock, and the
+        deployed host's NTP stepped it ~1.5 s backwards every ~32.3 s -- so rejecting the number
+        ended live meetings for a reason that was never about the audio. The live decode's
+        duration is the adapter's own monotonic measurement, and a runner's timing metadata is
+        not read at all. See the timing seam in `tests/test_live_pipeline_seams.py`.
+        """
+    
+        class TimingRunner:
+            def transcribe(self, audio_path, **kwargs):
+                del audio_path, kwargs
+                return TranscriptionResult(
+                    text="[0][S01]ok[0.25]",
+                    prompt_len=1,
+                    generated_tokens=2,
+                    elapsed_sec=elapsed_sec,
+                    model="fake",
+                    audio="fake.wav",
+                    decoding="greedy",
+                    temperature=None,
+                )
+    
+        adapter = RunnerBoundedWavInference(TimingRunner(), max_samples=4000, scratch_dir=tmp_path)
+        frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
+    
+        result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
+    
+>       assert result.transcript == "[0][S01]ok[0.25]"
+E       AssertionError: assert '' == '[0][S01]ok[0.25]'
+E         
+E         - [0][S01]ok[0.25]
+
+tests/test_live_vad.py:334: AssertionError
+_ test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports[-0.01] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_runner_bounded_wav_infere2')
+elapsed_sec = -0.01
+
+    @pytest.mark.parametrize("elapsed_sec", [None, -0.01, float("nan"), float("inf"), "slow"])
+    def test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports(tmp_path, elapsed_sec):
+        """Supersedes "rejects an invalid runner elapsed_sec", which was the shipped defect.
+    
+        A runner reports whatever clock it holds -- `VllmRunner` reported a *wall* clock, and the
+        deployed host's NTP stepped it ~1.5 s backwards every ~32.3 s -- so rejecting the number
+        ended live meetings for a reason that was never about the audio. The live decode's
+        duration is the adapter's own monotonic measurement, and a runner's timing metadata is
+        not read at all. See the timing seam in `tests/test_live_pipeline_seams.py`.
+        """
+    
+        class TimingRunner:
+            def transcribe(self, audio_path, **kwargs):
+                del audio_path, kwargs
+                return TranscriptionResult(
+                    text="[0][S01]ok[0.25]",
+                    prompt_len=1,
+                    generated_tokens=2,
+                    elapsed_sec=elapsed_sec,
+                    model="fake",
+                    audio="fake.wav",
+                    decoding="greedy",
+                    temperature=None,
+                )
+    
+        adapter = RunnerBoundedWavInference(TimingRunner(), max_samples=4000, scratch_dir=tmp_path)
+        frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
+    
+        result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
+    
+>       assert result.transcript == "[0][S01]ok[0.25]"
+E       AssertionError: assert '' == '[0][S01]ok[0.25]'
+E         
+E         - [0][S01]ok[0.25]
+
+tests/test_live_vad.py:334: AssertionError
+_ test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports[nan] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_runner_bounded_wav_infere3')
+elapsed_sec = nan
+
+    @pytest.mark.parametrize("elapsed_sec", [None, -0.01, float("nan"), float("inf"), "slow"])
+    def test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports(tmp_path, elapsed_sec):
+        """Supersedes "rejects an invalid runner elapsed_sec", which was the shipped defect.
+    
+        A runner reports whatever clock it holds -- `VllmRunner` reported a *wall* clock, and the
+        deployed host's NTP stepped it ~1.5 s backwards every ~32.3 s -- so rejecting the number
+        ended live meetings for a reason that was never about the audio. The live decode's
+        duration is the adapter's own monotonic measurement, and a runner's timing metadata is
+        not read at all. See the timing seam in `tests/test_live_pipeline_seams.py`.
+        """
+    
+        class TimingRunner:
+            def transcribe(self, audio_path, **kwargs):
+                del audio_path, kwargs
+                return TranscriptionResult(
+                    text="[0][S01]ok[0.25]",
+                    prompt_len=1,
+                    generated_tokens=2,
+                    elapsed_sec=elapsed_sec,
+                    model="fake",
+                    audio="fake.wav",
+                    decoding="greedy",
+                    temperature=None,
+                )
+    
+        adapter = RunnerBoundedWavInference(TimingRunner(), max_samples=4000, scratch_dir=tmp_path)
+        frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
+    
+        result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
+    
+>       assert result.transcript == "[0][S01]ok[0.25]"
+E       AssertionError: assert '' == '[0][S01]ok[0.25]'
+E         
+E         - [0][S01]ok[0.25]
+
+tests/test_live_vad.py:334: AssertionError
+_ test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports[inf] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_runner_bounded_wav_infere4')
+elapsed_sec = inf
+
+    @pytest.mark.parametrize("elapsed_sec", [None, -0.01, float("nan"), float("inf"), "slow"])
+    def test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports(tmp_path, elapsed_sec):
+        """Supersedes "rejects an invalid runner elapsed_sec", which was the shipped defect.
+    
+        A runner reports whatever clock it holds -- `VllmRunner` reported a *wall* clock, and the
+        deployed host's NTP stepped it ~1.5 s backwards every ~32.3 s -- so rejecting the number
+        ended live meetings for a reason that was never about the audio. The live decode's
+        duration is the adapter's own monotonic measurement, and a runner's timing metadata is
+        not read at all. See the timing seam in `tests/test_live_pipeline_seams.py`.
+        """
+    
+        class TimingRunner:
+            def transcribe(self, audio_path, **kwargs):
+                del audio_path, kwargs
+                return TranscriptionResult(
+                    text="[0][S01]ok[0.25]",
+                    prompt_len=1,
+                    generated_tokens=2,
+                    elapsed_sec=elapsed_sec,
+                    model="fake",
+                    audio="fake.wav",
+                    decoding="greedy",
+                    temperature=None,
+                )
+    
+        adapter = RunnerBoundedWavInference(TimingRunner(), max_samples=4000, scratch_dir=tmp_path)
+        frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
+    
+        result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
+    
+>       assert result.transcript == "[0][S01]ok[0.25]"
+E       AssertionError: assert '' == '[0][S01]ok[0.25]'
+E         
+E         - [0][S01]ok[0.25]
+
+tests/test_live_vad.py:334: AssertionError
+_ test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports[slow] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_runner_bounded_wav_infere5')
+elapsed_sec = 'slow'
+
+    @pytest.mark.parametrize("elapsed_sec", [None, -0.01, float("nan"), float("inf"), "slow"])
+    def test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports(tmp_path, elapsed_sec):
+        """Supersedes "rejects an invalid runner elapsed_sec", which was the shipped defect.
+    
+        A runner reports whatever clock it holds -- `VllmRunner` reported a *wall* clock, and the
+        deployed host's NTP stepped it ~1.5 s backwards every ~32.3 s -- so rejecting the number
+        ended live meetings for a reason that was never about the audio. The live decode's
+        duration is the adapter's own monotonic measurement, and a runner's timing metadata is
+        not read at all. See the timing seam in `tests/test_live_pipeline_seams.py`.
+        """
+    
+        class TimingRunner:
+            def transcribe(self, audio_path, **kwargs):
+                del audio_path, kwargs
+                return TranscriptionResult(
+                    text="[0][S01]ok[0.25]",
+                    prompt_len=1,
+                    generated_tokens=2,
+                    elapsed_sec=elapsed_sec,
+                    model="fake",
+                    audio="fake.wav",
+                    decoding="greedy",
+                    temperature=None,
+                )
+    
+        adapter = RunnerBoundedWavInference(TimingRunner(), max_samples=4000, scratch_dir=tmp_path)
+        frozen = FrozenSpan(id=7, epoch=0, start_sample=0, end_sample=4000, reason="end_silence")
+    
+        result = adapter.transcribe_pcm(span=frozen, pcm=pcm(4000))
+    
+>       assert result.transcript == "[0][S01]ok[0.25]"
+E       AssertionError: assert '' == '[0][S01]ok[0.25]'
+E         
+E         - [0][S01]ok[0.25]
+
+tests/test_live_vad.py:334: AssertionError
+_ test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durable _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_signed_in_two_lane_live_m0')
+
+    def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durable(
+        tmp_path: Path,
+    ):
+        database = tmp_path / "moss.sqlite3"
+        sessions = asyncio.run(provision(database))
+        app = make_app(
+            database,
+            terminal_text="[0][S01]terminal owner words[0.000375]",
+        )
+    
+        with TestClient(app, base_url="https://moss.test") as client:
+            session(client, None)
+            assert client.get("/api/live/descriptor").status_code == 401
+    
+            session(client, sessions["a"])
+            workspace = client.get("/")
+            assert 'data-live-capture="account"' in workspace.text
+            assert '<meta name="moss-authority" content="account">' in workspace.text
+            assert "Capture bearer" not in workspace.text
+            assert client.post("/api/live/pairing-codes").status_code == 404
+            assert client.post("/api/live/pairings").status_code == 404
+            assert client.delete("/api/live/sessions/unknown/view").status_code == 404
+            assert client.delete("/api/live/devices/unknown").status_code == 404
+            bypass = client.post("/api/meetings", json={"mode": "live"})
+            assert bypass.status_code == 405
+            assert client.get("/api/meetings").json() == {"meetings": []}
+            created = client.post("/api/live/sessions", json={"echo_mode": "speakers"})
+            assert created.status_code == 201
+            assert set(created.json()) == {"id", "descriptor", "snapshot"}
+            meeting_id = created.json()["id"]
+    
+            session(client, sessions["a-observer"])
+            assert client.get(f"/api/live/sessions/{meeting_id}/snapshot").status_code == 200
+            assert client.get(f"/api/live/sessions/{meeting_id}/events?since_seq=-1").status_code == 200
+            # Another tab shares the same browser credential, not a separate sign-in.
+            assert sessions["a-observer"] == sessions["a"]
+    
+            session(client, sessions["b"])
+            assert client.get(f"/api/live/sessions/{meeting_id}/snapshot").status_code == 404
+            assert client.post(f"/api/live/sessions/{meeting_id}/abort").status_code == 404
+            session(client, None)
+            assert client.get(f"/api/live/sessions/{meeting_id}/snapshot").status_code == 401
+    
+            session(client, sessions["a"])
+            assert client.post(
+                f"/api/live/sessions/{meeting_id}/heartbeat", json=heartbeat()
+            ).status_code == 200
+            feed_two_lane_span(client, meeting_id)
+            published = wait_snapshot(
+                client,
+                meeting_id,
+                lambda body: bool(body["snapshot"]["session"]["effective_transcript"]),
+            )
+            assert published["meeting_transcript_version"] == 1
+            assert published["snapshot"]["session"]["effective_transcript"][0]["text"] == (
+                "owner live words"
+            )
+            raw_session = app.state.phase2_live.runtime._sessions[meeting_id]
+            accepted_samples = raw_session.session.snapshot().accepted_samples
+            staged_path = database.parent / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
+            assert staged_path.read_bytes() == raw_session.coordinator.tape.read(
+                start_sample=0,
+                end_sample=accepted_samples,
+            )
+    
+            statements: list[str] = []
+            client.portal.call(
+                app.state.phase2_store._connection.set_trace_callback,
+                statements.append,
+            )
+            session(client, sessions["a-observer"])
+            for index in range(8):
+                route = "snapshot" if index % 2 == 0 else "events?since_seq=-1"
+                assert client.get(f"/api/live/sessions/{meeting_id}/{route}").status_code == 200
+            client.portal.call(app.state.phase2_store._connection.set_trace_callback, None)
+            normalized = [" ".join(statement.lower().split()) for statement in statements]
+            assert len([statement for statement in normalized if statement.startswith("select")]) == 8
+            assert all("sign_in_sessions" in statement and "accounts" in statement for statement in normalized)
+            assert not any(" meetings" in statement or "meeting_transcripts" in statement for statement in normalized)
+            assert not any(
+                statement.startswith(("insert", "update", "delete", "replace"))
+                for statement in normalized
+            )
+    
+            session(client, sessions["a"])
+            stopped = client.post(
+                f"/api/live/sessions/{meeting_id}/stop",
+                json={"deadline": 2.0},
+            )
+            assert stopped.status_code == 200, stopped.text
+            assert stopped.json()["raw_terminal_status"] == "closed"
+            assert stopped.json()["snapshot"]["session"]["status"] == "closed"
+>           assert stopped.json()["snapshot"]["session"]["finalization_status"] == "final"
+E           AssertionError: assert 'failed' == 'final'
+E             
+E             - final
+E             + failed
+
+tests/phase2/test_owner_bound_live_meeting.py:566: AssertionError
+___ test_terminal_audio_cleanup_precedes_atomic_final_transcript_and_status ____
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_terminal_audio_cleanup_pr0')
+
+    def test_terminal_audio_cleanup_precedes_atomic_final_transcript_and_status(tmp_path: Path):
+        database = tmp_path / "moss.sqlite3"
+        sessions = asyncio.run(provision(database))
+        app = make_app(
+            database,
+            terminal_text="[0][S01]atomic terminal words[0.000375]",
+        )
+    
+        with TestClient(app, base_url="https://moss.test") as client:
+            session(client, sessions["a"])
+            meeting_id = client.post("/api/live/sessions").json()["id"]
+            feed_two_lane_span(client, meeting_id)
+            wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+            binding = app.state.phase2_live._bindings[meeting_id]
+            original_finish = binding.handle.finish_with_transcript
+            observed: list[tuple[str, str, str]] = []
+            stage_path = tmp_path / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
+    
+            async def observe_atomic_finish(document, status):
+                before = await binding.handle.snapshot()
+                assert before.audio is not None and before.audio.state == "available"
+                assert not stage_path.exists()
+                observed.append(
+                    (
+                        before.status,
+                        before.transcript["segments"][0]["text"],
+                        document["segments"][0]["text"],
+                    )
+                )
+                return await original_finish(document, status)
+    
+            binding.handle.finish_with_transcript = observe_atomic_finish
+            stopped = client.post(
+                f"/api/live/sessions/{meeting_id}/stop",
+                json={"deadline": 2.0},
+            )
+            assert stopped.status_code == 200, stopped.text
+>           assert observed == [("active", "owner live words", "atomic terminal words")]
+E           AssertionError: assert [] == [('active', '...minal words')]
+E             
+E             Right contains one more item: ('active', 'owner live words', 'atomic terminal words')
+E             Use -v to get more diff
+
+tests/phase2/test_owner_bound_live_meeting.py:2235: AssertionError
+__ test_revoke_after_audio_settlement_downgrades_before_terminal_publication ___
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_revoke_after_audio_settle0')
+
+    def test_revoke_after_audio_settlement_downgrades_before_terminal_publication(
+        tmp_path: Path,
+    ):
+        database = tmp_path / "moss.sqlite3"
+        sessions = asyncio.run(provision(database))
+        app = make_app(
+            database,
+            terminal_text="[0][S01]revoked terminal words[0.000375]",
+        )
+        observed: dict[str, object] = {}
+    
+        with TestClient(app, base_url="https://moss.test") as client:
+            session(client, sessions["a"])
+            meeting_id = client.post("/api/live/sessions").json()["id"]
+            feed_two_lane_span(client, meeting_id)
+            wait_snapshot(client, meeting_id, lambda body: body["meeting_transcript_version"] == 1)
+            binding = app.state.phase2_live._bindings[meeting_id]
+            store = app.state.phase2_store
+            original_finish = binding.handle.finish_with_transcript
+    
+            async def revoke_before_terminal_tuple(document, status):
+                before = await binding.handle.snapshot()
+                assert before.audio is not None and before.audio.relative_path is not None
+                retained = tmp_path / "meetings" / before.audio.relative_path
+                observed["audio"] = before.audio.to_dict()
+                observed["bytes"] = retained.read_bytes()
+                observed["raw_absent"] = not (
+                    tmp_path / "meetings" / "sub-a" / meeting_id / ".live-mix.pcm"
+                ).exists()
+                await force_historical_authority_loss(store, "sub-a")
+                return await original_finish(document, status)
+    
+            binding.handle.finish_with_transcript = revoke_before_terminal_tuple
+            stopped = client.post(
+                f"/api/live/sessions/{meeting_id}/stop",
+                json={"deadline": 2.0},
+            )
+            assert stopped.status_code == 200, stopped.text
+            assert binding.terminal_persisted is True
+>           assert binding.persistence_failure == "meeting_authority_revoked"
+E           AssertionError: assert None == 'meeting_authority_revoked'
+E            +  where None = _LiveBinding(owner_key=('sub-a', 0), origin_session='JyYH-_zxOOEk7-jqiZhVAtCAp6JArON6aocfSmub4WE', handle=<moss_transc...ker_label_revision=0, speaker_identity_closed=True, changed=<asyncio.locks.Condition object at 0x119e9d550 [unlocked]>).persistence_failure
+
+tests/phase2/test_owner_bound_live_meeting.py:3377: AssertionError
+______________ test_http_stop_bounds_wait_for_terminal_finalizer _______________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp3-capture-guards/evidence/mvpfix/wp3/tmp/pytest/test_http_stop_bounds_wait_for0')
+
+    def test_http_stop_bounds_wait_for_terminal_finalizer(tmp_path):
+        database = tmp_path / 'moss.sqlite3'
+        sessions = asyncio.run(provision(database))
+        scheduler = _ManualTerminalScheduler()
+        app = make_app(database, terminal_text='[0][S01]final words[0.000375]', terminal_scheduler=scheduler)
+        with TestClient(app, base_url='https://moss.test') as client:
+            session(client, sessions['a'])
+            meeting_id = client.post('/api/live/sessions').json()['id']
+            feed_two_lane_span(client, meeting_id)
+            pending = client.post(f'/api/live/sessions/{meeting_id}/stop', json={'deadline': 0.05})
+            assert pending.status_code == 202, pending.text
+            assert pending.json()['code'] == 'stop_in_progress'
+            assert scheduler.pending == 1
+            assert scheduler.run_one()
+>           final = wait_snapshot(client, meeting_id, lambda body: body['snapshot']['session']['finalization_status'] == 'final')
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_owner_bound_live_meeting.py:3600: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x119ee9190>
+meeting_id = '1LyxGnQ7V2V5Ge65MiJbqkxc'
+predicate = <function test_http_stop_bounds_wait_for_terminal_finalizer.<locals>.<lambda> at 0x11a856f20>
+timeout = 5.0
+
+    def wait_snapshot(
+        client: TestClient,
+        meeting_id: str,
+        predicate,
+        *,
+        timeout: float = 5.0,
+    ) -> dict[str, object]:
+        deadline = time.monotonic() + timeout
+        payload: dict[str, object] | None = None
+        while time.monotonic() < deadline:
+            response = client.get(f"/api/live/sessions/{meeting_id}/snapshot")
+            assert response.status_code == 200
+            payload = response.json()
+            if predicate(payload):
+                return payload
+            time.sleep(0.01)
+>       raise AssertionError(f"Live snapshot did not reach expected state: {payload}")
+E       AssertionError: Live snapshot did not reach expected state: {'snapshot': {'session_id': '1LyxGnQ7V2V5Ge65MiJbqkxc', 'descriptor': {'source_revision': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'provider_name': 'phase2-live-test', 'provider_revision': 'test', 'provider_manifest_hash': 'b3784621a0519fea92b78e2df6aeda9f478f9fdb07914423c6b7bc0fef10bb6a', 'config_hashes': {'endpoint_config_hash': '1d8b02901ddc442d8995b2c48228fdcff92a3a015942f826fe6bcfd387d2ab97', 'identity_config_hash': 'c3618da32758dab68db6da5c6edcaadc5915bc64761c4751c3bd9499d6dc7adb', 'decoder_config_hash': '682e4ff122fdf945e482d11abb37f0523d22c5721c59bef7271249097fdbedf9', 'combined_config_hash': '909aa7f395886f2f7c2465cc808a0401526c830cfe92bdca35c43668fc16d283'}, 'bounds': {'max_frame_samples': 4000, 'max_queue_depth': 4, 'max_retained_samples': 16000, 'max_identity_speakers': 2, 'max_events': 128, 'hard_cap_samples': 4000, 'stop_drain_deadline_seconds': None, 'max_tape_bytes': 32000}, 'schema_version': 1, 'live_protocol_version': 'moss-live-service.v1', 'live_protocol': {'protocol': 'moss-live-service.v2', 'min_protocol_version': 2, 'max_protocol_version': 2, 'capabilities': {'lanes': True, 'binary': False, 'idempotent_frames': True, 'resumable': True}}, 'sample_rate': 16000, 'frame_samples': 2, 'feature_enabled': True}, 'session': {'status': 'closed', 'epoch': 0, 'version': 11, 'accepted_samples': 6, 'accounted_samples': 6, 'retained_samples': 0, 'committed_samples': 6, 'committed_prefix_hash': 'd1b1a5db0d7b43f21fb575fa0b59a0884668df7f0aa839f53050857184f89e77', 'identity_snapshot': {'version': 2, 'canonical_speakers': ['speaker-0001'], 'diagnostics': []}, 'committed': [{'span_id': 0, 'start_sample': 0, 'end_sample': 2, 'transcript': '[0][S01]owner live words[0.000125]', 'prefix_hash': 'b6e117b2cfcbeed8617ac66333f085ee4dcaa98b6e3a5e287799dd792bb9d78e', 'identity_snapshot_version': 1, 'revised_transcript': None}, {'span_id': 1, 'start_sample': 2, 'end_sample': 6, 'transcript': '[0][S01]owner live words[0.00025]', 'prefix_hash': 'd1b1a5db0d7b43f21fb575fa0b59a0884668df7f0aa839f53050857184f89e77', 'identity_snapshot_version': 2, 'revised_transcript': None}], 'provisional': None, 'next_frame_sequence': 3, 'frozen_until_sample': 6, 'pending_span_ids': [], 'failure_reason': None, 'label_revision_version': 0, 'text_revision_version': 0, 'canonical_through_sample': 0, 'effective_transcript': [{'start_sample': 0, 'end_sample': 2, 'text': 'owner live words', 'canonical_speaker': 'speaker-0001', 'authority': 'provisional'}, {'start_sample': 2, 'end_sample': 6, 'text': 'owner live words', 'canonical_speaker': 'speaker-0001', 'authority': 'provisional'}], 'finalization_status': 'failed'}, 'pending_work_items': 0, 'terminal_failure': None, 'schema_version': 1, 'identity_counts': {'identities_born_count': 1, 'album_admitted_count': None, 'provisional_only_count': None, 'abstention_count': 0}}, 'unchanged': False, 'capture_guard': None, 'v2_session': None, 'helper_presence': None, 'meeting_transcript_version': 2, 'persistence_failure': None, 'speaker_labels': {}, 'speaker_label_revision': 0, 'capture_phase': 'stopped', 'status_line': 'Audio capture stopped.'}
+
+tests/phase2/test_owner_bound_live_meeting.py:455: AssertionError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_live_capture_guard.py::test_terminal_zero_tape_never_calls_decoder
+FAILED tests/test_live_capture_guard.py::test_one_lsb_quiet_audio_still_reaches_decoder[\x01\x00]
+FAILED tests/test_live_capture_guard.py::test_one_lsb_quiet_audio_still_reaches_decoder[\xff\xff]
+FAILED tests/test_live_vad.py::test_runner_bounded_wav_inference_writes_complete_16khz_pcm_wav
+FAILED tests/test_live_vad.py::test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports[None]
+FAILED tests/test_live_vad.py::test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports[-0.01]
+FAILED tests/test_live_vad.py::test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports[nan]
+FAILED tests/test_live_vad.py::test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports[inf]
+FAILED tests/test_live_vad.py::test_runner_bounded_wav_inference_measures_the_decode_whatever_the_runner_reports[slow]
+FAILED tests/phase2/test_owner_bound_live_meeting.py::test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durable
+FAILED tests/phase2/test_owner_bound_live_meeting.py::test_terminal_audio_cleanup_precedes_atomic_final_transcript_and_status
+FAILED tests/phase2/test_owner_bound_live_meeting.py::test_revoke_after_audio_settlement_downgrades_before_terminal_publication
+FAILED tests/phase2/test_owner_bound_live_meeting.py::test_http_stop_bounds_wait_for_terminal_finalizer
+13 failed, 348 passed, 1 warning, 19 subtests passed in 16.59s

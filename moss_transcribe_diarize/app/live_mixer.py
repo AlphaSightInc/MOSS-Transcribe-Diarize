@@ -6,6 +6,7 @@ import threading
 from dataclasses import dataclass
 from typing import Mapping
 
+from .live_capture_guard import observe_capture_span
 from .live_ingest import RetainedLiveV2Frame
 from .live_lane_contract import LiveLane
 from .live_session import AudioFrame, LIVE_SAMPLE_RATE
@@ -36,6 +37,7 @@ class LiveMixDiagnostics:
     silent_samples: Mapping[LiveLane, int]
     gap_samples: Mapping[LiveLane, int]
     source_watermarks: Mapping[LiveLane, int]
+    capture_guard: Mapping[str, object]
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "silent_samples", dict(self.silent_samples))
@@ -55,6 +57,7 @@ class LiveMixDiagnostics:
             "gap_samples": {
                 lane.value: value for lane, value in self.gap_samples.items()
             },
+            "capture_guard": dict(self.capture_guard),
             "source_watermarks": {
                 lane.value: value for lane, value in self.source_watermarks.items()
             },
@@ -96,6 +99,7 @@ class LiveCompatibilityMixer:
             raise ValueError("max_output_samples must be a positive integer.")
         self._max_output_samples = max_output_samples
         self._cursor_ns: int | None = None
+        self.last_capture_guard: dict[str, object] | None = None
         self._lock = threading.RLock()
 
     def admit_available(
@@ -133,6 +137,11 @@ class LiveCompatibilityMixer:
                 retryable_queue_backpressure=retryable_backpressure,
             )
             self._cursor_ns = staged.diagnostics.end_timestamp_ns
+            self.last_capture_guard = {
+                "start_timestamp_ns": staged.diagnostics.start_timestamp_ns,
+                "end_timestamp_ns": staged.diagnostics.end_timestamp_ns,
+                **staged.diagnostics.capture_guard,
+            }
             # A bounded output chunk may end inside every retained lane frame.
             # Keep those source frames until a later chunk consumes them completely.
             if staged.diagnostics.source_watermarks:
@@ -295,6 +304,10 @@ class LiveCompatibilityMixer:
             silent_samples=lane_silent,
             gap_samples=lane_gaps,
             source_watermarks=watermarks,
+            capture_guard=observe_capture_span(
+                lane_values[LiveLane.SYSTEM], lane_values[LiveLane.MICROPHONE],
+                sample_rate=LIVE_SAMPLE_RATE,
+            ),
         )
         frame = AudioFrame(
             sequence=sequence,
