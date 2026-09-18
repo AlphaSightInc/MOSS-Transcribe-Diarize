@@ -1,0 +1,23 @@
+{
+  "arm": "overlap-shadow-p180",
+  "status": "INVALIDATED",
+  "request_numbers": [
+    876,
+    877,
+    878,
+    879,
+    880,
+    881,
+    882,
+    883,
+    884,
+    885,
+    886,
+    887,
+    888,
+    889
+  ],
+  "completed_requests": 14,
+  "reason": "Admission retry became idle while its parent was being stopped; a second launch reached the first server before failing startup. HTTP 409 and stop/cleanup invalidated this control. All owned processes stopped; no measurements from it used.",
+  "next_arm": "overlap-shadow-p180-clean"
+}

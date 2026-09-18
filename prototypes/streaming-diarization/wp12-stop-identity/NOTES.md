@@ -1,4 +1,127 @@
-# WP12 prototype — measured improvement; latency acceptance not established
+# WP12 — overlap candidate FALSIFIED at 180 seconds
+
+**STOP:** the supplementary 180 s same-input comparison changes attribution on
+54/56 system segments (575 words). No tuning or further decoder runs followed.
+Candidate implementation/tests are retained on this isolated branch for review,
+not accepted or deployed. The six required 24/60 cases pass, but the user's
+"any case" attribution stop condition takes precedence. See the final verdict below.
+
+## Same-lane overlap continuation (from accepted diagnosis 60b3b584)
+
+The user now explicitly authorizes adopting mono's overlap mapping per lane,
+with acoustic fallback only for terminal segments without same-lane overlap.
+The earlier measurement establishes the cost of the existing algorithm, not an
+unavoidable product requirement. This new semantic choice is now in scope.
+
+Structural question: does same-lane overlap preserve the acoustic control's
+terminal attribution while removing full-tape probes? Primitives: settled
+pre-terminal lane surface; terminal local speaker partition; overlap assignment;
+acoustic probe for uncovered segments. The surface is exactly mono's input
+(`snapshot.effective_transcript`, including accepted rolling corrections), filtered
+to the producing lane. Canonical candidates retain snapshot order and lane scope.
+Invariants: same decoded words, same segment attribution as acoustic control,
+zero cross-lane assignments, existing thresholds/sampling/QUALITY_BOUNDS, max two
+decoder calls. Unknown: assignment equivalence across the requested real inputs.
+Falsifier: ANY attribution difference; stop immediately without tuning.
+
+Tool decision: a shadow prototype calls both mapping methods on identical terminal
+decoder output and settled session state, removing decoder nondeterminism from
+the comparison. The existing acoustic result remains what gets saved. It reports
+every changed segment's sample range and speaker, word equality, fallback audio,
+and cross-lane assignments; no transcript/audio enters git. Matrix intended:
+24/60 s parity, microphone minus 10 dB, same voice on both lanes. Only after all
+pass: absorb prototype, regression tests, live 24/60/180 s Stop measurements.
+Budget begins at 339/1200. Existing experiment wrapper checks waiting/running
+before each batch and owns/tears down its 18112 tunnel and 17872 service.
+
+Prototype command:
+`WP12_ARM=overlap-shadow-p24 bash prototypes/streaming-diarization/wp12-stop-identity/experiment.sh 24 parity`.
+Cases `mic-minus10` and `same-voice` respectively scale mic PCM by 10**(-10/20)
+and copy system PCM to mic; the unchanged 60 s public corpora are the sources.
+The first 24 s parity control passes: 13/13 segment dictionaries equal,
+0 cross-lane assignments, 0 fallback audio-seconds. Outcomes follow below.
+
+Prototype verdict before production edits: **PASS, six cases / 135 segments**.
+24/60 parity: 13/28 segments; mic -10 dB: 13/28; same-voice both lanes: 17/36.
+Every candidate segment equals its acoustic control (words, times, speaker,
+authority, source lane). Zero cross-lane assignments, zero fallback audio, and
+all six acoustic final surfaces equal saved text/identity. Same decoder output
+and session state in each comparison; no comparison between independent decoder
+responses. `overlap-comparison.json` retains per-lane results and empty diffs.
+One same-voice admission attempt refused running=1/waiting=0 before any decoder
+call; a later idle check admitted it. Total now 603/1200 calls. Three new
+production-seam tests fail on unchanged code: both covered-lane cases still
+probe, and the uncovered-tail test sees full-tape probes on both lanes instead
+of only the system 3–5 s interval. Log: `overlap-regression-before.txt`.
+Proceed to absorption using the existing terminal finalizer's overlap mapping,
+with bounded per-segment acoustic fallback; no new matcher or thresholds.
+
+Absorption: production passes `lane_base` plus that lane's canonical candidates
+directly to the existing finalizer, deleting CaptureRunner/copy and the whole-tape
+voice-preparation pass. Only a terminal segment lacking labelled overlap invokes
+`revision_segments` on its exact PCM crop. The prototype is absorbed into the
+standing bench as a frozen 60b3b584 acoustic-versus-overlap comparator; production
+does not import it. Focused tests: 191 passed. Full suites, run while the shared
+GPU was occupied: 1805 passed / 2 skipped / 37 subtests / 21 warnings in 143.19 s;
+frontend 26 files / 230 tests, typecheck/build passed. No production changes after
+these gates. All three new regression tests fail before and pass after the fix.
+
+Two initial production timing admissions refused running=1/waiting=0, dispatching
+no requests; after the full suites the idle admission check passed. Together with
+the earlier same-voice refusal, there were three busy-GPU refusals, all retained in
+admission.txt. Small editing-tool failures (an empty test hunk and a documentation
+context mismatch) made no changes; corrected. A transient placeholder was removed
+immediately and never used or committed.
+
+Production 24 s: Stop→final 3.788534 s, drain 2.578691 s, terminal 1.100589 s,
+26 decoder requests, 0 terminal embedding calls/audio-seconds. All 13 saved/live
+surface segment dictionaries equal the separate 24 s acoustic control exactly.
+Production 60 s: Stop→final 7.490138 s, drain 4.867833 s, terminal 2.446688 s,
+62 requests, 0 terminal embedding calls/audio-seconds. All 351 ordered words retain
+their lane and speaker. Of 28 independently decoded segment rows, 27 equal exactly;
+mic row 9 start changes 879360→879040 samples (54.96→54.94 s), end 958080 and
+speaker-0003 unchanged, text exactly equal. This is a separate-decoder comparison;
+the same-input acoustic/overlap shadow has 28/28 exact equality. No attribution
+falsifier fired. Details: overlap-independent-output-comparison.json.
+
+### Final verdict — supplementary 180 s falsifier
+
+Candidate 180 s parity: Stop→final 16.964282 s; drain 4.794547 s, terminal
+11.791761 s, 184 decoder calls, zero terminal embedding calls/audio-seconds.
+Both lanes complete; saved text/identity equal final. The 10 s bar is still missed.
+The system has two unattributed segments, 149.61–153.75 and 160.68–161.40 s,
+totalling 16 words. This justified checking the multi-window acoustic control,
+also supplying the previously missing before-embedding denominator.
+
+The clean frozen-acoustic 180 s control is **FALSIFIED** on exactly the same
+decoder output/session state: system 56 segments, microphone 30. All words and
+boundaries equal, zero cross-lane assignments. Acoustic system preparation
+abstains for the entire lane with `same_span_cannot_link_conflict`: three local
+labels S01/S02/S03 compete for two known lane speakers. Overlap instead assigns
+50 segments / 543 words from None to speaker-0001 and 4 / 32 from None to
+speaker-0004; two segments remain None. Mic 30/30 equal. This is an attribution
+change, not a finding that either choice is source-adjudicated correct. No
+threshold, conflict rule, or assignment was tuned to remove the difference.
+All 54 row diffs are retained in overlap-comparison.json; concise counts/reason
+in overlap-falsifier-summary.json. No additional decoder calls after detection.
+
+Terminal embedding audio-seconds before→candidate: 24 s parity 43.08→0;
+60 s 111.90→0; 180 s 335.52→0. Requested six-case matrix remains 135/135 exact
+segment equality; the additional 86-segment case changes 54 rows and fails the
+broader attribution criterion. The implementation remains a review candidate.
+
+Final request ledger: **1073/1200**, peak 2 in flight. 1059 calls across 21
+completed runs, plus 14 fully accounted calls in one invalidated control attempt.
+There were 12 idle-only admission refusals with no dispatch. The last idle retry
+became admitted while its parent was being stopped; an overlapping launch then
+failed startup and the client received HTTP 409. Both were discarded as measurement
+evidence, all owned processes stopped, and the 14 calls remained in the ledger.
+The bench now refuses occupied measurement ports and checks its tunnel/server PIDs.
+A clean, uniquely named control used `WP12_SINGLE_FLIGHT=1`: at most one own
+request, waiting=0 and running<=1 at admission. Its Stop timing is not used as a
+performance comparison. This is a bench-only scheduling mode, not a production
+concurrency change. Final owned listeners 18112/17872 absent. An additional
+documentation context patch failed without changing files and was corrected.
 
 ## Fresh-context continuation, 2026-09-18 (supersedes old budget/status below)
 

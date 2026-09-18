@@ -4,6 +4,8 @@ from pathlib import Path
 ROOT=Path.cwd()
 ARM=os.environ.get('WP12_ARM','lane')
 source_root={'mono':ROOT/'.wp12','mono-traced':ROOT/'.wp12','serial':ROOT/'.wp12/base-b316','serial-traced':ROOT/'.wp12/base-b316'}.get(ARM,ROOT)
+if ARM.startswith('overlap-shadow'):
+    source_root=ROOT/'.wp12/base-acoustic'  # Frozen 60b3b584 control after absorption.
 sys.path.insert(0,str(source_root))
 OUT=ROOT/'evidence/mvpfix/wp12'
 lock=threading.Lock()
@@ -15,7 +17,7 @@ import moss_transcribe_diarize
 emit("source",package=moss_transcribe_diarize.__file__)
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
 original=VllmRunner._post_multipart
-capacity=threading.BoundedSemaphore(2)
+capacity=threading.BoundedSemaphore(1 if os.environ.get('WP12_SINGLE_FLIGHT')=='1' else 2)
 def request(self,*a,**k):
     with capacity:
         with lock:
@@ -93,5 +95,9 @@ def measured_embed(self,wav_path,intervals):
     try:return embed(self,wav_path,intervals)
     finally:emit('embedding',start=start,seconds=time.monotonic()-start,intervals=intervals,audio_seconds=sum(b-a for a,b in intervals),**details)
 _OnnxWeSpeakerEmbedder.embed=measured_embed
+if ARM.startswith('overlap-shadow'):
+    sys.path.insert(0, str(Path(__file__).parent))
+    from overlap_prototype import install
+    install(emit)
 # Same current harness recipe and arguments for both checked-out production arms.
 runpy.run_path(str(ROOT/'prototypes/streaming-diarization/draft-lane/run_local_stack.py'),run_name='__main__')

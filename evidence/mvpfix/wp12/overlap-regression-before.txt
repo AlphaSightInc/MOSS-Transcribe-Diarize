@@ -1,0 +1,122 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+______ test_terminal_overlap_uses_own_lane_without_acoustic_probes[False] ______
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp1/test-tmp/pytest-of-gao/pytest-0/test_terminal_overlap_uses_own0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10dffb650>
+same_voice = False
+
+    @pytest.mark.parametrize("same_voice", [False, True])
+    def test_terminal_overlap_uses_own_lane_without_acoustic_probes(tmp_path, monkeypatch, same_voice):
+        import moss_transcribe_diarize.app.live_lane_decode as lanes
+    
+        c, _, session, arbiter = make()
+        c.accept_frame(frame(mic=1 if same_voice else 2))
+        commit(c, arbiter)
+        snapshot = session.snapshot()
+        calls = []
+        original = lanes.revision_segments
+    
+        def recorded(*args):
+            calls.append(args[1])
+            return original(*args)
+    
+        monkeypatch.setattr(lanes, "revision_segments", recorded)
+        result = finalize_lanes(
+            c, TerminalTranscriptFinalizer(runner=Runner(None), scratch_dir=tmp_path),
+            plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+            tape=c.tape, base_text_revision_version=0,
+            base_surface=snapshot.effective_transcript,
+            canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+        )
+>       assert calls == []
+E       AssertionError: assert ['microphone', 'system'] == []
+E         
+E         Left contains 2 more items, first extra item: 'microphone'
+E         Use -v to get more diff
+
+tests/test_live_lane_decode.py:360: AssertionError
+______ test_terminal_overlap_uses_own_lane_without_acoustic_probes[True] _______
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp1/test-tmp/pytest-of-gao/pytest-0/test_terminal_overlap_uses_own1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10d644530>
+same_voice = True
+
+    @pytest.mark.parametrize("same_voice", [False, True])
+    def test_terminal_overlap_uses_own_lane_without_acoustic_probes(tmp_path, monkeypatch, same_voice):
+        import moss_transcribe_diarize.app.live_lane_decode as lanes
+    
+        c, _, session, arbiter = make()
+        c.accept_frame(frame(mic=1 if same_voice else 2))
+        commit(c, arbiter)
+        snapshot = session.snapshot()
+        calls = []
+        original = lanes.revision_segments
+    
+        def recorded(*args):
+            calls.append(args[1])
+            return original(*args)
+    
+        monkeypatch.setattr(lanes, "revision_segments", recorded)
+        result = finalize_lanes(
+            c, TerminalTranscriptFinalizer(runner=Runner(None), scratch_dir=tmp_path),
+            plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+            tape=c.tape, base_text_revision_version=0,
+            base_surface=snapshot.effective_transcript,
+            canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+        )
+>       assert calls == []
+E       AssertionError: assert ['system', 'microphone'] == []
+E         
+E         Left contains 2 more items, first extra item: 'system'
+E         Use -v to get more diff
+
+tests/test_live_lane_decode.py:360: AssertionError
+______ test_terminal_acoustic_fallback_only_reads_uncovered_lane_segment _______
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp1/test-tmp/pytest-of-gao/pytest-0/test_terminal_acoustic_fallbac0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e03b1a0>
+
+    def test_terminal_acoustic_fallback_only_reads_uncovered_lane_segment(tmp_path, monkeypatch):
+        import moss_transcribe_diarize.app.live_lane_decode as lanes
+    
+        c, _, session, arbiter = make()
+        for sequence in range(2):
+            c.accept_frame(frame(sequence))
+            commit(c, arbiter)
+        snapshot = session.snapshot()
+        # The system surface lacks a later interval; microphone evidence at the same
+        # time must neither cover it nor provide its speaker identity.
+        base = tuple(s for s in snapshot.effective_transcript
+                     if s.source_lane == "microphone" or s.end_sample <= 40000)
+        calls = []
+        original = lanes.revision_segments
+    
+        def recorded(c, lane, span, pcm, text, authority):
+            calls.append((lane, span.start_sample, span.end_sample, len(pcm), pcm[0]))
+            return original(c, lane, span, pcm, text, authority)
+    
+        class GapRunner:
+            def transcribe(self, *args, **kwargs):
+                return SimpleNamespace(text="[0][S01]covered words[2.5][3][S01]new words[5]")
+    
+        monkeypatch.setattr(lanes, "revision_segments", recorded)
+        result = finalize_lanes(
+            c, TerminalTranscriptFinalizer(runner=GapRunner(), scratch_dir=tmp_path),
+            plan=TerminalDecodePlan(session.epoch, 80000, 0, RollingStatus.STOPPED, 0, 0),
+            tape=c.tape, base_text_revision_version=0, base_surface=base,
+            canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+        )
+>       assert calls == [("system", 48000, 80000, 64000, 1)]
+E       AssertionError: assert [('microphone...0, 160000, 1)] == [('system', 4...00, 64000, 1)]
+E         
+E         At index 0 diff: ('microphone', 0, 80000, 160000, 2) != ('system', 48000, 80000, 64000, 1)
+E         Left contains one more item: ('system', 0, 80000, 160000, 1)
+E         Use -v to get more diff
+
+tests/test_live_lane_decode.py:396: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_lane_decode.py::test_terminal_overlap_uses_own_lane_without_acoustic_probes[False]
+FAILED tests/test_live_lane_decode.py::test_terminal_overlap_uses_own_lane_without_acoustic_probes[True]
+FAILED tests/test_live_lane_decode.py::test_terminal_acoustic_fallback_only_reads_uncovered_lane_segment
+3 failed, 21 deselected in 0.37s

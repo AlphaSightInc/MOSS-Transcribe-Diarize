@@ -334,6 +334,75 @@ def test_terminal_lane_decode_and_failure_preserves_committed_lane(
         assert result.accounting.reason == "lane_terminal_failed:" + lane
 
 
+@pytest.mark.parametrize("same_voice", [False, True])
+def test_terminal_overlap_uses_own_lane_without_acoustic_probes(tmp_path, monkeypatch, same_voice):
+    import moss_transcribe_diarize.app.live_lane_decode as lanes
+
+    c, _, session, arbiter = make()
+    c.accept_frame(frame(mic=1 if same_voice else 2))
+    commit(c, arbiter)
+    snapshot = session.snapshot()
+    calls = []
+    original = lanes.revision_segments
+
+    def recorded(*args):
+        calls.append(args[1])
+        return original(*args)
+
+    monkeypatch.setattr(lanes, "revision_segments", recorded)
+    result = finalize_lanes(
+        c, TerminalTranscriptFinalizer(runner=Runner(None), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0,
+        base_surface=snapshot.effective_transcript,
+        canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+    )
+    assert calls == []
+    assert {(s.source_lane, s.canonical_speaker) for s in result.proposal.segments} == {
+        ("system", "speaker-0001"), ("microphone", "speaker-0002")}
+    assert session.apply_text_revision(result.proposal).applied
+
+
+def test_terminal_acoustic_fallback_only_reads_uncovered_lane_segment(tmp_path, monkeypatch):
+    import moss_transcribe_diarize.app.live_lane_decode as lanes
+
+    c, _, session, arbiter = make()
+    for sequence in range(2):
+        c.accept_frame(frame(sequence))
+        commit(c, arbiter)
+    snapshot = session.snapshot()
+    # The system surface lacks a later interval; microphone evidence at the same
+    # time must neither cover it nor provide its speaker identity.
+    base = tuple(s for s in snapshot.effective_transcript
+                 if s.source_lane == "microphone" or s.end_sample <= 40000)
+    calls = []
+    original = lanes.revision_segments
+
+    def recorded(c, lane, span, pcm, text, authority):
+        calls.append((lane, span.start_sample, span.end_sample, len(pcm), pcm[0]))
+        return original(c, lane, span, pcm, text, authority)
+
+    class GapRunner:
+        def transcribe(self, *args, **kwargs):
+            return SimpleNamespace(text="[0][S01]covered words[2.5][3][S01]new words[5]")
+
+    monkeypatch.setattr(lanes, "revision_segments", recorded)
+    result = finalize_lanes(
+        c, TerminalTranscriptFinalizer(runner=GapRunner(), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(session.epoch, 80000, 0, RollingStatus.STOPPED, 0, 0),
+        tape=c.tape, base_text_revision_version=0, base_surface=base,
+        canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+    )
+    assert calls == [("system", 48000, 80000, 64000, 1)]
+    assert [(s.source_lane, s.start_sample, s.end_sample, s.text, s.canonical_speaker)
+            for s in result.proposal.segments] == [
+        ("system", 0, 40000, "covered words", "speaker-0001"),
+        ("microphone", 0, 40000, "covered words", "speaker-0002"),
+        ("system", 48000, 80000, "new words", "speaker-0001"),
+        ("microphone", 48000, 80000, "new words", "speaker-0002"),
+    ]
+
+
 def test_legacy_frame_uses_only_mixed_pcm():
     c, decoder, _, arbiter = make()
     c.accept_frame(AudioFrame(0, bytes([7]) * 80000, 40000))

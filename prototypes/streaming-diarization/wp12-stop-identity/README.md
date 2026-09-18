@@ -1,5 +1,30 @@
 # WP12 LOGIC measurement prototype
 
+**Current verdict: FALSIFIED, candidate retained for review only.** The six
+required 24/60 cases pass, but the additional 180 s same-input control changes
+54/56 system segment identities (575 words). Acoustic matching abstains on
+`same_span_cannot_link_conflict`; overlap labels those segments. No tuning or
+further decoder runs after this finding. See `overlap-falsifier-summary.json`.
+
+Latest continuation: same-lane terminal overlap mapping. Six paired shadow
+cases (24/60 s parity, mic -10 dB, same voice on both lanes) passed 135/135 exact
+segment comparisons against acoustic attribution. Production now reuses mono's
+existing finalizer with a lane-filtered pre-terminal surface and speaker set.
+Only terminal segments without labelled overlap use cropped acoustic probes.
+Sampling/threshold values and QUALITY_BOUNDS are unchanged.
+
+`overlap_prototype.py` is absorbed into the standing bench as a counterfactual
+comparator, using the frozen acoustic implementation. Prepare its ignored source:
+`mkdir -p .wp12/base-acoustic && git archive 60b3b584 moss_transcribe_diarize | tar -x -C .wp12/base-acoustic`.
+Then run `WP12_ARM=overlap-shadow-<unique-name> bash prototypes/streaming-diarization/wp12-stop-identity/experiment.sh 24 parity`.
+Supported cases: `parity`, `mic-minus10`, `same-voice`, `alternation`.
+`analyze_overlap.py` reports segment differences without retaining transcript text.
+For current production timings use `WP12_ARM=overlap-fixed` and durations
+24, 60, or 180 with the same experiment command. Comparison runs retain acoustic
+publication, so their Stop timings are NOT optimized-production timings.
+
+The following sections describe the earlier latency diagnosis/history.
+
 Question: where does per-lane Stop time go, how does it scale, and why does the
 microphone gain a second identity in WP1's half-system/half-mic 48 s fixture?
 Primitives: source tape; decoder window; lane-owned voice reference; publication.

@@ -2,7 +2,6 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-from copy import copy
 from .live_span_bounds import span_segments, render_segments
 from .live_session import LiveIdentityPreparation, LiveIdentitySnapshot, FrozenSpan
 from .live_adapters import (
@@ -254,25 +253,18 @@ def finalize_lanes(c, finalizer, **kwargs):
             return results, failures, placed
         if not any(pcm):
             return results, failures, placed
-        captured = []
-
-        class CaptureRunner:
-            def transcribe(self, *args, **options):
-                result = finalizer.runner.transcribe(*args, **options)
-                captured.append(result)
-                return result
-
-        listener = copy(finalizer)
-        listener.runner = CaptureRunner()
-        result = listener.finalize(
+        own = c._lane_speakers.get(lane, set())
+        # Reuse mono's speaker-level overlap assignment, with both evidence and
+        # candidates scoped to this lane. The finalizer preserves its partition.
+        result = finalizer.finalize(
             **{
                 **kwargs,
                 "tape": tape,
-                "base_surface": (),
+                "base_surface": lane_base,
                 "canonical_speakers": tuple(
                     s
                     for s in kwargs["canonical_speakers"]
-                    if s in c._lane_speakers.get(lane, set())
+                    if s in own
                 ),
             }
         )
@@ -281,22 +273,35 @@ def finalize_lanes(c, finalizer, **kwargs):
             failures.append((lane, result.accounting.outcome.value))
             placed.extend(lane_base)
         else:
-            # Terminal identity is voice evidence, never timestamp overlap.
-            raw = str(captured[0].text)
             base_snapshot = c.session.snapshot().identity_snapshot
-            span = FrozenSpan(
-                id=int(dict(base_snapshot.diagnostics).get("span_id", "0")) + 1,
-                epoch=kwargs["plan"].epoch,
-                start_sample=0,
-                end_sample=kwargs["plan"].end_sample,
-                reason="terminal",
-            )
-            try:
-                revised = revision_segments(c, lane, span, pcm, raw, "terminal")
-            except Exception as exc:
-                failures.append((lane, type(exc).__name__))
-                revised = ()
-            placed.extend(revised or lane_base)
+            for index, segment in enumerate(result.proposal.segments):
+                covered = any(
+                    s.canonical_speaker in own
+                    and min(segment.end_sample, s.end_sample)
+                    > max(segment.start_sample, s.start_sample)
+                    for s in lane_base
+                )
+                speaker = segment.canonical_speaker
+                if not covered:
+                    # No labelled overlap: probe only this uncovered segment.
+                    # Existing evidence floors and matching thresholds still apply.
+                    span = FrozenSpan(
+                        id=int(dict(base_snapshot.diagnostics).get("span_id", "0")) + 1 + index,
+                        epoch=kwargs["plan"].epoch,
+                        start_sample=segment.start_sample,
+                        end_sample=segment.end_sample,
+                        reason="terminal_uncovered",
+                    )
+                    try:
+                        probe = revision_segments(
+                            c, lane, span, pcm[span.start_sample * 2:span.end_sample * 2],
+                            f"[0][S01]{segment.text}[{span.sample_count / 16000}]", "terminal",
+                        )
+                        speaker = probe[0].canonical_speaker if probe else None
+                    except Exception as exc:
+                        failures.append((lane, type(exc).__name__))
+                        speaker = None
+                placed.append(replace(segment, source_lane=lane, canonical_speaker=speaker))
         return results, failures, placed
 
     # Stop has drained causal work. Each lane reads its own tape and settled voice

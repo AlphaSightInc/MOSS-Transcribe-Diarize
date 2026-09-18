@@ -14,7 +14,8 @@ for _,delta in sorted(intervals):active+=delta;peak=max(peak,active)
 assert peak<=2 and active==0
 assert len(intervals)//2 == len(requests)
 result={'requests':len(requests),'request_cap':1200,'peak_decoder_concurrency':peak,'runs':[]}
-for path in sorted(OUT.glob('*-parity-*.json'))+sorted(OUT.glob('*-alternation-*.json')):
+paths = sorted(path for case in ('parity','alternation','mic-minus10','same-voice') for path in OUT.glob(f'*-{case}-*.json'))
+for path in paths:
     r=json.loads(path.read_text());assert r['status']=='final' and r['saved_equal']
     subset=[x for x in rows if x['arm']==r['arm'] and r['stop']<=x['time']<=r['stop']+r['stop_to_final']+.1]
     events={x['event']:x for x in subset if x['kind']=='event'}
@@ -53,4 +54,20 @@ for arm in ('serial-traced','concurrent-traced'):
 assert matched['serial-traced']==matched['concurrent-traced']
 result['matched_24_exact_saved_segments_equal']=True
 result['matched_24_saved_segment_count']=len(matched['serial-traced'])
+c=sqlite3.connect(f'file:{ROOT}/.wp12/state-overlap-fixed/phase2.sqlite?mode=ro',uri=True)
+fixed=[json.loads(x[0])['segments'] for x in c.execute('SELECT document_json FROM meeting_transcripts ORDER BY updated_at_ms')]
+c.close()
+for index,duration in enumerate((24,60)):
+    c=sqlite3.connect(f'file:{ROOT}/.wp12/state-overlap-shadow-p{duration}/phase2.sqlite?mode=ro',uri=True)
+    control=json.loads(c.execute('SELECT document_json FROM meeting_transcripts ORDER BY updated_at_ms LIMIT 1').fetchone()[0])['segments']
+    c.close()
+    actual=fixed[index]
+    assert [(s['text'],s['speaker_entity_id']) for s in actual] == [(s['text'],s['speaker_entity_id']) for s in control]
+    differences=[{'row':i,'fields':[key for key in a if a[key]!=b[key]]} for i,(a,b) in enumerate(zip(control,actual,strict=True)) if a!=b]
+    if duration==24:assert not differences
+    result[f'overlap_saved_{duration}']={'segments':len(actual),'exact_text_and_speaker_equal':True,'exact_dictionaries_equal':not differences,'differences':differences}
+invalidated=json.loads((OUT/'overlap-invalidated-180-control.json').read_text())
+result['completed_run_requests']=sum(r['requests'] for r in result['runs'])
+result['invalidated_control_requests']=invalidated['completed_requests']
+assert result['completed_run_requests']+result['invalidated_control_requests']==len(requests)
 print(json.dumps(result,indent=2))

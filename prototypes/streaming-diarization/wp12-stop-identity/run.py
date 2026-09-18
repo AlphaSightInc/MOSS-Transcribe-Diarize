@@ -16,6 +16,11 @@ def summary(segs):
     return result
 pcm=[lane_pcm(CORPUS/x/'audio.wav',60) for x in ('interview_bill_ackman_60s','interview_keyu_jin_60s')]
 pcm=[(p*((seconds*32000+len(p)-1)//len(p)))[:seconds*32000] for p in pcm]
+if case == 'mic-minus10':
+    import numpy as np
+    pcm[1] = (np.frombuffer(pcm[1], dtype='<i2').astype(float) * 10**(-10/20)).round().astype('<i2').tobytes()
+elif case == 'same-voice':
+    pcm[1] = pcm[0]
 c=Client('https://127.0.0.1:17872',ssl._create_unverified_context());c.call('POST','/api/workspace/bootstrap')
 d=c.call('GET','/api/live/descriptor')['descriptor'];ident=c.call('POST','/api/live/sessions',{'source_revision':d['source_revision']})['id']
 fs=d['frame_samples'];sr=d['sample_rate'];fb=fs*2;n=seconds*sr//fs;zero=bytes(fb);before=count();start=time.monotonic();epoch=time.time_ns()

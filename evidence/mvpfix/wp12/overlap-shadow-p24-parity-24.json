@@ -1,0 +1,39 @@
+{
+  "arm": "overlap-shadow-p24",
+  "case": "parity",
+  "seconds": 24,
+  "start": 92426.8658365,
+  "stop": 92450.872172583,
+  "stop_to_final": 7.479680667005596,
+  "status": "final",
+  "requests": 26,
+  "pre": {
+    "microphone": {
+      "words": 51,
+      "speakers": [
+        "speaker-0002"
+      ]
+    },
+    "system": {
+      "words": 71,
+      "speakers": [
+        "speaker-0001"
+      ]
+    }
+  },
+  "final": {
+    "microphone": {
+      "words": 56,
+      "speakers": [
+        "speaker-0002"
+      ]
+    },
+    "system": {
+      "words": 86,
+      "speakers": [
+        "speaker-0001"
+      ]
+    }
+  },
+  "saved_equal": true
+}

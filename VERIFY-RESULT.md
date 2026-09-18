@@ -1,84 +1,119 @@
-# WP12 fresh-context verification — PASS within measured scope
+# WP12 overlap candidate — FALSIFIED; software gates PASS
 
-Date: 2026-09-18. This user turn began with fresh context and explicitly required
-the additional matched instrumentation before full verification. Starting branch
-`mvpfix/wp12-stop-latency-identity`, clean at
-`a02a8491cbedc66278538031230518dbce672293`. All commands ran in the WP12 worktree;
-package import resolved there. Production code remains that exact revision.
-Continuation changes only bench instrumentation, evidence, and documentation.
-No same-context reread is being presented as another fresh session.
+Date: 2026-09-18. Branch `mvpfix/wp12-stop-latency-identity`, starting clean at
+accepted diagnosis `60b3b584`. Candidate implementation and tests are retained on
+this isolated branch for review only. **Not accepted, not deployed.** No tuning
+or additional decoder runs followed the attribution falsifier.
 
-## V1 — full gates
+## F4 — exact attribution stop condition triggered at 180 seconds
 
-Commands from root VERIFY.md were executed after matched measurement, using the
-specified Python and worktree-local test adapter, without installs:
+The six requested same-input comparisons pass: 24/60 s parity, mic -10 dB, and
+same voice on both lanes. **135/135 segment dictionaries equal**, zero cross-lane
+assignments, zero fallback audio. Acoustic output remained the saved control.
 
-- `bash prototypes/streaming-diarization/wp12-stop-identity/check-python.sh`:
-  **1802 passed, 2 skipped, 21 warnings, 37 subtests passed, 144.84 s**.
-  Full `tests`, no cacheprovider. Log: `evidence/mvpfix/wp12/fresh-python.txt`.
-- `bash prototypes/streaming-diarization/wp12-stop-identity/check-frontend.sh`:
-  **26 files / 230 tests passed**, **typecheck passed**, **build passed**.
-  Log: `evidence/mvpfix/wp12/fresh-frontend.txt`. Generated assets unchanged.
-- `<WP12_PY> prototypes/streaming-diarization/wp12-stop-identity/audit.py`:
-  **339/1200 decoder calls, peak 2 in flight, 11/11 final/saved agreements**.
-  Historical 24 s exact segment equality and 24/60 s ordered per-speaker word
-  equality pass; new matched serial/concurrent **12/12 saved dictionaries equal**.
-  Result: `evidence/mvpfix/wp12/fresh-audit.json`.
-- `<WP12_PY> prototypes/streaming-diarization/wp12-stop-identity/analyze_embeddings.py`:
-  matched phase and audio accounting retained in
-  `evidence/mvpfix/wp12/matched-embedding-audit.json`.
+An additional 180 s control supplied the before-embedding denominator and tested
+the two unassigned system segments observed in the candidate's long run. It used
+identical decoder output and settled session state for both mapping methods:
 
-No production/test assertions altered. Test-generated WP2 PNGs restored using
-VERIFY.md's explicit three-file command. `git diff --check` passes. No listeners
-on 18112/17872 after measurement (`lsof` empty, expected exit 1).
-
-## V2 — matched diagnosis
-
-Three real-stack runs, same paced public-corpus 24 s parity input:
-
-| Arm | Stop→terminal | Stop→observed final | Decoder calls |
+| Lane | Segments | Attribution changes | Word/boundary changes |
 | --- | ---: | ---: | ---: |
-| Mono 37979e53 | 0.383135 s | 1.880702 s | 13 |
-| Serial lanes b31683a6 | 2.733792 s | 11.327668 s | 26 |
-| Accepted concurrent lanes a02a8491 | 2.326931 s | 6.839325 s | 26 |
+| System | 56 | 54 | 0 |
+| Microphone | 30 | 0 | 0 |
 
-Serial pre-terminal delay: remaining rolling work 0.897933 s, queued causal work
-1.108433 s, tail 0.722543 s, identity sweep 0.002924 s. Mono: tail 0.369481 s,
-sweep 0.001617 s. No fixed timer or lease delay; notifications release the drain.
+Acoustic system preparation abstains for the whole lane with
+`same_span_cannot_link_conflict`: decoder labels S01/S02/S03 compete for two
+known system speakers. Overlap mapping instead changes:
 
-Serial terminal embeddings: system 1 call / 8 intervals / 21.33 audio-seconds /
-3.287698 s; microphone 1 / 4 / 22.20 / 3.416678 s. Combined 43.53 audio-seconds,
-6.704376 s. Mono terminal: **zero embedding calls**; its speaker mapping uses
-time overlap. Lane albums already supply the retained reference vectors. New
-terminal probe intervals differ from causal units: 0/12 exact interval matches,
-0/2 whole embedding calls repeated. 40.29 audio-seconds overlap causal audio;
-same audio coverage does not make different interval encodings interchangeable.
-One 5.28 s interval repeats part of a rolling call, but no individual vector was
-retained. Dominant cost belongs to the current acoustic-probe algorithm.
+- 50 segments / 543 words: unassigned → `speaker-0001`.
+- 4 segments / 32 words: unassigned → `speaker-0004`.
+- Two segments / 16 words remain unassigned; all 30 mic segments match.
 
-Per user's explicit inherent-cost stop clause, **no new production fix** or
-further concurrency work. Identity allegation remains **falsified** by the
-two-voice mic fixture (Lex Fridman 25–35 s); no identity change.
+Zero cross-lane assignments. This is a strict attribution-equivalence failure;
+it does not establish which output is source-correct. No policy values, sampling
+values, thresholds, QUALITY_BOUNDS, conflict rule, or mapping were tuned afterward.
+All row diffs: `evidence/mvpfix/wp12/overlap-comparison.json`.
+Concise verdict: `evidence/mvpfix/wp12/overlap-falsifier-summary.json`.
 
-## V3 — custody, limits, deviations
+## F3 — measured candidate Stop latency
 
-New requests: 65. Total: 339. Each batch checked running=0/waiting=0 via owned
-tunnel 18112; local service port 17872. All started processes stopped. Archived
-baseline source compared directly against git: mono **86/86 Python files equal**,
-serial **89/89 equal** (`baseline-source-audit.json`). No push, merge, deployment,
-shared-service changes, external messages, or modifications outside this tree.
-No audio, transcripts, private databases, or credentials committed.
+| Parity input | Stop→final | Stop→terminal | Terminal→publication | Decoder calls |
+| --- | ---: | ---: | ---: | ---: |
+| 24 s | 3.788534 s | 2.578691 s | 1.100589 s | 26 |
+| 60 s | 7.490138 s | 4.867833 s | 2.446688 s | 62 |
+| 180 s | 16.964282 s | 4.794547 s | 11.791761 s | 184 |
 
-VERIFY.md's obsolete 300-call/no-provider wording was superseded by this user's
-explicit 1200-call measurement instruction and updated accordingly. No production
-changes followed the fresh-context start, so full suites verify the existing
-accepted implementation independently. Bench instrumentation is retained as an
-extension of the standing measurement bench, not an alternate implementation.
-Minor failed inspections and corrected prose count are recorded in NOTES.md.
+Mono 24 s reference: **1.880702 s**. Stop→final is the API client’s observed completion;
+publication is timestamped separately. 60 s exceeds 4 s; 180 s exceeds both 4 s and 10 s.
+These are single observations on the shared GPU, not a capacity qualification or
+30-minute extrapolation. All three candidate final surfaces equal saved text/identity.
 
-**Not full WP12 latency acceptance:** 24 s concurrent remains above 4 s. Prior
-60 s concurrent prototype remains 16.174951 s, above 10 s; no new 60 s run. 180 s,
-additional matched alternation arms, 30-minute scaling, and multi-meeting
-contention remain unmeasured. Further work stopped under the inherent-cost clause,
-not because the increased budget was exhausted. Saved equality is not a claim
-of human-adjudicated word/speaker accuracy.
+## F2 — terminal embedding work removed on these inputs
+
+| Parity input | Acoustic control audio-seconds embedded | Candidate |
+| --- | ---: | ---: |
+| 24 s | 43.08 | 0 |
+| 60 s | 111.90 | 0 |
+| 180 s | 335.52 | 0 |
+
+Candidate terminal embedding calls and encoder intervals are also zero for all
+three lengths. Causal and rolling embeddings remain unchanged. The candidate
+passes each lane's settled surface/canonical set to the existing mono finalizer;
+only terminal segments without labelled same-lane overlap use cropped acoustic
+probes. Regression coverage exercises an uncovered 3–5 s system segment while
+simultaneous microphone evidence cannot cover it.
+
+Separate saved-output comparison: 24 s **13/13 exact dictionaries**. At 60 s,
+**all 28 rows have exact text and speaker IDs**; one microphone row starts at
+54.94 rather than 54.96 s, same end/text/speaker. The same-input 60 s shadow
+comparison is 28/28 exact; independent decoder calls produced the 20 ms difference.
+Native saved schema lacks source_lane; lane ownership was checked on live segments.
+Results: `overlap-timings.json`, `overlap-independent-output-comparison.json`,
+and the read-only saved-document assertions in `overlap-audit.json`.
+
+## F5 — software verification and source scope
+
+Production change: `moss_transcribe_diarize/app/live_lane_decode.py` only.
+Tests: `tests/test_live_lane_decode.py` adds three production-seam checks;
+all three fail on the previous acoustic implementation, then pass on the candidate.
+No existing assertion was weakened. Bench, evidence and design/verification docs
+record the candidate and stop condition.
+
+Commands (specified venv, PYTHONDONTWRITEBYTECODE=1, worktree-local imports):
+
+- Focused lane/identity/session/coordinator/runtime/lifecycle pytest set:
+  **191 passed**, 1 warning, 4.55 s (`overlap-focused.txt`).
+- `bash prototypes/streaming-diarization/wp12-stop-identity/check-python.sh`:
+  **1805 passed, 2 skipped, 21 warnings, 37 subtests passed**, 143.19 s.
+- `bash prototypes/streaming-diarization/wp12-stop-identity/check-frontend.sh`:
+  **26 files / 230 tests passed; typecheck and build passed**.
+- `audit.py`, `analyze_overlap.py`, `analyze_fixed.py`: retained content-free
+  accounting, row diffs, and timing results. Their commands are in VERIFY.md.
+
+Logs: `evidence/mvpfix/wp12/overlap-full-python.txt` and
+`overlap-full-frontend.txt`. Suites ran while waiting for the shared GPU; no
+production/test edits followed. Generated WP2 PNGs restored; frontend assets
+unchanged; `git diff --check` passes. This is implementation-context verification,
+not a claimed new /new acceptance pass. Prior fresh verification is retained in
+commit 60b3b584. Passing software tests do not override F4.
+
+## Operational accounting and deviations
+
+**1073/1200 dispatched calls; peak own concurrency 2.** 1059 calls across 21
+completed runs, 21 final/saved agreements, plus 14 accounted calls from one
+invalidated control launch. Twelve idle-only admission refusals sent no calls.
+An idle retry became admitted while its parent was being stopped; an overlapping
+launch failed startup and reached HTTP 409. No results from that attempt were
+used. All owned processes stopped before the clean run; bench port/PID checks
+now prevent reusing a listener from an overlapping launch.
+
+The additional 180 s control used `WP12_SINGLE_FLIGHT=1`, allowing one own request
+with waiting=0/running<=1 at admission. Its Stop timing is not a performance
+baseline. Its source is the frozen 60b3b584 acoustic archive; production timing
+runs used the candidate and normal two-request cap, with idle admission. All
+attempts remain in the ledger; no silent exclusion from budget or concurrency.
+
+No owned listeners remain on 18112/17872. No push, merge, deployment, shared-service
+changes, or writes outside this worktree. No audio, transcripts, credentials, or
+private databases committed. The earlier two-mic-ID claim remains falsified by
+the two-voice fixture; no identity-policy repair. Work stopped on F4, with the
+candidate retained for review and no further tuning or qualification claim.

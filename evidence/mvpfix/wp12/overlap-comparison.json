@@ -1,0 +1,1039 @@
+[
+  {
+    "arm": "overlap-shadow-p180-clean",
+    "case": "parity",
+    "seconds": 180,
+    "requests": 184,
+    "control_saved_equal": true,
+    "control_status": "final",
+    "control_segments": 86,
+    "changed_segments": 54,
+    "cross_lane_assignments": 0,
+    "acoustic_terminal_embedding_audio_seconds": 335.52,
+    "candidate_embedding_audio_seconds": 0,
+    "verdict": "FALSIFIED",
+    "lanes": [
+      {
+        "time": 94251.944549,
+        "arm": "overlap-shadow-p180-clean",
+        "kind": "overlap_comparison",
+        "lane": "system",
+        "samples": 2880000,
+        "acoustic_segments": 56,
+        "overlap_segments": 56,
+        "differences": [
+          {
+            "index": 0,
+            "acoustic": {
+              "start": 8640,
+              "end": 52320,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 8640,
+              "end": 52320,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 1,
+            "acoustic": {
+              "start": 65280,
+              "end": 142080,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 65280,
+              "end": 142080,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 2,
+            "acoustic": {
+              "start": 142080,
+              "end": 152640,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 142080,
+              "end": 152640,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 3,
+            "acoustic": {
+              "start": 152640,
+              "end": 245280,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 152640,
+              "end": 245280,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 4,
+            "acoustic": {
+              "start": 245280,
+              "end": 310080,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 245280,
+              "end": 310080,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 5,
+            "acoustic": {
+              "start": 314880,
+              "end": 337920,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 314880,
+              "end": 337920,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 6,
+            "acoustic": {
+              "start": 341760,
+              "end": 408000,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 341760,
+              "end": 408000,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 7,
+            "acoustic": {
+              "start": 408000,
+              "end": 444960,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 408000,
+              "end": 444960,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 8,
+            "acoustic": {
+              "start": 448320,
+              "end": 468000,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 448320,
+              "end": 468000,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 9,
+            "acoustic": {
+              "start": 473760,
+              "end": 540000,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 473760,
+              "end": 540000,
+              "speaker": "speaker-0004"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 10,
+            "acoustic": {
+              "start": 541920,
+              "end": 641280,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 541920,
+              "end": 641280,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 11,
+            "acoustic": {
+              "start": 641760,
+              "end": 647040,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 641760,
+              "end": 647040,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 12,
+            "acoustic": {
+              "start": 650880,
+              "end": 662400,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 650880,
+              "end": 662400,
+              "speaker": "speaker-0004"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 13,
+            "acoustic": {
+              "start": 674880,
+              "end": 747360,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 674880,
+              "end": 747360,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 14,
+            "acoustic": {
+              "start": 747840,
+              "end": 881280,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 747840,
+              "end": 881280,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 15,
+            "acoustic": {
+              "start": 881280,
+              "end": 932640,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 881280,
+              "end": 932640,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 16,
+            "acoustic": {
+              "start": 932640,
+              "end": 949920,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 932640,
+              "end": 949920,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 17,
+            "acoustic": {
+              "start": 949920,
+              "end": 1004640,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 949920,
+              "end": 1004640,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 18,
+            "acoustic": {
+              "start": 1004640,
+              "end": 1011840,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1004640,
+              "end": 1011840,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 19,
+            "acoustic": {
+              "start": 1024800,
+              "end": 1095200,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1024800,
+              "end": 1095200,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 20,
+            "acoustic": {
+              "start": 1095200,
+              "end": 1109280,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1095200,
+              "end": 1109280,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 21,
+            "acoustic": {
+              "start": 1112640,
+              "end": 1194720,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1112640,
+              "end": 1194720,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 22,
+            "acoustic": {
+              "start": 1194720,
+              "end": 1202880,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1194720,
+              "end": 1202880,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 23,
+            "acoustic": {
+              "start": 1205280,
+              "end": 1270080,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1205280,
+              "end": 1270080,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 24,
+            "acoustic": {
+              "start": 1274880,
+              "end": 1297440,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1274880,
+              "end": 1297440,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 25,
+            "acoustic": {
+              "start": 1301760,
+              "end": 1366560,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1301760,
+              "end": 1366560,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 26,
+            "acoustic": {
+              "start": 1366560,
+              "end": 1404960,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1366560,
+              "end": 1404960,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 27,
+            "acoustic": {
+              "start": 1408320,
+              "end": 1428000,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1408320,
+              "end": 1428000,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 28,
+            "acoustic": {
+              "start": 1433760,
+              "end": 1500000,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1433760,
+              "end": 1500000,
+              "speaker": "speaker-0004"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 29,
+            "acoustic": {
+              "start": 1501920,
+              "end": 1601280,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1501920,
+              "end": 1601280,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 30,
+            "acoustic": {
+              "start": 1601760,
+              "end": 1607040,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1601760,
+              "end": 1607040,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 31,
+            "acoustic": {
+              "start": 1610880,
+              "end": 1622400,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1610880,
+              "end": 1622400,
+              "speaker": "speaker-0004"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 32,
+            "acoustic": {
+              "start": 1634880,
+              "end": 1707360,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1634880,
+              "end": 1707360,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 33,
+            "acoustic": {
+              "start": 1707840,
+              "end": 1841280,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1707840,
+              "end": 1841280,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 34,
+            "acoustic": {
+              "start": 1841280,
+              "end": 1892640,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1841280,
+              "end": 1892640,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 35,
+            "acoustic": {
+              "start": 1892640,
+              "end": 1909920,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1892640,
+              "end": 1909920,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 36,
+            "acoustic": {
+              "start": 1909920,
+              "end": 1964640,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1909920,
+              "end": 1964640,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 37,
+            "acoustic": {
+              "start": 1964640,
+              "end": 1971840,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1964640,
+              "end": 1971840,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 38,
+            "acoustic": {
+              "start": 1984800,
+              "end": 2055360,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 1984800,
+              "end": 2055360,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 39,
+            "acoustic": {
+              "start": 2055360,
+              "end": 2069280,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2055360,
+              "end": 2069280,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 40,
+            "acoustic": {
+              "start": 2072640,
+              "end": 2154560,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2072640,
+              "end": 2154560,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 41,
+            "acoustic": {
+              "start": 2154560,
+              "end": 2162880,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2154560,
+              "end": 2162880,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 42,
+            "acoustic": {
+              "start": 2164320,
+              "end": 2230080,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2164320,
+              "end": 2230080,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 43,
+            "acoustic": {
+              "start": 2234880,
+              "end": 2257920,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2234880,
+              "end": 2257920,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 44,
+            "acoustic": {
+              "start": 2261760,
+              "end": 2328000,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2261760,
+              "end": 2328000,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 45,
+            "acoustic": {
+              "start": 2328000,
+              "end": 2364960,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2328000,
+              "end": 2364960,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 46,
+            "acoustic": {
+              "start": 2368320,
+              "end": 2388000,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2368320,
+              "end": 2388000,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 48,
+            "acoustic": {
+              "start": 2461760,
+              "end": 2561280,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2461760,
+              "end": 2561280,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 49,
+            "acoustic": {
+              "start": 2561760,
+              "end": 2567040,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2561760,
+              "end": 2567040,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 51,
+            "acoustic": {
+              "start": 2594880,
+              "end": 2667360,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2594880,
+              "end": 2667360,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 52,
+            "acoustic": {
+              "start": 2667840,
+              "end": 2801280,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2667840,
+              "end": 2801280,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 53,
+            "acoustic": {
+              "start": 2801280,
+              "end": 2852640,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2801280,
+              "end": 2852640,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 54,
+            "acoustic": {
+              "start": 2852640,
+              "end": 2869920,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2852640,
+              "end": 2869920,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          },
+          {
+            "index": 55,
+            "acoustic": {
+              "start": 2869920,
+              "end": 2879040,
+              "speaker": null
+            },
+            "overlap": {
+              "start": 2869920,
+              "end": 2879040,
+              "speaker": "speaker-0001"
+            },
+            "words_equal": true
+          }
+        ],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      },
+      {
+        "time": 94253.299549166,
+        "arm": "overlap-shadow-p180-clean",
+        "kind": "overlap_comparison",
+        "lane": "microphone",
+        "samples": 2880000,
+        "acoustic_segments": 30,
+        "overlap_segments": 30,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      }
+    ]
+  },
+  {
+    "arm": "overlap-shadow-p24",
+    "case": "parity",
+    "seconds": 24,
+    "requests": 26,
+    "control_saved_equal": true,
+    "control_status": "final",
+    "control_segments": 13,
+    "changed_segments": 0,
+    "cross_lane_assignments": 0,
+    "acoustic_terminal_embedding_audio_seconds": 43.080000000000005,
+    "candidate_embedding_audio_seconds": 0,
+    "verdict": "PASS",
+    "lanes": [
+      {
+        "time": 92457.940042041,
+        "arm": "overlap-shadow-p24",
+        "kind": "overlap_comparison",
+        "lane": "microphone",
+        "samples": 384000,
+        "acoustic_segments": 4,
+        "overlap_segments": 4,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      },
+      {
+        "time": 92458.235608375,
+        "arm": "overlap-shadow-p24",
+        "kind": "overlap_comparison",
+        "lane": "system",
+        "samples": 384000,
+        "acoustic_segments": 9,
+        "overlap_segments": 9,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      }
+    ]
+  },
+  {
+    "arm": "overlap-shadow-p60",
+    "case": "parity",
+    "seconds": 60,
+    "requests": 62,
+    "control_saved_equal": true,
+    "control_status": "final",
+    "control_segments": 28,
+    "changed_segments": 0,
+    "cross_lane_assignments": 0,
+    "acoustic_terminal_embedding_audio_seconds": 111.89999999999998,
+    "candidate_embedding_audio_seconds": 0,
+    "verdict": "PASS",
+    "lanes": [
+      {
+        "time": 92546.504514416,
+        "arm": "overlap-shadow-p60",
+        "kind": "overlap_comparison",
+        "lane": "microphone",
+        "samples": 960000,
+        "acoustic_segments": 10,
+        "overlap_segments": 10,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      },
+      {
+        "time": 92547.2532395,
+        "arm": "overlap-shadow-p60",
+        "kind": "overlap_comparison",
+        "lane": "system",
+        "samples": 960000,
+        "acoustic_segments": 18,
+        "overlap_segments": 18,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      }
+    ]
+  },
+  {
+    "arm": "overlap-shadow-q24",
+    "case": "mic-minus10",
+    "seconds": 24,
+    "requests": 26,
+    "control_saved_equal": true,
+    "control_status": "final",
+    "control_segments": 13,
+    "changed_segments": 0,
+    "cross_lane_assignments": 0,
+    "acoustic_terminal_embedding_audio_seconds": 42.96000000000001,
+    "candidate_embedding_audio_seconds": 0,
+    "verdict": "PASS",
+    "lanes": [
+      {
+        "time": 92639.042296416,
+        "arm": "overlap-shadow-q24",
+        "kind": "overlap_comparison",
+        "lane": "microphone",
+        "samples": 384000,
+        "acoustic_segments": 4,
+        "overlap_segments": 4,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      },
+      {
+        "time": 92639.245786666,
+        "arm": "overlap-shadow-q24",
+        "kind": "overlap_comparison",
+        "lane": "system",
+        "samples": 384000,
+        "acoustic_segments": 9,
+        "overlap_segments": 9,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      }
+    ]
+  },
+  {
+    "arm": "overlap-shadow-q60",
+    "case": "mic-minus10",
+    "seconds": 60,
+    "requests": 62,
+    "control_saved_equal": true,
+    "control_status": "final",
+    "control_segments": 28,
+    "changed_segments": 0,
+    "cross_lane_assignments": 0,
+    "acoustic_terminal_embedding_audio_seconds": 112.15999999999998,
+    "candidate_embedding_audio_seconds": 0,
+    "verdict": "PASS",
+    "lanes": [
+      {
+        "time": 92721.1633625,
+        "arm": "overlap-shadow-q60",
+        "kind": "overlap_comparison",
+        "lane": "system",
+        "samples": 960000,
+        "acoustic_segments": 18,
+        "overlap_segments": 18,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      },
+      {
+        "time": 92722.776459208,
+        "arm": "overlap-shadow-q60",
+        "kind": "overlap_comparison",
+        "lane": "microphone",
+        "samples": 960000,
+        "acoustic_segments": 10,
+        "overlap_segments": 10,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      }
+    ]
+  },
+  {
+    "arm": "overlap-shadow-s24",
+    "case": "same-voice",
+    "seconds": 24,
+    "requests": 26,
+    "control_saved_equal": true,
+    "control_status": "final",
+    "control_segments": 17,
+    "changed_segments": 0,
+    "cross_lane_assignments": 0,
+    "acoustic_terminal_embedding_audio_seconds": 42.21000000000001,
+    "candidate_embedding_audio_seconds": 0,
+    "verdict": "PASS",
+    "lanes": [
+      {
+        "time": 92816.716361208,
+        "arm": "overlap-shadow-s24",
+        "kind": "overlap_comparison",
+        "lane": "system",
+        "samples": 384000,
+        "acoustic_segments": 9,
+        "overlap_segments": 9,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      },
+      {
+        "time": 92816.726354166,
+        "arm": "overlap-shadow-s24",
+        "kind": "overlap_comparison",
+        "lane": "microphone",
+        "samples": 384000,
+        "acoustic_segments": 8,
+        "overlap_segments": 8,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      }
+    ]
+  },
+  {
+    "arm": "overlap-shadow-s60",
+    "case": "same-voice",
+    "seconds": 60,
+    "requests": 62,
+    "control_saved_equal": true,
+    "control_status": "final",
+    "control_segments": 36,
+    "changed_segments": 0,
+    "cross_lane_assignments": 0,
+    "acoustic_terminal_embedding_audio_seconds": 111.91999999999999,
+    "candidate_embedding_audio_seconds": 0,
+    "verdict": "PASS",
+    "lanes": [
+      {
+        "time": 92899.047835208,
+        "arm": "overlap-shadow-s60",
+        "kind": "overlap_comparison",
+        "lane": "system",
+        "samples": 960000,
+        "acoustic_segments": 18,
+        "overlap_segments": 18,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      },
+      {
+        "time": 92901.549067041,
+        "arm": "overlap-shadow-s60",
+        "kind": "overlap_comparison",
+        "lane": "microphone",
+        "samples": 960000,
+        "acoustic_segments": 18,
+        "overlap_segments": 18,
+        "differences": [],
+        "fallback_audio_seconds": 0.0,
+        "cross_lane_assignments": 0
+      }
+    ]
+  }
+]

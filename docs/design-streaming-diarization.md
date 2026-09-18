@@ -634,3 +634,56 @@ design, not equivalent reuse of an existing probe. No such policy change made.
 All 12 saved serial/concurrent segment dictionaries equal exactly in this pair.
 Budget now authorized at 1200; 339 calls used. Optimization stopped per user's
 inherent-cost instruction; 180 s remains unmeasured, not budget-blocked.
+
+### WP12 follow-up: reuse mono's terminal mapping within each lane
+
+**Final status: candidate FALSIFIED; review only.** The six requested 24/60 s
+comparisons pass, but the additional 180 s comparison violates attribution equality.
+
+The user subsequently authorized changing the terminal evidence source to
+mono's existing time-overlap assignment. The diagnosis above describes the old
+algorithm's cost, not an unavoidable product cost. `finalize_lanes` now passes
+each lane's settled pre-terminal surface and canonical speaker set to the same
+`TerminalTranscriptFinalizer` used by mono. This includes accepted rolling
+corrections, exactly as mono's caller does, but cannot use another lane's segments
+or canonical speakers. The terminal decoder's local-speaker partition and the
+existing one-to-one overlap assignment are retained.
+
+Only a terminal segment with no labelled same-lane overlap receives a fresh
+acoustic probe. Its PCM is cropped to that segment; the existing revision reader,
+evidence floor, matching thresholds and birth rules apply unchanged. Other-lane
+evidence cannot cover this gap. A failed probe preserves the terminal words with
+unattributed identity. No changes to QUALITY_BOUNDS, identity/sampling policy
+values, decoder windows, causal/rolling preparation, or publication lifecycle.
+
+Before production edits, matched shadow comparisons exercised both mappings on
+the SAME terminal decoder output and settled session state. All six cases passed:
+24/60 s parity (13/28 segments), mic -10 dB (13/28), same voice on both lanes
+(17/36). **135/135 segment dictionaries equal**, zero cross-lane assignments,
+zero fallback audio. The acoustic control remained the saved output, and all six
+saved/final agreements passed. This removes decoder nondeterminism from the
+attribution comparison; it is not a human transcription-accuracy claim.
+
+Three production-seam regression tests first failed on the acoustic implementation
+and then passed: two covered-lane variants require no probes; a system gap requires
+only its 3–5 s audio while simultaneous microphone evidence cannot cover it.
+The focused lane/identity/session/coordinator/runtime/lifecycle set passed 191 tests.
+The final Stop timings and full-suite results are recorded in root VERIFY-RESULT.md
+and `evidence/mvpfix/wp12/overlap-*`.
+
+Candidate Stop→final: 24 s **3.788534 s**, 60 s **7.490138 s**, 180 s
+**16.964282 s** (mono 24 s reference 1.880702 s). Terminal embedding audio-seconds
+fall from **43.08 / 111.90 / 335.52** to **0 / 0 / 0**. At 180 s, draining still
+takes 4.794547 s and terminal processing 11.791761 s; the 10 s bar is not met.
+
+The 180 s frozen-acoustic control uses the same decoder output and settled state
+for both mapping methods. Acoustic preparation abstains for the whole system lane
+on `same_span_cannot_link_conflict` (three local labels, two known system voices).
+Overlap maps 54/56 system segments that acoustic leaves unassigned: 50 segments /
+543 words to speaker-0001, 4 / 32 to speaker-0004. Two remain unassigned; mic 30/30
+segments equal. Words, boundaries and lane ownership do not change. Which output
+is source-correct has not been adjudicated. Per the user's any-case falsifier,
+work stopped without tuning. Candidate retained for review, not accepted/deployed.
+Full suites pass (1805 Python tests + 37 subtests; 230 frontend tests), which does
+not override this semantic mismatch. Final budget 1073/1200, including 14 calls
+from an invalidated control launch; all accounted, peak own concurrency two.
