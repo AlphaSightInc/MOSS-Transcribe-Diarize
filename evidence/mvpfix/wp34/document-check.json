@@ -1,0 +1,66 @@
+{
+  "rows": 34,
+  "row_sequence_correct": true,
+  "ticket_rows": 31,
+  "open": 16,
+  "closed": 15,
+  "links": 49,
+  "missing_links": [],
+  "inventories": [
+    {
+      "wp": 23,
+      "file_count": 17,
+      "match": true
+    },
+    {
+      "wp": 24,
+      "file_count": 428,
+      "match": true
+    },
+    {
+      "wp": 25,
+      "file_count": 67,
+      "match": true
+    },
+    {
+      "wp": 26,
+      "file_count": 43,
+      "match": true
+    },
+    {
+      "wp": 27,
+      "file_count": 29,
+      "match": true
+    },
+    {
+      "wp": 28,
+      "file_count": 51,
+      "match": true
+    },
+    {
+      "wp": 29,
+      "file_count": 49,
+      "match": true
+    },
+    {
+      "wp": 30,
+      "file_count": 15,
+      "match": true
+    },
+    {
+      "wp": 31,
+      "file_count": 39,
+      "match": true
+    },
+    {
+      "wp": 32,
+      "file_count": 41,
+      "match": true
+    },
+    {
+      "wp": 33,
+      "file_count": 0,
+      "match": true
+    }
+  ]
+}

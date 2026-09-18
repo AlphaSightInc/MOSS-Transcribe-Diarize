@@ -3,7 +3,9 @@
 **Reserve approximately two hours; this is an estimate, not a completion promise.**
 The goal is to measure physical capture, identity and usability on one identified
 candidate. Passing automated tests cannot show whether a real microphone hears the
-operator correctly while speakers play. Unavailable prerequisites stay blocked.
+operator correctly while speakers play. Unavailable prerequisites stay blocked. Local WP31 restore checks are complete; any
+operator recovery drill must follow `docs/data-durability-upgrades.md`. Base rollback
+is a reduced-capability reader and does not establish safe lane-document writes.
 No deployment, renewal, service restart or fallback is authorized by this plan.
 
 ## Before the sitting
@@ -11,7 +13,7 @@ No deployment, renewal, service restart or fallback is authorized by this plan.
 - **A1 — Engineer preparation:** freeze and record installed/served candidate SHA,
   target origin, browser version and active configuration. Complete available local
   checks first; retain failures. Integration source at this plan's writing is
-  `c609d7f3`; do not assume the host serves it. Arrange existing G7 collector/profile
+  `a625d1a1` (WP31 merged); do not assume the host serves it. Arrange existing G7 collector/profile
   and any host authority separately; the older runbook's example SHA is historical.
 - **A2 — Trust and equipment:** MacBook with physical microphone, headphones and
   speakers, Chrome, working system-audio share. Use normal trusted TLS on the exact
@@ -33,7 +35,7 @@ No deployment, renewal, service restart or fallback is authorized by this plan.
 
 | Step | Estimate | Operator action and retained outcome |
 |---|---:|---|
-| A5 Trust/readiness | 10 min | Confirm candidate and normal Chrome trust; check mic and shared-audio meters; record actual devices/routes. Prerequisite failure stops dependent capture. |
+| A5 Trust/readiness | 10 min | Confirm candidate and normal Chrome trust; check mic and shared-audio meters; record actual devices/routes. Prerequisite failure stops dependent capture. Exercise WP27 early Share, microphone rejection, chooser cancellation/no-audio and Reset; confirm errors survive late completions and meters clear. Separately record the known WP32 F2 pre-session track-ended/no-Reset gap; WP33 remains in flight. |
 | A6 Speakers echo protocol | 30 min | Six conditions below; human-operated recording and scoring on an authorized decoder endpoint. |
 | A7 G7 x2 | 30 min | First headphones, then speakers with AEC on. Each G7 run includes BOTH tab+mic and entire-screen+mic scenarios, so four scenario captures overall. |
 | A8 Visual and summaries | 20 min | Three viewports, dialogs, failure copy and summary checks below. |
@@ -94,7 +96,14 @@ every failed attempt; no route's pass substitutes for another's.
 
 ### A8 — Visual sign-off and real summaries
 
-Operator reviews the actual served app at **1440x900, 1280x800 and 400 px width**:
+Use the [WP24 52-state checklist](../../evidence/mvpfix/wp24/pack/index.md)
+(156 PNG/copy pairs; 400×844 mobile) as preparation, then review the actual served
+app at **1440x900, 1280x800 and 400 px width**. The pack mixes real public-corpus
+runs, retained-response replay and labelled fixtures; its passing geometry/contrast
+checks do not supply owner sign-off. WP27 changed setup/error states after the pack;
+review them live, and record WP32 F2 separately until a verified WP33 candidate is served.
+
+
 
 - **V1:** workspace layout, scroll/overflow, selected-meeting header and history;
   live/provisional/saved text, system/microphone lane badges and cross-lane overlap.
@@ -107,7 +116,7 @@ Operator reviews the actual served app at **1440x900, 1280x800 and 400 px width*
   source fidelity, retry/cancel/title and reload persistence. Deliberately select and
   check configured relay separately if available; no silent provider switching.
 
-Record sign-off or specific remaining defects per viewport. Automated geometry is
+Record sign-off or specific remaining defects per viewport, including partial-audio/refinement notice, early-Share error and Reset recovery. Automated geometry is
 supporting evidence only. A missing key leaves summaries blocked; a schema-valid
 summary still requires the operator to read it against the source.
 
