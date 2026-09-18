@@ -121,3 +121,17 @@ it.each(["srt", "vtt"] as const)("keeps %s empty and provisional exports syntact
   expect(content).toContain("Alex: Words");
   expect(content).toMatch(format === "vtt" ? /^WEBVTT\n\nNOTE / : /^1\n00:00:00,000 --> 00:00:01,000\n/);
 });
+
+
+it("serializes labelled overlapping md/txt/json turns exactly in lane order", () => {
+  const system: TranscriptTurn = {...makeTurn(0, "Alex", "System"), end:3, source_lane:"system", state:"final"};
+  const microphone: TranscriptTurn = {...makeTurn(0, "Alex", "Mic"), end:1, source_lane:"microphone", state:"final"};
+  const turns = [microphone,system];
+  const identity = {sessionId:"lanes",exportedAt:new Date(0)};
+  expect(serializeTranscriptExport("md", turns, t=>t.display_name,identity).content).toBe("## [00:00:00] Alex [System]\n\nSystem\n\n## [00:00:00] Alex [Microphone]\n\nMic");
+  expect(serializeTranscriptExport("txt", turns, t=>t.display_name,identity).content).toBe("[00:00:00] Alex [System]:\nSystem\n\n[00:00:00] Alex [Microphone]:\nMic");
+  expect(serializeTranscriptExport("json", turns, t=>t.display_name,identity).content).toBe(JSON.stringify({version:1,turns:[
+    {source_lane:"system",start:0,end:3,speaker:system.speaker,speaker_entity_id:system.speaker_entity_id,display_name:"Alex",speaker_label:"Alex [System]",state:"final",text:"System",segment_ids:system.segment_ids,target_segment_keys:system.target_segment_keys,provisional_stale:false},
+    {source_lane:"microphone",start:0,end:1,speaker:microphone.speaker,speaker_entity_id:microphone.speaker_entity_id,display_name:"Alex",speaker_label:"Alex [Microphone]",state:"final",text:"Mic",segment_ids:microphone.segment_ids,target_segment_keys:microphone.target_segment_keys,provisional_stale:false}
+  ]},null,2)+"\n");
+});

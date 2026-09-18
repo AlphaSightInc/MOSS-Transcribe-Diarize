@@ -1,3 +1,4 @@
+import { compareTranscriptOrder } from "./transcriptOrder";
 import type { TranscriptTurn } from "./mergeTranscript";
 
 export interface TranscriptSearchPart {
@@ -22,6 +23,7 @@ export function buildTranscriptSearchResults(
   query: string,
   resolveSpeakerLabel: (turn: TranscriptTurn) => string
 ): TranscriptSearchResults {
+  turns = [...turns].sort(compareTranscriptOrder);
   const normalizedQuery = query.trim();
   if (normalizedQuery.length === 0) {
     return {

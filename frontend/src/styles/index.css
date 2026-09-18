@@ -3693,3 +3693,5 @@ button.legend-chip:disabled {
     grid-template-columns: 240px minmax(0, 1fr);
   }
 }
+
+.utt-lane { font-size: 11px; color: var(--text-muted, #696969); white-space: nowrap; }

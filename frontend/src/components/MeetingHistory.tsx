@@ -373,6 +373,7 @@ function publishMeeting(meeting: Meeting, observeActive: boolean): void {
 
 function transcriptItems(meeting: Meeting): TranscriptItem[] {
   return (meeting.transcript?.segments ?? []).map((segment) => ({
+    ...(segment.source_lane ? { source_lane: segment.source_lane } : {}),
     start: segment.start,
     end: segment.end,
     text: segment.text,

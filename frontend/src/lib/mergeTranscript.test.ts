@@ -286,13 +286,13 @@ describe("mergeTranscript", () => {
     expect(turns.map((turn) => turn.text)).toEqual(["first speaker text", "second speaker text"]);
   });
 
-  it("keeps provisional items sorted after committed rows", () => {
+  it("sorts provisional and committed rows by chronological start", () => {
     const items = [
       makeItem({ state: "provisional", segment_id: "seg-preview", text: "preview", start: 0.5 }),
       makeItem({ segment_id: "seg-final", text: "final", start: 0.75 })
     ].sort(compareSegments);
 
-    expect(items.map((item) => item.state)).toEqual(["final", "provisional"]);
+    expect(items.map((item) => item.state)).toEqual(["provisional", "final"]);
   });
 
   it("groups consecutive committed segments into turns without duplicating overlap text", () => {

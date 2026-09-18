@@ -1,8 +1,10 @@
+import type { SourceLane } from "../lib/transcriptOrder";
 export type SessionMode = "live" | "file";
 
 export type SessionLifecycle = "idle" | "active" | "closing" | "closed" | "failed" | "aborted";
 
 export interface TranscriptItem {
+  source_lane?: SourceLane;
   start: number;
   end: number;
   text: string;

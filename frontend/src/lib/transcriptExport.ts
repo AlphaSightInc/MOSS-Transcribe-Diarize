@@ -1,3 +1,5 @@
+import { compareTranscriptOrder, transcriptLaneLabel } from "./transcriptOrder";
+import type { SourceLane } from "./transcriptOrder";
 import type { TranscriptTurn } from "./mergeTranscript";
 
 export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json", "srt", "vtt"] as const;
@@ -22,6 +24,7 @@ export interface TranscriptExportIdentity {
 }
 
 export interface TranscriptExportJsonTurn {
+  source_lane?: SourceLane;
   start: number;
   end: number;
   speaker: string;
@@ -64,6 +67,7 @@ export function serializeTranscriptExport(
   resolveLabel: (turn: TranscriptTurn) => string,
   identity: TranscriptExportIdentity
 ): TranscriptExportFile {
+  turns = [...turns].sort(compareTranscriptOrder);
   const rows = buildExportRows(turns, resolveLabel);
   const provisionalAttribution = hasProvisionalAttribution(turns);
   const filename = `transcript-${identity.sessionId}-${identity.exportedAt.toISOString()}.${format}`;
@@ -119,7 +123,8 @@ export function buildTranscriptExportJsonDocument(
     ...(hasProvisionalAttribution(turns)
       ? { provisional_attribution_notice: TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT }
       : {}),
-    turns: turns.map((turn) => ({
+    turns: [...turns].sort(compareTranscriptOrder).map((turn) => ({
+      ...(turn.source_lane ? { source_lane: turn.source_lane } : {}),
       start: turn.start,
       end: turn.end,
       speaker: turn.speaker,
@@ -153,7 +158,7 @@ function buildExportRows(
   turns: readonly TranscriptTurn[],
   resolveLabel: (turn: TranscriptTurn) => string
 ) {
-  return turns.map((turn) => ({
+  return [...turns].sort(compareTranscriptOrder).map((turn) => ({
     clockTime: formatTranscriptClockTime(turn.start),
     label: resolveExportLabel(turn, resolveLabel),
     text: turn.text.trim()
@@ -161,7 +166,8 @@ function buildExportRows(
 }
 
 function resolveExportLabel(turn: TranscriptTurn, resolveLabel: (turn: TranscriptTurn) => string): string {
-  return resolveLabel(turn).trim() || turn.display_name.trim() || turn.speaker;
+  const label = resolveLabel(turn).trim() || turn.display_name.trim() || turn.speaker;
+  return turn.source_lane ? `${label} [${transcriptLaneLabel(turn.source_lane)}]` : label;
 }
 
 function hasProvisionalAttribution(turns: readonly TranscriptTurn[]): boolean {

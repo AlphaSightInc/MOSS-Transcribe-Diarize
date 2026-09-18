@@ -1,3 +1,4 @@
+import { compareTranscriptOrder } from "./transcriptOrder";
 import defaultPrompt from "./final-summary-prompt.txt?raw";
 import { openMeeting, type Meeting } from "../api/meetings";
 
@@ -113,7 +114,7 @@ export function providerBody(meeting: Meeting, settings: SummarySettings): strin
   if (meeting.status !== "completed" || !meeting.transcript?.segments.some(s => s.text.trim())) throw new Error("Finalized speech is required.");
   return JSON.stringify({ model: settings.model, max_tokens: 2048, ...(settings.endpoint === RELAY_ENDPOINT ? {} : { stream: false, response_format: { type: "json_object" } }), messages: [
     { role: "system", content: `${settings.prompt}${settings.language.trim() ? `\nWrite the final briefing in ${settings.language.trim()}.` : ""}` },
-    { role: "user", content: JSON.stringify({ segments: meeting.transcript.segments.map(s => ({ start: summaryTimestamp(s.start), end: summaryTimestamp(s.end), speaker: s.speaker, text: s.text })) }) }
+    { role: "user", content: JSON.stringify({ segments: [...meeting.transcript.segments].sort(compareTranscriptOrder).map(s => ({ ...(s.source_lane ? { source_lane: s.source_lane } : {}), start: summaryTimestamp(s.start), end: summaryTimestamp(s.end), speaker: s.speaker, text: s.text })) }) }
   ] });
 }
 function path(id: string): string { return `/api/meetings/${encodeURIComponent(id)}/summary`; }
