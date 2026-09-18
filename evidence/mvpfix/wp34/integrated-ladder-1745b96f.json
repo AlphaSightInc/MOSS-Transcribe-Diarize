@@ -1,0 +1,150 @@
+{
+ "scope": "Lead (Fable MOSS:2.1) ladder on INTEGRATED candidate 1745b96f (integration/mvp-fix-20260917), isolated stack, isolated finalized manifest (max_tape_bytes 57.6 MB), real vLLM via own tunnel, 2026-09-18 ~03:30 EDT; same probe/corpus/witness as the 2026-09-17 baseline ladder; n=1 per level; sibling WPs shared the GPU.",
+ "cases": [
+  {
+   "case": "system@1",
+   "mic_gain_db": 0.0,
+   "words": 86,
+   "speakers": 1,
+   "sys_unique": "37/37",
+   "mic_unique": "0/32",
+   "per_speaker": [
+    {
+     "words": 86,
+     "sys_unique_hits": 37,
+     "mic_unique_hits": 0
+    }
+   ]
+  },
+  {
+   "case": "mic@1",
+   "mic_gain_db": 0.0,
+   "words": 56,
+   "speakers": 1,
+   "sys_unique": "0/37",
+   "mic_unique": "32/32",
+   "per_speaker": [
+    {
+     "words": 56,
+     "sys_unique_hits": 0,
+     "mic_unique_hits": 32
+    }
+   ]
+  },
+  {
+   "case": "mic@0.03",
+   "mic_gain_db": -30.5,
+   "words": 60,
+   "speakers": 1,
+   "sys_unique": "0/37",
+   "mic_unique": "32/32",
+   "per_speaker": [
+    {
+     "words": 60,
+     "sys_unique_hits": 0,
+     "mic_unique_hits": 32
+    }
+   ]
+  },
+  {
+   "case": "overlap@1",
+   "mic_gain_db": 0.0,
+   "words": 142,
+   "speakers": 2,
+   "sys_unique": "37/37",
+   "mic_unique": "32/32",
+   "per_speaker": [
+    {
+     "words": 56,
+     "sys_unique_hits": 0,
+     "mic_unique_hits": 32
+    },
+    {
+     "words": 86,
+     "sys_unique_hits": 37,
+     "mic_unique_hits": 0
+    }
+   ]
+  },
+  {
+   "case": "overlap@0.316",
+   "mic_gain_db": -10.0,
+   "words": 142,
+   "speakers": 2,
+   "sys_unique": "37/37",
+   "mic_unique": "32/32",
+   "per_speaker": [
+    {
+     "words": 56,
+     "sys_unique_hits": 0,
+     "mic_unique_hits": 32
+    },
+    {
+     "words": 86,
+     "sys_unique_hits": 37,
+     "mic_unique_hits": 0
+    }
+   ]
+  },
+  {
+   "case": "overlap@0.1",
+   "mic_gain_db": -20.0,
+   "words": 146,
+   "speakers": 2,
+   "sys_unique": "37/37",
+   "mic_unique": "32/32",
+   "per_speaker": [
+    {
+     "words": 60,
+     "sys_unique_hits": 0,
+     "mic_unique_hits": 32
+    },
+    {
+     "words": 86,
+     "sys_unique_hits": 37,
+     "mic_unique_hits": 0
+    }
+   ]
+  },
+  {
+   "case": "overlap@0.03",
+   "mic_gain_db": -30.5,
+   "words": 146,
+   "speakers": 2,
+   "sys_unique": "37/37",
+   "mic_unique": "32/32",
+   "per_speaker": [
+    {
+     "words": 60,
+     "sys_unique_hits": 0,
+     "mic_unique_hits": 32
+    },
+    {
+     "words": 86,
+     "sys_unique_hits": 37,
+     "mic_unique_hits": 0
+    }
+   ]
+  },
+  {
+   "case": "overlapsysquiet@0.316",
+   "mic_gain_db": -10.0,
+   "words": 142,
+   "speakers": 2,
+   "sys_unique": "37/37",
+   "mic_unique": "32/32",
+   "per_speaker": [
+    {
+     "words": 56,
+     "sys_unique_hits": 0,
+     "mic_unique_hits": 32
+    },
+    {
+     "words": 86,
+     "sys_unique_hits": 37,
+     "mic_unique_hits": 0
+    }
+   ]
+  }
+ ]
+}
