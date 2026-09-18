@@ -1,0 +1,24 @@
+{
+  "status": "PASS",
+  "comparisons": [
+    {
+      "minutes": 6,
+      "windows": 3,
+      "before_seconds": 61.13577787500981,
+      "after_seconds": 17.89411158299481,
+      "speedup": 3.416530493366799,
+      "byte_identical": true,
+      "intervals": 107
+    },
+    {
+      "minutes": 30,
+      "windows": 15,
+      "before_seconds": 320.8388805420109,
+      "after_seconds": 93.03196541700163,
+      "speedup": 3.4486950706018025,
+      "byte_identical": true,
+      "intervals": 575
+    }
+  ],
+  "decoder_requests": 0
+}

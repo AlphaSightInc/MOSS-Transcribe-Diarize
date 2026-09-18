@@ -1,0 +1,8 @@
+{
+  "pane": "%20",
+  "target": "MOSS:3.1",
+  "prior_thread": "01a0b37c-6798-7603-9d79-0d77aedd7a55",
+  "command": "/new",
+  "submitted_at_utc": "2026-09-18T08:17:44Z",
+  "note": "Command submitted through own CLI. Fresh verify.sh records the new thread ID independently."
+}
