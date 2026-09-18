@@ -295,14 +295,12 @@ def main():
                     row['events'].append(dict(kind=event['kind'], seq=event['seq'], session_id=ident,
                         payload={k:p[k] for k in ('runtime_monotonic_ns','item_id','submitted','admitted',
                         'committed_samples','canonical_decode_elapsed_sec','frozen_span_duration_sec',
-                        'rolling_decode_elapsed_sec','windows_failed','stale_completions','outcome','reason','decode_failure',
-                        'finalization_status','accepted_samples','accounted_samples') if k in p}))
+                        'rolling_decode_elapsed_sec','windows_failed','stale_completions','outcome','reason','decode_failure') if k in p}))
                 return snap
 
             try:
                 barrier.wait(timeout=30)
                 started = time.monotonic()
-                row['started_monotonic'] = started
                 paused_seconds = 0.0
                 for seq in range(int(args.seconds/cadence)):
                     heartbeat()
@@ -349,20 +347,16 @@ def main():
                               pending=snap.get('pending_work_items'), foreign_probes=row['foreign_probes']))
                     time.sleep(max(0, started+paused_seconds+(seq+1)*cadence-time.monotonic()))
                 stopped = time.monotonic()
-                row['stop_requested_monotonic'] = stopped
                 c.call('POST', f'/api/live/sessions/{ident}/stop', {'deadline':30})
                 while True:
                     snap = observe()
                     ses = snap['session']
-                    if ses['finalization_status'] in ('final','failed','unavailable') or (ses['status']=='closed' and ses['finalization_status']=='not_started'):
+                    if ses['finalization_status'] in ('final','failed'):
                         break
                     if time.monotonic()-stopped > 90:
                         raise RuntimeError('finalization_timeout_90s')
                     time.sleep(.25)
                 terminal = True
-                ended = time.monotonic()
-                # Raw public-corpus words stay in ignored local state, never in git.
-                (scratch / f'snapshot-{index+1}.json').write_text(json.dumps(snap))
                 words = latency.words(' '.join(s['text'] for s in latency.segments_of(snap)))
                 ref = []
                 clip_seconds = len(pcm)/2/sr
@@ -375,8 +369,7 @@ def main():
                             partial_reference_rows += 1
                 ref_set = set(ref)
                 row.update(status=ses['status'], finalization_status=ses['finalization_status'],
-                           stop_to_final_seconds=ended-stopped if ses['finalization_status']=='final' else None,
-                           stop_to_outcome_seconds=ended-stopped,
+                           stop_to_final_seconds=time.monotonic()-stopped,
                            accepted_samples=ses['accepted_samples'], accounted_samples=ses['accounted_samples'],
                            word_count=len(words), reference_word_count=len(ref), partial_reference_rows=partial_reference_rows,
                            words_per_minute=len(words)/(args.seconds/60),

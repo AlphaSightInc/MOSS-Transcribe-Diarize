@@ -1,4 +1,4 @@
-# WP6 capacity prototype — campaign in progress
+# WP6 capacity prototype — 4x600 not accepted
 
 ## Contract
 
@@ -21,7 +21,15 @@
 
 ## Verdict and authority
 
-IN PROGRESS. User explicitly authorized the existing vLLM decoder through this
+MEASURED / NOT ACCEPTED. Four workspaces each accepted 600 seconds and saved a
+completed transcript, but the supplied 9,600,000-byte retention declaration caps
+both audio stores at 300 seconds. All four archived partial 300-second MP3s and
+reported terminal refinement unavailable. Runtime refusal matches ADR-0003 D5/D8;
+no production policy was changed. Eight-session overload was correctly skipped.
+Total decoder requests: 1,612 including the preserved interrupted harness attempt.
+See evidence/mvpfix/wp6/REPORT.md for exact measurements and limits.
+
+User explicitly authorized the existing vLLM decoder through this
 lane's own 18106 forward, the 1x120 -> 2x300 -> 4x600 ladder, and conditional
 8-session overload. Shared vLLM restarts/reconfiguration and ports 7861/7862 remain
 forbidden. Pause after more than one consecutive foreign-load sample; resume when
@@ -86,6 +94,14 @@ metadata to evidence. Local state/audio/certificates/logs remain in ignored
   budget (harness timeout, not a new production acceptance bar); retry/progress
   observations are retained. HTTP 429 bodies on this base do not all expose the
   internal retryable_queue_backpressure keyword. The runner records actual code.
+- The original collector missed `unavailable`, waited 90 seconds, and omitted
+  terminal metrics for the four-session run. It now recognizes that declared ending,
+  keeps exact replay/Stop anchors and a local ignored final snapshot, and records
+  Stop-to-final as null when no final exists. Original failures are preserved;
+  `recover_four.py` reads the saved transcript/audio offline and labels timing bounds.
+  The corrected reporting path was not used to rerun the load to green.
+- Paused-run wall-clock lag and decoder elapsed timing include pause/dispatch waits;
+  they are not uncontended inference measurements. Words/minute uses audio duration.
 - Setup failures and exceptions write failed results, then terminate every owned
   subprocess. No production repair should follow a harness-only failure.
 

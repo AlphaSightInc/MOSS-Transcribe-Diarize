@@ -1,0 +1,9 @@
+{
+  "python": "3.12.12 (main, Nov 19 2025, 22:30:44) [Clang 21.1.4 ]",
+  "executable": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python",
+  "sqlite_runtime": "3.50.4",
+  "platform": "macOS-26.6.1-arm64-arm-64bit",
+  "import_path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp6-capacity-baseline/moss_transcribe_diarize/__init__.py",
+  "production_sqlite_pin_unchanged": true,
+  "local_recipe_adapts_pin": true
+}

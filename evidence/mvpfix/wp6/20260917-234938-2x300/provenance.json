@@ -1,0 +1,12 @@
+{
+  "production_revision": "37979e539f04d4ea740a1a94d021cd3bb894a0e2",
+  "initial_checkout": "c3d159284ba2687db073237814a926c8a81ed759",
+  "runner": "runner-used.py",
+  "python": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python",
+  "environment": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONPATH": "."
+  },
+  "app_port": 17866,
+  "decoder_forward_port": 18106
+}
