@@ -1,0 +1,23 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run src/components/speakerRename.test.tsx src/components/VoiceprintBank.test.tsx
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.ts:7:9). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp7-identity-stress/frontend
+
+(node:44937) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  2 passed (2)
+      Tests  5 passed (5)
+   Start at  23:46:44
+   Duration  1.25s (transform 161ms, setup 0ms, import 233ms, tests 527ms, environment 1.35s)
+
+npm notice
+npm notice New minor version of npm available! 11.12.1 -> 11.19.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.19.1
+npm notice To update run: npm install -g npm@11.19.1
+npm notice

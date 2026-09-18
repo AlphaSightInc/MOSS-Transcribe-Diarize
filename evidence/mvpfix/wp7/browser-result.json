@@ -1,0 +1,57 @@
+{
+  "labels": [
+    "WP7 Adam"
+  ],
+  "reloaded_labels": [
+    "WP7 Adam"
+  ],
+  "history_has_name": false,
+  "name_persisted": true,
+  "formats": {
+    "md": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    },
+    "txt": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    },
+    "json": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    },
+    "srt": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    },
+    "vtt": {
+      "ok": true,
+      "expected_turns": 1,
+      "downloaded_turns": 1,
+      "words": true,
+      "labels": true,
+      "timing": true,
+      "identity": true
+    }
+  }
+}

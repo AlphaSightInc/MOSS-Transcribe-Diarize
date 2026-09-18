@@ -1,0 +1,321 @@
+{
+  "cases": [
+    {
+      "case": "single",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4675545968,
+      "album_dispositions": {
+        "provisional": 1,
+        "admitted": 16,
+        "rejected_below_admission": 3,
+        "rejected_weaker_than_bank": 4
+      },
+      "observed_deferred_spans": 1,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": null,
+      "stop_seconds": 3.42
+    },
+    {
+      "case": "gap",
+      "status": "completed",
+      "births": 2,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4704946800,
+      "album_dispositions": {
+        "provisional": 1,
+        "admitted": 17,
+        "rejected_below_admission": 1,
+        "rejected_weaker_than_bank": 4
+      },
+      "observed_deferred_spans": 1,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": null,
+      "stop_seconds": 3.461
+    },
+    {
+      "case": "alternating",
+      "status": "completed",
+      "births": 2,
+      "final_used_ids": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "final_switches": {
+        "Bill": 0,
+        "Keyu": 0
+      },
+      "album": 4704721744,
+      "album_dispositions": {
+        "admitted": 18,
+        "rejected_below_admission": 4,
+        "provisional": 3
+      },
+      "observed_deferred_spans": 1,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": null,
+      "stop_seconds": 3.184
+    },
+    {
+      "case": "enroll",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4704541520,
+      "album_dispositions": {
+        "provisional": 1,
+        "admitted": 3,
+        "rejected_below_admission": 1
+      },
+      "observed_deferred_spans": 1,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": null,
+      "stop_seconds": 1.081
+    },
+    {
+      "case": "recognition",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4705173040,
+      "album_dispositions": {
+        "provisional": 1,
+        "admitted": 3,
+        "rejected_below_admission": 1
+      },
+      "observed_deferred_spans": 1,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": 3.520347749989014,
+      "stop_seconds": 1.124
+    },
+    {
+      "case": "unknown",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Keyu": 0
+      },
+      "album": 4704425584,
+      "album_dispositions": {
+        "admitted": 4,
+        "rejected_below_admission": 1
+      },
+      "observed_deferred_spans": 0,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": null,
+      "stop_seconds": 0.941
+    },
+    {
+      "case": "after_delete",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4741291264,
+      "album_dispositions": {
+        "provisional": 1,
+        "admitted": 1,
+        "rejected_below_admission": 1
+      },
+      "observed_deferred_spans": 1,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": null,
+      "stop_seconds": 0.655
+    },
+    {
+      "case": "three_seconds",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4740935520,
+      "album_dispositions": {
+        "provisional": 1
+      },
+      "observed_deferred_spans": 0,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": null,
+      "stop_seconds": 0.531
+    },
+    {
+      "case": "lanes",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4704426400,
+      "album_dispositions": {
+        "provisional": 1,
+        "admitted": 3,
+        "rejected_below_admission": 1
+      },
+      "observed_deferred_spans": 0,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": null,
+      "stop_seconds": 1.165
+    },
+    {
+      "case": "three_seconds_waited",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4667027440,
+      "album_dispositions": {
+        "provisional": 1
+      },
+      "observed_deferred_spans": 1,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": null,
+      "stop_seconds": 0.421
+    },
+    {
+      "case": "replacement",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4696381952,
+      "album_dispositions": {
+        "admitted": 2,
+        "rejected_below_admission": 1
+      },
+      "observed_deferred_spans": 0,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": null,
+      "stop_seconds": 0.673
+    },
+    {
+      "case": "eligible_replacement",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4695856416,
+      "album_dispositions": {
+        "provisional": 1,
+        "admitted": 2
+      },
+      "observed_deferred_spans": 1,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": 3.5286159999959636,
+      "stop_seconds": 0.896
+    },
+    {
+      "case": "confirmed_replacement",
+      "status": "completed",
+      "births": 1,
+      "final_used_ids": [
+        "speaker-0001"
+      ],
+      "final_switches": {
+        "Adam": 0
+      },
+      "album": 4695923392,
+      "album_dispositions": {
+        "provisional": 1,
+        "admitted": 3,
+        "rejected_below_admission": 1
+      },
+      "observed_deferred_spans": 1,
+      "abstentions": "not inferable from published identity snapshots",
+      "recognition_seconds": 3.5278550420043757,
+      "stop_seconds": 1.075
+    }
+  ],
+  "word_oracle": {
+    "lanes": {
+      "system": {
+        "reference_words": 106,
+        "observed_words": 104,
+        "substitutions": 2,
+        "omissions": 5,
+        "additions": 3,
+        "wer": 0.09433962264150944,
+        "unique_reference_words": 60,
+        "unique_retained": 56,
+        "unique_retention": 0.9333333333333333
+      },
+      "microphone": {
+        "reference_words": 48,
+        "observed_words": 54,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 6,
+        "wer": 0.125,
+        "unique_reference_words": 41,
+        "unique_retained": 41,
+        "unique_retention": 1.0
+      }
+    },
+    "attribution_errors": 2,
+    "speaker_lane_conflicts": 0,
+    "boundary_attribution_words": 0,
+    "boundary_duplication_words": 0,
+    "attribution_segments": [
+      {
+        "start": 29.02,
+        "end": 30.05,
+        "speaker": "speaker-0002",
+        "inferred_lane": "microphone",
+        "words": 2,
+        "switch_straddling": false
+      }
+    ],
+    "max_wer": 0.15,
+    "ownership": "lexically_inferred",
+    "duplication_count": 2,
+    "unresolved_words": 0,
+    "passed": false
+  },
+  "word_oracle_scope": "First 54 s complete-reference input; output selected by segment end <=54. Boundary words may be omitted by this selection. Voice grouping via lexical inference; both voices actually supplied on system lane.",
+  "request_count": 149
+}

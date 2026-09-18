@@ -1,0 +1,52 @@
+{
+  "production_embedder": true,
+  "device": "cpu",
+  "fresh_embeddings": 5,
+  "profile_seconds": 3,
+  "enrollment_floor": 2.0,
+  "matching": [
+    {
+      "case": "interview_adam_frank_180s",
+      "start": 61,
+      "end": 64,
+      "expected": "adam",
+      "observed": "adam"
+    },
+    {
+      "case": "interview_adam_frank_180s",
+      "start": 83,
+      "end": 86,
+      "expected": "adam",
+      "observed": "adam"
+    },
+    {
+      "case": "interview_bill_ackman_60s",
+      "start": 0,
+      "end": 3,
+      "expected": null,
+      "observed": null
+    },
+    {
+      "case": "interview_keyu_jin_60s",
+      "start": 0,
+      "end": 3,
+      "expected": null,
+      "observed": null
+    }
+  ],
+  "floors": [
+    {
+      "seconds": 1.99,
+      "eligible": false
+    },
+    {
+      "seconds": 2.0,
+      "eligible": true
+    },
+    {
+      "seconds": 3.0,
+      "eligible": true
+    }
+  ],
+  "seconds": 3.056513375006034
+}
