@@ -28,7 +28,7 @@ def test_outcomes_are_safe_persistent_and_owner_bound(tmp_path, caplog, case, ex
                 return SimpleNamespace(text='malformed PRIVATE' if case=='malformed' else '',
                        window_diagnostics=[{'condition':'speechless_window_empty'}] if case=='no_speech' else [])
         class Archive:
-            def prepare_mix(self,*a): raise RuntimeError('PRIVATE container data')
+            def prepare_mix(self,*a,**kw): raise RuntimeError('PRIVATE container data')
         requests=[]
         def respond(request):
             requests.append(request)

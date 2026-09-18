@@ -386,13 +386,14 @@ class FileMeetingTasks:
         self,
         input_path: Path,
         options: dict[str, object],
-    ) -> tuple[Any, Path | None]:
+    ) -> tuple[Any, Path | None, list[str]]:
+        notices: list[str] = []
         mix_path: Path | None = None
         mix_failed = False
         if self._audio_archive is not None:
             candidate = input_path.parent / "transcription-mix.wav"
             try:
-                mix_path = self._audio_archive.prepare_mix(input_path, candidate)
+                mix_path = self._audio_archive.prepare_mix(input_path, candidate, notices=notices)
             except Exception:
                 mix_failed = True
                 candidate.unlink(missing_ok=True)
@@ -407,14 +408,14 @@ class FileMeetingTasks:
                 window_diagnostics=[{
                     "condition": "speechless_window_empty", "detector": "digital_zero",
                 }],
-            ), mix_path
+            ), mix_path, notices
         try:
             result = self._runner.transcribe(mix_path or input_path, **options)
         except Exception as exc:
             if mix_failed or getattr(exc, "condition", None) == "extraction_exception":
                 raise FileProcessingError("transcode_failed", "Media could not be decoded. The format may be unsupported or damaged.") from exc
             raise FileProcessingError("decode_failed", "The speech decoder could not transcribe this media.") from exc
-        return result, mix_path
+        return result, mix_path, notices
 
     async def _complete(
         self,
@@ -423,7 +424,7 @@ class FileMeetingTasks:
         runner_task: asyncio.Task[Any],
     ) -> None:
         try:
-            result, mix_path = await asyncio.shield(runner_task)
+            result, mix_path, notices = await asyncio.shield(runner_task)
         except Exception as exc:
             code = exc.code if isinstance(exc, FileProcessingError) else "decode_failed"
             reason = exc.reason if isinstance(exc, FileProcessingError) else "The speech decoder could not transcribe this media."
@@ -501,7 +502,11 @@ class FileMeetingTasks:
             await self._mark_failed(handle)
             raise
         try:
-            await handle.finish("completed", notice="No speech detected." if not document["segments"] else None)
+            if getattr(result, "possibly_truncated", False):
+                notices.append("The speech decoder reached its output limit. This transcript may be incomplete.")
+            if not document["segments"]:
+                notices.append("No speech detected.")
+            await handle.finish("completed", notice=" ".join(notices) or None)
         except AccountRevoked:
             pass
 

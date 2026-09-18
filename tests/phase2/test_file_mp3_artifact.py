@@ -49,7 +49,7 @@ class BlockingArchive:
         self.started = threading.Event()
         self.release = threading.Event()
 
-    def prepare_mix(self, source: Path, destination: Path) -> Path:
+    def prepare_mix(self, source: Path, destination: Path, *, notices=None) -> Path:
         destination.write_bytes(source.read_bytes())
         return destination
 

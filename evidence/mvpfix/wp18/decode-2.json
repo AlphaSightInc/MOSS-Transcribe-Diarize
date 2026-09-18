@@ -1,0 +1,17 @@
+{
+  "window": {
+    "index": 2,
+    "start": 240.0,
+    "end": 360,
+    "own_start": 255.0,
+    "own_end": 360,
+    "merged_tail_start": null
+  },
+  "queue_before": [
+    "vllm:num_requests_running{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0",
+    "vllm:num_requests_waiting{engine=\"0\",model_name=\"OpenMOSS-Team/MOSS-Transcribe-Diarize\"} 0.0"
+  ],
+  "elapsed": 3.940289833000861,
+  "tokens": 901,
+  "local_speakers": 3
+}

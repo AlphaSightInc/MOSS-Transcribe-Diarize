@@ -79,3 +79,5 @@ evidence/mvpfix/*/raw/
 
 # WP16 private media, browser profiles, TLS, and raw logs.
 .wp16runtime/
+
+.wp18runtime/

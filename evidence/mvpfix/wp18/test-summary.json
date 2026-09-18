@@ -1,0 +1,57 @@
+{
+  "initial_test_author_error": {
+    "failed": 3,
+    "cause": "new test indexed absent notice key; corrected to get"
+  },
+  "red": {
+    "failed": 2,
+    "passed": 1,
+    "cause": "missing truncated-media and decoder-cap notices"
+  },
+  "focused": {
+    "passed": 98,
+    "warnings": 4,
+    "seconds": 6.71
+  },
+  "first_full_python": {
+    "failed": 3,
+    "passed": 1871,
+    "skipped": 2,
+    "subtests": 37,
+    "warnings": 21,
+    "seconds": 140.23,
+    "cause": "test_file_digital_silence direct internal helper callers expected two values instead of added notices; updated unpacking and asserted empty notices; original assertions unchanged"
+  },
+  "frontend": {
+    "passed": 244,
+    "files": 27,
+    "seconds": 2.59
+  },
+  "fake_probe_correction": {
+    "initial_resolver": [
+      3,
+      6
+    ],
+    "initial_stitch": [
+      1,
+      2
+    ],
+    "corrected_resolver": [
+      3,
+      6
+    ],
+    "corrected_stitch": [
+      3,
+      6
+    ],
+    "cause": "fake intervals moved into every window ownership interval; no real measurement changed"
+  },
+  "full_python": {
+    "passed": 1874,
+    "skipped": 2,
+    "subtests": 37,
+    "warnings": 21,
+    "seconds": 142.44,
+    "failed": 0
+  }
+}

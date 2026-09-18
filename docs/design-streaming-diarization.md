@@ -584,3 +584,18 @@ zero residual corrections. Remaining caveat: in-span local diarization assumed c
 
 Retention TTL/privacy posture is no longer fog: ADR-0003 decided it. Full crash/resume and batch
 identity unification remain targets, not shipped behavior.
+
+### WP18 file-mode wiring falsifier (2026-09-18)
+
+The Account file constructor still uses overlap Tier A with embedding Tier B disabled;
+its live-provider manifest reaches only the live runtime. The repo-recorded production
+launcher and local measurement launcher share that construction. Enabling the pinned
+existing Tier B in an isolated replay did **not** implement ADR-0002's batch album target:
+three real windows / six minutes / three reference voices remained **7 identities → 7**.
+Perfect embeddings likewise produced **3 identities for one voice**, **6 for two voices**.
+The pairwise margin compares repeated occurrences of the same voice as competing
+identities (cosine 1, margin 0); linked overlap components are excluded from candidates.
+Stitching preserved the resolver's labels. No threshold or identity algorithm changed.
+Wiring-only repair is falsified; album integration requires a separate measured design.
+Reproduction and decisions: `prototypes/streaming-diarization/wp18-file-identity/NOTES.md`
+and `evidence/mvpfix/wp18/`. This is a local diagnosis, not deployment acceptance.
