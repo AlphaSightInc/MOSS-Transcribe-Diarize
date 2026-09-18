@@ -7,7 +7,7 @@ Minimum primitives: source revision (what ran), measurement (what happened),
 verdict (what it establishes), authority (what may be done next). None substitutes
 for another. Invariants: docs/evidence only, no external writes, exact denominators,
 failed attempts retained, no invented acceptance or new threshold/policy.
-Unknowns: fresh spot-check until /new; final-candidate acceptance, attended/device,
+Preparation unknowns: fresh spot-check until the next context; final-candidate acceptance, attended/device,
 provider and host evidence; pending WP12/WP21/WP22 outcomes. Falsifier: a documented
 SHA/count/outcome contradicted by its pinned branch or source report.
 
@@ -87,4 +87,28 @@ Deviations: state-printing census instead of interactive TUI; verification under
 docs/verify/wp23 to obey the existing layout gate rather than COMMON's root path.
 WP8 documents imported because branch was never merged. No source/research inference
 uses historical memory counts: memory only reinforced evidence/qualification separation.
-Literal /new and fresh verdict remain pending until the next session records them.
+At preparation, literal /new and fresh verdict were pending. The fresh-context
+documentation verdict is now recorded below; literal prior reset execution was
+not independently witnessed.
+
+## Fresh-context spot-check — completed 2026-09-18
+
+Verified clean documentation HEAD `ff8bcb797ab2f371805de4634ffe02c0f12f634f`
+in the user's new assignment, without the drafting conversation. No repeated reset
+or asserted tmux identity. Result: **10/10 pinned ledger rows, 5/5 selected numerical
+claims PASS; zero factual corrections to the six deliverables**. Full source rows,
+counts, methods and boundaries: [fresh-spot-check.md](fresh-spot-check.md).
+Formal result: [VERIFY-RESULT.md](../../../docs/verify/wp23/VERIFY-RESULT.md).
+
+Independently read Git ranges/results/file inventories for WP1/3/6/8/9/12/15/17/19/20.
+Confirmed 22 ledger rows, 31 original ticket states (16 OPEN/15 CLOSED), 34 valid
+local links, actual first-parent integration history and missing WP21/WP22 results
+at their pins. WP21 current branch observed at `5ae9566f`; ledger deliberately
+remains pinned to `33112b07`. WP19 merged / WP12 unmerged at `c609d7f3` confirmed.
+
+Retained 1901 passed/2 skipped/37 subtests Python and 249 frontend/28 files are
+**PREPARATION counts**, freshly read but not rerun. Only documentation checks ran.
+Layout, whitespace and docs/evidence-only scope pass. No new product/test code,
+runtime measurements, provider calls, host actions, other-tree writes or external
+publication. Open D2/P3, P4, D3, D5, P2, P5 and summary reliability decisions remain;
+documentation PASS does not change quality failures or release authority.
