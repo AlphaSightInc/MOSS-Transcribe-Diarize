@@ -791,7 +791,23 @@ class Phase2LiveMeetings:
                 return
 
             try:
-                await self._finish_terminal(binding, document, status)
+                notice = None
+                if status == "completed" and (
+                    terminal_snapshot.session.finalization_status == "unavailable"
+                    or any(
+                        event.kind.startswith("terminal_finalization_")
+                        and event.payload.get("tape_gaps", 0)
+                        # The final text revision can enqueue publication before
+                        # its terminal accounting event. Read the settled runtime
+                        # event stream under its lock, not that earlier enqueue.
+                        for event in self.runtime.events(binding.handle.meeting_id)
+                    )
+                ):
+                    notice = (
+                        "Final transcript refinement was unavailable for some audio. "
+                        "Previously committed words were kept."
+                    )
+                await self._finish_terminal(binding, document, status, notice=notice)
             except AccountRevoked:
                 await self._complete_revoked_terminal_locked(
                     binding,
@@ -824,13 +840,15 @@ class Phase2LiveMeetings:
         binding: _LiveBinding,
         document: dict[str, object],
         status: str,
+        *, notice: str | None = None,
     ) -> None:
+        outcome = {"notice": notice} if notice else {}
         if document != binding.durable_document:
-            version = await binding.handle.finish_with_transcript(document, status)
+            version = await binding.handle.finish_with_transcript(document, status, **outcome)
             binding.durable_document = document
             binding.durable_version = version
         else:
-            await binding.handle.finish(status)
+            await binding.handle.finish(status, **outcome)
 
     async def _recover_terminal_locked(
         self,

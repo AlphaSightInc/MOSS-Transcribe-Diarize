@@ -1118,6 +1118,7 @@ class Phase2Store:
         meeting_id: str,
         document: Mapping[str, object],
         status: str,
+        *, notice: str | None = None,
     ) -> int:
         """Atomically publish a last transcript revision and its terminal Meeting state."""
 
@@ -1152,6 +1153,11 @@ class Phase2Store:
                 """,
                 (account_id, meeting_id, document_json, now),
             )
+            if notice:
+                await self._connection.execute(
+                    "INSERT INTO meeting_outcomes VALUES (?, ?, ?, ?, ?)",
+                    (account_id, meeting_id, None, None, notice),
+                )
             version_cursor = await self._connection.execute(
                 """
                 SELECT version FROM meeting_transcripts
@@ -1405,6 +1411,7 @@ class MeetingHandle:
         self,
         document: Mapping[str, object],
         status: str,
+        *, notice: str | None = None,
     ) -> int:
         return await self._store._finish_meeting_with_transcript(
             self._account_id,
@@ -1412,6 +1419,7 @@ class MeetingHandle:
             self.meeting_id,
             document,
             status,
+            **({"notice": notice} if notice else {}),
         )
 
     async def publish_audio(

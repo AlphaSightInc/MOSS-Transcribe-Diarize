@@ -268,3 +268,21 @@ meeting. And *"re-ASR of the tape"* in **What this record does not decide** keep
 was aimed — inside an ADR-0002 **identity sweep**, which is still diarization only. The terminal
 finalizer is the second of the two text producers ADR-0005 defines, governed by that record's seven
 validations, and it is the only reader this tape has.
+
+### Per-lane tape exhaustion verification (WP29, 2026-09-18)
+
+D5/D8 apply separately to mixed and per-lane tapes. If no lane can supply the complete
+meeting, final refinement is `unavailable`; the saved meeting remains completed with
+its committed transcript. If one lane can refine, its result is combined with the
+other lane's committed words, and terminal accounting includes the missing lane's gaps.
+Saved meetings state unavailable refinement with fixed, content-safe notice text;
+partial MP3 metadata describes only the retained audio prefix. Departure before an
+accepted Stop still follows the existing interrupted-session contract.
+
+The accelerated HTTP/SQLite/MP3 bench in
+`prototypes/streaming-diarization/tape-exhaustion/` exercises 90-second meetings against
+an isolated 60-second capacity, both lanes, individual tape faults, silence, client
+departure and concurrent sessions. Digital zero occupies the same tape space as speech;
+a silent microphone does not extend its tape's duration. These checks change no deployed
+capacity, identity policy, quality threshold, or lifecycle rule. See its `NOTES.md` and
+`evidence/mvpfix/wp29/` for pre-fix failures and measured results.

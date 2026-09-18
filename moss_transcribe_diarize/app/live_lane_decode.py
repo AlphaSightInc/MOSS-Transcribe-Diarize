@@ -318,6 +318,12 @@ def finalize_lanes(c, finalizer, **kwargs):
             results.extend(lane_results)
             failures.extend(lane_failures)
             placed.extend(lane_segments)
+    gaps = tuple(
+        gap
+        for tape in c.lane_tapes.values()
+        for gap in tape.gaps(kwargs["plan"].end_sample)
+    )
+    tape_samples = sum(tape.sample_count for tape in c.lane_tapes.values())
     if not results:
         return finalizer._refused(
             kwargs["plan"],
@@ -327,15 +333,21 @@ def finalize_lanes(c, finalizer, **kwargs):
                 else TerminalOutcome.NO_TRANSCRIPT
             ),
             "lane_tape_unavailable" if failures else "all_lanes_zero",
+            gaps=gaps,
+            tape_samples=tape_samples,
         )
     template = next((r for r in results if r.proposal is not None), results[0])
     if template.proposal is None:
-        return template
+        return replace(template, accounting=replace(
+            template.accounting, tape_gaps=len(gaps), tape_samples=tape_samples,
+        ))
     return replace(
         template,
         proposal=replace(template.proposal, segments=tuple(sorted(placed, key=order))),
         accounting=replace(
             template.accounting,
+            tape_gaps=len(gaps),
+            tape_samples=tape_samples,
             segments=len(placed),
             reason=(
                 "lane_terminal_failed:" + ",".join(lane for lane, _ in failures)
