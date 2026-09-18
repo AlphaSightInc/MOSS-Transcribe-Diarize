@@ -943,6 +943,7 @@ def _effective_segment_from_dict(payload: dict[str, Any]) -> EffectiveTranscript
         text=str(payload["text"]),
         canonical_speaker=_optional_str(payload.get("canonical_speaker")),
         authority=str(payload["authority"]),
+        source_lane=_optional_str(payload.get("source_lane")),
     )
 
 
@@ -963,6 +964,7 @@ def _commit_from_dict(payload: dict[str, Any]) -> CanonicalCommit:
         prefix_hash=str(payload["prefix_hash"]),
         identity_snapshot_version=int(payload["identity_snapshot_version"]),
         revised_transcript=_optional_str(payload.get("revised_transcript")),
+        source_lanes=tuple(str(item) for item in payload.get("source_lanes", ())),
     )
 
 

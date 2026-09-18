@@ -1,0 +1,22 @@
+vllm:num_requests_running{engine="0",model_name="OpenMOSS-Team/MOSS-Transcribe-Diarize"} 0.0
+vllm:num_requests_waiting{engine="0",model_name="OpenMOSS-Team/MOSS-Transcribe-Diarize"} 0.0
+vllm:num_requests_waiting_by_reason{engine="0",model_name="OpenMOSS-Team/MOSS-Transcribe-Diarize",reason="capacity"} 0.0
+vllm:num_requests_waiting_by_reason{engine="0",model_name="OpenMOSS-Team/MOSS-Transcribe-Diarize",reason="deferred"} 0.0
+  -- reshared SYSTEM lane at frame 14 (device_epoch bumped, discontinuity set)
+  -- switched MICROPHONE device at frame 26
+  PASS  every frame accepted across both mid-session swaps | []
+  PASS  session stops cleanly after the swaps | status=200
+  PASS  finalizes after the swaps | final
+  PASS  transcribes across the reshare boundary | last_sample=319200 reshare_sample=112000
+  PASS  transcribes across the mic-switch boundary | last_sample=319200 switch_sample=208000
+  PASS  produced real text | 39 words in 7 segments
+
+  6/6 reshare checks passed
+    [13920] speaker-0001: The following is a conversation with Javier Malé,
+    [62400] speaker-0001: the president of Argentina.
+    [101760] speaker-0001: He is a libertarian, a narco-capitalist and economist
+    [180480] speaker-0001: who campaigned with a chainsaw
+    [222240] speaker-0001: that symbolized his promise
+    [252960] speaker-0001: to slash the corrupt bureaucracy of the state.
+{"case": "stress_reshare", "first": 620, "last": 634, "count": 15, "exit_code": 0, "adaptations": ["heartbeat every frame", "wait for finalization before next meeting"], "excluded": []}
+{"cases": 26, "requests": 634, "saved_matches": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true], "arbiter_max": {"live_canonical": 3, "live_refinement": 0, "batch": 0}}

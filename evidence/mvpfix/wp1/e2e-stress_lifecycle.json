@@ -1,0 +1,14 @@
+{
+  "case": "stress_lifecycle",
+  "first": 611,
+  "last": 619,
+  "count": 9,
+  "exit_code": 0,
+  "adaptations": [
+    "heartbeat every frame",
+    "wait for finalization before next meeting"
+  ],
+  "excluded": [
+    "concurrent session case"
+  ]
+}

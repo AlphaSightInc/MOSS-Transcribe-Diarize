@@ -1,0 +1,920 @@
+........................................................................ [  9%]
+........................................................................ [ 19%]
+.......FF............................F...................FF............. [ 28%]
+......................................F.FF..............F.F............. [ 38%]
+........................................................................ [ 48%]
+........................................................................ [ 57%]
+........................................................................ [ 67%]
+....................F................................................... [ 76%]
+....................F................................................... [ 86%]
+........................................................................ [ 96%]
+..........................FFF                                            [100%]
+=================================== FAILURES ===================================
+_______________ test_missing_executable_skips_with_checked_path ________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1118a0890>
+
+    def test_missing_executable_skips_with_checked_path(monkeypatch):
+        monkeypatch.setattr(Path, 'is_file', lambda self: False)
+        monkeypatch.setattr(support.shutil, 'which', lambda name: None)
+        p = SimpleNamespace(chromium=SimpleNamespace(executable_path='/missing/chrome-headless-shell'))
+>       with pytest.raises(pytest.skip.Exception, match='Missing supported Chrome/Chromium executable; checked:') as skip:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Skipped
+
+tests/phase2/test_browser_support.py:12: Failed
+__________________ test_installed_bundled_executable_is_used ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1118a6f30>
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_installed_bundled_executa0')
+
+    def test_installed_bundled_executable_is_used(monkeypatch, tmp_path):
+        binary = tmp_path/'chrome'
+        binary.write_text('#!/bin/sh\nexit 9\n'); binary.chmod(0o755)
+        actual = Path.is_file
+        monkeypatch.setattr(Path, 'is_file', lambda self: self == binary and actual(self))
+        monkeypatch.setattr(support.shutil, 'which', lambda name: None)
+        p = SimpleNamespace(chromium=SimpleNamespace(executable_path=str(binary)))
+>       assert support.require_browser(p) == binary  # launch failure is not caught by this guard
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert PosixPath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome') == PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_installed_bundled_executa0/chrome')
+E        +  where PosixPath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome') = <function require_browser at 0x1102fd300>(namespace(chromium=namespace(executable_path='/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_installed_bundled_executa0/chrome')))
+E        +    where <function require_browser at 0x1102fd300> = support.require_browser
+
+tests/phase2/test_browser_support.py:24: AssertionError
+__ test_operator_revocation_uses_workspace_id_without_content_or_credentials ___
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_operator_revocation_uses_0')
+
+    def test_operator_revocation_uses_workspace_id_without_content_or_credentials(tmp_path: Path):
+        # The host-local socket is independent of the browser cookie and contains no content.
+        import tempfile
+    
+        with tempfile.TemporaryDirectory(prefix="moss-control-") as socket_root:
+            socket = Path(socket_root) / "control.sock"
+            app = create_phase2_app(database_path=tmp_path / "browser.sqlite3", control_socket_path=socket)
+>           with TestClient(app, base_url="https://moss.test") as client:
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_browser_workspace.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/testclient.py:697: in __enter__
+    portal.call(self.wait_startup)
+../MOSS-Transcribe-Diarize-wt-production-20260910/.venv/lib/python3.12/site-packages/anyio/from_thread.py:338: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../MOSS-Transcribe-Diarize-wt-production-20260910/.venv/lib/python3.12/site-packages/anyio/from_thread.py:263: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/testclient.py:732: in wait_startup
+    await receive()
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/testclient.py:723: in receive
+    self.task.result()
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py:449: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../MOSS-Transcribe-Diarize-wt-production-20260910/.venv/lib/python3.12/site-packages/anyio/from_thread.py:263: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/testclient.py:713: in lifespan
+    await self.app(scope, self.stream_receive.receive, self.stream_send.send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/applications.py:1163: in __call__
+    await super().__call__(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:151: in __call__
+    await self.app(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:49: in __call__
+    await self.app(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/routing.py:2726: in app
+    await self.lifespan(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/routing.py:638: in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/phase2.py:1764: in lifespan
+    await control_server.start()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.phase2_control.Phase2ControlServer object at 0x10e631220>
+
+    async def start(self) -> None:
+        if len(os.fsencode(self._path)) >= 104:
+>           raise Phase2ControlError("Control socket path is too long for this host.")
+E           moss_transcribe_diarize.app.phase2_control.Phase2ControlError: Control socket path is too long for this host.
+
+moss_transcribe_diarize/app/phase2_control.py:44: Phase2ControlError
+__________________ test_staging_dry_run_deletes_nothing[True] __________________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_staging_dry_run_deletes_n0')
+flag = True
+
+    @pytest.mark.parametrize("flag", [True, False])
+    def test_staging_dry_run_deletes_nothing(tmp_path, flag):
+        import subprocess
+        share=tmp_path/'.local/share/moss-transcribe-diarize'
+        victim=directory(share/'staging'/'old',2*storage.DAY,now=storage.time.time())
+        result=subprocess.run(['bash','ops/stage-account-candidate.sh'] + (['--dry-run'] if flag else []),
+                              env=dict(os.environ,HOME=str(tmp_path),MOSS_TOOL_DRY_RUN='0' if flag else '1'),capture_output=True,text=True)
+>       assert result.returncode==0 and 'would_remove' in result.stdout
+E       assert (0 == 0 and 'would_remove' in '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n')
+E        +  where 0 = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh', '--dry-run'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').returncode
+E        +  and   '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n' = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh', '--dry-run'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').stdout
+
+tests/phase2/test_candidate_storage.py:150: AssertionError
+_________________ test_staging_dry_run_deletes_nothing[False] __________________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_staging_dry_run_deletes_n1')
+flag = False
+
+    @pytest.mark.parametrize("flag", [True, False])
+    def test_staging_dry_run_deletes_nothing(tmp_path, flag):
+        import subprocess
+        share=tmp_path/'.local/share/moss-transcribe-diarize'
+        victim=directory(share/'staging'/'old',2*storage.DAY,now=storage.time.time())
+        result=subprocess.run(['bash','ops/stage-account-candidate.sh'] + (['--dry-run'] if flag else []),
+                              env=dict(os.environ,HOME=str(tmp_path),MOSS_TOOL_DRY_RUN='0' if flag else '1'),capture_output=True,text=True)
+>       assert result.returncode==0 and 'would_remove' in result.stdout
+E       assert (0 == 0 and 'would_remove' in '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n')
+E        +  where 0 = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').returncode
+E        +  and   '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n' = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').stdout
+
+tests/phase2/test_candidate_storage.py:150: AssertionError
+____ test_post_replace_failure_and_failed_discard_never_commits_unavailable ____
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_post_replace_failure_and_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11194bf20>
+
+    def test_post_replace_failure_and_failed_discard_never_commits_unavailable(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        database = tmp_path / "moss.sqlite3"
+        sessions = asyncio.run(provision(database))
+        work_root = tmp_path / "file-work"
+        audio_root = tmp_path / "meetings"
+        archive = MeetingAudioArchive(audio_root)
+        app = make_app(database, work_root, audio_root, archive=archive)
+        real_fsync = archive._fsync_directory
+        fsync_calls = 0
+    
+        def fail_final_publish_fsync(path: Path) -> None:
+            nonlocal fsync_calls
+            fsync_calls += 1
+            if fsync_calls == 4:
+                raise OSError("forced final publication fsync failure")
+            real_fsync(path)
+    
+        real_unlink = Path.unlink
+    
+        def fail_canonical_unlink(path: Path, *args: object, **kwargs: object) -> None:
+            if path.name == "audio.mp3":
+                raise OSError("forced canonical MP3 unlink failure")
+            real_unlink(path, *args, **kwargs)
+    
+        monkeypatch.setattr(archive, "_fsync_directory", fail_final_publish_fsync)
+        monkeypatch.setattr(Path, "unlink", fail_canonical_unlink)
+        with TestClient(app, base_url="https://moss.test") as client:
+            session(client, sessions["sub-a"])
+            meeting_id = client.post(
+                "/api/meetings/file",
+                files={"file": ("meeting.wav", stereo_wav(), "audio/wav")},
+            ).json()["id"]
+>           meeting = await_terminal(client, meeting_id, "failed")
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_file_mp3_artifact.py:740: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x111bdc800>
+meeting_id = '-x4SIzgCewX0hasDGAEn5kYw', status = 'failed'
+
+    def await_terminal(client: TestClient, meeting_id: str, status: str) -> dict[str, object]:
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            response = client.get(f"/api/meetings/{meeting_id}")
+            if response.status_code == 200 and response.json()["status"] == status:
+                return response.json()
+            time.sleep(0.01)
+>       raise AssertionError(f"Meeting {meeting_id} did not reach {status}")
+E       AssertionError: Meeting -x4SIzgCewX0hasDGAEn5kYw did not reach failed
+
+tests/phase2/test_file_mp3_artifact.py:107: AssertionError
+_ test_size_mismatch_reconciliation_never_marks_surviving_mp3_unavailable[True] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_size_mismatch_reconciliat1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x110fb49e0>
+discard_fails = True
+
+    @pytest.mark.parametrize("discard_fails", [False, True])
+    def test_size_mismatch_reconciliation_never_marks_surviving_mp3_unavailable(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        discard_fails: bool,
+    ):
+        database = tmp_path / "moss.sqlite3"
+        sessions = asyncio.run(provision(database))
+        work_root = tmp_path / "file-work"
+        audio_root = tmp_path / "meetings"
+        app = make_app(database, work_root, audio_root)
+    
+        with TestClient(app, base_url="https://moss.test") as client:
+            session(client, sessions["sub-a"])
+            meeting_id = client.post(
+                "/api/meetings/file",
+                files={"file": ("meeting.wav", stereo_wav(), "audio/wav")},
+            ).json()["id"]
+            meeting = await_terminal(client, meeting_id, "completed")
+            path = audio_root / meeting["audio"]["relative_path"]
+            path.write_bytes(path.read_bytes() + b"size mismatch")
+            if discard_fails:
+                real_unlink = Path.unlink
+    
+                def fail_canonical_unlink(
+                    candidate: Path,
+                    *args: object,
+                    **kwargs: object,
+                ) -> None:
+                    if candidate == path:
+                        raise OSError("forced mismatched MP3 unlink failure")
+                    real_unlink(candidate, *args, **kwargs)
+    
+                monkeypatch.setattr(Path, "unlink", fail_canonical_unlink)
+    
+            response = client.get(f"/api/meetings/{meeting_id}/audio/download")
+            reconciled = client.get(f"/api/meetings/{meeting_id}").json()
+    
+        if discard_fails:
+>           assert response.status_code == 503
+E           assert 404 == 503
+E            +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_file_mp3_artifact.py:795: AssertionError
+_ test_unobservable_size_mismatch_returns_controlled_503_without_state_change __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_unobservable_size_mismatc0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111bc17f0>
+
+    def test_unobservable_size_mismatch_returns_controlled_503_without_state_change(
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        database = tmp_path / "moss.sqlite3"
+        sessions = asyncio.run(provision(database))
+        audio_root = tmp_path / "meetings"
+        app = make_app(database, tmp_path / "file-work", audio_root)
+    
+        with TestClient(app, base_url="https://moss.test") as client:
+            session(client, sessions["sub-a"])
+            meeting_id = client.post(
+                "/api/meetings/file",
+                files={"file": ("meeting.wav", stereo_wav(), "audio/wav")},
+            ).json()["id"]
+            meeting = await_terminal(client, meeting_id, "completed")
+            path = audio_root / meeting["audio"]["relative_path"]
+            path.write_bytes(path.read_bytes() + b"size mismatch")
+            real_unlink = Path.unlink
+            real_stat = Path.stat
+    
+            def fail_canonical_unlink(
+                candidate: Path,
+                *args: object,
+                **kwargs: object,
+            ) -> None:
+                if candidate == path:
+                    raise OSError("forced mismatched MP3 unlink failure")
+                real_unlink(candidate, *args, **kwargs)
+    
+            def fail_canonical_stat(candidate: Path, *args: object, **kwargs: object):
+                if candidate == path:
+                    raise OSError("forced existence uncertainty")
+                return real_stat(candidate, *args, **kwargs)
+    
+            monkeypatch.setattr(Path, "unlink", fail_canonical_unlink)
+            monkeypatch.setattr(Path, "stat", fail_canonical_stat)
+            response = client.get(f"/api/meetings/{meeting_id}/audio/download")
+            reconciled = client.get(f"/api/meetings/{meeting_id}").json()
+    
+        monkeypatch.undo()
+>       assert response.status_code == 503
+E       assert 404 == 503
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/phase2/test_file_mp3_artifact.py:845: AssertionError
+__ test_successful_stop_can_be_followed_by_failed_finalization[decode_failed] __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_successful_stop_can_be_fo0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x111c59bb0>
+failure = 'decode_failed'
+
+    @pytest.mark.parametrize('failure', ['decode_failed', 'no_transcript', 'finalizer_defect'])
+    def test_successful_stop_can_be_followed_by_failed_finalization(tmp_path, monkeypatch, failure):
+        database = tmp_path / 'account.sqlite3'
+        sessions = asyncio.run(fixture.provision(database))
+        app = fixture.make_app(database, terminal_text='')
+        if failure == 'decode_failed':
+            def failed_decode(*args, **kwargs):
+                raise RuntimeError('controlled provider failure')
+            monkeypatch.setattr(fixture.WholeMeetingStub, 'transcribe', failed_decode)
+        with TestClient(app, base_url='https://moss.test') as client:
+            fixture.session(client, sessions['a'])
+            meeting_id = client.post('/api/live/sessions').json()['id']
+            fixture.feed_two_lane_span(client, meeting_id)
+            fixture.wait_snapshot(client, meeting_id, lambda row: row['meeting_transcript_version'] > 0)
+            if failure == 'finalizer_defect':
+                def defect(**kwargs):
+                    raise ZeroDivisionError('controlled finalizer defect')
+                monkeypatch.setattr(app.state.phase2_live.runtime._terminal_finalizer, 'finalize', defect)
+            stopped = client.post(f'/api/live/sessions/{meeting_id}/stop', json={'deadline': 2.0})
+>           assert stopped.status_code == 200
+E           assert 202 == 200
+E            +  where 202 = <Response [202 Accepted]>.status_code
+
+tests/phase2/test_finalization_failure_stop_boundary.py:28: AssertionError
+_ test_successful_stop_can_be_followed_by_failed_finalization[finalizer_defect] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_successful_stop_can_be_fo2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11c2a5fa0>
+failure = 'finalizer_defect'
+
+    @pytest.mark.parametrize('failure', ['decode_failed', 'no_transcript', 'finalizer_defect'])
+    def test_successful_stop_can_be_followed_by_failed_finalization(tmp_path, monkeypatch, failure):
+        database = tmp_path / 'account.sqlite3'
+        sessions = asyncio.run(fixture.provision(database))
+        app = fixture.make_app(database, terminal_text='')
+        if failure == 'decode_failed':
+            def failed_decode(*args, **kwargs):
+                raise RuntimeError('controlled provider failure')
+            monkeypatch.setattr(fixture.WholeMeetingStub, 'transcribe', failed_decode)
+        with TestClient(app, base_url='https://moss.test') as client:
+            fixture.session(client, sessions['a'])
+            meeting_id = client.post('/api/live/sessions').json()['id']
+            fixture.feed_two_lane_span(client, meeting_id)
+            fixture.wait_snapshot(client, meeting_id, lambda row: row['meeting_transcript_version'] > 0)
+            if failure == 'finalizer_defect':
+                def defect(**kwargs):
+                    raise ZeroDivisionError('controlled finalizer defect')
+                monkeypatch.setattr(app.state.phase2_live.runtime._terminal_finalizer, 'finalize', defect)
+            stopped = client.post(f'/api/live/sessions/{meeting_id}/stop', json={'deadline': 2.0})
+            assert stopped.status_code == 200
+            after = fixture.wait_snapshot(client, meeting_id,
+                lambda row: row['snapshot']['session']['finalization_status'] == 'failed')
+            assert after['snapshot']['session']['status'] == 'closed'
+            assert after['snapshot']['terminal_failure'] is None
+            assert after['snapshot']['session']['effective_transcript']
+            events = app.state.phase2_live.runtime.events(meeting_id)
+            event = next(row for row in events if row.kind == 'terminal_finalization_failed')
+>           assert event.payload.get('outcome', event.payload.get('reason')) == failure
+E           AssertionError: assert 'no_transcript' == 'finalizer_defect'
+E             
+E             - finalizer_defect
+E             + no_transcript
+
+tests/phase2/test_finalization_failure_stop_boundary.py:36: AssertionError
+__________ test_name_latency_is_independent_of_observer_polling_delay __________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_name_latency_is_independe0')
+
+    def test_name_latency_is_independent_of_observer_polling_delay(tmp_path):
+        async def run():
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(executable_path=str(require_browser(p)), headless=True)
+                try:
+                    context = await browser.new_context()
+                    page = await context.new_page()
+                    html = '''<div data-auth-state="signed-in" data-boot="ready" data-history-boot="ready">Ready</div>
+                      <section aria-label="Private voiceprints"><button>Voiceprints</button>
+                        <div data-voiceprint-id="saved">E2E Rowan</div></section>
+                      <button onclick="setTimeout(() => {
+                        const label = document.createElement('span');
+                        label.className = 'utt-speaker-label'; label.textContent = 'E2E Rowan';
+                        document.body.append(label);
+                      }, 200)">Start capture</button>'''
+                    await context.route('**/*', lambda route: route.fulfill(status=200, content_type='text/html', body=html))
+                    await page.goto('https://measurement.test/')
+                    class Probe(Harness):
+                        def attach(self, page):
+                            page = super().attach(page)
+                            original_wait = page.wait_for_function
+                            async def late_reader(*args, **kwargs):
+                                await asyncio.sleep(.8)
+                                return await original_wait(*args, **kwargs)
+                            page.wait_for_function = late_reader
+                            return page
+                        async def api(self, path):
+                            return {"body": {"events": []}}
+                        async def setup_live(self):
+                            pass
+                        async def start_live(self, key):
+                            await self.page.get_by_role('button', name='Start capture', exact=True).click()
+                            return 'controlled-meeting'
+                    probe = Probe(SimpleNamespace(output=str(tmp_path), base="https://measurement.test/"))
+                    probe.page = page
+                    probe.context = context
+                    try:
+                        result = await probe.bank()
+                        assert result['ok'] and result['bank_contains_name']
+                        assert .18 <= result['recognition_seconds'] < .5
+                        assert result['measurement'] == 'Start click to visible name DOM mutation'
+                    finally:
+                        await probe.page.close()
+                        probe.network.close()
+                finally:
+                    await browser.close()
+>       asyncio.run(run())
+
+tests/phase2/test_voiceprint_latency_measurement.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/phase2/test_voiceprint_latency_measurement.py:48: in run
+    result = await probe.bank()
+             ^^^^^^^^^^^^^^^^^^
+tests/e2e/verify_workspace.py:444: in bank
+    history=self.page.get_by_role('region',name='Meeting history',exact=True); await history.get_by_role('tab',name='Voiceprints',exact=True).click()
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/async_api/_generated.py:17894: in click
+    await self._impl_obj.click(
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:165: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:593: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x11e913470>
+cb = <function Channel.send.<locals>.<lambda> at 0x11e9e8e00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for get_by_role("region", name="Meeting history", exact=True).get_by_role("tab", name="Voiceprints", exact=True)
+
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+___ test_real_g0_identity_and_zero_producers_use_fixed_product_observations ____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11e58f7a0>
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_real_g0_identity_and_zero0')
+
+    def test_real_g0_identity_and_zero_producers_use_fixed_product_observations(
+        monkeypatch, tmp_path: Path,
+    ):
+        release = tmp_path / "release"
+        release_bin = release / "bin"
+        release_bin.mkdir(parents=True)
+        launcher = release_bin / "mtd-account-web"
+        admin_launcher = release_bin / "mtd-admin"
+        cutover_launcher = release_bin / "mtd-phase2-cutover"
+        vllm_launcher = release_bin / "mtd-vllm"
+        launcher.write_bytes(b"reviewed launcher\n")
+        admin_launcher.write_bytes(b"reviewed admin\n")
+        cutover_launcher.write_bytes(b"reviewed cutover\n")
+        vllm_launcher.write_bytes(b"reviewed vllm\n")
+        shared_python = tmp_path / "python3.12"
+        shared_python.write_bytes(b"runtime\n")
+        (release_bin / "python").symlink_to(shared_python)
+        checkout = tmp_path / "checkout"
+        unit_sources = checkout / "ops/systemd"
+        unit_sources.mkdir(parents=True)
+        web_unit = unit_sources / "moss-web.service"
+        vllm_unit = unit_sources / "moss-vllm.service"
+        web_unit.write_bytes(b"web unit\n")
+        vllm_unit.write_bytes(b"vllm unit\n")
+        fake_home = tmp_path / "home"
+        pointer = fake_home / ".local/share/moss-transcribe-diarize/account-current"
+        pointer.parent.mkdir(parents=True)
+        pointer.symlink_to(release)
+        installed_units = fake_home / ".config/systemd/user"
+        installed_units.mkdir(parents=True)
+        (installed_units / "moss-web.service").write_bytes(web_unit.read_bytes())
+        (installed_units / "moss-vllm.service").write_bytes(vllm_unit.read_bytes())
+        manifest = tmp_path / "candidate.json"
+        manifest.write_text(
+            json.dumps(
+                {
+                    "schema": "moss-account-candidate.v1",
+                    "activation_state": "staged_inert",
+                    "git_sha": "a" * 40,
+                    "git_tree": "b" * 40,
+                    "uv_lock_sha256": "c" * 64,
+                    "fixtures": FIXTURES,
+                    "installed_record": {
+                        "record_verified": True,
+                        "record_entries_verified": 12,
+                    },
+                    "wheel_record_projection_sha256": "d" * 64,
+                    "dependency_projection": {
+                        "sha256": "e" * 64,
+                        "packages": [
+                            {"name": "aiosqlite", "version": "0.22.1"},
+                        ],
+                    },
+                    "sqlite_runtime": "3.53.4",
+                    "release": str(release),
+                    "release_launcher": str(launcher),
+                    "release_launcher_sha256": hashlib.sha256(
+                        launcher.read_bytes()
+                    ).hexdigest(),
+                    "release_admin_launcher": str(admin_launcher),
+                    "release_admin_launcher_sha256": hashlib.sha256(
+                        admin_launcher.read_bytes()
+                    ).hexdigest(),
+                    "release_cutover_launcher": str(cutover_launcher),
+                    "release_cutover_launcher_sha256": hashlib.sha256(
+                        cutover_launcher.read_bytes()
+                    ).hexdigest(),
+                    "release_vllm_launcher": str(vllm_launcher),
+                    "release_vllm_launcher_sha256": hashlib.sha256(
+                        vllm_launcher.read_bytes()
+                    ).hexdigest(),
+                    "qualification_checkout": str(checkout),
+                    "web_unit_path": str(web_unit),
+                    "web_unit_sha256": hashlib.sha256(web_unit.read_bytes()).hexdigest(),
+                    "vllm_unit_path": str(vllm_unit),
+                    "vllm_unit_sha256": hashlib.sha256(vllm_unit.read_bytes()).hexdigest(),
+                }
+            ),
+            encoding="utf-8",
+        )
+        manifest.chmod(0o600)
+        fixture = tmp_path / "fixture.wav"
+        fixture.write_bytes(b"fixture")
+        descriptor = {
+            "source_revision": "a" * 40,
+            "provider_name": "provider",
+            "provider_revision": "revision",
+            "provider_manifest_hash": "f" * 64,
+            "schema_version": "schema",
+            "live_protocol_version": "protocol",
+            "sample_rate": 16_000,
+            "frame_samples": 8_000,
+            "bounds": {"limit": 4},
+            "config_hashes": {"combined_config_hash": "1" * 64},
+        }
+    
+        class IdentityClient:
+            def json(self, *_: object, **__: object):
+                return {"descriptor": descriptor}, _Response(
+                    200, headers={"X-MOSS-Candidate-SHA": "a" * 40}
+                )
+    
+            def close(self) -> None:
+                pass
+    
+        campaign = _campaign(
+            tmp_path,
+            candidate_manifest=str(manifest),
+            url_fixture=acceptance.QUALIFICATION_URL_FIXTURE,
+            file_fixture=str(fixture),
+            chrome_binary=str(fixture),
+            https_origin="https://moss.example",
+            operator_socket=str(tmp_path / "operator.sock"),
+        )
+        campaign._clients["a"] = IdentityClient()
+        monkeypatch.setattr(Path, "home", lambda: fake_home)
+        def run_identity_command(argv, **kwargs):
+            if tuple(argv[:4]) == ("git", "-C", str(checkout), "rev-parse"):
+                return SimpleNamespace(returncode=0, stdout="a" * 40 + "\n")
+            if tuple(argv[:4]) == ("git", "-C", str(checkout), "status"):
+                return SimpleNamespace(returncode=0, stdout="")
+            return SimpleNamespace(returncode=0, stdout="123\n")
+    
+        monkeypatch.setattr(external.subprocess, "run", run_identity_command)
+        original_readlink = os.readlink
+        monkeypatch.setattr(
+            external.os,
+            "readlink",
+            lambda path: (
+                str(shared_python)
+                if str(path) in {"/proc/123/cwd", "/proc/123/exe"}
+                else original_readlink(path)
+            ),
+        )
+        original_read_bytes = Path.read_bytes
+    
+        def read_bytes(path: Path) -> bytes:
+            if str(path) == "/proc/123/cmdline":
+                return (
+                    str(pointer / "bin/python").encode()
+                    + b"\0-I\0-m\0moss_transcribe_diarize.app.phase2_web_cli\0"
+                )
+            return original_read_bytes(path)
+    
+        monkeypatch.setattr(Path, "read_bytes", read_bytes)
+        monkeypatch.setattr(external, "_file_fixture_identity", lambda path: {"sha256": "2" * 64})
+        monkeypatch.setattr(external, "_toolchain_identity", lambda path: {"chrome": "fixed"})
+        monkeypatch.setattr(external, "_accelerator_identity", lambda pid: {"vllm": "fixed"})
+        monkeypatch.setattr(external, "_tls_identity", lambda origin: {"trusted": True})
+        monkeypatch.setattr(external, "_unit_pid", lambda unit: 456)
+>       identity = campaign.installed_candidate_identity()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_wave1_qualification.py:1680: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.phase2_acceptance_external.FixedAccountCampaign object at 0x11e58ce30>
+
+    def installed_candidate_identity(self) -> dict[str, object]:
+        manifest_path = Path(self._text("candidate_manifest")).expanduser()
+        _mode_600(manifest_path, "candidate manifest")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if (
+            not isinstance(manifest, dict)
+            or manifest.get("schema") != "moss-account-candidate.v1"
+            or manifest.get("activation_state") != "staged_inert"
+        ):
+            raise ExternalMeasurementError("candidate manifest is not an object")
+        try:
+            artifacts = validated_candidate_artifacts(manifest)
+        except (OSError, ValueError) as exc:
+            raise ExternalMeasurementError("candidate artifact identity is invalid") from exc
+        release = artifacts.release
+        launcher = artifacts.launchers["mtd-account-web"]
+        active_pointer = (
+            Path.home() / ".local/share/moss-transcribe-diarize/account-current"
+        )
+        if (
+            not active_pointer.is_symlink()
+            or active_pointer.resolve() != release
+        ):
+>           raise ExternalMeasurementError("running Account release does not match the manifest")
+E           moss_transcribe_diarize.phase2_acceptance_external.ExternalMeasurementError: running Account release does not match the manifest
+
+moss_transcribe_diarize/phase2_acceptance_external.py:673: ExternalMeasurementError
+___ test_frontend_asset_version_is_cached_and_changes_after_deployment_swap ____
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_frontend_asset_version_is0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11e52b2c0>
+
+    def test_frontend_asset_version_is_cached_and_changes_after_deployment_swap(
+        tmp_path: Path, monkeypatch
+    ):
+        asset = tmp_path / 'app.js'
+        asset.write_bytes(b'first build')
+        os.utime(asset, ns=(1_000_000_000, 1_000_000_000))
+        read_count = 0
+        read_bytes = Path.read_bytes
+    
+        def counted_read_bytes(path: Path) -> bytes:
+            nonlocal read_count
+            read_count += 1
+            return read_bytes(path)
+    
+        monkeypatch.setattr(Path, "read_bytes", counted_read_bytes)
+        first = _asset_content_version(asset)
+        assert _asset_content_version(asset) == first
+>       assert read_count == 1
+E       assert 0 == 1
+
+tests/phase2/test_workspace_reachability.py:37: AssertionError
+_________ test_same_workspace_reads_converge_without_acquiring_capture _________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_same_workspace_reads_conv0')
+
+    def test_same_workspace_reads_converge_without_acquiring_capture(tmp_path):
+        app = create_phase2_app(database_path=tmp_path/'moss.sqlite3',
+                                live_runtime_factory=_runtime, live_helper_lease_seconds=30)
+        with TestClient(app, base_url='https://moss.test') as owner:
+            assert owner.post('/api/workspace/bootstrap').status_code == 200
+            created = owner.post('/api/live/sessions', json={'echo_mode': 'speakers'})
+            assert created.status_code == 201
+            ident = created.json()['id']
+            prefix = '/api/live/sessions/' + ident
+            assert owner.post(prefix+'/heartbeat', json=_heartbeat()).status_code == 200
+            for sequence in range(3):
+                for lane in ('system', 'microphone'):
+                    assert owner.post(prefix+'/frames', json=_v2_frame(sequence, lane)).status_code == 200
+            deadline = time.monotonic()+5
+            while time.monotonic() < deadline:
+                before = owner.get(prefix+'/snapshot').json()
+                if before['snapshot']['session']['effective_transcript']:
+                    break
+                time.sleep(.02)
+>           assert before['snapshot']['session']['effective_transcript']
+E           assert []
+
+tests/phase2/test_workspace_reachability.py:68: AssertionError
+_____ test_real_bundle_same_workspace_views_converge_and_remain_read_only ______
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_real_bundle_same_workspac0')
+
+    def test_real_bundle_same_workspace_views_converge_and_remain_read_only(
+        tmp_path: Path,
+    ) -> None:
+        chrome = _chrome()
+        assert (
+            Path(__file__).resolve().parents[2]
+            / "moss_transcribe_diarize/app/frontend_assets/app.js"
+        ).is_file()
+        database = tmp_path / "moss.sqlite3"
+        app = create_phase2_app(
+            database_path=database,
+            live_runtime_factory=_runtime,
+            live_helper_lease_seconds=30,
+        )
+        certificate, private_key = _certificate(tmp_path)
+        server, thread, base_url = _start_server(app, certificate, private_key)
+        controller = None
+        try:
+>           controller, meeting_id = _create_active_meeting(base_url)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_workspace_reachability_browser.py:307: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+base_url = 'https://127.0.0.1:51913'
+
+    def _create_active_meeting(base_url: str) -> tuple[httpx.Client, str]:
+        client = httpx.Client(base_url=base_url, verify=False, follow_redirects=True)
+        response = client.post("/api/workspace/bootstrap")
+        assert response.status_code == 200
+        created = client.post("/api/live/sessions", json={"echo_mode": "speakers"})
+        assert created.status_code == 201
+        meeting_id = created.json()["id"]
+        assert client.post(
+            f"/api/live/sessions/{meeting_id}/heartbeat", json=_heartbeat()
+        ).status_code == 200
+        for sequence in range(3):
+            for lane in ("system", "microphone"):
+                assert client.post(
+                    f"/api/live/sessions/{meeting_id}/frames",
+                    json=_v2_frame(sequence, lane),
+                ).status_code == 200
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            snapshot = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
+            if snapshot["snapshot"]["session"]["effective_transcript"]:
+                return client, meeting_id
+            time.sleep(0.02)
+>       raise AssertionError("Active browser Meeting did not publish its transcript.")
+E       AssertionError: Active browser Meeting did not publish its transcript.
+
+tests/phase2/test_workspace_reachability_browser.py:286: AssertionError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2/test_real_bundle_same_workspac0')
+
+    def test_real_bundle_same_workspace_views_converge_and_remain_read_only(
+        tmp_path: Path,
+    ) -> None:
+        chrome = _chrome()
+        assert (
+            Path(__file__).resolve().parents[2]
+            / "moss_transcribe_diarize/app/frontend_assets/app.js"
+        ).is_file()
+        database = tmp_path / "moss.sqlite3"
+        app = create_phase2_app(
+            database_path=database,
+            live_runtime_factory=_runtime,
+            live_helper_lease_seconds=30,
+        )
+        certificate, private_key = _certificate(tmp_path)
+        server, thread, base_url = _start_server(app, certificate, private_key)
+        controller = None
+        try:
+            controller, meeting_id = _create_active_meeting(base_url)
+            async def unavailable_audio_fixture():
+                store = await Phase2Store.open(database)
+                try:
+                    owner = await store.account_for_session(controller.cookies["__Host-moss_session"])
+                    handle = await store.workspace(owner).create_meeting("file")
+                    await handle.record_audio_unavailable()
+                    await handle.finish("failed")
+                finally:
+                    await store.close()
+    
+            # Active Live audio has no final state yet. Exercise the unavailable label
+            # with a separate terminal meeting that actually has unavailable audio.
+            asyncio.run(unavailable_audio_fixture())
+            measured = asyncio.run(
+                _exercise_two_browsers(
+                    chrome=chrome,
+                    tmp_path=tmp_path,
+                    base_url=base_url,
+                    meeting_id=meeting_id,
+                    credential=controller.cookies["__Host-moss_session"],
+                )
+            )
+            assert measured["distinct_sessions"] is False
+            assert measured["desktop_order"] == ["file", "live", "history", "voiceprints"]
+            assert measured["mobile_order"] == ["file", "live", "history", "voiceprints"]
+            assert measured["desktop_history_visible"] is True
+            assert measured["mobile_history_visible"] is True
+            assert measured["mobile_inner_width"] <= 768
+            assert measured["mobile_screen_width"] == 390
+            assert measured["mobile_media"] is True
+            assert measured["mobile_user_agent"] is True
+            assert measured["viewport_meta"] is True
+            assert measured["audio_unavailable_visible"] is True
+            assert measured["rename_dialog_accessible"] is True
+            assert measured["escape_restored_focus"] is True
+            assert measured["both_observed_words"] is True
+            assert measured["title_converged"] is True
+            assert measured["reload_read_only"] is True
+            assert measured["reattach_stored"] is None
+        finally:
+            if controller is not None:
+                controller.close()
+>           _stop_server(server, thread)
+
+tests/phase2/test_workspace_reachability_browser.py:350: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+server = <uvicorn.server.Server object at 0x11e59e960>
+thread = <Thread(Thread-630 (run), started daemon 6105739264)>
+
+    def _stop_server(server: uvicorn.Server, thread: threading.Thread) -> None:
+        server.should_exit = True
+        thread.join(timeout=8)
+>       assert not thread.is_alive()
+E       assert not True
+E        +  where True = is_alive()
+E        +    where is_alive = <Thread(Thread-630 (run), started daemon 6105739264)>.is_alive
+
+tests/phase2/test_workspace_reachability_browser.py:261: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    asyncio:base_events.py:1833 Task was destroyed but it is pending!
+task: <Task cancelling name='Task-3525' coro=<Connection.run.<locals>.init() running at /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:344> wait_for=<Future finished result=None>>
+ERROR    asyncio:base_events.py:1833 Future exception was never retrieved
+future: <Future finished exception=TargetClosedError('Target page, context or browser has been closed')>
+playwright._impl._errors.TargetClosedError: Target page, context or browser has been closed
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/phase2/test_atomic_cutover.py: 17 warnings
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/moss_transcribe_diarize/phase2_cutover.py:1410: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    source.extractall(extraction)
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:16: DeprecationWarning: 'aifc' is deprecated and slated for removal in Python 3.13
+    import aifc
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:17: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:19: DeprecationWarning: 'sunau' is deprecated and slated for removal in Python 3.13
+    import sunau
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_browser_support.py::test_missing_executable_skips_with_checked_path
+FAILED tests/phase2/test_browser_support.py::test_installed_bundled_executable_is_used
+FAILED tests/phase2/test_browser_workspace.py::test_operator_revocation_uses_workspace_id_without_content_or_credentials
+FAILED tests/phase2/test_candidate_storage.py::test_staging_dry_run_deletes_nothing[True]
+FAILED tests/phase2/test_candidate_storage.py::test_staging_dry_run_deletes_nothing[False]
+FAILED tests/phase2/test_file_mp3_artifact.py::test_post_replace_failure_and_failed_discard_never_commits_unavailable
+FAILED tests/phase2/test_file_mp3_artifact.py::test_size_mismatch_reconciliation_never_marks_surviving_mp3_unavailable[True]
+FAILED tests/phase2/test_file_mp3_artifact.py::test_unobservable_size_mismatch_returns_controlled_503_without_state_change
+FAILED tests/phase2/test_finalization_failure_stop_boundary.py::test_successful_stop_can_be_followed_by_failed_finalization[decode_failed]
+FAILED tests/phase2/test_finalization_failure_stop_boundary.py::test_successful_stop_can_be_followed_by_failed_finalization[finalizer_defect]
+FAILED tests/phase2/test_voiceprint_latency_measurement.py::test_name_latency_is_independent_of_observer_polling_delay
+FAILED tests/phase2/test_wave1_qualification.py::test_real_g0_identity_and_zero_producers_use_fixed_product_observations
+FAILED tests/phase2/test_workspace_reachability.py::test_frontend_asset_version_is_cached_and_changes_after_deployment_swap
+FAILED tests/phase2/test_workspace_reachability.py::test_same_workspace_reads_converge_without_acquiring_capture
+FAILED tests/phase2/test_workspace_reachability_browser.py::test_real_bundle_same_workspace_views_converge_and_remain_read_only
+15 failed, 734 passed, 21 warnings in 146.51s (0:02:26)

@@ -1,0 +1,12 @@
+{
+  "case": "stress_reshare",
+  "first": 620,
+  "last": 634,
+  "count": 15,
+  "exit_code": 0,
+  "adaptations": [
+    "heartbeat every frame",
+    "wait for finalization before next meeting"
+  ],
+  "excluded": []
+}

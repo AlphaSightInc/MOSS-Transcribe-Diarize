@@ -31,6 +31,7 @@ from .live_session import (
     LiveIdentitySnapshot,
     LiveSession,
     PCM16_BYTES_PER_SAMPLE,
+    EffectiveTranscriptSegment,
 )
 from .live_span_bounds import span_segments
 from .live_tape import CompleteMixedTape, CompleteMixedTapeAccounting
@@ -192,6 +193,9 @@ class RefinementDecode:
     request: RollingDecodeRequest
     outcome: InferenceTranscript
     failure: str | None = None
+    lane_segments: tuple[EffectiveTranscriptSegment, ...] | None = None
+    revision_lanes: tuple[str, ...] = ()
+    failed_lanes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -324,6 +328,7 @@ class CoordinatorWorkInput:
     pcm: bytes
     base_snapshot: LiveIdentitySnapshot
     analysis_pcm: bytes | None = None
+    lane_pcm: tuple[tuple[str, bytes], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -359,6 +364,9 @@ class CoordinatorPreparedWork:
     decode_generated_tokens: int | None = None
     empty_reason: str | None = None
     decode_salvage: str | None = None
+    source_lanes: tuple[str, ...] = ()
+    new_speaker_lanes: tuple[tuple[str, str], ...] = ()
+    lane_failures: tuple[tuple[str, str], ...] = ()
 
 
 class LiveCoordinator:
@@ -389,6 +397,12 @@ class LiveCoordinator:
         self.arbiter = arbiter
         self._pcm = _PcmRetention()
         self._analysis_pcm = _PcmRetention()
+        self._lane_pcm: dict[str, _PcmRetention] = {}
+        self.lane_tapes: dict[str, CompleteMixedTape] = {}
+        self._lane_preparers = {}
+        self._stopped_refinement_lanes: set[str] = set()
+        self._lane_speakers: dict[str, set[str]] = {}
+        self._tape_capacity = tape_capacity_bytes
         self._staged_frame: _StagedFrame | None = None
         self._consecutive_unanswered_spans = 0
         self._abstention_count = 0
@@ -425,8 +439,25 @@ class LiveCoordinator:
 
     def _capture_identity_counts(self) -> None:
         # Called only after preparation/finalization, never while the provider mutates.
-        counts = getattr(self.identity_preparer, "identity_counts", None)
-        self._album_counts = None if counts is None else counts()
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+        values = []
+        for preparer in preparers:
+            counts = getattr(preparer, "identity_counts", None)
+            value = None if counts is None else counts()
+            if value is not None:
+                values.append(value)
+        self._album_counts = (
+            {
+                key: (
+                    sum(v[key] for v in values)
+                    if all(v.get(key) is not None for v in values)
+                    else None
+                )
+                for key in {key for value in values for key in value}
+            }
+            if values
+            else None
+        )
 
     def identity_counts(self) -> dict[str, int | None]:
         snapshot = self.session.snapshot()
@@ -477,6 +508,18 @@ class LiveCoordinator:
         ack = self.session.accept_frame(frame)
         self._pcm.append(ack.start_sample, ack.end_sample, frame.pcm)
         self._analysis_pcm.append(ack.start_sample, ack.end_sample, self._analysis_frame(frame).pcm)
+        for lane, pcm in frame.lane_pcm:
+            if dict(frame.lane_silent).get(lane, False):
+                pcm = bytes(len(pcm))
+            self._lane_pcm.setdefault(lane, _PcmRetention()).append(
+                ack.start_sample, ack.end_sample, pcm
+            )
+            if self._tape_capacity is not None:
+                if lane not in self.lane_tapes:
+                    self.lane_tapes[lane] = CompleteMixedTape(
+                        epoch=self.session.epoch, capacity_bytes=self._tape_capacity
+                    )
+                self.lane_tapes[lane].append(start_sample=ack.start_sample, pcm=pcm)
         staged = self._staged_frame
         if staged is not None:
             if staged.frame != frame:
@@ -534,8 +577,14 @@ class LiveCoordinator:
         pcm = self._pcm.extract(span.start_sample, span.end_sample)
         base_snapshot = self.session.snapshot().identity_snapshot
         return CoordinatorWorkInput(
-            span=span, pcm=pcm, base_snapshot=base_snapshot,
+            span=span,
+            pcm=pcm,
+            base_snapshot=base_snapshot,
             analysis_pcm=self._analysis_pcm.extract(span.start_sample, span.end_sample),
+            lane_pcm=tuple(
+                (lane, retained.extract(span.start_sample, span.end_sample))
+                for lane, retained in self._lane_pcm.items()
+            ),
         )
 
     def _canonical_work(self, item: ArbiterWorkItem) -> CanonicalWork:
@@ -554,6 +603,10 @@ class LiveCoordinator:
     ) -> CoordinatorPreparedWork:
         span = work.span
         pcm = work.pcm
+        if work.lane_pcm:
+            from .live_lane_decode import prepare_lanes
+
+            return prepare_lanes(self, work, on_decoded)
         try:
             inferred = self._decode(span, pcm)
         except LiveProviderTransientError as exc:
@@ -614,6 +667,7 @@ class LiveCoordinator:
                 transcript=preparation.relabeled_transcript,
                 identity_preparation=preparation,
                 local_speakers=self._local_speakers(span, work.transcript),
+                source_lanes=work.source_lanes,
             )
             submission = self.session.submit_prepared_canonical(result)
             identity_status = preparation.status
@@ -638,13 +692,26 @@ class LiveCoordinator:
                     end_sample=span.end_sample,
                     transcript=unattributed,
                     local_speakers=self._local_speakers(span, work.transcript),
+                    source_lanes=work.source_lanes,
                 )
         snapshot = self.session.snapshot()
         if submission.submitted:
+            for speaker, lane in work.new_speaker_lanes:
+                self._lane_speakers.setdefault(lane, set()).add(speaker)
             self._abstention_count += int(identity_status == "abstain")
+            for preparer in self._lane_preparers.values():
+                reconcile = getattr(
+                    getattr(preparer, "evidence_provider", None),
+                    "reconcile_committed",
+                    None,
+                )
+                if reconcile is not None:
+                    reconcile(snapshot.identity_snapshot)
             self._capture_identity_counts()
             self._pcm.prune_before(snapshot.committed_samples)
             self._analysis_pcm.prune_before(snapshot.committed_samples)
+            for retained in self._lane_pcm.values():
+                retained.prune_before(snapshot.committed_samples)
         revision = self._publish_identity_revision()
         # A base commit is the event that makes a window ownable: the witness may only revise
         # audio the session has already committed. This is one of the two `observe_base`
@@ -719,7 +786,12 @@ class LiveCoordinator:
         finalize = getattr(self.identity_preparer, "finalize_identity", None)
         if finalize is not None:
             try:
-                finalize(base_snapshot=self.session.snapshot().identity_snapshot)
+                for preparer in tuple(self._lane_preparers.values()) or (
+                    self.identity_preparer,
+                ):
+                    preparer.finalize_identity(
+                        base_snapshot=self.session.snapshot().identity_snapshot
+                    )
                 self._capture_identity_counts()
             except Exception as exc:
                 # Counts and the name only -- a span's words are the meeting, and they are no
@@ -736,12 +808,23 @@ class LiveCoordinator:
         )
 
     def match_observations(self):
-        observations = getattr(self.identity_preparer, "match_observations", None)
-        return () if observations is None else tuple(observations(base_snapshot=self.session.snapshot().identity_snapshot))
+        base = self.session.snapshot().identity_snapshot
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+        return tuple(
+            observation
+            for preparer in preparers
+            if (read := getattr(preparer, "match_observations", None)) is not None
+            for observation in read(base_snapshot=base)
+        )
 
     def journal_observations(self):
-        observations = getattr(self.identity_preparer, "journal_observations", None)
-        return () if observations is None else tuple(observations())
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+        return tuple(
+            observation
+            for preparer in preparers
+            if (read := getattr(preparer, "journal_observations", None)) is not None
+            for observation in read()
+        )
 
     def _publish_identity_revision(self) -> _AppliedRevision:
         """Apply any retrospective correction to the transcript a reader is being shown.
@@ -754,8 +837,19 @@ class LiveCoordinator:
         the current one was refused.
         """
 
-        take = getattr(self.identity_preparer, "take_identity_revision", None)
-        revision = None if take is None else take()
+        from .live_identity_sweep import SweepRevision
+
+        preparers = tuple(self._lane_preparers.values()) or (self.identity_preparer,)
+        revisions = []
+        for preparer in preparers:
+            take = getattr(preparer, "take_identity_revision", None)
+            revision = None if take is None else take()
+            if revision is not None:
+                revisions.append(revision)
+        revision = SweepRevision(
+            corrections=tuple(x for r in revisions for x in r.corrections),
+            merges=tuple(x for r in revisions for x in r.merges),
+        )
         corrections = () if revision is None else revision.corrections
         # An empty revision is passed through rather than skipped: `revise_labels` answers a
         # meeting that has nothing to correct with the version it already has, so the reported
@@ -863,6 +957,10 @@ class LiveCoordinator:
         the first one is publishing correctly.
         """
 
+        if self.lane_tapes:
+            from .live_lane_decode import decode_refinement
+
+            return decode_refinement(self, request)
         if self.rolling_decoder is None:
             raise LiveCoordinatorError("no rolling decoder is configured for this session.")
         span = FrozenSpan(
@@ -906,7 +1004,12 @@ class LiveCoordinator:
         if converger is None:
             raise LiveCoordinatorError("no rolling converger is configured for this session.")
         self.release_refinement(item)
-        proposal = converger.complete(decode.request.id, decode.outcome)
+        proposal = converger.complete(
+            decode.request.id,
+            decode.outcome,
+            segments=decode.lane_segments,
+            revision_lanes=decode.revision_lanes,
+        )
         applied = False
         refusal: str | None = None
         revised_segments = 0
@@ -1026,6 +1129,8 @@ class LiveCoordinator:
         if self.tape is None:
             return None
         self.tape.release()
+        for tape in self.lane_tapes.values():
+            tape.release()
         return self.tape_accounting()
 
     def _rolling_status(self) -> str | None:

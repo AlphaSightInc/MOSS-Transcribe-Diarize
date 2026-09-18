@@ -46,8 +46,10 @@ class AudioFrame:
     pcm: bytes
     sample_count: int
     sample_rate: int = LIVE_SAMPLE_RATE
-    # Internal mixer analysis only; decoder and recording always consume pcm.
+    # Mixed PCM owns recording/accounting; aligned source PCM owns lane decoding.
     analysis_pcm: bytes | None = None
+    lane_pcm: tuple[tuple[str, bytes], ...] = ()
+    lane_silent: tuple[tuple[str, bool], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +108,7 @@ class CanonicalResult:
     # later correction is written to. Empty means "this span is not revisable", which is the
     # honest state for every caller that does not carry the decoder's own transcript.
     local_speakers: tuple[str, ...] = ()
+    source_lanes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -159,6 +162,7 @@ class CanonicalCommit:
     # corrections are a different fact about the same words. A reader is shown this when it
     # is present, and the hash a client verifies is unaffected by every correction.
     revised_transcript: str | None = None
+    source_lanes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -229,6 +233,7 @@ class EffectiveTranscriptSegment:
     text: str
     canonical_speaker: str | None
     authority: str
+    source_lane: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -253,6 +258,7 @@ class TextRevisionProposal:
     normalization_merged_segments: int = 0
     normalization_dropped_segments: int = 0
     normalization_displaced_samples: int = 0
+    revision_lanes: tuple[str, ...] = ()
 
 
 #: Where terminal finalization stands (plan §7.3). `not_started` until a terminal pass begins,
@@ -373,6 +379,7 @@ class LiveSession:
         self._text_revision_version = 0
         self._canonical_through_sample = 0
         self._revision_segments: tuple[EffectiveTranscriptSegment, ...] = ()
+        self._lane_revision_frontiers: dict[str, int] = {}
         self._finalization_status = "not_started"
         self._text_revision_refusals: dict[str, int] = {}
         # Bumped only by the three things that change what a reader is shown -- a published
@@ -505,6 +512,7 @@ class LiveSession:
         end_sample: int,
         transcript: str,
         local_speakers: tuple[str, ...] = (),
+        source_lanes: tuple[str, ...] = (),
     ) -> CanonicalSubmission:
         """Publish a frozen span's words without asserting who spoke them.
 
@@ -553,6 +561,7 @@ class LiveSession:
                 end_sample=span.end_sample,
                 transcript=transcript,
                 local_speakers=local_speakers,
+                source_lanes=source_lanes,
             ),
             identity_snapshot=self._identity_snapshot,
         )
@@ -757,8 +766,17 @@ class LiveSession:
         segments = tuple(proposal.segments)
         if proposal.source == "terminal":
             self._revision_segments = segments
+            if self._lane_revision_frontiers:
+                self._lane_revision_frontiers = {
+                    lane: proposal.end_sample for lane in self._lane_revision_frontiers
+                }
             self._finalization_status = "final"
         else:
+            if proposal.revision_lanes:
+                if not self._lane_revision_frontiers:
+                    self._lane_revision_frontiers = {"system": 0, "microphone": 0}
+                for lane in proposal.revision_lanes:
+                    self._lane_revision_frontiers[lane] = proposal.end_sample
             self._revision_segments = self._revision_segments + segments
         self._canonical_through_sample = int(proposal.end_sample)
         self._text_revision_version += 1
@@ -826,15 +844,36 @@ class LiveSession:
         if proposal.end_sample > self._committed_samples:
             return "beyond_committed_audio"
 
-        previous_end = proposal.start_sample
+        if any(
+            lane not in ("system", "microphone") for lane in proposal.revision_lanes
+        ):
+            return "unknown_source_lane"
+        if proposal.revision_lanes and any(
+            s.source_lane not in proposal.revision_lanes for s in proposal.segments
+        ):
+            return "segment_outside_revision_lanes"
+        previous_ends: dict[str | None, int] = {}
+        previous_key = None
         for segment in proposal.segments:
             if segment.start_sample < proposal.start_sample or segment.end_sample > proposal.end_sample:
                 return "segment_outside_owned_interval"
             if segment.end_sample <= segment.start_sample:
                 return "segment_does_not_advance"
-            if segment.start_sample < previous_end:
+            if segment.source_lane not in (None, "system", "microphone"):
+                return "unknown_source_lane"
+            key = (
+                segment.start_sample,
+                {None: 0, "system": 0, "microphone": 1}[segment.source_lane],
+                segment.end_sample,
+            )
+            if previous_key is not None and key < previous_key:
                 return "segments_out_of_order"
-            previous_end = segment.end_sample
+            if segment.start_sample < previous_ends.get(
+                segment.source_lane, proposal.start_sample
+            ):
+                return "segments_out_of_order"
+            previous_ends[segment.source_lane] = segment.end_sample
+            previous_key = key
         return None
 
     def _text_revision_outcome(
@@ -868,13 +907,18 @@ class LiveSession:
         base = self._base_segments()
         frontier = self._canonical_through_sample
         revised = tuple(
-            segment
-            if segment.canonical_speaker is not None
-            else replace(
-                segment,
-                canonical_speaker=_project_canonical_speaker(
-                    segment.start_sample, segment.end_sample, base
-                ),
+            (
+                segment
+                if segment.canonical_speaker is not None
+                or segment.source_lane is not None
+                else replace(
+                    segment,
+                    canonical_speaker=_project_canonical_speaker(
+                        segment.start_sample,
+                        segment.end_sample,
+                        tuple(s for s in base if s.source_lane == segment.source_lane),
+                    ),
+                )
             )
             for segment in self._revision_segments
         )
@@ -882,8 +926,26 @@ class LiveSession:
         # straddles the frontier belongs to the revision that already owns its first sample,
         # so nothing is published twice. Its tail is not lost -- the next rolling window starts
         # at this frontier and decodes that audio again.
-        suffix = tuple(segment for segment in base if segment.start_sample >= frontier)
-        return revised + suffix
+        suffix = tuple(
+            segment
+            for segment in base
+            if segment.start_sample
+            >= (
+                self._lane_revision_frontiers.get(segment.source_lane, 0)
+                if self._lane_revision_frontiers
+                else frontier
+            )
+        )
+        return tuple(
+            sorted(
+                revised + suffix,
+                key=lambda s: (
+                    s.start_sample,
+                    {None: 0, "system": 0, "microphone": 1}[s.source_lane],
+                    s.end_sample,
+                ),
+            )
+        )
 
     def _base_segments(self) -> tuple[EffectiveTranscriptSegment, ...]:
         """Every committed span's published segments, on the session clock.
@@ -896,7 +958,11 @@ class LiveSession:
         segments: list[EffectiveTranscriptSegment] = []
         for commit in self._committed:
             published = commit.revised_transcript if commit.revised_transcript is not None else commit.transcript
-            for parsed in span_segments(published, sample_count=commit.end_sample - commit.start_sample):
+            for index, parsed in enumerate(
+                span_segments(
+                    published, sample_count=commit.end_sample - commit.start_sample
+                )
+            ):
                 start = commit.start_sample + int(round(parsed.start * LIVE_SAMPLE_RATE))
                 end = commit.start_sample + int(round(parsed.end * LIVE_SAMPLE_RATE))
                 if end <= start or not parsed.text.strip():
@@ -908,6 +974,9 @@ class LiveSession:
                         text=parsed.text,
                         canonical_speaker=self._canonical_speaker_of(parsed.speaker),
                         authority="provisional",
+                        source_lane=(
+                            commit.source_lanes[index] if commit.source_lanes else None
+                        ),
                     )
                 )
         return tuple(segments)
@@ -1122,6 +1191,7 @@ class LiveSession:
             transcript=result.transcript,
             prefix_hash=prefix_hash,
             identity_snapshot_version=identity_snapshot.version,
+            source_lanes=result.source_lanes,
         )
         self._committed.append(commit)
         self._surface_version += 1
@@ -1230,6 +1300,21 @@ def _validate_frame(frame: AudioFrame) -> None:
         or len(frame.analysis_pcm) != len(frame.pcm)
     ):
         raise ValueError("analysis PCM must match the admitted audio extent.")
+    lanes = dict(frame.lane_pcm)
+    if len(lanes) != len(frame.lane_pcm) or (
+        lanes and set(lanes) != {"system", "microphone"}
+    ):
+        raise ValueError("lane PCM must name system and microphone exactly once.")
+    if any(
+        not isinstance(pcm, bytes) or len(pcm) != len(frame.pcm)
+        for pcm in lanes.values()
+    ):
+        raise ValueError("lane PCM must match the admitted audio extent.")
+    silent = dict(frame.lane_silent)
+    if len(silent) != len(frame.lane_silent) or (silent and set(silent) != set(lanes)):
+        raise ValueError("lane silence must name the aligned PCM lanes.")
+    if any(type(value) is not bool for value in silent.values()):
+        raise ValueError("lane silence facts must be boolean.")
     if frame.sample_rate != LIVE_SAMPLE_RATE:
         raise ValueError(f"live audio must be {LIVE_SAMPLE_RATE} Hz PCM.")
     if frame.sample_count <= 0:

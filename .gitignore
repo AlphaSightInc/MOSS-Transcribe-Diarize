@@ -54,6 +54,7 @@ evidence/e2e-*/*.wav
 evidence/e2e-*/*.png
 prototypes/streaming-diarization/identity-floor-a2/results/*.npz
 
+<<<<<<< HEAD
 # Local acceptance measurement scratch (never evidence or model input in git).
 .wp4runtime/
 frontend/.vite-cache/
@@ -61,3 +62,7 @@ evidence/mvpfix/wp4/.pytest*/
 evidence/mvpfix/wp4/.npm-cache/
 
 .wp7runtime/
+=======
+# WP1 isolated prototype runtime state (audio, SQLite, local sockets).
+.wp1/
+>>>>>>> mvpfix/wp1-lane-decode

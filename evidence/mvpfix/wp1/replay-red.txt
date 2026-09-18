@@ -1,0 +1,19 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ ReplayReconstructorRoundTripTest.test_service_snapshot_survives_json_round_trip_field_for_field _
+
+self = <test_live_service_replay.ReplayReconstructorRoundTripTest testMethod=test_service_snapshot_survives_json_round_trip_field_for_field>
+
+    def test_service_snapshot_survives_json_round_trip_field_for_field(self):
+        snapshot = _rich_service_snapshot()
+        _assert_varies_from_defaults(self, snapshot)
+    
+        restored = live_service_replay._snapshot_from_dict(json.loads(json.dumps(snapshot.to_dict())))
+    
+>       self.assertEqual(restored, snapshot)
+E       AssertionError: LiveS[1913 chars]nes=()),), provisional=ProvisionalSuffix(gener[1175 chars]: 3}) != LiveS[1913 chars]nes=('system',)),), provisional=ProvisionalSuf[1196 chars]: 3})
+
+tests/test_live_service_replay.py:856: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_service_replay.py::ReplayReconstructorRoundTripTest::test_service_snapshot_survives_json_round_trip_field_for_field
+1 failed, 23 deselected in 0.39s

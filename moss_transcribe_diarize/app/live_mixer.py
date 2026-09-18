@@ -316,6 +316,23 @@ class LiveCompatibilityMixer:
             sample_count=sample_count,
             sample_rate=LIVE_SAMPLE_RATE,
             analysis_pcm=analysis_pcm,
+            lane_pcm=tuple(
+                (
+                    lane.value,
+                    struct.pack(
+                        "<" + "h" * sample_count,
+                        *(
+                            max(-32768, min(32767, int(x * 32768)))
+                            for x in lane_values[lane]
+                        ),
+                    ),
+                )
+                for lane in (LiveLane.SYSTEM, LiveLane.MICROPHONE)
+            ),
+            lane_silent=tuple(
+                (lane.value, lane_silent[lane] == sample_count)
+                for lane in (LiveLane.SYSTEM, LiveLane.MICROPHONE)
+            ),
         )
         return _StagedMix(frame=frame, diagnostics=diagnostics)
 

@@ -333,7 +333,12 @@ class RollingTranscriptConverger:
     # ---------------------------------------------------------------- decode back
 
     def complete(
-        self, request_id: int, outcome: InferenceTranscript
+        self,
+        request_id: int,
+        outcome: InferenceTranscript,
+        *,
+        segments: tuple[EffectiveTranscriptSegment, ...] | None = None,
+        revision_lanes: tuple[str, ...] = (),
     ) -> TextRevisionProposal | None:
         """Turn one window's decode into the revision it proposes, or refuse it by name.
 
@@ -350,8 +355,11 @@ class RollingTranscriptConverger:
         self._in_flight = None
         self._decoded_audio_samples += request.sample_count
 
-        segments, normalization = self._segments_of(request, outcome)
-        if not segments:
+        if segments is None:
+            segments, normalization = self._segments_of(request, outcome)
+        else:
+            normalization = EMPTY_OVERLAP_RESOLUTION
+        if not segments and not revision_lanes:
             self._windows_failed += 1
             self._end_refinement(RollingStatus.WINDOW_FAILED)
             return None
@@ -364,6 +372,7 @@ class RollingTranscriptConverger:
             start_sample=request.start_sample,
             end_sample=request.end_sample,
             segments=segments,
+            revision_lanes=revision_lanes,
             decode_elapsed_sec=outcome.elapsed_sec,
             normalization_merged_segments=normalization.merged,
             normalization_dropped_segments=normalization.dropped,

@@ -1,0 +1,95 @@
+........................................................................ [  9%]
+........................................................................ [ 19%]
+.....................................F
+=================================== FAILURES ===================================
+__ test_operator_revocation_uses_workspace_id_without_content_or_credentials ___
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/prototypes/lane-decode-proto/scratch/pytest-phase2-first/test_operator_revocation_uses_0')
+
+    def test_operator_revocation_uses_workspace_id_without_content_or_credentials(tmp_path: Path):
+        # The host-local socket is independent of the browser cookie and contains no content.
+        import tempfile
+    
+        with tempfile.TemporaryDirectory(prefix="moss-control-") as socket_root:
+            socket = Path(socket_root) / "control.sock"
+            app = create_phase2_app(database_path=tmp_path / "browser.sqlite3", control_socket_path=socket)
+>           with TestClient(app, base_url="https://moss.test") as client:
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_browser_workspace.py:143: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/testclient.py:697: in __enter__
+    portal.call(self.wait_startup)
+../MOSS-Transcribe-Diarize-wt-production-20260910/.venv/lib/python3.12/site-packages/anyio/from_thread.py:338: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../MOSS-Transcribe-Diarize-wt-production-20260910/.venv/lib/python3.12/site-packages/anyio/from_thread.py:263: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/testclient.py:732: in wait_startup
+    await receive()
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/testclient.py:723: in receive
+    self.task.result()
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py:449: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../MOSS-Transcribe-Diarize-wt-production-20260910/.venv/lib/python3.12/site-packages/anyio/from_thread.py:263: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/testclient.py:713: in lifespan
+    await self.app(scope, self.stream_receive.receive, self.stream_send.send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/applications.py:1163: in __call__
+    await super().__call__(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:151: in __call__
+    await self.app(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/middleware/base.py:103: in __call__
+    await self.app(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:49: in __call__
+    await self.app(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/routing.py:2726: in app
+    await self.lifespan(scope, receive, send)
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/starlette/routing.py:638: in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/contextlib.py:210: in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+moss_transcribe_diarize/app/phase2.py:1764: in lifespan
+    await control_server.start()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <moss_transcribe_diarize.app.phase2_control.Phase2ControlServer object at 0x1104959a0>
+
+    async def start(self) -> None:
+        if len(os.fsencode(self._path)) >= 104:
+>           raise Phase2ControlError("Control socket path is too long for this host.")
+E           moss_transcribe_diarize.app.phase2_control.Phase2ControlError: Control socket path is too long for this host.
+
+moss_transcribe_diarize/app/phase2_control.py:44: Phase2ControlError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/phase2/test_atomic_cutover.py: 17 warnings
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/moss_transcribe_diarize/phase2_cutover.py:1410: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    source.extractall(extraction)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_browser_workspace.py::test_operator_revocation_uses_workspace_id_without_content_or_credentials
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 181 passed, 18 warnings in 44.91s

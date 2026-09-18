@@ -27,7 +27,7 @@ from .live_coordinator import (
 from .live_endpoint import EndpointPolicy, EndpointPolicyError
 from .live_identity import unattributed_transcript
 from .live_lane_contract import LiveV2Descriptor
-from .live_span_bounds import LiveTranscriptDisposition
+from .live_span_bounds import LiveTranscriptDisposition, render_segments, span_segments
 from .live_transcript_convergence import (
     TerminalDecodePlan,
     TerminalFinalization,
@@ -1177,7 +1177,18 @@ class LiveServiceRuntime:
         try:
             with self._lock:
                 snapshot = state.session.snapshot()
-            finalization = self._terminal_finalizer.finalize(
+            from .live_lane_decode import finalize_lanes
+
+            finalizer = (
+                (
+                    lambda **kwargs: finalize_lanes(
+                        state.coordinator, self._terminal_finalizer, **kwargs
+                    )
+                )
+                if state.coordinator.lane_tapes
+                else self._terminal_finalizer.finalize
+            )
+            finalization = finalizer(
                 plan=plan,
                 tape=tape,
                 base_text_revision_version=snapshot.text_revision_version,
@@ -1381,17 +1392,52 @@ class LiveServiceRuntime:
             return
         span = FrozenSpan(stats["ticks"], state.session.epoch, start, end, "draft")
         pcm = state.coordinator._pcm.extract(start, end)
+        lane_pcm = tuple(
+            (lane, buffer.extract(start, end))
+            for lane, buffer in state.coordinator._lane_pcm.items()
+        )
         self._draft_in_flight = True
         stats["started"] += 1
         threading.Thread(
-            target=self._decode_draft, args=(state, span, pcm),
-            name="moss-draft", daemon=True,
+            target=self._decode_draft,
+            args=(state, span, pcm, lane_pcm),
+            name="moss-draft",
+            daemon=True,
         ).start()
 
-    def _decode_draft(self, state: _RuntimeSession, span: FrozenSpan, pcm: bytes) -> None:
+    def _decode_draft(
+        self,
+        state: _RuntimeSession,
+        span: FrozenSpan,
+        pcm: bytes,
+        lane_pcm: tuple[tuple[str, bytes], ...] = (),
+    ) -> None:
         try:
-            result = self._draft_decoder_factory().transcribe_pcm(span=span, pcm=pcm)
-            text = unattributed_transcript(result.transcript, sample_count=span.sample_count)
+            decoder = self._draft_decoder_factory()
+            if lane_pcm:
+                placed = []
+                for index, (_, audio) in enumerate(lane_pcm):
+                    if not any(audio):
+                        continue
+                    try:
+                        result = decoder.transcribe_pcm(span=span, pcm=audio)
+                    except Exception:
+                        with self._lock:
+                            state.draft_stats["errors"] += 1
+                        continue
+                    placed.extend(
+                        (segment.start, index, segment.end, segment)
+                        for segment in span_segments(
+                            result.transcript, sample_count=span.sample_count
+                        )
+                    )
+                placed.sort(key=lambda item: item[:3])
+                text = render_segments((item[3] for item in placed), lambda _: "S00")
+            else:
+                result = decoder.transcribe_pcm(span=span, pcm=pcm)
+                text = unattributed_transcript(
+                    result.transcript, sample_count=span.sample_count
+                )
             with self._lock:
                 snapshot = state.session.snapshot()
                 if (

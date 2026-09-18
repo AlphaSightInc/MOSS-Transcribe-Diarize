@@ -1,0 +1,362 @@
+........................................................................ [  9%]
+........................................................................ [ 19%]
+.........................................................FF............. [ 28%]
+........................................................F............... [ 38%]
+........................................................................ [ 48%]
+........................................................................ [ 57%]
+........................................................................ [ 67%]
+....................F................................................... [ 76%]
+........................................................................ [ 86%]
+........................................................................ [ 96%]
+......F......................                                            [100%]
+=================================== FAILURES ===================================
+__________________ test_staging_dry_run_deletes_nothing[True] __________________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2-2/test_staging_dry_run_deletes_n0')
+flag = True
+
+    @pytest.mark.parametrize("flag", [True, False])
+    def test_staging_dry_run_deletes_nothing(tmp_path, flag):
+        import subprocess
+        share=tmp_path/'.local/share/moss-transcribe-diarize'
+        victim=directory(share/'staging'/'old',2*storage.DAY,now=storage.time.time())
+        result=subprocess.run(['bash','ops/stage-account-candidate.sh'] + (['--dry-run'] if flag else []),
+                              env=dict(os.environ,HOME=str(tmp_path),MOSS_TOOL_DRY_RUN='0' if flag else '1'),capture_output=True,text=True)
+>       assert result.returncode==0 and 'would_remove' in result.stdout
+E       assert (0 == 0 and 'would_remove' in '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n')
+E        +  where 0 = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh', '--dry-run'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').returncode
+E        +  and   '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n' = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh', '--dry-run'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').stdout
+
+tests/phase2/test_candidate_storage.py:150: AssertionError
+_________________ test_staging_dry_run_deletes_nothing[False] __________________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2-2/test_staging_dry_run_deletes_n1')
+flag = False
+
+    @pytest.mark.parametrize("flag", [True, False])
+    def test_staging_dry_run_deletes_nothing(tmp_path, flag):
+        import subprocess
+        share=tmp_path/'.local/share/moss-transcribe-diarize'
+        victim=directory(share/'staging'/'old',2*storage.DAY,now=storage.time.time())
+        result=subprocess.run(['bash','ops/stage-account-candidate.sh'] + (['--dry-run'] if flag else []),
+                              env=dict(os.environ,HOME=str(tmp_path),MOSS_TOOL_DRY_RUN='0' if flag else '1'),capture_output=True,text=True)
+>       assert result.returncode==0 and 'would_remove' in result.stdout
+E       assert (0 == 0 and 'would_remove' in '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n')
+E        +  where 0 = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').returncode
+E        +  and   '{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n' = CompletedProcess(args=['bash', 'ops/stage-account-candidate.sh'], returncode=0, stdout='{"status": "dry_run", "filesystem_free_bytes_delta": 0, "allocated_bytes_reclaimable": 0}\n', stderr='').stdout
+
+tests/phase2/test_candidate_storage.py:150: AssertionError
+__ test_successful_stop_can_be_followed_by_failed_finalization[decode_failed] __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2-2/test_successful_stop_can_be_fo0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10e238ad0>
+failure = 'decode_failed'
+
+    @pytest.mark.parametrize('failure', ['decode_failed', 'no_transcript', 'finalizer_defect'])
+    def test_successful_stop_can_be_followed_by_failed_finalization(tmp_path, monkeypatch, failure):
+        database = tmp_path / 'account.sqlite3'
+        sessions = asyncio.run(fixture.provision(database))
+        app = fixture.make_app(database, terminal_text='')
+        if failure == 'decode_failed':
+            def failed_decode(*args, **kwargs):
+                raise RuntimeError('controlled provider failure')
+            monkeypatch.setattr(fixture.WholeMeetingStub, 'transcribe', failed_decode)
+        with TestClient(app, base_url='https://moss.test') as client:
+            fixture.session(client, sessions['a'])
+            meeting_id = client.post('/api/live/sessions').json()['id']
+            fixture.feed_two_lane_span(client, meeting_id)
+            fixture.wait_snapshot(client, meeting_id, lambda row: row['meeting_transcript_version'] > 0)
+            if failure == 'finalizer_defect':
+                def defect(**kwargs):
+                    raise ZeroDivisionError('controlled finalizer defect')
+                monkeypatch.setattr(app.state.phase2_live.runtime._terminal_finalizer, 'finalize', defect)
+            stopped = client.post(f'/api/live/sessions/{meeting_id}/stop', json={'deadline': 2.0})
+>           assert stopped.status_code == 200
+E           assert 202 == 200
+E            +  where 202 = <Response [202 Accepted]>.status_code
+
+tests/phase2/test_finalization_failure_stop_boundary.py:28: AssertionError
+__________ test_name_latency_is_independent_of_observer_polling_delay __________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2-2/test_name_latency_is_independe0')
+
+    def test_name_latency_is_independent_of_observer_polling_delay(tmp_path):
+        async def run():
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(executable_path=str(require_browser(p)), headless=True)
+                try:
+                    context = await browser.new_context()
+                    page = await context.new_page()
+                    html = '''<div data-auth-state="signed-in" data-boot="ready" data-history-boot="ready">Ready</div>
+                      <section aria-label="Private voiceprints"><button>Voiceprints</button>
+                        <div data-voiceprint-id="saved">E2E Rowan</div></section>
+                      <button onclick="setTimeout(() => {
+                        const label = document.createElement('span');
+                        label.className = 'utt-speaker-label'; label.textContent = 'E2E Rowan';
+                        document.body.append(label);
+                      }, 200)">Start capture</button>'''
+                    await context.route('**/*', lambda route: route.fulfill(status=200, content_type='text/html', body=html))
+                    await page.goto('https://measurement.test/')
+                    class Probe(Harness):
+                        def attach(self, page):
+                            page = super().attach(page)
+                            original_wait = page.wait_for_function
+                            async def late_reader(*args, **kwargs):
+                                await asyncio.sleep(.8)
+                                return await original_wait(*args, **kwargs)
+                            page.wait_for_function = late_reader
+                            return page
+                        async def api(self, path):
+                            return {"body": {"events": []}}
+                        async def setup_live(self):
+                            pass
+                        async def start_live(self, key):
+                            await self.page.get_by_role('button', name='Start capture', exact=True).click()
+                            return 'controlled-meeting'
+                    probe = Probe(SimpleNamespace(output=str(tmp_path), base="https://measurement.test/"))
+                    probe.page = page
+                    probe.context = context
+                    try:
+                        result = await probe.bank()
+                        assert result['ok'] and result['bank_contains_name']
+                        assert .18 <= result['recognition_seconds'] < .5
+                        assert result['measurement'] == 'Start click to visible name DOM mutation'
+                    finally:
+                        await probe.page.close()
+                        probe.network.close()
+                finally:
+                    await browser.close()
+>       asyncio.run(run())
+
+tests/phase2/test_voiceprint_latency_measurement.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/phase2/test_voiceprint_latency_measurement.py:48: in run
+    result = await probe.bank()
+             ^^^^^^^^^^^^^^^^^^
+tests/e2e/verify_workspace.py:444: in bank
+    history=self.page.get_by_role('region',name='Meeting history',exact=True); await history.get_by_role('tab',name='Voiceprints',exact=True).click()
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/async_api/_generated.py:17894: in click
+    await self._impl_obj.click(
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:165: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:593: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x11c464f80>
+cb = <function Channel.send.<locals>.<lambda> at 0x11c460860>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for get_by_role("region", name="Meeting history", exact=True).get_by_role("tab", name="Voiceprints", exact=True)
+
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_____________ test_measurement_directories_use_attempt_owned_root ______________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11c508590>
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/.wp1/pytest-phase2-2/test_measurement_directories_u0')
+
+    def test_measurement_directories_use_attempt_owned_root(monkeypatch, tmp_path):
+        root = tmp_path / 'attempt' / 'measurement-workspaces'
+        root.mkdir(parents=True)
+        monkeypatch.setenv('MOSS_ACCEPTANCE_WORK_ROOT', str(root))
+        original_load = acceptance.load_profile
+        original_mkdtemp = acceptance.tempfile.mkdtemp
+        created = []
+    
+        def load(*args, **kwargs):
+            profile, errors = original_load(*args, **kwargs)
+            profile['measurements'] = {'deployed': {}, 'pre_admission': {}}
+            return profile, errors
+    
+        def mkdtemp(*args, **kwargs):
+            path = original_mkdtemp(*args, **kwargs)
+            created.append(Path(path))
+            return path
+    
+        monkeypatch.setattr(acceptance, 'load_profile', load)
+        monkeypatch.setattr(acceptance.tempfile, 'mkdtemp', mkdtemp)
+        # Refused identity skips external commands but still allocates/cleans both roots.
+        test_driver_verdict_counts_wave_commands_including_unmeasured(
+            monkeypatch, tmp_path, wave=1, expected=14, refused=True)
+        assert len(created) == 2
+>       assert all(path.parent == root and not path.exists() for path in created)
+E       assert False
+E        +  where False = all(<generator object test_measurement_directories_use_attempt_owned_root.<locals>.<genexpr> at 0x11c587030>)
+
+tests/phase2/test_wave1_qualification.py:3791: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{
+  "candidate_sha": "abcdef0111111111111111111111111111111111",
+  "commands": [],
+  "denominators": {
+    "commands_collected": 14,
+    "commands_executed": 0,
+    "commands_failed": 0,
+    "commands_passed": 0,
+    "commands_skipped": 0,
+    "commands_unmeasured": 14,
+    "external_campaigns": {
+      "deployed": {
+        "cross_owner_actions": {
+          "collected": 0,
+          "executed": 0,
+          "failed": 0,
+          "passed": 0,
+          "skipped": 0,
+          "unmeasured": 0
+        },
+        "eight_session_overload": {
+          "collected": 0,
+          "executed": 0,
+          "failed": 0,
+          "passed": 0,
+          "skipped": 0,
+          "unmeasured": 0
+        },
+        "four_session_capacity": {
+          "collected": 0,
+          "executed": 0,
+          "failed": 0,
+          "passed": 0,
+          "skipped": 0,
+          "unmeasured": 0
+        },
+        "quality_sessions": {
+          "collected": 0,
+          "executed": 0,
+          "failed": 0,
+          "passed": 0,
+          "skipped": 0,
+          "unmeasured": 0
+        },
+        "quality_windows": {
+          "collected": 0,
+          "executed": 0,
+          "failed": 0,
+          "passed": 0,
+          "skipped": 0,
+          "unmeasured": 0
+        }
+      },
+      "pre_admission": {
+        "cross_owner_actions": {
+          "collected": 0,
+          "executed": 0,
+          "failed": 0,
+          "passed": 0,
+          "skipped": 0,
+          "unmeasured": 0
+        },
+        "eight_session_overload": {
+          "collected": 0,
+          "executed": 0,
+          "failed": 0,
+          "passed": 0,
+          "skipped": 0,
+          "unmeasured": 0
+        },
+        "four_session_capacity": {
+          "collected": 0,
+          "executed": 0,
+          "failed": 0,
+          "passed": 0,
+          "skipped": 0,
+          "unmeasured": 0
+        },
+        "quality_sessions": {
+          "collected": 0,
+          "executed": 0,
+          "failed": 0,
+          "passed": 0,
+          "skipped": 0,
+          "unmeasured": 0
+        },
+        "quality_windows": {
+          "collected": 0,
+          "executed": 0,
+          "failed": 0,
+          "passed": 0,
+          "skipped": 0,
+          "unmeasured": 0
+        }
+      }
+    },
+    "test_suites": {}
+  },
+  "errors": [
+    "candidate_dirty",
+    "cross_layer_identity_unmeasured",
+    "cutover_rehearsal_unmeasured",
+    "deployed_collector_report_missing",
+    "deployed_evidence_unreadable:FileNotFoundError",
+    "deployed_unmeasured",
+    "pre_admission_collector_report_missing",
+    "pre_admission_evidence_unreadable:FileNotFoundError",
+    "pre_admission_unmeasured"
+  ],
+  "g7": "UNCLAIMED",
+  "qualified": false,
+  "quality_exceptions": [],
+  "schema": "moss-phase2-acceptance.v1",
+  "wave": 1
+}
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/phase2/test_atomic_cutover.py: 17 warnings
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp1-lane-decode/moss_transcribe_diarize/phase2_cutover.py:1410: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    source.extractall(extraction)
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:16: DeprecationWarning: 'aifc' is deprecated and slated for removal in Python 3.13
+    import aifc
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:17: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:19: DeprecationWarning: 'sunau' is deprecated and slated for removal in Python 3.13
+    import sunau
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_candidate_storage.py::test_staging_dry_run_deletes_nothing[True]
+FAILED tests/phase2/test_candidate_storage.py::test_staging_dry_run_deletes_nothing[False]
+FAILED tests/phase2/test_finalization_failure_stop_boundary.py::test_successful_stop_can_be_followed_by_failed_finalization[decode_failed]
+FAILED tests/phase2/test_voiceprint_latency_measurement.py::test_name_latency_is_independent_of_observer_polling_delay
+FAILED tests/phase2/test_wave1_qualification.py::test_measurement_directories_use_attempt_owned_root
+5 failed, 744 passed, 21 warnings in 129.51s (0:02:09)
