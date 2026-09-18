@@ -1,0 +1,179 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run src/components/ControlPanel.earlyShare-prototype.test.tsx
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp27-early-share/frontend
+
+{"step":"descriptor pending","phase":"configuring","status":"Requesting microphone access...","reset":false,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":[],"handlers":0,"chooserCalls":0}
+{"step":"early share rejected","phase":"error","status":"start microphone before display capture","reset":true,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":[],"handlers":0,"chooserCalls":0}
+{"step":"microphone succeeded","phase":"error","status":"preflight_status_lines must be an object","reset":true,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":[],"handlers":0,"chooserCalls":0}
+{"step":"microphone pending","phase":"configuring","status":"Requesting microphone access...","reset":false,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":["running"],"handlers":0,"chooserCalls":0}
+{"step":"early share rejected","phase":"error","status":"start microphone before display capture","reset":true,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":["running"],"handlers":0,"chooserCalls":0}
+{"step":"microphone succeeded","phase":"error","status":"Microphone connected. Share a browser tab, window, or screen with audio.","reset":true,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Connected · quiet","Not connected"],"tracks":[0],"contexts":["running"],"handlers":1,"chooserCalls":0}
+{"step":"descriptor pending","phase":"configuring","status":"Requesting microphone access...","reset":false,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":[],"handlers":0,"chooserCalls":0}
+{"step":"early share rejected","phase":"error","status":"start microphone before display capture","reset":true,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":[],"handlers":0,"chooserCalls":0}
+{"step":"microphone failed","phase":"error","status":"microphone preparation denied","reset":true,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":[],"handlers":0,"chooserCalls":0}
+{"step":"microphone pending","phase":"configuring","status":"Requesting microphone access...","reset":false,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":["running"],"handlers":0,"chooserCalls":0}
+{"step":"early share rejected","phase":"error","status":"start microphone before display capture","reset":true,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":["running"],"handlers":0,"chooserCalls":0}
+{"step":"microphone failed","phase":"error","status":"microphone preparation denied","reset":true,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":["closed"],"handlers":0,"chooserCalls":0}
+{"step":"reset while pending","phase":"idle","status":"Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.","reset":false,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":[],"handlers":0,"chooserCalls":0}
+{"step":"old setup settled","phase":"error","status":"preflight_status_lines must be an object","reset":true,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":[],"handlers":0,"chooserCalls":0}
+{"step":"reset while pending","phase":"idle","status":"Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.","reset":false,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":["closed"],"handlers":0,"chooserCalls":0}
+{"step":"old setup settled","phase":"idle","status":"Microphone connected. Share a browser tab, window, or screen with audio.","reset":false,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Connected · quiet","Not connected"],"tracks":[0],"contexts":["closed","running"],"handlers":1,"chooserCalls":0}
+{"step":"mic receiving","phase":"configuring","status":"Microphone connected. Share a browser tab, window, or screen with audio.","reset":false,"meters":["Microphone level 43%","Shared audio level 0%"],"connected":["Connected · receiving sound","Not connected"],"tracks":[0],"contexts":["running"],"handlers":1,"chooserCalls":0}
+{"step":"share reject","phase":"error","status":"chooser rejected","reset":true,"meters":["Microphone level 43%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[1],"contexts":["closed"],"handlers":0,"chooserCalls":1}
+{"step":"mic receiving","phase":"configuring","status":"Microphone connected. Share a browser tab, window, or screen with audio.","reset":false,"meters":["Microphone level 43%","Shared audio level 0%"],"connected":["Connected · receiving sound","Not connected"],"tracks":[0],"contexts":["running"],"handlers":1,"chooserCalls":0}
+{"step":"share missing","phase":"error","status":"selected display surface supplied no audio track","reset":true,"meters":["Microphone level 43%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[1],"contexts":["closed"],"handlers":0,"chooserCalls":1}
+{"step":"mic denied first","phase":"error","status":"microphone denied","reset":true,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Not connected","Not connected"],"tracks":[],"contexts":["closed"],"handlers":0,"chooserCalls":0}
+{"step":"both attached","phase":"configuring","status":"Shared audio connected. Play sound in the shared tab and speak into the microphone.","reset":false,"meters":["Microphone level 0%","Shared audio level 0%"],"connected":["Connected · quiet","Connected · quiet"],"tracks":[0,0,0],"contexts":["running"],"handlers":2,"chooserCalls":1}
+{"step":"mic sound","phase":"configuring","status":"Shared audio connected. Play sound in the shared tab and speak into the microphone.","reset":false,"meters":["Microphone level 43%","Shared audio level 0%"],"connected":["Connected · receiving sound","Connected · quiet"],"tracks":[0,0,0],"contexts":["running"],"handlers":2,"chooserCalls":1}
+{"step":"both sound","phase":"ready","status":"Both sources are receiving sound. Start capture when ready.","reset":false,"meters":["Microphone level 43%","Shared audio level 83%"],"connected":["Connected · receiving sound","Connected · receiving sound"],"tracks":[0,0,0],"contexts":["running"],"handlers":2,"chooserCalls":1}
+ ❯ src/components/ControlPanel.earlyShare-prototype.test.tsx (10 tests | 9 failed) 92ms
+   × early Share while descriptor pending retains explanation after success 30ms
+   × early Share while microphone pending retains explanation after success 9ms
+   × early Share while descriptor pending retains both failures 7ms
+   × early Share while microphone pending retains both failures 7ms
+   × Reset before pending descriptor resolves cannot revive capture 8ms
+   × Reset before pending microphone resolves cannot revive capture 8ms
+   × admitted Share reject clears meters and explains recovery 6ms
+   × admitted Share missing clears meters and explains recovery 6ms
+   × mic failure before Share removes Share and offers Reset 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/ControlPanel.earlyShare-prototype.test.tsx > early Share while descriptor pending retains explanation after success
+AssertionError: expected 'preflight_status_lines must be an obj…' to contain 'start microphone before display captu…'
+
+Expected: "start microphone before display capture"
+Received: "preflight_status_lines must be an object"
+
+ ❯ src/components/ControlPanel.earlyShare-prototype.test.tsx:152:20
+    150|     ? { ok: true, json: async () => ({ descriptor }) } : new FakeStrea…
+    151|   snapshot("microphone succeeded");
+    152|   expect(status()).toContain("start microphone before display capture"…
+       |                    ^
+    153|   expect(status()).toContain("Shared audio");
+    154|   expect(status()).toContain("Reset capture");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  src/components/ControlPanel.earlyShare-prototype.test.tsx > early Share while microphone pending retains explanation after success
+AssertionError: expected 'Microphone connected. Share a browser…' to contain 'start microphone before display captu…'
+
+Expected: "start microphone before display capture"
+Received: "Microphone connected. Share a browser tab, window, or screen with audio."
+
+ ❯ src/components/ControlPanel.earlyShare-prototype.test.tsx:152:20
+    150|     ? { ok: true, json: async () => ({ descriptor }) } : new FakeStrea…
+    151|   snapshot("microphone succeeded");
+    152|   expect(status()).toContain("start microphone before display capture"…
+       |                    ^
+    153|   expect(status()).toContain("Shared audio");
+    154|   expect(status()).toContain("Reset capture");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  src/components/ControlPanel.earlyShare-prototype.test.tsx > early Share while descriptor pending retains both failures
+ FAIL  src/components/ControlPanel.earlyShare-prototype.test.tsx > early Share while microphone pending retains both failures
+AssertionError: expected 'microphone preparation denied' to contain 'start microphone before display captu…'
+
+Expected: "start microphone before display capture"
+Received: "microphone preparation denied"
+
+ ❯ src/components/ControlPanel.earlyShare-prototype.test.tsx:166:20
+    164|   await click("Share audio"); snapshot("early share rejected");
+    165|   await settle(() => gate.reject(new Error("microphone preparation den…
+    166|   expect(status()).toContain("start microphone before display capture"…
+       |                    ^
+    167|   expect(status()).toContain("microphone preparation denied");
+    168|   expect(status()).toContain("Microphone"); expect(status()).toContain…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+ FAIL  src/components/ControlPanel.earlyShare-prototype.test.tsx > Reset before pending descriptor resolves cannot revive capture
+AssertionError: expected 'error' to be 'idle' // Object.is equality
+
+Expected: "idle"
+Received: "error"
+
+ ❯ src/components/ControlPanel.earlyShare-prototype.test.tsx:180:19
+    178|   await settle(() => gate.resolve(pending === "descriptor"
+    179|     ? { ok: true, json: async () => ({ descriptor }) } : new FakeStrea…
+    180|   expect(phase()).toBe("idle");
+       |                   ^
+    181|   expect(status()).toContain("Live capture requires both");
+    182|   expect(contexts.every(c => c.state === "closed")).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  src/components/ControlPanel.earlyShare-prototype.test.tsx > Reset before pending microphone resolves cannot revive capture
+AssertionError: expected 'Microphone connected. Share a browser…' to contain 'Live capture requires both'
+
+Expected: "Live capture requires both"
+Received: "Microphone connected. Share a browser tab, window, or screen with audio."
+
+ ❯ src/components/ControlPanel.earlyShare-prototype.test.tsx:181:20
+    179|     ? { ok: true, json: async () => ({ descriptor }) } : new FakeStrea…
+    180|   expect(phase()).toBe("idle");
+    181|   expect(status()).toContain("Live capture requires both");
+       |                    ^
+    182|   expect(contexts.every(c => c.state === "closed")).toBe(true);
+    183|   expect(streams.every(s => s.getTracks().every(t => t.stop.mock.calls…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  src/components/ControlPanel.earlyShare-prototype.test.tsx > admitted Share reject clears meters and explains recovery
+AssertionError: expected 'chooser rejected' to contain 'Shared audio'
+
+Expected: "Shared audio"
+Received: "chooser rejected"
+
+ ❯ src/components/ControlPanel.earlyShare-prototype.test.tsx:189:20
+    187|   await click("Enable microphone"); await settle(() => feed("microphon…
+    188|   displayMode = mode; await click("Share audio"); snapshot(`share ${mo…
+    189|   expect(status()).toContain("Shared audio"); expect(status()).toConta…
+       |                    ^
+    190|   expect(status()).toContain(mode === "reject" ? "chooser rejected" : …
+    191|   expect(root.querySelector('[aria-label="Microphone level 0%"]')).toB…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  src/components/ControlPanel.earlyShare-prototype.test.tsx > admitted Share missing clears meters and explains recovery
+AssertionError: expected 'selected display surface supplied no …' to contain 'Shared audio'
+
+Expected: "Shared audio"
+Received: "selected display surface supplied no audio track"
+
+ ❯ src/components/ControlPanel.earlyShare-prototype.test.tsx:189:20
+    187|   await click("Enable microphone"); await settle(() => feed("microphon…
+    188|   displayMode = mode; await click("Share audio"); snapshot(`share ${mo…
+    189|   expect(status()).toContain("Shared audio"); expect(status()).toConta…
+       |                    ^
+    190|   expect(status()).toContain(mode === "reject" ? "chooser rejected" : …
+    191|   expect(root.querySelector('[aria-label="Microphone level 0%"]')).toB…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  src/components/ControlPanel.earlyShare-prototype.test.tsx > mic failure before Share removes Share and offers Reset
+AssertionError: expected 'microphone denied' to contain 'Microphone'
+
+Expected: "Microphone"
+Received: "microphone denied"
+
+ ❯ src/components/ControlPanel.earlyShare-prototype.test.tsx:198:20
+    196|   denyMicrophone = true; await click("Enable microphone"); snapshot("m…
+    197|   expect(button("Share audio")).toBeUndefined();
+    198|   expect(status()).toContain("Microphone"); expect(status()).toContain…
+       |                    ^
+    199|   expect(status()).toContain("Reset capture"); await assertReset();
+    200| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  9 failed | 1 passed (10)
+   Start at  03:46:35
+   Duration  543ms (transform 63ms, setup 0ms, import 80ms, tests 92ms, environment 264ms)
+
