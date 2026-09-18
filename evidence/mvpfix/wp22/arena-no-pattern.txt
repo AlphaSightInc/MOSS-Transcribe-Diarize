@@ -1,0 +1,20 @@
+{"action": "loaded", "arena": "no-pattern", "rss_bytes": 265912320}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 469647360, "cycle": 0, "seconds": 2.5, "elapsed": 0.9164075409935322}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 616955904, "cycle": 0, "seconds": 10, "elapsed": 1.5752401670033578}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 617971712, "cycle": 0, "seconds": 2.5, "elapsed": 0.39550408300419804}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 983580672, "cycle": 0, "seconds": 30, "elapsed": 4.767947084008483}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 983924736, "cycle": 0, "seconds": 2.5, "elapsed": 0.38768070799415}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 991051776, "cycle": 0, "seconds": 10, "elapsed": 1.6041148749936838}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 991068160, "cycle": 1, "seconds": 2.5, "elapsed": 0.39428554200276267}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 991281152, "cycle": 1, "seconds": 10, "elapsed": 1.6036086660024012}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 991363072, "cycle": 1, "seconds": 2.5, "elapsed": 0.39389570799539797}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 992280576, "cycle": 1, "seconds": 30, "elapsed": 4.781670500000473}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 992559104, "cycle": 1, "seconds": 2.5, "elapsed": 0.3938919999927748}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 995082240, "cycle": 1, "seconds": 10, "elapsed": 1.5752696249983273}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 995098624, "cycle": 2, "seconds": 2.5, "elapsed": 0.3828988750028657}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 995115008, "cycle": 2, "seconds": 10, "elapsed": 1.5678656669915654}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 995115008, "cycle": 2, "seconds": 2.5, "elapsed": 0.395003124998766}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 995131392, "cycle": 2, "seconds": 30, "elapsed": 4.788000832995749}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 995311616, "cycle": 2, "seconds": 2.5, "elapsed": 0.392280625004787}
+{"action": "embedded", "arena": "no-pattern", "rss_bytes": 995328000, "cycle": 2, "seconds": 10, "elapsed": 1.5784177920140792}
+{"action": "session_destroyed", "arena": "no-pattern", "rss_bytes": 995377152}

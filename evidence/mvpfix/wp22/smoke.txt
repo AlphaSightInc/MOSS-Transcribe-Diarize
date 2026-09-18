@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp22-memory-longrun/prototypes/streaming-diarization/memory-longrun/profile.py", line 134, in <module>
+    if __name__=='__main__': main()
+                             ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp22-memory-longrun/prototypes/streaming-diarization/memory-longrun/profile.py", line 84, in main
+    config=bundle.LiveProviderBundleConfig.from_path(Path.home()/'.local/share/moss-transcribe-diarize/live/live-provider-manifest.json')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: type object 'LiveProviderBundleConfig' has no attribute 'from_path'

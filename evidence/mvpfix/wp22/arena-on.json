@@ -1,0 +1,156 @@
+[
+  {
+    "action": "loaded",
+    "arena": "on",
+    "rss_bytes": 264044544
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 466223104,
+    "cycle": 0,
+    "seconds": 2.5,
+    "elapsed": 0.9281294170068577
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 617136128,
+    "cycle": 0,
+    "seconds": 10,
+    "elapsed": 1.5561594999890076
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 617398272,
+    "cycle": 0,
+    "seconds": 2.5,
+    "elapsed": 0.39056133400299586
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 985858048,
+    "cycle": 0,
+    "seconds": 30,
+    "elapsed": 4.794992750001256
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 987512832,
+    "cycle": 0,
+    "seconds": 2.5,
+    "elapsed": 0.38635625000461005
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 994050048,
+    "cycle": 0,
+    "seconds": 10,
+    "elapsed": 1.6064449590048753
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 994050048,
+    "cycle": 1,
+    "seconds": 2.5,
+    "elapsed": 0.3954911250039004
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 998653952,
+    "cycle": 1,
+    "seconds": 10,
+    "elapsed": 1.590245875006076
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 998653952,
+    "cycle": 1,
+    "seconds": 2.5,
+    "elapsed": 0.3929681660083588
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 1445511168,
+    "cycle": 1,
+    "seconds": 30,
+    "elapsed": 4.768692874989938
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 1445527552,
+    "cycle": 1,
+    "seconds": 2.5,
+    "elapsed": 0.3933863749989541
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 1448525824,
+    "cycle": 1,
+    "seconds": 10,
+    "elapsed": 1.598493375000544
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 1448542208,
+    "cycle": 2,
+    "seconds": 2.5,
+    "elapsed": 0.39939720899565145
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 1450688512,
+    "cycle": 2,
+    "seconds": 10,
+    "elapsed": 1.6388905000058003
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 1451032576,
+    "cycle": 2,
+    "seconds": 2.5,
+    "elapsed": 0.41329079199931584
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 1451048960,
+    "cycle": 2,
+    "seconds": 30,
+    "elapsed": 4.8167845829884754
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 1451065344,
+    "cycle": 2,
+    "seconds": 2.5,
+    "elapsed": 0.3979751659935573
+  },
+  {
+    "action": "embedded",
+    "arena": "on",
+    "rss_bytes": 1451081728,
+    "cycle": 2,
+    "seconds": 10,
+    "elapsed": 1.5928227090043947
+  },
+  {
+    "action": "session_destroyed",
+    "arena": "on",
+    "rss_bytes": 1451147264
+  }
+]

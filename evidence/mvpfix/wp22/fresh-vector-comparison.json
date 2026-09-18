@@ -1,0 +1,14 @@
+{
+  "constructor": "production; no options override",
+  "vectors": 80,
+  "baseline_vectors": 80,
+  "exact_vectors": 80,
+  "numpy_array_equal": true,
+  "max_absolute_difference": 0.0,
+  "rss_loaded_bytes": 258572288,
+  "rss_last_embedded_bytes": 664633344,
+  "rss_max_sampled_bytes": 666845184,
+  "rss_session_destroyed_bytes": 664682496,
+  "total_inference_seconds": 63.3058349560597,
+  "embedded_calls": 80
+}

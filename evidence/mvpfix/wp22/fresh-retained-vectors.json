@@ -1,0 +1,26 @@
+{
+  "retained_vectors_exact": 98,
+  "total_vectors": 98,
+  "cases": [
+    {
+      "case": "long_segments",
+      "vectors": 18,
+      "shape": [
+        18,
+        256
+      ],
+      "numpy_array_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    {
+      "case": "varying",
+      "vectors": 80,
+      "shape": [
+        80,
+        256
+      ],
+      "numpy_array_equal": true,
+      "max_absolute_difference": 0.0
+    }
+  ]
+}

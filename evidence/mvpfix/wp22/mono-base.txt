@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp22-memory-longrun/.wp22/base/../../prototypes/streaming-diarization/memory-longrun/profile.py", line 135, in <module>
+    if __name__=='__main__': main()
+                             ^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp22-memory-longrun/.wp22/base/../../prototypes/streaming-diarization/memory-longrun/profile.py", line 95, in main
+    sid=runtime.create().session_id;source=LiveV2Session(max_retained_samples=desc.bounds.max_retained_samples)
+        ^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp22-memory-longrun/.wp22/base/moss_transcribe_diarize/app/live_service_runtime.py", line 674, in create
+    decoder=self._decoder_factory(),
+            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp22-memory-longrun/.wp22/base/../../prototypes/streaming-diarization/memory-longrun/profile.py", line 94, in <lambda>
+    runtime=LiveServiceRuntime(descriptor=desc,endpoint_policy_factory=lambda:bundle.EndpointPolicy(bundle._endpoint_config(config.endpoint_config)),speech_provider_factory=lambda:bundle._speech_provider(config),decoder_factory=lambda:bundle.bounded_live_inference(runner,max_samples=config.decoder_config['max_samples']),rolling_decoder_factory=lambda:bundle.bounded_live_inference(runner,max_samples=bundle.DEFAULT_ROLLING_GEOMETRY.window_samples),identity_preparer_factory=lambda:bundle._identity_preparer(config,encoder=encoder),terminal_finalizer=TerminalTranscriptFinalizer(runner=runner),_canonical_scheduler=pump,_terminal_scheduler=terminal)
+                                                                                                                                                                                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'moss_transcribe_diarize.app.live_provider_bundle' has no attribute 'bounded_live_inference'

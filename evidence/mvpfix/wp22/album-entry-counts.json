@@ -1,0 +1,17 @@
+[
+  {
+    "seconds": 300,
+    "system": 15,
+    "microphone": 20
+  },
+  {
+    "seconds": 900,
+    "system": 20,
+    "microphone": 20
+  },
+  {
+    "seconds": 1800,
+    "system": 20,
+    "microphone": 20
+  }
+]

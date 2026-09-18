@@ -226,6 +226,7 @@ def test_onnx_embedder_forces_cpu_session_threads_and_feeds_fbank_features(tmp_p
     class SessionOptions:
         inter_op_num_threads = 0
         intra_op_num_threads = 0
+        enable_mem_pattern = True
 
     class FakeValueInfo:
         def __init__(self, name, shape):
@@ -236,6 +237,7 @@ def test_onnx_embedder_forces_cpu_session_threads_and_feeds_fbank_features(tmp_p
         def __init__(self, path, *, sess_options, providers):
             calls["path"] = path
             calls["providers"] = providers
+            calls["memory_patterns"] = sess_options.enable_mem_pattern
             calls["threads"] = (sess_options.inter_op_num_threads, sess_options.intra_op_num_threads)
 
         def get_providers(self):
@@ -274,6 +276,7 @@ def test_onnx_embedder_forces_cpu_session_threads_and_feeds_fbank_features(tmp_p
         "path": str(state),
         "providers": ["CPUExecutionProvider"],
         "threads": (1, 1),
+        "memory_patterns": False,
         "outputs": ["embs"],
         "input_name": ["feats"],
         "feature_shape": (1, 12, 80),

@@ -610,6 +610,18 @@ No production endpoint/policy change promoted. The standing bench retains the
 failed hypothesis, 24/48 s controls, exact stage counts, and limitations in
 `evidence/mvpfix/wp20/NOTES.md`; lane-local scheduler timing remains unmeasured.
 
+### WP22 measurement — 2026-09-18: variable-length encoder memory
+
+The pinned CPU speaker encoder now disables ONNX memory-pattern caching. Holding
+model, features, input audio and intervals fixed, 18 alternating 2.5/10/30-second
+probes fell from 1,384 to 949 MiB retained RSS; 80 variable-length probes fell from
+831 to 634 MiB. All 98 vectors were bit-for-bit equal across the selected arms;
+total inference time was 28.061/27.894 s and 64.774/64.624 s respectively. Disabling
+the CPU arena or requesting arena shrinkage did not improve retention and were
+rejected. This changes allocation reuse only; identity/tape/queue values stay fixed.
+These are local memory measurements, not ASR accuracy or durability acceptance.
+Evidence and full-session ownership accounting:
+`prototypes/streaming-diarization/memory-longrun/NOTES.md`, `evidence/mvpfix/wp22/`.
 ### WP19: file-window album composition (2026-09-18)
 
 WP18 falsified pairwise occurrence matching: repeated observations of one voice
