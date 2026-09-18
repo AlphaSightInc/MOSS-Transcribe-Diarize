@@ -3,7 +3,7 @@ import os, sys, time, json, threading, runpy
 from pathlib import Path
 ROOT=Path.cwd()
 ARM=os.environ.get('WP12_ARM','lane')
-source_root={'mono':ROOT/'.wp12','mono-traced':ROOT/'.wp12','serial':ROOT/'.wp12/base-b316','serial-traced':ROOT/'.wp12/base-b316'}.get(ARM,ROOT)
+source_root={'mono':ROOT/'.wp12','mono-traced':ROOT/'.wp12','mono180-traced':ROOT/'.wp12','serial':ROOT/'.wp12/base-b316','serial-traced':ROOT/'.wp12/base-b316'}.get(ARM,ROOT)
 if ARM.startswith('overlap-shadow'):
     source_root=ROOT/'.wp12/base-acoustic'  # Frozen 60b3b584 control after absorption.
 sys.path.insert(0,str(source_root))
@@ -54,13 +54,26 @@ async def measured_drain(self,*args,**kwargs):
     try:return await drain(self,*args,**kwargs)
     finally:emit('drain_end',start=start,seconds=time.monotonic()-start)
 LiveServiceRuntime._wait_for_drain=measured_drain
+publish=LiveServiceRuntime._publish_terminal_locked
+def measured_publish(self,*args,**kwargs):
+    start=time.monotonic();emit('publication_start')
+    try:return publish(self,*args,**kwargs)
+    finally:emit('publication_end',start=start,seconds=time.monotonic()-start)
+LiveServiceRuntime._publish_terminal_locked=measured_publish
 from moss_transcribe_diarize.app.live_transcript_convergence import TerminalTranscriptFinalizer
+import moss_transcribe_diarize.app.live_transcript_convergence as convergence
+speaker_mapping=convergence.terminal_speaker_mapping
+def measured_mapping(*args,**kwargs):
+    start=time.monotonic()
+    try:return speaker_mapping(*args,**kwargs)
+    finally:emit('terminal_mapping',start=start,seconds=time.monotonic()-start,thread=threading.current_thread().name)
+convergence.terminal_speaker_mapping=measured_mapping
 terminal=TerminalTranscriptFinalizer.finalize
 def finalize(self,**k):
     start=time.monotonic();emit('terminal_start',samples=k['plan'].end_sample,speakers=list(k['canonical_speakers']))
     try:
         result=terminal(self,**k)
-        emit('terminal_end',start=start,seconds=time.monotonic()-start,accounting=result.accounting.to_dict())
+        emit('terminal_end',start=start,seconds=time.monotonic()-start,accounting=result.accounting.to_dict(),thread=threading.current_thread().name)
         return result
     except Exception as e:emit('terminal_error',error=type(e).__name__);raise
 TerminalTranscriptFinalizer.finalize=finalize

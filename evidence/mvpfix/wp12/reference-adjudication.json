@@ -1,0 +1,1603 @@
+{
+  "verdict": "SECOND_VOICE_CONFIRMED_STOP_ACCEPTANCE",
+  "reference": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/reference.jsonl",
+  "source_arm": "overlap-shadow-p180-clean",
+  "source_lane": "system",
+  "method": "Manual word-to-reference-row adjudication; raw time overlaps retained separately. No audio re-listening or word-level reference timestamps claimed.",
+  "conclusion": "All 54 restored assignments agree with reference voices: 50 Bill Ackman, 4 Lex Fridman. speaker-0004 is legitimate. Two later Lex turns remain unassigned; candidate not accepted under the user stop condition.",
+  "changed_segments": 54,
+  "changed_words": 575,
+  "changed_reference_labels": {
+    "Bill Ackman": 50,
+    "Lex Fridman": 4
+  },
+  "unchanged_unassigned_words": 16,
+  "segments": [
+    {
+      "system_segment_index": 0,
+      "start_seconds": 0.54,
+      "end_seconds": 3.27,
+      "changed": true,
+      "words": 15,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 2.73
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 1,
+      "start_seconds": 4.08,
+      "end_seconds": 8.88,
+      "changed": true,
+      "words": 18,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.8
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 2,
+      "start_seconds": 8.88,
+      "end_seconds": 9.54,
+      "changed": true,
+      "words": 1,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.66
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 3,
+      "start_seconds": 9.54,
+      "end_seconds": 15.33,
+      "changed": true,
+      "words": 15,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 5.79
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 4,
+      "start_seconds": 15.33,
+      "end_seconds": 19.38,
+      "changed": true,
+      "words": 17,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.05
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 5,
+      "start_seconds": 19.68,
+      "end_seconds": 21.12,
+      "changed": true,
+      "words": 10,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 1.44
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 6,
+      "start_seconds": 21.36,
+      "end_seconds": 25.5,
+      "changed": true,
+      "words": 17,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.14
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 7,
+      "start_seconds": 25.5,
+      "end_seconds": 27.81,
+      "changed": true,
+      "words": 11,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 2.31
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 8,
+      "start_seconds": 28.02,
+      "end_seconds": 29.25,
+      "changed": true,
+      "words": 10,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.98
+        },
+        {
+          "loop": 0,
+          "reference_row": 2,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.25
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 9,
+      "start_seconds": 29.61,
+      "end_seconds": 33.75,
+      "changed": true,
+      "words": 14,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0004",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 2,
+          "label": "Lex Fridman",
+          "overlap_seconds": 3.39
+        },
+        {
+          "loop": 0,
+          "reference_row": 3,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.75
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 2
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Lex Fridman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 10,
+      "start_seconds": 33.87,
+      "end_seconds": 40.08,
+      "changed": true,
+      "words": 13,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 3,
+          "label": "Bill Ackman",
+          "overlap_seconds": 6.13
+        },
+        {
+          "loop": 0,
+          "reference_row": 4,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.08
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 3
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 11,
+      "start_seconds": 40.11,
+      "end_seconds": 40.44,
+      "changed": true,
+      "words": 2,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 4,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.33
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 3
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 12,
+      "start_seconds": 40.68,
+      "end_seconds": 41.4,
+      "changed": true,
+      "words": 2,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0004",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 4,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.72
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 4
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Lex Fridman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 13,
+      "start_seconds": 42.18,
+      "end_seconds": 46.71,
+      "changed": true,
+      "words": 14,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.53
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 14,
+      "start_seconds": 46.74,
+      "end_seconds": 55.08,
+      "changed": true,
+      "words": 18,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 8.34
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 15,
+      "start_seconds": 55.08,
+      "end_seconds": 58.29,
+      "changed": true,
+      "words": 7,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 3.21
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 16,
+      "start_seconds": 58.29,
+      "end_seconds": 59.37,
+      "changed": true,
+      "words": 8,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 1.08
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 17,
+      "start_seconds": 59.37,
+      "end_seconds": 62.79,
+      "changed": true,
+      "words": 18,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 0,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.63
+        },
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 2.79
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 0,
+          "reference_row": 5
+        },
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 18,
+      "start_seconds": 62.79,
+      "end_seconds": 63.24,
+      "changed": true,
+      "words": 2,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.45
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 19,
+      "start_seconds": 64.05,
+      "end_seconds": 68.45,
+      "changed": true,
+      "words": 15,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.4
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 20,
+      "start_seconds": 68.45,
+      "end_seconds": 69.33,
+      "changed": true,
+      "words": 4,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.88
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 21,
+      "start_seconds": 69.54,
+      "end_seconds": 74.67,
+      "changed": true,
+      "words": 13,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 5.13
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 22,
+      "start_seconds": 74.67,
+      "end_seconds": 75.18,
+      "changed": true,
+      "words": 2,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.51
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 23,
+      "start_seconds": 75.33,
+      "end_seconds": 79.38,
+      "changed": true,
+      "words": 17,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.05
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 24,
+      "start_seconds": 79.68,
+      "end_seconds": 81.09,
+      "changed": true,
+      "words": 10,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 1.41
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 25,
+      "start_seconds": 81.36,
+      "end_seconds": 85.41,
+      "changed": true,
+      "words": 16,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.05
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 26,
+      "start_seconds": 85.41,
+      "end_seconds": 87.81,
+      "changed": true,
+      "words": 12,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 2.4
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 27,
+      "start_seconds": 88.02,
+      "end_seconds": 89.25,
+      "changed": true,
+      "words": 10,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.98
+        },
+        {
+          "loop": 1,
+          "reference_row": 2,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.25
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 28,
+      "start_seconds": 89.61,
+      "end_seconds": 93.75,
+      "changed": true,
+      "words": 14,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0004",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 2,
+          "label": "Lex Fridman",
+          "overlap_seconds": 3.39
+        },
+        {
+          "loop": 1,
+          "reference_row": 3,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.75
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 2
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Lex Fridman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 29,
+      "start_seconds": 93.87,
+      "end_seconds": 100.08,
+      "changed": true,
+      "words": 13,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 3,
+          "label": "Bill Ackman",
+          "overlap_seconds": 6.13
+        },
+        {
+          "loop": 1,
+          "reference_row": 4,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.08
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 3
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 30,
+      "start_seconds": 100.11,
+      "end_seconds": 100.44,
+      "changed": true,
+      "words": 2,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 4,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.33
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 3
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 31,
+      "start_seconds": 100.68,
+      "end_seconds": 101.4,
+      "changed": true,
+      "words": 2,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0004",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 4,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.72
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 4
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Lex Fridman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 32,
+      "start_seconds": 102.18,
+      "end_seconds": 106.71,
+      "changed": true,
+      "words": 14,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.53
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 33,
+      "start_seconds": 106.74,
+      "end_seconds": 115.08,
+      "changed": true,
+      "words": 18,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 8.34
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 34,
+      "start_seconds": 115.08,
+      "end_seconds": 118.29,
+      "changed": true,
+      "words": 7,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 3.21
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 35,
+      "start_seconds": 118.29,
+      "end_seconds": 119.37,
+      "changed": true,
+      "words": 8,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 1.08
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 36,
+      "start_seconds": 119.37,
+      "end_seconds": 122.79,
+      "changed": true,
+      "words": 18,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 1,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.63
+        },
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 2.79
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 1,
+          "reference_row": 5
+        },
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 37,
+      "start_seconds": 122.79,
+      "end_seconds": 123.24,
+      "changed": true,
+      "words": 2,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.45
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 38,
+      "start_seconds": 124.05,
+      "end_seconds": 128.46,
+      "changed": true,
+      "words": 15,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.41
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 39,
+      "start_seconds": 128.46,
+      "end_seconds": 129.33,
+      "changed": true,
+      "words": 4,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.87
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 40,
+      "start_seconds": 129.54,
+      "end_seconds": 134.66,
+      "changed": true,
+      "words": 13,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 5.12
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 41,
+      "start_seconds": 134.66,
+      "end_seconds": 135.18,
+      "changed": true,
+      "words": 2,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.52
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 42,
+      "start_seconds": 135.27,
+      "end_seconds": 139.38,
+      "changed": true,
+      "words": 17,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.11
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 43,
+      "start_seconds": 139.68,
+      "end_seconds": 141.12,
+      "changed": true,
+      "words": 10,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 1.44
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 44,
+      "start_seconds": 141.36,
+      "end_seconds": 145.5,
+      "changed": true,
+      "words": 17,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.14
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 45,
+      "start_seconds": 145.5,
+      "end_seconds": 147.81,
+      "changed": true,
+      "words": 11,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 2.31
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 46,
+      "start_seconds": 148.02,
+      "end_seconds": 149.25,
+      "changed": true,
+      "words": 10,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 1,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.98
+        },
+        {
+          "loop": 2,
+          "reference_row": 2,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.25
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 1
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 47,
+      "start_seconds": 149.61,
+      "end_seconds": 153.75,
+      "changed": false,
+      "words": 14,
+      "acoustic_speaker": null,
+      "overlap_speaker": null,
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 2,
+          "label": "Lex Fridman",
+          "overlap_seconds": 3.39
+        },
+        {
+          "loop": 2,
+          "reference_row": 3,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.75
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 2
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Lex Fridman"
+      ],
+      "reference_agrees_with_overlap": null
+    },
+    {
+      "system_segment_index": 48,
+      "start_seconds": 153.86,
+      "end_seconds": 160.08,
+      "changed": true,
+      "words": 13,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 3,
+          "label": "Bill Ackman",
+          "overlap_seconds": 6.14
+        },
+        {
+          "loop": 2,
+          "reference_row": 4,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.08
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 3
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 49,
+      "start_seconds": 160.11,
+      "end_seconds": 160.44,
+      "changed": true,
+      "words": 2,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 4,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.33
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 3
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 50,
+      "start_seconds": 160.68,
+      "end_seconds": 161.4,
+      "changed": false,
+      "words": 2,
+      "acoustic_speaker": null,
+      "overlap_speaker": null,
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 4,
+          "label": "Lex Fridman",
+          "overlap_seconds": 0.72
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 4
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Lex Fridman"
+      ],
+      "reference_agrees_with_overlap": null
+    },
+    {
+      "system_segment_index": 51,
+      "start_seconds": 162.18,
+      "end_seconds": 166.71,
+      "changed": true,
+      "words": 14,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 4.53
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 52,
+      "start_seconds": 166.74,
+      "end_seconds": 175.08,
+      "changed": true,
+      "words": 18,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 8.34
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 53,
+      "start_seconds": 175.08,
+      "end_seconds": 178.29,
+      "changed": true,
+      "words": 7,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 3.21
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 54,
+      "start_seconds": 178.29,
+      "end_seconds": 179.37,
+      "changed": true,
+      "words": 8,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 1.08
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    },
+    {
+      "system_segment_index": 55,
+      "start_seconds": 179.37,
+      "end_seconds": 179.94,
+      "changed": true,
+      "words": 5,
+      "acoustic_speaker": null,
+      "overlap_speaker": "speaker-0001",
+      "reference_time_overlaps": [
+        {
+          "loop": 2,
+          "reference_row": 5,
+          "label": "Bill Ackman",
+          "overlap_seconds": 0.57
+        }
+      ],
+      "reviewed_reference_rows": [
+        {
+          "loop": 2,
+          "reference_row": 5
+        }
+      ],
+      "reviewed_reference_labels": [
+        "Bill Ackman"
+      ],
+      "reference_agrees_with_overlap": true
+    }
+  ]
+}

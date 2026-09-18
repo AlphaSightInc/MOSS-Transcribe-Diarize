@@ -637,8 +637,10 @@ inherent-cost instruction; 180 s remains unmeasured, not budget-blocked.
 
 ### WP12 follow-up: reuse mono's terminal mapping within each lane
 
-**Final status: candidate FALSIFIED; review only.** The six requested 24/60 s
-comparisons pass, but the additional 180 s comparison violates attribution equality.
+**Current status: second reference voice confirmed; acceptance stopped.** The
+six requested 24/60 s comparisons pass. The 180 s attribution-equivalence failure
+was adjudicated against the reference after the user rejected the premise that
+the acoustic baseline was necessarily correct. See the source adjudication below.
 
 The user subsequently authorized changing the terminal evidence source to
 mono's existing time-overlap assignment. The diagnosis above describes the old
@@ -681,9 +683,27 @@ for both mapping methods. Acoustic preparation abstains for the whole system lan
 on `same_span_cannot_link_conflict` (three local labels, two known system voices).
 Overlap maps 54/56 system segments that acoustic leaves unassigned: 50 segments /
 543 words to speaker-0001, 4 / 32 to speaker-0004. Two remain unassigned; mic 30/30
-segments equal. Words, boundaries and lane ownership do not change. Which output
-is source-correct has not been adjudicated. Per the user's any-case falsifier,
-work stopped without tuning. Candidate retained for review, not accepted/deployed.
-Full suites pass (1805 Python tests + 37 subtests; 230 frontend tests), which does
-not override this semantic mismatch. Final budget 1073/1200, including 14 calls
-from an invalidated control launch; all accounted, peak own concurrency two.
+segments equal. Words, boundaries and lane ownership do not change. The original
+any-case equivalence falsifier stopped work at 1073/1200 calls without tuning.
+
+The subsequent reference adjudication confirms **all 54 restored assignments**:
+50 Bill Ackman segments and four Lex Fridman segments. Reference rows 2 and 4 name
+Lex; speaker-0004 is legitimate at 29.61–33.75, 40.68–41.40, 89.61–93.75 and
+100.68–101.40 s. The same Lex turns at 149.61–153.75 and 160.68–161.40 s remain
+unassigned (16 words). Reference timestamps are coarse: reviewed word-to-reference
+associations and raw time overlaps are retained separately for every system row
+in `reference-adjudication.json`. The acoustic whole-lane abstention was wrong;
+this is not a single-voice fixture. Per the user's second-voice branch, acceptance
+and tuning stop. No single-voice regression is asserted on this two-voice input.
+
+One authorized mono-180 run on verified base archive 37979e53 takes **12.717313 s**:
+1.282284 s before terminal, 11.025424 s decode, 0.000692 s overlap mapping,
+0.002557 s publication-method wall time, zero terminal embeddings. The candidate
+lane-180 critical decoder stage is 11.783398 s (system; mic 9.257648 s), following
+4.794547 s before terminal. Whole-meeting decode dominates both: 69.5% and 86.7%
+of observed lane/mono Stop time. Old lane instrumentation bounds mapping plus
+other non-decode work to 3.45 ms/system and 2.97 ms/mic; it does not separately
+measure those calls. Last terminal return to publication event is 2.875 ms.
+These are single observations, not a 30-minute capacity claim. Current total
+1165/1200 calls, including the original 14 invalidated calls; peak two. Candidate
+remains review-only, not accepted/deployed. Current full gates: VERIFY-RESULT.md.

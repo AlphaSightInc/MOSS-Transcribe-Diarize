@@ -1,4 +1,40 @@
-# WP12 — overlap candidate FALSIFIED at 180 seconds
+# WP12 — reference adjudication: second voice confirmed; acceptance stopped
+
+## Current adjudication (2026-09-18, starting at c410db8f)
+
+The user superseded acoustic-baseline equivalence with source-reference truth.
+Question: which reference voices own the 54 changed system segments? Minimum
+primitives: the retained terminal segment, its source-lane/loop position, and the
+reference row containing its words. Each is required to distinguish speaker
+identity from decoder labels and coarse reference timestamps. Invariants: preserve
+all words, lane scope, thresholds and policy; retain every changed segment in the
+evidence. Unknown: exact word-level reference timing; no such precision is claimed.
+Falsifier/stop: a second reference voice means report the segments and stop
+candidate acceptance/tuning. Offline reference annotation decides that condition;
+one authorized mono-180 run measures the independent latency question.
+
+**SECOND VOICE CONFIRMED.** Reference rows 2 and 4 label Lex Fridman at 29–33 s
+and 40–42 s in the 60 s Bill Ackman clip. The four restored speaker-0004 segments
+are Lex: 29.61–33.75, 40.68–41.40, 89.61–93.75, 100.68–101.40 s. The other 50
+restored segments are Bill Ackman, correctly mapped to speaker-0001. Thus all
+54 restored assignments / 575 words agree with the reference; the acoustic
+baseline's blanket abstention was wrong, and speaker-0004 is legitimate.
+Two third-loop Lex turns remain unassigned: 149.61–153.75 and 160.68–161.40 s,
+16 words. This is not a long single-voice lane. The user's single-voice acceptance
+and regression-test condition does not apply. No production/test/policy changes.
+
+Evidence: `reference-adjudication.json` retains all 56 system rows (54 changed),
+reference labels/row numbers/loop offsets, coarse time overlaps, and separately
+reviewed word-to-reference associations. A timestamp-only join would mislabel
+boundary-crossing turns, including Bill's continuation just after 40 s; this is
+why reference words were reviewed. No transcript/audio is committed.
+Reproduce: `python prototypes/streaming-diarization/wp12-stop-identity/adjudicate_reference.py`.
+
+The separate requested mono timing/full-suite tasks continue under the latest
+authorization; the older no-further-runs stop below describes the prior turn.
+Detailed current timings, counts and limitations: root `VERIFY-RESULT.md`.
+
+## Historical attribution-equivalence stop (superseded criterion)
 
 **STOP:** the supplementary 180 s same-input comparison changes attribution on
 54/56 system segments (575 words). No tuning or further decoder runs followed.
