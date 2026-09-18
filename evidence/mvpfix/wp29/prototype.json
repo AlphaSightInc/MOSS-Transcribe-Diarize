@@ -1,0 +1,5544 @@
+[
+  {
+    "case": "stop",
+    "results": [
+      {
+        "case": "stop",
+        "session": 0,
+        "saved_status": "completed",
+        "finalization": "failed",
+        "terminal_failure": null,
+        "saved_segments": 36,
+        "prefix_preserved": true,
+        "saved_equal": true,
+        "audio": {
+          "state": "partial",
+          "relative_path": "sub-a/Q5dVwQF9uSDbwCgnZbe_9L0o/audio.partial.mp3",
+          "byte_count": 360765,
+          "duration_ms": 60000,
+          "format": "mp3",
+          "sample_rate_hz": 16000,
+          "channels": 1,
+          "bit_rate_bps": 48000
+        },
+        "mp3": {
+          "format": {
+            "duration": "60.000000"
+          }
+        },
+        "notice": null,
+        "events": [
+          {
+            "seq": 384,
+            "session_id": "Q5dVwQF9uSDbwCgnZbe_9L0o",
+            "kind": "terminal_finalization_started",
+            "snapshot_version": 261,
+            "payload": {
+              "runtime_monotonic_ns": 103564494623666,
+              "epoch": 0,
+              "end_sample": 1440000,
+              "rolling_through_sample": 960000,
+              "rolling_status": "window_failed",
+              "rolling_windows_completed": 6,
+              "rolling_windows_failed": 1,
+              "finalization_status": "running"
+            },
+            "schema_version": 1
+          },
+          {
+            "seq": 385,
+            "session_id": "Q5dVwQF9uSDbwCgnZbe_9L0o",
+            "kind": "terminal_finalization_failed",
+            "snapshot_version": 262,
+            "payload": {
+              "runtime_monotonic_ns": 103564501214833,
+              "reason": "finalizer_defect",
+              "finalization_status": "failed",
+              "applied": false
+            },
+            "schema_version": 1
+          }
+        ],
+        "state": {
+          "case": "stop",
+          "session": 0,
+          "action": "terminal",
+          "status": "closed",
+          "finalization": "failed",
+          "accepted": 1440000,
+          "accounted": 1440000,
+          "words": 108,
+          "lease_armed": false,
+          "queue": 0,
+          "tapes": {
+            "mixed": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "system": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "microphone": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            }
+          }
+        },
+        "reopened_status": "completed",
+        "reopened_segments": 36
+      }
+    ],
+    "trace": [
+      {
+        "case": "stop",
+        "session": 0,
+        "action": "capture_1.5s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 16000,
+        "accounted": 0,
+        "words": 0,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "d067b776c1dee5ca1c9fabaea8cd318d934142dacab094ab88a02e35b26564d8",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "824dcebb2a69456d945dd04a724a656e85039e8f3ebdb4c7083c02b02bdc592b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "4d18a687fccb15d6cfa7e4d22f15d37330c6f51877fece67a551cfae7b886bd4",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "stop",
+        "session": 0,
+        "action": "capture_60s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 952000,
+        "accounted": 920000,
+        "words": 48,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "7e940cac014d842d586e708c6dd9a4e991c873b39453aae4910ce15d93c66c17",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "43978416cac7df9cce0cc15c3da440107b6169065dcc9618c0c2c944636c04be",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "1431e39fff4a9dc40d4117a6ba85a7ae9bfb5a23229995eb3ee5aa963e7711ce",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "stop",
+        "session": 0,
+        "action": "capture_61s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 968000,
+        "accounted": 960000,
+        "words": 36,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "stop",
+        "session": 0,
+        "action": "capture_90s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 102,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "stop",
+        "session": 0,
+        "action": "closed_before_terminal",
+        "status": "closed",
+        "finalization": "running",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 108,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "stop",
+        "session": 0,
+        "action": "terminal",
+        "status": "closed",
+        "finalization": "failed",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 108,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case": "depart",
+    "results": [
+      {
+        "case": "depart",
+        "session": 0,
+        "saved_status": "completed",
+        "finalization": "failed",
+        "terminal_failure": null,
+        "saved_segments": 36,
+        "prefix_preserved": true,
+        "saved_equal": true,
+        "audio": {
+          "state": "partial",
+          "relative_path": "sub-a/tHS3nPqWlEec6cvqlpC72WE5/audio.partial.mp3",
+          "byte_count": 360765,
+          "duration_ms": 60000,
+          "format": "mp3",
+          "sample_rate_hz": 16000,
+          "channels": 1,
+          "bit_rate_bps": 48000
+        },
+        "mp3": {
+          "format": {
+            "duration": "60.000000"
+          }
+        },
+        "notice": null,
+        "events": [
+          {
+            "seq": 384,
+            "session_id": "tHS3nPqWlEec6cvqlpC72WE5",
+            "kind": "terminal_finalization_started",
+            "snapshot_version": 261,
+            "payload": {
+              "runtime_monotonic_ns": 103567160935583,
+              "epoch": 0,
+              "end_sample": 1440000,
+              "rolling_through_sample": 960000,
+              "rolling_status": "window_failed",
+              "rolling_windows_completed": 6,
+              "rolling_windows_failed": 1,
+              "finalization_status": "running"
+            },
+            "schema_version": 1
+          },
+          {
+            "seq": 385,
+            "session_id": "tHS3nPqWlEec6cvqlpC72WE5",
+            "kind": "terminal_finalization_failed",
+            "snapshot_version": 262,
+            "payload": {
+              "runtime_monotonic_ns": 103567166331125,
+              "reason": "finalizer_defect",
+              "finalization_status": "failed",
+              "applied": false
+            },
+            "schema_version": 1
+          }
+        ],
+        "state": {
+          "case": "depart",
+          "session": 0,
+          "action": "terminal",
+          "status": "closed",
+          "finalization": "failed",
+          "accepted": 1440000,
+          "accounted": 1440000,
+          "words": 108,
+          "lease_armed": false,
+          "queue": 0,
+          "tapes": {
+            "mixed": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "system": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "microphone": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            }
+          }
+        },
+        "reopened_status": "completed",
+        "reopened_segments": 36
+      }
+    ],
+    "trace": [
+      {
+        "case": "depart",
+        "session": 0,
+        "action": "capture_1.5s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 16000,
+        "accounted": 0,
+        "words": 0,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "d067b776c1dee5ca1c9fabaea8cd318d934142dacab094ab88a02e35b26564d8",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "824dcebb2a69456d945dd04a724a656e85039e8f3ebdb4c7083c02b02bdc592b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "4d18a687fccb15d6cfa7e4d22f15d37330c6f51877fece67a551cfae7b886bd4",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "depart",
+        "session": 0,
+        "action": "capture_60s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 952000,
+        "accounted": 920000,
+        "words": 48,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "7e940cac014d842d586e708c6dd9a4e991c873b39453aae4910ce15d93c66c17",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "43978416cac7df9cce0cc15c3da440107b6169065dcc9618c0c2c944636c04be",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "1431e39fff4a9dc40d4117a6ba85a7ae9bfb5a23229995eb3ee5aa963e7711ce",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "depart",
+        "session": 0,
+        "action": "capture_61s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 968000,
+        "accounted": 960000,
+        "words": 36,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "depart",
+        "session": 0,
+        "action": "capture_90s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 102,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "depart",
+        "session": 0,
+        "action": "closed_before_terminal",
+        "status": "closed",
+        "finalization": "running",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 108,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "depart",
+        "session": 0,
+        "action": "terminal",
+        "status": "closed",
+        "finalization": "failed",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 108,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case": "lease_expiry",
+    "results": [
+      {
+        "case": "lease_expiry",
+        "session": 0,
+        "saved_status": "interrupted",
+        "finalization": "not_started",
+        "terminal_failure": "aborted",
+        "saved_segments": 34,
+        "prefix_preserved": true,
+        "saved_equal": true,
+        "audio": {
+          "state": "partial",
+          "relative_path": "sub-a/db05l-NJ8WopBAaH_LZn-qWL/audio.partial.mp3",
+          "byte_count": 360765,
+          "duration_ms": 60000,
+          "format": "mp3",
+          "sample_rate_hz": 16000,
+          "channels": 1,
+          "bit_rate_bps": 48000
+        },
+        "mp3": {
+          "format": {
+            "duration": "60.000000"
+          }
+        },
+        "notice": null,
+        "events": [],
+        "state": {
+          "case": "lease_expiry",
+          "session": 0,
+          "action": "terminal",
+          "status": "aborted",
+          "finalization": "not_started",
+          "accepted": 1432000,
+          "accounted": 1400000,
+          "words": 102,
+          "lease_armed": false,
+          "queue": 0,
+          "tapes": {
+            "mixed": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1432000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 472000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1432000,
+                  "sample_count": 472000
+                }
+              ],
+              "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "system": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1432000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 472000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1432000,
+                  "sample_count": 472000
+                }
+              ],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "microphone": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1432000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 472000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1432000,
+                  "sample_count": 472000
+                }
+              ],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            }
+          }
+        },
+        "reopened_status": "interrupted",
+        "reopened_segments": 34
+      }
+    ],
+    "trace": [
+      {
+        "case": "lease_expiry",
+        "session": 0,
+        "action": "capture_1.5s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 16000,
+        "accounted": 0,
+        "words": 0,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "d067b776c1dee5ca1c9fabaea8cd318d934142dacab094ab88a02e35b26564d8",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "824dcebb2a69456d945dd04a724a656e85039e8f3ebdb4c7083c02b02bdc592b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "4d18a687fccb15d6cfa7e4d22f15d37330c6f51877fece67a551cfae7b886bd4",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "lease_expiry",
+        "session": 0,
+        "action": "capture_60s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 952000,
+        "accounted": 920000,
+        "words": 48,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "7e940cac014d842d586e708c6dd9a4e991c873b39453aae4910ce15d93c66c17",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "43978416cac7df9cce0cc15c3da440107b6169065dcc9618c0c2c944636c04be",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "1431e39fff4a9dc40d4117a6ba85a7ae9bfb5a23229995eb3ee5aa963e7711ce",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "lease_expiry",
+        "session": 0,
+        "action": "capture_61s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 968000,
+        "accounted": 960000,
+        "words": 36,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "lease_expiry",
+        "session": 0,
+        "action": "capture_90s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 102,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "lease_expiry",
+        "session": 0,
+        "action": "closed_before_terminal",
+        "status": "aborted",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 102,
+        "lease_armed": false,
+        "queue": 1,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "lease_expiry",
+        "session": 0,
+        "action": "terminal",
+        "status": "aborted",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 102,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case": "silent_mic",
+    "results": [
+      {
+        "case": "silent_mic",
+        "session": 0,
+        "saved_status": "completed",
+        "finalization": "failed",
+        "terminal_failure": null,
+        "saved_segments": 18,
+        "prefix_preserved": true,
+        "saved_equal": true,
+        "audio": {
+          "state": "partial",
+          "relative_path": "sub-a/T8yPaWk-j3DEVDdVOxA62PcC/audio.partial.mp3",
+          "byte_count": 360765,
+          "duration_ms": 60000,
+          "format": "mp3",
+          "sample_rate_hz": 16000,
+          "channels": 1,
+          "bit_rate_bps": 48000
+        },
+        "mp3": {
+          "format": {
+            "duration": "60.000000"
+          }
+        },
+        "notice": null,
+        "events": [
+          {
+            "seq": 384,
+            "session_id": "T8yPaWk-j3DEVDdVOxA62PcC",
+            "kind": "terminal_finalization_started",
+            "snapshot_version": 261,
+            "payload": {
+              "runtime_monotonic_ns": 103572253665166,
+              "epoch": 0,
+              "end_sample": 1440000,
+              "rolling_through_sample": 960000,
+              "rolling_status": "window_failed",
+              "rolling_windows_completed": 6,
+              "rolling_windows_failed": 1,
+              "finalization_status": "running"
+            },
+            "schema_version": 1
+          },
+          {
+            "seq": 385,
+            "session_id": "T8yPaWk-j3DEVDdVOxA62PcC",
+            "kind": "terminal_finalization_failed",
+            "snapshot_version": 262,
+            "payload": {
+              "runtime_monotonic_ns": 103572258552625,
+              "reason": "finalizer_defect",
+              "finalization_status": "failed",
+              "applied": false
+            },
+            "schema_version": 1
+          }
+        ],
+        "state": {
+          "case": "silent_mic",
+          "session": 0,
+          "action": "terminal",
+          "status": "closed",
+          "finalization": "failed",
+          "accepted": 1440000,
+          "accounted": 1440000,
+          "words": 54,
+          "lease_armed": false,
+          "queue": 0,
+          "tapes": {
+            "mixed": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "1c068240521c35ce6f1671f30d27fc8290da7cc359b91da11e2c4b7b0af1f10e",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "system": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "microphone": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            }
+          }
+        },
+        "reopened_status": "completed",
+        "reopened_segments": 18
+      }
+    ],
+    "trace": [
+      {
+        "case": "silent_mic",
+        "session": 0,
+        "action": "capture_1.5s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 16000,
+        "accounted": 0,
+        "words": 0,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "0b15815728a8641d5d4dac124dd790e2b18f42100aaaeb845583906ffc75bbeb",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "824dcebb2a69456d945dd04a724a656e85039e8f3ebdb4c7083c02b02bdc592b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "0c92bddb4e96f3ea9ec9f0f64a668255a6c15527ac09f6f119cafde60c7c4a39",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "silent_mic",
+        "session": 0,
+        "action": "capture_60s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 952000,
+        "accounted": 920000,
+        "words": 24,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "f1858c4d9ea7e6dff6d3d39d2b37e85b4c527d55aeaf91382ab2902955e6d0d5",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "43978416cac7df9cce0cc15c3da440107b6169065dcc9618c0c2c944636c04be",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "854b1a700f1f6f42ef72bd0ba575ecc2813aaed43fa7724364759d36596d825a",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "silent_mic",
+        "session": 0,
+        "action": "capture_61s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 968000,
+        "accounted": 960000,
+        "words": 18,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "1c068240521c35ce6f1671f30d27fc8290da7cc359b91da11e2c4b7b0af1f10e",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "silent_mic",
+        "session": 0,
+        "action": "capture_90s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 51,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "1c068240521c35ce6f1671f30d27fc8290da7cc359b91da11e2c4b7b0af1f10e",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "silent_mic",
+        "session": 0,
+        "action": "closed_before_terminal",
+        "status": "closed",
+        "finalization": "running",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 54,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "1c068240521c35ce6f1671f30d27fc8290da7cc359b91da11e2c4b7b0af1f10e",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "silent_mic",
+        "session": 0,
+        "action": "terminal",
+        "status": "closed",
+        "finalization": "failed",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 54,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "1c068240521c35ce6f1671f30d27fc8290da7cc359b91da11e2c4b7b0af1f10e",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "124617c1f65e92d3bc895fbd869e4bb16a30754b198f59e6e973949b9aaa1b01",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case": "system_only",
+    "results": [
+      {
+        "case": "system_only",
+        "session": 0,
+        "saved_status": "completed",
+        "finalization": "final",
+        "terminal_failure": null,
+        "saved_segments": 19,
+        "prefix_preserved": true,
+        "saved_equal": true,
+        "audio": {
+          "state": "partial",
+          "relative_path": "sub-a/-ce_Hu68EB4SXJvz75rGBHWw/audio.partial.mp3",
+          "byte_count": 360765,
+          "duration_ms": 60000,
+          "format": "mp3",
+          "sample_rate_hz": 16000,
+          "channels": 1,
+          "bit_rate_bps": 48000
+        },
+        "mp3": {
+          "format": {
+            "duration": "60.000000"
+          }
+        },
+        "notice": null,
+        "events": [
+          {
+            "seq": 391,
+            "session_id": "-ce_Hu68EB4SXJvz75rGBHWw",
+            "kind": "terminal_finalization_started",
+            "snapshot_version": 264,
+            "payload": {
+              "runtime_monotonic_ns": 103574973511791,
+              "epoch": 0,
+              "end_sample": 1440000,
+              "rolling_through_sample": 1440000,
+              "rolling_status": "rolling",
+              "rolling_windows_completed": 9,
+              "rolling_windows_failed": 0,
+              "finalization_status": "running"
+            },
+            "schema_version": 1
+          },
+          {
+            "seq": 393,
+            "session_id": "-ce_Hu68EB4SXJvz75rGBHWw",
+            "kind": "terminal_finalization_completed",
+            "snapshot_version": 265,
+            "payload": {
+              "runtime_monotonic_ns": 103574981824083,
+              "outcome": "finalized",
+              "finalization_status": "final",
+              "epoch": 0,
+              "end_sample": 1440000,
+              "reason": "lane_terminal_failed:system",
+              "tape_samples": 1440000,
+              "tape_gaps": 0,
+              "window_count": 1,
+              "completed_windows": 1,
+              "decoded_audio_samples": 1440000,
+              "generated_tokens": 3,
+              "prompt_tokens": 0,
+              "decode_elapsed_sec": 0.0010137499921256676,
+              "possibly_truncated": false,
+              "segments": 19,
+              "local_speakers": 1,
+              "mapped_speakers": 1,
+              "unattributed_segments": 0,
+              "seam_merged_segments": 0,
+              "seam_dropped_segments": 0,
+              "seam_displaced_samples": 0,
+              "rolling_through_sample": 1440000,
+              "rolling_status": "rolling",
+              "window_seconds": 150.0,
+              "stride_seconds": 120.0,
+              "window_failure": null,
+              "window_diagnostics": null,
+              "applied": true,
+              "refusal": null,
+              "text_revision_version": 10,
+              "canonical_through_sample": 1440000
+            },
+            "schema_version": 1
+          }
+        ],
+        "state": {
+          "case": "system_only",
+          "session": 0,
+          "action": "terminal",
+          "status": "closed",
+          "finalization": "final",
+          "accepted": 1440000,
+          "accounted": 1440000,
+          "words": 57,
+          "lease_armed": false,
+          "queue": 0,
+          "tapes": {
+            "mixed": {
+              "epoch": 0,
+              "sample_count": 1440000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 3840000,
+              "peak_retained_bytes": 2880000,
+              "refused_samples": 0,
+              "gaps": [],
+              "pcm_sha256": "ac37568967a3ee7e60962ccdcc31c4aa8a3182c490c5f1f718f23eb1fbd9aa1c",
+              "released": true,
+              "complete": true,
+              "degradation": null
+            },
+            "system": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "microphone": {
+              "epoch": 0,
+              "sample_count": 1440000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 3840000,
+              "peak_retained_bytes": 2880000,
+              "refused_samples": 0,
+              "gaps": [],
+              "pcm_sha256": "3a588af7a05d368833f485e43709c07d0e294742f838b5e6e12d6c9694800177",
+              "released": true,
+              "complete": true,
+              "degradation": null
+            }
+          }
+        },
+        "reopened_status": "completed",
+        "reopened_segments": 19
+      }
+    ],
+    "trace": [
+      {
+        "case": "system_only",
+        "session": 0,
+        "action": "capture_1.5s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 16000,
+        "accounted": 0,
+        "words": 0,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "d067b776c1dee5ca1c9fabaea8cd318d934142dacab094ab88a02e35b26564d8",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "824dcebb2a69456d945dd04a724a656e85039e8f3ebdb4c7083c02b02bdc592b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "4d18a687fccb15d6cfa7e4d22f15d37330c6f51877fece67a551cfae7b886bd4",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "system_only",
+        "session": 0,
+        "action": "capture_60s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 952000,
+        "accounted": 920000,
+        "words": 48,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "7e940cac014d842d586e708c6dd9a4e991c873b39453aae4910ce15d93c66c17",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "43978416cac7df9cce0cc15c3da440107b6169065dcc9618c0c2c944636c04be",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "1431e39fff4a9dc40d4117a6ba85a7ae9bfb5a23229995eb3ee5aa963e7711ce",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "system_only",
+        "session": 0,
+        "action": "capture_61s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 968000,
+        "accounted": 960000,
+        "words": 36,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 968000,
+            "through_sample": 968000,
+            "retained_bytes": 1936000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1936000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "a5adbe231d82bb7fd3fa9fc9635df4c4cc6b39393f52c7de8476300d2d76dafb",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 968000,
+            "through_sample": 968000,
+            "retained_bytes": 1936000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1936000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "5c11fc2b8ee1f4b61d9add4e55e1cac5da2bd6288f7b4c0e33a3e59c0500bb53",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "system_only",
+        "session": 0,
+        "action": "capture_90s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 84,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 1432000,
+            "through_sample": 1432000,
+            "retained_bytes": 2864000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2864000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "5f22bec48e792bdc5bc28fb6115c40fddce0f4938bed265a4c10b3058615e94b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 1432000,
+            "through_sample": 1432000,
+            "retained_bytes": 2864000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2864000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "60552d6f24c4fdde7deb9746022e8723bc0407fa219514c6b1e2ae8764f47272",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "system_only",
+        "session": 0,
+        "action": "closed_before_terminal",
+        "status": "closed",
+        "finalization": "running",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 81,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 2880000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "ac37568967a3ee7e60962ccdcc31c4aa8a3182c490c5f1f718f23eb1fbd9aa1c",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 2880000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "3a588af7a05d368833f485e43709c07d0e294742f838b5e6e12d6c9694800177",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "system_only",
+        "session": 0,
+        "action": "terminal",
+        "status": "closed",
+        "finalization": "final",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 57,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "ac37568967a3ee7e60962ccdcc31c4aa8a3182c490c5f1f718f23eb1fbd9aa1c",
+            "released": true,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "3a588af7a05d368833f485e43709c07d0e294742f838b5e6e12d6c9694800177",
+            "released": true,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case": "microphone_only",
+    "results": [
+      {
+        "case": "microphone_only",
+        "session": 0,
+        "saved_status": "completed",
+        "finalization": "final",
+        "terminal_failure": null,
+        "saved_segments": 19,
+        "prefix_preserved": true,
+        "saved_equal": true,
+        "audio": {
+          "state": "partial",
+          "relative_path": "sub-a/qHWYbX3OW7bqmM3t_oJuqQjh/audio.partial.mp3",
+          "byte_count": 360765,
+          "duration_ms": 60000,
+          "format": "mp3",
+          "sample_rate_hz": 16000,
+          "channels": 1,
+          "bit_rate_bps": 48000
+        },
+        "mp3": {
+          "format": {
+            "duration": "60.000000"
+          }
+        },
+        "notice": null,
+        "events": [
+          {
+            "seq": 391,
+            "session_id": "qHWYbX3OW7bqmM3t_oJuqQjh",
+            "kind": "terminal_finalization_started",
+            "snapshot_version": 264,
+            "payload": {
+              "runtime_monotonic_ns": 103577699092833,
+              "epoch": 0,
+              "end_sample": 1440000,
+              "rolling_through_sample": 1440000,
+              "rolling_status": "rolling",
+              "rolling_windows_completed": 9,
+              "rolling_windows_failed": 0,
+              "finalization_status": "running"
+            },
+            "schema_version": 1
+          },
+          {
+            "seq": 393,
+            "session_id": "qHWYbX3OW7bqmM3t_oJuqQjh",
+            "kind": "terminal_finalization_completed",
+            "snapshot_version": 265,
+            "payload": {
+              "runtime_monotonic_ns": 103577706857666,
+              "outcome": "finalized",
+              "finalization_status": "final",
+              "epoch": 0,
+              "end_sample": 1440000,
+              "reason": "lane_terminal_failed:microphone",
+              "tape_samples": 1440000,
+              "tape_gaps": 0,
+              "window_count": 1,
+              "completed_windows": 1,
+              "decoded_audio_samples": 1440000,
+              "generated_tokens": 3,
+              "prompt_tokens": 0,
+              "decode_elapsed_sec": 0.000994291011011228,
+              "possibly_truncated": false,
+              "segments": 19,
+              "local_speakers": 1,
+              "mapped_speakers": 1,
+              "unattributed_segments": 0,
+              "seam_merged_segments": 0,
+              "seam_dropped_segments": 0,
+              "seam_displaced_samples": 0,
+              "rolling_through_sample": 1440000,
+              "rolling_status": "rolling",
+              "window_seconds": 150.0,
+              "stride_seconds": 120.0,
+              "window_failure": null,
+              "window_diagnostics": null,
+              "applied": true,
+              "refusal": null,
+              "text_revision_version": 10,
+              "canonical_through_sample": 1440000
+            },
+            "schema_version": 1
+          }
+        ],
+        "state": {
+          "case": "microphone_only",
+          "session": 0,
+          "action": "terminal",
+          "status": "closed",
+          "finalization": "final",
+          "accepted": 1440000,
+          "accounted": 1440000,
+          "words": 57,
+          "lease_armed": false,
+          "queue": 0,
+          "tapes": {
+            "mixed": {
+              "epoch": 0,
+              "sample_count": 1440000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 3840000,
+              "peak_retained_bytes": 2880000,
+              "refused_samples": 0,
+              "gaps": [],
+              "pcm_sha256": "ac37568967a3ee7e60962ccdcc31c4aa8a3182c490c5f1f718f23eb1fbd9aa1c",
+              "released": true,
+              "complete": true,
+              "degradation": null
+            },
+            "system": {
+              "epoch": 0,
+              "sample_count": 1440000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 3840000,
+              "peak_retained_bytes": 2880000,
+              "refused_samples": 0,
+              "gaps": [],
+              "pcm_sha256": "cdfe2787a8fc13fa683147c5a5b296ea3a549700ce7279247448d4ed987cf782",
+              "released": true,
+              "complete": true,
+              "degradation": null
+            },
+            "microphone": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            }
+          }
+        },
+        "reopened_status": "completed",
+        "reopened_segments": 19
+      }
+    ],
+    "trace": [
+      {
+        "case": "microphone_only",
+        "session": 0,
+        "action": "capture_1.5s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 16000,
+        "accounted": 0,
+        "words": 0,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "d067b776c1dee5ca1c9fabaea8cd318d934142dacab094ab88a02e35b26564d8",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "824dcebb2a69456d945dd04a724a656e85039e8f3ebdb4c7083c02b02bdc592b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "4d18a687fccb15d6cfa7e4d22f15d37330c6f51877fece67a551cfae7b886bd4",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "microphone_only",
+        "session": 0,
+        "action": "capture_60s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 952000,
+        "accounted": 920000,
+        "words": 48,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "7e940cac014d842d586e708c6dd9a4e991c873b39453aae4910ce15d93c66c17",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "43978416cac7df9cce0cc15c3da440107b6169065dcc9618c0c2c944636c04be",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "1431e39fff4a9dc40d4117a6ba85a7ae9bfb5a23229995eb3ee5aa963e7711ce",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "microphone_only",
+        "session": 0,
+        "action": "capture_61s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 968000,
+        "accounted": 960000,
+        "words": 36,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 968000,
+            "through_sample": 968000,
+            "retained_bytes": 1936000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1936000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "a5adbe231d82bb7fd3fa9fc9635df4c4cc6b39393f52c7de8476300d2d76dafb",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 968000,
+            "through_sample": 968000,
+            "retained_bytes": 1936000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1936000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "26c40c0136777a9fb2b31bada4af92cf3635b640a49f581cac4296f3df3be3ee",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "microphone_only",
+        "session": 0,
+        "action": "capture_90s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 84,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 1432000,
+            "through_sample": 1432000,
+            "retained_bytes": 2864000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2864000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "5f22bec48e792bdc5bc28fb6115c40fddce0f4938bed265a4c10b3058615e94b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 1432000,
+            "through_sample": 1432000,
+            "retained_bytes": 2864000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2864000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "d9de66f9411d095cdddedb7042a9abc04756128805141c092d2f84130aef7911",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "microphone_only",
+        "session": 0,
+        "action": "closed_before_terminal",
+        "status": "closed",
+        "finalization": "running",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 81,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 2880000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "ac37568967a3ee7e60962ccdcc31c4aa8a3182c490c5f1f718f23eb1fbd9aa1c",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 2880000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "cdfe2787a8fc13fa683147c5a5b296ea3a549700ce7279247448d4ed987cf782",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "microphone_only",
+        "session": 0,
+        "action": "terminal",
+        "status": "closed",
+        "finalization": "final",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 57,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "ac37568967a3ee7e60962ccdcc31c4aa8a3182c490c5f1f718f23eb1fbd9aa1c",
+            "released": true,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "cdfe2787a8fc13fa683147c5a5b296ea3a549700ce7279247448d4ed987cf782",
+            "released": true,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case": "mixed_only",
+    "results": [
+      {
+        "case": "mixed_only",
+        "session": 0,
+        "saved_status": "completed",
+        "finalization": "final",
+        "terminal_failure": null,
+        "saved_segments": 2,
+        "prefix_preserved": true,
+        "saved_equal": true,
+        "audio": {
+          "state": "partial",
+          "relative_path": "sub-a/Uz_P2jqBNRrhrW_ElxkOpIBT/audio.partial.mp3",
+          "byte_count": 360765,
+          "duration_ms": 60000,
+          "format": "mp3",
+          "sample_rate_hz": 16000,
+          "channels": 1,
+          "bit_rate_bps": 48000
+        },
+        "mp3": {
+          "format": {
+            "duration": "60.000000"
+          }
+        },
+        "notice": null,
+        "events": [
+          {
+            "seq": 391,
+            "session_id": "Uz_P2jqBNRrhrW_ElxkOpIBT",
+            "kind": "terminal_finalization_started",
+            "snapshot_version": 264,
+            "payload": {
+              "runtime_monotonic_ns": 103580364705291,
+              "epoch": 0,
+              "end_sample": 1440000,
+              "rolling_through_sample": 1440000,
+              "rolling_status": "rolling",
+              "rolling_windows_completed": 9,
+              "rolling_windows_failed": 0,
+              "finalization_status": "running"
+            },
+            "schema_version": 1
+          },
+          {
+            "seq": 393,
+            "session_id": "Uz_P2jqBNRrhrW_ElxkOpIBT",
+            "kind": "terminal_finalization_completed",
+            "snapshot_version": 265,
+            "payload": {
+              "runtime_monotonic_ns": 103580373406416,
+              "outcome": "finalized",
+              "finalization_status": "final",
+              "epoch": 0,
+              "end_sample": 1440000,
+              "reason": null,
+              "tape_samples": 1440000,
+              "tape_gaps": 0,
+              "window_count": 2,
+              "completed_windows": 2,
+              "decoded_audio_samples": 2880000,
+              "generated_tokens": 6,
+              "prompt_tokens": 0,
+              "decode_elapsed_sec": 0.0029083749977871776,
+              "possibly_truncated": false,
+              "segments": 2,
+              "local_speakers": 2,
+              "mapped_speakers": 1,
+              "unattributed_segments": 0,
+              "seam_merged_segments": 0,
+              "seam_dropped_segments": 0,
+              "seam_displaced_samples": 0,
+              "rolling_through_sample": 1440000,
+              "rolling_status": "rolling",
+              "window_seconds": 150.0,
+              "stride_seconds": 120.0,
+              "window_failure": null,
+              "window_diagnostics": null,
+              "applied": true,
+              "refusal": null,
+              "text_revision_version": 10,
+              "canonical_through_sample": 1440000
+            },
+            "schema_version": 1
+          }
+        ],
+        "state": {
+          "case": "mixed_only",
+          "session": 0,
+          "action": "terminal",
+          "status": "closed",
+          "finalization": "final",
+          "accepted": 1440000,
+          "accounted": 1440000,
+          "words": 6,
+          "lease_armed": false,
+          "queue": 0,
+          "tapes": {
+            "mixed": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "system": {
+              "epoch": 0,
+              "sample_count": 1440000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 3840000,
+              "peak_retained_bytes": 2880000,
+              "refused_samples": 0,
+              "gaps": [],
+              "pcm_sha256": "cdfe2787a8fc13fa683147c5a5b296ea3a549700ce7279247448d4ed987cf782",
+              "released": true,
+              "complete": true,
+              "degradation": null
+            },
+            "microphone": {
+              "epoch": 0,
+              "sample_count": 1440000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 3840000,
+              "peak_retained_bytes": 2880000,
+              "refused_samples": 0,
+              "gaps": [],
+              "pcm_sha256": "3a588af7a05d368833f485e43709c07d0e294742f838b5e6e12d6c9694800177",
+              "released": true,
+              "complete": true,
+              "degradation": null
+            }
+          }
+        },
+        "reopened_status": "completed",
+        "reopened_segments": 2
+      }
+    ],
+    "trace": [
+      {
+        "case": "mixed_only",
+        "session": 0,
+        "action": "capture_1.5s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 16000,
+        "accounted": 0,
+        "words": 0,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "d067b776c1dee5ca1c9fabaea8cd318d934142dacab094ab88a02e35b26564d8",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "824dcebb2a69456d945dd04a724a656e85039e8f3ebdb4c7083c02b02bdc592b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "4d18a687fccb15d6cfa7e4d22f15d37330c6f51877fece67a551cfae7b886bd4",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "mixed_only",
+        "session": 0,
+        "action": "capture_60s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 952000,
+        "accounted": 920000,
+        "words": 48,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "7e940cac014d842d586e708c6dd9a4e991c873b39453aae4910ce15d93c66c17",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "43978416cac7df9cce0cc15c3da440107b6169065dcc9618c0c2c944636c04be",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "1431e39fff4a9dc40d4117a6ba85a7ae9bfb5a23229995eb3ee5aa963e7711ce",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "mixed_only",
+        "session": 0,
+        "action": "capture_61s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 968000,
+        "accounted": 960000,
+        "words": 36,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 968000,
+            "through_sample": 968000,
+            "retained_bytes": 1936000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1936000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "26c40c0136777a9fb2b31bada4af92cf3635b640a49f581cac4296f3df3be3ee",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 968000,
+            "through_sample": 968000,
+            "retained_bytes": 1936000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 1936000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "5c11fc2b8ee1f4b61d9add4e55e1cac5da2bd6288f7b4c0e33a3e59c0500bb53",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "mixed_only",
+        "session": 0,
+        "action": "capture_90s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 66,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 1432000,
+            "through_sample": 1432000,
+            "retained_bytes": 2864000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2864000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "d9de66f9411d095cdddedb7042a9abc04756128805141c092d2f84130aef7911",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 1432000,
+            "through_sample": 1432000,
+            "retained_bytes": 2864000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2864000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "60552d6f24c4fdde7deb9746022e8723bc0407fa219514c6b1e2ae8764f47272",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "mixed_only",
+        "session": 0,
+        "action": "closed_before_terminal",
+        "status": "closed",
+        "finalization": "running",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 54,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 2880000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "cdfe2787a8fc13fa683147c5a5b296ea3a549700ce7279247448d4ed987cf782",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 2880000,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "3a588af7a05d368833f485e43709c07d0e294742f838b5e6e12d6c9694800177",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "mixed_only",
+        "session": 0,
+        "action": "terminal",
+        "status": "closed",
+        "finalization": "final",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 6,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "cdfe2787a8fc13fa683147c5a5b296ea3a549700ce7279247448d4ed987cf782",
+            "released": true,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 1440000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 3840000,
+            "peak_retained_bytes": 2880000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "3a588af7a05d368833f485e43709c07d0e294742f838b5e6e12d6c9694800177",
+            "released": true,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      }
+    ]
+  },
+  {
+    "case": "concurrent",
+    "results": [
+      {
+        "case": "concurrent",
+        "session": 0,
+        "saved_status": "completed",
+        "finalization": "failed",
+        "terminal_failure": null,
+        "saved_segments": 36,
+        "prefix_preserved": true,
+        "saved_equal": true,
+        "audio": {
+          "state": "partial",
+          "relative_path": "sub-a/h9gqtqzNvV5yieE6GOUoSJcS/audio.partial.mp3",
+          "byte_count": 360765,
+          "duration_ms": 60000,
+          "format": "mp3",
+          "sample_rate_hz": 16000,
+          "channels": 1,
+          "bit_rate_bps": 48000
+        },
+        "mp3": {
+          "format": {
+            "duration": "60.000000"
+          }
+        },
+        "notice": null,
+        "events": [
+          {
+            "seq": 384,
+            "session_id": "h9gqtqzNvV5yieE6GOUoSJcS",
+            "kind": "terminal_finalization_started",
+            "snapshot_version": 261,
+            "payload": {
+              "runtime_monotonic_ns": 103585765162958,
+              "epoch": 0,
+              "end_sample": 1440000,
+              "rolling_through_sample": 960000,
+              "rolling_status": "window_failed",
+              "rolling_windows_completed": 6,
+              "rolling_windows_failed": 1,
+              "finalization_status": "running"
+            },
+            "schema_version": 1
+          },
+          {
+            "seq": 385,
+            "session_id": "h9gqtqzNvV5yieE6GOUoSJcS",
+            "kind": "terminal_finalization_failed",
+            "snapshot_version": 262,
+            "payload": {
+              "runtime_monotonic_ns": 103585769892458,
+              "reason": "finalizer_defect",
+              "finalization_status": "failed",
+              "applied": false
+            },
+            "schema_version": 1
+          }
+        ],
+        "state": {
+          "case": "concurrent",
+          "session": 0,
+          "action": "terminal",
+          "status": "closed",
+          "finalization": "failed",
+          "accepted": 1440000,
+          "accounted": 1440000,
+          "words": 108,
+          "lease_armed": false,
+          "queue": 0,
+          "tapes": {
+            "mixed": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "system": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "microphone": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            }
+          }
+        },
+        "reopened_status": "completed",
+        "reopened_segments": 36
+      },
+      {
+        "case": "concurrent",
+        "session": 1,
+        "saved_status": "completed",
+        "finalization": "failed",
+        "terminal_failure": null,
+        "saved_segments": 36,
+        "prefix_preserved": true,
+        "saved_equal": true,
+        "audio": {
+          "state": "partial",
+          "relative_path": "sub-a/KqVDY_bE0MrcRx3OJFQ295hn/audio.partial.mp3",
+          "byte_count": 360765,
+          "duration_ms": 60000,
+          "format": "mp3",
+          "sample_rate_hz": 16000,
+          "channels": 1,
+          "bit_rate_bps": 48000
+        },
+        "mp3": {
+          "format": {
+            "duration": "60.000000"
+          }
+        },
+        "notice": null,
+        "events": [
+          {
+            "seq": 384,
+            "session_id": "KqVDY_bE0MrcRx3OJFQ295hn",
+            "kind": "terminal_finalization_started",
+            "snapshot_version": 261,
+            "payload": {
+              "runtime_monotonic_ns": 103585753194791,
+              "epoch": 0,
+              "end_sample": 1440000,
+              "rolling_through_sample": 960000,
+              "rolling_status": "window_failed",
+              "rolling_windows_completed": 6,
+              "rolling_windows_failed": 1,
+              "finalization_status": "running"
+            },
+            "schema_version": 1
+          },
+          {
+            "seq": 385,
+            "session_id": "KqVDY_bE0MrcRx3OJFQ295hn",
+            "kind": "terminal_finalization_failed",
+            "snapshot_version": 262,
+            "payload": {
+              "runtime_monotonic_ns": 103585769305166,
+              "reason": "finalizer_defect",
+              "finalization_status": "failed",
+              "applied": false
+            },
+            "schema_version": 1
+          }
+        ],
+        "state": {
+          "case": "concurrent",
+          "session": 1,
+          "action": "terminal",
+          "status": "closed",
+          "finalization": "failed",
+          "accepted": 1440000,
+          "accounted": 1440000,
+          "words": 108,
+          "lease_armed": false,
+          "queue": 0,
+          "tapes": {
+            "mixed": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "system": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            },
+            "microphone": {
+              "epoch": 0,
+              "sample_count": 960000,
+              "through_sample": 1440000,
+              "retained_bytes": 0,
+              "capacity_bytes": 1920000,
+              "peak_retained_bytes": 1920000,
+              "refused_samples": 480000,
+              "gaps": [
+                {
+                  "start_sample": 960000,
+                  "end_sample": 1440000,
+                  "sample_count": 480000
+                }
+              ],
+              "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+              "released": true,
+              "complete": false,
+              "degradation": {
+                "reason": "tape_capacity_exhausted",
+                "detail": {
+                  "capacity_bytes": 1920000,
+                  "retained_bytes": 1920000,
+                  "requested_bytes": 16000
+                }
+              }
+            }
+          }
+        },
+        "reopened_status": "completed",
+        "reopened_segments": 36
+      }
+    ],
+    "trace": [
+      {
+        "case": "concurrent",
+        "session": 0,
+        "action": "capture_1.5s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 16000,
+        "accounted": 0,
+        "words": 0,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "d067b776c1dee5ca1c9fabaea8cd318d934142dacab094ab88a02e35b26564d8",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "824dcebb2a69456d945dd04a724a656e85039e8f3ebdb4c7083c02b02bdc592b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "4d18a687fccb15d6cfa7e4d22f15d37330c6f51877fece67a551cfae7b886bd4",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 1,
+        "action": "capture_1.5s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 16000,
+        "accounted": 0,
+        "words": 0,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "d067b776c1dee5ca1c9fabaea8cd318d934142dacab094ab88a02e35b26564d8",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "824dcebb2a69456d945dd04a724a656e85039e8f3ebdb4c7083c02b02bdc592b",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 16000,
+            "through_sample": 16000,
+            "retained_bytes": 32000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 32000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "4d18a687fccb15d6cfa7e4d22f15d37330c6f51877fece67a551cfae7b886bd4",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 0,
+        "action": "capture_60s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 952000,
+        "accounted": 920000,
+        "words": 48,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "7e940cac014d842d586e708c6dd9a4e991c873b39453aae4910ce15d93c66c17",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "43978416cac7df9cce0cc15c3da440107b6169065dcc9618c0c2c944636c04be",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "1431e39fff4a9dc40d4117a6ba85a7ae9bfb5a23229995eb3ee5aa963e7711ce",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 1,
+        "action": "capture_60s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 952000,
+        "accounted": 920000,
+        "words": 48,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "7e940cac014d842d586e708c6dd9a4e991c873b39453aae4910ce15d93c66c17",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "43978416cac7df9cce0cc15c3da440107b6169065dcc9618c0c2c944636c04be",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 952000,
+            "through_sample": 952000,
+            "retained_bytes": 1904000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1904000,
+            "refused_samples": 0,
+            "gaps": [],
+            "pcm_sha256": "1431e39fff4a9dc40d4117a6ba85a7ae9bfb5a23229995eb3ee5aa963e7711ce",
+            "released": false,
+            "complete": true,
+            "degradation": null
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 0,
+        "action": "capture_61s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 968000,
+        "accounted": 960000,
+        "words": 36,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 1,
+        "action": "capture_61s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 968000,
+        "accounted": 960000,
+        "words": 36,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 968000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 8000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 968000,
+                "sample_count": 8000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 0,
+        "action": "capture_90s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 102,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 1,
+        "action": "capture_90s",
+        "status": "active",
+        "finalization": "not_started",
+        "accepted": 1432000,
+        "accounted": 1400000,
+        "words": 102,
+        "lease_armed": true,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1432000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 472000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1432000,
+                "sample_count": 472000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 0,
+        "action": "closed_before_terminal",
+        "status": "closed",
+        "finalization": "running",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 108,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 1,
+        "action": "closed_before_terminal",
+        "status": "closed",
+        "finalization": "running",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 108,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 1920000,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": false,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 0,
+        "action": "terminal",
+        "status": "closed",
+        "finalization": "failed",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 108,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      },
+      {
+        "case": "concurrent",
+        "session": 1,
+        "action": "terminal",
+        "status": "closed",
+        "finalization": "failed",
+        "accepted": 1440000,
+        "accounted": 1440000,
+        "words": 108,
+        "lease_armed": false,
+        "queue": 0,
+        "tapes": {
+          "mixed": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "27daf3a656f4f4b8462bb2ae665bf51383791c3e4f578e0ccd1fc23d0b09354d",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "system": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "9956f0572ff05689fe4e9ffe8afac81b546240e43df86b6facf1366af0ddfbe4",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          },
+          "microphone": {
+            "epoch": 0,
+            "sample_count": 960000,
+            "through_sample": 1440000,
+            "retained_bytes": 0,
+            "capacity_bytes": 1920000,
+            "peak_retained_bytes": 1920000,
+            "refused_samples": 480000,
+            "gaps": [
+              {
+                "start_sample": 960000,
+                "end_sample": 1440000,
+                "sample_count": 480000
+              }
+            ],
+            "pcm_sha256": "2bae071e22f27d2e8d14e568bd823a21eda67a4bd309e8abbbf2c333fcc975ff",
+            "released": true,
+            "complete": false,
+            "degradation": {
+              "reason": "tape_capacity_exhausted",
+              "detail": {
+                "capacity_bytes": 1920000,
+                "retained_bytes": 1920000,
+                "requested_bytes": 16000
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+]

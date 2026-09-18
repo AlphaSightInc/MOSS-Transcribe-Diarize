@@ -1,0 +1,325 @@
+FFF.F                                                                    [100%]
+=================================== FAILURES ===================================
+__ test_terminal_exhausted_lane_keeps_words_and_reports_tape_gaps[exhausted0] __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp29-tape-exhaustion/.wp29/t/pytest-of-gao/pytest-0/test_terminal_exhausted_lane_k0')
+exhausted = ('system', 'microphone')
+
+    @pytest.mark.parametrize("exhausted", [("system", "microphone"), ("system",), ("microphone",), ()])
+    def test_terminal_exhausted_lane_keeps_words_and_reports_tape_gaps(tmp_path, exhausted):
+        c, _, session, arbiter = make(capacity=80000)
+        c.accept_frame(frame())
+        commit(c, arbiter)
+        for lane, tape in c.lane_tapes.items():
+            if lane not in exhausted:
+                tape.capacity_bytes = 160000
+        c.accept_frame(frame(seq=1))
+        commit(c, arbiter)
+        before = session.snapshot().effective_transcript
+        runner = Runner()
+>       result = finalize_lanes(
+            c, TerminalTranscriptFinalizer(runner=runner, scratch_dir=tmp_path),
+            plan=TerminalDecodePlan(session.epoch, 80000, 0, RollingStatus.STOPPED, 0, 0),
+            tape=c.tape, base_text_revision_version=0, base_surface=before,
+            canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers,
+        )
+
+tests/test_live_lane_decode.py:777: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+c = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10dfea150>
+finalizer = <moss_transcribe_diarize.app.live_transcript_convergence.TerminalTranscriptFinalizer object at 0x10c62e3c0>
+kwargs = {'plan': TerminalDecodePlan(epoch=0, end_sample=80000, rolling_through_sample=0, rolling_status=<RollingStatus.STOPPED...ample=80000, text='lane 2', canonical_speaker='speaker-0002', authority='provisional', source_lane='microphone')), ...}
+
+    def finalize_lanes(c, finalizer, **kwargs):
+        """Finalize lanes by overlap, acoustically probing uncovered or unmapped segments."""
+        from .live_transcript_convergence import TerminalOutcome
+    
+        results = []
+        failures = []
+        placed = []
+        base = kwargs["base_surface"]
+    
+        def finish_lane(item):
+            lane, tape = item
+            results, failures, placed = [], [], []
+            lane_base = tuple(s for s in base if s.source_lane == lane)
+            try:
+                pcm = tape.read(end_sample=kwargs["plan"].end_sample)
+            except Exception as exc:
+                failures.append((lane, type(exc).__name__))
+                placed.extend(lane_base)
+                return results, failures, placed
+            if not any(pcm):
+                return results, failures, placed
+            own = c._lane_speakers.get(lane, set())
+            # Reuse mono's speaker-level overlap assignment, with both evidence and
+            # candidates scoped to this lane. The finalizer preserves its partition.
+            result = finalizer.finalize(
+                **{
+                    **kwargs,
+                    "tape": tape,
+                    "base_surface": lane_base,
+                    "canonical_speakers": tuple(
+                        s
+                        for s in kwargs["canonical_speakers"]
+                        if s in own
+                    ),
+                }
+            )
+            results.append(result)
+            if result.proposal is None:
+                failures.append((lane, result.accounting.outcome.value))
+                placed.extend(lane_base)
+            else:
+                base_snapshot = c.session.snapshot().identity_snapshot
+                for index, segment in enumerate(result.proposal.segments):
+                    covered = any(
+                        s.canonical_speaker in own
+                        and min(segment.end_sample, s.end_sample)
+                        > max(segment.start_sample, s.start_sample)
+                        for s in lane_base
+                    )
+                    speaker = segment.canonical_speaker
+                    if not covered or speaker is None:
+                        # Overlap alone is insufficient: extra terminal local labels can
+                        # lose the one-to-one assignment to an established lane speaker.
+                        # Probe only this segment, including when that mapping is absent.
+                        # Existing evidence floors and matching thresholds still apply.
+                        span = FrozenSpan(
+                            id=int(dict(base_snapshot.diagnostics).get("span_id", "0")) + 1 + index,
+                            epoch=kwargs["plan"].epoch,
+                            start_sample=segment.start_sample,
+                            end_sample=segment.end_sample,
+                            reason="terminal_uncovered" if not covered else "terminal_unassigned",
+                        )
+                        try:
+                            probe = revision_segments(
+                                c, lane, span, pcm[span.start_sample * 2:span.end_sample * 2],
+                                f"[0][S01]{segment.text}[{span.sample_count / 16000}]", "terminal",
+                            )
+                            speaker = probe[0].canonical_speaker if probe else None
+                        except Exception as exc:
+                            failures.append((lane, type(exc).__name__))
+                            speaker = None
+                    placed.append(replace(segment, source_lane=lane, canonical_speaker=speaker))
+            return results, failures, placed
+    
+        # Stop has drained causal work. Each lane reads its own tape and settled voice
+        # evidence; results are assembled in lane order before the single publication.
+        with ThreadPoolExecutor(
+            max_workers=len(LANES), thread_name_prefix="moss-lane-terminal"
+        ) as pool:
+            for lane_results, lane_failures, lane_segments in pool.map(
+                finish_lane, c.lane_tapes.items()
+            ):
+                results.extend(lane_results)
+                failures.extend(lane_failures)
+                placed.extend(lane_segments)
+        if not results:
+>           return finalizer._refused(
+                kwargs["plan"],
+                (
+                    TerminalOutcome.TAPE_UNAVAILABLE
+                    if failures
+                    else TerminalOutcome.NO_TRANSCRIPT
+                ),
+                "lane_tape_unavailable" if failures else "all_lanes_zero",
+            )
+E           TypeError: TerminalTranscriptFinalizer._refused() missing 1 required keyword-only argument: 'gaps'
+
+moss_transcribe_diarize/app/live_lane_decode.py:322: TypeError
+------------------------------ Captured log call -------------------------------
+WARNING  moss_transcribe_diarize.live.tape:live_tape.py:345 live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 80000, 'retained_bytes': 80000, 'requested_bytes': 80000}
+WARNING  moss_transcribe_diarize.live.tape:live_tape.py:345 live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 80000, 'retained_bytes': 80000, 'requested_bytes': 80000}
+WARNING  moss_transcribe_diarize.live.tape:live_tape.py:345 live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 80000, 'retained_bytes': 80000, 'requested_bytes': 80000}
+__ test_terminal_exhausted_lane_keeps_words_and_reports_tape_gaps[exhausted1] __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp29-tape-exhaustion/.wp29/t/pytest-of-gao/pytest-0/test_terminal_exhausted_lane_k1')
+exhausted = ('system',)
+
+    @pytest.mark.parametrize("exhausted", [("system", "microphone"), ("system",), ("microphone",), ()])
+    def test_terminal_exhausted_lane_keeps_words_and_reports_tape_gaps(tmp_path, exhausted):
+        c, _, session, arbiter = make(capacity=80000)
+        c.accept_frame(frame())
+        commit(c, arbiter)
+        for lane, tape in c.lane_tapes.items():
+            if lane not in exhausted:
+                tape.capacity_bytes = 160000
+        c.accept_frame(frame(seq=1))
+        commit(c, arbiter)
+        before = session.snapshot().effective_transcript
+        runner = Runner()
+        result = finalize_lanes(
+            c, TerminalTranscriptFinalizer(runner=runner, scratch_dir=tmp_path),
+            plan=TerminalDecodePlan(session.epoch, 80000, 0, RollingStatus.STOPPED, 0, 0),
+            tape=c.tape, base_text_revision_version=0, base_surface=before,
+            canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers,
+        )
+>       assert result.accounting.tape_gaps == len(exhausted)
+E       AssertionError: assert 0 == 1
+E        +  where 0 = TerminalFinalizationAccounting(outcome=<TerminalOutcome.FINALIZED: 'finalized'>, epoch=0, end_sample=80000, reason='la...le=0, rolling_status='stopped', window_seconds=None, stride_seconds=None, window_failure=None, window_diagnostics=None).tape_gaps
+E        +    where TerminalFinalizationAccounting(outcome=<TerminalOutcome.FINALIZED: 'finalized'>, epoch=0, end_sample=80000, reason='la...le=0, rolling_status='stopped', window_seconds=None, stride_seconds=None, window_failure=None, window_diagnostics=None) = TerminalFinalization(proposal=TextRevisionProposal(epoch=0, base_text_revision_version=0, source='terminal', start_sam...e=0, rolling_status='stopped', window_seconds=None, stride_seconds=None, window_failure=None, window_diagnostics=None)).accounting
+E        +  and   1 = len(('system',))
+
+tests/test_live_lane_decode.py:783: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  moss_transcribe_diarize.live.tape:live_tape.py:345 live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 80000, 'retained_bytes': 80000, 'requested_bytes': 80000}
+WARNING  moss_transcribe_diarize.live.tape:live_tape.py:345 live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 80000, 'retained_bytes': 80000, 'requested_bytes': 80000}
+__ test_terminal_exhausted_lane_keeps_words_and_reports_tape_gaps[exhausted2] __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp29-tape-exhaustion/.wp29/t/pytest-of-gao/pytest-0/test_terminal_exhausted_lane_k2')
+exhausted = ('microphone',)
+
+    @pytest.mark.parametrize("exhausted", [("system", "microphone"), ("system",), ("microphone",), ()])
+    def test_terminal_exhausted_lane_keeps_words_and_reports_tape_gaps(tmp_path, exhausted):
+        c, _, session, arbiter = make(capacity=80000)
+        c.accept_frame(frame())
+        commit(c, arbiter)
+        for lane, tape in c.lane_tapes.items():
+            if lane not in exhausted:
+                tape.capacity_bytes = 160000
+        c.accept_frame(frame(seq=1))
+        commit(c, arbiter)
+        before = session.snapshot().effective_transcript
+        runner = Runner()
+        result = finalize_lanes(
+            c, TerminalTranscriptFinalizer(runner=runner, scratch_dir=tmp_path),
+            plan=TerminalDecodePlan(session.epoch, 80000, 0, RollingStatus.STOPPED, 0, 0),
+            tape=c.tape, base_text_revision_version=0, base_surface=before,
+            canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers,
+        )
+>       assert result.accounting.tape_gaps == len(exhausted)
+E       AssertionError: assert 0 == 1
+E        +  where 0 = TerminalFinalizationAccounting(outcome=<TerminalOutcome.FINALIZED: 'finalized'>, epoch=0, end_sample=80000, reason='la...le=0, rolling_status='stopped', window_seconds=None, stride_seconds=None, window_failure=None, window_diagnostics=None).tape_gaps
+E        +    where TerminalFinalizationAccounting(outcome=<TerminalOutcome.FINALIZED: 'finalized'>, epoch=0, end_sample=80000, reason='la...le=0, rolling_status='stopped', window_seconds=None, stride_seconds=None, window_failure=None, window_diagnostics=None) = TerminalFinalization(proposal=TextRevisionProposal(epoch=0, base_text_revision_version=0, source='terminal', start_sam...e=0, rolling_status='stopped', window_seconds=None, stride_seconds=None, window_failure=None, window_diagnostics=None)).accounting
+E        +  and   1 = len(('microphone',))
+
+tests/test_live_lane_decode.py:783: AssertionError
+------------------------------ Captured log call -------------------------------
+WARNING  moss_transcribe_diarize.live.tape:live_tape.py:345 live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 80000, 'retained_bytes': 80000, 'requested_bytes': 80000}
+WARNING  moss_transcribe_diarize.live.tape:live_tape.py:345 live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 80000, 'retained_bytes': 80000, 'requested_bytes': 80000}
+________________ test_terminal_all_zero_lanes_has_named_refusal ________________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp29-tape-exhaustion/.wp29/t/pytest-of-gao/pytest-0/test_terminal_all_zero_lanes_h0')
+
+    def test_terminal_all_zero_lanes_has_named_refusal(tmp_path):
+        c, _, session, _ = make()
+        c.accept_frame(frame(system=0, mic=0))
+>       result = finalize_lanes(
+            c, TerminalTranscriptFinalizer(runner=Runner(), scratch_dir=tmp_path),
+            plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+            tape=c.tape, base_text_revision_version=0, base_surface=(), canonical_speakers=(),
+        )
+
+tests/test_live_lane_decode.py:797: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+c = <moss_transcribe_diarize.app.live_coordinator.LiveCoordinator object at 0x10e011970>
+finalizer = <moss_transcribe_diarize.app.live_transcript_convergence.TerminalTranscriptFinalizer object at 0x10e012870>
+kwargs = {'plan': TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0, rolling_status=<RollingStatus.STOPPED...arize.app.live_tape.CompleteMixedTape object at 0x10e012c30>, 'base_text_revision_version': 0, 'base_surface': (), ...}
+
+    def finalize_lanes(c, finalizer, **kwargs):
+        """Finalize lanes by overlap, acoustically probing uncovered or unmapped segments."""
+        from .live_transcript_convergence import TerminalOutcome
+    
+        results = []
+        failures = []
+        placed = []
+        base = kwargs["base_surface"]
+    
+        def finish_lane(item):
+            lane, tape = item
+            results, failures, placed = [], [], []
+            lane_base = tuple(s for s in base if s.source_lane == lane)
+            try:
+                pcm = tape.read(end_sample=kwargs["plan"].end_sample)
+            except Exception as exc:
+                failures.append((lane, type(exc).__name__))
+                placed.extend(lane_base)
+                return results, failures, placed
+            if not any(pcm):
+                return results, failures, placed
+            own = c._lane_speakers.get(lane, set())
+            # Reuse mono's speaker-level overlap assignment, with both evidence and
+            # candidates scoped to this lane. The finalizer preserves its partition.
+            result = finalizer.finalize(
+                **{
+                    **kwargs,
+                    "tape": tape,
+                    "base_surface": lane_base,
+                    "canonical_speakers": tuple(
+                        s
+                        for s in kwargs["canonical_speakers"]
+                        if s in own
+                    ),
+                }
+            )
+            results.append(result)
+            if result.proposal is None:
+                failures.append((lane, result.accounting.outcome.value))
+                placed.extend(lane_base)
+            else:
+                base_snapshot = c.session.snapshot().identity_snapshot
+                for index, segment in enumerate(result.proposal.segments):
+                    covered = any(
+                        s.canonical_speaker in own
+                        and min(segment.end_sample, s.end_sample)
+                        > max(segment.start_sample, s.start_sample)
+                        for s in lane_base
+                    )
+                    speaker = segment.canonical_speaker
+                    if not covered or speaker is None:
+                        # Overlap alone is insufficient: extra terminal local labels can
+                        # lose the one-to-one assignment to an established lane speaker.
+                        # Probe only this segment, including when that mapping is absent.
+                        # Existing evidence floors and matching thresholds still apply.
+                        span = FrozenSpan(
+                            id=int(dict(base_snapshot.diagnostics).get("span_id", "0")) + 1 + index,
+                            epoch=kwargs["plan"].epoch,
+                            start_sample=segment.start_sample,
+                            end_sample=segment.end_sample,
+                            reason="terminal_uncovered" if not covered else "terminal_unassigned",
+                        )
+                        try:
+                            probe = revision_segments(
+                                c, lane, span, pcm[span.start_sample * 2:span.end_sample * 2],
+                                f"[0][S01]{segment.text}[{span.sample_count / 16000}]", "terminal",
+                            )
+                            speaker = probe[0].canonical_speaker if probe else None
+                        except Exception as exc:
+                            failures.append((lane, type(exc).__name__))
+                            speaker = None
+                    placed.append(replace(segment, source_lane=lane, canonical_speaker=speaker))
+            return results, failures, placed
+    
+        # Stop has drained causal work. Each lane reads its own tape and settled voice
+        # evidence; results are assembled in lane order before the single publication.
+        with ThreadPoolExecutor(
+            max_workers=len(LANES), thread_name_prefix="moss-lane-terminal"
+        ) as pool:
+            for lane_results, lane_failures, lane_segments in pool.map(
+                finish_lane, c.lane_tapes.items()
+            ):
+                results.extend(lane_results)
+                failures.extend(lane_failures)
+                placed.extend(lane_segments)
+        if not results:
+>           return finalizer._refused(
+                kwargs["plan"],
+                (
+                    TerminalOutcome.TAPE_UNAVAILABLE
+                    if failures
+                    else TerminalOutcome.NO_TRANSCRIPT
+                ),
+                "lane_tape_unavailable" if failures else "all_lanes_zero",
+            )
+E           TypeError: TerminalTranscriptFinalizer._refused() missing 1 required keyword-only argument: 'gaps'
+
+moss_transcribe_diarize/app/live_lane_decode.py:322: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_live_lane_decode.py::test_terminal_exhausted_lane_keeps_words_and_reports_tape_gaps[exhausted0]
+FAILED tests/test_live_lane_decode.py::test_terminal_exhausted_lane_keeps_words_and_reports_tape_gaps[exhausted1]
+FAILED tests/test_live_lane_decode.py::test_terminal_exhausted_lane_keeps_words_and_reports_tape_gaps[exhausted2]
+FAILED tests/test_live_lane_decode.py::test_terminal_all_zero_lanes_has_named_refusal
+4 failed, 1 passed, 32 deselected in 0.37s

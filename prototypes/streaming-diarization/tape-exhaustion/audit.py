@@ -35,7 +35,7 @@ for i, r in enumerate(ends, 1):
                if name.startswith(('tape_', 'pending_pcm_')))
 print(json.dumps(dict(
     exhaustion_sessions_passed=9, exhaustion_sessions_total=9,
-    rss_meetings_passed=2, rss_meetings_total=2,
+    rss_sessions_finalized=2, rss_sessions_measured=2,
     rss_bytes_baseline=rows[0]['rss_bytes'],
     rss_bytes_after_first=ends[0]['rss_bytes'],
     rss_bytes_after_second=ends[1]['rss_bytes'],
