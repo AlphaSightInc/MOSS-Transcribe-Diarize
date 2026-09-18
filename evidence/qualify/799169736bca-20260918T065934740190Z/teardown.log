@@ -1,0 +1,22 @@
+{
+  "name": "teardown",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0,
+  "artifacts": [
+    "teardown.log"
+  ],
+  "decoder_requests_at_record": 300,
+  "decoder_budget_exhausted_at_record": true,
+  "measurements": {
+    "owned_process_groups_remaining": []
+  }
+}

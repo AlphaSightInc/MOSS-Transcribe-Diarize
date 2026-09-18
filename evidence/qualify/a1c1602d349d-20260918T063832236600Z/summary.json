@@ -1,0 +1,684 @@
+{
+  "schema": "moss-local-qualification.v1",
+  "scope": "local measurement; not deployment or attended acceptance",
+  "identity": {
+    "git_sha": "a1c1602d349d6fedc5fa8a5299e17adbbbf91a14",
+    "tree_clean": true,
+    "dirty_files": [],
+    "python": "3.12.12",
+    "node": "v25.9.0",
+    "decoder_tunnel_url": "http://127.0.0.1:18121",
+    "decoder_base_url": "http://127.0.0.1:18122/v1"
+  },
+  "gates": [
+    {
+      "name": "tree_clean",
+      "status": "PASS",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "tree_clean.log"
+      ],
+      "measurements": {
+        "dirty_files": []
+      }
+    },
+    {
+      "name": "python_import",
+      "status": "PASS",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "python_import.log"
+      ],
+      "measurements": {
+        "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp21-qualify-bundle/moss_transcribe_diarize/__init__.py"
+      }
+    },
+    {
+      "name": "asset_parity",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "expected": 17,
+        "compared": 17,
+        "different": 0
+      },
+      "duration_seconds": 0.767,
+      "artifacts": [
+        "asset_parity.log"
+      ],
+      "measurements": {
+        "different_files": []
+      }
+    },
+    {
+      "name": "runner",
+      "status": "FAIL",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "runner.log"
+      ],
+      "reason": "KeyboardInterrupt; inspect private runtime log"
+    },
+    {
+      "name": "browser_stress_all",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 16,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 16
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "browser_stress_all.log"
+      ],
+      "reason": "run.py all includes case 14 restart with fixed WP5 paths/port and stack.py tunnel 18105; no restart/decoder arguments"
+    },
+    {
+      "name": "identity_stress",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 3,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 3
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "identity_stress.log"
+      ],
+      "reason": "single/gap/alternating require fixed 17867 base and fixed WP7 output; no --base/--output arguments"
+    },
+    {
+      "name": "file_6min",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "file_6min.log"
+      ],
+      "reason": "WP16 probe fixes app at 17876, metrics at 18116, output under WP16; no base/metrics/output arguments"
+    },
+    {
+      "name": "file_failures",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 5,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 5
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "file_failures.log"
+      ],
+      "reason": "WP16 failure cases share fixed 18116 metrics and fixed source ports; no isolation arguments"
+    },
+    {
+      "name": "file_30min",
+      "status": "SKIP",
+      "exit_code": null,
+      "denominators": {
+        "expected": 3,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 3,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "file_30min.log"
+      ],
+      "reason": "Default bounded run; --long requests this gate"
+    },
+    {
+      "name": "capacity_4x600",
+      "status": "SKIP",
+      "exit_code": null,
+      "denominators": {
+        "expected": 4,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 4,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "capacity_4x600.log"
+      ],
+      "reason": "Default bounded run; --long requests this gate"
+    },
+    {
+      "name": "pytest",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 0,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "pytest.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "frontend",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 0,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "frontend.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "bundle_helpers",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 0,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "bundle_helpers.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "typecheck",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "typecheck.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "verify_layout",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "verify_layout.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "stack",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "stack.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 14,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 14
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "demo_lanes",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 2,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 2
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "demo_lanes.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "lifecycle",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 7,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 7
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "lifecycle.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "reshare",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 6,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 6
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "reshare.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "level_ladder",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 6,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 6
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "level_ladder.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_1",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_1.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_2",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_2.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_3",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_3.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_4",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_4.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_5",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_5.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_6",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_6.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_7",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_7.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_8",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_8.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_9",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_9.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_10",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_10.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_11",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_11.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_12",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_12.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_13",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_13.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "workspace_row_14",
+      "status": "UNRUNNABLE",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "workspace_row_14.log"
+      ],
+      "reason": "Prerequisite failed or runner interrupted; no observation"
+    },
+    {
+      "name": "teardown",
+      "status": "PASS",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "teardown.log"
+      ],
+      "measurements": {
+        "owned_process_groups_remaining": []
+      }
+    }
+  ],
+  "request_budget": 300,
+  "duration_seconds": 65.495,
+  "decoder": {
+    "requests": 0,
+    "peak_in_flight": 0,
+    "rejected_by_budget": 0,
+    "active_at_teardown": 0,
+    "shared_metrics": "sampled every 2 seconds; not own request attribution"
+  },
+  "gate_counts": {
+    "PASS": 4,
+    "FAIL": 1,
+    "UNRUNNABLE": 29,
+    "SKIP": 2
+  },
+  "qualified": false
+}

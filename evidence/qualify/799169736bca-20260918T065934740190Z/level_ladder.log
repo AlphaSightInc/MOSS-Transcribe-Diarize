@@ -1,0 +1,21 @@
+{
+  "name": "level_ladder",
+  "status": "FAIL",
+  "exit_code": 1,
+  "denominators": {
+    "expected": 6,
+    "executed": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 6
+  },
+  "duration_seconds": 3.152,
+  "artifacts": [
+    "level_ladder.log"
+  ],
+  "decoder_requests_at_record": 300,
+  "decoder_budget_exhausted_at_record": true,
+  "reason": "PASS means six finalized measurements; retention has no supplied acceptance threshold. Unique vocabulary is not transcript accuracy.",
+  "measurements": []
+}

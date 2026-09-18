@@ -1,0 +1,20 @@
+{
+  "name": "file_30min",
+  "status": "SKIP",
+  "exit_code": null,
+  "denominators": {
+    "expected": 3,
+    "executed": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 3,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0,
+  "artifacts": [
+    "file_30min.log"
+  ],
+  "decoder_requests_at_record": 300,
+  "decoder_budget_exhausted_at_record": true,
+  "reason": "Default bounded run; --long requests this gate"
+}

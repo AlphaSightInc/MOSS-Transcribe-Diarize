@@ -1,0 +1,923 @@
+{
+  "dry_bundle": "evidence/qualify/5ae9566f017e-20260918T064038829598Z",
+  "fresh_bundle": "evidence/qualify/799169736bca-20260918T065934740190Z",
+  "dry_summary": "evidence/qualify/5ae9566f017e-20260918T064038829598Z/summary.json",
+  "fresh_summary": "evidence/qualify/799169736bca-20260918T065934740190Z/summary.json",
+  "entry_sha": "852155b511e8fa0bf805dd8d2ca7a2df0444a961",
+  "tested_sha": "799169736bca4e25768610facffed44a4bb30eef",
+  "product_baseline": "c2e458676cf27b9e4da69bea20a1612152f1516a",
+  "command": "bash scripts/mvpfix-qualify.sh --compare evidence/qualify/5ae9566f017e-20260918T064038829598Z/summary.json > .wp21runtime/fresh-run.console 2>&1",
+  "exit_code": 1,
+  "status_comparison": {
+    "baseline": "evidence/qualify/5ae9566f017e-20260918T064038829598Z/summary.json",
+    "status": "PASS",
+    "deltas": [],
+    "same_candidate": false
+  },
+  "gate_comparison": [
+    {
+      "name": "tree_clean",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0,
+      "fresh_seconds": 0,
+      "duration_delta_seconds": 0
+    },
+    {
+      "name": "python_import",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0,
+      "fresh_seconds": 0,
+      "duration_delta_seconds": 0
+    },
+    {
+      "name": "asset_parity",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 17,
+        "compared": 17,
+        "different": 0
+      },
+      "fresh_denominators": {
+        "expected": 17,
+        "compared": 17,
+        "different": 0
+      },
+      "dry_seconds": 0.782,
+      "fresh_seconds": 0.976,
+      "duration_delta_seconds": 0.194
+    },
+    {
+      "name": "pytest",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "collected": 1879,
+        "executed": 1877,
+        "passed": 1877,
+        "failed": 0,
+        "skipped": 2,
+        "errors": 0,
+        "deselected": 0,
+        "failure_names": [],
+        "subtests": 37,
+        "reported": 1879,
+        "exit_code": 0
+      },
+      "fresh_denominators": {
+        "collected": 1879,
+        "executed": 1877,
+        "passed": 1877,
+        "failed": 0,
+        "skipped": 2,
+        "errors": 0,
+        "deselected": 0,
+        "failure_names": [],
+        "subtests": 37,
+        "reported": 1879,
+        "exit_code": 0
+      },
+      "dry_seconds": 155.946,
+      "fresh_seconds": 152.756,
+      "duration_delta_seconds": -3.19
+    },
+    {
+      "name": "frontend",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "collected": 244,
+        "executed": 244,
+        "passed": 244,
+        "failed": 0,
+        "skipped": 0,
+        "failure_names": []
+      },
+      "fresh_denominators": {
+        "collected": 244,
+        "executed": 244,
+        "passed": 244,
+        "failed": 0,
+        "skipped": 0,
+        "failure_names": []
+      },
+      "dry_seconds": 3.185,
+      "fresh_seconds": 3.533,
+      "duration_delta_seconds": 0.348
+    },
+    {
+      "name": "bundle_helpers",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "collected": 6,
+        "executed": 6,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "deselected": 0,
+        "failure_names": [],
+        "subtests": 0,
+        "reported": 6,
+        "exit_code": 0
+      },
+      "fresh_denominators": {
+        "collected": 7,
+        "executed": 7,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "deselected": 0,
+        "failure_names": [],
+        "subtests": 0,
+        "reported": 7,
+        "exit_code": 0
+      },
+      "dry_seconds": 1.766,
+      "fresh_seconds": 1.794,
+      "duration_delta_seconds": 0.028
+    },
+    {
+      "name": "typecheck",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 1.415,
+      "fresh_seconds": 1.351,
+      "duration_delta_seconds": -0.064
+    },
+    {
+      "name": "verify_layout",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0.08,
+      "fresh_seconds": 0.048,
+      "duration_delta_seconds": -0.032
+    },
+    {
+      "name": "stack",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 5.546,
+      "fresh_seconds": 6.555,
+      "duration_delta_seconds": 1.009
+    },
+    {
+      "name": "workspace",
+      "dry_status": "FAIL",
+      "fresh_status": "FAIL",
+      "dry_denominators": {
+        "expected": 14,
+        "executed": 13,
+        "passed": 10,
+        "failed": 3,
+        "skipped": 1,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 14,
+        "executed": 13,
+        "passed": 10,
+        "failed": 3,
+        "skipped": 1,
+        "unrunnable": 0
+      },
+      "dry_seconds": 295.08,
+      "fresh_seconds": 296.107,
+      "duration_delta_seconds": 1.027
+    },
+    {
+      "name": "workspace_row_1",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0.106,
+      "fresh_seconds": 0.108,
+      "duration_delta_seconds": 0.002
+    },
+    {
+      "name": "workspace_row_2",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 3.26,
+      "fresh_seconds": 3.264,
+      "duration_delta_seconds": 0.004
+    },
+    {
+      "name": "workspace_row_3",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 2.164,
+      "fresh_seconds": 2.168,
+      "duration_delta_seconds": 0.004
+    },
+    {
+      "name": "workspace_row_4",
+      "dry_status": "FAIL",
+      "fresh_status": "FAIL",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 132.152,
+      "fresh_seconds": 132.06,
+      "duration_delta_seconds": -0.092
+    },
+    {
+      "name": "workspace_row_5",
+      "dry_status": "FAIL",
+      "fresh_status": "FAIL",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0.073,
+      "fresh_seconds": 0.076,
+      "duration_delta_seconds": 0.003
+    },
+    {
+      "name": "workspace_row_6",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0.463,
+      "fresh_seconds": 0.423,
+      "duration_delta_seconds": -0.04
+    },
+    {
+      "name": "workspace_row_7",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0.167,
+      "fresh_seconds": 0.171,
+      "duration_delta_seconds": 0.004
+    },
+    {
+      "name": "workspace_row_8",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 38.504,
+      "fresh_seconds": 38.488,
+      "duration_delta_seconds": -0.016
+    },
+    {
+      "name": "workspace_row_9",
+      "dry_status": "SKIP",
+      "fresh_status": "SKIP",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 1,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 1,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0.003,
+      "fresh_seconds": 0.003,
+      "duration_delta_seconds": 0.0
+    },
+    {
+      "name": "workspace_row_10",
+      "dry_status": "FAIL",
+      "fresh_status": "FAIL",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 5.436,
+      "fresh_seconds": 5.475,
+      "duration_delta_seconds": 0.039
+    },
+    {
+      "name": "workspace_row_11",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0.081,
+      "fresh_seconds": 0.091,
+      "duration_delta_seconds": 0.01
+    },
+    {
+      "name": "workspace_row_12",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0.18,
+      "fresh_seconds": 0.179,
+      "duration_delta_seconds": -0.001
+    },
+    {
+      "name": "workspace_row_13",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 68.207,
+      "fresh_seconds": 68.202,
+      "duration_delta_seconds": -0.005
+    },
+    {
+      "name": "workspace_row_14",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 42.919,
+      "fresh_seconds": 43.642,
+      "duration_delta_seconds": 0.723
+    },
+    {
+      "name": "demo_lanes",
+      "dry_status": "FAIL",
+      "fresh_status": "FAIL",
+      "dry_denominators": {
+        "expected": 2,
+        "executed": 2,
+        "passed": 0,
+        "failed": 2,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 2,
+        "executed": 2,
+        "passed": 0,
+        "failed": 2,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 104.798,
+      "fresh_seconds": 104.659,
+      "duration_delta_seconds": -0.139
+    },
+    {
+      "name": "lifecycle",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 7,
+        "executed": 7,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 7,
+        "executed": 7,
+        "passed": 7,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 12.239,
+      "fresh_seconds": 12.093,
+      "duration_delta_seconds": -0.146
+    },
+    {
+      "name": "reshare",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 6,
+        "executed": 6,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 6,
+        "executed": 6,
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 38.196,
+      "fresh_seconds": 37.854,
+      "duration_delta_seconds": -0.342
+    },
+    {
+      "name": "identity_stress",
+      "dry_status": "FAIL",
+      "fresh_status": "FAIL",
+      "dry_denominators": {
+        "expected": 3,
+        "executed": 3,
+        "passed": 1,
+        "failed": 2,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 3,
+        "executed": 3,
+        "passed": 1,
+        "failed": 2,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 82.988,
+      "fresh_seconds": 80.415,
+      "duration_delta_seconds": -2.573
+    },
+    {
+      "name": "level_ladder",
+      "dry_status": "FAIL",
+      "fresh_status": "FAIL",
+      "dry_denominators": {
+        "expected": 6,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 6
+      },
+      "fresh_denominators": {
+        "expected": 6,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 6
+      },
+      "dry_seconds": 3.103,
+      "fresh_seconds": 3.152,
+      "duration_delta_seconds": 0.049
+    },
+    {
+      "name": "browser_stress_all",
+      "dry_status": "UNRUNNABLE",
+      "fresh_status": "UNRUNNABLE",
+      "dry_denominators": {
+        "expected": 16,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 16
+      },
+      "fresh_denominators": {
+        "expected": 16,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 16
+      },
+      "dry_seconds": 0,
+      "fresh_seconds": 0,
+      "duration_delta_seconds": 0
+    },
+    {
+      "name": "file_6min",
+      "dry_status": "UNRUNNABLE",
+      "fresh_status": "UNRUNNABLE",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 1
+      },
+      "dry_seconds": 0,
+      "fresh_seconds": 0,
+      "duration_delta_seconds": 0
+    },
+    {
+      "name": "file_failures",
+      "dry_status": "UNRUNNABLE",
+      "fresh_status": "UNRUNNABLE",
+      "dry_denominators": {
+        "expected": 5,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 5
+      },
+      "fresh_denominators": {
+        "expected": 5,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 5
+      },
+      "dry_seconds": 0,
+      "fresh_seconds": 0,
+      "duration_delta_seconds": 0
+    },
+    {
+      "name": "file_30min",
+      "dry_status": "SKIP",
+      "fresh_status": "SKIP",
+      "dry_denominators": {
+        "expected": 3,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 3,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 3,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 3,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0,
+      "fresh_seconds": 0,
+      "duration_delta_seconds": 0
+    },
+    {
+      "name": "capacity_4x600",
+      "dry_status": "SKIP",
+      "fresh_status": "SKIP",
+      "dry_denominators": {
+        "expected": 4,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 4,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 4,
+        "executed": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 4,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0,
+      "fresh_seconds": 0,
+      "duration_delta_seconds": 0
+    },
+    {
+      "name": "teardown",
+      "dry_status": "PASS",
+      "fresh_status": "PASS",
+      "dry_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "fresh_denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "dry_seconds": 0,
+      "fresh_seconds": 0,
+      "duration_delta_seconds": 0
+    }
+  ],
+  "dry_runtime_seconds": 705.52,
+  "fresh_runtime_seconds": 701.799,
+  "runtime_delta_seconds": -3.721,
+  "dry_decoder": {
+    "requests": 300,
+    "peak_in_flight": 1,
+    "rejected_by_budget": 0,
+    "active_at_teardown": 0,
+    "shared_metrics": "sampled every 2 seconds; not own request attribution"
+  },
+  "fresh_decoder": {
+    "requests": 300,
+    "peak_in_flight": 1,
+    "rejected_by_budget": 0,
+    "active_at_teardown": 0,
+    "budget_exhausted": true,
+    "shared_metrics": "sampled every 2 seconds; not own request attribution"
+  },
+  "dry_contention": {
+    "samples": 267,
+    "errors": 0,
+    "max_running": 1.0,
+    "max_waiting": 0,
+    "shared_running_gt_own_samples": 0
+  },
+  "fresh_contention": {
+    "samples": 267,
+    "errors": 0,
+    "max_running": 2.0,
+    "max_waiting": 0,
+    "shared_running_gt_own_samples": 4
+  },
+  "checks": {
+    "product_diff_exit": 0,
+    "verify_layout_exit": 0,
+    "diff_check_exit": 0,
+    "listeners_exit": 1,
+    "listeners": [],
+    "retained_artifact_files": 39,
+    "nonempty_content_fields": []
+  },
+  "explanations": {
+    "status_deltas": "None across all 35 gates; no added or missing gates.",
+    "denominator_delta": "bundle_helpers 6 to 7: pre-existing added missing-reference-voice negative control.",
+    "source_delta": "Fresh entry 852155b5 already included stricter identity predicate and budget metadata. Commit 79916973 removes busy-decoder refusal per user instruction and updates README; product source unchanged.",
+    "timing_delta": "Every gate duration retained above. Timing causes were not isolated; runtime delta is not a performance conclusion.",
+    "contention_delta": "Shared running maximum 1 to 2; four fresh samples exceeded own active count, versus zero dry. Initial load zero in both; no causal timing attribution.",
+    "identity_delta": "Gap emitted two scored segments in dry run and zero fresh; both interrupted at the request limit, not completed acoustic rejection.",
+    "comparison_limit": "Different runner revisions; gate-status agreement is not strict same-code determinism or final integrated/deployed acceptance."
+  }
+}

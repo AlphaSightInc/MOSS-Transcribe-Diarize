@@ -1,0 +1,203 @@
+{
+  "schema": "moss-local-qualification.v1",
+  "scope": "local measurement; not deployment or attended acceptance",
+  "identity": {
+    "git_sha": "33112b07c20b9389391c0a2c9683307cd4dd70ab",
+    "tree_clean": true,
+    "dirty_files": [],
+    "python": "3.12.12",
+    "node": "v25.9.0",
+    "decoder_tunnel_url": "http://127.0.0.1:18121",
+    "decoder_base_url": "http://127.0.0.1:18122/v1",
+    "vllm_version": "0.23.1rc1.dev949+g68b4a1d58",
+    "manifest": {
+      "name": "manifest-30m.json",
+      "sha256": "9518eef5111daef713e41a9f7b77544b3911693dcc66e9aff6c215b339e9ba75",
+      "max_tape_bytes": 57600000
+    }
+  },
+  "gates": [
+    {
+      "name": "python_import",
+      "status": "PASS",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "python_import.log"
+      ],
+      "measurements": {
+        "path": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp21-qualify-bundle/moss_transcribe_diarize/__init__.py"
+      }
+    },
+    {
+      "name": "asset_parity",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "expected": 17,
+        "compared": 17,
+        "different": 0
+      },
+      "duration_seconds": 0.861,
+      "artifacts": [
+        "asset_parity.log"
+      ],
+      "measurements": {
+        "different_files": []
+      }
+    },
+    {
+      "name": "pytest",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "collected": 1879,
+        "executed": 1879,
+        "passed": 1877,
+        "failed": 0,
+        "skipped": 2,
+        "errors": 0,
+        "deselected": 0,
+        "failure_names": [],
+        "subtests": 37,
+        "exit_code": 0
+      },
+      "duration_seconds": 151.938,
+      "artifacts": [
+        "pytest.log"
+      ]
+    },
+    {
+      "name": "frontend",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "collected": 244,
+        "executed": 244,
+        "passed": 244,
+        "failed": 0,
+        "skipped": 0,
+        "failure_names": []
+      },
+      "duration_seconds": 3.507,
+      "artifacts": [
+        "frontend.log"
+      ]
+    },
+    {
+      "name": "bundle_helpers",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0.752,
+      "artifacts": [
+        "bundle_helpers.log"
+      ]
+    },
+    {
+      "name": "typecheck",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 1.315,
+      "artifacts": [
+        "typecheck.log"
+      ]
+    },
+    {
+      "name": "verify_layout",
+      "status": "PASS",
+      "exit_code": 0,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0.048,
+      "artifacts": [
+        "verify_layout.log"
+      ]
+    },
+    {
+      "name": "runner",
+      "status": "FAIL",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "runner.log"
+      ],
+      "reason": "KeyboardInterrupt; inspect private runtime log"
+    },
+    {
+      "name": "teardown",
+      "status": "PASS",
+      "exit_code": null,
+      "denominators": {
+        "expected": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "unrunnable": 0
+      },
+      "duration_seconds": 0,
+      "artifacts": [
+        "teardown.log"
+      ],
+      "measurements": {
+        "owned_process_groups_remaining": []
+      }
+    }
+  ],
+  "request_budget": 300,
+  "duration_seconds": 214.292,
+  "initial_contention": {
+    "num_requests_running": 0.0,
+    "num_requests_waiting": 0.0,
+    "request_success_total": 33169.0
+  },
+  "decoder": {
+    "requests": 0,
+    "peak_in_flight": 0,
+    "rejected_by_budget": 0,
+    "shared_metrics": "sampled every 2 seconds; not own request attribution"
+  },
+  "gate_counts": {
+    "PASS": 8,
+    "FAIL": 1
+  },
+  "qualified": false
+}

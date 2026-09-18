@@ -1,0 +1,28 @@
+{
+  "name": "workspace_row_9",
+  "status": "SKIP",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 1,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0.003,
+  "artifacts": [
+    "workspace_row_9.log"
+  ],
+  "reason": "no_configured_relay_models",
+  "measurements": {
+    "skip": true,
+    "reason_code": "no_configured_relay_models",
+    "configured_models": 0,
+    "screenshot": null,
+    "status": "SKIP",
+    "seconds": 0.003,
+    "network": null,
+    "row": 9
+  }
+}

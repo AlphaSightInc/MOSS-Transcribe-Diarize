@@ -1,0 +1,34 @@
+{
+  "name": "workspace_row_8",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 38.488,
+  "artifacts": [
+    "workspace_row_8.log"
+  ],
+  "decoder_requests_at_record": 180,
+  "decoder_budget_exhausted_at_record": false,
+  "measurements": {
+    "ok": true,
+    "filename": null,
+    "duration": 11.92,
+    "source_duration": 50.0,
+    "artifact": null,
+    "decodable": true,
+    "meeting": "N1ybsgmyzx4kS1tiR61O6WyA",
+    "status_received": "interrupted",
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 38.488,
+    "network": null,
+    "row": 8
+  }
+}

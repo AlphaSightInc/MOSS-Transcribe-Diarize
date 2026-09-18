@@ -1,0 +1,20 @@
+{
+  "name": "file_6min",
+  "status": "UNRUNNABLE",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 1
+  },
+  "duration_seconds": 0,
+  "artifacts": [
+    "file_6min.log"
+  ],
+  "decoder_requests_at_record": 300,
+  "decoder_budget_exhausted_at_record": true,
+  "reason": "WP16 probe fixes app at 17876, metrics at 18116, output under WP16; no base/metrics/output arguments"
+}

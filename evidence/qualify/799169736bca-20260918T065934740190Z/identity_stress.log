@@ -1,0 +1,144 @@
+{
+  "name": "identity_stress",
+  "status": "FAIL",
+  "exit_code": 0,
+  "denominators": {
+    "expected": 3,
+    "executed": 3,
+    "passed": 1,
+    "failed": 2,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 80.415,
+  "artifacts": [
+    "identity_stress.log"
+  ],
+  "decoder_requests_at_record": 300,
+  "decoder_budget_exhausted_at_record": true,
+  "reason": "One saved identity per reference voice, distinct across voices, zero within-voice switches/unresolved segments; unused births reported separately",
+  "measurements": [
+    {
+      "case": "single",
+      "status": "PASS",
+      "exit_code": 0,
+      "seconds": 74.10655154100095,
+      "measurements": {
+        "kind": null,
+        "case": null,
+        "meeting": "5DHOLDOAny2pSGFnvQ2ib3Zp",
+        "status": "completed",
+        "failure": null,
+        "finalization": null,
+        "seconds": 73.981,
+        "stop_seconds": 13.969,
+        "identity": {
+          "version": 24,
+          "canonical_speakers": [
+            null
+          ],
+          "diagnostics": [
+            [
+              null,
+              null
+            ],
+            [
+              null,
+              null
+            ],
+            [
+              null,
+              null
+            ]
+          ]
+        },
+        "saved_speakers": [
+          null
+        ],
+        "score": {
+          "ids_by_truth": {
+            "Adam": {
+              "speaker-0001": 16
+            }
+          },
+          "id_switches": {
+            "Adam": 0
+          },
+          "switch_straddling_segments": 0,
+          "unresolved_segments": 0
+        },
+        "recognition_seconds": null,
+        "recognition_bar_seconds": 4.0,
+        "actions": [],
+        "bank": [],
+        "admissions": null
+      }
+    },
+    {
+      "case": "gap",
+      "status": "FAIL",
+      "exit_code": 0,
+      "seconds": 3.149566041989601,
+      "measurements": {
+        "kind": null,
+        "case": null,
+        "meeting": "Z7giuznBnX8YKGUAOH7I_N2s",
+        "status": "interrupted",
+        "failure": null,
+        "finalization": null,
+        "seconds": 3.023,
+        "stop_seconds": 0.009,
+        "identity": {
+          "version": 0,
+          "canonical_speakers": [],
+          "diagnostics": []
+        },
+        "saved_speakers": [],
+        "score": {
+          "ids_by_truth": {},
+          "id_switches": {},
+          "switch_straddling_segments": 0,
+          "unresolved_segments": 0
+        },
+        "recognition_seconds": null,
+        "recognition_bar_seconds": 4.0,
+        "actions": [],
+        "bank": [],
+        "admissions": null
+      }
+    },
+    {
+      "case": "alternating",
+      "status": "FAIL",
+      "exit_code": 0,
+      "seconds": 3.157855124998605,
+      "measurements": {
+        "kind": null,
+        "case": null,
+        "meeting": "4YKmkPnBLB0dBtKFPEEPhVZF",
+        "status": "interrupted",
+        "failure": null,
+        "finalization": null,
+        "seconds": 3.025,
+        "stop_seconds": 0.01,
+        "identity": {
+          "version": 0,
+          "canonical_speakers": [],
+          "diagnostics": []
+        },
+        "saved_speakers": [],
+        "score": {
+          "ids_by_truth": {},
+          "id_switches": {},
+          "switch_straddling_segments": 0,
+          "unresolved_segments": 0
+        },
+        "recognition_seconds": null,
+        "recognition_bar_seconds": 4.0,
+        "actions": [],
+        "bank": [],
+        "admissions": null
+      }
+    }
+  ]
+}

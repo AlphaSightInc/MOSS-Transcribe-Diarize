@@ -1,0 +1,23 @@
+[
+  {
+    "case": "single",
+    "original": "PASS",
+    "rescored": "PASS",
+    "unchanged": true,
+    "finalization_status": "final"
+  },
+  {
+    "case": "gap",
+    "original": "FAIL",
+    "rescored": "FAIL",
+    "unchanged": true,
+    "finalization_status": "not_started"
+  },
+  {
+    "case": "alternating",
+    "original": "FAIL",
+    "rescored": "FAIL",
+    "unchanged": true,
+    "finalization_status": "not_started"
+  }
+]

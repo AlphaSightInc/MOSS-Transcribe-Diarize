@@ -1,0 +1,19 @@
+{
+  "name": "lifecycle",
+  "status": "PASS",
+  "exit_code": 0,
+  "denominators": {
+    "expected": 7,
+    "executed": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 12.093,
+  "artifacts": [
+    "lifecycle.log"
+  ],
+  "decoder_requests_at_record": 254,
+  "decoder_budget_exhausted_at_record": false
+}

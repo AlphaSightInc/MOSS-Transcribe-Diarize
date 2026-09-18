@@ -1,0 +1,34 @@
+{
+  "name": "workspace_row_10",
+  "status": "FAIL",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 5.475,
+  "artifacts": [
+    "workspace_row_10.log"
+  ],
+  "decoder_requests_at_record": 180,
+  "decoder_budget_exhausted_at_record": false,
+  "measurements": {
+    "ok": false,
+    "bound_seconds": 4.0,
+    "decoder_trace": null,
+    "expected_name": null,
+    "bank_contains_name": true,
+    "recognition_seconds": 4.0162999999970195,
+    "measurement": null,
+    "meeting": "N1ybsgmyzx4kS1tiR61O6WyA",
+    "screenshot": null,
+    "status": "FAIL",
+    "seconds": 5.475,
+    "network": null,
+    "row": 10
+  }
+}

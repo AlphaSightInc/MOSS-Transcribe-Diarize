@@ -1,0 +1,22 @@
+{
+  "name": "bundle_helpers",
+  "status": "PASS",
+  "exit_code": 0,
+  "denominators": {
+    "collected": 7,
+    "executed": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "deselected": 0,
+    "failure_names": [],
+    "subtests": 0,
+    "reported": 7,
+    "exit_code": 0
+  },
+  "duration_seconds": 1.794,
+  "artifacts": [
+    "bundle_helpers.log"
+  ]
+}

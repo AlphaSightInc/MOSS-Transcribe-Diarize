@@ -87,3 +87,6 @@ evidence/mvpfix/*/raw/
 
 # WP12 private runtime and baseline scratch.
 .wp12/
+# WP21 local qualification private runtime and content-bearing command output.
+.wp21runtime/
+!evidence/qualify/**/*.log
