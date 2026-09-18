@@ -35,3 +35,19 @@ def test_existing_evidence_and_cookies_never_reused(tmp_path):
 def test_summary_reports_missing_selected_rows_as_fail():
     state = {'rows': {'1': {'status': 'PASS'}, '2': {'status': 'FAIL'}}}
     assert summary(state, {1,6}) == '1:PASS | 6:FAIL | total 1/2 PASS, 1 FAIL'
+
+
+def test_no_provider_is_explicit_skip_not_transcription_failure(tmp_path):
+    import asyncio
+    harness=Harness(parse_args(['--rows','1','--output',str(tmp_path)]))
+    async def api(path):
+        assert path=='/api/llm/models'
+        return {'body':{'data':[]}}
+    harness.api=api
+    try:
+        asyncio.run(harness.check(9,harness.summaries))
+        assert harness.state['rows']['9']['status']=='SKIP'
+        assert harness.state['rows']['9']['reason_code']=='no_configured_relay_models'
+        assert summary(harness.state,{9})=='9:SKIP | total 0/1 PASS, 0 FAIL, 1 SKIP'
+    finally:
+        harness.network.close();harness._private.cleanup()

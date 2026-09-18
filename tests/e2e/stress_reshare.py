@@ -58,6 +58,11 @@ for seq in range(total):
     if seq==micswitch_at:
         epoch["microphone"]+=1_000_000; disc["microphone"]=True
         print(f"  -- switched MICROPHONE device at frame {seq}")
+    health=lambda lane:dict(state='capturing',device_epoch=epoch[lane],dropped_frames=0,discontinuities=int(disc[lane]),failure_code=None)
+    call('POST',f'/api/live/sessions/{sid}/heartbeat',dict(
+        schema='moss-live-helper-health.v1',instance_id='reshare-stress',sequence=seq,
+        sent_monotonic_ns=time.monotonic_ns(),helper_version='e2e',state='capturing',
+        lanes={lane:health(lane) for lane in ('system','microphone')}))
     send("system", seq, pcm[off:off+fb] or silence)
     send("microphone", seq, silence)
     time.sleep(max(0.0,(seq+1)*(fs/rate)-(time.monotonic()-t0)))
@@ -79,5 +84,5 @@ check("transcribes across the mic-switch boundary",
       last > micswitch_at*fs, f"last_sample={last} switch_sample={micswitch_at*fs}")
 check("produced real text", words>20, f"{words} words in {len(segs)} segments")
 print(f"\n  {len(results)-results.count(False)}/{len(results)} reshare checks passed")
-for x in segs[:6]: print(f"    [{x.get('start_sample')}] {x.get('canonical_speaker')}: {str(x.get('text',''))[:70]}")
+
 raise SystemExit(1 if results.count(False) else 0)

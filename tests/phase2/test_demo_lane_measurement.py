@@ -31,10 +31,11 @@ def test_lane_checks_reach_both_surfaces_and_reopen(case,missing):
     result=run_case('https://local.test',None,case,1,client=client,realtime=False)
     assert result['passed'] is (missing is None)
     assert client.frames==2*client.heartbeats and client.snapshots==2 and client.reads==2
-    assert result['expected_failure'] is (case=='overlap')
+    assert result['expected_failure'] is False
 
 
-def test_interruption_is_not_a_passing_overlap_negative_control():
+def test_neither_interruption_nor_quality_failure_is_accepted():
     from tests.e2e.verify_demo_lanes import accepted_case
     assert not accepted_case(dict(status='interrupted',finalization_status='failed',passed=False,expected_failure=True))
-    assert accepted_case(dict(status='completed',finalization_status='final',passed=False,expected_failure=True))
+    assert not accepted_case(dict(status='completed',finalization_status='final',passed=False,expected_failure=True))
+    assert accepted_case(dict(status='completed',finalization_status='final',passed=True,expected_failure=False))

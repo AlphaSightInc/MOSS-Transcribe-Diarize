@@ -39,7 +39,7 @@ _STATUS_VALUES = frozenset({
     'enrolled', 'already_enrolled', 'matched', 'unmatched', 'unavailable',
     'live', 'file', 'url', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'mp3',
     'microphone', 'system', 'interrupted', 'aborted', 'confirmed', 'provisional',
-    'previous_meeting_not_ready',
+    'previous_meeting_not_ready', 'no_configured_relay_models',
 })
 _ID_KEYS = frozenset({'id', 'meeting', 'session_id', 'meeting_id', 'speaker_id', 'speaker_entity_id', 'voiceprint_id'})
 _BODY_KEYS = frozenset({'body', 'messages', 'prompt', 'content', 'text', 'transcript',
@@ -142,7 +142,7 @@ class Harness:
         previous_row=self.row; self.row=n; start=time.monotonic(); data={}
         try:
             data=await fn() or {}
-            status='PASS' if data.get('ok', True) else 'FAIL'
+            status='SKIP' if data.get('skip') else 'PASS' if data.get('ok', True) else 'FAIL'
         except Exception as exc:
             status='FAIL'
             # Locator/errors only; no response/prompt text.
@@ -234,7 +234,8 @@ class Harness:
     async def setup_live(self, *, foreground=True):
         if foreground:
             await self.page.bring_to_front()
-        await self.page.get_by_role('link',name='Live / Transcript & export',exact=True).click()
+        # Desktop navigation is clipped but Playwright still calls it visible.
+        # Capture controls exist on both layouts; their clicks scroll as needed.
         await self.wait_before_reset()
         reset=self.page.get_by_role('button',name='Reset capture',exact=True)
         if await reset.count(): await reset.click()
@@ -383,7 +384,7 @@ class Harness:
 
     async def summaries(self):
         models=(await self.api('/api/llm/models'))['body']['data']
-        if not models: return {'ok':False,'reason':'No configured relay models'}
+        if not models: return {'skip':True,'reason_code':'no_configured_relay_models','configured_models':0}
         ident=self.state['meetings'].get('live') or self.state['meetings'].get('file') or self.state['meetings']['url']
         await self.select(ident)
         cancel=self.page.get_by_role('button',name='Cancel summary',exact=True)
@@ -703,7 +704,7 @@ class Harness:
                 for n in rows:
                     if str(n) not in self.state['rows']: self.state['rows'][str(n)]={'status':'FAIL','reason':'Prerequisite not reached'}
                 write(self.out/'results.json',self.state)
-                return int(any(r['status']!='PASS' for r in self.state['rows'].values()))
+                return int(any(r['status'] not in ('PASS','SKIP') for r in self.state['rows'].values()))
             finally:
                 if self.pending: await asyncio.gather(*self.pending,return_exceptions=True)
                 await self.context.close(); await browser.close()
@@ -742,7 +743,8 @@ def parse_args(argv=None):
 def summary(state, rows):
     statuses=[(n,state['rows'].get(str(n),{}).get('status','FAIL')) for n in sorted(rows)]
     passed=sum(status=='PASS' for _,status in statuses)
-    return ' | '.join(f'{n}:{status}' for n,status in statuses)+f' | total {passed}/{len(rows)} PASS, {len(rows)-passed} FAIL'
+    skipped=sum(status=='SKIP' for _,status in statuses)
+    return ' | '.join(f'{n}:{status}' for n,status in statuses)+f' | total {passed}/{len(rows)} PASS, {len(rows)-passed-skipped} FAIL'+(f', {skipped} SKIP' if skipped else '')
 
 
 def main(argv=None):

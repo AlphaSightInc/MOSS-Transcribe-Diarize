@@ -42,6 +42,12 @@ def new_session():
     s,b=c("POST","/api/live/sessions",{"source_revision":rev}); return b.get("id") if isinstance(b,dict) else None
 
 def send(sid, seq, chunk, lane="system", epoch=None):
+    if lane=='system':
+        health=dict(state='capturing',device_epoch=epoch or 0,dropped_frames=0,discontinuities=0,failure_code=None)
+        c('POST',f'/api/live/sessions/{sid}/heartbeat',dict(
+            schema='moss-live-helper-health.v1',instance_id='lifecycle-stress',sequence=seq,
+            sent_monotonic_ns=time.monotonic_ns(),helper_version='e2e',state='capturing',
+            lanes={'system':health,'microphone':dict(health)}))
     return c("POST",f"/api/live/sessions/{sid}/frames",{
         "lane":lane,"sequence":seq,"capture_timestamp_ns":(epoch or 0)+seq*int(fs/rate*1e9),
         "device_epoch":epoch or 0,"pcm_base64":base64.b64encode(chunk).decode(),
