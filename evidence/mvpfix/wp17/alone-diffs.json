@@ -1,0 +1,240 @@
+[
+  {
+    "lane": "system",
+    "gain": 0.03,
+    "score": {
+      "reference_words": 106,
+      "observed_words": 105,
+      "substitutions": 2,
+      "omissions": 6,
+      "additions": 5,
+      "wer": 0.12264150943396226
+    },
+    "diff": [
+      {
+        "operation": "delete",
+        "reference": [
+          "and",
+          "the",
+          "key",
+          "is"
+        ],
+        "observed": []
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "you",
+          "know"
+        ]
+      },
+      {
+        "operation": "replace",
+        "reference": [
+          "market's"
+        ],
+        "observed": [
+          "market",
+          "is"
+        ]
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "you're"
+        ]
+      },
+      {
+        "operation": "replace",
+        "reference": [
+          "define"
+        ],
+        "observed": [
+          "divine"
+        ]
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "to"
+        ]
+      },
+      {
+        "operation": "delete",
+        "reference": [
+          "the",
+          "book"
+        ],
+        "observed": []
+      }
+    ]
+  },
+  {
+    "lane": "microphone",
+    "gain": 0.03,
+    "score": {
+      "reference_words": 48,
+      "observed_words": 58,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 10,
+      "wer": 0.20833333333333334
+    },
+    "diff": [
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "kind",
+          "of",
+          "the",
+          "same",
+          "thing"
+        ]
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "uh"
+        ]
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "um"
+        ]
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "deference"
+        ]
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "uh"
+        ]
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "uh"
+        ]
+      }
+    ]
+  },
+  {
+    "lane": "system",
+    "gain": 1.0,
+    "score": {
+      "reference_words": 106,
+      "observed_words": 105,
+      "substitutions": 2,
+      "omissions": 6,
+      "additions": 5,
+      "wer": 0.12264150943396226
+    },
+    "diff": [
+      {
+        "operation": "delete",
+        "reference": [
+          "and",
+          "the",
+          "key",
+          "is"
+        ],
+        "observed": []
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "you",
+          "know"
+        ]
+      },
+      {
+        "operation": "replace",
+        "reference": [
+          "market's"
+        ],
+        "observed": [
+          "market",
+          "is"
+        ]
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "you're"
+        ]
+      },
+      {
+        "operation": "replace",
+        "reference": [
+          "define"
+        ],
+        "observed": [
+          "divine"
+        ]
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "to"
+        ]
+      },
+      {
+        "operation": "delete",
+        "reference": [
+          "the",
+          "book"
+        ],
+        "observed": []
+      }
+    ]
+  },
+  {
+    "lane": "microphone",
+    "gain": 1.0,
+    "score": {
+      "reference_words": 48,
+      "observed_words": 54,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 6,
+      "wer": 0.125
+    },
+    "diff": [
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "kind",
+          "of",
+          "the",
+          "same",
+          "thing"
+        ]
+      },
+      {
+        "operation": "insert",
+        "reference": [],
+        "observed": [
+          "deference"
+        ]
+      }
+    ]
+  }
+]

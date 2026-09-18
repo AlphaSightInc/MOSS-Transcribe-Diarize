@@ -1,0 +1,550 @@
+[
+  {
+    "kind": "result",
+    "case": "24-alternation-paired",
+    "meeting": "H34F-GyK6TqQzijXVuEZWcR_",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 29.068,
+    "stop_seconds": 5.054,
+    "identity": {
+      "version": 10,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "9"
+        ],
+        [
+          "assignments",
+          "S201->speaker-0002"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "24-alternation-system-alone",
+    "meeting": "ePLQFjOyoO4-nx9H2lAitt7S",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 26.616,
+    "stop_seconds": 2.607,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "assignments",
+          "S101->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "24-alternation-microphone-alone",
+    "meeting": "2OuY657HE4_d2EknmwE-kX5T",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 26.853,
+    "stop_seconds": 2.84,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "9"
+        ],
+        [
+          "assignments",
+          "S201->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "24-overlap-paired",
+    "meeting": "O5OL2PnBVkQBQ8YkVZ-jj4Vf",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 35.103,
+    "stop_seconds": 11.093,
+    "identity": {
+      "version": 10,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "9"
+        ],
+        [
+          "assignments",
+          "S101->speaker-0001,S201->speaker-0002"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "24-overlap-system-alone",
+    "meeting": "bEHmnyNnCMOT6zyyS_X54yL9",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 28.782,
+    "stop_seconds": 4.77,
+    "identity": {
+      "version": 10,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "9"
+        ],
+        [
+          "assignments",
+          "S101->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "24-overlap-microphone-alone",
+    "meeting": "A8q8QA5BbqS0EtZrBoKpSRvn",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 29.434,
+    "stop_seconds": 5.421,
+    "identity": {
+      "version": 10,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "9"
+        ],
+        [
+          "assignments",
+          "S201->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "48-alternation-paired",
+    "meeting": "6cCNf-yBCIH6rpIJArI6mqDh",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 61.412,
+    "stop_seconds": 13.397,
+    "identity": {
+      "version": 20,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "21"
+        ],
+        [
+          "assignments",
+          ""
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02",
+      "S03"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "48-alternation-system-alone",
+    "meeting": "z5vn4kjrpL3kip62YAwNQvg0",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 52.85,
+    "stop_seconds": 4.839,
+    "identity": {
+      "version": 10,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "9"
+        ],
+        [
+          "assignments",
+          "S101->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "48-alternation-microphone-alone",
+    "meeting": "dhr6omGnWk_2q_FP8GUIrRuE",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 52.616,
+    "stop_seconds": 4.603,
+    "identity": {
+      "version": 10,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "20"
+        ],
+        [
+          "assignments",
+          "S201->speaker-0002"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "48-overlap-paired",
+    "meeting": "hmzHcpgNOYFlg3hnOOrQ-Xbq",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 65.542,
+    "stop_seconds": 17.529,
+    "identity": {
+      "version": 20,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002",
+        "speaker-0003",
+        "speaker-0004"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "19"
+        ],
+        [
+          "assignments",
+          ""
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02",
+      "S03",
+      "S04"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "48-overlap-system-alone",
+    "meeting": "AfzBVXJf9vpxS6Sqc9MOoUqC",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 56.671,
+    "stop_seconds": 8.667,
+    "identity": {
+      "version": 20,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "19"
+        ],
+        [
+          "assignments",
+          ""
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "48-overlap-microphone-alone",
+    "meeting": "CGTQtHE3tWJP8Ocgk8D6BMF_",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 57.022,
+    "stop_seconds": 9.008,
+    "identity": {
+      "version": 20,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "21"
+        ],
+        [
+          "assignments",
+          ""
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02"
+    ],
+    "score": {
+      "ids_by_truth": {},
+      "id_switches": {},
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  }
+]

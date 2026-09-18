@@ -1,0 +1,114 @@
+[
+  {
+    "seconds": 24,
+    "case": "alternation",
+    "lane": "system",
+    "saved": {
+      "reference_words": 37,
+      "observed_words": 37,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "producer_windows": 8
+  },
+  {
+    "seconds": 24,
+    "case": "alternation",
+    "lane": "microphone",
+    "saved": {
+      "reference_words": 26,
+      "observed_words": 26,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "producer_windows": 8
+  },
+  {
+    "seconds": 24,
+    "case": "overlap",
+    "lane": "system",
+    "saved": {
+      "reference_words": 81,
+      "observed_words": 81,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "producer_windows": 13
+  },
+  {
+    "seconds": 24,
+    "case": "overlap",
+    "lane": "microphone",
+    "saved": {
+      "reference_words": 57,
+      "observed_words": 57,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "producer_windows": 13
+  },
+  {
+    "seconds": 48,
+    "case": "alternation",
+    "lane": "system",
+    "saved": {
+      "reference_words": 81,
+      "observed_words": 81,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "producer_windows": 14
+  },
+  {
+    "seconds": 48,
+    "case": "alternation",
+    "lane": "microphone",
+    "saved": {
+      "reference_words": 71,
+      "observed_words": 71,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "producer_windows": 14
+  },
+  {
+    "seconds": 48,
+    "case": "overlap",
+    "lane": "system",
+    "saved": {
+      "reference_words": 149,
+      "observed_words": 149,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "producer_windows": 25
+  },
+  {
+    "seconds": 48,
+    "case": "overlap",
+    "lane": "microphone",
+    "saved": {
+      "reference_words": 126,
+      "observed_words": 126,
+      "substitutions": 0,
+      "omissions": 0,
+      "additions": 0,
+      "wer": 0.0
+    },
+    "producer_windows": 25
+  }
+]

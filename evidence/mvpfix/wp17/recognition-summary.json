@@ -1,0 +1,50 @@
+{
+  "note": "First after-profile is deliberately deleted before opposite-lane enrollment; deletion removes its links, preserves saved names. Current link count is not link count at recognition.",
+  "rows": [
+    {
+      "phase": "before",
+      "case": "recognition",
+      "recognition_seconds": null,
+      "saved_speakers": [
+        "WP7 Adam"
+      ],
+      "current_links": 0
+    },
+    {
+      "phase": "after",
+      "case": "recognize-system-to-system",
+      "recognition_seconds": 3.5264644999988377,
+      "saved_speakers": [
+        "WP17 Adam"
+      ],
+      "current_links": 0
+    },
+    {
+      "phase": "after",
+      "case": "recognize-system-to-microphone",
+      "recognition_seconds": 3.527691750001395,
+      "saved_speakers": [
+        "WP17 Adam"
+      ],
+      "current_links": 0
+    },
+    {
+      "phase": "after",
+      "case": "recognize-microphone-to-system",
+      "recognition_seconds": 3.528290541988099,
+      "saved_speakers": [
+        "WP17 Adam"
+      ],
+      "current_links": 1
+    },
+    {
+      "phase": "after",
+      "case": "recognize-microphone-to-microphone",
+      "recognition_seconds": 3.526378541995655,
+      "saved_speakers": [
+        "WP17 Adam"
+      ],
+      "current_links": 1
+    }
+  ]
+}

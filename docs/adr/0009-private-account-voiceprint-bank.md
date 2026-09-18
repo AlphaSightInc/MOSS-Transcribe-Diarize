@@ -33,3 +33,17 @@ revision before returning.
 - Rename propagates to linked active Meetings; stopped Meeting text stays recorded.
 - The accepted evidence covers five speakers, two English recordings, and banks up to five;
   broader populations remain unmeasured.
+
+## Lane publication evidence (WP17, 2026-09-18)
+
+Lane-local speaker IDs remain distinct; either lane can match the same Account bank.
+A committed lane span must retain its original matching observation before its
+embedding is consumed into the enrollment album. The coordinator retains one
+snapshot's immutable observations; reading them never re-embeds or enrolls.
+
+The prior ordering produced two prepared observations but zero at publication.
+After repair, fake-encoder regression covers both enrollment lanes and both
+recognition lanes. Public-corpus live replay recognizes all four routes in
+3.526–3.528 seconds at the API, versus no recognition during the 12-second
+baseline meeting. Browser DOM latency is not measured here. Thresholds unchanged.
+Evidence: `evidence/mvpfix/wp17/NOTES.md`.
