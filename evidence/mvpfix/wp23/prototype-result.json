@@ -1,0 +1,246 @@
+{
+  "question": "Can closure claims be pinned to actual branch evidence without treating inheritance as authored acceptance?",
+  "recorded_utc": "2026-09-18T06:46:44.073524+00:00",
+  "candidate": "c609d7f3e03091becda8aa8588655447a51ea434",
+  "records": [
+    {
+      "wp": 1,
+      "tip": "2ffd80e7ffd2dff48d6eba29f3c0d70b72e25e71",
+      "base": "37979e539f04d4ea740a1a94d021cd3bb894a0e2",
+      "commit_count": 6,
+      "changed_file_count": 102,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 2,
+      "tip": "db851d2fb9a12abc142c91a146079463d8c73dcc",
+      "base": "37979e539f04d4ea740a1a94d021cd3bb894a0e2",
+      "commit_count": 5,
+      "changed_file_count": 95,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 3,
+      "tip": "2e7206c7d52fed1676adc3304fe63d12a2405116",
+      "base": "37979e539f04d4ea740a1a94d021cd3bb894a0e2",
+      "commit_count": 4,
+      "changed_file_count": 57,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 4,
+      "tip": "a7bb420139fbd34da4c95d12aee1e0d2a00cb18d",
+      "base": "37979e539f04d4ea740a1a94d021cd3bb894a0e2",
+      "commit_count": 6,
+      "changed_file_count": 77,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 5,
+      "tip": "3bfec55834745e9141b4182399057f790581ee47",
+      "base": "37979e539f04d4ea740a1a94d021cd3bb894a0e2",
+      "commit_count": 4,
+      "changed_file_count": 130,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 6,
+      "tip": "06a6737a6626c51123fd2f14ab50b9e2ef5735fe",
+      "base": "37979e539f04d4ea740a1a94d021cd3bb894a0e2",
+      "commit_count": 5,
+      "changed_file_count": 75,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 7,
+      "tip": "cf8147f5d44735c0964596f0a82082c990a38f31",
+      "base": "a7bb420139fbd34da4c95d12aee1e0d2a00cb18d",
+      "commit_count": 4,
+      "changed_file_count": 47,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 8,
+      "tip": "fcb247c25099c7499d30cd92e5306b5301d57c88",
+      "base": "37979e539f04d4ea740a1a94d021cd3bb894a0e2",
+      "commit_count": 2,
+      "changed_file_count": 30,
+      "tip_is_ancestor_of_candidate": false,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 9,
+      "tip": "8f8847fc3e9be3fc6da4cdd2393fe285c66429dc",
+      "base": "a92bb4aa88f9581b46cefcafae98c80e911a1d3b",
+      "commit_count": 3,
+      "changed_file_count": 80,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 10,
+      "tip": "8977e4d1d4a99ba69d01d53e6d5057580e85387b",
+      "base": "79467f089d3e0b1d5ec336be326f2fc1f9ad80d4",
+      "commit_count": 5,
+      "changed_file_count": 31,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 11,
+      "tip": "57286fdf7ae75e3593c3f68eec9b862603b96811",
+      "base": "b31683a6feb2f6a1597ce6947bfdc0aac5d645a0",
+      "commit_count": 3,
+      "changed_file_count": 95,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 12,
+      "tip": "a2ee97eb4461c7c2d035635a696319b5385b2712",
+      "base": "b31683a6feb2f6a1597ce6947bfdc0aac5d645a0",
+      "commit_count": 6,
+      "changed_file_count": 89,
+      "tip_is_ancestor_of_candidate": false,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 13,
+      "tip": "8d01ab06bb17c9a11533b1df323a3da59fe4f802",
+      "base": "d8ee6f4109f277a22bfbca298da9ebdf85b218c8",
+      "commit_count": 2,
+      "changed_file_count": 33,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "docs/verify/wp13/VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 14,
+      "tip": "d562d76824e124a960230f01b9ab3f1990b303c9",
+      "base": "8068afce47e72d061f41447bb5d683e7ee4196ac",
+      "commit_count": 4,
+      "changed_file_count": 185,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 15,
+      "tip": "e721fc7d0a4cc712d17fa8d0db03d9fe401f9b4e",
+      "base": "3d5fdfe0a92aa63b726edb8ef637d2408992b661",
+      "commit_count": 3,
+      "changed_file_count": 80,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 16,
+      "tip": "67c020fd2c17a583532dc07afda932743eb25c22",
+      "base": "5179368e671623e60f8eee67bbcaeb13f0d49204",
+      "commit_count": 3,
+      "changed_file_count": 69,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "docs/verify/wp16/VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 17,
+      "tip": "371af1bedf0796b1b9a43e40654cb249aeee95ab",
+      "base": "41cfebb9388830996e1666498f0ca3bf4cebbd5b",
+      "commit_count": 4,
+      "changed_file_count": 62,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "docs/verify/wp17/VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 18,
+      "tip": "57fa5e7b81cb9777b396ee15c0689c9bf8b1da4b",
+      "base": "d769b0104d2e5edc648ae03b209b4036a21414bf",
+      "commit_count": 3,
+      "changed_file_count": 33,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "docs/verify/wp18/VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 19,
+      "tip": "164603966230b452575f31d8ff0db88943c82efd",
+      "base": "c2e458676cf27b9e4da69bea20a1612152f1516a",
+      "commit_count": 4,
+      "changed_file_count": 44,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "docs/verify/wp19/VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 20,
+      "tip": "717daaa8f010647a99b04132e0053338bb6f8ede",
+      "base": "de35ef365724caad47c407bd41c34e21182d20c7",
+      "commit_count": 2,
+      "changed_file_count": 36,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": [
+        "docs/verify/wp20/VERIFY-RESULT.md"
+      ]
+    },
+    {
+      "wp": 21,
+      "tip": "33112b07c20b9389391c0a2c9683307cd4dd70ab",
+      "base": "c2e458676cf27b9e4da69bea20a1612152f1516a",
+      "commit_count": 1,
+      "changed_file_count": 10,
+      "tip_is_ancestor_of_candidate": false,
+      "verify_files": []
+    },
+    {
+      "wp": 22,
+      "tip": "8938cb2cd7d4a03e52f7c59f3f680a5cf3a5a999",
+      "base": "8938cb2cd7d4a03e52f7c59f3f680a5cf3a5a999",
+      "commit_count": 0,
+      "changed_file_count": 0,
+      "tip_is_ancestor_of_candidate": true,
+      "verify_files": []
+    }
+  ],
+  "verdict": "22/22 ranges match Git; 20/22 have result files; WP21 and WP22 missing result; WP22 ancestor is inherited base only"
+}

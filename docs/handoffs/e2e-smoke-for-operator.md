@@ -70,3 +70,55 @@ Verified on isolated port 17863, separate SQLite state, draft lane 1.0, **relay 
 Result: 4/4 PASS. Network evidence contains exactly one mutation, `POST /api/workspace/bootstrap`; zero decoder/summary submissions. Nine CLI/isolation regression tests pass. Retained evidence: `evidence/operator-smoke-20260911/`. This local self-signed run does not claim verification of production TLS or deployment. No host operations or changes to port 17861's database.
 
 Scratch paths in commands above are local inputs/output destinations, not bundled evidence; retained outputs from the original Mac run are MacStudio-local (not in repo).
+
+## Campaign refresh — WP23, integrated source c609d7f3 (2026-09-18)
+
+**Historical smoke results above are not final-candidate qualification.** Confirm
+the exact served SHA and target TLS first. These commands are future authorized
+checks; WP23 ran no browser/decoder campaign. See the [campaign ledger](mvpfix-campaign-20260918.md)
+and [attended plan](attended-session-plan.md).
+
+**A1 — Independent lane oracle.** From an isolated candidate checkout, against the
+identified trusted target (substitute its origin and private output path):
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <venv-python> tests/e2e/verify_demo_lanes.py \
+  --base https://TARGET-ORIGIN --case both --output PRIVATE-OUTPUT/lane-oracle.json
+```
+
+Both alternation and overlap must pass their actual immediate/final/reopened
+per-lane WER, attribution and duplication predicates. Default microphone gain is
+.03. WP17's corrected independent reference is 53 words; old 48-word reports remain
+historical. WP20 still failed quality; do not count expected failure as success.
+This synthetic source replay does not establish physical microphone/AEC acceptance.
+
+**A2 — Browser stress, 16 cases.** WP14 extended the WP5 bench:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <venv-python> prototypes/browser-stress/run.py \
+  all --base https://127.0.0.1:17865 --output PRIVATE-OUTPUT/browser-stress
+```
+
+Use its dedicated isolated WP5-style stack and fixture state, after port/budget
+scheduling; `all` includes stack-control assumptions and is not safe to point at a
+shared deployed service. A `--base` argument alone does not isolate all its internals.
+Cases 15/16 add 25/35-second lease-outage behavior. Report the actual 16-case table,
+including blocked hidden-tab capability; no historical 16/16 pass is claimed.
+Do not use a visible-state result to satisfy hidden capture.
+
+**A3 — Qualification bundle once WP21 lands.** Planned entry point, absent at c609d7f3:
+
+```sh
+bash scripts/mvpfix-qualify.sh
+```
+
+Read `tools/qualify/README.md` in the landed version first. Its initial branch uses
+app 17881, tunnel 18121 and accounting 18122; 18122 overlaps WP22's assigned tunnel,
+so schedule ownership and treat an occupied port as UNRUNNABLE. Do not reuse/stop it.
+The first retained WP21 run completed static gates then stopped with KeyboardInterrupt
+before decoder use; it is not a qualification pass. Current bench interface gaps must
+remain UNRUNNABLE. After the final SHA is frozen, retain
+`evidence/qualify/<sha>-<utc>/summary.json` and all gate denominators. `--long` requests
+30-minute files/four-session capacity; initial interfaces cannot execute those safely.
+Summary row SKIP-with-reason is not summary acceptance. The bundle cannot replace
+attended G7/echo, visual approval, physical voiceprints or host release gates.
