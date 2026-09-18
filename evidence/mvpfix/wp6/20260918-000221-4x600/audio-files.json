@@ -1,0 +1,74 @@
+[
+  {
+    "ordinal": 1,
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "300.000000",
+        "size": "1800837"
+      }
+    }
+  },
+  {
+    "ordinal": 2,
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "300.000000",
+        "size": "1800837"
+      }
+    }
+  },
+  {
+    "ordinal": 3,
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "300.000000",
+        "size": "1800837"
+      }
+    }
+  },
+  {
+    "ordinal": 4,
+    "ffprobe": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "mp3",
+          "sample_rate": "16000",
+          "channels": 1
+        }
+      ],
+      "format": {
+        "duration": "300.000000",
+        "size": "1800837"
+      }
+    }
+  }
+]

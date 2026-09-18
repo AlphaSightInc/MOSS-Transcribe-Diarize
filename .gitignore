@@ -64,8 +64,10 @@ evidence/mvpfix/wp4/.npm-cache/
 <<<<<<< HEAD
 # WP1 isolated prototype runtime state (audio, SQLite, local sockets).
 .wp1/
-=======
 
 .wp9runtime/
 !evidence/mvpfix/wp9/*.log
->>>>>>> mvpfix/wp9-rename-identity
+=======
+# WP6 private measurement state, audio, TLS material, and test scratch.
+.wp6-tmp/
+>>>>>>> mvpfix/wp6-capacity-baseline

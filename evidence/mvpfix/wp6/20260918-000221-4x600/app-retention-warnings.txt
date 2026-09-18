@@ -1,0 +1,4 @@
+live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 9600000, 'retained_bytes': 9600000, 'requested_bytes': 16000}
+live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 9600000, 'retained_bytes': 9600000, 'requested_bytes': 16000}
+live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 9600000, 'retained_bytes': 9600000, 'requested_bytes': 16000}
+live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 9600000, 'retained_bytes': 9600000, 'requested_bytes': 16000}

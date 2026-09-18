@@ -1,0 +1,53 @@
+
+        tests/test_live_mixer.py::test_mixer_emits_16k_mono_from_capture_timestamp_anchors_and_accounts_after_admission .
+        tests/test_live_mixer.py::test_mixer_uses_successor_capture_anchor_instead_of_nominal_sample_rate .
+        tests/test_live_mixer.py::test_mixer_rolls_back_source_and_cursor_when_mono_admission_rejects_then_retries_once .
+        tests/test_live_mixer.py::test_mixer_preserves_whole_source_frame_until_entire_interval_is_admitted .
+        tests/test_live_mixer.py::test_mixer_zero_fills_discontinuity_gap_and_reports_gap_samples .
+        tests/test_live_mixer.py::test_silent_flag_ignores_nonzero_pcm_before_overlap_mix .
+        tests/test_live_mixer.py::test_failed_lane_contributes_silence_while_sealed_peer_admits_and_accounts .
+        tests/test_live_mixer.py::test_failed_lane_admission_rejection_rolls_back_peer_accounting_and_cursor .
+        tests/test_live_mixer.py::test_limiter_uses_registered_tanh_curve_above_098_not_hard_clip .
+        tests/test_live_mixer.py::test_final_flush_zero_fills_bounded_tail_to_latest_sealed_frontier .
+        tests/test_live_mixer.py::test_stalled_active_lane_is_gap_sealed_in_bounded_chunks_and_can_resume .
+        tests/test_live_mixer.py::test_final_flush_drains_a_one_lane_backlog_in_bounded_chunks .
+        tests/test_live_mixer.py::test_final_missing_source_is_gap_sealed_without_mutating_absent_lane .
+        tests/test_live_mixer.py::test_non_advancing_continuous_clock_fails_before_downstream_admission .
+        tests/test_live_mixer.py::test_registry_create_get_release_is_exact .
+        tests/test_live_mixer.py::test_partial_timestamp_stretched_frame_waits_for_complete_source_accounting .
+        SETUP    F audible_lane[<LiveLane.SYSTEM: 'system'>]
+        tests/test_live_mixer.py::test_single_source_analysis_keeps_original_level_without_changing_decoder_pcm[system] (fixtures used: audible_lane) .
+        TEARDOWN F audible_lane[<LiveLane.SYSTEM: 'system'>]
+        SETUP    F audible_lane[<LiveLane.MICROPHONE: 'microphone'>]
+        tests/test_live_mixer.py::test_single_source_analysis_keeps_original_level_without_changing_decoder_pcm[microphone] (fixtures used: audible_lane) .
+        TEARDOWN F audible_lane[<LiveLane.MICROPHONE: 'microphone'>]
+        tests/test_live_mixer.py::test_two_audible_sources_analysis_preserves_existing_mix .
+        tests/test_live_mixer.py::test_observed_frame_ends_release_canonical_boundary_without_changing_two_lane_alignment .
+        tests/test_live_mixer.py::test_explicit_frame_end_cannot_be_rewritten_after_source_accounting .
+SETUP    S tmp_path_factory
+        SETUP    F monkeypatch
+        SETUP    F permit_test_runner_sqlite (fixtures used: monkeypatch)
+        SETUP    F tmp_path (fixtures used: tmp_path_factory)
+        SETUP    F ending['lease_expiry']
+        tests/phase2/test_pre_stop_terminal_boundary.py::test_late_stop_has_same_refusal_for_distinct_prior_endings[lease_expiry] (fixtures used: ending, monkeypatch, permit_test_runner_sqlite, request, tmp_path, tmp_path_factory) .
+        TEARDOWN F ending['lease_expiry']
+        TEARDOWN F tmp_path
+        TEARDOWN F permit_test_runner_sqlite
+        TEARDOWN F monkeypatch
+        SETUP    F monkeypatch
+        SETUP    F permit_test_runner_sqlite (fixtures used: monkeypatch)
+        SETUP    F tmp_path (fixtures used: tmp_path_factory)
+        SETUP    F ending['explicit_abort']
+        tests/phase2/test_pre_stop_terminal_boundary.py::test_late_stop_has_same_refusal_for_distinct_prior_endings[explicit_abort] (fixtures used: ending, monkeypatch, permit_test_runner_sqlite, request, tmp_path, tmp_path_factory) .
+        TEARDOWN F ending['explicit_abort']
+        TEARDOWN F tmp_path
+        TEARDOWN F permit_test_runner_sqlite
+        TEARDOWN F monkeypatch
+TEARDOWN S tmp_path_factory
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+23 passed, 1 warning in 0.99s

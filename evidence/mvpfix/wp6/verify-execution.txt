@@ -1,0 +1,61 @@
+BLOCK 1 exit=1
+/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp6-capacity-baseline/moss_transcribe_diarize/__init__.py
+mvpfix/wp6-capacity-baseline
+57907d76ce07e121eabffa8921b50650f9dfd574
+ M VERIFY.md
+ M evidence/mvpfix/wp6/AUTHORITY.md
+ M evidence/mvpfix/wp6/REPORT.md
+ M evidence/mvpfix/wp6/SUMMARY.json
+ M prototypes/capacity-campaign/NOTES.md
+ M prototypes/capacity-campaign/run.py
+?? evidence/mvpfix/wp6/20260918-002944-4x600/
+?? evidence/mvpfix/wp6/MANIFEST.md
+?? evidence/mvpfix/wp6/REPORT-300s-original.md
+?? evidence/mvpfix/wp6/WP12.md
+?? evidence/mvpfix/wp6/fresh-retention-tests.txt
+?? evidence/mvpfix/wp6/frontend-missing-dependencies.txt
+?? evidence/mvpfix/wp6/full-frontend-tests.txt
+?? evidence/mvpfix/wp6/full-python-short-temp.txt
+?? evidence/mvpfix/wp6/full-python-tests.txt
+?? evidence/mvpfix/wp6/manifest-30m-evidence.json
+?? evidence/mvpfix/wp6/recover_run.py
+?? evidence/mvpfix/wp6/wp12-original-speakers.json
+?? prototypes/capacity-campaign/copy_manifest.py
+..........................................            [100%]
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+42 passed, 1 warning, 19 subtests passed in 3.55s
+6 files compile
++ export PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. TMPDIR=/private/tmp
++ PYTHONDONTWRITEBYTECODE=1
++ PYTHONPATH=.
++ TMPDIR=/private/tmp
++ WP6_PYTHON=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python
++ /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python -c 'import moss_transcribe_diarize as m; print(m.__file__)'
++ git branch --show-current
++ git rev-parse HEAD
++ git status --short
++ /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python evidence/mvpfix/wp6/summarize.py
++ cmp evidence/mvpfix/wp6/SUMMARY.json .wp6-tmp/fresh-summary.json
++ /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python evidence/mvpfix/wp6/recover_four.py
++ cmp evidence/mvpfix/wp6/20260918-000221-4x600/recovered.json .wp6-tmp/fresh-recovered.json
++ /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python evidence/mvpfix/wp6/recover_run.py evidence/mvpfix/wp6/20260918-002944-4x600
++ cmp evidence/mvpfix/wp6/20260918-002944-4x600/recovered.json .wp6-tmp/fresh-rerun.json
++ /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python -m pytest -q -p no:cacheprovider tests/test_live_terminal_finalizer.py tests/test_live_terminal_tape.py tests/phase2/test_owner_bound_live_meeting.py::test_live_stage_bound_degrades_normal_stop_to_partial_without_losing_transcript
++ /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python -c 'from pathlib import Path; paths=list(Path("prototypes/capacity-campaign").glob("*.py"))+[Path("evidence/mvpfix/wp6")/name for name in ("summarize.py","recover_four.py","recover_run.py")]; [compile(p.read_text(),str(p),"exec") for p in paths]; print(len(paths), "files compile")'
++ git diff 37979e53 -- moss_transcribe_diarize
++ git diff --check
++ lsof -nP -iTCP:18106 -iTCP:17866 -sTCP:LISTEN
+
+BLOCK 2 exit=0
+PASS: counts, ownership probes, decoder completion, saved durations, birth limits, shared manifest, overload gate
++ export PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. TMPDIR=/private/tmp
++ PYTHONDONTWRITEBYTECODE=1
++ PYTHONPATH=.
++ TMPDIR=/private/tmp
++ WP6_PYTHON=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python
++ /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python -

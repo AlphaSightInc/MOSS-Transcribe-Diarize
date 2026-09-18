@@ -1,0 +1,19 @@
+{
+  "manifest_path": "/Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json",
+  "manifest_mtime_ns": 1787665017563735525,
+  "bounds_config": {
+    "frame_samples": 8000,
+    "hard_cap_samples": 40000,
+    "max_events": 1000,
+    "max_frame_samples": 16000,
+    "max_identity_speakers": 16,
+    "max_queue_depth": 16,
+    "max_retained_samples": 960000,
+    "max_tape_bytes": 9600000,
+    "stop_drain_deadline_seconds": 5.0
+  },
+  "observed_capacity_bytes": 9600000,
+  "pcm_bytes_per_second": 32000,
+  "supported_campaign_seconds": 600,
+  "minimum_complete_pcm_bytes": 19200000
+}
