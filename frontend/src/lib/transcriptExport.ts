@@ -1,5 +1,5 @@
-import { compareTranscriptOrder, transcriptLaneLabel } from "./transcriptOrder";
-import type { SourceLane } from "./transcriptOrder";
+import { compareTranscriptOrder, transcriptLaneLabel } from "./transcriptOrder.ts";
+import type { SourceLane } from "./transcriptOrder.ts";
 import type { TranscriptTurn } from "./mergeTranscript";
 
 export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json", "srt", "vtt"] as const;
