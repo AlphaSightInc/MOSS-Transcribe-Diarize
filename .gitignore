@@ -107,3 +107,6 @@ evidence/mvpfix/*/raw/
 .wp25runtime/
 !evidence/mvpfix/wp25/*.log
 !evidence/mvpfix/wp25/**/*.log
+
+# WP35 private stop-drain scratch: stub bench temp files, TLS material, stack state.
+.wp35-tmp/
