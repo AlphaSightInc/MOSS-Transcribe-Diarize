@@ -1,0 +1,18 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run --no-cache --configLoader runner --config .wp5-vite.config.ts
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp5-browser-stress/frontend
+
+(node:48942) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:48948) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:48944) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  24 passed (24)
+      Tests  206 passed (206)
+   Start at  23:48:54
+   Duration  2.45s (transform 1.60s, setup 0ms, import 2.36s, tests 5.75s, environment 5.24s)

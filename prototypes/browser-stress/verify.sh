@@ -10,9 +10,14 @@ OUT=evidence/mvpfix/wp5/fresh
 if test -e "$OUT"; then echo 'Fresh evidence exists: do not overwrite/retry silently.'; exit 2; fi
 mkdir -p "$OUT"
 "$PY" -c 'import moss_transcribe_diarize as m; from pathlib import Path; assert Path(m.__file__).is_relative_to(Path.cwd()); print(m.__file__)' > "$OUT/import.txt"
-npm --prefix frontend test -- --run --no-cache --configLoader runner > "$OUT/frontend.txt" 2>&1
+# Same Vite config, with its bundle-injected __dirname made explicit for runner.
+"$PY" -c 'import json; from pathlib import Path; p=Path("frontend"); (p/".wp5-vite.config.ts").write_text("const __dirname = " + json.dumps(str(p.resolve())) + ";\n" + (p/"vite.config.ts").read_text())'
+trap 'rm -f frontend/.wp5-vite.config.ts' EXIT
+npm --prefix frontend test -- --run --no-cache --configLoader runner --config .wp5-vite.config.ts > "$OUT/frontend.txt" 2>&1
 npm --prefix frontend run typecheck > "$OUT/typecheck.txt" 2>&1
-npm --prefix frontend run build -- --configLoader runner > "$OUT/build.txt" 2>&1
+npm --prefix frontend run build -- --configLoader runner --config .wp5-vite.config.ts > "$OUT/build.txt" 2>&1
+rm frontend/.wp5-vite.config.ts
+trap - EXIT
 "$PY" -m pytest -q -p no:cacheprovider tests/phase2/test_acceptance_locator_sentinels.py > "$OUT/sentinels.txt" 2>&1
 ssh -N -o BatchMode=yes -o ExitOnForwardFailure=yes -L 127.0.0.1:18105:127.0.0.1:8000 gyauo@ga0-alienware-rtx4070ti.tailnet.aisight.us > runs/wp5/verify-tunnel.log 2>&1 &
 TUNNEL_PID=$!
