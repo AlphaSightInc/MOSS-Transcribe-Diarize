@@ -51,6 +51,7 @@ export function ControlPanel() {
   const [message, setMessage] = useState(
     "Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio."
   );
+  const [setupErrors, setSetupErrors] = useState<Partial<Record<CaptureLane, string>>>({});
   const clientRef = useRef<CaptureClient | null>(null);
   const pollerRef = useRef<MossSessionPoller | null>(null);
   const phaseRef = useRef<CapturePhase>("idle");
@@ -71,10 +72,16 @@ export function ControlPanel() {
     }
   };
 
+  const reportSetupError = (lane: CaptureLane, message: string) => {
+    setSetupErrors(current => ({ ...current, [lane]: message }));
+    metersRef.current = EMPTY_METERS;
+    setMeters(EMPTY_METERS);
+    transition("error");
+  };
+
   const reportPreSessionFailure = (failure: PreSessionCaptureFailure) => {
     setConnected({ microphone: false, system: false });
-    transition("error");
-    setMessage(`${failure.lane}: ${failure.code}`);
+    reportSetupError(failure.lane, `${failure.lane}: ${failure.code}`);
   };
 
   const transportFailed = (source: "capture" | "transcript", message: string) => {
@@ -117,9 +124,15 @@ export function ControlPanel() {
     const client = new CaptureClient({
       helperVersion: HELPER_VERSION,
       workletUrl: workletUrl(),
-      onMeter: updateMeter,
-      onPreflightStatus: setMessage,
-      onPreSessionFailure: reportPreSessionFailure,
+      onMeter: (lane, rms) => {
+        if (clientRef.current === client && phaseRef.current !== "error") updateMeter(lane, rms);
+      },
+      onPreflightStatus: message => {
+        if (clientRef.current === client) setMessage(message);
+      },
+      onPreSessionFailure: failure => {
+        if (clientRef.current === client) reportPreSessionFailure(failure);
+      },
       onTransportError: (_route, error) => {
         if (clientRef.current === client) transportFailed("capture", error.message);
       },
@@ -130,12 +143,13 @@ export function ControlPanel() {
     clientRef.current = client;
     try {
       await client.prepare();
+      if (clientRef.current !== client) { await client.close(); return; }
       await client.startMicrophone(audioRoute === "speakers");
+      if (clientRef.current !== client) { await client.close(); return; }
       setConnected(current => ({ ...current, microphone: true }));
       setMessage("Microphone connected. Share a browser tab, window, or screen with audio.");
     } catch (error) {
-      transition("error");
-      setMessage(errorMessage(error));
+      if (clientRef.current === client) reportSetupError("microphone", errorMessage(error));
     }
   };
 
@@ -146,6 +160,10 @@ export function ControlPanel() {
     try {
       const displayRequest = client.requestDisplayMedia();
       const stream = await displayRequest;
+      if (clientRef.current !== client) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
       if (connected.system) {
         metersRef.current = { ...metersRef.current, system: 0 };
         setMeters(metersRef.current);
@@ -153,11 +171,13 @@ export function ControlPanel() {
       } else {
         await client.attachDisplayMedia(stream);
       }
+      if (clientRef.current !== client) { await client.close(); return; }
       setConnected(current => ({ ...current, system: true }));
       setMessage("Shared audio connected. Play sound in the shared tab and speak into the microphone.");
     } catch (error) {
-      setMessage(errorMessage(error));
-      if (phaseRef.current !== "active") transition("error");
+      if (clientRef.current !== client) return;
+      if (phaseRef.current === "active") setMessage(errorMessage(error));
+      else reportSetupError("system", errorMessage(error));
     }
   };
 
@@ -253,6 +273,7 @@ export function ControlPanel() {
     resetSessionState();
     sessionTitle.value = "";
     transition("idle");
+    setSetupErrors({});
     setMessage("Live capture requires both your microphone and shared audio. Enable the microphone, then share a tab with audio.");
   };
 
@@ -409,7 +430,13 @@ export function ControlPanel() {
         <button type="button" className="btn" onClick={() => void resetCapture()}>Reset capture</button>
       ) : null}
 
-      <p className="capture-status" role="status">{message}</p>
+      <p className="capture-status" role="status">{
+        Object.keys(setupErrors).length > 0
+          ? [setupErrors.microphone && `Microphone: ${setupErrors.microphone}`,
+              setupErrors.system && `Shared audio: ${setupErrors.system}`]
+              .filter(Boolean).join(". ") + ". Reset capture to try again."
+          : message
+      }</p>
     </section>
   );
 }

@@ -109,9 +109,11 @@ afterEach(async () => {
   vi.restoreAllMocks(); vi.unstubAllGlobals();
 });
 
-async function resetAfterFailure(message: string) {
+async function resetAfterFailure(message: string, lane?: CaptureLane) {
   expect(phase()).toBe("error");
-  expect(status()).toBe(message);
+  expect(status()).toBe(lane
+    ? `${lane === "microphone" ? "Microphone" : "Shared audio"}: ${message}. Reset capture to try again.`
+    : message);
   expect(button("Reset capture")).toBeTruthy();
   await click("Reset capture");
   expect(phase()).toBe("idle");
@@ -123,12 +125,12 @@ it.each(["source", "worklet"])("F4/4 cleans acquired display and existing microp
   await click("Enable microphone");
   sourceFails = failure === "source"; workletFails = failure === "worklet";
   await click("Share audio");
-  await resetAfterFailure(`${failure} attachment failed`);
+  await resetAfterFailure(`${failure} attachment failed`, "system");
 });
 it.each(["source", "worklet"])("F4/5 cleans acquired microphone after %s failure and Reset", async failure => {
   sourceFails = failure === "source"; workletFails = failure === "worklet";
   await click("Enable microphone");
-  await resetAfterFailure(`${failure} attachment failed`);
+  await resetAfterFailure(`${failure} attachment failed`, "microphone");
 });
 it("F4/6 catches synchronous chooser errors in the user gesture", async () => {
   await click("Enable microphone");
@@ -140,7 +142,7 @@ it("F4/6 catches synchronous chooser errors in the user gesture", async () => {
     expect(request).toHaveBeenCalledOnce();
     await new Promise(resolve => setTimeout(resolve, 0));
   });
-  await resetAfterFailure("capture AudioContext is not running");
+  await resetAfterFailure("capture AudioContext is not running", "system");
 });
 it.each(["source", "worklet"])("F4/9 cleans replacement microphone and both old lanes after %s failure and Reset", async failure => {
   await ready();
@@ -150,11 +152,138 @@ it.each(["source", "worklet"])("F4/9 cleans replacement microphone and both old 
 });
 it("denied microphone recovers without reload", async () => {
   denyMicrophone = true; await click("Enable microphone");
-  await resetAfterFailure("microphone denied");
+  await resetAfterFailure("microphone denied", "microphone");
   denyMicrophone = false; await ready();
 });
 it("cancelled picker recovers without reload", async () => {
   await click("Enable microphone"); displayMode = "reject"; await click("Share audio");
-  await resetAfterFailure("chooser rejected");
+  await resetAfterFailure("chooser rejected", "system");
   displayMode = "ok"; await ready();
+});
+
+// WP27 ordering regressions absorbed from the measured logic prototype.
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
+  return { promise, resolve, reject };
+}
+async function settle(action: () => void) {
+  await act(async () => { action(); await new Promise(resolve => setTimeout(resolve, 0)); });
+}
+function snapshot(step: string) {
+  process.stdout.write(JSON.stringify({ step, phase: phase(), status: status(),
+    reset: !!button("Reset capture"),
+    meters: [...root.querySelectorAll(".capture-meter-track")].map(n => n.getAttribute("aria-label")),
+    connected: [...root.querySelectorAll(".capture-meter small")].map(n => n.textContent),
+    tracks: streams.flatMap(s => s.getTracks().map(t => t.stop.mock.calls.length)),
+    contexts: contexts.map(c => c.state),
+    handlers: [...nodes.values()].filter(n => n.port.onmessage).length,
+    chooserCalls: vi.mocked(navigator.mediaDevices.getDisplayMedia).mock.calls.length }) + "\n");
+}
+async function assertReset() {
+  expect(button("Reset capture")).toBeTruthy();
+  await click("Reset capture"); snapshot("reset");
+  expect(phase()).toBe("idle");
+  expect(contexts.every(c => c.state === "closed")).toBe(true);
+  expect(streams.every(s => s.getTracks().every(t => t.stop.mock.calls.length > 0))).toBe(true);
+  expect([...nodes.values()].filter(n => n.port.onmessage)).toHaveLength(0);
+  expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
+  expect(root.querySelector('[aria-label="Shared audio level 0%"]')).toBeTruthy();
+}
+it.each(["descriptor", "microphone"] as const)("early Share while %s pending retains explanation after success", async pending => {
+  const gate = deferred<Response | MediaStream>();
+  if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
+  else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
+  await click("Enable microphone"); snapshot(`${pending} pending`);
+  await click("Share audio"); snapshot("early share rejected");
+  expect(vi.mocked(navigator.mediaDevices.getDisplayMedia)).not.toHaveBeenCalled();
+  await settle(() => gate.resolve(pending === "descriptor"
+    ? { ok: true, json: async () => ({ descriptor }) } as Response : new FakeStream() as unknown as MediaStream));
+  snapshot("microphone succeeded");
+  expect(status()).toContain("start microphone before display capture");
+  expect(status()).toContain("Shared audio");
+  expect(status()).toContain("Reset capture");
+  await settle(() => feed("microphone", .02)); snapshot("late meter");
+  expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
+  await assertReset();
+});
+it.each(["descriptor", "microphone"] as const)("early Share while %s pending retains both failures", async pending => {
+  const gate = deferred<Response | MediaStream>();
+  if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
+  else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
+  await click("Enable microphone"); snapshot(`${pending} pending`);
+  await click("Share audio"); snapshot("early share rejected");
+  await settle(() => gate.reject(new Error("microphone preparation denied"))); snapshot("microphone failed");
+  expect(status()).toContain("start microphone before display capture");
+  expect(status()).toContain("microphone preparation denied");
+  expect(status()).toContain("Microphone"); expect(status()).toContain("Shared audio");
+  expect(status()).toContain("Reset capture");
+  await assertReset();
+});
+it.each(["descriptor", "microphone"] as const)("Reset before pending %s resolves cannot revive capture", async pending => {
+  const gate = deferred<Response | MediaStream>();
+  if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
+  else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
+  await click("Enable microphone"); await click("Share audio");
+  await click("Reset capture"); snapshot("reset while pending");
+  await settle(() => gate.resolve(pending === "descriptor"
+    ? { ok: true, json: async () => ({ descriptor }) } as Response : new FakeStream() as unknown as MediaStream)); snapshot("old setup settled");
+  expect(phase()).toBe("idle");
+  expect(status()).toContain("Live capture requires both");
+  expect(contexts.every(c => c.state === "closed")).toBe(true);
+  expect(streams.every(s => s.getTracks().every(t => t.stop.mock.calls.length > 0))).toBe(true);
+  expect([...nodes.values()].filter(n => n.port.onmessage)).toHaveLength(0);
+});
+it.each(["reject", "missing"] as const)("admitted Share %s clears meters and explains recovery", async mode => {
+  await click("Enable microphone"); await settle(() => feed("microphone", .02)); snapshot("mic receiving");
+  displayMode = mode; await click("Share audio"); snapshot(`share ${mode}`);
+  expect(status()).toContain("Shared audio"); expect(status()).toContain("Reset capture");
+  expect(status()).toContain(mode === "reject" ? "chooser rejected" : "selected display surface supplied no audio track");
+  expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
+  await assertReset();
+  displayMode = "ok"; await ready(); snapshot("retry ready");
+});
+it("mic failure before Share removes Share and offers Reset", async () => {
+  denyMicrophone = true; await click("Enable microphone"); snapshot("mic denied first");
+  expect(button("Share audio")).toBeUndefined();
+  expect(status()).toContain("Microphone"); expect(status()).toContain("microphone denied");
+  expect(status()).toContain("Reset capture"); await assertReset();
+});
+it("successful setup still becomes ready only after both lanes have sound", async () => {
+  await click("Enable microphone"); await click("Share audio"); snapshot("both attached");
+  expect(phase()).toBe("configuring");
+  await settle(() => feed("microphone", .02)); snapshot("mic sound"); expect(phase()).toBe("configuring");
+  await settle(() => feed("system", .3)); snapshot("both sound"); expect(phase()).toBe("ready");
+  expect(status()).toBe("Both sources are receiving sound. Start capture when ready.");
+});
+
+it.each(["descriptor", "microphone"] as const)("old %s rejection after Reset cannot overwrite a fresh ready setup", async pending => {
+  const gate = deferred<Response | MediaStream>();
+  if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
+  else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
+  await click("Enable microphone"); await click("Share audio"); await click("Reset capture");
+  await ready();
+  await settle(() => gate.reject(new Error("old microphone denied"))); snapshot("retired rejection after fresh ready");
+  expect(phase()).toBe("ready");
+  expect(status()).toBe("Both sources are receiving sound. Start capture when ready.");
+  expect(button("Reset capture")).toBeUndefined();
+});
+it.each(["success", "reject"] as const)("Reset while chooser pending handles late %s", async outcome => {
+  await click("Enable microphone");
+  const chooser = deferred<MediaStream>();
+  vi.mocked(navigator.mediaDevices.getDisplayMedia).mockImplementationOnce(() => chooser.promise);
+  await click("Share audio");
+  // A second Share can fail while the first request is pending (for example,
+  // the browser rejects a concurrent chooser). Both are real client requests.
+  displayMode = "reject";
+  await click("Share audio");
+  snapshot("second chooser rejected with first pending");
+  await click("Reset capture");
+  await settle(() => outcome === "success" ? chooser.resolve(new FakeStream() as unknown as MediaStream)
+    : chooser.reject(new Error("chooser cancelled")));
+  snapshot("late chooser settled");
+  expect(phase()).toBe("idle"); expect(status()).toContain("Live capture requires both");
+  expect(contexts.every(c => c.state === "closed")).toBe(true);
+  expect(streams.every(s => s.getTracks().every(t => t.stop.mock.calls.length > 0))).toBe(true);
 });
