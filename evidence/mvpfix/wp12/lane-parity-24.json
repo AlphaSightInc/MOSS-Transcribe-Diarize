@@ -1,0 +1,39 @@
+{
+  "arm": "lane",
+  "case": "parity",
+  "seconds": 24,
+  "start": 90084.146155916,
+  "stop": 90108.156179541,
+  "stop_to_final": 11.803096209012438,
+  "status": "final",
+  "requests": 26,
+  "pre": {
+    "microphone": {
+      "words": 51,
+      "speakers": [
+        "speaker-0002"
+      ]
+    },
+    "system": {
+      "words": 71,
+      "speakers": [
+        "speaker-0001"
+      ]
+    }
+  },
+  "final": {
+    "microphone": {
+      "words": 56,
+      "speakers": [
+        "speaker-0002"
+      ]
+    },
+    "system": {
+      "words": 86,
+      "speakers": [
+        "speaker-0001"
+      ]
+    }
+  },
+  "saved_equal": true
+}

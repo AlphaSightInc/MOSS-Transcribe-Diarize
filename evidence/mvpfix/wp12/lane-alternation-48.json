@@ -1,0 +1,41 @@
+{
+  "arm": "lane",
+  "case": "alternation",
+  "seconds": 48,
+  "start": 90180.920360416,
+  "stop": 90228.930385958,
+  "stop_to_final": 9.999039458009065,
+  "status": "final",
+  "requests": 28,
+  "pre": {
+    "system": {
+      "words": 89,
+      "speakers": [
+        "speaker-0001"
+      ]
+    },
+    "microphone": {
+      "words": 62,
+      "speakers": [
+        "speaker-0002",
+        "speaker-0003"
+      ]
+    }
+  },
+  "final": {
+    "system": {
+      "words": 86,
+      "speakers": [
+        "speaker-0001"
+      ]
+    },
+    "microphone": {
+      "words": 69,
+      "speakers": [
+        "speaker-0003",
+        "speaker-0002"
+      ]
+    }
+  },
+  "saved_equal": true
+}

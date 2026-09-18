@@ -1,0 +1,51 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_terminal_jobs_overlap_and_publish_only_after_both_lanes _________
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/.wp12/red/test_terminal_jobs_overlap_and0')
+
+    def test_terminal_jobs_overlap_and_publish_only_after_both_lanes(tmp_path):
+        """Two Stop listeners must overlap; each keeps its own captured decoder result."""
+        from threading import Barrier, Lock
+    
+        c, _, session, arbiter = make()
+        c.accept_frame(frame())
+        commit(c, arbiter)
+        before = session.snapshot().effective_transcript
+        barrier = Barrier(2, timeout=2)
+        lock = Lock()
+    
+        class ConcurrentRunner(Runner):
+            peak = 0
+            active = 0
+    
+            def transcribe(self, path, **kwargs):
+                with lock:
+                    self.active += 1
+                    self.peak = max(self.peak, self.active)
+                try:
+                    barrier.wait()
+                    assert session.snapshot().effective_transcript == before
+                    with wave.open(str(path)) as f:
+                        marker = f.readframes(1)[0]
+                    self.calls.append(marker)
+                    return SimpleNamespace(text=f"[0][S01]terminal lane {marker}[2.5]")
+                finally:
+                    with lock:
+                        self.active -= 1
+    
+        runner = ConcurrentRunner()
+        result = finalize_lanes(
+            c, TerminalTranscriptFinalizer(runner=runner, scratch_dir=tmp_path),
+            plan=TerminalDecodePlan(session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0),
+            tape=c.tape, base_text_revision_version=0, base_surface=before,
+            canonical_speakers=session.snapshot().identity_snapshot.canonical_speakers,
+        )
+>       assert runner.peak == 2
+E       assert 1 == 2
+E        +  where 1 = <test_live_lane_decode.test_terminal_jobs_overlap_and_publish_only_after_both_lanes.<locals>.ConcurrentRunner object at 0x10be4cf50>.peak
+
+tests/test_live_lane_decode.py:452: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_lane_decode.py::test_terminal_jobs_overlap_and_publish_only_after_both_lanes
+1 failed, 1 passed, 19 deselected in 4.54s

@@ -1,0 +1,654 @@
+........................................................................ [  3%]
+........................................................................ [  7%]
+........................................................................ [ 11%]
+...........................................................F............ [ 15%]
+........................................................................ [ 19%]
+........................................................................ [ 23%]
+........................................................................ [ 27%]
+........................................................................ [ 31%]
+......F................................................................. [ 35%]
+........................................................................ [ 39%]
+........................................................................ [ 43%]
+........................................................................ [ 47%]
+.................................................................. [ 51%]
+........................................................................ [ 55%]
+.............s.......................................................... [ 59%]
+........................................................................ [ 63%]
+........................................................................ [ 67%]
+..........F.FFF..FFFFFFFFF......F..F.................................... [ 71%]
+..........................................................F............. [ 75%]
+...............................F............................... [ 78%]
+.......................................s............................ [ 82%]
+......................................................... [ 85%]
+........................................................................ [ 89%]
+........................................................................ [ 93%]
+........................................................................ [ 97%]
+......................................                                [100%]
+=================================== FAILURES ===================================
+____________ test_reader_retires_draft_by_audio_boundary[multiple] _____________
+
+replacement = 'multiple'
+
+    @pytest.mark.parametrize('replacement', ['preview', 'multiple', 'empty', 'abort'])
+    def test_reader_retires_draft_by_audio_boundary(replacement):
+        r, _, sid = runtime(RecordingDecoder())
+        r.accept_frame(sid, _frame(0)); finished(r)
+        first = r.snapshot(sid).to_dict()
+        import copy
+        second = copy.deepcopy(first)
+        # Even a stale transport draft cannot survive the reader's canonical boundary.
+        if replacement == 'preview':
+            second['session']['provisional'] = dict(generation=1, start_sample=0,
+                                                   end_sample=1000, transcript='[0][S00]confirmed preview[0.0625]')
+        elif replacement == 'abort':
+            second['session']['status'] = 'aborted'
+        else:
+            second['session']['committed_samples'] = 1000
+            second['session']['committed'] = [dict(span_id=0, start_sample=0, end_sample=1000,
+                transcript='[0][S00]one[0.03][0.03][S00]two[0.0625]' if replacement == 'multiple' else '',
+                revised_transcript=None)]
+        rows = read_snapshots([{'snapshot': first}, {'snapshot': second}])
+        assert len(rows[0]) == 1
+>       assert len(rows[1]) == {'preview': 1, 'multiple': 2, 'empty': 0, 'abort': 0}[replacement]
+E       assert 0 == 2
+E        +  where 0 = len([])
+
+tests/phase2/test_draft_lane.py:159: AssertionError
+__________ test_launcher_without_prompt_finalizer_builds_http_request __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x11cd3aa20>
+
+    def test_launcher_without_prompt_finalizer_builds_http_request(monkeypatch):
+        import io
+        import json
+        from moss_transcribe_diarize.app.phase2_web_cli import parse_args, _build_file_runner
+        from moss_transcribe_diarize.app.live_transcript_convergence import TerminalDecodePlan, RollingStatus
+        from moss_transcribe_diarize.inference_utils import DEFAULT_PROMPT
+    
+        # Mirrors account-web-launcher.sh: deliberately no --prompt.
+        args = parse_args([
+            '--database', '/tmp/account.sqlite', '--control-socket', '/tmp/control.sock',
+            '--tls-certfile', '/tmp/cert.pem', '--tls-keyfile', '/tmp/key.pem',
+            '--backend', 'vllm', '--model', '/tmp/model',
+            '--vllm-base-url', 'http://127.0.0.1:8000/v1',
+            '--vllm-model', 'OpenMOSS-Team/MOSS-Transcribe-Diarize', '--vllm-timeout', '1800',
+            '--file-work-root', '/tmp/file-work', '--meeting-audio-root', '/tmp/audio',
+            '--live-provider-manifest', '/tmp/provider.json', '--live-helper-lease-seconds', '30',
+            '--host', '0.0.0.0', '--port', '7861', '--max-len', '16384', '--max-new-tokens', '12000',
+        ])
+        assert args.prompt is None
+        requests = []
+        class Response(io.BytesIO):
+            headers = {'Content-Type': 'application/json'}
+        def fake_urlopen(request, **kwargs):
+            requests.append(request)
+            return Response(json.dumps({'text': '[0][S01]test[2.5]',
+                            'usage': {'completion_tokens': 12, 'prompt_tokens': 10}}).encode())
+        monkeypatch.setattr('urllib.request.urlopen', fake_urlopen)
+        finalizer = runner_composition.build_terminal_finalizer(
+            runner=_build_file_runner(args), prompt=args.prompt, max_length=args.max_len,
+            max_new_tokens=args.max_new_tokens, decoding=args.decoding,
+            temperature=args.temperature, max_length_cap=args.max_len,
+        )
+        class Tape:
+            def gaps(self, end_sample): return ()
+            def read(self, *, start_sample, end_sample): return b'\0\0' * (end_sample-start_sample)
+        finalizer.finalize(
+            plan=TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0,
+                rolling_status=RollingStatus.ROLLING, windows_completed=0, windows_failed=0),
+            tape=Tape(), base_text_revision_version=0,
+        )
+>       assert len(requests) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/phase2/test_runner_composition.py:153: AssertionError
+_ test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_which_it_was _
+
+    def test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_which_it_was():
+        """All three of `_validate_transcription_response`'s conditions publish the same thing.
+    
+        They are not the same observation, and the adapter no longer flattens them into one. The
+        span still commits empty for all three -- that policy is unchanged here -- but the decode
+        now carries which ending it was and how many tokens it took to get there, so a trace can
+        tell a silent microphone from a model answering in the wrong grammar.
+        """
+    
+        for label, response in NO_SPEECH_RESPONSES.items():
+            cause, generated_tokens, reason = NO_SPEECH_DISPOSITIONS[label]
+            runner = StubbedTransportVllmRunner([response])
+            decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+            span = _span(0, DEPLOYED_MIXED_FRAME_SAMPLES)
+    
+            inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * DEPLOYED_MIXED_FRAME_SAMPLES)
+    
+            assert inferred.transcript == "", label
+>           assert inferred.empty_cause is cause, label
+E           AssertionError: zero generated tokens
+E           assert None is <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'>
+E            +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause
+
+tests/test_live_pipeline_seams.py:639: AssertionError
+_ test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it __
+
+    def test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it():
+        """Words the parser threw away come back, and a reader can tell they were repaired."""
+    
+        runner = StubbedTransportVllmRunner([SALVAGEABLE_ANSWER])
+        decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+        span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="hard_cap")
+    
+        inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
+    
+>       assert inferred.transcript == "[0][S01]The difference between, you said the stock market.[2.5]"
+E       AssertionError: assert '' == '[0][S01]The ... market.[2.5]'
+E         
+E         - [0][S01]The difference between, you said the stock market.[2.5]
+
+tests/test_live_pipeline_seams.py:680: AssertionError
+__ test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence ___
+
+    def test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence():
+        """The gate is enforced where the raw answer is read, not asserted somewhere downstream."""
+    
+        runner = StubbedTransportVllmRunner([SALVAGEABLE_ANSWER])
+        decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+        span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="leading_silence")
+    
+        inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
+    
+        assert inferred.transcript == ""
+>       assert inferred.empty_cause is EmptyTranscriptCause.UNPARSEABLE_TEXT
+E       AssertionError: assert None is <EmptyTranscriptCause.UNPARSEABLE_TEXT: 'unparseable_text'>
+E        +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause
+E        +  and   <EmptyTranscriptCause.UNPARSEABLE_TEXT: 'unparseable_text'> = EmptyTranscriptCause.UNPARSEABLE_TEXT
+
+tests/test_live_pipeline_seams.py:696: AssertionError
+_ test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with_it _
+
+    def test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with_it():
+        """Zero completion tokens means the model did not answer, whatever the payload held.
+    
+        The response body can still carry a perfectly parseable string -- it is not this span's
+        answer, and salvage is only ever offered an answer the decoder actually produced.
+        """
+    
+        runner = StubbedTransportVllmRunner([NO_SPEECH_RESPONSES["zero generated tokens"]])
+        decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+        span = FrozenSpan(id=0, epoch=0, start_sample=0, end_sample=40000, reason="hard_cap")
+    
+        inferred = decoder.transcribe_pcm(span=span, pcm=b"\x00\x00" * 40000)
+    
+        assert inferred.transcript == ""
+>       assert inferred.empty_cause is EmptyTranscriptCause.NO_GENERATED_TOKENS
+E       AssertionError: assert None is <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'>
+E        +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).empty_cause
+E        +  and   <EmptyTranscriptCause.NO_GENERATED_TOKENS: 'no_generated_tokens'> = EmptyTranscriptCause.NO_GENERATED_TOKENS
+
+tests/test_live_pipeline_seams.py:715: AssertionError
+_________ test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say _________
+
+    def test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say():
+        """The classification seam, stated as the distinction that matters.
+    
+        Nothing leaves the decode seam unclassified -- that is what made the bare `RuntimeError`
+        fatal -- but a decoder that *failed* must not be silently committed as silence either,
+        or a dead GPU would render as a blank meeting. It is named, and it stays terminal.
+    
+        The example here is a decoder that cannot work at all. A decoder that merely did not
+        answer is the other half of the same seam and answers differently; see the transient
+        nodes below.
+        """
+    
+        class BrokenRunner:
+            def transcribe(self, *args, **kwargs):
+                raise ValueError("model weights are not loaded")
+    
+        decoder = RunnerBoundedWavInference(BrokenRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+    
+>       with pytest.raises(LiveProviderError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE LiveProviderError
+
+tests/test_live_pipeline_seams.py:812: Failed
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer0-True] _
+
+answer = <test_live_pipeline_seams.FailingTransport object at 0x11c286600>
+transient = True
+
+    @pytest.mark.parametrize(
+        "answer, transient",
+        [
+            (_connection_reset(), True),
+            (_http_error(503), True),
+            (_http_error(429), True),
+            (_http_error(500), True),
+            (FailingTransport(lambda: TimeoutError("timed out")), True),
+            (_http_error(400, b"malformed multipart"), False),
+            (_http_error(401, b"no"), False),
+            (_http_error(404, b"no such route"), False),
+        ],
+    )
+    def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer(answer, transient):
+        """One table, drawn where the status code is still in hand.
+    
+        Every one of these left `VllmRunner` as the same bare `RuntimeError` carrying only a
+        message, so the live path could not tell "the socket dropped" from "the request is
+        wrong" without parsing English. The status decides, and it decides at the source.
+        """
+        decoder = RunnerBoundedWavInference(
+            StubbedTransportVllmRunner([answer]),
+            max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+        )
+    
+>       with pytest.raises(LiveProviderError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE LiveProviderError
+
+tests/test_live_pipeline_seams.py:858: Failed
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer1-True] _
+
+answer = <test_live_pipeline_seams.FailingTransport object at 0x11c286270>
+transient = True
+
+    @pytest.mark.parametrize(
+        "answer, transient",
+        [
+            (_connection_reset(), True),
+            (_http_error(503), True),
+            (_http_error(429), True),
+            (_http_error(500), True),
+            (FailingTransport(lambda: TimeoutError("timed out")), True),
+            (_http_error(400, b"malformed multipart"), False),
+            (_http_error(401, b"no"), False),
+            (_http_error(404, b"no such route"), False),
+        ],
+    )
+    def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer(answer, transient):
+        """One table, drawn where the status code is still in hand.
+    
+        Every one of these left `VllmRunner` as the same bare `RuntimeError` carrying only a
+        message, so the live path could not tell "the socket dropped" from "the request is
+        wrong" without parsing English. The status decides, and it decides at the source.
+        """
+        decoder = RunnerBoundedWavInference(
+            StubbedTransportVllmRunner([answer]),
+            max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+        )
+    
+>       with pytest.raises(LiveProviderError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE LiveProviderError
+
+tests/test_live_pipeline_seams.py:858: Failed
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer2-True] _
+
+answer = <test_live_pipeline_seams.FailingTransport object at 0x11c2863c0>
+transient = True
+
+    @pytest.mark.parametrize(
+        "answer, transient",
+        [
+            (_connection_reset(), True),
+            (_http_error(503), True),
+            (_http_error(429), True),
+            (_http_error(500), True),
+            (FailingTransport(lambda: TimeoutError("timed out")), True),
+            (_http_error(400, b"malformed multipart"), False),
+            (_http_error(401, b"no"), False),
+            (_http_error(404, b"no such route"), False),
+        ],
+    )
+    def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer(answer, transient):
+        """One table, drawn where the status code is still in hand.
+    
+        Every one of these left `VllmRunner` as the same bare `RuntimeError` carrying only a
+        message, so the live path could not tell "the socket dropped" from "the request is
+        wrong" without parsing English. The status decides, and it decides at the source.
+        """
+        decoder = RunnerBoundedWavInference(
+            StubbedTransportVllmRunner([answer]),
+            max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+        )
+    
+>       with pytest.raises(LiveProviderError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE LiveProviderError
+
+tests/test_live_pipeline_seams.py:858: Failed
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer3-True] _
+
+answer = <test_live_pipeline_seams.FailingTransport object at 0x11c286060>
+transient = True
+
+    @pytest.mark.parametrize(
+        "answer, transient",
+        [
+            (_connection_reset(), True),
+            (_http_error(503), True),
+            (_http_error(429), True),
+            (_http_error(500), True),
+            (FailingTransport(lambda: TimeoutError("timed out")), True),
+            (_http_error(400, b"malformed multipart"), False),
+            (_http_error(401, b"no"), False),
+            (_http_error(404, b"no such route"), False),
+        ],
+    )
+    def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer(answer, transient):
+        """One table, drawn where the status code is still in hand.
+    
+        Every one of these left `VllmRunner` as the same bare `RuntimeError` carrying only a
+        message, so the live path could not tell "the socket dropped" from "the request is
+        wrong" without parsing English. The status decides, and it decides at the source.
+        """
+        decoder = RunnerBoundedWavInference(
+            StubbedTransportVllmRunner([answer]),
+            max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+        )
+    
+>       with pytest.raises(LiveProviderError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE LiveProviderError
+
+tests/test_live_pipeline_seams.py:858: Failed
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer4-True] _
+
+answer = <test_live_pipeline_seams.FailingTransport object at 0x11c286450>
+transient = True
+
+    @pytest.mark.parametrize(
+        "answer, transient",
+        [
+            (_connection_reset(), True),
+            (_http_error(503), True),
+            (_http_error(429), True),
+            (_http_error(500), True),
+            (FailingTransport(lambda: TimeoutError("timed out")), True),
+            (_http_error(400, b"malformed multipart"), False),
+            (_http_error(401, b"no"), False),
+            (_http_error(404, b"no such route"), False),
+        ],
+    )
+    def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer(answer, transient):
+        """One table, drawn where the status code is still in hand.
+    
+        Every one of these left `VllmRunner` as the same bare `RuntimeError` carrying only a
+        message, so the live path could not tell "the socket dropped" from "the request is
+        wrong" without parsing English. The status decides, and it decides at the source.
+        """
+        decoder = RunnerBoundedWavInference(
+            StubbedTransportVllmRunner([answer]),
+            max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+        )
+    
+>       with pytest.raises(LiveProviderError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE LiveProviderError
+
+tests/test_live_pipeline_seams.py:858: Failed
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer5-False] _
+
+answer = <test_live_pipeline_seams.FailingTransport object at 0x11c286540>
+transient = False
+
+    @pytest.mark.parametrize(
+        "answer, transient",
+        [
+            (_connection_reset(), True),
+            (_http_error(503), True),
+            (_http_error(429), True),
+            (_http_error(500), True),
+            (FailingTransport(lambda: TimeoutError("timed out")), True),
+            (_http_error(400, b"malformed multipart"), False),
+            (_http_error(401, b"no"), False),
+            (_http_error(404, b"no such route"), False),
+        ],
+    )
+    def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer(answer, transient):
+        """One table, drawn where the status code is still in hand.
+    
+        Every one of these left `VllmRunner` as the same bare `RuntimeError` carrying only a
+        message, so the live path could not tell "the socket dropped" from "the request is
+        wrong" without parsing English. The status decides, and it decides at the source.
+        """
+        decoder = RunnerBoundedWavInference(
+            StubbedTransportVllmRunner([answer]),
+            max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+        )
+    
+>       with pytest.raises(LiveProviderError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE LiveProviderError
+
+tests/test_live_pipeline_seams.py:858: Failed
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer6-False] _
+
+answer = <test_live_pipeline_seams.FailingTransport object at 0x11c285c40>
+transient = False
+
+    @pytest.mark.parametrize(
+        "answer, transient",
+        [
+            (_connection_reset(), True),
+            (_http_error(503), True),
+            (_http_error(429), True),
+            (_http_error(500), True),
+            (FailingTransport(lambda: TimeoutError("timed out")), True),
+            (_http_error(400, b"malformed multipart"), False),
+            (_http_error(401, b"no"), False),
+            (_http_error(404, b"no such route"), False),
+        ],
+    )
+    def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer(answer, transient):
+        """One table, drawn where the status code is still in hand.
+    
+        Every one of these left `VllmRunner` as the same bare `RuntimeError` carrying only a
+        message, so the live path could not tell "the socket dropped" from "the request is
+        wrong" without parsing English. The status decides, and it decides at the source.
+        """
+        decoder = RunnerBoundedWavInference(
+            StubbedTransportVllmRunner([answer]),
+            max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+        )
+    
+>       with pytest.raises(LiveProviderError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE LiveProviderError
+
+tests/test_live_pipeline_seams.py:858: Failed
+_ test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer7-False] _
+
+answer = <test_live_pipeline_seams.FailingTransport object at 0x11c2858b0>
+transient = False
+
+    @pytest.mark.parametrize(
+        "answer, transient",
+        [
+            (_connection_reset(), True),
+            (_http_error(503), True),
+            (_http_error(429), True),
+            (_http_error(500), True),
+            (FailingTransport(lambda: TimeoutError("timed out")), True),
+            (_http_error(400, b"malformed multipart"), False),
+            (_http_error(401, b"no"), False),
+            (_http_error(404, b"no such route"), False),
+        ],
+    )
+    def test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer(answer, transient):
+        """One table, drawn where the status code is still in hand.
+    
+        Every one of these left `VllmRunner` as the same bare `RuntimeError` carrying only a
+        message, so the live path could not tell "the socket dropped" from "the request is
+        wrong" without parsing English. The status decides, and it decides at the source.
+        """
+        decoder = RunnerBoundedWavInference(
+            StubbedTransportVllmRunner([answer]),
+            max_samples=DEPLOYED_DECODER_MAX_SAMPLES,
+        )
+    
+>       with pytest.raises(LiveProviderError) as caught:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE LiveProviderError
+
+tests/test_live_pipeline_seams.py:858: Failed
+__ test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span ___
+
+    def test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span():
+        """The rule stated on the adapter, so it holds for a runner with any clock at all.
+    
+        A runner reports whatever clock it happens to hold. The live decode's duration is the
+        adapter's own measurement, taken on the monotonic clock it already reads for the
+        empty-transcript branch twelve lines away -- and which it used to throw away here.
+        """
+    
+        class NegativeElapsedResult:
+            text = "[0.00][S01]hello there[1.10]"
+            prompt_len = 3
+            generated_tokens = 9
+            elapsed_sec = -WALL_CLOCK_BACKWARD_STEP_SEC
+    
+        class NegativeElapsedRunner:
+            def transcribe(self, *args, **kwargs):
+                del args, kwargs
+                return NegativeElapsedResult()
+    
+        decoder = RunnerBoundedWavInference(NegativeElapsedRunner(), max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+    
+        inferred = decoder.transcribe_pcm(span=_span(0, 8000), pcm=b"\x00\x00" * 8000)
+    
+>       assert "hello there" in inferred.transcript
+E       AssertionError: assert 'hello there' in ''
+E        +  where '' = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).transcript
+
+tests/test_live_pipeline_seams.py:1141: AssertionError
+_____ test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire ______
+
+    def test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire():
+        """The real runner builds the real request, and the cap is in it.
+    
+        `RunnerBoundedWavInference` passed no `max_new_tokens` at all, so every live span was
+        decoded under `VllmRunner.transcribe`'s 2048-token default -- the bound the two runaway
+        spans actually hit. The assertion is made on `max_completion_tokens`, the field the
+        product's own `_build_fields` puts on the wire, because that is what the decoder obeys.
+        """
+        runner = StubbedTransportVllmRunner([GOOD_RESPONSE])
+        decoder = RunnerBoundedWavInference(runner, max_samples=DEPLOYED_DECODER_MAX_SAMPLES)
+    
+        for sample_count in (DEPLOYED_HARD_CAP_SAMPLES, DEPLOYED_MIXED_FRAME_SAMPLES):
+            inferred = decoder.transcribe_pcm(span=_span(0, sample_count), pcm=b"\x00\x00" * sample_count)
+            expected = canonical_decode_token_cap(sample_count=sample_count)
+>           assert inferred.token_cap == expected
+E           AssertionError: assert None == 286
+E            +  where None = InferenceTranscript(transcript='', prompt_len=0, generated_tokens=0, elapsed_sec=0.0, token_cap=None, capped=False, empty_cause=None, salvage_disposition=None).token_cap
+
+tests/test_live_pipeline_seams.py:1270: AssertionError
+_ RollingRuntimeWiringTest.test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate _
+
+self = <test_live_rolling_wiring.RollingRuntimeWiringTest testMethod=test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate>
+
+    def test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate(self):
+        """Bounded salvage was measured on 2.5 s hard-cap spans, and stays there.
+    
+        The same unparseable answer is decoded twice through the production adapter: once as
+        a hard-cap span, where M1 completes its absent closing bound and publishes it, and
+        once as a rolling window, where the gate refuses it and the window fails.
+        """
+    
+        raw = "[0.00][S01] the difference between, you said the stock market."
+    
+        class UnparseableRunner:
+            def transcribe(self, audio_path, **kwargs):
+                raise EmptyTranscriptionError(
+                    "zero parsed segments",
+                    cause=EmptyTranscriptCause.UNPARSEABLE_TEXT,
+                    text=raw,
+                    generated_tokens=17,
+                )
+    
+        adapter = RunnerBoundedWavInference(UnparseableRunner(), max_samples=WINDOW_SAMPLES)
+        salvaged = adapter.transcribe_pcm(
+            span=FrozenSpan(
+                id=1, epoch=0, start_sample=0, end_sample=HARD_CAP_SAMPLES, reason=HARD_CAP_REASON
+            ),
+            pcm=b"\0" * HARD_CAP_SAMPLES * 2,
+        )
+        refused = adapter.transcribe_pcm(
+            span=FrozenSpan(
+                id=2,
+                epoch=0,
+                start_sample=0,
+                end_sample=WINDOW_SAMPLES,
+                reason=ROLLING_WINDOW_REASON,
+            ),
+            pcm=b"\0" * WINDOW_SAMPLES * 2,
+        )
+    
+>       self.assertIn("stock market", salvaged.transcript)
+E       AssertionError: 'stock market' not found in ''
+
+tests/test_live_rolling_wiring.py:450: AssertionError
+_ ReplayTerminalFinalizationWaitTest.test_the_run_reports_the_terminal_surface_and_the_events_that_made_it _
+
+self = <test_live_service_replay.ReplayTerminalFinalizationWaitTest testMethod=test_the_run_reports_the_terminal_surface_and_the_events_that_made_it>
+
+    def test_the_run_reports_the_terminal_surface_and_the_events_that_made_it(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            trace, summary = _run_terminal_replay(Path(tmp), finalizer=_terminal_finalizer())
+    
+        wait = _one_trace_record(self, trace, "terminal_finalization_wait")
+        terminal = _one_trace_record(self, trace, "terminal")
+        session = terminal["snapshot"]["session"]
+        kinds = [
+            record["event"]["kind"] for record in trace if record["kind"] == "service_event"
+        ]
+    
+        self.assertEqual(wait["stop_finalization_status"], "running")
+>       self.assertEqual(wait["finalization_status"], "final")
+E       AssertionError: 'failed' != 'final'
+E       - failed
+E       + final
+
+tests/test_live_service_replay.py:724: AssertionError
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/phase2/test_atomic_cutover.py: 17 warnings
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp12-stop-latency-identity/moss_transcribe_diarize/phase2_cutover.py:1410: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    source.extractall(extraction)
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:16: DeprecationWarning: 'aifc' is deprecated and slated for removal in Python 3.13
+    import aifc
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:17: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+tests/test_live_pipeline_seams.py::test_a_leading_silence_span_commits_empty_instead_of_ending_the_meeting
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:19: DeprecationWarning: 'sunau' is deprecated and slated for removal in Python 3.13
+    import sunau
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_draft_lane.py::test_reader_retires_draft_by_audio_boundary[multiple]
+FAILED tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+FAILED tests/test_live_pipeline_seams.py::test_every_no_speech_answer_from_the_real_runner_publishes_nothing_and_says_which_it_was
+FAILED tests/test_live_pipeline_seams.py::test_the_decode_seam_publishes_a_salvaged_span_and_says_that_it_salvaged_it
+FAILED tests/test_live_pipeline_seams.py::test_the_decode_seam_refuses_the_same_answer_on_a_span_frozen_for_silence
+FAILED tests/test_live_pipeline_seams.py::test_a_decode_that_emitted_no_tokens_never_publishes_the_text_that_came_with_it
+FAILED tests/test_live_pipeline_seams.py::test_a_decoder_that_failed_is_not_a_span_with_nothing_to_say
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer0-True]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer1-True]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer2-True]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer3-True]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer4-True]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer5-False]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer6-False]
+FAILED tests/test_live_pipeline_seams.py::test_the_real_runner_decides_which_transport_failures_a_later_attempt_could_answer[answer7-False]
+FAILED tests/test_live_pipeline_seams.py::test_a_runner_result_whose_elapsed_sec_is_negative_never_reaches_the_span
+FAILED tests/test_live_pipeline_seams.py::test_the_live_decode_carries_its_duration_derived_cap_onto_the_wire
+FAILED tests/test_live_rolling_wiring.py::RollingRuntimeWiringTest::test_a_rolling_window_is_never_offered_to_the_M1_salvage_gate
+FAILED tests/test_live_service_replay.py::ReplayTerminalFinalizationWaitTest::test_the_run_reports_the_terminal_surface_and_the_events_that_made_it
+19 failed, 1783 passed, 2 skipped, 21 warnings, 37 subtests passed in 148.45s (0:02:28)

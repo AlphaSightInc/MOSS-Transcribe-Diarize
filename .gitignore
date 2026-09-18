@@ -66,3 +66,6 @@ evidence/mvpfix/wp4/.npm-cache/
 # WP1 isolated prototype runtime state (audio, SQLite, local sockets).
 .wp1/
 >>>>>>> mvpfix/wp1-lane-decode
+
+# WP12 private runtime and baseline scratch.
+.wp12/
