@@ -1,0 +1,35 @@
+{
+  "name": "workspace_row_2",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 3.264,
+  "artifacts": [
+    "workspace_row_2.log"
+  ],
+  "decoder_requests_at_record": 180,
+  "decoder_budget_exhausted_at_record": false,
+  "measurements": {
+    "ok": true,
+    "meeting": "Ipl4i9qpvGYmKeCArNuO2T3U",
+    "status_received": "completed",
+    "speaker_count": 1,
+    "reference_words": 115,
+    "hypothesis_words": 111,
+    "edits": 10,
+    "wer": 0.08695652173913043,
+    "artifact": null,
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 3.264,
+    "network": null,
+    "row": 2
+  }
+}

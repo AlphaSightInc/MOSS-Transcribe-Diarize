@@ -1,0 +1,76 @@
+{
+  "name": "workspace_row_14",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 43.642,
+  "artifacts": [
+    "workspace_row_14.log"
+  ],
+  "decoder_requests_at_record": 180,
+  "decoder_budget_exhausted_at_record": false,
+  "measurements": {
+    "ok": true,
+    "same_document": true,
+    "all_in_history": true,
+    "cycles": [
+      {
+        "cycle": 1,
+        "pane_empty_before_start": true,
+        "meeting": "CIgH0qjE5Y4IRmsa9SZGt90d",
+        "active_phase": null,
+        "first_frame_sequence": 0,
+        "status_received": "completed",
+        "finalization_status": "final",
+        "history_present": true,
+        "export": null,
+        "export_filename": null,
+        "terminal_phase": null,
+        "screenshot": null,
+        "ok": true
+      },
+      {
+        "cycle": 2,
+        "pane_empty_before_start": true,
+        "meeting": "CrRatNH7v6SEMWZGRWnupv-P",
+        "active_phase": null,
+        "first_frame_sequence": 0,
+        "status_received": "completed",
+        "finalization_status": "final",
+        "history_present": true,
+        "export": null,
+        "export_filename": null,
+        "terminal_phase": null,
+        "screenshot": null,
+        "ok": true
+      },
+      {
+        "cycle": 3,
+        "pane_empty_before_start": true,
+        "meeting": "DTXr5O3w_ONlQtQfX8QWUpt0",
+        "active_phase": null,
+        "first_frame_sequence": 0,
+        "status_received": "completed",
+        "finalization_status": "final",
+        "history_present": true,
+        "export": null,
+        "export_filename": null,
+        "terminal_phase": null,
+        "screenshot": null,
+        "ok": true
+      }
+    ],
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 43.642,
+    "network": null,
+    "row": 14
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "tree_clean",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0,
+  "artifacts": [
+    "tree_clean.log"
+  ],
+  "measurements": {
+    "dirty_files": []
+  }
+}

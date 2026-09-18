@@ -1,0 +1,43 @@
+{
+  "name": "workspace_row_11",
+  "status": "PASS",
+  "exit_code": null,
+  "denominators": {
+    "expected": 1,
+    "executed": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 0.091,
+  "artifacts": [
+    "workspace_row_11.log"
+  ],
+  "decoder_requests_at_record": 180,
+  "decoder_budget_exhausted_at_record": false,
+  "measurements": {
+    "header_visible": true,
+    "header_box": {
+      "x": 527.375,
+      "y": 104,
+      "width": 187.6875,
+      "height": 33.5
+    },
+    "ok": true,
+    "title_matches": true,
+    "mode": null,
+    "panel_box": {
+      "x": 310,
+      "y": 97.5,
+      "width": 820,
+      "height": 984.5
+    },
+    "selected": null,
+    "screenshot": null,
+    "status": "PASS",
+    "seconds": 0.091,
+    "network": null,
+    "row": 11
+  }
+}
