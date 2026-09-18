@@ -32,3 +32,11 @@ no prototype hook is imported by production. No production implementation added.
 Full evidence, per-stage table, falsifiers and limits: evidence/mvpfix/wp20/NOTES.md.
 The hypothesis test is complete; local scheduler/timing admission not attempted
 following the explicit no-win stop. No word-aligned per-span truth was available.
+
+## Fresh-context verification — 2026-09-18
+
+Tested 8b46938aedc97fc50167f08ceb7838def0a159a6. Offline audit PASS; no-overlap-win
+rejection confirmed; product quality FAIL. Python 1874 passed, 2 skipped,
+37 subtests passed (150.98 s); frontend 244/27 files (2.62 s); typecheck/build PASS,
+assets unchanged; ports 17880/18120 clear. Zero new decoder calls. Details and
+independent surface/padding checks: `docs/verify/wp20/VERIFY-RESULT.md`.

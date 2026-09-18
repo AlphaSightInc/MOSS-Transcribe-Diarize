@@ -1,0 +1,61 @@
+{
+  "result": "PASS",
+  "surface_checks": [
+    {
+      "case": "alternation",
+      "stage": "pre_terminal",
+      "scores_equal": true,
+      "lane_wer": {
+        "system": 0.1509433962264151,
+        "microphone": 0.20754716981132076
+      }
+    },
+    {
+      "case": "alternation",
+      "stage": "final",
+      "scores_equal": true,
+      "lane_wer": {
+        "system": 0.08490566037735849,
+        "microphone": 0.09433962264150944
+      }
+    },
+    {
+      "case": "alternation",
+      "stage": "reopened",
+      "scores_equal": true,
+      "lane_wer": {
+        "system": 0.08490566037735849,
+        "microphone": 0.09433962264150944
+      }
+    },
+    {
+      "case": "overlap",
+      "stage": "pre_terminal",
+      "scores_equal": true,
+      "lane_wer": {
+        "system": 0.22641509433962265,
+        "microphone": 0.11320754716981132
+      }
+    },
+    {
+      "case": "overlap",
+      "stage": "final",
+      "scores_equal": true,
+      "lane_wer": {
+        "system": 0.12264150943396226,
+        "microphone": 0.09433962264150944
+      }
+    },
+    {
+      "case": "overlap",
+      "stage": "reopened",
+      "scores_equal": true,
+      "lane_wer": {
+        "system": 0.12264150943396226,
+        "microphone": 0.09433962264150944
+      }
+    }
+  ],
+  "padding_scores_rederived": 4,
+  "new_decoder_calls": 0
+}

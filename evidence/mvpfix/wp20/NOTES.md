@@ -140,3 +140,13 @@ scheduling, because the requested overlap mechanism failed its falsifier. Per-sp
 WER requires independently aligned word references, currently unavailable. No
 candidate immediate/final or latency acceptance invented. Fresh /new verification
 is recorded separately in docs/verify/wp20/VERIFY-RESULT.md when executed.
+
+## V2 — fresh-context verification completed, 2026-09-18
+
+Tested 8b46938aedc97fc50167f08ceb7838def0a159a6 in the clean WP20 tree. Audit PASS;
+prototype REJECTED_NO_OVERLAP_WIN; product quality FAIL. Raw-surface scores match
+6/6 records (12 lane scores); raw padding scores match 4/4. Full Python 1874 passed,
+2 skipped, 21 warnings, 37 subtests passed in 150.98 s; frontend 244/27 files in
+2.62 s; typecheck/build PASS; assets unchanged; listeners absent on 17880/18120.
+Zero new decoder calls; historical 390-call ledger unchanged. Report, limitations,
+execution deviations: `docs/verify/wp20/VERIFY-RESULT.md`; logs: `fresh-*` here.
