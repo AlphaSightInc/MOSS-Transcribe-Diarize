@@ -53,3 +53,6 @@ evidence/e2e-*/*.mp3
 evidence/e2e-*/*.wav
 evidence/e2e-*/*.png
 prototypes/streaming-diarization/identity-floor-a2/results/*.npz
+
+# WP6 private measurement state, audio, TLS material, and test scratch.
+.wp6-tmp/
