@@ -121,6 +121,9 @@ class Meeting:
     transcript: dict[str, object] | None = None
     transcript_version: int = 0
     audio: MeetingAudio | None = None
+    failure_code: str | None = None
+    failure_reason: str | None = None
+    notice: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -133,6 +136,8 @@ class Meeting:
             "transcript": self.transcript,
             "transcript_version": self.transcript_version,
             "audio": None if self.audio is None else self.audio.to_dict(),
+            **({"failure_code": self.failure_code, "failure_reason": self.failure_reason} if self.failure_code else {}),
+            **({"notice": self.notice} if self.notice else {}),
         }
 
 
@@ -183,6 +188,15 @@ class Phase2Store:
                 raise SchemaVersionError(
                     f"Refusing existing database with user_version={version}; expected {SCHEMA_VERSION}."
                 )
+            # Additive outcome storage for existing schema-v2 workspaces; no data rewrite.
+            await connection.execute("""CREATE TABLE IF NOT EXISTS meeting_outcomes (
+                account_id TEXT NOT NULL, meeting_id TEXT NOT NULL,
+                failure_code TEXT, failure_reason TEXT, notice TEXT,
+                PRIMARY KEY(account_id, meeting_id),
+                FOREIGN KEY(account_id, meeting_id) REFERENCES meetings(account_id, meeting_id)
+                    ON DELETE CASCADE
+            )""")
+            await connection.commit()
             return store
         except BaseException:
             await connection.close()
@@ -860,6 +874,7 @@ class Phase2Store:
                 """
                 SELECT m.meeting_id, m.mode, m.title, m.title_source,
                        m.status, m.created_at_ms,
+                       mo.failure_code, mo.failure_reason, mo.notice,
                        t.document_json, t.version AS transcript_version,
                        ma.state AS audio_state, ma.relative_path AS audio_relative_path,
                        ma.byte_count AS audio_byte_count, ma.duration_ms AS audio_duration_ms,
@@ -868,6 +883,8 @@ class Phase2Store:
                 FROM meetings m
                 JOIN accounts a ON a.account_id = m.account_id
                     AND a.enabled = 1 AND a.authority_generation = ?
+                LEFT JOIN meeting_outcomes mo
+                    ON mo.account_id = m.account_id AND mo.meeting_id = m.meeting_id
                 LEFT JOIN meeting_transcripts t
                     ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
                 LEFT JOIN meeting_audio ma
@@ -944,6 +961,7 @@ class Phase2Store:
                 """
                 SELECT m.meeting_id, m.mode, m.title, m.title_source,
                        m.status, m.created_at_ms,
+                       mo.failure_code, mo.failure_reason, mo.notice,
                        t.document_json, t.version AS transcript_version,
                        ma.state AS audio_state, ma.relative_path AS audio_relative_path,
                        ma.byte_count AS audio_byte_count, ma.duration_ms AS audio_duration_ms,
@@ -952,6 +970,8 @@ class Phase2Store:
                 FROM meetings m
                 JOIN accounts a ON a.account_id = m.account_id
                     AND a.enabled = 1 AND a.authority_generation = ?
+                LEFT JOIN meeting_outcomes mo
+                    ON mo.account_id = m.account_id AND mo.meeting_id = m.meeting_id
                 LEFT JOIN meeting_transcripts t
                     ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
                 LEFT JOIN meeting_audio ma
@@ -1063,6 +1083,8 @@ class Phase2Store:
         authority_generation: int,
         meeting_id: str,
         status: str,
+        *, failure_code: str | None = None, failure_reason: str | None = None,
+        notice: str | None = None,
     ) -> None:
         if status not in {"completed", "failed", "interrupted"}:
             raise ValueError("Meeting terminal status is invalid.")
@@ -1082,6 +1104,12 @@ class Phase2Store:
             )
             if cursor.rowcount != 1:
                 raise AccountRevoked("Meeting authority is revoked or interrupted.")
+
+            if failure_code or notice:
+                await self._connection.execute(
+                    "INSERT INTO meeting_outcomes VALUES (?, ?, ?, ?, ?)",
+                    (account_id, meeting_id, failure_code, failure_reason, notice),
+                )
 
     async def _finish_meeting_with_transcript(
         self,
@@ -1363,12 +1391,14 @@ class MeetingHandle:
             terminal=terminal,
         )
 
-    async def finish(self, status: str) -> None:
+    async def finish(self, status: str, *, failure_code: str | None = None,
+                     failure_reason: str | None = None, notice: str | None = None) -> None:
         await self._store._finish_meeting(
             self._account_id,
             self._authority_generation,
             self.meeting_id,
-            status,
+            status, **{key: value for key, value in {"failure_code": failure_code,
+                "failure_reason": failure_reason, "notice": notice}.items() if value is not None},
         )
 
     async def finish_with_transcript(
@@ -2175,6 +2205,7 @@ def _meeting_from_row(row: Any) -> Meeting:
         transcript=None if document_json is None else json.loads(document_json),
         transcript_version=0 if row["transcript_version"] is None else int(row["transcript_version"]),
         audio=_meeting_audio_from_row(row),
+        failure_code=row["failure_code"], failure_reason=row["failure_reason"], notice=row["notice"],
     )
 
 

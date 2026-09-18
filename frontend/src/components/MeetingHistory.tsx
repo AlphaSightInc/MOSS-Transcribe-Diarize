@@ -219,6 +219,7 @@ export function MeetingHistory() {
         <FinalSummarySettings />
         {error ? <p className="history-state-card is-error" role="alert">{error}</p> : null}
         {selected ? <p className="hint" role="status">Selected: {meetingTitle(selected)}. <a href="#transcript-panel">View selected transcript and export</a></p> : null}
+        {selected && (selected.failure_reason || selected.notice) && <p role="status">{selected.failure_reason || selected.notice}</p>}
         {selected?.status === "completed" && <FinalSummary key={selected.id} meeting={selected} />}
         {loading && meetings.length === 0 ? (
           <p className="history-state-card" role="status">Loading meetings…</p>
@@ -255,7 +256,7 @@ export function MeetingHistory() {
                             {formatMeetingTimestamp(meeting.created_at_ms)} · {modeLabel(meeting.mode)} · {statusLabel(meeting.status)}
                           </span>
                           <span className="history-card-subtitle">
-                            {meetingPreview(meeting)}
+                            {meeting.failure_reason || meeting.notice || meetingPreview(meeting)}
                           </span>
                         </span>
                         <span className="history-count-chip">v{meeting.transcript_version}</span>
@@ -352,9 +353,9 @@ function publishMeeting(meeting: Meeting, observeActive: boolean): void {
     state: meeting.status,
     status: sessionLifecycle(meeting.status),
     error: meeting.status === "failed" || meeting.status === "interrupted"
-      ? statusLabel(meeting.status)
+      ? meeting.failure_reason || statusLabel(meeting.status)
       : null,
-    status_line: meeting.status === "active" ? "Meeting active" : statusLabel(meeting.status)
+    status_line: meeting.failure_reason || meeting.notice || (meeting.status === "active" ? "Meeting active" : statusLabel(meeting.status))
   });
   dispatchWsEvent({
     type: "transcript_update",

@@ -12,6 +12,7 @@ import stat
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.request
 from collections.abc import Callable, Mapping
 from contextlib import ExitStack
@@ -22,6 +23,10 @@ from urllib.parse import urlsplit
 if TYPE_CHECKING:
     from playwright.sync_api import BrowserContext, Page
 
+
+from .lane_word_oracle import normalize_segment, words
+
+G7_OPERATOR_PHRASE = "Copper planets orbit distant stars above violet gardens"
 
 G7_EVIDENCE_SCHEMA = "moss-phase2-attended-g7.v1"
 G7_EVIDENCE_SOURCE = "candidate-owned-production-browser"
@@ -418,6 +423,51 @@ def _wait_for_capture_phase(page: Page, phase: str, *, scenario: str) -> None:
         ) from exc
 
 
+def operator_phrase_witness(meeting, phrase, operator_window, tab_window):
+    """Project only a public predeclared phrase and speaker IDs, never private text."""
+    rows = [normalize_segment(row) for row in (meeting.get("transcript") or {}).get("segments", [])]
+    tab_speakers = {row["speaker"] for row in rows if row["speaker"] and (
+        row.get("source_lane") == "system" or
+        (not row.get("source_lane") and row["start"] >= tab_window[0] and row["end"] <= tab_window[1]))}
+    phrase_words = words(phrase)
+    speakers = {row["speaker"] for row in rows if row["speaker"]}
+    matched = []
+    best_match = 0
+    for speaker in sorted(speakers):
+        observed = [word for row in sorted(rows, key=lambda r: r["start"])
+                    if row["speaker"] == speaker and row.get("source_lane") != "system"
+                    and row["start"] >= operator_window[0] and row["end"] <= operator_window[1]
+                    for word in words(row["text"])]
+        # Longest common subsequence permits one ASR omission/substitution and
+        # inserted words, while retaining the phrase's order within one speaker.
+        previous = [0] * (len(observed) + 1)
+        for expected in phrase_words:
+            current = [0]
+            for index, actual in enumerate(observed):
+                current.append(previous[index] + 1 if expected == actual
+                               else max(previous[index + 1], current[-1]))
+            previous = current
+        best_match = max(best_match, previous[-1])
+        if phrase_words and previous[-1] >= len(phrase_words) - 1:
+            matched.append(speaker)
+    return {"phrase": phrase, "reference_words": len(phrase_words),
+            "matched_words": best_match,
+            "operator_speakers": matched, "tab_speakers": sorted(tab_speakers)}
+
+
+def _valid_operator_phrase(value):
+    if not isinstance(value, Mapping):
+        return False
+    operators, tabs = value.get("operator_speakers"), value.get("tab_speakers")
+    return (value.get("phrase") == G7_OPERATOR_PHRASE
+            and value.get("reference_words") == len(words(G7_OPERATOR_PHRASE))
+            and value.get("matched_words") in (len(words(G7_OPERATOR_PHRASE)) - 1, len(words(G7_OPERATOR_PHRASE)))
+            and isinstance(operators, list) and bool(operators)
+            and isinstance(tabs, list) and bool(tabs)
+            and all(isinstance(v, str) and bool(v) for v in operators + tabs)
+            and set(operators).isdisjoint(tabs))
+
+
 def _run_scenario(
     context: BrowserContext,
     *,
@@ -480,8 +530,15 @@ def _run_scenario(
 
         page.get_by_role("button", name="Start capture").click()
         _wait_for_capture_phase(page, "active", scenario=scenario)
+        capture_started = time.monotonic()
+        confirm(f"{scenario}: pause shared playback. Read this predeclared phrase ALONE: "
+                f"{G7_OPERATOR_PHRASE}. Wait for its last word, then press Enter. ")
+        operator_window = (0.0, time.monotonic() - capture_started)
+        tab_start = time.monotonic() - capture_started
+        confirm(f"{scenario}: stay silent; play the shared source ALONE until its speaker appears, then press Enter. ")
+        tab_window = (tab_start, time.monotonic() - capture_started)
         confirm(
-            f"{scenario}: keep both sources audible, speak distinctly, and press Enter only "
+            f"{scenario}: now overlap both sources, speak distinctly, and press Enter only "
             "after the transcript visibly contains both speakers. "
         )
         if page.locator('[data-capture-phase="active"]').count() != 1:
@@ -517,6 +574,7 @@ def _run_scenario(
             "meter_nonzero_samples": meter_samples,
             "frames": frames,
             "distinct_speakers": _speaker_count(meeting),
+            "operator_phrase": operator_phrase_witness(meeting, G7_OPERATOR_PHRASE, operator_window, tab_window),
             "meeting_status": meeting.get("status"),
             "audio_state": (
                 meeting.get("audio", {}).get("state")
@@ -566,7 +624,8 @@ def validate_attended_g7(
         meters = row.get("meter_nonzero_samples")
         probe = row.get("audio_probe")
         if (
-            row.get("display_surface") != surface
+            not _valid_operator_phrase(row.get("operator_phrase"))
+            or row.get("display_surface") != surface
             or row.get("display_audio_tracks") != 1
             or not isinstance(meters, Mapping)
             or set(meters) != {"microphone", "system"}

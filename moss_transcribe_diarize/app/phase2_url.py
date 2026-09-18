@@ -26,6 +26,10 @@ HTTP_REDIRECT_STATUSES = frozenset({301, 302, 303, 307, 308})
 class UrlAcquisitionRejected(ValueError):
     """A content-free rejection safe to translate into a failed Meeting."""
 
+    def __init__(self, message: str, *, failure_code: str = "acquisition_failed"):
+        super().__init__(message)
+        self.failure_code = failure_code
+
 
 def validate_http_url(source_url: str) -> str:
     value = source_url.strip()
@@ -76,7 +80,14 @@ class UrlMediaAcquirer:
         except UrlAcquisitionRejected:
             raise
         except asyncio.TimeoutError as exc:
-            raise UrlAcquisitionRejected("URL acquisition timed out.") from exc
+            raise UrlAcquisitionRejected("URL acquisition timed out.", failure_code="acquisition_timeout") from exc
+        except httpx.TimeoutException as exc:
+            raise UrlAcquisitionRejected("URL acquisition timed out.", failure_code="acquisition_timeout") from exc
+        except httpx.HTTPStatusError as exc:
+            status = exc.response.status_code
+            reason = {403: "The media server refused access (403).", 404: "The media was not found (404)."}.get(status, "The media server returned an error.")
+            code = f"acquisition_http_{status}" if status in (403, 404) else "acquisition_failed"
+            raise UrlAcquisitionRejected(reason, failure_code=code) from exc
         except httpx.HTTPError as exc:
             raise UrlAcquisitionRejected("URL media could not be acquired.") from exc
 
@@ -85,6 +96,7 @@ class UrlMediaAcquirer:
         destination: Path | None = None
         try:
             async with httpx.AsyncClient(
+                headers={"User-Agent": "Mozilla/5.0 (compatible; MOSS/1.0; media fetch)"},
                 follow_redirects=False,
                 timeout=timeout,
                 transport=self._http_transport,
@@ -181,7 +193,7 @@ class UrlMediaAcquirer:
         except asyncio.TimeoutError as exc:
             if await self._quiesce_youtube(process, destination):
                 raise asyncio.CancelledError from exc
-            raise UrlAcquisitionRejected("URL acquisition timed out.") from exc
+            raise UrlAcquisitionRejected("URL acquisition timed out.", failure_code="acquisition_timeout") from exc
         except asyncio.CancelledError:
             await self._quiesce_youtube(process, destination)
             raise

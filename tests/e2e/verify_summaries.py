@@ -11,7 +11,7 @@ Run: .venv/bin/python tests/e2e/verify_summaries.py
   MOSS_RELAY_MODEL       default qwen/qwen3.6-35b-a3b; skipped if the relay does not list it
   OPENROUTER_API_KEY     enables the external provider; never printed or retained
   MOSS_SUMMARY_ENDPOINT  default https://openrouter.ai/api/v1
-  MOSS_SUMMARY_MODEL     default google/gemini-2.5-flash
+  MOSS_SUMMARY_MODEL     default google/gemini-2.5-flash-lite
   TRIALS                 default 1
   MOSS_SUMMARY_PROVIDERS default relay,external; use external to check only the demo provider
 Exit 0 = every attempted summary became current; 1 = one did not; 77 = nothing could be attempted.
@@ -43,9 +43,9 @@ CONTEXT = ssl._create_unverified_context() if LOOPBACK else None
 CORPUS = REPO / 'evidence/live-policy-sweep-20260825/corpus'
 TRANSCRIPTS = ('mono_javier_intro_50s', 'interview_adam_frank_180s')
 RELAY_MODEL = os.environ.get('MOSS_RELAY_MODEL', 'qwen/qwen3.6-35b-a3b')
-EXTERNAL_KEY = os.environ.get('OPENROUTER_API_KEY', '')
+EXTERNAL_KEY = os.environ.get('OPENROUTER_API_KEY') or os.environ.get('MOSS_DEMO_OPENROUTER_API_KEY', '')
 EXTERNAL_ENDPOINT = os.environ.get('MOSS_SUMMARY_ENDPOINT', 'https://openrouter.ai/api/v1')
-EXTERNAL_MODEL = os.environ.get('MOSS_SUMMARY_MODEL', 'google/gemini-2.5-flash')
+EXTERNAL_MODEL = os.environ.get('MOSS_SUMMARY_MODEL', 'google/gemini-2.5-flash-lite')
 TRIALS = int(os.environ.get('TRIALS', '1'))
 PROVIDERS = {name.strip() for name in os.environ.get('MOSS_SUMMARY_PROVIDERS', 'relay,external').split(',') if name.strip()}
 

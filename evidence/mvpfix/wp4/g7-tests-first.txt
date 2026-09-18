@@ -1,0 +1,447 @@
+....FF......F.............................F......                        [100%]
+=================================== FAILURES ===================================
+_ test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_evidence _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10abc2540>
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-g7/test_candidate_owned_runner_re0')
+
+    def test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_evidence(
+        monkeypatch, tmp_path
+    ):
+        chrome = tmp_path / "chrome"
+        chrome.write_bytes(b"chrome")
+        profile = tmp_path / "acceptance.json"
+        profile.write_text(
+            json.dumps(
+                {
+                    "measurements": {
+                        "pre_admission": {
+                            "https_origin": g7.G7_PRODUCTION_ORIGIN,
+                            "chrome_binary": str(chrome),
+                            "caller_authored_result": "ignored",
+                        }
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        profile.chmod(0o600)
+    
+        class Browser:
+            version = "Chrome/real"
+    
+        class Context:
+            browser = Browser()
+    
+            def add_init_script(self, _script):
+                pass
+    
+            def close(self):
+                pass
+    
+        class Chromium:
+            def launch_persistent_context(self, *_args, **_kwargs):
+                return Context()
+    
+        class Playwright:
+            chromium = Chromium()
+    
+        class Manager:
+            def __enter__(self):
+                return Playwright()
+    
+            def __exit__(self, *_args):
+                pass
+    
+        monkeypatch.setattr(g7, "_playwright_manager", Manager)
+        monkeypatch.setattr(
+            g7,
+            "_run_scenario",
+            lambda _context, *, scenario, expected_surface, **_kwargs: _scenario(
+                scenario, expected_surface
+            ),
+        )
+>       evidence = g7.run_attended_g7_canary(
+            acceptance_profile=profile,
+            candidate=_candidate(),
+            confirm=lambda _prompt: "",
+        )
+
+tests/phase2/test_attended_g7_canary.py:194: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/phase2_g7_canary.py:730: in run_attended_g7_canary
+    validate_attended_g7(evidence, candidate=candidate)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema': 'moss-phase2-attended-g7.v1', 'source': 'candidate-owned-production-browser', 'production_origin': True, 'operator_attended': True, ...}
+candidate = {'git_sha': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'git_tree': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'uv_lock_sha256': 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'}
+
+    def validate_attended_g7(
+        payload: Mapping[str, object], *, candidate: Mapping[str, object]
+    ) -> None:
+        identity = payload.get("candidate")
+        scenarios = payload.get("scenarios")
+        if (
+            payload.get("schema") != G7_EVIDENCE_SCHEMA
+            or payload.get("source") != G7_EVIDENCE_SOURCE
+            or payload.get("production_origin") is not True
+            or payload.get("operator_attended") is not True
+            or payload.get("admitted") is not False
+            or payload.get("origin") != G7_PRODUCTION_ORIGIN
+            or not isinstance(identity, Mapping)
+            or any(identity.get(key) != candidate.get(key) for key in ("git_sha", "git_tree", "uv_lock_sha256"))
+            or not isinstance(payload.get("chrome_version"), str)
+            or not payload.get("chrome_version")
+            or not isinstance(scenarios, list)
+            or len(scenarios) != 2
+        ):
+            raise AttendedCanaryError("attended G7 evidence identity is incomplete")
+        by_id = {
+            row.get("id"): row for row in scenarios if isinstance(row, Mapping)
+        }
+        if set(by_id) != set(G7_SCENARIOS):
+            raise AttendedCanaryError("attended G7 scenarios are incomplete")
+        session_ids = {
+            row.get("session_id") for row in by_id.values() if isinstance(row.get("session_id"), str)
+        }
+        if len(session_ids) != 2 or any(not value for value in session_ids):
+            raise AttendedCanaryError("attended G7 session identity is incomplete")
+        for scenario, surface in G7_SCENARIOS.items():
+            row = by_id[scenario]
+            frames = row.get("frames")
+            meters = row.get("meter_nonzero_samples")
+            probe = row.get("audio_probe")
+            if (
+                not _valid_operator_phrase(row.get("operator_phrase"))
+                or row.get("display_surface") != surface
+                or row.get("display_audio_tracks") != 1
+                or not isinstance(meters, Mapping)
+                or set(meters) != {"microphone", "system"}
+                or any(not _positive_int(meters.get(lane)) for lane in meters)
+                or not isinstance(frames, Mapping)
+                or set(frames) != {"microphone", "system"}
+                or row.get("source_revision") != candidate.get("git_sha")
+                or not _positive_int(row.get("distinct_speakers"))
+                or int(row["distinct_speakers"]) < 2
+                or row.get("meeting_status") != "completed"
+                or row.get("audio_state") != "available"
+                or row.get("owner_download_status") != 200
+                or not isinstance(probe, Mapping)
+                or probe.get("codec") != "mp3"
+                or probe.get("sample_rate_hz") != 16_000
+                or probe.get("channels") != 1
+                or probe.get("bit_rate_bps") != 48_000
+                or not _positive_int(probe.get("byte_count"))
+            ):
+>               raise AttendedCanaryError(f"attended G7 scenario failed: {scenario}")
+E               moss_transcribe_diarize.phase2_g7_canary.AttendedCanaryError: attended G7 scenario failed: microphone_meeting_tab
+
+moss_transcribe_diarize/phase2_g7_canary.py:637: AttendedCanaryError
+----------------------------- Captured stdout call -----------------------------
+G7 attended canary: choose Chrome display surface 'browser' for microphone_meeting_tab; enable shared audio.
+G7 attended canary: choose Chrome display surface 'monitor' for microphone_entire_screen; enable shared audio.
+________ test_attended_runner_attaches_to_the_operator_loopback_browser ________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10ab1d370>
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-g7/test_attended_runner_attaches_0')
+
+    def test_attended_runner_attaches_to_the_operator_loopback_browser(monkeypatch, tmp_path):
+        """The attended client may run on the operator's machine, not the server."""
+    
+        profile = _profile_with(
+            tmp_path, chrome_cdp_endpoint="ws://127.0.0.1:9222/devtools/browser/abc"
+        )
+        observed: dict[str, object] = {}
+    
+        class Context:
+            def add_init_script(self, _script):
+                observed["init_script"] = True
+    
+            def clear_cookies(self, **filters):
+                observed["cleared"] = filters
+    
+        attached = Context()
+    
+        class Browser:
+            version = "Chrome/operator"
+            contexts = [attached]
+    
+            def close(self):
+                observed["disconnected"] = True
+    
+            def new_browser_cdp_session(self):
+                return _CommandLineSession(["--enable-automation", "--remote-debugging-port=9222"])
+    
+            def new_context(self):  # pragma: no cover - only reached without an open context
+                raise AssertionError("the operator's existing context must be reused")
+    
+        class Chromium:
+            def connect_over_cdp(self, endpoint):
+                observed["endpoint"] = endpoint
+                return Browser()
+    
+            def launch_persistent_context(self, *_args, **_kwargs):
+                raise AssertionError("a remote attended browser must never be launched on the host")
+    
+        class Playwright:
+            chromium = Chromium()
+    
+        class Manager:
+            def __enter__(self):
+                return Playwright()
+    
+            def __exit__(self, *_args):
+                pass
+    
+        monkeypatch.setattr(g7, "_playwright_manager", Manager)
+        monkeypatch.setattr(
+            g7,
+            "_run_scenario",
+            lambda context, *, scenario, expected_surface, **_kwargs: (
+                observed.setdefault("context", context),
+                _scenario(scenario, expected_surface),
+            )[1],
+        )
+>       evidence = g7.run_attended_g7_canary(
+            acceptance_profile=profile,
+            candidate=_candidate(),
+            confirm=lambda _prompt: "",
+        )
+
+tests/phase2/test_attended_g7_canary.py:275: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+moss_transcribe_diarize/phase2_g7_canary.py:730: in run_attended_g7_canary
+    validate_attended_g7(evidence, candidate=candidate)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema': 'moss-phase2-attended-g7.v1', 'source': 'candidate-owned-production-browser', 'production_origin': True, 'operator_attended': True, ...}
+candidate = {'git_sha': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'git_tree': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'uv_lock_sha256': 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'}
+
+    def validate_attended_g7(
+        payload: Mapping[str, object], *, candidate: Mapping[str, object]
+    ) -> None:
+        identity = payload.get("candidate")
+        scenarios = payload.get("scenarios")
+        if (
+            payload.get("schema") != G7_EVIDENCE_SCHEMA
+            or payload.get("source") != G7_EVIDENCE_SOURCE
+            or payload.get("production_origin") is not True
+            or payload.get("operator_attended") is not True
+            or payload.get("admitted") is not False
+            or payload.get("origin") != G7_PRODUCTION_ORIGIN
+            or not isinstance(identity, Mapping)
+            or any(identity.get(key) != candidate.get(key) for key in ("git_sha", "git_tree", "uv_lock_sha256"))
+            or not isinstance(payload.get("chrome_version"), str)
+            or not payload.get("chrome_version")
+            or not isinstance(scenarios, list)
+            or len(scenarios) != 2
+        ):
+            raise AttendedCanaryError("attended G7 evidence identity is incomplete")
+        by_id = {
+            row.get("id"): row for row in scenarios if isinstance(row, Mapping)
+        }
+        if set(by_id) != set(G7_SCENARIOS):
+            raise AttendedCanaryError("attended G7 scenarios are incomplete")
+        session_ids = {
+            row.get("session_id") for row in by_id.values() if isinstance(row.get("session_id"), str)
+        }
+        if len(session_ids) != 2 or any(not value for value in session_ids):
+            raise AttendedCanaryError("attended G7 session identity is incomplete")
+        for scenario, surface in G7_SCENARIOS.items():
+            row = by_id[scenario]
+            frames = row.get("frames")
+            meters = row.get("meter_nonzero_samples")
+            probe = row.get("audio_probe")
+            if (
+                not _valid_operator_phrase(row.get("operator_phrase"))
+                or row.get("display_surface") != surface
+                or row.get("display_audio_tracks") != 1
+                or not isinstance(meters, Mapping)
+                or set(meters) != {"microphone", "system"}
+                or any(not _positive_int(meters.get(lane)) for lane in meters)
+                or not isinstance(frames, Mapping)
+                or set(frames) != {"microphone", "system"}
+                or row.get("source_revision") != candidate.get("git_sha")
+                or not _positive_int(row.get("distinct_speakers"))
+                or int(row["distinct_speakers"]) < 2
+                or row.get("meeting_status") != "completed"
+                or row.get("audio_state") != "available"
+                or row.get("owner_download_status") != 200
+                or not isinstance(probe, Mapping)
+                or probe.get("codec") != "mp3"
+                or probe.get("sample_rate_hz") != 16_000
+                or probe.get("channels") != 1
+                or probe.get("bit_rate_bps") != 48_000
+                or not _positive_int(probe.get("byte_count"))
+            ):
+>               raise AttendedCanaryError(f"attended G7 scenario failed: {scenario}")
+E               moss_transcribe_diarize.phase2_g7_canary.AttendedCanaryError: attended G7 scenario failed: microphone_meeting_tab
+
+moss_transcribe_diarize/phase2_g7_canary.py:637: AttendedCanaryError
+----------------------------- Captured stdout call -----------------------------
+G7 attended canary: choose Chrome display surface 'browser' for microphone_meeting_tab; enable shared audio.
+G7 attended canary: choose Chrome display surface 'monitor' for microphone_entire_screen; enable shared audio.
+_____________ test_attended_runner_records_the_switches_it_cleared _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10abc5880>
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-g7/test_attended_runner_records_t0')
+
+    def test_attended_runner_records_the_switches_it_cleared(monkeypatch, tmp_path):
+        session = _CommandLineSession(["--enable-automation", "--remote-debugging-port=9222"])
+>       evidence = _attach_runner(monkeypatch, tmp_path, session)()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_attended_g7_canary.py:397: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/phase2/test_attended_g7_canary.py:358: in <lambda>
+    return lambda: g7.run_attended_g7_canary(
+moss_transcribe_diarize/phase2_g7_canary.py:730: in run_attended_g7_canary
+    validate_attended_g7(evidence, candidate=candidate)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema': 'moss-phase2-attended-g7.v1', 'source': 'candidate-owned-production-browser', 'production_origin': True, 'operator_attended': True, ...}
+candidate = {'git_sha': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'git_tree': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'uv_lock_sha256': 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'}
+
+    def validate_attended_g7(
+        payload: Mapping[str, object], *, candidate: Mapping[str, object]
+    ) -> None:
+        identity = payload.get("candidate")
+        scenarios = payload.get("scenarios")
+        if (
+            payload.get("schema") != G7_EVIDENCE_SCHEMA
+            or payload.get("source") != G7_EVIDENCE_SOURCE
+            or payload.get("production_origin") is not True
+            or payload.get("operator_attended") is not True
+            or payload.get("admitted") is not False
+            or payload.get("origin") != G7_PRODUCTION_ORIGIN
+            or not isinstance(identity, Mapping)
+            or any(identity.get(key) != candidate.get(key) for key in ("git_sha", "git_tree", "uv_lock_sha256"))
+            or not isinstance(payload.get("chrome_version"), str)
+            or not payload.get("chrome_version")
+            or not isinstance(scenarios, list)
+            or len(scenarios) != 2
+        ):
+            raise AttendedCanaryError("attended G7 evidence identity is incomplete")
+        by_id = {
+            row.get("id"): row for row in scenarios if isinstance(row, Mapping)
+        }
+        if set(by_id) != set(G7_SCENARIOS):
+            raise AttendedCanaryError("attended G7 scenarios are incomplete")
+        session_ids = {
+            row.get("session_id") for row in by_id.values() if isinstance(row.get("session_id"), str)
+        }
+        if len(session_ids) != 2 or any(not value for value in session_ids):
+            raise AttendedCanaryError("attended G7 session identity is incomplete")
+        for scenario, surface in G7_SCENARIOS.items():
+            row = by_id[scenario]
+            frames = row.get("frames")
+            meters = row.get("meter_nonzero_samples")
+            probe = row.get("audio_probe")
+            if (
+                not _valid_operator_phrase(row.get("operator_phrase"))
+                or row.get("display_surface") != surface
+                or row.get("display_audio_tracks") != 1
+                or not isinstance(meters, Mapping)
+                or set(meters) != {"microphone", "system"}
+                or any(not _positive_int(meters.get(lane)) for lane in meters)
+                or not isinstance(frames, Mapping)
+                or set(frames) != {"microphone", "system"}
+                or row.get("source_revision") != candidate.get("git_sha")
+                or not _positive_int(row.get("distinct_speakers"))
+                or int(row["distinct_speakers"]) < 2
+                or row.get("meeting_status") != "completed"
+                or row.get("audio_state") != "available"
+                or row.get("owner_download_status") != 200
+                or not isinstance(probe, Mapping)
+                or probe.get("codec") != "mp3"
+                or probe.get("sample_rate_hz") != 16_000
+                or probe.get("channels") != 1
+                or probe.get("bit_rate_bps") != 48_000
+                or not _positive_int(probe.get("byte_count"))
+            ):
+>               raise AttendedCanaryError(f"attended G7 scenario failed: {scenario}")
+E               moss_transcribe_diarize.phase2_g7_canary.AttendedCanaryError: attended G7 scenario failed: microphone_meeting_tab
+
+moss_transcribe_diarize/phase2_g7_canary.py:637: AttendedCanaryError
+----------------------------- Captured stdout call -----------------------------
+G7 attended canary: choose Chrome display surface 'browser' for microphone_meeting_tab; enable shared audio.
+G7 attended canary: choose Chrome display surface 'monitor' for microphone_entire_screen; enable shared audio.
+___________ test_phrase_accepts_final_words_under_distinct_operator ____________
+
+    def test_phrase_accepts_final_words_under_distinct_operator():
+        payload=_phrase_payload()
+>       g7.validate_attended_g7(payload,candidate=_candidate())
+
+tests/phase2/test_attended_g7_canary.py:679: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+payload = {'schema': 'moss-phase2-attended-g7.v1', 'source': 'candidate-owned-production-browser', 'production_origin': True, 'operator_attended': True, ...}
+candidate = {'git_sha': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 'git_tree': 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', 'uv_lock_sha256': 'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'}
+
+    def validate_attended_g7(
+        payload: Mapping[str, object], *, candidate: Mapping[str, object]
+    ) -> None:
+        identity = payload.get("candidate")
+        scenarios = payload.get("scenarios")
+        if (
+            payload.get("schema") != G7_EVIDENCE_SCHEMA
+            or payload.get("source") != G7_EVIDENCE_SOURCE
+            or payload.get("production_origin") is not True
+            or payload.get("operator_attended") is not True
+            or payload.get("admitted") is not False
+            or payload.get("origin") != G7_PRODUCTION_ORIGIN
+            or not isinstance(identity, Mapping)
+            or any(identity.get(key) != candidate.get(key) for key in ("git_sha", "git_tree", "uv_lock_sha256"))
+            or not isinstance(payload.get("chrome_version"), str)
+            or not payload.get("chrome_version")
+            or not isinstance(scenarios, list)
+            or len(scenarios) != 2
+        ):
+            raise AttendedCanaryError("attended G7 evidence identity is incomplete")
+        by_id = {
+            row.get("id"): row for row in scenarios if isinstance(row, Mapping)
+        }
+        if set(by_id) != set(G7_SCENARIOS):
+            raise AttendedCanaryError("attended G7 scenarios are incomplete")
+        session_ids = {
+            row.get("session_id") for row in by_id.values() if isinstance(row.get("session_id"), str)
+        }
+        if len(session_ids) != 2 or any(not value for value in session_ids):
+            raise AttendedCanaryError("attended G7 session identity is incomplete")
+        for scenario, surface in G7_SCENARIOS.items():
+            row = by_id[scenario]
+            frames = row.get("frames")
+            meters = row.get("meter_nonzero_samples")
+            probe = row.get("audio_probe")
+            if (
+                not _valid_operator_phrase(row.get("operator_phrase"))
+                or row.get("display_surface") != surface
+                or row.get("display_audio_tracks") != 1
+                or not isinstance(meters, Mapping)
+                or set(meters) != {"microphone", "system"}
+                or any(not _positive_int(meters.get(lane)) for lane in meters)
+                or not isinstance(frames, Mapping)
+                or set(frames) != {"microphone", "system"}
+                or row.get("source_revision") != candidate.get("git_sha")
+                or not _positive_int(row.get("distinct_speakers"))
+                or int(row["distinct_speakers"]) < 2
+                or row.get("meeting_status") != "completed"
+                or row.get("audio_state") != "available"
+                or row.get("owner_download_status") != 200
+                or not isinstance(probe, Mapping)
+                or probe.get("codec") != "mp3"
+                or probe.get("sample_rate_hz") != 16_000
+                or probe.get("channels") != 1
+                or probe.get("bit_rate_bps") != 48_000
+                or not _positive_int(probe.get("byte_count"))
+            ):
+>               raise AttendedCanaryError(f"attended G7 scenario failed: {scenario}")
+E               moss_transcribe_diarize.phase2_g7_canary.AttendedCanaryError: attended G7 scenario failed: microphone_meeting_tab
+
+moss_transcribe_diarize/phase2_g7_canary.py:637: AttendedCanaryError
+=========================== short test summary info ============================
+FAILED tests/phase2/test_attended_g7_canary.py::test_candidate_owned_runner_reads_only_prerequisites_and_builds_fixed_evidence
+FAILED tests/phase2/test_attended_g7_canary.py::test_attended_runner_attaches_to_the_operator_loopback_browser
+FAILED tests/phase2/test_attended_g7_canary.py::test_attended_runner_records_the_switches_it_cleared
+FAILED tests/phase2/test_attended_g7_canary.py::test_phrase_accepts_final_words_under_distinct_operator
+4 failed, 45 passed in 4.67s

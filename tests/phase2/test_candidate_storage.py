@@ -145,7 +145,16 @@ def test_staging_dry_run_deletes_nothing(tmp_path, flag):
     import subprocess
     share=tmp_path/'.local/share/moss-transcribe-diarize'
     victim=directory(share/'staging'/'old',2*storage.DAY,now=storage.time.time())
-    result=subprocess.run(['bash','ops/stage-account-candidate.sh'] + (['--dry-run'] if flag else []),
+    # Keep fake home outside the script's protected checkout, including when pytest's
+    # basetemp is inside the real checkout. Exercise unmodified production scripts.
+    import shutil
+    checkout=tmp_path/'checkout'
+    (checkout/'ops').mkdir(parents=True)
+    (checkout/'moss_transcribe_diarize').mkdir()
+    for name in ('stage-account-candidate.sh','moss-ops-lib.sh'):
+        shutil.copyfile(Path('ops')/name,checkout/'ops'/name)
+    shutil.copyfile(storage.__file__,checkout/'moss_transcribe_diarize/candidate_storage.py')
+    result=subprocess.run(['bash',str(checkout/'ops/stage-account-candidate.sh')] + (['--dry-run'] if flag else []),
                           env=dict(os.environ,HOME=str(tmp_path),MOSS_TOOL_DRY_RUN='0' if flag else '1'),capture_output=True,text=True)
     assert result.returncode==0 and 'would_remove' in result.stdout
     assert victim.exists() and (victim/'data').read_bytes()==b'x'*1024

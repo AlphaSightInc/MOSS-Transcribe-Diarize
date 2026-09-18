@@ -1,0 +1,1209 @@
+[
+  {
+    "kind": "result",
+    "case": "single",
+    "meeting": "OfRTx0REypvlnbFWieVPHAtb",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 63.432,
+    "stop_seconds": 3.42,
+    "identity": {
+      "version": 24,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "23"
+        ],
+        [
+          "span_samples",
+          "920000:960000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          "S01->speaker-0001"
+        ],
+        [
+          "deferred_births",
+          ""
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 16
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "gap",
+    "meeting": "_-2UFfiqiRiLcc3ZfvW3kvXH",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 63.467,
+    "stop_seconds": 3.461,
+    "identity": {
+      "version": 24,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "25"
+        ],
+        [
+          "span_samples",
+          "958400:960000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          ""
+        ],
+        [
+          "deferred_births",
+          "S01=0.000"
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001,speaker-0002"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 15
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "alternating",
+    "meeting": "jTXM5aex-kevKVlefXlJSvrn",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 63.192,
+    "stop_seconds": 3.184,
+    "identity": {
+      "version": 24,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "23"
+        ],
+        [
+          "span_samples",
+          "920000:960000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          "S01->speaker-0001"
+        ],
+        [
+          "deferred_births",
+          ""
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001,speaker-0002"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Bill": {
+          "speaker-0001": 11
+        },
+        "Keyu": {
+          "speaker-0002": 6
+        }
+      },
+      "id_switches": {
+        "Bill": 0,
+        "Keyu": 0
+      },
+      "switch_straddling_segments": 1,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "enroll",
+    "meeting": "_9lbNkF-Dft6mhWp4oHtX53x",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 13.094,
+    "stop_seconds": 1.081,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "span_samples",
+          "160000:192000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          "S01->speaker-0001"
+        ],
+        [
+          "deferred_births",
+          ""
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP7 Adam"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 4
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [
+      {
+        "kind": "enroll",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "_9lbNkF-Dft6mhWp4oHtX53x",
+            "speaker_id": "speaker-0001",
+            "label": "WP7 Adam",
+            "voiceprint_id": null,
+            "enrollment": "pending",
+            "transcript_version": 2
+          }
+        }
+      },
+      {
+        "kind": "enroll_again",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "_9lbNkF-Dft6mhWp4oHtX53x",
+            "speaker_id": "speaker-0001",
+            "label": "WP7 Adam",
+            "voiceprint_id": null,
+            "enrollment": "pending",
+            "transcript_version": 3
+          }
+        },
+        "bank": []
+      }
+    ],
+    "bank": [
+      {
+        "id": "KH9aDubrZnKri-wm4eOPhlzo",
+        "label": "WP7 Adam",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 1,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "recognition",
+    "meeting": "XX7f4-Wg3ecIf2i1ow8Tkk10",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 13.137,
+    "stop_seconds": 1.124,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "span_samples",
+          "160000:192000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          "S01->speaker-0001"
+        ],
+        [
+          "deferred_births",
+          ""
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP7 Adam"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 3
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": 3.520347749989014,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [
+      {
+        "id": "KH9aDubrZnKri-wm4eOPhlzo",
+        "label": "WP7 Adam",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 1,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "unknown",
+    "meeting": "mS5LIul-yK1K7z9B7qlkrai3",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 12.955,
+    "stop_seconds": 0.941,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "span_samples",
+          "160000:192000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          "S01->speaker-0001"
+        ],
+        [
+          "deferred_births",
+          ""
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Keyu": {
+          "speaker-0001": 2
+        }
+      },
+      "id_switches": {
+        "Keyu": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [
+      {
+        "id": "KH9aDubrZnKri-wm4eOPhlzo",
+        "label": "WP7 Adam",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 1,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "after_delete",
+    "meeting": "dOXrSKVUCUnc1F3lOQNwXqSC",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 6.669,
+    "stop_seconds": 0.655,
+    "identity": {
+      "version": 3,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "2"
+        ],
+        [
+          "span_samples",
+          "80000:96000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          "S01->speaker-0001"
+        ],
+        [
+          "deferred_births",
+          ""
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 2
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "three_seconds",
+    "meeting": "jkgvZnIi9Ml0rjjIjGcdzXWf",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 3.544,
+    "stop_seconds": 0.531,
+    "identity": {
+      "version": 2,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "1"
+        ],
+        [
+          "span_samples",
+          "40000:48000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          ""
+        ],
+        [
+          "deferred_births",
+          "S01=0.000"
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 2
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "lanes",
+    "meeting": "oBQpz1SHmXjMpzrtUirq_Aq9",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 13.178,
+    "stop_seconds": 1.165,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "span_samples",
+          "160000:192000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          "S01->speaker-0001"
+        ],
+        [
+          "deferred_births",
+          ""
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 4
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "three_seconds_waited",
+    "meeting": "ZcKOpz8SdTRyfo0fHxIDRWnb",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 4.739,
+    "stop_seconds": 0.421,
+    "identity": {
+      "version": 2,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "1"
+        ],
+        [
+          "span_samples",
+          "40000:48000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          ""
+        ],
+        [
+          "deferred_births",
+          "S01=0.000"
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP7 short"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 1
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [
+      {
+        "kind": "short_enrollment_attempt",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "ZcKOpz8SdTRyfo0fHxIDRWnb",
+            "speaker_id": "speaker-0001",
+            "label": "WP7 short",
+            "voiceprint_id": null,
+            "enrollment": "pending",
+            "transcript_version": 2
+          }
+        }
+      }
+    ],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "replacement",
+    "meeting": "F6Fg9MpZqznLkhmuaoalqsi9",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 6.683,
+    "stop_seconds": 0.673,
+    "identity": {
+      "version": 3,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "2"
+        ],
+        [
+          "span_samples",
+          "80000:96000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          "S01->speaker-0001"
+        ],
+        [
+          "deferred_births",
+          ""
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP7 replacement"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 2
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [
+      {
+        "kind": "replace_profile",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "F6Fg9MpZqznLkhmuaoalqsi9",
+            "speaker_id": "speaker-0001",
+            "label": "WP7 replacement",
+            "voiceprint_id": null,
+            "enrollment": "pending",
+            "transcript_version": 2
+          }
+        },
+        "bank": []
+      },
+      {
+        "kind": "replace_same_sample",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "F6Fg9MpZqznLkhmuaoalqsi9",
+            "speaker_id": "speaker-0001",
+            "label": "WP7 replacement",
+            "voiceprint_id": null,
+            "enrollment": "pending",
+            "transcript_version": 3
+          }
+        },
+        "bank": []
+      }
+    ],
+    "bank": [
+      {
+        "id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+        "label": "WP7 replacement",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 1,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "eligible_replacement",
+    "meeting": "RHrcVUZn-lChd-IRPC41r86q",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 8.908,
+    "stop_seconds": 0.896,
+    "identity": {
+      "version": 4,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "3"
+        ],
+        [
+          "span_samples",
+          "120000:128000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          ""
+        ],
+        [
+          "deferred_births",
+          "S01=0.000"
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP7 renamed"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 2
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": 3.5286159999959636,
+    "recognition_bar_seconds": 4.0,
+    "actions": [
+      {
+        "kind": "eligible_replace",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "RHrcVUZn-lChd-IRPC41r86q",
+            "speaker_id": "speaker-0001",
+            "label": "WP7 renamed",
+            "voiceprint_id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+            "enrollment": "pending",
+            "transcript_version": 3
+          }
+        },
+        "bank": [
+          {
+            "id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+            "label": "WP7 renamed",
+            "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+            "embedding_dimension": 256,
+            "revision": 3,
+            "sample_count": 1,
+            "compatibility": "compatible"
+          }
+        ]
+      },
+      {
+        "kind": "eligible_replace_again",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "RHrcVUZn-lChd-IRPC41r86q",
+            "speaker_id": "speaker-0001",
+            "label": "WP7 renamed",
+            "voiceprint_id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+            "enrollment": "pending",
+            "transcript_version": 4
+          }
+        },
+        "bank": [
+          {
+            "id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+            "label": "WP7 renamed",
+            "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+            "embedding_dimension": 256,
+            "revision": 5,
+            "sample_count": 1,
+            "compatibility": "compatible"
+          }
+        ]
+      }
+    ],
+    "bank": [
+      {
+        "id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+        "label": "WP7 renamed",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 5,
+        "sample_count": 1,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  },
+  {
+    "kind": "result",
+    "case": "confirmed_replacement",
+    "meeting": "6Nqnf3Uq3wxXo-MmssNR1148",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 13.088,
+    "stop_seconds": 1.075,
+    "identity": {
+      "version": 5,
+      "canonical_speakers": [
+        "speaker-0001"
+      ],
+      "diagnostics": [
+        [
+          "schema_version",
+          "1"
+        ],
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "reason",
+          "ok"
+        ],
+        [
+          "span_id",
+          "4"
+        ],
+        [
+          "span_samples",
+          "160000:192000"
+        ],
+        [
+          "local_speakers",
+          "S01"
+        ],
+        [
+          "assignments",
+          "S01->speaker-0001"
+        ],
+        [
+          "deferred_births",
+          ""
+        ],
+        [
+          "canonical_speakers",
+          "speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "WP7 renamed"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Adam": {
+          "speaker-0001": 4
+        }
+      },
+      "id_switches": {
+        "Adam": 0
+      },
+      "switch_straddling_segments": 0,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": 3.5278550420043757,
+    "recognition_bar_seconds": 4.0,
+    "actions": [
+      {
+        "kind": "eligible_replace",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "6Nqnf3Uq3wxXo-MmssNR1148",
+            "speaker_id": "speaker-0001",
+            "label": "WP7 renamed",
+            "voiceprint_id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+            "enrollment": "enrolled",
+            "transcript_version": 4
+          }
+        },
+        "bank": [
+          {
+            "id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+            "label": "WP7 renamed",
+            "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+            "embedding_dimension": 256,
+            "revision": 7,
+            "sample_count": 2,
+            "compatibility": "compatible"
+          }
+        ]
+      },
+      {
+        "kind": "eligible_replace_again",
+        "response": {
+          "http": 200,
+          "result": {
+            "meeting_id": "6Nqnf3Uq3wxXo-MmssNR1148",
+            "speaker_id": "speaker-0001",
+            "label": "WP7 renamed",
+            "voiceprint_id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+            "enrollment": "enrolled",
+            "transcript_version": 5
+          }
+        },
+        "bank": [
+          {
+            "id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+            "label": "WP7 renamed",
+            "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+            "embedding_dimension": 256,
+            "revision": 9,
+            "sample_count": 2,
+            "compatibility": "compatible"
+          }
+        ]
+      }
+    ],
+    "bank": [
+      {
+        "id": "hh1mMGSqFupEYXLoa-Cnh0uK",
+        "label": "WP7 renamed",
+        "embedder_id": "wespeaker_resnet152_lm:4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+        "embedding_dimension": 256,
+        "revision": 9,
+        "sample_count": 2,
+        "compatibility": "compatible"
+      }
+    ],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  }
+]

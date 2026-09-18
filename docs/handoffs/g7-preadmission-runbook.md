@@ -615,3 +615,19 @@ Checked against installed candidate `433e67b25274e98eabc4d3523e5256525e7349f7`:
 `app/phase2_cutover_cli.py`, `phase2_cutover.py` and `phase2_g7_canary.py`.
 That SHA is verification context, not authorization to run it. No cutover, browser capture,
 WSL restart or service change was performed during this review.
+
+
+### Operator phrase sequence (required final-surface evidence)
+
+After readiness and Start capture, pause shared playback. Read the predeclared
+phrase **Copper planets orbit distant stars above violet gardens** ALONE, wait
+for its end, and confirm. Next remain silent while the shared source speaks
+ALONE, then confirm. Only then OVERLAP sources for the existing attended check.
+The initial readiness/meter overlap happens before recording this phrase sequence.
+Do not speak the phrase during playback. The final transcript must contain the
+at least 7 of the 8 phrase words as an in-order subsequence under one speaker
+distinct from all tab-only speakers. One omission/substitution and inserted words
+are allowed; 6/8 or reversed order fails. Fewer than 7 matching words,
+missing tab evidence, or the same speaker on both intervals fails G7 even when
+meters, frames, speaker count, completion and MP3 checks pass. This remains an
+attended operator procedure; no synthetic attendance is permitted.

@@ -5,6 +5,7 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [preact()],
   root: __dirname,
+  cacheDir: path.resolve(__dirname, ".vite-cache"),
   base: "/static/",
   build: {
     outDir: path.resolve(__dirname, "../moss_transcribe_diarize/app/frontend_assets"),

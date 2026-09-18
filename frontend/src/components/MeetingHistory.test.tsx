@@ -55,6 +55,19 @@ describe("MeetingHistory", () => {
     vi.useRealTimers();
   });
 
+  it.each([
+    { status: "failed" as const, failure_code: "decode_failed", failure_reason: "Decoder unavailable." },
+    { status: "completed" as const, notice: "No speech detected." }
+  ])("shows file outcome on the history row and selected meeting", async outcome => {
+    const selected = meeting({ mode: "file", transcript: { segments: [] }, ...outcome });
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [selected] } : selected)));
+    await act(async () => render(<MeetingHistory />, root));
+    const reason = selected.failure_reason || selected.notice!;
+    await vi.waitFor(() => expect(root.querySelector(".history-card-subtitle")?.textContent).toBe(reason));
+    await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: selected.id } })); });
+    await vi.waitFor(() => expect([...root.querySelectorAll('[role="status"]')].some(node => node.textContent === reason)).toBe(true));
+  });
+
   it("brings an explicitly opened import into view but leaves background refresh in place", async () => {
     const selected = meeting({ id: "imported", title: "Imported review" });
     vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [selected] } : selected)));

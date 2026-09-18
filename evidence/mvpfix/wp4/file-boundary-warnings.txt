@@ -1,0 +1,9 @@
+File Meeting failed: acquisition_http_403
+File Meeting failed: acquisition_http_404
+File Meeting failed: acquisition_timeout
+File Meeting audio: transcode_failed; trying runner input
+File Meeting failed: transcode_failed
+File Meeting audio: transcode_failed; trying runner input
+File Meeting failed: transcode_failed
+File Meeting failed: decode_failed
+File Meeting failed: decode_invalid

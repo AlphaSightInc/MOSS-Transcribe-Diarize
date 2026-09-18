@@ -30,6 +30,8 @@ def _scenario(scenario: str, surface: str):
             for lane in ("microphone", "system")
         },
         "distinct_speakers": 2,
+        "operator_phrase": {"phrase": g7.G7_OPERATOR_PHRASE, "reference_words": 8, "matched_words": 8,
+                            "operator_speakers": ["operator"], "tab_speakers": ["tab"]},
         "meeting_status": "completed",
         "audio_state": "available",
         "owner_download_status": 200,
@@ -664,3 +666,55 @@ def test_scenario_timeout_reports_only_capture_status_and_selects_headphones(
             assert closed == [True]
         finally:
             browser.close()
+
+
+def _phrase_payload():
+    return dict(schema=g7.G7_EVIDENCE_SCHEMA, source=g7.G7_EVIDENCE_SOURCE,
+                production_origin=True, operator_attended=True, admitted=False,
+                origin=g7.G7_PRODUCTION_ORIGIN, candidate=_candidate(), chrome_version="fixture",
+                scenarios=[_scenario(name, surface) for name,surface in g7.G7_SCENARIOS.items()])
+
+def test_phrase_accepts_final_words_under_distinct_operator():
+    payload=_phrase_payload()
+    g7.validate_attended_g7(payload,candidate=_candidate())
+
+@pytest.mark.parametrize('corrupt', ['absent','missing_words','tab_speaker','no_tab','wrong_phrase'])
+def test_phrase_rejects_counts_only_or_wrong_attribution(corrupt):
+    payload=_phrase_payload();row=payload['scenarios'][0]
+    if corrupt=='absent': row.pop('operator_phrase')
+    elif corrupt=='missing_words': row['operator_phrase']['matched_words']=0
+    elif corrupt=='tab_speaker': row['operator_phrase']['operator_speakers']=['tab']
+    elif corrupt=='no_tab': row['operator_phrase']['tab_speakers']=[]
+    else: row['operator_phrase']['phrase']='arbitrary transcript words'
+    with pytest.raises(g7.AttendedCanaryError): g7.validate_attended_g7(payload,candidate=_candidate())
+
+def test_phrase_witness_is_derived_from_final_transcript_not_counts():
+    meeting={'transcript':{'segments':[
+        dict(start=0,end=3,speaker='operator',text=g7.G7_OPERATOR_PHRASE),
+        dict(start=4,end=8,speaker='tab',text='public tab fixture'),
+    ]}}
+    witness=g7.operator_phrase_witness(meeting,g7.G7_OPERATOR_PHRASE,(0,3),(4,8))
+    assert g7._valid_operator_phrase(witness)
+    assert 'public tab fixture' not in json.dumps(witness)
+    meeting['transcript']['segments'][0]['speaker']='tab'
+    assert not g7._valid_operator_phrase(g7.operator_phrase_witness(meeting,g7.G7_OPERATOR_PHRASE,(0,3),(4,8)))
+
+
+@pytest.mark.parametrize("text,matched,accepted", [
+    ("Copper planets orbit distant stars above violet gardens", 8, True),
+    ("Copper planets orbit nearby stars above violet gardens", 7, True),
+    ("Copper planets orbit distant stars above", 6, False),
+    ("gardens violet above stars distant orbit planets Copper", 1, False),
+    ("Copper planets sometimes orbit distant stars above violet gardens", 8, True),
+])
+def test_phrase_subsequence_tolerates_one_asr_error(text, matched, accepted):
+    meeting = {"transcript": {"segments": [
+        dict(start=0, end=3, speaker="operator", text=text),
+        dict(start=4, end=8, speaker="tab", text="public tab fixture"),
+    ]}}
+    witness = g7.operator_phrase_witness(meeting, g7.G7_OPERATOR_PHRASE, (0, 3), (4, 8))
+    assert witness["matched_words"] == matched
+    assert g7._valid_operator_phrase(witness) is accepted
+    meeting["transcript"]["segments"][0]["speaker"] = "tab"
+    assert not g7._valid_operator_phrase(g7.operator_phrase_witness(
+        meeting, g7.G7_OPERATOR_PHRASE, (0, 3), (4, 8)))

@@ -139,6 +139,8 @@ def test_operator_revocation_uses_workspace_id_without_content_or_credentials(tm
 
     with tempfile.TemporaryDirectory(prefix="moss-control-") as socket_root:
         socket = Path(socket_root) / "control.sock"
+        if socket.is_relative_to(Path.cwd()):
+            socket = socket.relative_to(Path.cwd())
         app = create_phase2_app(database_path=tmp_path / "browser.sqlite3", control_socket_path=socket)
         with TestClient(app, base_url="https://moss.test") as client:
             owner = client.post("/api/workspace/bootstrap").json()["workspace_id"]

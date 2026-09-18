@@ -1,0 +1,8 @@
+{"case": "403", "status": "failed", "segments": null}
+{"case": "404", "status": "failed", "segments": null}
+{"case": "timeout", "status": "failed", "segments": null}
+{"case": "unsupported_container", "status": "failed", "segments": null}
+{"case": "transcode", "status": "completed", "audio": "unavailable", "segments": 0}
+{"case": "decoder", "status": "failed", "segments": null}
+{"case": "no_speech", "status": "completed", "audio": "unavailable", "segments": 0}
+{"case": "malformed_decoder", "status": "completed", "audio": "unavailable", "segments": 0}
