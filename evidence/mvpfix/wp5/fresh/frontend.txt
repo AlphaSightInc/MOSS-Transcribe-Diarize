@@ -1,0 +1,24 @@
+
+> livetranscribe-frontend@0.0.0 test
+> vitest run --run --no-cache --configLoader runner --config .wp5-vite.config.ts
+
+
+ RUN  v4.1.10 /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp5-browser-stress/frontend
+
+(node:52422) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:52428) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:52424) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+ Test Files  24 passed (24)
+      Tests  206 passed (206)
+   Start at  23:51:35
+   Duration  2.39s (transform 1.81s, setup 0ms, import 2.73s, tests 5.70s, environment 5.06s)
+
+npm notice
+npm notice New minor version of npm available! 11.12.1 -> 11.19.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.19.1
+npm notice To update run: npm install -g npm@11.19.1
+npm notice

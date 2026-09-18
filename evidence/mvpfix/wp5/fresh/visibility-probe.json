@@ -1,0 +1,59 @@
+{
+  "question": "Can native CDP focus/lifecycle controls unblock actual hidden-page measurement?",
+  "decoder_requests": 0,
+  "spoofed_visibility": false,
+  "headless": true,
+  "samples": [
+    {
+      "action": "initial",
+      "error": null,
+      "hidden": false,
+      "visibility": "visible",
+      "focus": true,
+      "events": []
+    },
+    {
+      "action": "other-tab-front-background-disabling-flags-removed",
+      "error": null,
+      "hidden": false,
+      "visibility": "visible",
+      "focus": true,
+      "events": []
+    },
+    {
+      "action": "Emulation.setFocusEmulationEnabled True",
+      "error": null,
+      "hidden": false,
+      "visibility": "visible",
+      "focus": true,
+      "events": []
+    },
+    {
+      "action": "Emulation.setFocusEmulationEnabled False",
+      "error": null,
+      "hidden": false,
+      "visibility": "visible",
+      "focus": false,
+      "events": []
+    },
+    {
+      "action": "Page.setWebLifecycleState hidden",
+      "error": "CDPSession.send: Protocol error (Page.setWebLifecycleState): Unidentified lifecycle state",
+      "hidden": false,
+      "visibility": "visible",
+      "focus": false,
+      "events": []
+    }
+  ],
+  "removed_default_args": [
+    "--disable-backgrounding-occluded-windows",
+    "--disable-renderer-backgrounding",
+    "--disable-background-timer-throttling"
+  ],
+  "browser_version": "153.0.8010.53",
+  "hidden_observations": 0,
+  "observations": 5,
+  "configuration_unblocked": false,
+  "case3_verdict": "BLOCKED",
+  "browser_closed": true
+}

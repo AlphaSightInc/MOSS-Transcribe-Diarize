@@ -1,0 +1,11 @@
+{
+  "verification": "PASS",
+  "browser_cases": 8,
+  "pass": 6,
+  "known_N1_fail": 2,
+  "decoder_requests_total": 127,
+  "frontend_tests": 206,
+  "locator_sentinel_tests": 3,
+  "typecheck": "PASS",
+  "build": "PASS"
+}
