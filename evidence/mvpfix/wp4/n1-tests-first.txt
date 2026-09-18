@@ -1,0 +1,745 @@
+FFFFFFFFF.....F...........................................               [100%]
+=================================== FAILURES ===================================
+_ test_outcomes_are_safe_persistent_and_owner_bound[403-acquisition_http_403] __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-n1/test_outcomes_are_safe_persist0')
+caplog = <_pytest.logging.LogCaptureFixture object at 0x117be4440>, case = '403'
+expected = 'acquisition_http_403'
+
+    @pytest.mark.parametrize('case,expected', [
+        ('403','acquisition_http_403'), ('404','acquisition_http_404'), ('timeout','acquisition_timeout'),
+        ('unsupported','transcode_failed'), ('transcode','transcode_failed'), ('decoder','decode_failed'),
+        ('malformed','decode_invalid'), ('unconfirmed_empty','decode_invalid'), ('no_speech',None),
+    ])
+    def test_outcomes_are_safe_persistent_and_owner_bound(tmp_path, caplog, case, expected):
+        async def run():
+            database=tmp_path/'state.sqlite3'
+            store=await Phase2Store.open(database)
+            workspace,cookie=await store.bootstrap_browser(None)
+            handle=await workspace.create_meeting('file')
+            meeting_id=handle.meeting_id
+            root=tmp_path/'file-work'; directory=root/'input'; directory.mkdir(parents=True)
+            source=directory/'media';source.write_bytes(b'fixture')
+            class Runner:
+                def transcribe(self,*a,**kw):
+                    if case in ('decoder','unsupported','transcode'): raise RuntimeError('PRIVATE token https://user:secret@host')
+                    return SimpleNamespace(text='malformed PRIVATE' if case=='malformed' else '',
+                           window_diagnostics=[{'condition':'speechless_window_empty'}] if case=='no_speech' else [])
+            class Archive:
+                def prepare_mix(self,*a): raise RuntimeError('PRIVATE container data')
+            requests=[]
+            def respond(request):
+                requests.append(request)
+                if case=='timeout': raise httpx.ReadTimeout('PRIVATE URL',request=request)
+                return httpx.Response(int(case),request=request)
+            tasks=FileMeetingTasks(Runner(), root,
+                  audio_archive=Archive() if case in ('unsupported','transcode') else None,
+                  url_acquirer=UrlMediaAcquirer(http_transport=httpx.MockTransport(respond)))
+            if case in ('403','404','timeout'):
+                await tasks._acquire_and_run(handle,'https://user:secret@media.test/file',directory,asyncio.Event())
+                assert requests[0].headers['user-agent'].startswith('Mozilla/')
+            else: await tasks._run(handle,source,asyncio.Event())
+            record=(await handle.snapshot()).to_dict()
+            assert record['status']==('failed' if expected else 'completed')
+            assert record.get('failure_code')==expected
+            if expected: assert record['failure_reason'] and 'PRIVATE' not in record['failure_reason'] and 'secret' not in record['failure_reason']
+            else: assert record['notice']=='No speech detected.' and record['transcript']=={'segments':[]}
+            other,_=await store.bootstrap_browser(None)
+            assert await other.open_meeting(meeting_id) is None
+            await store.close()
+            store=await Phase2Store.open(database)
+            workspace,_=await store.bootstrap_browser(cookie)
+            assert (await workspace.list_meetings())[0].to_dict()==record
+            await store.close()
+>       asyncio.run(run())
+
+tests/phase2/test_file_failure_reasons.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def run():
+        database=tmp_path/'state.sqlite3'
+        store=await Phase2Store.open(database)
+        workspace,cookie=await store.bootstrap_browser(None)
+>       handle=await workspace.create_meeting('file')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Account' object has no attribute 'create_meeting'
+
+tests/phase2/test_file_failure_reasons.py:20: AttributeError
+_ test_outcomes_are_safe_persistent_and_owner_bound[404-acquisition_http_404] __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-n1/test_outcomes_are_safe_persist1')
+caplog = <_pytest.logging.LogCaptureFixture object at 0x117bc1640>, case = '404'
+expected = 'acquisition_http_404'
+
+    @pytest.mark.parametrize('case,expected', [
+        ('403','acquisition_http_403'), ('404','acquisition_http_404'), ('timeout','acquisition_timeout'),
+        ('unsupported','transcode_failed'), ('transcode','transcode_failed'), ('decoder','decode_failed'),
+        ('malformed','decode_invalid'), ('unconfirmed_empty','decode_invalid'), ('no_speech',None),
+    ])
+    def test_outcomes_are_safe_persistent_and_owner_bound(tmp_path, caplog, case, expected):
+        async def run():
+            database=tmp_path/'state.sqlite3'
+            store=await Phase2Store.open(database)
+            workspace,cookie=await store.bootstrap_browser(None)
+            handle=await workspace.create_meeting('file')
+            meeting_id=handle.meeting_id
+            root=tmp_path/'file-work'; directory=root/'input'; directory.mkdir(parents=True)
+            source=directory/'media';source.write_bytes(b'fixture')
+            class Runner:
+                def transcribe(self,*a,**kw):
+                    if case in ('decoder','unsupported','transcode'): raise RuntimeError('PRIVATE token https://user:secret@host')
+                    return SimpleNamespace(text='malformed PRIVATE' if case=='malformed' else '',
+                           window_diagnostics=[{'condition':'speechless_window_empty'}] if case=='no_speech' else [])
+            class Archive:
+                def prepare_mix(self,*a): raise RuntimeError('PRIVATE container data')
+            requests=[]
+            def respond(request):
+                requests.append(request)
+                if case=='timeout': raise httpx.ReadTimeout('PRIVATE URL',request=request)
+                return httpx.Response(int(case),request=request)
+            tasks=FileMeetingTasks(Runner(), root,
+                  audio_archive=Archive() if case in ('unsupported','transcode') else None,
+                  url_acquirer=UrlMediaAcquirer(http_transport=httpx.MockTransport(respond)))
+            if case in ('403','404','timeout'):
+                await tasks._acquire_and_run(handle,'https://user:secret@media.test/file',directory,asyncio.Event())
+                assert requests[0].headers['user-agent'].startswith('Mozilla/')
+            else: await tasks._run(handle,source,asyncio.Event())
+            record=(await handle.snapshot()).to_dict()
+            assert record['status']==('failed' if expected else 'completed')
+            assert record.get('failure_code')==expected
+            if expected: assert record['failure_reason'] and 'PRIVATE' not in record['failure_reason'] and 'secret' not in record['failure_reason']
+            else: assert record['notice']=='No speech detected.' and record['transcript']=={'segments':[]}
+            other,_=await store.bootstrap_browser(None)
+            assert await other.open_meeting(meeting_id) is None
+            await store.close()
+            store=await Phase2Store.open(database)
+            workspace,_=await store.bootstrap_browser(cookie)
+            assert (await workspace.list_meetings())[0].to_dict()==record
+            await store.close()
+>       asyncio.run(run())
+
+tests/phase2/test_file_failure_reasons.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def run():
+        database=tmp_path/'state.sqlite3'
+        store=await Phase2Store.open(database)
+        workspace,cookie=await store.bootstrap_browser(None)
+>       handle=await workspace.create_meeting('file')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Account' object has no attribute 'create_meeting'
+
+tests/phase2/test_file_failure_reasons.py:20: AttributeError
+_ test_outcomes_are_safe_persistent_and_owner_bound[timeout-acquisition_timeout] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-n1/test_outcomes_are_safe_persist2')
+caplog = <_pytest.logging.LogCaptureFixture object at 0x117bb93a0>
+case = 'timeout', expected = 'acquisition_timeout'
+
+    @pytest.mark.parametrize('case,expected', [
+        ('403','acquisition_http_403'), ('404','acquisition_http_404'), ('timeout','acquisition_timeout'),
+        ('unsupported','transcode_failed'), ('transcode','transcode_failed'), ('decoder','decode_failed'),
+        ('malformed','decode_invalid'), ('unconfirmed_empty','decode_invalid'), ('no_speech',None),
+    ])
+    def test_outcomes_are_safe_persistent_and_owner_bound(tmp_path, caplog, case, expected):
+        async def run():
+            database=tmp_path/'state.sqlite3'
+            store=await Phase2Store.open(database)
+            workspace,cookie=await store.bootstrap_browser(None)
+            handle=await workspace.create_meeting('file')
+            meeting_id=handle.meeting_id
+            root=tmp_path/'file-work'; directory=root/'input'; directory.mkdir(parents=True)
+            source=directory/'media';source.write_bytes(b'fixture')
+            class Runner:
+                def transcribe(self,*a,**kw):
+                    if case in ('decoder','unsupported','transcode'): raise RuntimeError('PRIVATE token https://user:secret@host')
+                    return SimpleNamespace(text='malformed PRIVATE' if case=='malformed' else '',
+                           window_diagnostics=[{'condition':'speechless_window_empty'}] if case=='no_speech' else [])
+            class Archive:
+                def prepare_mix(self,*a): raise RuntimeError('PRIVATE container data')
+            requests=[]
+            def respond(request):
+                requests.append(request)
+                if case=='timeout': raise httpx.ReadTimeout('PRIVATE URL',request=request)
+                return httpx.Response(int(case),request=request)
+            tasks=FileMeetingTasks(Runner(), root,
+                  audio_archive=Archive() if case in ('unsupported','transcode') else None,
+                  url_acquirer=UrlMediaAcquirer(http_transport=httpx.MockTransport(respond)))
+            if case in ('403','404','timeout'):
+                await tasks._acquire_and_run(handle,'https://user:secret@media.test/file',directory,asyncio.Event())
+                assert requests[0].headers['user-agent'].startswith('Mozilla/')
+            else: await tasks._run(handle,source,asyncio.Event())
+            record=(await handle.snapshot()).to_dict()
+            assert record['status']==('failed' if expected else 'completed')
+            assert record.get('failure_code')==expected
+            if expected: assert record['failure_reason'] and 'PRIVATE' not in record['failure_reason'] and 'secret' not in record['failure_reason']
+            else: assert record['notice']=='No speech detected.' and record['transcript']=={'segments':[]}
+            other,_=await store.bootstrap_browser(None)
+            assert await other.open_meeting(meeting_id) is None
+            await store.close()
+            store=await Phase2Store.open(database)
+            workspace,_=await store.bootstrap_browser(cookie)
+            assert (await workspace.list_meetings())[0].to_dict()==record
+            await store.close()
+>       asyncio.run(run())
+
+tests/phase2/test_file_failure_reasons.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def run():
+        database=tmp_path/'state.sqlite3'
+        store=await Phase2Store.open(database)
+        workspace,cookie=await store.bootstrap_browser(None)
+>       handle=await workspace.create_meeting('file')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Account' object has no attribute 'create_meeting'
+
+tests/phase2/test_file_failure_reasons.py:20: AttributeError
+_ test_outcomes_are_safe_persistent_and_owner_bound[unsupported-transcode_failed] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-n1/test_outcomes_are_safe_persist3')
+caplog = <_pytest.logging.LogCaptureFixture object at 0x117b6a450>
+case = 'unsupported', expected = 'transcode_failed'
+
+    @pytest.mark.parametrize('case,expected', [
+        ('403','acquisition_http_403'), ('404','acquisition_http_404'), ('timeout','acquisition_timeout'),
+        ('unsupported','transcode_failed'), ('transcode','transcode_failed'), ('decoder','decode_failed'),
+        ('malformed','decode_invalid'), ('unconfirmed_empty','decode_invalid'), ('no_speech',None),
+    ])
+    def test_outcomes_are_safe_persistent_and_owner_bound(tmp_path, caplog, case, expected):
+        async def run():
+            database=tmp_path/'state.sqlite3'
+            store=await Phase2Store.open(database)
+            workspace,cookie=await store.bootstrap_browser(None)
+            handle=await workspace.create_meeting('file')
+            meeting_id=handle.meeting_id
+            root=tmp_path/'file-work'; directory=root/'input'; directory.mkdir(parents=True)
+            source=directory/'media';source.write_bytes(b'fixture')
+            class Runner:
+                def transcribe(self,*a,**kw):
+                    if case in ('decoder','unsupported','transcode'): raise RuntimeError('PRIVATE token https://user:secret@host')
+                    return SimpleNamespace(text='malformed PRIVATE' if case=='malformed' else '',
+                           window_diagnostics=[{'condition':'speechless_window_empty'}] if case=='no_speech' else [])
+            class Archive:
+                def prepare_mix(self,*a): raise RuntimeError('PRIVATE container data')
+            requests=[]
+            def respond(request):
+                requests.append(request)
+                if case=='timeout': raise httpx.ReadTimeout('PRIVATE URL',request=request)
+                return httpx.Response(int(case),request=request)
+            tasks=FileMeetingTasks(Runner(), root,
+                  audio_archive=Archive() if case in ('unsupported','transcode') else None,
+                  url_acquirer=UrlMediaAcquirer(http_transport=httpx.MockTransport(respond)))
+            if case in ('403','404','timeout'):
+                await tasks._acquire_and_run(handle,'https://user:secret@media.test/file',directory,asyncio.Event())
+                assert requests[0].headers['user-agent'].startswith('Mozilla/')
+            else: await tasks._run(handle,source,asyncio.Event())
+            record=(await handle.snapshot()).to_dict()
+            assert record['status']==('failed' if expected else 'completed')
+            assert record.get('failure_code')==expected
+            if expected: assert record['failure_reason'] and 'PRIVATE' not in record['failure_reason'] and 'secret' not in record['failure_reason']
+            else: assert record['notice']=='No speech detected.' and record['transcript']=={'segments':[]}
+            other,_=await store.bootstrap_browser(None)
+            assert await other.open_meeting(meeting_id) is None
+            await store.close()
+            store=await Phase2Store.open(database)
+            workspace,_=await store.bootstrap_browser(cookie)
+            assert (await workspace.list_meetings())[0].to_dict()==record
+            await store.close()
+>       asyncio.run(run())
+
+tests/phase2/test_file_failure_reasons.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def run():
+        database=tmp_path/'state.sqlite3'
+        store=await Phase2Store.open(database)
+        workspace,cookie=await store.bootstrap_browser(None)
+>       handle=await workspace.create_meeting('file')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Account' object has no attribute 'create_meeting'
+
+tests/phase2/test_file_failure_reasons.py:20: AttributeError
+_ test_outcomes_are_safe_persistent_and_owner_bound[transcode-transcode_failed] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-n1/test_outcomes_are_safe_persist4')
+caplog = <_pytest.logging.LogCaptureFixture object at 0x117be6390>
+case = 'transcode', expected = 'transcode_failed'
+
+    @pytest.mark.parametrize('case,expected', [
+        ('403','acquisition_http_403'), ('404','acquisition_http_404'), ('timeout','acquisition_timeout'),
+        ('unsupported','transcode_failed'), ('transcode','transcode_failed'), ('decoder','decode_failed'),
+        ('malformed','decode_invalid'), ('unconfirmed_empty','decode_invalid'), ('no_speech',None),
+    ])
+    def test_outcomes_are_safe_persistent_and_owner_bound(tmp_path, caplog, case, expected):
+        async def run():
+            database=tmp_path/'state.sqlite3'
+            store=await Phase2Store.open(database)
+            workspace,cookie=await store.bootstrap_browser(None)
+            handle=await workspace.create_meeting('file')
+            meeting_id=handle.meeting_id
+            root=tmp_path/'file-work'; directory=root/'input'; directory.mkdir(parents=True)
+            source=directory/'media';source.write_bytes(b'fixture')
+            class Runner:
+                def transcribe(self,*a,**kw):
+                    if case in ('decoder','unsupported','transcode'): raise RuntimeError('PRIVATE token https://user:secret@host')
+                    return SimpleNamespace(text='malformed PRIVATE' if case=='malformed' else '',
+                           window_diagnostics=[{'condition':'speechless_window_empty'}] if case=='no_speech' else [])
+            class Archive:
+                def prepare_mix(self,*a): raise RuntimeError('PRIVATE container data')
+            requests=[]
+            def respond(request):
+                requests.append(request)
+                if case=='timeout': raise httpx.ReadTimeout('PRIVATE URL',request=request)
+                return httpx.Response(int(case),request=request)
+            tasks=FileMeetingTasks(Runner(), root,
+                  audio_archive=Archive() if case in ('unsupported','transcode') else None,
+                  url_acquirer=UrlMediaAcquirer(http_transport=httpx.MockTransport(respond)))
+            if case in ('403','404','timeout'):
+                await tasks._acquire_and_run(handle,'https://user:secret@media.test/file',directory,asyncio.Event())
+                assert requests[0].headers['user-agent'].startswith('Mozilla/')
+            else: await tasks._run(handle,source,asyncio.Event())
+            record=(await handle.snapshot()).to_dict()
+            assert record['status']==('failed' if expected else 'completed')
+            assert record.get('failure_code')==expected
+            if expected: assert record['failure_reason'] and 'PRIVATE' not in record['failure_reason'] and 'secret' not in record['failure_reason']
+            else: assert record['notice']=='No speech detected.' and record['transcript']=={'segments':[]}
+            other,_=await store.bootstrap_browser(None)
+            assert await other.open_meeting(meeting_id) is None
+            await store.close()
+            store=await Phase2Store.open(database)
+            workspace,_=await store.bootstrap_browser(cookie)
+            assert (await workspace.list_meetings())[0].to_dict()==record
+            await store.close()
+>       asyncio.run(run())
+
+tests/phase2/test_file_failure_reasons.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def run():
+        database=tmp_path/'state.sqlite3'
+        store=await Phase2Store.open(database)
+        workspace,cookie=await store.bootstrap_browser(None)
+>       handle=await workspace.create_meeting('file')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Account' object has no attribute 'create_meeting'
+
+tests/phase2/test_file_failure_reasons.py:20: AttributeError
+___ test_outcomes_are_safe_persistent_and_owner_bound[decoder-decode_failed] ___
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-n1/test_outcomes_are_safe_persist5')
+caplog = <_pytest.logging.LogCaptureFixture object at 0x117ba5a90>
+case = 'decoder', expected = 'decode_failed'
+
+    @pytest.mark.parametrize('case,expected', [
+        ('403','acquisition_http_403'), ('404','acquisition_http_404'), ('timeout','acquisition_timeout'),
+        ('unsupported','transcode_failed'), ('transcode','transcode_failed'), ('decoder','decode_failed'),
+        ('malformed','decode_invalid'), ('unconfirmed_empty','decode_invalid'), ('no_speech',None),
+    ])
+    def test_outcomes_are_safe_persistent_and_owner_bound(tmp_path, caplog, case, expected):
+        async def run():
+            database=tmp_path/'state.sqlite3'
+            store=await Phase2Store.open(database)
+            workspace,cookie=await store.bootstrap_browser(None)
+            handle=await workspace.create_meeting('file')
+            meeting_id=handle.meeting_id
+            root=tmp_path/'file-work'; directory=root/'input'; directory.mkdir(parents=True)
+            source=directory/'media';source.write_bytes(b'fixture')
+            class Runner:
+                def transcribe(self,*a,**kw):
+                    if case in ('decoder','unsupported','transcode'): raise RuntimeError('PRIVATE token https://user:secret@host')
+                    return SimpleNamespace(text='malformed PRIVATE' if case=='malformed' else '',
+                           window_diagnostics=[{'condition':'speechless_window_empty'}] if case=='no_speech' else [])
+            class Archive:
+                def prepare_mix(self,*a): raise RuntimeError('PRIVATE container data')
+            requests=[]
+            def respond(request):
+                requests.append(request)
+                if case=='timeout': raise httpx.ReadTimeout('PRIVATE URL',request=request)
+                return httpx.Response(int(case),request=request)
+            tasks=FileMeetingTasks(Runner(), root,
+                  audio_archive=Archive() if case in ('unsupported','transcode') else None,
+                  url_acquirer=UrlMediaAcquirer(http_transport=httpx.MockTransport(respond)))
+            if case in ('403','404','timeout'):
+                await tasks._acquire_and_run(handle,'https://user:secret@media.test/file',directory,asyncio.Event())
+                assert requests[0].headers['user-agent'].startswith('Mozilla/')
+            else: await tasks._run(handle,source,asyncio.Event())
+            record=(await handle.snapshot()).to_dict()
+            assert record['status']==('failed' if expected else 'completed')
+            assert record.get('failure_code')==expected
+            if expected: assert record['failure_reason'] and 'PRIVATE' not in record['failure_reason'] and 'secret' not in record['failure_reason']
+            else: assert record['notice']=='No speech detected.' and record['transcript']=={'segments':[]}
+            other,_=await store.bootstrap_browser(None)
+            assert await other.open_meeting(meeting_id) is None
+            await store.close()
+            store=await Phase2Store.open(database)
+            workspace,_=await store.bootstrap_browser(cookie)
+            assert (await workspace.list_meetings())[0].to_dict()==record
+            await store.close()
+>       asyncio.run(run())
+
+tests/phase2/test_file_failure_reasons.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def run():
+        database=tmp_path/'state.sqlite3'
+        store=await Phase2Store.open(database)
+        workspace,cookie=await store.bootstrap_browser(None)
+>       handle=await workspace.create_meeting('file')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Account' object has no attribute 'create_meeting'
+
+tests/phase2/test_file_failure_reasons.py:20: AttributeError
+_ test_outcomes_are_safe_persistent_and_owner_bound[malformed-decode_invalid] __
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-n1/test_outcomes_are_safe_persist6')
+caplog = <_pytest.logging.LogCaptureFixture object at 0x117b6af60>
+case = 'malformed', expected = 'decode_invalid'
+
+    @pytest.mark.parametrize('case,expected', [
+        ('403','acquisition_http_403'), ('404','acquisition_http_404'), ('timeout','acquisition_timeout'),
+        ('unsupported','transcode_failed'), ('transcode','transcode_failed'), ('decoder','decode_failed'),
+        ('malformed','decode_invalid'), ('unconfirmed_empty','decode_invalid'), ('no_speech',None),
+    ])
+    def test_outcomes_are_safe_persistent_and_owner_bound(tmp_path, caplog, case, expected):
+        async def run():
+            database=tmp_path/'state.sqlite3'
+            store=await Phase2Store.open(database)
+            workspace,cookie=await store.bootstrap_browser(None)
+            handle=await workspace.create_meeting('file')
+            meeting_id=handle.meeting_id
+            root=tmp_path/'file-work'; directory=root/'input'; directory.mkdir(parents=True)
+            source=directory/'media';source.write_bytes(b'fixture')
+            class Runner:
+                def transcribe(self,*a,**kw):
+                    if case in ('decoder','unsupported','transcode'): raise RuntimeError('PRIVATE token https://user:secret@host')
+                    return SimpleNamespace(text='malformed PRIVATE' if case=='malformed' else '',
+                           window_diagnostics=[{'condition':'speechless_window_empty'}] if case=='no_speech' else [])
+            class Archive:
+                def prepare_mix(self,*a): raise RuntimeError('PRIVATE container data')
+            requests=[]
+            def respond(request):
+                requests.append(request)
+                if case=='timeout': raise httpx.ReadTimeout('PRIVATE URL',request=request)
+                return httpx.Response(int(case),request=request)
+            tasks=FileMeetingTasks(Runner(), root,
+                  audio_archive=Archive() if case in ('unsupported','transcode') else None,
+                  url_acquirer=UrlMediaAcquirer(http_transport=httpx.MockTransport(respond)))
+            if case in ('403','404','timeout'):
+                await tasks._acquire_and_run(handle,'https://user:secret@media.test/file',directory,asyncio.Event())
+                assert requests[0].headers['user-agent'].startswith('Mozilla/')
+            else: await tasks._run(handle,source,asyncio.Event())
+            record=(await handle.snapshot()).to_dict()
+            assert record['status']==('failed' if expected else 'completed')
+            assert record.get('failure_code')==expected
+            if expected: assert record['failure_reason'] and 'PRIVATE' not in record['failure_reason'] and 'secret' not in record['failure_reason']
+            else: assert record['notice']=='No speech detected.' and record['transcript']=={'segments':[]}
+            other,_=await store.bootstrap_browser(None)
+            assert await other.open_meeting(meeting_id) is None
+            await store.close()
+            store=await Phase2Store.open(database)
+            workspace,_=await store.bootstrap_browser(cookie)
+            assert (await workspace.list_meetings())[0].to_dict()==record
+            await store.close()
+>       asyncio.run(run())
+
+tests/phase2/test_file_failure_reasons.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def run():
+        database=tmp_path/'state.sqlite3'
+        store=await Phase2Store.open(database)
+        workspace,cookie=await store.bootstrap_browser(None)
+>       handle=await workspace.create_meeting('file')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Account' object has no attribute 'create_meeting'
+
+tests/phase2/test_file_failure_reasons.py:20: AttributeError
+_ test_outcomes_are_safe_persistent_and_owner_bound[unconfirmed_empty-decode_invalid] _
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-n1/test_outcomes_are_safe_persist7')
+caplog = <_pytest.logging.LogCaptureFixture object at 0x117bb8980>
+case = 'unconfirmed_empty', expected = 'decode_invalid'
+
+    @pytest.mark.parametrize('case,expected', [
+        ('403','acquisition_http_403'), ('404','acquisition_http_404'), ('timeout','acquisition_timeout'),
+        ('unsupported','transcode_failed'), ('transcode','transcode_failed'), ('decoder','decode_failed'),
+        ('malformed','decode_invalid'), ('unconfirmed_empty','decode_invalid'), ('no_speech',None),
+    ])
+    def test_outcomes_are_safe_persistent_and_owner_bound(tmp_path, caplog, case, expected):
+        async def run():
+            database=tmp_path/'state.sqlite3'
+            store=await Phase2Store.open(database)
+            workspace,cookie=await store.bootstrap_browser(None)
+            handle=await workspace.create_meeting('file')
+            meeting_id=handle.meeting_id
+            root=tmp_path/'file-work'; directory=root/'input'; directory.mkdir(parents=True)
+            source=directory/'media';source.write_bytes(b'fixture')
+            class Runner:
+                def transcribe(self,*a,**kw):
+                    if case in ('decoder','unsupported','transcode'): raise RuntimeError('PRIVATE token https://user:secret@host')
+                    return SimpleNamespace(text='malformed PRIVATE' if case=='malformed' else '',
+                           window_diagnostics=[{'condition':'speechless_window_empty'}] if case=='no_speech' else [])
+            class Archive:
+                def prepare_mix(self,*a): raise RuntimeError('PRIVATE container data')
+            requests=[]
+            def respond(request):
+                requests.append(request)
+                if case=='timeout': raise httpx.ReadTimeout('PRIVATE URL',request=request)
+                return httpx.Response(int(case),request=request)
+            tasks=FileMeetingTasks(Runner(), root,
+                  audio_archive=Archive() if case in ('unsupported','transcode') else None,
+                  url_acquirer=UrlMediaAcquirer(http_transport=httpx.MockTransport(respond)))
+            if case in ('403','404','timeout'):
+                await tasks._acquire_and_run(handle,'https://user:secret@media.test/file',directory,asyncio.Event())
+                assert requests[0].headers['user-agent'].startswith('Mozilla/')
+            else: await tasks._run(handle,source,asyncio.Event())
+            record=(await handle.snapshot()).to_dict()
+            assert record['status']==('failed' if expected else 'completed')
+            assert record.get('failure_code')==expected
+            if expected: assert record['failure_reason'] and 'PRIVATE' not in record['failure_reason'] and 'secret' not in record['failure_reason']
+            else: assert record['notice']=='No speech detected.' and record['transcript']=={'segments':[]}
+            other,_=await store.bootstrap_browser(None)
+            assert await other.open_meeting(meeting_id) is None
+            await store.close()
+            store=await Phase2Store.open(database)
+            workspace,_=await store.bootstrap_browser(cookie)
+            assert (await workspace.list_meetings())[0].to_dict()==record
+            await store.close()
+>       asyncio.run(run())
+
+tests/phase2/test_file_failure_reasons.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def run():
+        database=tmp_path/'state.sqlite3'
+        store=await Phase2Store.open(database)
+        workspace,cookie=await store.bootstrap_browser(None)
+>       handle=await workspace.create_meeting('file')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Account' object has no attribute 'create_meeting'
+
+tests/phase2/test_file_failure_reasons.py:20: AttributeError
+______ test_outcomes_are_safe_persistent_and_owner_bound[no_speech-None] _______
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-n1/test_outcomes_are_safe_persist8')
+caplog = <_pytest.logging.LogCaptureFixture object at 0x117ba6030>
+case = 'no_speech', expected = None
+
+    @pytest.mark.parametrize('case,expected', [
+        ('403','acquisition_http_403'), ('404','acquisition_http_404'), ('timeout','acquisition_timeout'),
+        ('unsupported','transcode_failed'), ('transcode','transcode_failed'), ('decoder','decode_failed'),
+        ('malformed','decode_invalid'), ('unconfirmed_empty','decode_invalid'), ('no_speech',None),
+    ])
+    def test_outcomes_are_safe_persistent_and_owner_bound(tmp_path, caplog, case, expected):
+        async def run():
+            database=tmp_path/'state.sqlite3'
+            store=await Phase2Store.open(database)
+            workspace,cookie=await store.bootstrap_browser(None)
+            handle=await workspace.create_meeting('file')
+            meeting_id=handle.meeting_id
+            root=tmp_path/'file-work'; directory=root/'input'; directory.mkdir(parents=True)
+            source=directory/'media';source.write_bytes(b'fixture')
+            class Runner:
+                def transcribe(self,*a,**kw):
+                    if case in ('decoder','unsupported','transcode'): raise RuntimeError('PRIVATE token https://user:secret@host')
+                    return SimpleNamespace(text='malformed PRIVATE' if case=='malformed' else '',
+                           window_diagnostics=[{'condition':'speechless_window_empty'}] if case=='no_speech' else [])
+            class Archive:
+                def prepare_mix(self,*a): raise RuntimeError('PRIVATE container data')
+            requests=[]
+            def respond(request):
+                requests.append(request)
+                if case=='timeout': raise httpx.ReadTimeout('PRIVATE URL',request=request)
+                return httpx.Response(int(case),request=request)
+            tasks=FileMeetingTasks(Runner(), root,
+                  audio_archive=Archive() if case in ('unsupported','transcode') else None,
+                  url_acquirer=UrlMediaAcquirer(http_transport=httpx.MockTransport(respond)))
+            if case in ('403','404','timeout'):
+                await tasks._acquire_and_run(handle,'https://user:secret@media.test/file',directory,asyncio.Event())
+                assert requests[0].headers['user-agent'].startswith('Mozilla/')
+            else: await tasks._run(handle,source,asyncio.Event())
+            record=(await handle.snapshot()).to_dict()
+            assert record['status']==('failed' if expected else 'completed')
+            assert record.get('failure_code')==expected
+            if expected: assert record['failure_reason'] and 'PRIVATE' not in record['failure_reason'] and 'secret' not in record['failure_reason']
+            else: assert record['notice']=='No speech detected.' and record['transcript']=={'segments':[]}
+            other,_=await store.bootstrap_browser(None)
+            assert await other.open_meeting(meeting_id) is None
+            await store.close()
+            store=await Phase2Store.open(database)
+            workspace,_=await store.bootstrap_browser(cookie)
+            assert (await workspace.list_meetings())[0].to_dict()==record
+            await store.close()
+>       asyncio.run(run())
+
+tests/phase2/test_file_failure_reasons.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:195: in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/runners.py:118: in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/gao/.local/share/uv/python/cpython-3.12.12-macos-aarch64-none/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    async def run():
+        database=tmp_path/'state.sqlite3'
+        store=await Phase2Store.open(database)
+        workspace,cookie=await store.bootstrap_browser(None)
+>       handle=await workspace.create_meeting('file')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'Account' object has no attribute 'create_meeting'
+
+tests/phase2/test_file_failure_reasons.py:20: AttributeError
+_______ test_operator_interrupt_downgrades_file_audio_at_finish_boundary _______
+
+tmp_path = PosixPath('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-wp4-oracles-n1/evidence/mvpfix/wp4/.pytest-n1/test_operator_interrupt_downgr0')
+
+    def test_operator_interrupt_downgrades_file_audio_at_finish_boundary(tmp_path: Path):
+        database = tmp_path / "moss.sqlite3"
+        socket = Path("/tmp") / f"moss-i20-file-audio-{os.getpid()}-{time.time_ns()}.sock"
+        sessions = asyncio.run(provision(database))
+        runner = ControlledRunner()
+        work_root = tmp_path / "file-work"
+        app = make_app(database, runner, work_root, control_socket=socket)
+    
+        with TestClient(app, base_url="https://moss.test") as client:
+            session(client, sessions["sub-a"])
+            finish_started = threading.Event()
+            release_finish = client.portal.call(asyncio.Event)
+            original_finish = app.state.phase2_store._finish_meeting
+            target_id: str | None = None
+    
+            async def held_complete(
+                account_id: str,
+                authority_generation: int,
+                meeting_id: str,
+                status: str,
+            ) -> None:
+                if meeting_id == target_id and status == "completed":
+                    finish_started.set()
+                    await release_finish.wait()
+                await original_finish(
+                    account_id,
+                    authority_generation,
+                    meeting_id,
+                    status,
+                )
+    
+            app.state.phase2_store._finish_meeting = held_complete
+            target_id = client.post(
+                "/api/meetings/file",
+                files={"file": ("target.wav", wav_bytes(), "audio/wav")},
+            ).json()["id"]
+            assert runner.started.wait(timeout=2)
+            runner.release.set()
+>           assert finish_started.wait(timeout=5)
+E           assert False
+E            +  where False = wait(timeout=5)
+E            +    where wait = <threading.Event at 0x11812c710: unset>.wait
+
+tests/phase2/test_owner_bound_file_meeting.py:443: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    moss_transcribe_diarize.app.phase2_file:phase2_file.py:313 File Meeting background task failed.
+=============================== warnings summary ===============================
+../MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_file_failure_reasons.py::test_outcomes_are_safe_persistent_and_owner_bound[403-acquisition_http_403]
+FAILED tests/phase2/test_file_failure_reasons.py::test_outcomes_are_safe_persistent_and_owner_bound[404-acquisition_http_404]
+FAILED tests/phase2/test_file_failure_reasons.py::test_outcomes_are_safe_persistent_and_owner_bound[timeout-acquisition_timeout]
+FAILED tests/phase2/test_file_failure_reasons.py::test_outcomes_are_safe_persistent_and_owner_bound[unsupported-transcode_failed]
+FAILED tests/phase2/test_file_failure_reasons.py::test_outcomes_are_safe_persistent_and_owner_bound[transcode-transcode_failed]
+FAILED tests/phase2/test_file_failure_reasons.py::test_outcomes_are_safe_persistent_and_owner_bound[decoder-decode_failed]
+FAILED tests/phase2/test_file_failure_reasons.py::test_outcomes_are_safe_persistent_and_owner_bound[malformed-decode_invalid]
+FAILED tests/phase2/test_file_failure_reasons.py::test_outcomes_are_safe_persistent_and_owner_bound[unconfirmed_empty-decode_invalid]
+FAILED tests/phase2/test_file_failure_reasons.py::test_outcomes_are_safe_persistent_and_owner_bound[no_speech-None]
+FAILED tests/phase2/test_owner_bound_file_meeting.py::test_operator_interrupt_downgrades_file_audio_at_finish_boundary
+10 failed, 48 passed, 1 warning in 13.01s

@@ -1,3 +1,4 @@
+import { EXTERNAL_SUMMARY_MODELS } from "../lib/finalSummary";
 import { useEffect, useState } from "preact/hooks";
 import type { Meeting } from "../api/meetings";
 import {
@@ -32,7 +33,7 @@ export function FinalSummarySettings() {
       <label>Provider<select aria-label="Provider" value={relay ? "relay" : "external"} onChange={event => {
         const useRelay = event.currentTarget.value === "relay";
         setSettings(current => ({ ...current, endpoint: useRelay ? RELAY_ENDPOINT : "",
-          model: useRelay ? models[0]?.id ?? "" : "", apiKey: "", timeoutSeconds: useRelay ? 200 : 120 }));
+          model: useRelay ? models[0]?.id ?? "" : EXTERNAL_SUMMARY_MODELS[0], apiKey: "", timeoutSeconds: useRelay ? 200 : 120 }));
       }}>
         <option value="relay" disabled={!models.length}>Server relay (tailnet models)</option>
         <option value="external">External HTTPS provider</option>
@@ -48,7 +49,10 @@ export function FinalSummarySettings() {
         <p>The API key is stored in this browser's site data, not on the MOSS server. Use a restricted key on a trusted browser profile.</p>
         {([ ["endpoint", "Provider HTTPS URL"], ["model", "Model"], ["apiKey", "API key (optional)"] ] as const).map(([key, label]) =>
           <label style={{ display: "block", marginBlock: "0.5rem" }} key={key}>{label}<input style={{ display: "block", width: "100%" }} type={key === "apiKey" ? "password" : "text"}
+            list={key === "model" ? "summary-model-suggestions" : undefined}
+            placeholder={key === "model" ? EXTERNAL_SUMMARY_MODELS[0] : key === "endpoint" ? "https://openrouter.ai/api/v1" : undefined}
             autoComplete="off" value={settings[key]} onInput={event => field(key, event.currentTarget.value)} /></label>)}
+        <datalist id="summary-model-suggestions">{EXTERNAL_SUMMARY_MODELS.map(model => <option value={model} key={model} />)}</datalist>
       </>}
       <label style={{ display: "block" }}>Output language (blank preserves prompt)<input value={settings.language} onInput={event => field("language", event.currentTarget.value)} /></label>
       <label>Request timeout (seconds)<input type="number" step="1" min="1" value={settings.timeoutSeconds} onInput={event => field("timeoutSeconds", event.currentTarget.value)} /></label>

@@ -23,6 +23,7 @@ const SETTINGS_KEY = "moss.browser-final-summary.v1";
 export const SUMMARY_CHANGED = "llm_status";
 export const SUMMARY_RESULT = "llm_summary_update";
 export const MEETING_CREATED = "moss:meeting-created";
+export const EXTERNAL_SUMMARY_MODELS = ["google/gemini-2.5-flash-lite", "google/gemini-2.5-flash"] as const;
 export const RELAY_ENDPOINT = "/api/llm/chat/completions";
 export interface RelayModel { id: string; upstream: string; }
 export async function fetchRelayModels(fetcher: typeof fetch = fetch): Promise<RelayModel[]> {

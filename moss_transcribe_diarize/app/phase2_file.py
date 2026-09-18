@@ -13,7 +13,8 @@ from typing import Any
 from moss_transcribe_diarize.subtitle import subtitle_segments_from_transcript
 
 from .phase2 import AccountRevoked
-from .phase2_url import validate_http_url
+from .phase2_url import UrlAcquisitionRejected, validate_http_url
+from .windowed_transcription import _accepted_speechless
 
 
 DEFAULT_PHASE2_FILE_WORK_ROOT = (
@@ -23,6 +24,13 @@ LOGGER = logging.getLogger(__name__)
 UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS = 30.0
 UPLOAD_CAPACITY_RESERVE_BYTES = 512 * 1024 * 1024
 UPLOAD_CHUNK_BYTES = 1024 * 1024
+
+
+class FileProcessingError(RuntimeError):
+    def __init__(self, code: str, reason: str):
+        super().__init__(reason)
+        self.code = code
+        self.reason = reason
 
 
 class FileUploadRejected(RuntimeError):
@@ -310,9 +318,11 @@ class FileMeetingTasks:
         if work_dir.exists():
             shutil.rmtree(work_dir)
 
-    async def _mark_failed(self, handle: Any) -> None:
+    async def _mark_failed(self, handle: Any, code: str = "storage_failed",
+                           reason: str = "The meeting could not be saved.") -> None:
+        LOGGER.warning("File Meeting failed: %s", code)
         try:
-            await handle.finish("failed")
+            await handle.finish("failed", failure_code=code, failure_reason=reason)
         except AccountRevoked:
             pass
 
@@ -329,8 +339,10 @@ class FileMeetingTasks:
         except asyncio.CancelledError:
             self._remove_work_dir(staging_dir)
             raise
-        except Exception:
-            await self._mark_failed(handle)
+        except Exception as exc:
+            code = exc.failure_code if isinstance(exc, UrlAcquisitionRejected) else "acquisition_failed"
+            reason = str(exc) if isinstance(exc, UrlAcquisitionRejected) else "The media could not be downloaded."
+            await self._mark_failed(handle, code, reason)
             self._remove_work_dir(staging_dir)
             return
         await self._run(handle, input_path, asyncio.Event())
@@ -368,13 +380,21 @@ class FileMeetingTasks:
         options: dict[str, object],
     ) -> tuple[Any, Path | None]:
         mix_path: Path | None = None
+        mix_failed = False
         if self._audio_archive is not None:
             candidate = input_path.parent / "transcription-mix.wav"
             try:
                 mix_path = self._audio_archive.prepare_mix(input_path, candidate)
             except Exception:
+                mix_failed = True
                 candidate.unlink(missing_ok=True)
-        result = self._runner.transcribe(mix_path or input_path, **options)
+                LOGGER.warning("File Meeting audio: transcode_failed; trying runner input")
+        try:
+            result = self._runner.transcribe(mix_path or input_path, **options)
+        except Exception as exc:
+            if mix_failed or getattr(exc, "condition", None) == "extraction_exception":
+                raise FileProcessingError("transcode_failed", "Media could not be decoded. The format may be unsupported or damaged.") from exc
+            raise FileProcessingError("decode_failed", "The speech decoder could not transcribe this media.") from exc
         return result, mix_path
 
     async def _complete(
@@ -385,8 +405,10 @@ class FileMeetingTasks:
     ) -> None:
         try:
             result, mix_path = await asyncio.shield(runner_task)
-        except Exception:
-            await self._mark_failed(handle)
+        except Exception as exc:
+            code = exc.code if isinstance(exc, FileProcessingError) else "decode_failed"
+            reason = exc.reason if isinstance(exc, FileProcessingError) else "The speech decoder could not transcribe this media."
+            await self._mark_failed(handle, code, reason)
             self._remove_work_dir(input_path.parent)
             return
 
@@ -401,8 +423,10 @@ class FileMeetingTasks:
                     for segment in subtitle_segments_from_transcript(result.text, postprocess=False)
                 ]
             }
+            if not document["segments"] and not _accepted_speechless(result):
+                raise ValueError("Empty decoder output without speechless evidence")
         except Exception:
-            await self._mark_failed(handle)
+            await self._mark_failed(handle, "decode_invalid", "The speech decoder returned no usable transcript.")
             self._remove_work_dir(input_path.parent)
             return
 
@@ -458,7 +482,7 @@ class FileMeetingTasks:
             await self._mark_failed(handle)
             raise
         try:
-            await handle.finish("completed")
+            await handle.finish("completed", notice="No speech detected." if not document["segments"] else None)
         except AccountRevoked:
             pass
 

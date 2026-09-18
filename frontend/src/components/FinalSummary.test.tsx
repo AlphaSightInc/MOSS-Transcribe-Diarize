@@ -105,3 +105,16 @@ it.each([true, false])("resolves a delayed model catalog before asserting the de
     .toBe(hasModels ? "relay" : "external"));
   expect(loadSummarySettings().endpoint).toBe(hasModels ? RELAY_ENDPOINT : "");
 });
+
+it("suggests Flash Lite first while preserving Flash and custom model entry", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ data: [] }))));
+  await act(async () => render(<FinalSummarySettings />, root));
+  await act(async () => root.querySelector<HTMLButtonElement>("button")!.click());
+  expect([...root.querySelectorAll<HTMLOptionElement>("datalist option")].map(o => o.value)).toEqual([
+    "google/gemini-2.5-flash-lite", "google/gemini-2.5-flash"
+  ]);
+  const model = root.querySelector<HTMLInputElement>('input[list="summary-model-suggestions"]')!;
+  expect(model.placeholder).toBe("google/gemini-2.5-flash-lite");
+  await act(async () => { model.value = "custom/model"; model.dispatchEvent(new Event("input", { bubbles: true })); });
+  expect(model.value).toBe("custom/model");
+});
