@@ -9,7 +9,7 @@ import numpy as np
 import onnxruntime as ort
 from moss_transcribe_diarize.app.live_provider_bundle import LiveProviderBundleConfig,_identity_encoder
 from moss_transcribe_diarize.app.speaker_identity import _OnnxWeSpeakerEmbedder
-p=argparse.ArgumentParser();p.add_argument('--arena',choices=['on','off','shrink','no-pattern'],required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--varying',action='store_true');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--arena',choices=['on','off','shrink','no-pattern','production'],required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--varying',action='store_true');a=p.parse_args()
 config=LiveProviderBundleConfig.from_manifest(Path.home()/'.local/share/moss-transcribe-diarize/live/live-provider-manifest.json')
 adapter=_identity_encoder(config)
 def factory(*args,**kw):
@@ -21,7 +21,7 @@ def factory(*args,**kw):
         opts=ort.RunOptions();opts.add_run_config_entry('memory.enable_memory_arena_shrinkage','cpu:0')
         session.run=lambda outputs,inputs:original(outputs,inputs,opts)
     return session
-encoder=_OnnxWeSpeakerEmbedder(adapter.state_path,device='cpu',session_factory=factory)
+encoder=_OnnxWeSpeakerEmbedder(adapter.state_path,device='cpu',session_factory=None if a.arena=='production' else factory)
 clip=Path('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/audio.wav')
 rows=[];vectors=[]
 def record(action,**kw):

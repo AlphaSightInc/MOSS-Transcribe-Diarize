@@ -89,3 +89,23 @@ the real-encoder profile; it uses fake identity/ASR and always-speech VAD.
 
 Final full suite before fresh verification: 1,890 passed, 2 skipped, 37 subtests (147.03 s).
 Frontend: 244 tests / 27 files; typecheck and build exit 0, assets unchanged.
+
+Exact album-entry supplement: original ownership counter counts speaker banks.
+`album_counts.py` replays the same real PCM and policy, caching embeddings only for
+byte-identical WAV + intervals; each unique input is computed by the pinned ONNX model.
+Only entry counts and exact transcript equality are used from this supplementary run.
+Its RSS/byte estimates are excluded because memoization changes ownership/allocations.
+This avoids falsely calling bank counts exemplar counts.
+
+## R1 — pre-existing terminal tape-refusal defect (outside memory fix)
+
+The per-lane empty-results path calls `TerminalTranscriptFinalizer._refused` without
+its required keyword-only `gaps`. Two exhausted lane tapes therefore yield TypeError
+and generic `failed`, not the intended `tape_unavailable`. The mono base reports
+`unavailable`. The runtime's finally block still releases all tapes. Reproduced with
+two 2.5-second frames and one-frame tape capacity, no ONNX/model involvement; exact
+error in `evidence/mvpfix/wp22/tape-refusal-defect.txt`. The same omitted argument is
+present in the locally visible WP12 tip a2ee97eb (read only; not merged).
+No change to WP12-owned terminal mapping/lifecycle code in this memory package.
+The full 30-minute per-lane bounded-tape profiles must report this failure explicitly,
+not relabel it successful finalization. Part C still needs its authorized larger tape.

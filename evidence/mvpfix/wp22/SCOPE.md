@@ -25,3 +25,10 @@
   that transient queue occupancy between samples was zero.
 - No GPU request, tunnel, shared service restart, deployment, push, merge or GitHub
   mutation occurred. Part C remains pending the user's WP12 confirmation.
+
+Additional controls: native `--arena production --varying` exercises the changed
+constructor without overriding options; 80/80 vectors exactly equal to default
+baseline. Count-only replay computes 60 unique embeddings and reuses 1,440 identical
+inputs; its final 1,440-segment transcript equals the uncached before run. Its RSS
+and byte estimates are excluded. Exact entries: system 15/20/20, mic 20/20/20 at
+5/15/30 minutes. R1 (missing terminal-refusal `gaps`) is pre-existing and remains open.

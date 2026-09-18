@@ -20,6 +20,22 @@ for arm in ['mono-base','lanes-before','lanes-after']:
 before=json.loads((root/'lanes-before.content.json').read_text());after=json.loads((root/'lanes-after.content.json').read_text())
 assert before==after,'Per-lane transcript changed'
 summary['content']=dict(exact_equal=True,segments=len(after),words=sum(len(s['text'].split()) for s in after))
+counts_content=json.loads((root/'album-counts.content.json').read_text())
+assert counts_content==after,'Cached count replay changed content'
+counts=[json.loads(x) for x in (root/'album-counts.jsonl').read_text().splitlines()]
+uncached=[json.loads(x) for x in (root/'lanes-after.jsonl').read_text().splitlines()]
+entry_rows=[]
+for second in (300,900,1800):
+    row=next(x for x in counts if x['seconds']==second and x['phase']=='capture')
+    original=next(x for x in uncached if x['seconds']==second and x['phase']=='capture')
+    for lane in ('system','microphone'):
+        assert row['structures']['album_'+lane]['count']==original['structures']['album_'+lane]['count']
+    entry_rows.append(dict(seconds=second,system=row['structures']['album_entries_system']['count'],microphone=row['structures']['album_entries_microphone']['count']))
+summary['album_entries']=entry_rows
+lines += ['Exact exemplar counts from the byte-identical cached replay (content and bank counts checked against uncached):', '', '| Audio seconds | System entries | Mic entries |', '|---|---:|---:|']
+lines += [f"| {r['seconds']} | {r['system']} | {r['microphone']} |" for r in entry_rows]
+lines += ['']
+
 publication=[json.loads(x) for x in (root/'publication.jsonl').read_text().splitlines()]
 assert publication[-1]['terminal'] and publication[-1]['queue_count']==0
 summary['publication']=dict(final=publication[-1],max_sampled_queue=max(r['max_queue_count'] for r in publication))

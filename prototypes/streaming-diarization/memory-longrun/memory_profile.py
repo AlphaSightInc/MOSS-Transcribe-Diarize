@@ -74,6 +74,8 @@ def owners(runtime, sid, source):
         e=p.evidence_provider
         add('pending_vectors_'+lane,e._pending_vectors)
         add('album_'+lane,e._album._exemplars)
+        result['album_entries_'+lane]={'bytes':size(e._album._exemplars), 'count':sum(len(bank) for bank in e._album._exemplars.values())}
+        add('album_provisional_'+lane,e._album._provisional)
         add('sweep_'+lane,e._sweeper.ledger._spans)
     return result
 

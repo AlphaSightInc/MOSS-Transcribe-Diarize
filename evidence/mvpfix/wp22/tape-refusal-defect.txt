@@ -1,0 +1,5 @@
+live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 80000, 'retained_bytes': 80000, 'requested_bytes': 80000}
+live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 80000, 'retained_bytes': 80000, 'requested_bytes': 80000}
+live complete tape degraded: epoch=0 reason=tape_capacity_exhausted detail={'capacity_bytes': 80000, 'retained_bytes': 80000, 'requested_bytes': 80000}
+TypeError: TerminalTranscriptFinalizer._refused() missing 1 required keyword-only argument: 'gaps'
+Existing two-lane tape-exhaustion path; independent of ONNX or WP22 change.
