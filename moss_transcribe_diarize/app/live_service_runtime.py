@@ -991,6 +991,7 @@ class LiveServiceRuntime:
             # When no pass is scheduled nothing has changed: the tape is released here, in
             # the stop that created it.
             if not self._begin_terminal_locked(state):
+                state.coordinator.release_finalized_identity()
                 self._release_tape_locked(state)
             return self._snapshot(state)
 
@@ -1209,6 +1210,7 @@ class LiveServiceRuntime:
                 # In the `finally` because every ending owes it: a refused proposal, a
                 # defect, and a published surface all end the only reason the audio was
                 # kept.
+                state.coordinator.release_finalized_identity()
                 self._release_tape_locked(state)
                 state.work_changed.set()
                 self._notify_drain_waiters_locked(state)

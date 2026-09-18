@@ -43,7 +43,11 @@ def audit(out):
             p95_update_gap_seconds=r.get('p95_live_update_gap_seconds'),capture_seconds=r.get('capture_elapsed_seconds'),
             stop_to_final_seconds=r.get('stop_to_final_seconds'),finalization=r.get('finalization_status'),
             error=r.get('error'),failure_code=r.get('failure_code'),http_failure_code=r.get('http_failure_code'),
-            saved_words=r.get('saved_words'),unaccounted_acknowledged_samples=r.get('unaccounted_acknowledged_samples'))
+            saved_words=r.get('saved_words'),before_cleanup=r.get('before_cleanup'),unaccounted_acknowledged_samples=r.get('unaccounted_acknowledged_samples'))
+        pressure = r.get('backpressure_bodies', [])
+        from collections import Counter
+        d['backpressure_codes'] = dict(Counter(b.get('code') or b.get('failure',{}).get('code') for b in pressure))
+        d['backpressure_declared_retryable'] = sum(b.get('retryable',b.get('failure',{}).get('retryable')) is True for b in pressure)
         if snap_path.exists():
             snap=json.loads(snap_path.read_text())['session']
             status,document=saved[r['session_id']]
@@ -56,6 +60,20 @@ def audit(out):
             d['accounted_samples']=snap['accounted_samples']
             assert snap['accepted_samples']==r['accepted_samples']
             assert snap['accounted_samples']==r['accounted_samples']
+            if result['stub_latency'] is not None:
+                # The timed stub defines exact words AND intervals, independently
+                # of the saved surface. This is synthetic retention, not real WER.
+                expected_stub = [(lane,start,min(start+40000,result['seconds']*16000),'memory probe words')
+                    for lane in ('system','microphone') for start in range(0,result['seconds']*16000,40000)]
+                actual_stub = sorted((s.get('source_lane'),s['start_sample'],s['end_sample'],s['text'])
+                                     for s in snap['effective_transcript'])
+                d['stub_expected_words'] = len(expected_stub)*3
+                d['stub_exact_lane_time_text'] = actual_stub==sorted(expected_stub)
+                from collections import Counter
+                missing=Counter(expected_stub)-Counter(actual_stub)
+                added=Counter(actual_stub)-Counter(expected_stub)
+                d['stub_missing_segments'] = sum(missing.values())
+                d['stub_added_or_changed_segments'] = sum(added.values())
             d['lanes']={lane:dict(segments=len(parts),words=sum(len(s['text'].split()) for s in parts),
                 first_sample=min([s['start_sample'] for s in parts] or [0]),last_sample=max([s['end_sample'] for s in parts] or [0]))
                 for lane in ('system','microphone') if (parts:=[s for s in snap['effective_transcript'] if s.get('source_lane')==lane])}
@@ -75,7 +93,7 @@ def audit(out):
     return dict(run=out.name,source=result['source_revision'],sessions=result['sessions'],seconds=result['seconds'],repeat=result['repeat'],
         stub_latency=result['stub_latency'],campaign_completed=result.get('campaign_completed'),campaign_clean=result['clean'],
         requests=len(requests),peak_own_inflight=max([r['active'] for r in decoder] or [0]),
-        contention_samples=sum(r['foreign_load_detected'] for r in result['resources']),resource_samples=len(result['resources']),
+        contention_samples=None if result['stub_latency'] is not None else sum(r['foreign_load_detected'] for r in result['resources']),resource_samples=len(result['resources']),
         maximum_pending_signals=max([r['pending_signals'] for r in runtime] or [0]),
         maximum_ready_sessions=max([r['ready'] for r in runtime] or [0]),
         maximum_session_canonical_queue=max([s['queues']['live_canonical'] for s in flat] or [0]),

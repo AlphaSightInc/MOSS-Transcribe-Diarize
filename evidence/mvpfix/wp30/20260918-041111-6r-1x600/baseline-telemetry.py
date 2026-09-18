@@ -48,8 +48,6 @@ def install(state):
                             owners[lane] = dict(album_entries=sum(len(v) for v in album._exemplars.values()) if album else 0,
                                 pending_vectors=len(getattr(e, '_pending_vectors', {})),
                                 sweep_spans=len(sweep.ledger._spans) if sweep else 0)
-                        # The observer must not extend the measured owners' lifetime.
-                        p = e = album = sweep = None
                         tapes = {'mixed':c.tape, **c.lane_tapes}
                         sessions.append(dict(id=sid, status=snap.status, finalization=snap.finalization_status,
                             accepted=snap.accepted_samples, accounted=snap.accounted_samples,
@@ -62,7 +60,6 @@ def install(state):
             row['replay_acks'] = [len(ref()._ingress._acks) for ref in sources if ref() is not None]
             row['rss_bytes'] = int(subprocess.check_output(['ps','-o','rss=','-p',str(os.getpid())],text=True))*1024
             row['python_bytes'], row['python_peak'] = tracemalloc.get_traced_memory()
-            row['tracer_bytes'] = tracemalloc.get_tracemalloc_memory()
             if checkpoint:
                 # Native RSS and traced Python bytes are separate measurements.
                 shot = tracemalloc.take_snapshot()

@@ -1,0 +1,178 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+______ test_final_lane_owners_released_without_losing_observations[final] ______
+
+ending = 'final'
+
+    @pytest.mark.parametrize('ending', ['final', 'failed', 'not_started'])
+    def test_final_lane_owners_released_without_losing_observations(ending):
+        class Encoder:
+            spec = SimpleNamespace(provider='wespeaker', revision='test', state_sha256='test')
+            def embed(self, path, intervals):
+                return [1.0, 0.0]
+    
+        def identity():
+            return BoundedCausalIdentityPreparer(
+                config=LiveIdentityConfig(16, .35, .1),
+                evidence_provider=WeSpeakerLiveEvidenceProvider(
+                    encoder=Encoder(), album=FingerprintAlbum(admission_seconds=2.0),
+                    birth_min_seconds=1.0,
+                ), lane_factory=identity,
+            )
+    
+        pump, terminal = _ManualCanonicalPumpScheduler(), _ManualTerminalScheduler()
+        descriptor = _descriptor()
+        descriptor = replace(descriptor, frame_samples=40000, bounds=replace(
+            descriptor.bounds, max_frame_samples=40000, max_retained_samples=160000,
+            hard_cap_samples=40000, max_queue_depth=16, max_tape_bytes=320000,
+        ))
+        runner = WholeMeetingStub('[0][S01]terminal words[2.5]',
+                                  raises=RuntimeError('injected') if ending == 'failed' else None)
+        runtime = LiveServiceRuntime(
+            descriptor=descriptor,
+            endpoint_policy_factory=lambda: EndpointPolicy(EndpointPolicyConfig(
+                min_speech_samples=1, min_silence_samples=1, hard_cap_samples=40000)),
+            speech_provider_factory=Speech, decoder_factory=Decoder,
+            rolling_decoder_factory=Decoder, identity_preparer_factory=identity,
+            terminal_finalizer=None if ending == 'not_started' else TerminalTranscriptFinalizer(runner=runner),
+            _canonical_scheduler=pump, _terminal_scheduler=terminal,
+        )
+        sid = runtime.create().session_id
+        runtime.accept_frame(sid, frame())
+        pump.drain()
+        coordinator = runtime._sessions[sid].coordinator
+        owners = [weakref.ref(p) for p in coordinator._lane_preparers.values()]
+        journal = coordinator.journal_observations()
+        counts = coordinator.identity_counts()
+        assert len(owners) == len(journal) == 2
+        asyncio.run(runtime.stop(sid, 5))
+        matches = coordinator.match_observations()
+        if ending != 'not_started':
+            assert terminal.pending == 1
+            assert all(ref() is not None for ref in owners)
+            assert runtime.snapshot(sid).session.finalization_status == 'running'
+            terminal.drain()
+>       assert all(ref() is None for ref in owners)
+E       assert False
+E        +  where False = all(<generator object test_final_lane_owners_released_without_losing_observations.<locals>.<genexpr> at 0x10e8c8ad0>)
+
+tests/test_live_finalized_memory.py:70: AssertionError
+_____ test_final_lane_owners_released_without_losing_observations[failed] ______
+
+ending = 'failed'
+
+    @pytest.mark.parametrize('ending', ['final', 'failed', 'not_started'])
+    def test_final_lane_owners_released_without_losing_observations(ending):
+        class Encoder:
+            spec = SimpleNamespace(provider='wespeaker', revision='test', state_sha256='test')
+            def embed(self, path, intervals):
+                return [1.0, 0.0]
+    
+        def identity():
+            return BoundedCausalIdentityPreparer(
+                config=LiveIdentityConfig(16, .35, .1),
+                evidence_provider=WeSpeakerLiveEvidenceProvider(
+                    encoder=Encoder(), album=FingerprintAlbum(admission_seconds=2.0),
+                    birth_min_seconds=1.0,
+                ), lane_factory=identity,
+            )
+    
+        pump, terminal = _ManualCanonicalPumpScheduler(), _ManualTerminalScheduler()
+        descriptor = _descriptor()
+        descriptor = replace(descriptor, frame_samples=40000, bounds=replace(
+            descriptor.bounds, max_frame_samples=40000, max_retained_samples=160000,
+            hard_cap_samples=40000, max_queue_depth=16, max_tape_bytes=320000,
+        ))
+        runner = WholeMeetingStub('[0][S01]terminal words[2.5]',
+                                  raises=RuntimeError('injected') if ending == 'failed' else None)
+        runtime = LiveServiceRuntime(
+            descriptor=descriptor,
+            endpoint_policy_factory=lambda: EndpointPolicy(EndpointPolicyConfig(
+                min_speech_samples=1, min_silence_samples=1, hard_cap_samples=40000)),
+            speech_provider_factory=Speech, decoder_factory=Decoder,
+            rolling_decoder_factory=Decoder, identity_preparer_factory=identity,
+            terminal_finalizer=None if ending == 'not_started' else TerminalTranscriptFinalizer(runner=runner),
+            _canonical_scheduler=pump, _terminal_scheduler=terminal,
+        )
+        sid = runtime.create().session_id
+        runtime.accept_frame(sid, frame())
+        pump.drain()
+        coordinator = runtime._sessions[sid].coordinator
+        owners = [weakref.ref(p) for p in coordinator._lane_preparers.values()]
+        journal = coordinator.journal_observations()
+        counts = coordinator.identity_counts()
+        assert len(owners) == len(journal) == 2
+        asyncio.run(runtime.stop(sid, 5))
+        matches = coordinator.match_observations()
+        if ending != 'not_started':
+            assert terminal.pending == 1
+            assert all(ref() is not None for ref in owners)
+            assert runtime.snapshot(sid).session.finalization_status == 'running'
+            terminal.drain()
+>       assert all(ref() is None for ref in owners)
+E       assert False
+E        +  where False = all(<generator object test_final_lane_owners_released_without_losing_observations.<locals>.<genexpr> at 0x1161b7ed0>)
+
+tests/test_live_finalized_memory.py:70: AssertionError
+___ test_final_lane_owners_released_without_losing_observations[not_started] ___
+
+ending = 'not_started'
+
+    @pytest.mark.parametrize('ending', ['final', 'failed', 'not_started'])
+    def test_final_lane_owners_released_without_losing_observations(ending):
+        class Encoder:
+            spec = SimpleNamespace(provider='wespeaker', revision='test', state_sha256='test')
+            def embed(self, path, intervals):
+                return [1.0, 0.0]
+    
+        def identity():
+            return BoundedCausalIdentityPreparer(
+                config=LiveIdentityConfig(16, .35, .1),
+                evidence_provider=WeSpeakerLiveEvidenceProvider(
+                    encoder=Encoder(), album=FingerprintAlbum(admission_seconds=2.0),
+                    birth_min_seconds=1.0,
+                ), lane_factory=identity,
+            )
+    
+        pump, terminal = _ManualCanonicalPumpScheduler(), _ManualTerminalScheduler()
+        descriptor = _descriptor()
+        descriptor = replace(descriptor, frame_samples=40000, bounds=replace(
+            descriptor.bounds, max_frame_samples=40000, max_retained_samples=160000,
+            hard_cap_samples=40000, max_queue_depth=16, max_tape_bytes=320000,
+        ))
+        runner = WholeMeetingStub('[0][S01]terminal words[2.5]',
+                                  raises=RuntimeError('injected') if ending == 'failed' else None)
+        runtime = LiveServiceRuntime(
+            descriptor=descriptor,
+            endpoint_policy_factory=lambda: EndpointPolicy(EndpointPolicyConfig(
+                min_speech_samples=1, min_silence_samples=1, hard_cap_samples=40000)),
+            speech_provider_factory=Speech, decoder_factory=Decoder,
+            rolling_decoder_factory=Decoder, identity_preparer_factory=identity,
+            terminal_finalizer=None if ending == 'not_started' else TerminalTranscriptFinalizer(runner=runner),
+            _canonical_scheduler=pump, _terminal_scheduler=terminal,
+        )
+        sid = runtime.create().session_id
+        runtime.accept_frame(sid, frame())
+        pump.drain()
+        coordinator = runtime._sessions[sid].coordinator
+        owners = [weakref.ref(p) for p in coordinator._lane_preparers.values()]
+        journal = coordinator.journal_observations()
+        counts = coordinator.identity_counts()
+        assert len(owners) == len(journal) == 2
+        asyncio.run(runtime.stop(sid, 5))
+        matches = coordinator.match_observations()
+        if ending != 'not_started':
+            assert terminal.pending == 1
+            assert all(ref() is not None for ref in owners)
+            assert runtime.snapshot(sid).session.finalization_status == 'running'
+            terminal.drain()
+>       assert all(ref() is None for ref in owners)
+E       assert False
+E        +  where False = all(<generator object test_final_lane_owners_released_without_losing_observations.<locals>.<genexpr> at 0x119ff0c70>)
+
+tests/test_live_finalized_memory.py:70: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_live_finalized_memory.py::test_final_lane_owners_released_without_losing_observations[final]
+FAILED tests/test_live_finalized_memory.py::test_final_lane_owners_released_without_losing_observations[failed]
+FAILED tests/test_live_finalized_memory.py::test_final_lane_owners_released_without_losing_observations[not_started]
+3 failed in 2.37s

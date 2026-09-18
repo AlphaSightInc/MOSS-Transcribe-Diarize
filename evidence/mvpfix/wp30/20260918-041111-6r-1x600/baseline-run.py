@@ -133,8 +133,7 @@ def main():
     state = scratch / 'state'
     state.mkdir()
     result.update(repeat=args.repeat, stub_latency=args.stub_latency, source_revision=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-                  contention_policy='record_only_no_pause' if wp30 else 'pause', checkpoints=[],
-                  real_request_budget=600 if wp30 and args.stub_latency is None else None)
+                  contention_policy='record_only_no_pause' if wp30 else 'pause', checkpoints=[])
     if wp30:
         # Measurement copy: retain the full requested audio; never write shared manifest.
         from moss_transcribe_diarize.app.live_manifest_finalizer import LiveIdentityRecalibration, LiveManifestRetune, finalize_payload, verify_admission
@@ -213,7 +212,7 @@ def main():
                              capture_output=True, text=True, timeout=10) if not wp30 else None
         rss = subprocess.check_output(['ps', '-o', 'rss=', '-p', str(pid)], text=True).strip()
         row = dict(kind='resource', time=time.monotonic(), app_rss_bytes=int(rss)*1024,
-                   gpu_metrics_measured=args.stub_latency is None, own_active=active, own_sent=own_after["sent"], shared_completions=shared_completions, foreign_completion_lower_bound=foreign_completion_lower_bound, foreign_load_detected=foreign, foreign_streak=foreign_streak, paused=paused.is_set(), metrics=metric,
+                   own_active=active, own_sent=own_after["sent"], shared_completions=shared_completions, foreign_completion_lower_bound=foreign_completion_lower_bound, foreign_load_detected=foreign, foreign_streak=foreign_streak, paused=paused.is_set(), metrics=metric,
                    gpu_memory_mib=gpu.stdout.strip() if gpu is not None and gpu.returncode == 0 else None)
         resources.append(row)
         emit(row)
@@ -231,7 +230,6 @@ def main():
     try:
         if args.stub_latency is None:
             tunnel = subprocess.Popen(['ssh', '-N', '-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes',
-                                       '-o', 'UpdateHostKeys=no', '-o', 'StrictHostKeyChecking=yes', '-o', 'ControlPath=none',
                                        '-L', f'127.0.0.1:{tunnel_port}:127.0.0.1:8000', HOST], stdout=subprocess.DEVNULL,
                                       stderr=(scratch / 'ssh.log').open('w'))
             processes.append(tunnel)
@@ -319,8 +317,7 @@ def main():
                 c, ident = clients[index], ids[index]
                 name, pcm, reference = clips[index]
                 row = dict(ordinal=index+1, repeat=repeat_index+1, session_id=ident, clip=name, acknowledged_frames=0, retries=0,
-                           foreign_probes=0, wrong_owner_failures=0, updates=[], coverage_lags=[], events=[],
-                           acknowledged_by_lane={'system':0, 'microphone':0})
+                           foreign_probes=0, wrong_owner_failures=0, updates=[], coverage_lags=[], events=[])
                 outputs.append(row)
                 terminal = False
                 event_seq = 0
@@ -401,15 +398,14 @@ def main():
                                 try:
                                     c.call('POST', f'/api/live/sessions/{ident}/frames', frame)
                                     row['acknowledged_frames'] += 1
-                                    row['acknowledged_by_lane'][lane] += 1
                                     break
                                 except urllib.error.HTTPError as exc:
                                     body = json.loads(exc.read())
                                     if exc.code != 429:
                                         raise RuntimeError(f'frame_http_{exc.code}') from None
                                     row['retries'] += 1
-                                    row.setdefault('backpressure_bodies', []).append({k:body[k] for k in ('failure','retryable','code') if k in body})
-                                    emit(dict(kind='backpressure', ordinal=index+1, sequence=seq, lane=lane, code=body.get('code') or body.get('failure',{}).get('code'), retryable=body.get('retryable', body.get('failure',{}).get('retryable'))))
+                                    row.setdefault('backpressure_bodies', []).append(body)
+                                    emit(dict(kind='backpressure', ordinal=index+1, sequence=seq, lane=lane, code=body.get('code') or body.get('failure',{}).get('code'), retryable=body.get('retryable')))
                                     if time.monotonic()-retry_started > 30:
                                         raise RuntimeError('backpressure_no_progress_30s')
                                     heartbeat()
@@ -436,7 +432,7 @@ def main():
                         ses = snap['session']
                         if ses['finalization_status'] in ('final','failed','unavailable') or (ses['status']=='closed' and ses['finalization_status']=='not_started'):
                             break
-                        if not wp30 and time.monotonic()-stopped > 90:
+                        if time.monotonic()-stopped > (600 if wp30 else 90):
                             raise RuntimeError('finalization_observation_timeout')
                         time.sleep(.25)
                     terminal = True
@@ -461,7 +457,7 @@ def main():
                                word_count=len(words), reference_word_count=len(ref), partial_reference_rows=partial_reference_rows,
                                words_per_minute=len(words)/(args.seconds/60),
                                unique_vocabulary_retention=len(set(words)&ref_set)/len(ref_set) if ref_set else None,
-                               wer=latency.edit_wer(ref,words) if not wp30 and not partial_reference_rows else None,
+                               wer=latency.edit_wer(ref,words) if not partial_reference_rows else None,
                                speakers=len({s['canonical_speaker'] for s in latency.segments_of(snap) if s.get('canonical_speaker')}),
                                unassigned_segments=sum(not s.get('canonical_speaker') for s in latency.segments_of(snap)),
                                identities_born_count=snap['identity_counts']['identities_born_count'],
@@ -502,20 +498,6 @@ def main():
                     row['failure_code'] = str(exc) if isinstance(exc,RuntimeError) else None
                     row['clean'] = False
                     failures.append(f'session_{index+1}:{type(exc).__name__}')
-                    # Preserve the pre-cleanup state: abort is a harness action, not
-                    # evidence that the product itself discarded acknowledged audio.
-                    try:
-                        failed = c.call('GET', f'/api/live/sessions/{ident}/snapshot')
-                        (scratch/f'failure-{repeat_index+1}-{index+1}.json').write_text(json.dumps(failed))
-                        failed_session = failed['snapshot']['session']
-                        row['before_cleanup'] = {k:failed_session.get(k) for k in
-                            ('status','finalization_status','accepted_samples','accounted_samples')}
-                        row['before_cleanup']['pending_work_items'] = failed['snapshot'].get('pending_work_items')
-                        row['before_cleanup']['terminal_failure'] = failed['snapshot'].get('terminal_failure')
-                        row['before_cleanup']['v2_session'] = failed.get('v2_session')
-                    except Exception as capture_error:
-                        row['failure_snapshot_error'] = type(capture_error).__name__
-
                 finally:
                     if not terminal:
                         try:
@@ -583,7 +565,7 @@ def main():
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
-        for name in ('telemetry.jsonl', 'tape-release.jsonl', 'requests.jsonl', 'release-prototype.jsonl'):
+        for name in ('telemetry.jsonl', 'tape-release.jsonl', 'requests.jsonl'):
             if (state/name).exists():
                 (out/name).write_bytes((state/name).read_bytes())
         result['scratch'] = str(scratch)

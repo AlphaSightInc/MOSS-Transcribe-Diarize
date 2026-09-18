@@ -62,6 +62,10 @@
       "saved_status": "completed",
       "accepted_samples": 160000,
       "accounted_samples": 160000,
+      "stub_expected_words": 24,
+      "stub_exact_lane_time_text": true,
+      "stub_missing_segments": 0,
+      "stub_added_or_changed_segments": 0,
       "lanes": {
         "system": {
           "segments": 4,
