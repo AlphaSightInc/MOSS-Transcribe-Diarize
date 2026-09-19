@@ -1,0 +1,83 @@
+{
+  "blocker": "Three clean snippets cannot be independently established: two retained cases have demonstrated boundary spill, and the required listening step conflicts with the common no-audio-playback instruction.",
+  "cases": [
+    {
+      "case_id": "boss_how_long",
+      "duration_seconds": 1.44,
+      "reason": "Exact phrase passed sequential and isolated controls in round 2, but step 1 requires fresh listening-based ownership/purity adjudication.",
+      "reference_phrase": "how long do we think each one will take",
+      "sample_count": 23040,
+      "sample_end": 33120,
+      "sample_start": 10080,
+      "source_audio": "/Users/gao/Documents/Codex/2026-09-19/moss-round2/candidate/evidence/live-policy-sweep-20260825/corpus/discussion_rtfl_90s/audio.wav",
+      "source_frames": 1439896,
+      "source_reference": "/Users/gao/Documents/Codex/2026-09-19/moss-round2/candidate/evidence/live-policy-sweep-20260825/corpus/discussion_rtfl_90s/reference.jsonl",
+      "source_sample_rate": 16000,
+      "source_speaker": "BOSS",
+      "status": "retained_useful_exact_witness_not_freshly_listened"
+    },
+    {
+      "case_id": "eng_b_typing_faster",
+      "duration_seconds": 2.008875,
+      "reason": "exact control invalid at 4/6; frozen clip also emits adjacent I'm not, so reference/clipping/context needs adjudication",
+      "reference_phrase": "wait, why are you typing faster?",
+      "sample_count": 32142,
+      "sample_end": 606631,
+      "sample_start": 574489,
+      "source_audio": "/Users/gao/Documents/Codex/2026-09-19/moss-round2/candidate/evidence/live-policy-sweep-20260825/corpus/discussion_rtfl_90s/audio.wav",
+      "source_frames": 1439896,
+      "source_reference": "/Users/gao/Documents/Codex/2026-09-19/moss-round2/candidate/evidence/live-policy-sweep-20260825/corpus/discussion_rtfl_90s/reference.jsonl",
+      "source_sample_rate": 16000,
+      "source_speaker": "ENG_B",
+      "status": "rejected_boundary_spill"
+    },
+    {
+      "case_id": "lex_strong_words",
+      "duration_seconds": 2.0,
+      "reason": "exact target recovered, but frozen clip also emits adjacent But you're/At your; this is source-snippet isolation, not a proven pure Lex stem",
+      "reference_phrase": "Strong words.",
+      "sample_count": 32000,
+      "sample_end": 672000,
+      "sample_start": 640000,
+      "source_audio": "/Users/gao/Documents/Codex/2026-09-19/moss-round2/candidate/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/audio.wav",
+      "source_frames": 960000,
+      "source_reference": "/Users/gao/Documents/Codex/2026-09-19/moss-round2/candidate/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/reference.jsonl",
+      "source_sample_rate": 16000,
+      "source_speaker": "Lex Fridman",
+      "status": "rejected_boundary_spill"
+    }
+  ],
+  "clean_snippets_frozen": 0,
+  "fresh_listening_adjudications": 0,
+  "gate_verdict": "FAIL",
+  "invariants": [
+    "no boundary spill",
+    "three independently complete snippets",
+    "no decoder call before step 1 passes",
+    "no audio playback under common contract"
+  ],
+  "minimum_primitives": [
+    "source-owned utterance",
+    "exact sample boundary",
+    "speaker ownership",
+    "complete reference words",
+    "adjacent-speaker exclusion"
+  ],
+  "next_steps": {
+    "decoder_budget": "0 of gated 12 used",
+    "ip1_cpu_onnx": "NOT RUN: step 1 says stop if three clean snippets cannot be produced",
+    "oracle_matrix": "NOT UNLOCKED"
+  },
+  "required_clean_snippets": 3,
+  "retained_useful_candidates": 1,
+  "schema": "moss-round3-wp55b-step1.v1",
+  "scope": {
+    "audio_playback": 0,
+    "constraint": "COMMON.md forbids unmuting or playing audio",
+    "decoder_requests": 0,
+    "network_calls": 0,
+    "pane_revision": "e47b345a214207313b462b3e72aeaddee3a94dda",
+    "source_revision": "a7a738cf9f9ff246f64c52c112e0bf597ba58241"
+  },
+  "structural_question": "Can three complete source-owned utterances be frozen without adjacent speaker spill before any decoder lease is justified?"
+}
