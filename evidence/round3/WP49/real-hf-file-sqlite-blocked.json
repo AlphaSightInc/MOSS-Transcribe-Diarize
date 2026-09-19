@@ -1,0 +1,14 @@
+{
+  "backend": "hf",
+  "delegate_calls": 0,
+  "error": "Refusing SQLite runtime 3.50.4; exactly 3.53.4 is required.",
+  "error_type": "SqliteRuntimeError",
+  "model": "/Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8",
+  "remote_request_budget": 0,
+  "scheduler": {
+    "running": 0,
+    "waiting_background": 0
+  },
+  "source": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/audio.wav",
+  "wall_seconds": 0.03
+}

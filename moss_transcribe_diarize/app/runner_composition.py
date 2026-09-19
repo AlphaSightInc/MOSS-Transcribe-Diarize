@@ -115,16 +115,24 @@ def build_file_runner(
                                if file_identity == "album"
                                else IdentityResolver(config=IdentityResolverConfig())),
         )
+    from .file_identity_album import AlbumIdentityResolver
     from .model_runner import ModelRunner
+    from .speaker_identity import IdentityResolver, IdentityResolverConfig
+    from .windowed_transcription import WindowedRunner
 
-    runner: Any = ModelRunner(Path(model_path), device=device, dtype=dtype)
+    delegate = ModelRunner(Path(model_path), device=device, dtype=dtype)
     if inference_scheduler is not None:
         from .inference_scheduler import ScheduledInferenceRunner
 
-        runner = ScheduledInferenceRunner(
-            runner, inference_scheduler, kind="background"
+        delegate = ScheduledInferenceRunner(
+            delegate, inference_scheduler, kind="background"
         )
-    return runner
+    return WindowedRunner(
+        delegate,
+        identity_resolver=(AlbumIdentityResolver(manifest_path=identity_manifest)
+                           if file_identity == "album"
+                           else IdentityResolver(config=IdentityResolverConfig())),
+    )
 
 
 class LazyLiveRunner:

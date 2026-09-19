@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import time
 import wave
+from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -46,7 +47,17 @@ class WindowTranscriptionError(RuntimeError):
 class RunnerDelegate(Protocol):
     model_path: str
 
-    def transcribe(self, audio_path: str | Path, **kwargs) -> TranscriptionResult:
+    def transcribe(
+        self,
+        audio_path: str | Path,
+        *,
+        prompt: str | None = None,
+        max_length: int = 131072,
+        max_new_tokens: int = 2048,
+        decoding: str = "greedy",
+        temperature: float | None = None,
+        status_callback: StatusCallback | None = None,
+    ) -> TranscriptionResult:
         ...
 
 
@@ -183,9 +194,37 @@ class WindowedRunner:
         data["speaker_identity"] = self.identity_resolver.contract()
         return data
 
-    def transcribe(self, audio_path: str | Path, **kwargs) -> TranscriptionResult:
+    def transcribe(
+        self,
+        audio_path: str | Path,
+        *,
+        prompt: str | None = None,
+        max_length: int | None = None,
+        max_new_tokens: int | None = None,
+        decoding: str | None = None,
+        temperature: float | None = None,
+        status_callback: StatusCallback | None = None,
+        checkpoint_dir: str | Path | None = None,
+        _dispatch_key: str | None = None,
+        _dispatch_on_wait: Callable[[], None] | None = None,
+        _dispatch_on_start: Callable[[], None] | None = None,
+    ) -> TranscriptionResult:
         source = Path(audio_path)
-        checkpoint_dir = kwargs.pop("checkpoint_dir", None)
+        kwargs: dict[str, Any] = {
+            name: value
+            for name, value in {
+                "prompt": prompt,
+                "max_length": max_length,
+                "max_new_tokens": max_new_tokens,
+                "decoding": decoding,
+                "temperature": temperature,
+                "status_callback": status_callback,
+                "_dispatch_key": _dispatch_key,
+                "_dispatch_on_wait": _dispatch_on_wait,
+                "_dispatch_on_start": _dispatch_on_start,
+            }.items()
+            if value is not None
+        }
         duration = float(self.duration_probe(source))
         windows = plan_windows(
             duration,

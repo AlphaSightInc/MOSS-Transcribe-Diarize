@@ -1,6 +1,7 @@
 """WP30: lane identity evidence lives through the last reader, then is released."""
 import asyncio
 from dataclasses import replace
+import tempfile
 from types import SimpleNamespace
 import weakref
 
@@ -43,6 +44,7 @@ def test_final_lane_owners_released_without_losing_observations(ending):
     ))
     runner = WholeMeetingStub('[0][S01]terminal words[2.5]',
                               raises=RuntimeError('injected') if ending == 'failed' else None)
+    storage_owner = tempfile.TemporaryDirectory()
     runtime = LiveServiceRuntime(
         descriptor=descriptor,
         endpoint_policy_factory=lambda: EndpointPolicy(EndpointPolicyConfig(
@@ -51,7 +53,9 @@ def test_final_lane_owners_released_without_losing_observations(ending):
         rolling_decoder_factory=Decoder, identity_preparer_factory=identity,
         terminal_finalizer=None if ending == 'not_started' else TerminalTranscriptFinalizer(runner=runner),
         _canonical_scheduler=pump, _terminal_scheduler=terminal,
+        tape_storage_root=storage_owner.name,
     )
+    runtime._test_tape_storage_owner = storage_owner
     sid = runtime.create().session_id
     runtime.accept_frame(sid, frame())
     pump.drain()

@@ -22,6 +22,7 @@ place the decision now lives and the guarantee that place is responsible for:
 from __future__ import annotations
 
 import unittest
+import tempfile
 
 from moss_transcribe_diarize.app.live_adapters import DigitalSilenceGuardedInference
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig
@@ -116,6 +117,7 @@ def _zero_frame(sequence: int, *, sample: bytes = b"\0\0") -> AudioFrame:
 
 def _runtime(runner, identity):
     scheduler = _ManualCanonicalPumpScheduler()
+    storage_owner = tempfile.TemporaryDirectory()
     runtime = LiveServiceRuntime(
         descriptor=_descriptor(),
         endpoint_policy_factory=lambda: EndpointPolicy(
@@ -127,7 +129,9 @@ def _runtime(runner, identity):
         decoder_factory=lambda: bounded_live_inference(runner, max_samples=HARD_CAP_SAMPLES),
         identity_preparer_factory=lambda: identity,
         _canonical_scheduler=scheduler,
+        tape_storage_root=storage_owner.name,
     )
+    runtime._test_tape_storage_owner = storage_owner
     return runtime, scheduler
 
 
@@ -252,9 +256,13 @@ class TerminalSurfaceTest(unittest.TestCase):
     def test_a_tape_that_ever_held_one_nonzero_sample_still_decodes(self):
         """`has_signal` is about the whole meeting, not about the last frame of it."""
 
+        storage_owner = tempfile.TemporaryDirectory()
         tape = CompleteMixedTape(
-            epoch=0, capacity_bytes=4 * FRAME_SAMPLES * PCM16_BYTES_PER_SAMPLE
+            epoch=0,
+            capacity_bytes=4 * FRAME_SAMPLES * PCM16_BYTES_PER_SAMPLE,
+            storage_root=storage_owner.name,
         )
+        tape._test_storage_owner = storage_owner
         tape.append(start_sample=0, pcm=b"\0\0" * FRAME_SAMPLES)
         self.assertFalse(tape.has_signal)
         tape.append(start_sample=FRAME_SAMPLES, pcm=b"\0\0" * (FRAME_SAMPLES - 1) + b"\x01\0")

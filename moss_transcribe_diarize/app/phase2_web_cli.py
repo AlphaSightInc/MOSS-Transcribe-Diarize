@@ -121,6 +121,7 @@ def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
     return build_live_runtime_factory(
         config,
         live_runner,
+        tape_storage_root=Path(args.file_work_root).expanduser() / "live-tapes",
         draft_lane_seconds=getattr(args, "live_draft_lane_seconds", None),
         terminal_finalizer=build_terminal_finalizer(
             runner=file_runner,

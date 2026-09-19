@@ -36,7 +36,7 @@ def test_real_mix_dispatch_keeps_one_bit_signal(tmp_path,pcm,expected_calls):
         assert calls==[{
             'max_length':16384,
             'max_new_tokens':12000,
-            'checkpoint_dir':tmp_path/'checkpoint',
+            'checkpoint_dir':None,
         }]
         assert result.text=='[0][S01]speech[1]'
     else:

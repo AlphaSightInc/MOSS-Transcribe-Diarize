@@ -411,10 +411,10 @@ class FileMeetingTasks:
         notices: list[str] = []
         transcribe_options = {
             **options,
-            # WindowedRunner commits each completed 150-second window atomically here.
-            # Short-input delegates ignore the path; long File and URL meetings reuse the
-            # same existing checkpoint seam without gaining a new job identity.
-            "checkpoint_dir": input_path.parent / "checkpoint",
+            # The checkpoint seam remains available to a future durable owner. This
+            # transient job is deleted at every terminal outcome, so writing a prefix here
+            # would be dead I/O until that ownership gate is resolved.
+            "checkpoint_dir": None,
         }
         mix_path: Path | None = None
         mix_failed = False

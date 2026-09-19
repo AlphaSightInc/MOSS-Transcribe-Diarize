@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="6" time="2.907" timestamp="2026-09-19T19:05:40.319353-04:00" hostname="MacStudio.local"><testcase classname="tests.test_windowed_transcription" name="test_windowed_runner_has_explicit_signature_and_rejects_unknown_fields" time="0.002"><failure message="assert not True&#10; +  where True = any(&lt;generator object test_windowed_runner_has_explicit_signature_and_rejects_unknown_fields.&lt;locals&gt;.&lt;genexpr&gt; at 0x10a291490&gt;)">tmp_path = PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-867/test_windowed_runner_has_expli0')
+
+    def test_windowed_runner_has_explicit_signature_and_rejects_unknown_fields(tmp_path):
+        expected = result("[0][S01]short[1]")
+        runner, _ = make_runner([expected], 1.0)
+        source = tmp_path / "source.wav"
+        source.write_bytes(b"source")
+    
+        signature = inspect.signature(runner.transcribe)
+&gt;       assert not any(
+            parameter.kind is inspect.Parameter.VAR_KEYWORD
+            for parameter in signature.parameters.values()
+        )
+E       assert not True
+E        +  where True = any(&lt;generator object test_windowed_runner_has_explicit_signature_and_rejects_unknown_fields.&lt;locals&gt;.&lt;genexpr&gt; at 0x10a291490&gt;)
+
+tests/test_windowed_transcription.py:233: AssertionError</failure></testcase><testcase classname="tests.phase2.test_file_backend_contract" name="test_strict_hf_file_and_url_complete_with_audio_and_no_checkpoint_io[file]" time="0.087"><failure message="AssertionError: assert 'failed' == 'completed'&#10;  &#10;  - completed&#10;  + failed">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x11875b2c0&gt;
+tmp_path = PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-867/test_strict_hf_file_and_url_co0')
+ingress = 'file'
+
+    @pytest.mark.parametrize("ingress", ["file", "url"])
+    def test_strict_hf_file_and_url_complete_with_audio_and_no_checkpoint_io(
+        monkeypatch, tmp_path, ingress
+    ):
+        runner, calls = _build_hf_runner(monkeypatch, tmp_path)
+        payload = _wav_bytes()
+        work_root = tmp_path / "file-work"
+        app = create_phase2_app(
+            database_path=tmp_path / "state.sqlite3",
+            file_runner=runner,
+            file_work_root=work_root,
+            meeting_audio_root=tmp_path / "audio",
+            url_acquirer=_WavAcquirer(payload),
+        )
+    
+        with TestClient(app, base_url="https://moss.test") as client:
+            assert client.post("/api/workspace/bootstrap").status_code == 200
+            if ingress == "file":
+                accepted = client.post(
+                    "/api/meetings/file",
+                    files={"file": ("meeting.wav", payload, "audio/wav")},
+                )
+            else:
+                accepted = client.post(
+                    "/api/meetings/url", json={"url": "https://media.test/meeting.wav"}
+                )
+            assert accepted.status_code == 201
+            meeting_id = accepted.json()["id"]
+            completed = _await_terminal(client, meeting_id)
+    
+&gt;           assert completed["status"] == "completed"
+E           AssertionError: assert 'failed' == 'completed'
+E             
+E             - completed
+E             + failed
+
+tests/phase2/test_file_backend_contract.py:113: AssertionError</failure></testcase><testcase classname="tests.phase2.test_file_backend_contract" name="test_strict_hf_file_and_url_complete_with_audio_and_no_checkpoint_io[url]" time="0.054"><failure message="AssertionError: assert 'failed' == 'completed'&#10;  &#10;  - completed&#10;  + failed">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x1188aa480&gt;
+tmp_path = PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-867/test_strict_hf_file_and_url_co1')
+ingress = 'url'
+
+    @pytest.mark.parametrize("ingress", ["file", "url"])
+    def test_strict_hf_file_and_url_complete_with_audio_and_no_checkpoint_io(
+        monkeypatch, tmp_path, ingress
+    ):
+        runner, calls = _build_hf_runner(monkeypatch, tmp_path)
+        payload = _wav_bytes()
+        work_root = tmp_path / "file-work"
+        app = create_phase2_app(
+            database_path=tmp_path / "state.sqlite3",
+            file_runner=runner,
+            file_work_root=work_root,
+            meeting_audio_root=tmp_path / "audio",
+            url_acquirer=_WavAcquirer(payload),
+        )
+    
+        with TestClient(app, base_url="https://moss.test") as client:
+            assert client.post("/api/workspace/bootstrap").status_code == 200
+            if ingress == "file":
+                accepted = client.post(
+                    "/api/meetings/file",
+                    files={"file": ("meeting.wav", payload, "audio/wav")},
+                )
+            else:
+                accepted = client.post(
+                    "/api/meetings/url", json={"url": "https://media.test/meeting.wav"}
+                )
+            assert accepted.status_code == 201
+            meeting_id = accepted.json()["id"]
+            completed = _await_terminal(client, meeting_id)
+    
+&gt;           assert completed["status"] == "completed"
+E           AssertionError: assert 'failed' == 'completed'
+E             
+E             - completed
+E             + failed
+
+tests/phase2/test_file_backend_contract.py:113: AssertionError</failure></testcase><testcase classname="tests.phase2.test_file_backend_contract" name="test_hf_delegate_failure_is_durable_and_removes_transient_work" time="0.056"><failure message="assert 0 == 1&#10; +  where 0 = len([])">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x118950fb0&gt;
+tmp_path = PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-867/test_hf_delegate_failure_is_du0')
+
+    def test_hf_delegate_failure_is_durable_and_removes_transient_work(monkeypatch, tmp_path):
+        runner, calls = _build_hf_runner(monkeypatch, tmp_path, failure=True)
+        work_root = tmp_path / "file-work"
+        app = create_phase2_app(
+            database_path=tmp_path / "state.sqlite3",
+            file_runner=runner,
+            file_work_root=work_root,
+            meeting_audio_root=tmp_path / "audio",
+        )
+    
+        with TestClient(app, base_url="https://moss.test") as client:
+            assert client.post("/api/workspace/bootstrap").status_code == 200
+            accepted = client.post(
+                "/api/meetings/file",
+                files={"file": ("meeting.wav", _wav_bytes(), "audio/wav")},
+            )
+            failed = _await_terminal(client, accepted.json()["id"])
+            assert failed["status"] == "failed"
+            assert failed["failure_code"] == "decode_failed"
+            assert failed["transcript"] is None
+    
+&gt;       assert len(calls) == 1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/phase2/test_file_backend_contract.py:143: AssertionError</failure></testcase><testcase classname="tests.phase2.test_file_backend_contract" name="test_hf_cancellation_before_second_window_stops_dispatch_and_publication" time="0.001"><failure message="assert False&#10; +  where False = isinstance(&lt;moss_transcribe_diarize.app.inference_scheduler.ScheduledInferenceRunner object at 0x118a6c8c0&gt;, WindowedRunner)">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x118a6c890&gt;
+tmp_path = PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-867/test_hf_cancellation_before_se0')
+
+    def test_hf_cancellation_before_second_window_stops_dispatch_and_publication(
+        monkeypatch, tmp_path
+    ):
+        started = threading.Event()
+        release = threading.Event()
+        calls: list[Path] = []
+    
+        class BlockingModelRunner:
+            model_path = "blocking-hf"
+            is_loaded = True
+    
+            def __init__(self, *_args, **_kwargs):
+                pass
+    
+            def transcribe(
+                self,
+                audio_path,
+                *,
+                prompt="prompt",
+                max_length=131_072,
+                max_new_tokens=2_048,
+                decoding="greedy",
+                temperature=None,
+                status_callback=None,
+            ):
+                del prompt, max_length, max_new_tokens, decoding, temperature, status_callback
+                calls.append(Path(audio_path))
+                started.set()
+                assert release.wait(timeout=5)
+                return TranscriptionResult(
+                    text="[0][S01]first window only[1]",
+                    prompt_len=1,
+                    generated_tokens=1,
+                    elapsed_sec=0.0,
+                    model=self.model_path,
+                    audio=str(audio_path),
+                    decoding="greedy",
+                    temperature=None,
+                )
+    
+        monkeypatch.setattr(model_runner, "ModelRunner", BlockingModelRunner)
+        scheduler = InferenceDispatchScheduler(max_calls=2, max_background_calls=1)
+        runner = runner_composition.build_file_runner(
+            model_path=tmp_path / "model",
+            device="cpu",
+            dtype="float32",
+            backend="hf",
+            vllm_base_url=None,
+            vllm_model=None,
+            vllm_api_key=None,
+            vllm_timeout=30,
+            inference_scheduler=scheduler,
+        )
+&gt;       assert isinstance(runner, WindowedRunner)
+E       assert False
+E        +  where False = isinstance(&lt;moss_transcribe_diarize.app.inference_scheduler.ScheduledInferenceRunner object at 0x118a6c8c0&gt;, WindowedRunner)
+
+tests/phase2/test_file_backend_contract.py:200: AssertionError</failure></testcase><testcase classname="tests.phase2.test_file_backend_contract" name="test_file_runner_schedules_each_window_beneath_windowing[hf]" time="0.001"><failure message="assert False&#10; +  where False = isinstance(&lt;moss_transcribe_diarize.app.inference_scheduler.ScheduledInferenceRunner object at 0x118a6fad0&gt;, WindowedRunner)">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x118a6fc80&gt;
+tmp_path = PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-867/test_file_runner_schedules_eac0')
+backend = 'hf'
+
+    @pytest.mark.parametrize("backend", ["hf", "vllm"])
+    def test_file_runner_schedules_each_window_beneath_windowing(monkeypatch, tmp_path, backend):
+        calls = []
+    
+        class Delegate:
+            model_path = f"{backend}-delegate"
+            is_loaded = True
+    
+            def __init__(self, *_args, **_kwargs):
+                pass
+    
+            def transcribe(self, audio_path, **_kwargs):
+                calls.append(Path(audio_path).name)
+                return TranscriptionResult(
+                    text="[0][S01]window[1]",
+                    prompt_len=1,
+                    generated_tokens=1,
+                    elapsed_sec=0.0,
+                    model=self.model_path,
+                    audio=str(audio_path),
+                    decoding="greedy",
+                    temperature=None,
+                )
+    
+        if backend == "hf":
+            monkeypatch.setattr(model_runner, "ModelRunner", Delegate)
+        else:
+            from moss_transcribe_diarize.app import vllm_runner
+    
+            monkeypatch.setattr(vllm_runner, "VllmRunner", Delegate)
+        scheduler = InferenceDispatchScheduler(max_calls=2, max_background_calls=1)
+        runner = runner_composition.build_file_runner(
+            model_path=tmp_path / "model",
+            device="cpu",
+            dtype="float32",
+            backend=backend,
+            vllm_base_url="http://unused/v1" if backend == "vllm" else None,
+            vllm_model="test" if backend == "vllm" else None,
+            vllm_api_key=None,
+            vllm_timeout=30,
+            file_identity="legacy",
+            inference_scheduler=scheduler,
+        )
+&gt;       assert isinstance(runner, WindowedRunner)
+E       assert False
+E        +  where False = isinstance(&lt;moss_transcribe_diarize.app.inference_scheduler.ScheduledInferenceRunner object at 0x118a6fad0&gt;, WindowedRunner)
+
+tests/phase2/test_file_backend_contract.py:278: AssertionError</failure></testcase></testsuite></testsuites>

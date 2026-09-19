@@ -6,6 +6,7 @@ import dataclasses
 import inspect
 import threading
 import time
+import tempfile
 import unittest
 from dataclasses import dataclass
 from types import SimpleNamespace
@@ -330,7 +331,8 @@ def _runtime(
     monotonic_ns=None,
 ) -> LiveServiceRuntime:
     ids = iter(session_ids)
-    return LiveServiceRuntime(
+    storage_owner = tempfile.TemporaryDirectory()
+    runtime = LiveServiceRuntime(
         descriptor=descriptor or _descriptor(),
         endpoint_policy_factory=lambda: EndpointPolicy(
             EndpointPolicyConfig(min_speech_samples=1, min_silence_samples=1, hard_cap_samples=4000)
@@ -341,7 +343,10 @@ def _runtime(
         session_id_factory=lambda: next(ids),
         _canonical_scheduler=scheduler,
         monotonic_ns=monotonic_ns,
+        tape_storage_root=storage_owner.name,
     )
+    runtime._test_tape_storage_owner = storage_owner
+    return runtime
 
 
 def _threaded_call(fn):

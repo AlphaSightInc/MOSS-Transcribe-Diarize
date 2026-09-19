@@ -65,7 +65,9 @@ def test_speech_with_empty_decoder_remains_failure(tmp_path, kind):
 @pytest.mark.parametrize('kind', ['zero', 'unparseable', 'raw_unparseable'])
 def test_mixed_windows_and_terminal_long_silent_tail_finalize(tmp_path, kind):
     pcm = voiced_pcm().ljust(300*32000, b'\0')
-    tape = CompleteMixedTape(epoch=0, capacity_bytes=len(pcm))
+    tape = CompleteMixedTape(
+        epoch=0, capacity_bytes=len(pcm), storage_root=tmp_path
+    )
     tape.append(start_sample=0, pcm=pcm)
     decoder = Decoder(kind, first_text=True)
     final = TerminalTranscriptFinalizer(runner=WindowedRunner(decoder)).finalize(
@@ -133,7 +135,9 @@ def test_short_redundant_tail_is_owned_by_previous_window(seconds, expected):
 
 def test_overload_tape_terminal_merges_half_second_tail(tmp_path):
     pcm = voiced_pcm().ljust(int(120.5*32000), b'\0')
-    tape = CompleteMixedTape(epoch=0, capacity_bytes=len(pcm))
+    tape = CompleteMixedTape(
+        epoch=0, capacity_bytes=len(pcm), storage_root=tmp_path
+    )
     tape.append(start_sample=0, pcm=pcm)
     decoder = Decoder('unparseable', first_text=True)
     final = TerminalTranscriptFinalizer(runner=WindowedRunner(decoder)).finalize(
