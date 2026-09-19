@@ -1,0 +1,74 @@
+{
+  "birth_floor_seconds": 1.0,
+  "compatibility_threshold": 0.7,
+  "jamie_pair_cosines": [
+    1.0,
+    1.0,
+    1.0
+  ],
+  "different_person_cosines": {
+    "Ben": [
+      0.010919,
+      0.010919,
+      0.010919
+    ],
+    "David": [
+      0.077404,
+      0.077404,
+      0.077404
+    ]
+  },
+  "distinct_short_same_person_cosine": {
+    "ENG_A": 0.058275,
+    "ENG_B": 0.146357
+  },
+  "distinct_short_cross_person_cosines": [
+    0.101918,
+    0.108902,
+    0.0,
+    0.267328
+  ],
+  "distinct_short_cumulative_compatible_seconds": {
+    "ENG_A": [
+      0.885833,
+      0.5725
+    ],
+    "ENG_B": [
+      0.873413,
+      0.839999
+    ]
+  },
+  "jamie_cumulative_compatible_seconds": [
+    0.78,
+    1.56,
+    2.34
+  ],
+  "single_fragment_births": false,
+  "second_fragment_births": true,
+  "sweep": {
+    "corrections": [
+      {
+        "span_id": 71,
+        "local_speaker": "S00",
+        "previous_speaker": null,
+        "canonical_speaker": "speaker-0003",
+        "reason": "labelled",
+        "score": 1.0
+      },
+      {
+        "span_id": 227,
+        "local_speaker": "S00",
+        "previous_speaker": null,
+        "canonical_speaker": "speaker-0003",
+        "reason": "labelled",
+        "score": 1.0
+      }
+    ],
+    "merges": [],
+    "swept_spans": 3,
+    "swept_units": 3,
+    "dispositions": {
+      "kept_unscored": 1
+    }
+  }
+}

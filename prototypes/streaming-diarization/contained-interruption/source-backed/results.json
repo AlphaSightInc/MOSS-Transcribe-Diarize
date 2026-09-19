@@ -1,0 +1,363 @@
+{
+  "sent_before": 253,
+  "sent_after": 257,
+  "requests_this_invocation": 4,
+  "construction": {
+    "sample_rate": 16000,
+    "outer_source": "/private/tmp/moss-round2-20260919/identity/evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s/audio.wav",
+    "interrupt_source": "/private/tmp/moss-round2-20260919/identity/evidence/live-policy-sweep-20260825/corpus/discussion_rtfl_90s/audio.wav",
+    "interrupt_source_interval_sec": [
+      0.63,
+      2.07
+    ],
+    "mix_start_sec": 20.0,
+    "outer_region_rms": 0.07846724340227818,
+    "interrupt_source_rms": 0.02873308418224304,
+    "cases": {
+      "outer_only": {
+        "duration_sec": 50.0,
+        "construction": "unaltered outer source"
+      },
+      "interruption_only": {
+        "duration_sec": 1.44,
+        "construction": "unaltered source interval"
+      },
+      "sequential_control": {
+        "duration_sec": 51.44,
+        "construction": "interrupt inserted before outer continuation; no acoustic overlap"
+      },
+      "overlap_sir_minus3db": {
+        "duration_sec": 50.0,
+        "construction": "source-backed additive overlap",
+        "target_sir_db": -3.0,
+        "observed_sir_db": -3.0000000000000018,
+        "global_gain": 1.0,
+        "peak_before_gain": 0.9321142663104695
+      },
+      "overlap_sir_plus0db": {
+        "duration_sec": 50.0,
+        "construction": "source-backed additive overlap",
+        "target_sir_db": 0.0,
+        "observed_sir_db": 0.0,
+        "global_gain": 1.0,
+        "peak_before_gain": 0.8822960607259047
+      },
+      "overlap_sir_plus3db": {
+        "duration_sec": 50.0,
+        "construction": "source-backed additive overlap",
+        "target_sir_db": 3.0,
+        "observed_sir_db": 3.0000000000000004,
+        "global_gain": 1.0,
+        "peak_before_gain": 0.8470274720967298
+      }
+    }
+  },
+  "decoded": [
+    {
+      "case": "outer_only",
+      "audio": "prototypes/streaming-diarization/contained-interruption/source-backed/outer_only.wav",
+      "request_sent": 252,
+      "outcome": "validated_nonempty",
+      "raw_text": null,
+      "segments": null,
+      "evidence_limit": "The first harness validated this response, then failed on the next case before persisting either row. No retry permitted."
+    },
+    {
+      "case": "interruption_only",
+      "audio": "prototypes/streaming-diarization/contained-interruption/source-backed/interruption_only.wav",
+      "request_sent": 253,
+      "outcome": "EmptyTranscriptionError",
+      "raw_text": null,
+      "segments": [],
+      "evidence_limit": "The first harness raised before persisting exception attributes. Request was not retried."
+    },
+    {
+      "case": "sequential_control",
+      "audio": "prototypes/streaming-diarization/contained-interruption/source-backed/sequential_control.wav",
+      "raw_text": "[0.87][S01] The following is a conversation with Javier Malé,[3.87][3.87][S01] the president of Argentina.[6.33][6.33][S01] He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw[13.88][13.88][S01] that symbolized his promise to slash the corrupt bureaucracy of the state.[19.27][19.27][S01] He stepped[20.27][20.27][S02] How long do we think each one will take?[21.51][21.51][S01] into the presidency one year ago, with the country on the brink of hyperinflation,[26.34][26.34][S01] deep in debt and suffering from mass unemployment and poverty.[31.43][31.43][S01] He took this crisis head-on, transforming one of Latin America's largest economies[36.94][36.94][S01] through pure free-market principles.[40.15][40.15][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus[45.23][45.23][S01] in 16 years, and not just avoided the hyperinflation, but brought inflation down[51.32]",
+      "generated_tokens": 338,
+      "elapsed_sec": 2.15643,
+      "segments": [
+        {
+          "start": 0.87,
+          "end": 3.87,
+          "speaker": "S01",
+          "text": "The following is a conversation with Javier Malé,"
+        },
+        {
+          "start": 3.87,
+          "end": 6.33,
+          "speaker": "S01",
+          "text": "the president of Argentina."
+        },
+        {
+          "start": 6.33,
+          "end": 13.88,
+          "speaker": "S01",
+          "text": "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+        },
+        {
+          "start": 13.88,
+          "end": 19.27,
+          "speaker": "S01",
+          "text": "that symbolized his promise to slash the corrupt bureaucracy of the state."
+        },
+        {
+          "start": 19.27,
+          "end": 20.27,
+          "speaker": "S01",
+          "text": "He stepped"
+        },
+        {
+          "start": 20.27,
+          "end": 21.51,
+          "speaker": "S02",
+          "text": "How long do we think each one will take?"
+        },
+        {
+          "start": 21.51,
+          "end": 26.34,
+          "speaker": "S01",
+          "text": "into the presidency one year ago, with the country on the brink of hyperinflation,"
+        },
+        {
+          "start": 26.34,
+          "end": 31.43,
+          "speaker": "S01",
+          "text": "deep in debt and suffering from mass unemployment and poverty."
+        },
+        {
+          "start": 31.43,
+          "end": 36.94,
+          "speaker": "S01",
+          "text": "He took this crisis head-on, transforming one of Latin America's largest economies"
+        },
+        {
+          "start": 36.94,
+          "end": 40.15,
+          "speaker": "S01",
+          "text": "through pure free-market principles."
+        },
+        {
+          "start": 40.15,
+          "end": 45.23,
+          "speaker": "S01",
+          "text": "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+        },
+        {
+          "start": 45.23,
+          "end": 51.32,
+          "speaker": "S01",
+          "text": "in 16 years, and not just avoided the hyperinflation, but brought inflation down"
+        }
+      ]
+    },
+    {
+      "case": "overlap_sir_minus3db",
+      "audio": "prototypes/streaming-diarization/contained-interruption/source-backed/overlap_sir_minus3db.wav",
+      "raw_text": "[0.87][S01] The following is a conversation with Javier Malé,[3.87][3.87][S01] the president of Argentina.[6.33][6.33][S01] He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw[13.88][13.88][S01] that symbolized his promise to slash the corrupt bureaucracy of the state.[19.27][19.27][S01] He stepped into the presidency one year ago, with the country on the brink of hyperinflation,[24.93][24.93][S01] deep in debt and suffering from mass unemployment and poverty.[30.02][30.02][S01] He took this crisis head-on, transforming one of Latin America's largest economies[35.47][35.47][S01] through pure free-market principles.[38.76][38.76][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus[43.82][43.82][S01] in 16 years, and not just avoided the hyperinflation, but brought inflation down to[49.98]",
+      "generated_tokens": 296,
+      "elapsed_sec": 1.24614,
+      "segments": [
+        {
+          "start": 0.87,
+          "end": 3.87,
+          "speaker": "S01",
+          "text": "The following is a conversation with Javier Malé,"
+        },
+        {
+          "start": 3.87,
+          "end": 6.33,
+          "speaker": "S01",
+          "text": "the president of Argentina."
+        },
+        {
+          "start": 6.33,
+          "end": 13.88,
+          "speaker": "S01",
+          "text": "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+        },
+        {
+          "start": 13.88,
+          "end": 19.27,
+          "speaker": "S01",
+          "text": "that symbolized his promise to slash the corrupt bureaucracy of the state."
+        },
+        {
+          "start": 19.27,
+          "end": 24.93,
+          "speaker": "S01",
+          "text": "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+        },
+        {
+          "start": 24.93,
+          "end": 30.02,
+          "speaker": "S01",
+          "text": "deep in debt and suffering from mass unemployment and poverty."
+        },
+        {
+          "start": 30.02,
+          "end": 35.47,
+          "speaker": "S01",
+          "text": "He took this crisis head-on, transforming one of Latin America's largest economies"
+        },
+        {
+          "start": 35.47,
+          "end": 38.76,
+          "speaker": "S01",
+          "text": "through pure free-market principles."
+        },
+        {
+          "start": 38.76,
+          "end": 43.82,
+          "speaker": "S01",
+          "text": "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+        },
+        {
+          "start": 43.82,
+          "end": 49.98,
+          "speaker": "S01",
+          "text": "in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+        }
+      ]
+    },
+    {
+      "case": "overlap_sir_plus0db",
+      "audio": "prototypes/streaming-diarization/contained-interruption/source-backed/overlap_sir_plus0db.wav",
+      "raw_text": "[0.87][S01] The following is a conversation with Javier Malé,[3.87][3.87][S01] the president of Argentina.[6.33][6.33][S01] He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw[13.88][13.88][S01] that symbolized his promise to slash the corrupt bureaucracy of the state.[19.27][19.27][S01] He stepped into the presidency one year ago, with the country on the brink of hyperinflation,[24.93][24.93][S01] deep in debt and suffering from mass unemployment and poverty.[30.02][30.02][S01] He took this crisis head-on, transforming one of Latin America's largest economies[35.47][35.47][S01] through pure free-market principles.[38.76][38.76][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus[43.82][43.82][S01] in 16 years, and not just avoided the hyperinflation, but brought inflation down to[49.98]",
+      "generated_tokens": 296,
+      "elapsed_sec": 1.245471,
+      "segments": [
+        {
+          "start": 0.87,
+          "end": 3.87,
+          "speaker": "S01",
+          "text": "The following is a conversation with Javier Malé,"
+        },
+        {
+          "start": 3.87,
+          "end": 6.33,
+          "speaker": "S01",
+          "text": "the president of Argentina."
+        },
+        {
+          "start": 6.33,
+          "end": 13.88,
+          "speaker": "S01",
+          "text": "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+        },
+        {
+          "start": 13.88,
+          "end": 19.27,
+          "speaker": "S01",
+          "text": "that symbolized his promise to slash the corrupt bureaucracy of the state."
+        },
+        {
+          "start": 19.27,
+          "end": 24.93,
+          "speaker": "S01",
+          "text": "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+        },
+        {
+          "start": 24.93,
+          "end": 30.02,
+          "speaker": "S01",
+          "text": "deep in debt and suffering from mass unemployment and poverty."
+        },
+        {
+          "start": 30.02,
+          "end": 35.47,
+          "speaker": "S01",
+          "text": "He took this crisis head-on, transforming one of Latin America's largest economies"
+        },
+        {
+          "start": 35.47,
+          "end": 38.76,
+          "speaker": "S01",
+          "text": "through pure free-market principles."
+        },
+        {
+          "start": 38.76,
+          "end": 43.82,
+          "speaker": "S01",
+          "text": "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+        },
+        {
+          "start": 43.82,
+          "end": 49.98,
+          "speaker": "S01",
+          "text": "in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+        }
+      ]
+    },
+    {
+      "case": "overlap_sir_plus3db",
+      "audio": "prototypes/streaming-diarization/contained-interruption/source-backed/overlap_sir_plus3db.wav",
+      "raw_text": "[0.87][S01] The following is a conversation with Javier Malé,[3.87][3.87][S01] the president of Argentina.[6.33][6.33][S01] He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw[13.88][13.88][S01] that symbolized his promise to slash the corrupt bureaucracy of the state.[19.32][19.32][S01] He stepped into the presidency one year ago, with the country on the brink of hyperinflation,[24.93][24.93][S01] deep in debt and suffering from mass unemployment and poverty.[30.02][30.02][S01] He took this crisis head-on, transforming one of Latin America's largest economies[35.47][35.47][S01] through pure free-market principles.[38.76][38.76][S01] In just a few months in office, he already achieved Argentina's first fiscal surplus[43.82][43.82][S01] in 16 years, and not just avoided the hyperinflation, but brought inflation down to[49.98]",
+      "generated_tokens": 296,
+      "elapsed_sec": 1.266084,
+      "segments": [
+        {
+          "start": 0.87,
+          "end": 3.87,
+          "speaker": "S01",
+          "text": "The following is a conversation with Javier Malé,"
+        },
+        {
+          "start": 3.87,
+          "end": 6.33,
+          "speaker": "S01",
+          "text": "the president of Argentina."
+        },
+        {
+          "start": 6.33,
+          "end": 13.88,
+          "speaker": "S01",
+          "text": "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+        },
+        {
+          "start": 13.88,
+          "end": 19.32,
+          "speaker": "S01",
+          "text": "that symbolized his promise to slash the corrupt bureaucracy of the state."
+        },
+        {
+          "start": 19.32,
+          "end": 24.93,
+          "speaker": "S01",
+          "text": "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+        },
+        {
+          "start": 24.93,
+          "end": 30.02,
+          "speaker": "S01",
+          "text": "deep in debt and suffering from mass unemployment and poverty."
+        },
+        {
+          "start": 30.02,
+          "end": 35.47,
+          "speaker": "S01",
+          "text": "He took this crisis head-on, transforming one of Latin America's largest economies"
+        },
+        {
+          "start": 35.47,
+          "end": 38.76,
+          "speaker": "S01",
+          "text": "through pure free-market principles."
+        },
+        {
+          "start": 38.76,
+          "end": 43.82,
+          "speaker": "S01",
+          "text": "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+        },
+        {
+          "start": 43.82,
+          "end": 49.98,
+          "speaker": "S01",
+          "text": "in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+        }
+      ]
+    }
+  ]
+}

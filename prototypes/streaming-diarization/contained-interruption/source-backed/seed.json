@@ -1,0 +1,22 @@
+{
+  "decoded": [
+    {
+      "case": "outer_only",
+      "audio": "prototypes/streaming-diarization/contained-interruption/source-backed/outer_only.wav",
+      "request_sent": 252,
+      "outcome": "validated_nonempty",
+      "raw_text": null,
+      "segments": null,
+      "evidence_limit": "The first harness validated this response, then failed on the next case before persisting either row. No retry permitted."
+    },
+    {
+      "case": "interruption_only",
+      "audio": "prototypes/streaming-diarization/contained-interruption/source-backed/interruption_only.wav",
+      "request_sent": 253,
+      "outcome": "EmptyTranscriptionError",
+      "raw_text": null,
+      "segments": [],
+      "evidence_limit": "The first harness raised before persisting exception attributes. Request was not retried."
+    }
+  ]
+}

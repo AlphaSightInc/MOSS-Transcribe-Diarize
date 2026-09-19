@@ -1,0 +1,35 @@
+{
+  "terminal_interval": [
+    165.69,
+    166.88
+  ],
+  "live_third_intervals": [
+    [
+      167.08,
+      168.93
+    ],
+    [
+      347.08,
+      348.93
+    ],
+    [
+      527.08,
+      528.93
+    ]
+  ],
+  "time_overlap_seconds": 0.0,
+  "repeated_live_third_cosines": [
+    1.0,
+    1.0
+  ],
+  "terminal_scores": {
+    "live-third": 0.026625,
+    "Ben": 0.082028,
+    "David": 0.061186
+  },
+  "winner": "Ben",
+  "winner_score": 0.082028,
+  "runner_up_margin": 0.020841,
+  "match_floor": 0.35,
+  "match_margin": 0.1
+}

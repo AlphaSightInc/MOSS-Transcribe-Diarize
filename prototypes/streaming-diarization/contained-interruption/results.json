@@ -1,0 +1,35 @@
+{
+  "assertions": {
+    "distinct_contained_words_retained": true,
+    "cross_label_duplicate_suppressed": true,
+    "real_same_track_seam_unchanged": true,
+    "partial_distinct_words_retained": true,
+    "clean_case_unchanged": true
+  },
+  "measurements": {
+    "contained_distinct": {
+      "input_words": 6,
+      "current_words": 4,
+      "candidate_words": 6,
+      "current_dropped_segments": 1,
+      "candidate_dropped_segments": 0
+    },
+    "contained_cross_label_duplicate": {
+      "input_segments": 2,
+      "candidate_segments": 1,
+      "candidate_dropped_segments": 1
+    },
+    "retained_same_track_seam": {
+      "input_words": 15,
+      "candidate_words": 15,
+      "merged_segments": 1,
+      "displaced_samples": 0
+    },
+    "partial_distinct": {
+      "input_words": 5,
+      "current_displaced_samples": 40,
+      "candidate_displaced_samples": 0
+    }
+  },
+  "acoustic_recovery": "unmeasured_pending_decoder_lease"
+}

@@ -1,0 +1,659 @@
+{
+  "cases": {
+    "outer_only": {
+      "outcome": "validated_nonempty",
+      "adjudicable": false
+    },
+    "interruption_only": {
+      "adjudicable": true,
+      "local_speakers": [],
+      "target_phrase_segments": 0,
+      "segments_over_source_interval_20_00_21_44": [],
+      "current_normalizer": {
+        "segments": [],
+        "merged": 0,
+        "dropped": 0,
+        "displaced_samples": 0
+      },
+      "candidate_normalizer": {
+        "segments": [],
+        "merged": 0,
+        "dropped": 0,
+        "displaced_samples": 0
+      }
+    },
+    "sequential_control": {
+      "adjudicable": true,
+      "local_speakers": [
+        "S01",
+        "S02"
+      ],
+      "target_phrase_segments": 1,
+      "segments_over_source_interval_20_00_21_44": [
+        [
+          "S01",
+          308320,
+          324320,
+          "He stepped"
+        ],
+        [
+          "S02",
+          324320,
+          344160,
+          "How long do we think each one will take?"
+        ]
+      ],
+      "current_normalizer": {
+        "segments": [
+          [
+            "S01",
+            13920,
+            61920,
+            "The following is a conversation with Javier Mal\u00e9,"
+          ],
+          [
+            "S01",
+            61920,
+            101280,
+            "the president of Argentina."
+          ],
+          [
+            "S01",
+            101280,
+            222080,
+            "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+          ],
+          [
+            "S01",
+            222080,
+            308320,
+            "that symbolized his promise to slash the corrupt bureaucracy of the state."
+          ],
+          [
+            "S01",
+            308320,
+            324320,
+            "He stepped"
+          ],
+          [
+            "S02",
+            324320,
+            344160,
+            "How long do we think each one will take?"
+          ],
+          [
+            "S01",
+            344160,
+            421440,
+            "into the presidency one year ago, with the country on the brink of hyperinflation,"
+          ],
+          [
+            "S01",
+            421440,
+            502880,
+            "deep in debt and suffering from mass unemployment and poverty."
+          ],
+          [
+            "S01",
+            502880,
+            591040,
+            "He took this crisis head-on, transforming one of Latin America's largest economies"
+          ],
+          [
+            "S01",
+            591040,
+            642400,
+            "through pure free-market principles."
+          ],
+          [
+            "S01",
+            642400,
+            723680,
+            "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+          ],
+          [
+            "S01",
+            723680,
+            821120,
+            "in 16 years, and not just avoided the hyperinflation, but brought inflation down"
+          ]
+        ],
+        "merged": 0,
+        "dropped": 0,
+        "displaced_samples": 0
+      },
+      "candidate_normalizer": {
+        "segments": [
+          [
+            "S01",
+            13920,
+            61920,
+            "The following is a conversation with Javier Mal\u00e9,"
+          ],
+          [
+            "S01",
+            61920,
+            101280,
+            "the president of Argentina."
+          ],
+          [
+            "S01",
+            101280,
+            222080,
+            "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+          ],
+          [
+            "S01",
+            222080,
+            308320,
+            "that symbolized his promise to slash the corrupt bureaucracy of the state."
+          ],
+          [
+            "S01",
+            308320,
+            324320,
+            "He stepped"
+          ],
+          [
+            "S02",
+            324320,
+            344160,
+            "How long do we think each one will take?"
+          ],
+          [
+            "S01",
+            344160,
+            421440,
+            "into the presidency one year ago, with the country on the brink of hyperinflation,"
+          ],
+          [
+            "S01",
+            421440,
+            502880,
+            "deep in debt and suffering from mass unemployment and poverty."
+          ],
+          [
+            "S01",
+            502880,
+            591040,
+            "He took this crisis head-on, transforming one of Latin America's largest economies"
+          ],
+          [
+            "S01",
+            591040,
+            642400,
+            "through pure free-market principles."
+          ],
+          [
+            "S01",
+            642400,
+            723680,
+            "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+          ],
+          [
+            "S01",
+            723680,
+            821120,
+            "in 16 years, and not just avoided the hyperinflation, but brought inflation down"
+          ]
+        ],
+        "merged": 0,
+        "dropped": 0,
+        "displaced_samples": 0
+      }
+    },
+    "overlap_sir_minus3db": {
+      "adjudicable": true,
+      "local_speakers": [
+        "S01"
+      ],
+      "target_phrase_segments": 0,
+      "segments_over_source_interval_20_00_21_44": [
+        [
+          "S01",
+          308320,
+          398880,
+          "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+        ]
+      ],
+      "current_normalizer": {
+        "segments": [
+          [
+            "S01",
+            13920,
+            61920,
+            "The following is a conversation with Javier Mal\u00e9,"
+          ],
+          [
+            "S01",
+            61920,
+            101280,
+            "the president of Argentina."
+          ],
+          [
+            "S01",
+            101280,
+            222080,
+            "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+          ],
+          [
+            "S01",
+            222080,
+            308320,
+            "that symbolized his promise to slash the corrupt bureaucracy of the state."
+          ],
+          [
+            "S01",
+            308320,
+            398880,
+            "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+          ],
+          [
+            "S01",
+            398880,
+            480320,
+            "deep in debt and suffering from mass unemployment and poverty."
+          ],
+          [
+            "S01",
+            480320,
+            567520,
+            "He took this crisis head-on, transforming one of Latin America's largest economies"
+          ],
+          [
+            "S01",
+            567520,
+            620160,
+            "through pure free-market principles."
+          ],
+          [
+            "S01",
+            620160,
+            701120,
+            "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+          ],
+          [
+            "S01",
+            701120,
+            799680,
+            "in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+          ]
+        ],
+        "merged": 0,
+        "dropped": 0,
+        "displaced_samples": 0
+      },
+      "candidate_normalizer": {
+        "segments": [
+          [
+            "S01",
+            13920,
+            61920,
+            "The following is a conversation with Javier Mal\u00e9,"
+          ],
+          [
+            "S01",
+            61920,
+            101280,
+            "the president of Argentina."
+          ],
+          [
+            "S01",
+            101280,
+            222080,
+            "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+          ],
+          [
+            "S01",
+            222080,
+            308320,
+            "that symbolized his promise to slash the corrupt bureaucracy of the state."
+          ],
+          [
+            "S01",
+            308320,
+            398880,
+            "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+          ],
+          [
+            "S01",
+            398880,
+            480320,
+            "deep in debt and suffering from mass unemployment and poverty."
+          ],
+          [
+            "S01",
+            480320,
+            567520,
+            "He took this crisis head-on, transforming one of Latin America's largest economies"
+          ],
+          [
+            "S01",
+            567520,
+            620160,
+            "through pure free-market principles."
+          ],
+          [
+            "S01",
+            620160,
+            701120,
+            "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+          ],
+          [
+            "S01",
+            701120,
+            799680,
+            "in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+          ]
+        ],
+        "merged": 0,
+        "dropped": 0,
+        "displaced_samples": 0
+      }
+    },
+    "overlap_sir_plus0db": {
+      "adjudicable": true,
+      "local_speakers": [
+        "S01"
+      ],
+      "target_phrase_segments": 0,
+      "segments_over_source_interval_20_00_21_44": [
+        [
+          "S01",
+          308320,
+          398880,
+          "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+        ]
+      ],
+      "current_normalizer": {
+        "segments": [
+          [
+            "S01",
+            13920,
+            61920,
+            "The following is a conversation with Javier Mal\u00e9,"
+          ],
+          [
+            "S01",
+            61920,
+            101280,
+            "the president of Argentina."
+          ],
+          [
+            "S01",
+            101280,
+            222080,
+            "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+          ],
+          [
+            "S01",
+            222080,
+            308320,
+            "that symbolized his promise to slash the corrupt bureaucracy of the state."
+          ],
+          [
+            "S01",
+            308320,
+            398880,
+            "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+          ],
+          [
+            "S01",
+            398880,
+            480320,
+            "deep in debt and suffering from mass unemployment and poverty."
+          ],
+          [
+            "S01",
+            480320,
+            567520,
+            "He took this crisis head-on, transforming one of Latin America's largest economies"
+          ],
+          [
+            "S01",
+            567520,
+            620160,
+            "through pure free-market principles."
+          ],
+          [
+            "S01",
+            620160,
+            701120,
+            "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+          ],
+          [
+            "S01",
+            701120,
+            799680,
+            "in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+          ]
+        ],
+        "merged": 0,
+        "dropped": 0,
+        "displaced_samples": 0
+      },
+      "candidate_normalizer": {
+        "segments": [
+          [
+            "S01",
+            13920,
+            61920,
+            "The following is a conversation with Javier Mal\u00e9,"
+          ],
+          [
+            "S01",
+            61920,
+            101280,
+            "the president of Argentina."
+          ],
+          [
+            "S01",
+            101280,
+            222080,
+            "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+          ],
+          [
+            "S01",
+            222080,
+            308320,
+            "that symbolized his promise to slash the corrupt bureaucracy of the state."
+          ],
+          [
+            "S01",
+            308320,
+            398880,
+            "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+          ],
+          [
+            "S01",
+            398880,
+            480320,
+            "deep in debt and suffering from mass unemployment and poverty."
+          ],
+          [
+            "S01",
+            480320,
+            567520,
+            "He took this crisis head-on, transforming one of Latin America's largest economies"
+          ],
+          [
+            "S01",
+            567520,
+            620160,
+            "through pure free-market principles."
+          ],
+          [
+            "S01",
+            620160,
+            701120,
+            "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+          ],
+          [
+            "S01",
+            701120,
+            799680,
+            "in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+          ]
+        ],
+        "merged": 0,
+        "dropped": 0,
+        "displaced_samples": 0
+      }
+    },
+    "overlap_sir_plus3db": {
+      "adjudicable": true,
+      "local_speakers": [
+        "S01"
+      ],
+      "target_phrase_segments": 0,
+      "segments_over_source_interval_20_00_21_44": [
+        [
+          "S01",
+          309120,
+          398880,
+          "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+        ]
+      ],
+      "current_normalizer": {
+        "segments": [
+          [
+            "S01",
+            13920,
+            61920,
+            "The following is a conversation with Javier Mal\u00e9,"
+          ],
+          [
+            "S01",
+            61920,
+            101280,
+            "the president of Argentina."
+          ],
+          [
+            "S01",
+            101280,
+            222080,
+            "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+          ],
+          [
+            "S01",
+            222080,
+            309120,
+            "that symbolized his promise to slash the corrupt bureaucracy of the state."
+          ],
+          [
+            "S01",
+            309120,
+            398880,
+            "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+          ],
+          [
+            "S01",
+            398880,
+            480320,
+            "deep in debt and suffering from mass unemployment and poverty."
+          ],
+          [
+            "S01",
+            480320,
+            567520,
+            "He took this crisis head-on, transforming one of Latin America's largest economies"
+          ],
+          [
+            "S01",
+            567520,
+            620160,
+            "through pure free-market principles."
+          ],
+          [
+            "S01",
+            620160,
+            701120,
+            "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+          ],
+          [
+            "S01",
+            701120,
+            799680,
+            "in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+          ]
+        ],
+        "merged": 0,
+        "dropped": 0,
+        "displaced_samples": 0
+      },
+      "candidate_normalizer": {
+        "segments": [
+          [
+            "S01",
+            13920,
+            61920,
+            "The following is a conversation with Javier Mal\u00e9,"
+          ],
+          [
+            "S01",
+            61920,
+            101280,
+            "the president of Argentina."
+          ],
+          [
+            "S01",
+            101280,
+            222080,
+            "He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw"
+          ],
+          [
+            "S01",
+            222080,
+            309120,
+            "that symbolized his promise to slash the corrupt bureaucracy of the state."
+          ],
+          [
+            "S01",
+            309120,
+            398880,
+            "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,"
+          ],
+          [
+            "S01",
+            398880,
+            480320,
+            "deep in debt and suffering from mass unemployment and poverty."
+          ],
+          [
+            "S01",
+            480320,
+            567520,
+            "He took this crisis head-on, transforming one of Latin America's largest economies"
+          ],
+          [
+            "S01",
+            567520,
+            620160,
+            "through pure free-market principles."
+          ],
+          [
+            "S01",
+            620160,
+            701120,
+            "In just a few months in office, he already achieved Argentina's first fiscal surplus"
+          ],
+          [
+            "S01",
+            701120,
+            799680,
+            "in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+          ]
+        ],
+        "merged": 0,
+        "dropped": 0,
+        "displaced_samples": 0
+      }
+    }
+  },
+  "assertions": {
+    "sequential_control_emits_target_as_second_speaker": true,
+    "all_overlap_mixtures_omit_target_words": true,
+    "all_overlap_mixtures_emit_one_local_speaker": true,
+    "normalizer_has_no_overlapped_second_segment_to_recover": true
+  }
+}
