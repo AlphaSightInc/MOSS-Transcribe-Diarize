@@ -3,7 +3,7 @@ import pytest
 from tools.qualify.speaker_quality import score_speakers
 
 
-@pytest.mark.parametrize('label', ['', 'S00', 'speaker-0000', 'unassigned'])
+@pytest.mark.parametrize('label', ['', 'S00', 'UNKNOWN', 'Speaker uncertain', 'speaker-0000', 'unassigned'])
 def test_unassigned_cannot_be_matched_to_a_reference_person(label):
     refs = [dict(start=0, end=10, speaker='person')]
     score = score_speakers(refs, [dict(start=0, end=10, speaker=label)])

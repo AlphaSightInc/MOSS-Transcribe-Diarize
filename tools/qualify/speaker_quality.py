@@ -4,7 +4,7 @@ from collections import defaultdict
 from moss_transcribe_diarize.lane_word_oracle import normalize_segment
 from moss_transcribe_diarize.live_speaker_accuracy import Segment, score_live_speaker_accuracy
 
-UNKNOWN = frozenset(('', 'S00', 'speaker-0000', 'unassigned'))
+UNKNOWN = frozenset(('', 'S00', 'UNKNOWN', 'Speaker uncertain', 'speaker-0000', 'unassigned'))
 
 
 def score_speakers(reference_rows, hypothesis_rows):
