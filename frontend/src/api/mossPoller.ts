@@ -417,14 +417,15 @@ function renderSnapshot(
   previouslyRevisedSpanIds: ReadonlySet<number>,
   previousProvisional: { generation: number; items: TranscriptItem[] } | null
 ): SnapshotRender {
-  const committed = snapshot.publishedSegments?.map(item => ({ ...item, state: finalized ? "final" as const : "confirmed" as const })) ?? snapshot.committed.flatMap((commit) =>
+  const committedState = publishedTranscriptState(snapshot, finalized);
+  const committed = snapshot.publishedSegments?.map(item => ({ ...item, state: committedState })) ?? snapshot.committed.flatMap((commit) =>
     transcriptItemsFromMossText(
       commit.revisedTranscript ?? commit.transcript,
       commit.startSample,
       snapshot.sampleRate,
       snapshot.canonicalSpeakers,
       {
-        state: finalized ? "final" : "confirmed",
+        state: committedState,
         segmentIdPrefix: `${commit.spanId}:`,
         provisionalStale: false
       }
@@ -518,19 +519,20 @@ function mapRuntimeEvent(
         identity_revision_spans: optionalNumber(event.payload.identity_revision_spans),
         identity_revision_units: optionalNumber(event.payload.identity_revision_units)
       };
+      const committedState = publishedTranscriptState(snapshot, identityFinalized);
       return {
         type: "refinement_complete",
         session_id: event.sessionId,
         seq: event.seq,
         timestamp: new Date().toISOString(),
-        items: snapshot.publishedSegments?.map(item => ({ ...item, state: identityFinalized ? "final" as const : "confirmed" as const })) ?? snapshot.committed.flatMap((commit) =>
+        items: snapshot.publishedSegments?.map(item => ({ ...item, state: committedState })) ?? snapshot.committed.flatMap((commit) =>
           transcriptItemsFromMossText(
             commit.revisedTranscript ?? commit.transcript,
             commit.startSample,
             snapshot.sampleRate,
             snapshot.canonicalSpeakers,
             {
-              state: identityFinalized ? "final" : "confirmed",
+              state: committedState,
               segmentIdPrefix: `${commit.spanId}:`,
               provisionalStale: false
             }
@@ -551,6 +553,21 @@ function mapRuntimeEvent(
     default:
       return null;
   }
+}
+
+function publishedTranscriptState(
+  snapshot: MossSnapshot,
+  identityFinalized: boolean
+): "confirmed" | "final" {
+  // A closed session can still be running automatic terminal refinement. Its current
+  // identity is durable but not yet the settled publication the correction UI may edit.
+  if (snapshot.status === "closed" && snapshot.finalizationStatus === "running") {
+    return "confirmed";
+  }
+  if (["closed", "failed", "aborted"].includes(snapshot.status)) {
+    return "final";
+  }
+  return identityFinalized ? "final" : "confirmed";
 }
 
 function transcriptItemsFromMossText(

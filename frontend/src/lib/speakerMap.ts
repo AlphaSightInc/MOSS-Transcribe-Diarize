@@ -3,7 +3,9 @@ import { normalizeInlineWhitespace } from "./text";
 
 const SPEAKER_ID_PATTERN = /^SPEAKER_(\d+)$/;
 const UNKNOWN_SPEAKER_ID = "UNKNOWN";
+const UNATTRIBUTED_SPEAKER_ID = "S00";
 const UNKNOWN_DISPLAY_LABEL = "Preview";
+const UNCERTAIN_DISPLAY_LABEL = "Speaker uncertain";
 
 export function normalizeDisplayNameForStorage(displayName: unknown): string {
   return typeof displayName === "string" ? normalizeInlineWhitespace(displayName) : "";
@@ -57,7 +59,8 @@ export function resolveDisplayLabel(displayName: string): string {
 }
 
 export function isBackendUnknownSpeakerId(speakerId: unknown): boolean {
-  return normalizeDisplayNameForStorage(speakerId) === UNKNOWN_SPEAKER_ID;
+  const normalized = normalizeDisplayNameForStorage(speakerId);
+  return normalized === UNKNOWN_SPEAKER_ID || normalized === UNATTRIBUTED_SPEAKER_ID;
 }
 
 export function isUnidentifiedSpeakerLabel(displayName: unknown): boolean {
@@ -66,7 +69,8 @@ export function isUnidentifiedSpeakerLabel(displayName: unknown): boolean {
     return true;
   }
 
-  return normalizedDisplayName === UNKNOWN_SPEAKER_ID || SPEAKER_ID_PATTERN.test(normalizedDisplayName);
+  return normalizedDisplayName === UNKNOWN_SPEAKER_ID || normalizedDisplayName === UNCERTAIN_DISPLAY_LABEL ||
+    SPEAKER_ID_PATTERN.test(normalizedDisplayName);
 }
 
 export function buildSpeakerColorMap(

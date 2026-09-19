@@ -8,7 +8,7 @@ import {
   OPEN_MEETING_EVENT,
   MEETING_HISTORY_REFRESH_EVENT
 } from "../lib/meetingEvents";
-import { resetSessionState, sessionTitle, sessionId, sessionMode, transcript } from "../state/session";
+import { resetSessionState, sessionTitle, sessionId, sessionMode, sessionNeedsReview, sessionStatus, transcript } from "../state/session";
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
 
@@ -81,6 +81,40 @@ describe("MeetingHistory", () => {
     await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: selected.id } })); });
     await vi.waitFor(() => expect([...root.querySelectorAll('[role="status"]')].some(node => node.textContent === notice)).toBe(true));
     expect(transcript.value.map(segment => segment.text)).toEqual(["first words"]);
+  });
+
+  it("hydrates saved review truth after Stop settles without a manual reopen", async () => {
+    const active = meeting({ id: "just-stopped", status: "active", needs_review: false });
+    const completed = meeting({
+      id: "just-stopped",
+      status: "completed",
+      needs_review: true,
+      notice: "Final transcript refinement was unavailable for some audio. Previously committed words were kept.",
+      transcript_version: 2,
+      transcript: { segments: [
+        { id: "uncertain", start: 0, end: 1, speaker: "Speaker uncertain", speaker_entity_id: "S00", text: "kept words" }
+      ] }
+    });
+    let lists = 0;
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url !== "/api/meetings") return response(completed);
+      lists += 1;
+      return response({ meetings: [lists === 1 ? active : completed] });
+    }));
+    sessionId.value = "just-stopped";
+    sessionStatus.value = "closed";
+
+    await act(async () => render(<div><App /><MeetingHistory /></div>, root));
+    await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="just-stopped"]')).not.toBeNull());
+    expect(sessionNeedsReview.value).toBe(false);
+
+    act(() => {
+      document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT));
+    });
+    await vi.waitFor(() => expect(sessionNeedsReview.value).toBe(true));
+    expect(transcript.value.map(row => row.text)).toEqual(["kept words"]);
+    expect(root.textContent).toContain("Needs review.");
+    expect(lists).toBe(2);
   });
 
   it("brings an explicitly opened import into view but leaves background refresh in place", async () => {

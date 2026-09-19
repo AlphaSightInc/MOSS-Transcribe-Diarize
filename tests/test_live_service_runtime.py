@@ -1053,6 +1053,58 @@ def test_abort_fences_late_in_flight_canonical_result():
     assert event_kinds[-1] == "session_aborted"
 
 
+def test_abort_releases_terminal_owners_only_after_the_in_flight_reader_finishes():
+    scheduler = _TransientCanonicalPumpScheduler()
+    decoder = BlockingDecoder()
+    base = _descriptor(max_queue_depth=2, max_retained_samples=6000)
+    descriptor = dataclasses.replace(
+        base,
+        bounds=dataclasses.replace(base.bounds, max_tape_bytes=12_000),
+    )
+    runtime = _runtime(
+        speech=(True, False),
+        decoder=decoder,
+        descriptor=descriptor,
+        scheduler=scheduler,
+    )
+    created = runtime.create()
+    runtime.accept_frame(created.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(created.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1.0)
+    state = runtime._sessions[created.session_id]
+    releases = 0
+    original_release = state.coordinator.release_finalized_identity
+
+    def observe_release() -> None:
+        nonlocal releases
+        releases += 1
+        original_release()
+
+    state.coordinator.release_finalized_identity = observe_release
+    assert state.coordinator.tape_accounting().retained_bytes == 4000
+
+    asyncio.run(runtime.abort(created.session_id, "caller cancelled"))
+
+    assert state.coordinator.tape_accounting().retained_bytes == 4000
+    assert releases == 0
+    assert "session_tape_released" not in {
+        event.kind for event in runtime.events(created.session_id)
+    }
+
+    decoder.release.set()
+    assert decoder.finished.wait(timeout=1.0)
+    deadline = time.monotonic() + 1.0
+    while scheduler.worker_count and time.monotonic() < deadline:
+        time.sleep(0.001)
+
+    assert state.coordinator.tape_accounting().retained_bytes == 0
+    assert releases == 1
+    events = runtime.events(created.session_id)
+    kinds = [event.kind for event in events]
+    assert kinds.index("session_aborted") < kinds.index("session_tape_released")
+    assert "canonical_processed" not in kinds
+
+
 def test_abort_discards_only_the_target_session_queued_live_work_and_reconciles_depths():
     scheduler = _TransientCanonicalPumpScheduler()
     decoder = BlockingDecoder()

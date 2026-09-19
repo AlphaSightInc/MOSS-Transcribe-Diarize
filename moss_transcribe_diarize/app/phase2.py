@@ -59,6 +59,14 @@ class AccountRevoked(PermissionError):
     """An Account lost authority before an owner-bound mutation committed."""
 
 
+class MeetingNotSettled(RuntimeError):
+    """A correction arrived before automatic processing settled."""
+
+
+class PassageNotFound(KeyError):
+    """A selected passage or target speaker is absent from this Meeting."""
+
+
 @dataclass(frozen=True, slots=True)
 class Account:
     account_id: str
@@ -124,6 +132,7 @@ class Meeting:
     failure_code: str | None = None
     failure_reason: str | None = None
     notice: str | None = None
+    needs_review: bool = False
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -138,6 +147,27 @@ class Meeting:
             "audio": None if self.audio is None else self.audio.to_dict(),
             **({"failure_code": self.failure_code, "failure_reason": self.failure_reason} if self.failure_code else {}),
             **({"notice": self.notice} if self.notice else {}),
+            "needs_review": self.needs_review,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class PassageSpeakerResult:
+    meeting_id: str
+    segment_ids: tuple[str, ...]
+    speaker_id: str
+    label: str
+    transcript_version: int
+    needs_review: bool
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "meeting_id": self.meeting_id,
+            "segment_ids": list(self.segment_ids),
+            "speaker_id": self.speaker_id,
+            "label": self.label,
+            "transcript_version": self.transcript_version,
+            "needs_review": self.needs_review,
         }
 
 
@@ -1021,6 +1051,139 @@ class Phase2Store:
                 raise AccountRevoked("Meeting authority is revoked or interrupted.")
         return normalized
 
+    async def _reassign_passages(
+        self,
+        account_id: str,
+        authority_generation: int,
+        meeting_id: str,
+        segment_ids: tuple[str, ...],
+        *,
+        speaker_id: str | None,
+        label: str | None,
+    ) -> PassageSpeakerResult:
+        selected = tuple(dict.fromkeys(value.strip() for value in segment_ids if value.strip()))
+        if not selected or len(selected) != len(segment_ids):
+            raise ValueError("Select at least one unique passage.")
+        if (speaker_id is None) == (label is None):
+            raise ValueError("Choose one existing speaker or enter one new person.")
+
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """
+                SELECT m.status, t.document_json, mo.failure_code, mo.notice
+                FROM meetings m
+                JOIN accounts a ON a.account_id = m.account_id
+                    AND a.enabled = 1 AND a.authority_generation = ?
+                LEFT JOIN meeting_transcripts t
+                    ON t.account_id = m.account_id AND t.meeting_id = m.meeting_id
+                LEFT JOIN meeting_outcomes mo
+                    ON mo.account_id = m.account_id AND mo.meeting_id = m.meeting_id
+                WHERE m.account_id = ? AND m.meeting_id = ?
+                """,
+                (authority_generation, account_id, meeting_id),
+            )
+            row = await cursor.fetchone()
+            await cursor.close()
+            if row is None:
+                raise AccountRevoked("Meeting authority is revoked or interrupted.")
+            status = str(row["status"])
+            if status == "active":
+                raise MeetingNotSettled(
+                    "Wait for automatic processing to settle before correcting speakers."
+                )
+            if row["document_json"] is None:
+                raise PassageNotFound("Meeting transcript has no passages.")
+            document = json.loads(row["document_json"])
+            segments = document.get("segments")
+            if not isinstance(segments, list):
+                raise PassageNotFound("Meeting transcript has no passages.")
+            identified = [
+                segment
+                for segment in segments
+                if isinstance(segment, dict) and isinstance(segment.get("id"), str)
+            ]
+            by_id = {str(segment["id"]): segment for segment in identified}
+            if len(by_id) != len(identified):
+                raise ValueError("Meeting transcript passage identity is ambiguous.")
+            if any(value not in by_id for value in selected):
+                raise PassageNotFound("Selected passage was not found.")
+
+            if speaker_id is not None:
+                target_id = speaker_id.strip()
+                if not target_id or _is_unknown_speaker_value(target_id):
+                    raise PassageNotFound("Existing speaker was not found.")
+                target = next(
+                    (
+                        segment
+                        for segment in segments
+                        if isinstance(segment, dict)
+                        and _segment_speaker_id(segment) == target_id
+                    ),
+                    None,
+                )
+                if target is None:
+                    raise PassageNotFound("Existing speaker was not found.")
+                target_label = str(target.get("speaker") or "").strip()
+                if not target_label:
+                    raise PassageNotFound("Existing speaker was not found.")
+            else:
+                target_label = label.strip() if label is not None else ""
+                if not target_label:
+                    raise ValueError("New person name must not be empty.")
+                target_id = f"manual-{secrets.token_urlsafe(12)}"
+
+            for passage_id in selected:
+                segment = by_id[passage_id]
+                segment["speaker_entity_id"] = target_id
+                segment["speaker"] = target_label
+
+            document_json = json.dumps(document, ensure_ascii=False, separators=(",", ":"))
+            await self._connection.execute(
+                """
+                INSERT INTO meeting_speakers(
+                    account_id, meeting_id, speaker_id, label, voiceprint_id
+                ) VALUES (?, ?, ?, ?, NULL)
+                ON CONFLICT(account_id, meeting_id, speaker_id) DO UPDATE SET
+                    label = excluded.label
+                """,
+                (account_id, meeting_id, target_id, target_label),
+            )
+            await self._connection.execute(
+                """
+                UPDATE meeting_transcripts
+                SET document_json = ?, version = version + 1, updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ?
+                """,
+                (document_json, now, account_id, meeting_id),
+            )
+            await self._connection.execute(
+                """
+                UPDATE meetings SET updated_at_ms = ?
+                WHERE account_id = ? AND meeting_id = ?
+                """,
+                (now, account_id, meeting_id),
+            )
+            version_cursor = await self._connection.execute(
+                """
+                SELECT version FROM meeting_transcripts
+                WHERE account_id = ? AND meeting_id = ?
+                """,
+                (account_id, meeting_id),
+            )
+            version_row = await version_cursor.fetchone()
+            await version_cursor.close()
+            return PassageSpeakerResult(
+                meeting_id=meeting_id,
+                segment_ids=selected,
+                speaker_id=target_id,
+                label=target_label,
+                transcript_version=int(version_row["version"]),
+                needs_review=_meeting_needs_review(
+                    status, document, row["failure_code"], row["notice"]
+                ),
+            )
+
     async def _commit_transcript(
         self,
         account_id: str,
@@ -1381,6 +1544,22 @@ class MeetingHandle:
             self._authority_generation,
             self.meeting_id,
             title,
+        )
+
+    async def reassign_passages(
+        self,
+        segment_ids: tuple[str, ...],
+        *,
+        speaker_id: str | None = None,
+        label: str | None = None,
+    ) -> PassageSpeakerResult:
+        return await self._store._reassign_passages(
+            self._account_id,
+            self._authority_generation,
+            self.meeting_id,
+            segment_ids,
+            speaker_id=speaker_id,
+            label=label,
         )
 
     async def commit_transcript(
@@ -2150,6 +2329,38 @@ def create_phase2_app(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return result.to_dict()
 
+    @app.put("/api/meetings/{meeting_id}/passages/speaker")
+    async def reassign_meeting_passages(meeting_id: str, request: Request):
+        account = await require_account(request)
+        handle = await request.app.state.phase2_store.workspace(account).open_meeting(meeting_id)
+        if handle is None:
+            raise HTTPException(status_code=404, detail="Meeting not found.")
+        try:
+            payload = await request.json()
+            if not isinstance(payload, dict) or not isinstance(payload.get("segment_ids"), list):
+                raise ValueError("Passage selection is required.")
+            raw_segment_ids = payload["segment_ids"]
+            if not all(isinstance(value, str) for value in raw_segment_ids):
+                raise ValueError("Passage selection is invalid.")
+            speaker_id = payload.get("speaker_id")
+            label = payload.get("label")
+            if speaker_id is not None and not isinstance(speaker_id, str):
+                raise ValueError("Existing speaker is invalid.")
+            if label is not None and not isinstance(label, str):
+                raise ValueError("New person name is invalid.")
+            result = await handle.reassign_passages(
+                tuple(raw_segment_ids), speaker_id=speaker_id, label=label
+            )
+        except MeetingNotSettled as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except PassageNotFound as exc:
+            raise HTTPException(status_code=404, detail=str(exc.args[0])) from exc
+        except AccountRevoked as exc:
+            raise HTTPException(status_code=404, detail="Meeting not found.") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return result.to_dict()
+
     @app.get("/api/voiceprints")
     async def list_voiceprints(request: Request):
         account = await require_account(request)
@@ -2230,19 +2441,80 @@ def _now_ms() -> int:
     return int(time.time() * 1000)
 
 
+def _is_unknown_speaker_value(value: object) -> bool:
+    """True only for unknown values emitted by the saved/legacy transcript paths."""
+
+    normalized = value.strip() if isinstance(value, str) else ""
+    # Saved Live emits S00. The legacy transcript normalizer emits UNKNOWN.
+    # Speaker uncertain is this module's terminal presentation of either value.
+    return normalized in {"S00", "UNKNOWN", "Speaker uncertain"}
+
+
+def _segment_speaker_id(segment: Mapping[str, object]) -> str | None:
+    entity = segment.get("speaker_entity_id")
+    if isinstance(entity, str) and entity.strip():
+        normalized = entity.strip()
+        return None if _is_unknown_speaker_value(normalized) else normalized
+    speaker = segment.get("speaker")
+    if isinstance(speaker, str) and speaker.strip():
+        normalized = speaker.strip()
+        return None if _is_unknown_speaker_value(normalized) else normalized
+    return None
+
+
+def _settled_transcript(document: dict[str, object]) -> dict[str, object]:
+    for segment in document.get("segments", []):
+        if not isinstance(segment, dict):
+            continue
+        # Storage tests and interrupted imports may retain a non-renderable record with no
+        # speaker field at all. It is not a passage whose identity can be presented or edited.
+        if "speaker" not in segment:
+            continue
+        if _segment_speaker_id(segment) is None:
+            segment["speaker_entity_id"] = "S00"
+            segment["speaker"] = "Speaker uncertain"
+    return document
+
+
+def _meeting_needs_review(
+    status: str,
+    document: Mapping[str, object] | None,
+    failure_code: str | None,
+    notice: str | None,
+) -> bool:
+    if status == "active":
+        return False
+    if status != "completed" or failure_code or notice:
+        return True
+    if document is None:
+        return False
+    return any(
+        isinstance(segment, dict) and _segment_speaker_id(segment) is None
+        for segment in document.get("segments", [])
+    )
+
+
 def _meeting_from_row(row: Any) -> Meeting:
     document_json = row["document_json"]
+    status = str(row["status"])
+    transcript = None if document_json is None else json.loads(document_json)
+    needs_review = _meeting_needs_review(
+        status, transcript, row["failure_code"], row["notice"]
+    )
+    if transcript is not None and status != "active":
+        transcript = _settled_transcript(transcript)
     return Meeting(
         meeting_id=row["meeting_id"],
         mode=row["mode"],
         title=row["title"],
-        status=row["status"],
+        status=status,
         created_at_ms=int(row["created_at_ms"]),
         title_source=row["title_source"],
-        transcript=None if document_json is None else json.loads(document_json),
+        transcript=transcript,
         transcript_version=0 if row["transcript_version"] is None else int(row["transcript_version"]),
         audio=_meeting_audio_from_row(row),
         failure_code=row["failure_code"], failure_reason=row["failure_reason"], notice=row["notice"],
+        needs_review=needs_review,
     )
 
 

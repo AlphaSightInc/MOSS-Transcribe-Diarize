@@ -11,6 +11,9 @@ const TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT =
   `Provisional attribution: ${PROVISIONAL_ATTRIBUTION_CAVEAT}`;
 const MARKDOWN_PROVISIONAL_ATTRIBUTION_CAVEAT =
   `> **Provisional attribution:** ${PROVISIONAL_ATTRIBUTION_CAVEAT}`;
+const NEEDS_REVIEW_NOTICE = "Needs review: one or more speaker assignments remain uncertain or processing ended partially.";
+const MARKDOWN_NEEDS_REVIEW_NOTICE =
+  "> **Needs review:** One or more speaker assignments remain uncertain or processing ended partially.";
 
 export interface TranscriptExportFile {
   content: string;
@@ -41,7 +44,12 @@ export interface TranscriptExportJsonTurn {
 export interface TranscriptExportJsonDocument {
   version: 1;
   provisional_attribution_notice?: string;
+  review_status?: "Needs review";
   turns: TranscriptExportJsonTurn[];
+}
+
+export interface TranscriptExportReview {
+  needsReview: boolean;
 }
 
 export function formatTranscriptClockTime(seconds: number): string {
@@ -65,7 +73,8 @@ export function serializeTranscriptExport(
   format: TranscriptExportFormat,
   turns: readonly TranscriptTurn[],
   resolveLabel: (turn: TranscriptTurn) => string,
-  identity: TranscriptExportIdentity
+  identity: TranscriptExportIdentity,
+  review: TranscriptExportReview = { needsReview: false }
 ): TranscriptExportFile {
   turns = [...turns].sort(compareTranscriptOrder);
   const rows = buildExportRows(turns, resolveLabel);
@@ -78,37 +87,38 @@ export function serializeTranscriptExport(
       const text = subtitleText(turn.text.trim());
       const label = subtitleText(resolveExportLabel(turn, resolveLabel)).replace(/\n/g, " ");
       const provisional = format === "srt" && turn.state !== "final" ? "[Provisional attribution] " : "";
-      return `${index + 1}\n${subtitleTime(start, format)} --> ${subtitleTime(end, format)}\n${provisional}${label}: ${text}`;
+      const needsReview = format === "srt" && review.needsReview && index === 0 ? "[Needs review] " : "";
+      return `${index + 1}\n${subtitleTime(start, format)} --> ${subtitleTime(end, format)}\n${needsReview}${provisional}${label}: ${text}`;
     }).join("\n\n");
     const header = format === "vtt"
-      ? `WEBVTT\n\n${provisionalAttribution ? `NOTE ${TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT}\n\n` : ""}` : "";
+      ? `WEBVTT\n\n${review.needsReview ? `NOTE ${NEEDS_REVIEW_NOTICE}\n\n` : ""}${provisionalAttribution ? `NOTE ${TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT}\n\n` : ""}` : "";
     return { content: `${header}${cues}${cues ? "\n" : ""}`, filename,
       mediaType: format === "vtt" ? "text/vtt;charset=utf-8" : "application/x-subrip;charset=utf-8" };
   }
   if (format === "md") {
     return {
-      content: prependProvisionalAttributionCaveat(
+      content: prependNotice(prependProvisionalAttributionCaveat(
         rows.map((row) => `## [${row.clockTime}] ${row.label}\n\n${row.text}`).join("\n\n"),
         MARKDOWN_PROVISIONAL_ATTRIBUTION_CAVEAT,
         provisionalAttribution
-      ),
+      ), MARKDOWN_NEEDS_REVIEW_NOTICE, review.needsReview),
       filename,
       mediaType: "text/markdown;charset=utf-8"
     };
   }
   if (format === "txt") {
     return {
-      content: prependProvisionalAttributionCaveat(
+      content: prependNotice(prependProvisionalAttributionCaveat(
         buildTranscriptExportText(turns, resolveLabel),
         TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT,
         provisionalAttribution
-      ),
+      ), NEEDS_REVIEW_NOTICE, review.needsReview),
       filename,
       mediaType: "text/plain;charset=utf-8"
     };
   }
   return {
-    content: `${JSON.stringify(buildTranscriptExportJsonDocument(turns, resolveLabel), null, 2)}\n`,
+    content: `${JSON.stringify(buildTranscriptExportJsonDocument(turns, resolveLabel, review), null, 2)}\n`,
     filename,
     mediaType: "application/json;charset=utf-8"
   };
@@ -116,10 +126,12 @@ export function serializeTranscriptExport(
 
 export function buildTranscriptExportJsonDocument(
   turns: readonly TranscriptTurn[],
-  resolveLabel: (turn: TranscriptTurn) => string
+  resolveLabel: (turn: TranscriptTurn) => string,
+  review: TranscriptExportReview = { needsReview: false }
 ): TranscriptExportJsonDocument {
   return {
     version: 1,
+    ...(review.needsReview ? { review_status: "Needs review" as const } : {}),
     ...(hasProvisionalAttribution(turns)
       ? { provisional_attribution_notice: TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT }
       : {}),
@@ -138,6 +150,11 @@ export function buildTranscriptExportJsonDocument(
       provisional_stale: turn.provisional_stale
     }))
   };
+}
+
+function prependNotice(content: string, notice: string, present: boolean): string {
+  if (!present) return content;
+  return content ? `${notice}\n\n${content}` : notice;
 }
 
 export function triggerTranscriptExportDownload(file: TranscriptExportFile): void {

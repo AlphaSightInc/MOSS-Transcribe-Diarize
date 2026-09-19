@@ -513,6 +513,7 @@ class _RuntimeSession:
     events: deque[LiveServiceEvent]
     next_event_seq: int = 0
     terminal_failure: LiveServiceFailureRecord | None = None
+    terminal_owners_released: bool = False
     work_changed: threading.Event = field(default_factory=threading.Event)
     drain_waiters: set[_DrainWaiter] = field(default_factory=set)
     canonical_timing: dict[int, "_CanonicalTiming"] = field(default_factory=dict)
@@ -1004,8 +1005,7 @@ class LiveServiceRuntime:
             # When no pass is scheduled nothing has changed: the tape is released here, in
             # the stop that created it.
             if not self._begin_terminal_locked(state):
-                state.coordinator.release_finalized_identity()
-                self._release_tape_locked(state)
+                self._release_terminal_owners_locked(state)
             return self._snapshot(state)
 
     async def abort(
@@ -1254,8 +1254,7 @@ class LiveServiceRuntime:
                 # In the `finally` because every ending owes it: a refused proposal, a
                 # defect, and a published surface all end the only reason the audio was
                 # kept.
-                state.coordinator.release_finalized_identity()
-                self._release_tape_locked(state)
+                self._release_terminal_owners_locked(state)
                 state.work_changed.set()
                 self._notify_drain_waiters_locked(state)
 
@@ -1707,6 +1706,8 @@ class LiveServiceRuntime:
                 self._notify_drain_waiters_locked(state)
                 if state.terminal_failure is None:
                     self._mark_ready_locked(state)
+                else:
+                    self._release_terminal_owners_locked(state)
 
     def _publish_canonical_preview(
         self, state: _RuntimeSession, span: FrozenSpan, transcript: str,
@@ -1854,6 +1855,8 @@ class LiveServiceRuntime:
                     # `_mark_ready_locked` asks the arbiter itself, so this covers the window
                     # this span's own commit just made plannable as well as the next span.
                     self._mark_ready_locked(state)
+                else:
+                    self._release_terminal_owners_locked(state)
 
     def _record_event(self, state: _RuntimeSession, kind: str, payload: Mapping[str, Any]) -> None:
         if kind.startswith("terminal_") or kind in {"stop_requested", "session_closed", "session_aborted"}:
@@ -2037,9 +2040,20 @@ class LiveServiceRuntime:
             return
         state.terminal_failure = failure
         self._record_event(state, event_kind, {"failure": failure.to_dict()})
-        # A meeting that ended badly keeps no audio either: there is no terminal pass to
-        # run over it, and ADR-0003 D3's horizon is the meeting rather than its outcome.
+        self._release_terminal_owners_locked(state)
+
+    def _release_terminal_owners_locked(self, state: _RuntimeSession) -> None:
+        """Release evidence once, after every admitted reader has returned."""
+
+        if state.terminal_owners_released:
+            return
+        if state.session_id in self._in_flight_session_ids:
+            return
+        if state.session.snapshot().finalization_status == "running":
+            return
+        state.coordinator.release_finalized_identity()
         self._release_tape_locked(state)
+        state.terminal_owners_released = True
 
     def _release_tape_locked(self, state: _RuntimeSession) -> None:
         """End the meeting's audio and put its accounting on the stream (ADR-0003 D3).

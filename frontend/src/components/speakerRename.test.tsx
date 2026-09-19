@@ -9,7 +9,7 @@ import { SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { providerBody } from "../lib/finalSummary";
 import { groupSegmentsIntoTurns } from "../lib/mergeTranscript";
 import { serializeTranscriptExport } from "../lib/transcriptExport";
-import { captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus, transcript } from "../state/session";
+import { captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionNeedsReview, sessionStatus, transcript } from "../state/session";
 
 const root = document.createElement("div");
 document.body.append(root);
@@ -97,6 +97,86 @@ it("discards a pre-rename poll response and fetches the acknowledged labels", as
     await vi.waitFor(() => expect(JSON.stringify(dispatched)).toContain('"display_name":"After"'));
     expect(JSON.stringify(dispatched)).not.toContain('"display_name":"Before"');
   } finally { poller.stop(); }
+});
+
+it("reassigns only a selected settled passage to a new recording-local person", async () => {
+  vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+    expect(String(url)).toBe("/api/meetings/m/passages/speaker");
+    expect(JSON.parse(init.body)).toEqual({ segment_ids: ["two"], label: "Blair" });
+    return Response.json({
+      meeting_id: "m", segment_ids: ["two"], speaker_id: "manual-one", label: "Blair",
+      transcript_version: 2, needs_review: false
+    });
+  }));
+  await act(async () => {
+    sessionId.value = "m";
+    sessionStatus.value = "closed";
+    sessionNeedsReview.value = true;
+    replaceTranscript([
+      {segment_id:"one",start:0,end:1,text:"First",speaker:"person-a",speaker_entity_id:"person-a",display_name:"Alex",state:"final"},
+      {segment_id:"two",start:1,end:2,text:"Selected",speaker:"person-b",speaker_entity_id:"person-b",display_name:"Casey",state:"final"},
+      {segment_id:"three",start:2,end:3,text:"Other",speaker:"person-c",speaker_entity_id:"person-c",display_name:"Devon",state:"final"}
+    ]);
+    render(<TranscriptPane />, root);
+  });
+  act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="two"]')!.click());
+  const radios = root.querySelectorAll<HTMLInputElement>('dialog input[type="radio"]');
+  act(() => radios[1].click());
+  act(() => {
+    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New person name"]')!;
+    input.value = "Blair";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => {
+    root.querySelector('dialog form')!.dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true })
+    );
+  });
+  await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
+  expect(transcript.value.map(row => [row.text, row.display_name, row.speaker_entity_id])).toEqual([
+    ["First", "Alex", "person-a"],
+    ["Selected", "Blair", "manual-one"],
+    ["Other", "Devon", "person-c"]
+  ]);
+  expect(sessionNeedsReview.value).toBe(false);
+});
+
+it.each(["S00", "UNKNOWN"])("never offers persisted unknown id %s as an existing person", async (unknownId) => {
+  await act(async () => {
+    sessionId.value = "m";
+    sessionStatus.value = "closed";
+    sessionNeedsReview.value = true;
+    replaceTranscript([
+      {segment_id:"known",start:0,end:1,text:"Known",speaker:"person-a",speaker_entity_id:"person-a",display_name:"Alex",state:"final"},
+      {segment_id:"unknown",start:1,end:2,text:"Unknown",speaker:unknownId,speaker_entity_id:unknownId,display_name:"Speaker uncertain",state:"final"}
+    ]);
+    render(<TranscriptPane />, root);
+  });
+
+  act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="known"]')!.click());
+  const options = [...root.querySelectorAll<HTMLOptionElement>('dialog select option')];
+  expect(options.map(option => option.value)).not.toContain(unknownId);
+  expect(options.map(option => option.textContent)).not.toContain("Speaker uncertain");
+});
+
+it("keeps closed-but-finalizing identity provisional and passage correction unavailable", async () => {
+  await act(async () => {
+    sessionId.value = "m";
+    sessionStatus.value = "closed";
+    replaceTranscript([
+      {segment_id:"one",start:0,end:1,text:"Settling",speaker:"person-a",speaker_entity_id:"person-a",display_name:"Alex",state:"confirmed"}
+    ]);
+    render(<TranscriptPane />, root);
+  });
+
+  expect(root.textContent).toContain("Identity provisional");
+  expect(root.querySelector('[data-reassign-passage="one"]')).toBeNull();
+
+  act(() => replaceTranscript([
+    {segment_id:"one",start:0,end:1,text:"Settled",speaker:"person-a",speaker_entity_id:"person-a",display_name:"Alex",state:"final"}
+  ]));
+  expect(root.textContent).not.toContain("Identity provisional");
+  expect(root.querySelector('[data-reassign-passage="one"]')).not.toBeNull();
 });
 
 

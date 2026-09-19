@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager, nullcontext
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
-from .phase2 import AccountRevoked, _now_ms
+from .phase2 import AccountRevoked, _is_unknown_speaker_value, _now_ms
 from .phase2_voiceprint_match import VoiceprintProfile, match_voiceprint, normalized_mean
 
 
@@ -203,7 +203,7 @@ class AccountSpeakerIdentity:
         normalized = label.strip()
         if not normalized:
             raise ValueError("Speaker label must not be empty.")
-        if not speaker_id:
+        if not speaker_id or _is_unknown_speaker_value(speaker_id):
             raise SpeakerIdentityNotFound(speaker_id)
 
         live_naming = True
@@ -237,7 +237,10 @@ class AccountSpeakerIdentity:
             # Older/file documents use their original speaker token as identity.
             # Freeze it for every row before any display label can be edited.
             for segment in segments:
-                if "speaker_entity_id" not in segment and segment["speaker"] != "S00":
+                if (
+                    "speaker_entity_id" not in segment
+                    and not _is_unknown_speaker_value(segment.get("speaker"))
+                ):
                     segment["speaker_entity_id"] = segment["speaker"]
             addressed = [s for s in segments if s.get("speaker_entity_id") == speaker_id]
             if not addressed:

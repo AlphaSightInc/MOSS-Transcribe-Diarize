@@ -2,7 +2,7 @@ import { transcriptLaneLabel } from "../lib/transcriptOrder";
 import { Fragment, type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { requestMeetingHistoryRefresh, SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
-import { nameMeetingSpeaker } from "../api/speakers";
+import { nameMeetingSpeaker, reassignMeetingPassages } from "../api/speakers";
 import {
   buildTranscriptExportText,
   formatTranscriptClockTime,
@@ -10,7 +10,7 @@ import {
   triggerTranscriptExportDownload,
   type TranscriptExportFormat
 } from "../lib/transcriptExport";
-import { groupSegmentsIntoTurns } from "../lib/mergeTranscript";
+import { groupSegmentsIntoTurns, type TranscriptTurn } from "../lib/mergeTranscript";
 import {
   buildConsecutiveSpeakerMap,
   buildSpeakerColorMap,
@@ -24,7 +24,15 @@ import {
   buildTranscriptSearchResults,
   type TranscriptSearchPart
 } from "../lib/transcriptSearch";
-import { sessionId, sessionTitle, sessionTranscriptItems, transcript, transcriptSearchQuery } from "../state/session";
+import {
+  sessionId,
+  sessionNeedsReview,
+  sessionStatus,
+  sessionTitle,
+  sessionTranscriptItems,
+  transcript,
+  transcriptSearchQuery
+} from "../state/session";
 import { autoscroll } from "../state/ui";
 
 interface TranscriptLegendEntry {
@@ -100,6 +108,13 @@ export function TranscriptPane() {
   const [namingError, setNamingError] = useState<string | null>(null);
   const namingDialogRef = useRef<HTMLDialogElement | null>(null);
   const namingInputRef = useRef<HTMLInputElement | null>(null);
+  const [correctionTarget, setCorrectionTarget] = useState<TranscriptTurn | null>(null);
+  const [correctionMode, setCorrectionMode] = useState<"existing" | "new">("existing");
+  const [correctionSpeakerId, setCorrectionSpeakerId] = useState("");
+  const [correctionName, setCorrectionName] = useState("");
+  const [savingCorrection, setSavingCorrection] = useState(false);
+  const [correctionError, setCorrectionError] = useState<string | null>(null);
+  const correctionDialogRef = useRef<HTMLDialogElement | null>(null);
 
   const fullTranscriptItems = transcript.value;
   const searchQuery = transcriptSearchQuery.value.trim();
@@ -127,6 +142,17 @@ export function TranscriptPane() {
     consecutiveSpeakerMap,
     speakerColorMap
   );
+  const correctionSpeakers = legendEntries.filter(
+    entry => !isBackendUnknownSpeakerId(entry.speakerId)
+  );
+  const automaticProcessingRunning =
+    sessionStatus.value === "active" ||
+    sessionStatus.value === "closing" ||
+    (sessionStatus.value === "closed" && allTurns.some(turn => turn.state !== "final"));
+  const canCorrectPassages =
+    activeSessionId !== null &&
+    ["closed", "failed", "aborted"].includes(sessionStatus.value) &&
+    !automaticProcessingRunning;
 
   useEffect(() => {
     setNamingTarget(null);
@@ -149,6 +175,20 @@ export function TranscriptPane() {
       previousFocus?.focus();
     };
   }, [namingTarget]);
+
+  useEffect(() => {
+    if (!correctionTarget) return;
+    const dialog = correctionDialogRef.current;
+    if (!dialog) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    return () => {
+      if (dialog.open && typeof dialog.close === "function") dialog.close();
+      else dialog.removeAttribute("open");
+      previousFocus?.focus();
+    };
+  }, [correctionTarget]);
 
   function openSpeakerName(entry: TranscriptLegendEntry | undefined): void {
     const reason = !canNameSpeakers
@@ -194,6 +234,48 @@ export function TranscriptPane() {
       }
     } finally {
       setSavingName(false);
+    }
+  }
+
+  function openPassageCorrection(turn: TranscriptTurn): void {
+    if (!canCorrectPassages || turn.segment_ids.length === 0) return;
+    const existing = correctionSpeakers.find(entry => entry.speakerId !== turn.speaker_entity_id);
+    setCorrectionTarget(turn);
+    setCorrectionMode(existing ? "existing" : "new");
+    setCorrectionSpeakerId(existing?.speakerId ?? "");
+    setCorrectionName("");
+    setCorrectionError(null);
+  }
+
+  async function savePassageCorrection(event: Event): Promise<void> {
+    event.preventDefault();
+    if (!correctionTarget || !activeSessionId || savingCorrection) return;
+    const meetingId = activeSessionId;
+    setSavingCorrection(true);
+    setCorrectionError(null);
+    try {
+      const result = await reassignMeetingPassages(
+        meetingId,
+        correctionTarget.segment_ids,
+        correctionMode === "existing"
+          ? { speaker_id: correctionSpeakerId }
+          : { label: correctionName.trim() }
+      );
+      if (sessionId.value !== meetingId) return;
+      const changed = new Set(result.segment_ids);
+      sessionTranscriptItems.value = sessionTranscriptItems.value.map(item =>
+        item.segment_id && changed.has(item.segment_id)
+          ? { ...item, speaker: result.speaker_id, speaker_entity_id: result.speaker_id, display_name: result.label }
+          : item
+      );
+      sessionNeedsReview.value = result.needs_review;
+      requestMeetingHistoryRefresh();
+      setNamingMessage(`Reassigned selected passage to ${result.label}.`);
+      setCorrectionTarget(null);
+    } catch (error) {
+      setCorrectionError(error instanceof Error ? error.message : "Passage correction failed.");
+    } finally {
+      setSavingCorrection(false);
     }
   }
 
@@ -278,7 +360,8 @@ export function TranscriptPane() {
       format,
       allTurns,
       (turn) => visibleSpeakerName(turn, consecutiveSpeakerMap),
-      { sessionId: activeSessionId, exportedAt: new Date() }
+      { sessionId: activeSessionId, exportedAt: new Date() },
+      { needsReview: sessionNeedsReview.value }
     ));
   }
 
@@ -333,6 +416,7 @@ export function TranscriptPane() {
       </div>
 
       {namingMessage ? <p className="hint" role="status">{namingMessage}</p> : null}
+      {sessionNeedsReview.value ? <p className="hint" role="status"><strong>Needs review.</strong> Check passages marked Speaker uncertain or a partial processing notice.</p> : null}
       {namingTarget ? (
         <dialog ref={namingDialogRef} className="history-dialog" aria-labelledby="speaker-name-title"
           onCancel={() => setNamingTarget(null)}>
@@ -347,6 +431,37 @@ export function TranscriptPane() {
             <div className="history-dialog-actions">
               <button className="history-toolbar-btn" type="button" disabled={savingName} onClick={() => setNamingTarget(null)}>Cancel</button>
               <button className="history-toolbar-btn" type="submit" disabled={savingName || !speakerName.trim()}>{savingName ? "Saving…" : "Save name"}</button>
+            </div>
+          </form>
+        </dialog>
+      ) : null}
+      {correctionTarget ? (
+        <dialog ref={correctionDialogRef} className="history-dialog" aria-labelledby="passage-speaker-title"
+          onCancel={() => setCorrectionTarget(null)}>
+          <form onSubmit={(event) => void savePassageCorrection(event)}>
+            <h3 id="passage-speaker-title">Reassign passage</h3>
+            <p className="hint">Changes only this selected passage in this recording. It does not save a voiceprint.</p>
+            <label><input type="radio" name="passage-target" checked={correctionMode === "existing"}
+              disabled={savingCorrection || correctionSpeakers.length === 0}
+              onChange={() => setCorrectionMode("existing")} /> Existing person</label>
+            <select aria-label="Existing person" value={correctionSpeakerId}
+              disabled={savingCorrection || correctionMode !== "existing"}
+              onChange={event => setCorrectionSpeakerId(event.currentTarget.value)}>
+              {correctionSpeakers.map(entry => <option key={entry.speakerId} value={entry.speakerId}>{entry.visibleLabel}</option>)}
+            </select>
+            <label><input type="radio" name="passage-target" checked={correctionMode === "new"}
+              disabled={savingCorrection} onChange={() => setCorrectionMode("new")} /> New person</label>
+            <input aria-label="New person name" value={correctionName}
+              disabled={savingCorrection || correctionMode !== "new"}
+              onInput={event => setCorrectionName(event.currentTarget.value)} />
+            {correctionError ? <p role="alert">{correctionError}</p> : null}
+            <div className="history-dialog-actions">
+              <button className="history-toolbar-btn" type="button" disabled={savingCorrection}
+                onClick={() => setCorrectionTarget(null)}>Cancel</button>
+              <button className="history-toolbar-btn" type="submit" disabled={savingCorrection ||
+                (correctionMode === "existing" ? !correctionSpeakerId : !correctionName.trim())}>
+                {savingCorrection ? "Saving…" : "Save correction"}
+              </button>
             </div>
           </form>
         </dialog>
@@ -532,6 +647,7 @@ export function TranscriptPane() {
                         {renderSearchParts(speakerParts, activeSearchMatchId)}
                       </span>
                     </button>
+                    {automaticProcessingRunning ? <span className="hint">Identity provisional</span> : null}
                     {turn.source_lane && <span className="utt-lane">{transcriptLaneLabel(turn.source_lane)}</span>}
                     <div className="utt-time">{formatTranscriptClockTime(turn.start)}</div>
                   </div>
@@ -547,6 +663,11 @@ export function TranscriptPane() {
                       renderSearchParts(textParts, activeSearchMatchId)
                     )}
                   </p>
+                  {canCorrectPassages && turn.segment_ids.length > 0 ? (
+                    <button type="button" className="history-action-btn"
+                      data-reassign-passage={turn.segment_ids.join(",")}
+                      onClick={() => openPassageCorrection(turn)}>Reassign passage</button>
+                  ) : null}
                 </article>
               );
             })
@@ -581,7 +702,9 @@ function buildLegendEntries(
   const entries = new Map<string, TranscriptLegendEntry>();
 
   for (const item of items) {
-    if (isBackendUnknownSpeakerId(item.speaker)) {
+    // UNKNOWN is the transient legacy preview and has no legend entry. Saved S00
+    // remains visible as a disabled unidentified legend, but never a correction target.
+    if (item.speaker === "UNKNOWN") {
       continue;
     }
 

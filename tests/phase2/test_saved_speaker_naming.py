@@ -88,8 +88,9 @@ def test_saved_exact_id_duplicate_labels_and_legacy_file_tokens(tmp_path, mode, 
             assert response.json()['enrollment'] == 'not_requested'
         saved = client.get(f'/api/meetings/{mid}').json()
         rows = saved['transcript']['segments']
-        assert [s['speaker'] for s in rows] == ['Changed', 'Other', 'Changed', 'S00']
-        assert [s.get('speaker_entity_id') for s in rows] == ['S01', 'S02', 'S01', None]
+        assert [s['speaker'] for s in rows] == ['Changed', 'Other', 'Changed', 'Speaker uncertain']
+        assert [s.get('speaker_entity_id') for s in rows] == ['S01', 'S02', 'S01', 'S00']
+        assert saved['needs_review'] is True
         assert saved['status'] == status
         assert client.put(f'/api/meetings/{mid}/speakers/S00/name', json={'label': 'No'}).status_code == 404
         assert client.get('/api/voiceprints').json()['voiceprints'] == []

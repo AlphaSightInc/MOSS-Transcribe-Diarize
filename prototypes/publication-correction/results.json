@@ -1,0 +1,67 @@
+{
+  "base_sha": "b4e8e52c05d6b53fdb92eba7106290a7645445b4",
+  "offline": true,
+  "decoder_calls": 0,
+  "base_falsification": {
+    "verdict": "REJECT CURRENT DESIGN",
+    "retained_bytes_before_abort": 4000,
+    "retained_bytes_during_reader": 0,
+    "identity_release_calls_after_reader": 0,
+    "active_passage_status": 404,
+    "terminal_passage_status": 404,
+    "needs_review_present": false,
+    "voiceprints": 0
+  },
+  "implemented_probe": {
+    "verdict": "PASS",
+    "retained_bytes_before_abort": 4000,
+    "retained_bytes_during_reader": 4000,
+    "retained_bytes_after_reader": 0,
+    "identity_release_calls_during_reader": 0,
+    "identity_release_calls_after_reader": 1,
+    "active_passage_status": 409,
+    "terminal_passage_status": 200,
+    "reopened_speakers": ["S01", "New person", "Speaker uncertain"],
+    "reopened_words": ["first words", "selected words", "uncertain words"],
+    "needs_review": true,
+    "voiceprints": 0
+  },
+  "persisted_unknown_controls": {
+    "producer_values": ["S00", "UNKNOWN"],
+    "reopen_as": "Speaker uncertain",
+    "remain_needs_review_after_other_passage_edit": true,
+    "accepted_as_existing_person": false,
+    "pytest_cases_passed": 2
+  },
+  "finalization_ui_control": {
+    "closed_running_identity": "provisional",
+    "closed_running_correction_available": false,
+    "terminal_correction_available": true,
+    "stop_refresh_hydrates_saved_needs_review": true,
+    "backend_active_status": 409
+  },
+  "browser_round_trip": {
+    "port": 17960,
+    "stubbed_capture_and_decoder": true,
+    "put_status": 200,
+    "transcript_version_before": 1,
+    "transcript_version_after": 2,
+    "selected_segment_ids": ["seg_0001", "seg_0002"],
+    "selected_label_after": "Blair",
+    "untouched_unknown_id": "S00",
+    "reopen_preserved": true,
+    "export_formats_visible": ["md", "txt", "json", "srt", "vtt"],
+    "voiceprints": 0,
+    "browser_errors": 0,
+    "console_errors": 0
+  },
+  "validation": {
+    "relevant_python_tests_passed": 173,
+    "relevant_python_subtests_passed": 19,
+    "phase2_tests_passed": 920,
+    "phase2_tests_skipped": 1,
+    "frontend_tests_passed": 284,
+    "frontend_typecheck": "PASS",
+    "frontend_production_build": "PASS"
+  }
+}

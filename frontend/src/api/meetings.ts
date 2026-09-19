@@ -28,6 +28,7 @@ export interface Meeting {
   failure_code?: string;
   failure_reason?: string;
   notice?: string;
+  needs_review?: boolean;
   id: string;
   mode: MeetingMode;
   title: string | null;
@@ -106,9 +107,10 @@ function parseMeeting(value: unknown): Meeting {
   }
   return {
     id: value.id,
-    failure_code: typeof value.failure_code === "string" ? value.failure_code : undefined,
-    failure_reason: typeof value.failure_reason === "string" ? value.failure_reason : undefined,
-    notice: typeof value.notice === "string" ? value.notice : undefined,
+    ...(typeof value.failure_code === "string" ? { failure_code: value.failure_code } : {}),
+    ...(typeof value.failure_reason === "string" ? { failure_reason: value.failure_reason } : {}),
+    ...(typeof value.notice === "string" ? { notice: value.notice } : {}),
+    ...(typeof value.needs_review === "boolean" ? { needs_review: value.needs_review } : {}),
     mode: value.mode,
     title: value.title,
     title_source: value.title_source,

@@ -829,7 +829,7 @@ describe("MOSS session poller", () => {
       expect(snapshotRequests).toBe(1);
       expect(poller.running()).toBe(true);
       expect(onTerminal).not.toHaveBeenCalled();
-      expect(order).toEqual(["transcript:durable stop tail:final"]);
+      expect(order).toEqual(["transcript:durable stop tail:confirmed"]);
 
       await vi.advanceTimersByTimeAsync(1_999);
       expect(snapshotRequests).toBe(1);
@@ -837,7 +837,7 @@ describe("MOSS session poller", () => {
 
       expect(snapshotRequests).toBe(2);
       expect(order).toEqual([
-        "transcript:durable stop tail:final",
+        "transcript:durable stop tail:confirmed",
         "transcript:terminal final words:final",
         "terminal:Session closed."
       ]);

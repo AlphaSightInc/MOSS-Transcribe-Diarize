@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { nameMeetingSpeaker } from "./speakers";
+import { nameMeetingSpeaker, reassignMeetingPassages } from "./speakers";
 
 describe("speaker naming API", () => {
   it.each(["pending", "enrolled"])("accepts owner-bound %s results", async enrollment => {
@@ -17,5 +17,36 @@ describe("speaker naming API", () => {
 
   it("reports invalid JSON on a failed request without inventing success", async () => {
     await expect(nameMeetingSpeaker("m", "s", "Alex", vi.fn().mockResolvedValue(new Response("unavailable", { status: 503 })))).rejects.toThrow("Speaker naming failed (503)");
+  });
+});
+
+describe("settled passage correction API", () => {
+  it.each([
+    [{ speaker_id: "person-a" }, { speaker_id: "person-a" }],
+    [{ label: "Blair" }, { label: "Blair" }]
+  ] as const)("sends an exact recording-local target", async (target, expectedTarget) => {
+    const payload = {
+      meeting_id: "m",
+      segment_ids: ["seg_0002"],
+      speaker_id: "speaker_id" in target ? target.speaker_id : "manual-one",
+      label: "label" in target ? target.label : "Alex",
+      transcript_version: 2,
+      needs_review: false
+    };
+    const fetcher = vi.fn().mockResolvedValue(Response.json(payload));
+    expect(await reassignMeetingPassages("m", ["seg_0002"], target, fetcher)).toEqual(payload);
+    expect(fetcher).toHaveBeenCalledWith("/api/meetings/m/passages/speaker", expect.objectContaining({
+      method: "PUT",
+      body: JSON.stringify({ segment_ids: ["seg_0002"], ...expectedTarget })
+    }));
+  });
+
+  it("keeps the settled-only refusal visible", async () => {
+    const fetcher = vi.fn().mockResolvedValue(Response.json(
+      { detail: "Wait for automatic processing to settle before correcting speakers." },
+      { status: 409 }
+    ));
+    await expect(reassignMeetingPassages("m", ["seg"], { label: "Blair" }, fetcher))
+      .rejects.toThrow("Wait for automatic processing to settle");
   });
 });

@@ -25,6 +25,7 @@ import {
   resetSessionState,
   sessionId,
   sessionMode,
+  sessionNeedsReview,
   sessionStatus,
   sessionTitle
 } from "../state/session";
@@ -65,8 +66,13 @@ export function MeetingHistory() {
       const previous = selectedRef.current;
       const repaired = reconcileSelectedMeeting(next, selectedRef.current);
       replaceSelection(repaired);
+      const currentSession = next.find(meeting => meeting.id === sessionId.value);
       if (repaired && sessionId.value === repaired.id) {
         publishMeeting(repaired, false);
+      } else if (currentSession && currentSession.status !== "active") {
+        // Stop completes through the Live poller, not a manual History selection. Hydrate
+        // its durable notice/review projection as soon as the terminal row is visible.
+        publishMeeting(currentSession, false);
       } else if (!repaired && previous && sessionId.value === previous.id) {
         resetSessionState();
         sessionTitle.value = "";
@@ -346,6 +352,7 @@ export function MeetingHistory() {
 
 function publishMeeting(meeting: Meeting, observeActive: boolean): void {
   sessionTitle.value = meetingTitle(meeting);
+  sessionNeedsReview.value = meeting.needs_review === true;
   dispatchWsEvent({
     type: "session_state",
     session_id: meeting.id,

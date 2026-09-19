@@ -5,6 +5,17 @@ export interface SpeakerNameResult {
   enrollment: "pending" | "enrolled" | "not_requested" | "unavailable";
 }
 
+export interface PassageSpeakerResult {
+  meeting_id: string;
+  segment_ids: string[];
+  speaker_id: string;
+  label: string;
+  transcript_version: number;
+  needs_review: boolean;
+}
+
+export type PassageSpeakerTarget = { speaker_id: string } | { label: string };
+
 export interface Voiceprint {
   id: string;
   label: string;
@@ -56,6 +67,36 @@ export async function nameMeetingSpeaker(
   if (payload?.meeting_id !== meetingId || payload?.speaker_id !== speakerId ||
       typeof payload?.label !== "string" || !["pending", "enrolled", "not_requested", "unavailable"].includes(payload?.enrollment)) {
     throw new Error("Speaker naming response is invalid.");
+  }
+  return payload;
+}
+
+export async function reassignMeetingPassages(
+  meetingId: string,
+  segmentIds: string[],
+  target: PassageSpeakerTarget,
+  fetcher: typeof fetch = fetch
+): Promise<PassageSpeakerResult> {
+  const response = await fetcher(
+    `/api/meetings/${encodeURIComponent(meetingId)}/passages/speaker`,
+    {
+      method: "PUT",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ segment_ids: segmentIds, ...target })
+    }
+  );
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(typeof payload?.detail === "string"
+      ? payload.detail
+      : `Passage correction failed (${response.status}).`);
+  }
+  if (payload?.meeting_id !== meetingId || !Array.isArray(payload?.segment_ids) ||
+      payload.segment_ids.some((value: unknown) => typeof value !== "string") ||
+      typeof payload?.speaker_id !== "string" || typeof payload?.label !== "string" ||
+      typeof payload?.transcript_version !== "number" || typeof payload?.needs_review !== "boolean") {
+    throw new Error("Passage correction response is invalid.");
   }
   return payload;
 }

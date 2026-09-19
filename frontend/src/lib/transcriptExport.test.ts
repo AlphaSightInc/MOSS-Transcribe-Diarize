@@ -147,3 +147,20 @@ it.each(["srt", "vtt"] as const)("keeps %s lane overlap with speaker-only labels
     `1\n00:00:00${separator}000 --> 00:00:03${separator}000\nAlex: System\n\n` +
     `2\n00:00:00${separator}000 --> 00:00:01${separator}000\nSam: Mic\n`);
 });
+
+it.each(["md", "txt", "json", "srt", "vtt"] as const)(
+  "marks needs-review saved output in %s",
+  format => {
+    const file = serializeTranscriptExport(
+      format,
+      [makeTurn(0, "Speaker uncertain", "Uncertain words", {
+        speaker: "S00", speaker_entity_id: "S00"
+      })],
+      item => item.display_name,
+      { sessionId: "review", exportedAt: new Date(0) },
+      { needsReview: true }
+    );
+    expect(file.content).toContain("Needs review");
+    expect(file.content).toContain("Speaker uncertain");
+  }
+);

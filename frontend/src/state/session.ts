@@ -23,6 +23,7 @@ export const sessionError = signal<string | null>(null);
 // the signal exists so that fallback is the only reason it is ever empty.
 export const sessionTitle = signal("");
 export const sessionStatusLine = signal<string | null>(null);
+export const sessionNeedsReview = signal(false);
 
 export function applySessionStateEvent(
   event: Extract<WsEvent, { type: "session_state" }>
@@ -33,6 +34,7 @@ export function applySessionStateEvent(
   sessionStatus.value = event.status;
   sessionError.value = event.error ?? null;
   sessionStatusLine.value = event.status_line ?? null;
+  if (event.status === "active") sessionNeedsReview.value = false;
 }
 
 export function applyTranscriptUpdate(
@@ -59,5 +61,6 @@ export function resetSessionState(): void {
   sessionStatus.value = "idle";
   sessionError.value = null;
   sessionStatusLine.value = null;
+  sessionNeedsReview.value = false;
   clearSessionDisplay();
 }
