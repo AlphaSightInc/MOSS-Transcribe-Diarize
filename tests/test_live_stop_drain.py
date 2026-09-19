@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import asyncio
 import itertools
+import tempfile
 import unittest
 from dataclasses import replace
 
@@ -71,6 +72,7 @@ def _runtime(*, finalizer, sessions: int = 1, tape_bytes=SIZED_FOR_THE_MEETING):
     pump = _ManualCanonicalPumpScheduler()
     terminal = _ManualTerminalScheduler()
     names = itertools.count()
+    storage_owner = tempfile.TemporaryDirectory()
     runtime = LiveServiceRuntime(
         descriptor=replace(
             descriptor, bounds=replace(descriptor.bounds, max_tape_bytes=capacity)
@@ -84,7 +86,9 @@ def _runtime(*, finalizer, sessions: int = 1, tape_bytes=SIZED_FOR_THE_MEETING):
         session_id_factory=lambda: f"stop-drain-{next(names)}",
         _canonical_scheduler=pump,
         _terminal_scheduler=terminal,
+        tape_storage_root=storage_owner.name,
     )
+    runtime._test_tape_storage_owner = storage_owner
     return runtime, witness, pump, terminal
 
 

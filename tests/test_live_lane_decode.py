@@ -1,6 +1,7 @@
 from dataclasses import replace
 import json
 from pathlib import Path
+import tempfile
 from types import SimpleNamespace
 import wave
 
@@ -89,6 +90,7 @@ def make(decoder=None, *, capacity=640000, rolling=False):
     session = LiveSession(max_retained_samples=320000)
     arbiter = InferenceArbiter()
     decoder = decoder or Decoder()
+    storage_owner = tempfile.TemporaryDirectory()
     c = LiveCoordinator(
         session_key="lane-test",
         session=session,
@@ -102,8 +104,10 @@ def make(decoder=None, *, capacity=640000, rolling=False):
         identity_preparer=identity(),
         arbiter=arbiter,
         tape_capacity_bytes=capacity,
+        tape_storage_root=storage_owner.name,
         rolling_decoder=decoder if rolling else None,
     )
+    c._test_tape_storage_owner = storage_owner
     return c, decoder, session, arbiter
 
 
@@ -431,7 +435,9 @@ def test_terminal_extra_local_voice_probes_covered_short_second_voice(tmp_path, 
         (0, 2.5, speakers[0], system), (2.5, 5, speakers[2], system),
         (5, 5.72, speakers[2], system), (0, 5.72, speakers[1], "microphone"),
     ))
-    tape = CompleteMixedTape(epoch=0, capacity_bytes=6 * RATE * 2)
+    tape = CompleteMixedTape(
+        epoch=0, capacity_bytes=6 * RATE * 2, storage_root=tmp_path
+    )
     assert tape.append(start_sample=0, pcm=bytes([7]) * 6 * RATE * 2).written
     calls = []
 
@@ -526,7 +532,11 @@ def test_terminal_parity_segment_equality_from_accepted_geometry(tmp_path, monke
     tapes = {}
     own = {}
     for marker, lane in enumerate(("system", "microphone"), 1):
-        tapes[lane] = CompleteMixedTape(epoch=0, capacity_bytes=seconds * RATE * 2)
+        tapes[lane] = CompleteMixedTape(
+            epoch=0,
+            capacity_bytes=seconds * RATE * 2,
+            storage_root=tmp_path,
+        )
         assert tapes[lane].append(start_sample=0, pcm=bytes([marker]) * seconds * RATE * 2).written
         own[lane] = {s.canonical_speaker for s in expected if s.source_lane == lane}
     snapshot = SimpleNamespace(identity_snapshot=LiveIdentitySnapshot(canonical_speakers=speakers))

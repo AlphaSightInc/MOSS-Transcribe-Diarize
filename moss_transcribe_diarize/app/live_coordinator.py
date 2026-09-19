@@ -4,6 +4,7 @@ import logging
 from collections import deque
 from copy import deepcopy
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import Callable, Protocol
 
 from moss_transcribe_diarize.transcript_parser import parse_transcript
@@ -385,6 +386,7 @@ class LiveCoordinator:
         rolling_decoder: BoundedWavInference | None = None,
         rolling_geometry: RollingGeometry = DEFAULT_ROLLING_GEOMETRY,
         tape_capacity_bytes: int | None = None,
+        tape_storage_root: str | Path | None = None,
     ):
         if not session_key:
             raise ValueError("session_key must be non-empty.")
@@ -405,6 +407,7 @@ class LiveCoordinator:
         self._stopped_refinement_lanes: set[str] = set()
         self._lane_speakers: dict[str, set[str]] = {}
         self._tape_capacity = tape_capacity_bytes
+        self._tape_storage_root = tape_storage_root
         self._staged_frame: _StagedFrame | None = None
         self._consecutive_unanswered_spans = 0
         self._abstention_count = 0
@@ -426,7 +429,11 @@ class LiveCoordinator:
         self.tape = (
             None
             if tape_capacity_bytes is None
-            else CompleteMixedTape(epoch=session.epoch, capacity_bytes=tape_capacity_bytes)
+            else CompleteMixedTape(
+                epoch=session.epoch,
+                capacity_bytes=tape_capacity_bytes,
+                storage_root=tape_storage_root,
+            )
         )
 
         self.converger = (
@@ -519,7 +526,9 @@ class LiveCoordinator:
             if self._tape_capacity is not None:
                 if lane not in self.lane_tapes:
                     self.lane_tapes[lane] = CompleteMixedTape(
-                        epoch=self.session.epoch, capacity_bytes=self._tape_capacity
+                        epoch=self.session.epoch,
+                        capacity_bytes=self._tape_capacity,
+                        storage_root=self._tape_storage_root,
                     )
                 self.lane_tapes[lane].append(start_sample=ack.start_sample, pcm=pcm)
         staged = self._staged_frame

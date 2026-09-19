@@ -23,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import tempfile
 import unittest
 from dataclasses import dataclass, replace
 from typing import Any
@@ -186,7 +187,8 @@ def _runtime(
     max_events: int = 1000,
     scheduler: _ManualCanonicalPumpScheduler | None = None,
 ) -> LiveServiceRuntime:
-    return LiveServiceRuntime(
+    storage_owner = tempfile.TemporaryDirectory()
+    runtime = LiveServiceRuntime(
         descriptor=_descriptor(max_events=max_events),
         endpoint_policy_factory=lambda: EndpointPolicy(_endpoint_config()),
         speech_provider_factory=ScriptedSpeech,
@@ -195,7 +197,10 @@ def _runtime(
         identity_preparer_factory=ScriptedIdentity,
         session_id_factory=lambda: "rolling-session",
         _canonical_scheduler=scheduler,
+        tape_storage_root=storage_owner.name,
     )
+    runtime._test_tape_storage_owner = storage_owner
+    return runtime
 
 
 def _decoders(*, rolling: bool, rolling_failure: Exception | None = None):
@@ -840,12 +845,15 @@ def _queued_window_after_long_wait(*, tape=True):
     descriptor = replace(descriptor, bounds=replace(
         descriptor.bounds, max_tape_bytes=60 * LIVE_SAMPLE_RATE * 2 if tape else None))
     scheduler = _ManualCanonicalPumpScheduler()
+    storage_owner = tempfile.TemporaryDirectory()
     runtime = LiveServiceRuntime(
         descriptor=descriptor, endpoint_policy_factory=lambda: EndpointPolicy(_endpoint_config()),
         speech_provider_factory=ScriptedSpeech, decoder_factory=lambda: base,
         rolling_decoder_factory=lambda: witness, identity_preparer_factory=ScriptedIdentity,
         _canonical_scheduler=scheduler, monotonic_ns=lambda: clock[0],
+        tape_storage_root=storage_owner.name,
     )
+    runtime._test_tape_storage_owner = storage_owner
     sid = runtime.create().session_id
     def feed(start, end):
         for sequence in range(start, end):

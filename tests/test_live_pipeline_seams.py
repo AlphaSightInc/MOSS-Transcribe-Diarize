@@ -18,6 +18,7 @@ import hashlib
 import io
 import json
 import logging
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -495,8 +496,8 @@ def _decode_seam_runtime(
         # what the session does with a preparation still gets one the real preparer built.
         return preparer if prepared_by is None else prepared_by(preparer)
 
-    return (
-        LiveServiceRuntime(
+    storage_owner = tempfile.TemporaryDirectory()
+    runtime = LiveServiceRuntime(
             descriptor=_deployed_descriptor(),
             endpoint_policy_factory=lambda: EndpointPolicy(
                 EndpointPolicyConfig(
@@ -512,7 +513,11 @@ def _decode_seam_runtime(
             identity_preparer_factory=identity_preparer,
             session_id_factory=lambda: "seam-session",
             _canonical_scheduler=scheduler,
-        ),
+            tape_storage_root=storage_owner.name,
+        )
+    runtime._test_tape_storage_owner = storage_owner
+    return (
+        runtime,
         runner,
     )
 

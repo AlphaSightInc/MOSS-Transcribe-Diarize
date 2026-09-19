@@ -21,10 +21,13 @@ The corpus reading of the same properties, on real speech through the real runti
 from __future__ import annotations
 
 import asyncio
+import fcntl
 import hashlib
+import tempfile
 import tracemalloc
 import unittest
 from dataclasses import replace
+from pathlib import Path
 
 from moss_transcribe_diarize.app.live_adapters import LiveProviderError
 from moss_transcribe_diarize.app.live_service_runtime import (
@@ -57,11 +60,38 @@ def _pcm(samples: int, *, fill: bytes = b"\x11\x22") -> bytes:
     return fill * samples
 
 
+def _tape(capacity_bytes: int) -> CompleteMixedTape:
+    owner = tempfile.TemporaryDirectory()
+    tape = CompleteMixedTape(
+        epoch=0,
+        capacity_bytes=capacity_bytes,
+        storage_root=owner.name,
+    )
+    tape._test_storage_owner = owner
+    return tape
+
+
 class CompleteMixedTapeTest(unittest.TestCase):
     """T1 -- the tape on its own, with no session, no runtime and no audio provider."""
 
+    def test_a_tape_without_configured_storage_root_is_rejected(self):
+        with self.assertRaises(ValueError):
+            CompleteMixedTape(epoch=0, capacity_bytes=1024)
+
+    def test_tape_file_descriptor_resolves_inside_configured_storage_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "configured-live-tapes"
+            tape = CompleteMixedTape(epoch=0, capacity_bytes=1024, storage_root=root)
+            raw = fcntl.fcntl(tape._file.fileno(), fcntl.F_GETPATH, b"\0" * 1024)
+            fd_path = Path(raw.split(b"\0", 1)[0].decode())
+
+            self.assertEqual(fd_path.parent.resolve(), root.resolve())
+            self.assertNotEqual(fd_path.parent.resolve(), Path(tempfile.gettempdir()).resolve())
+            tape.release()
+            self.assertEqual(list(root.iterdir()), [])
+
     def test_a_contiguous_meeting_is_retained_byte_for_byte_with_no_gaps(self):
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
+        tape = _tape(1024)
         chunks = [_pcm(10), _pcm(20), _pcm(5)]
         cursor = 0
         for chunk in chunks:
@@ -80,7 +110,7 @@ class CompleteMixedTapeTest(unittest.TestCase):
         self.assertEqual(tape.read(), whole)
 
     def test_a_sub_range_is_served_from_the_session_clock(self):
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
+        tape = _tape(1024)
         tape.append(start_sample=0, pcm=_pcm(4, fill=b"\x00\x01"))
         tape.append(start_sample=4, pcm=_pcm(4, fill=b"\x00\x02"))
 
@@ -91,7 +121,7 @@ class CompleteMixedTapeTest(unittest.TestCase):
             tape.read(start_sample=6, end_sample=12)
 
     def test_capacity_stops_the_tape_and_names_the_tail_it_lost(self):
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=20)
+        tape = _tape(20)
         self.assertTrue(tape.append(start_sample=0, pcm=_pcm(10)).written)
 
         overflow = tape.append(start_sample=10, pcm=_pcm(10))
@@ -113,7 +143,7 @@ class CompleteMixedTapeTest(unittest.TestCase):
     def test_a_stopped_tape_serves_nothing_at_all(self):
         """A terminal pass over part of a meeting is not a terminal pass."""
 
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=20)
+        tape = _tape(20)
         tape.append(start_sample=0, pcm=_pcm(10))
         tape.append(start_sample=10, pcm=_pcm(10))
 
@@ -121,7 +151,7 @@ class CompleteMixedTapeTest(unittest.TestCase):
             tape.read(start_sample=0, end_sample=10)
 
     def test_a_hole_is_refused_rather_than_filled_with_silence(self):
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
+        tape = _tape(1024)
         tape.append(start_sample=0, pcm=_pcm(10))
         before = tape.accounting(through_sample=10).pcm_sha256
 
@@ -137,7 +167,7 @@ class CompleteMixedTapeTest(unittest.TestCase):
         self.assertEqual(after.refused_samples, 10)
 
     def test_a_partial_sample_is_refused_rather_than_stored(self):
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
+        tape = _tape(1024)
 
         result = tape.append(start_sample=0, pcm=b"\x01\x02\x03")
 
@@ -147,7 +177,7 @@ class CompleteMixedTapeTest(unittest.TestCase):
         self.assertEqual(tape.accounting(through_sample=0).sample_count, 0)
 
     def test_an_empty_append_changes_nothing_and_keeps_taping(self):
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
+        tape = _tape(1024)
         tape.append(start_sample=0, pcm=_pcm(4))
 
         result = tape.append(start_sample=4, pcm=b"")
@@ -170,7 +200,7 @@ class CompleteMixedTapeTest(unittest.TestCase):
             def close(self):
                 return None
 
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
+        tape = _tape(1024)
         tape._file.close()
         tape._file = FlushFailureFile()
 
@@ -183,13 +213,18 @@ class CompleteMixedTapeTest(unittest.TestCase):
         self.assertEqual(accounting.sample_count, 0)
         self.assertEqual(accounting.refused_samples, 12)
         self.assertFalse(accounting.complete)
+        with self.assertRaises(CompleteMixedTapeUnavailable):
+            tape.read(start_sample=0, end_sample=12)
+        later = tape.append(start_sample=0, pcm=_pcm(4))
+        self.assertFalse(later.written)
+        self.assertFalse(later.taping)
 
     def test_release_never_raises_when_close_reports_a_deferred_storage_failure(self):
         class CloseFailureFile:
             def close(self):
                 raise OSError("disk full during close")
 
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
+        tape = _tape(1024)
         tape.append(start_sample=0, pcm=_pcm(12))
         tape._file.close()
         tape._file = CloseFailureFile()
@@ -205,9 +240,24 @@ class CompleteMixedTapeTest(unittest.TestCase):
         self.assertFalse(accounting.complete)
 
     def test_release_drops_the_audio_and_keeps_the_evidence(self):
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
+        tape = _tape(1024)
         tape.append(start_sample=0, pcm=_pcm(12))
         digest = tape.accounting(through_sample=12).pcm_sha256
+
+        class CountingFile:
+            def __init__(self, wrapped):
+                self.wrapped = wrapped
+                self.close_count = 0
+
+            def close(self):
+                self.close_count += 1
+                return self.wrapped.close()
+
+            def __getattr__(self, name):
+                return getattr(self.wrapped, name)
+
+        counted = CountingFile(tape._file)
+        tape._file = counted
 
         tape.release()
         tape.release()
@@ -218,6 +268,7 @@ class CompleteMixedTapeTest(unittest.TestCase):
         self.assertEqual(accounting.peak_retained_bytes, 24)
         self.assertEqual(accounting.sample_count, 12)
         self.assertEqual(accounting.pcm_sha256, digest)
+        self.assertEqual(counted.close_count, 1)
         self.assertFalse(tape.taping)
         with self.assertRaises(CompleteMixedTapeUnavailable):
             tape.read()
@@ -231,7 +282,7 @@ class CompleteMixedTapeTest(unittest.TestCase):
     def test_long_tape_retention_does_not_keep_the_whole_source_in_python_memory(self):
         retained_bytes = 32 * 1024 * 1024
         chunk = b"\x11\x22" * (512 * 1024)
-        tape = CompleteMixedTape(epoch=0, capacity_bytes=retained_bytes)
+        tape = _tape(retained_bytes)
 
         tracemalloc.start()
         cursor = 0
@@ -261,6 +312,9 @@ def _tape_runtime(
     decoder = base if base is not None else _decoders(rolling=False)[0]
     runtime = _runtime(base=decoder, rolling=None)
     runtime.descriptor = _tape_descriptor(max_tape_bytes)
+    owner = tempfile.TemporaryDirectory()
+    runtime._tape_storage_root = Path(owner.name)
+    runtime._test_tape_storage_owner = owner
     return runtime
 
 

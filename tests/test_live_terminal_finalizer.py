@@ -23,6 +23,8 @@ paired file arm's own surface? -- is
 
 from __future__ import annotations
 
+import tempfile
+
 import unittest
 import wave
 
@@ -74,10 +76,13 @@ class WholeMeetingStub:
 
 
 def tape_of(samples: int, *, fill: bytes = b"\x11\x22", capacity: int | None = None) -> CompleteMixedTape:
+    storage_owner = tempfile.TemporaryDirectory()
     tape = CompleteMixedTape(
         epoch=0,
         capacity_bytes=capacity or samples * PCM16_BYTES_PER_SAMPLE,
+        storage_root=storage_owner.name,
     )
+    tape._test_storage_owner = storage_owner
     tape.append(start_sample=0, pcm=fill * samples)
     return tape
 
@@ -730,7 +735,11 @@ def test_silent_tail_reaches_window_decoder_and_retains_speechless_condition(tmp
     from moss_transcribe_diarize.phase2_acceptance_external import _diagnostic_event
     from tests.test_windowed_transcription import result
     # Received audio, not padding: 150 seconds nonzero followed by 450 seconds silence.
-    tape = CompleteMixedTape(epoch=0, capacity_bytes=600 * SECOND * 2)
+    tape = CompleteMixedTape(
+        epoch=0,
+        capacity_bytes=600 * SECOND * 2,
+        storage_root=tmp_path,
+    )
     tape.append(start_sample=0, pcm=b"\x01\x00" * (150 * SECOND))
     tape.append(start_sample=150 * SECOND, pcm=b"\0\0" * (450 * SECOND))
     assert tape.read(start_sample=240 * SECOND, end_sample=390 * SECOND) == b"\0\0" * (150 * SECOND)

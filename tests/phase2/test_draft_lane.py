@@ -2,6 +2,7 @@
 import asyncio
 import dataclasses
 import threading
+import tempfile
 import time
 
 import pytest
@@ -17,6 +18,7 @@ from tests.phase2.test_canonical_preview import read_snapshots
 
 def runtime(decoder, *, enabled=True):
     scheduler = _ManualCanonicalPumpScheduler()
+    storage_owner = tempfile.TemporaryDirectory()
     result = LiveServiceRuntime(
         descriptor=_descriptor(),
         endpoint_policy_factory=lambda: EndpointPolicy(EndpointPolicyConfig(
@@ -26,7 +28,9 @@ def runtime(decoder, *, enabled=True):
         draft_lane_seconds=.0625 if enabled else None,
         draft_decoder_factory=lambda: decoder,
         _canonical_scheduler=scheduler,
+        tape_storage_root=storage_owner.name,
     )
+    result._test_tape_storage_owner = storage_owner
     return result, scheduler, result.create().session_id
 
 

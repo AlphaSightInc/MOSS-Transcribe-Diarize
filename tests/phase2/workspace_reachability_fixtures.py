@@ -1,6 +1,7 @@
 """Synthetic runtime inputs shared by API and optional browser reachability checks."""
 from __future__ import annotations
 import base64
+import tempfile
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_endpoint import (
@@ -106,7 +107,8 @@ def _runtime() -> LiveServiceRuntime:
         ),
         frame_samples=2,
     )
-    return LiveServiceRuntime(
+    storage_owner = tempfile.TemporaryDirectory()
+    runtime = LiveServiceRuntime(
         descriptor=descriptor,
         endpoint_policy_factory=lambda: EndpointPolicy(
             EndpointPolicyConfig(
@@ -119,7 +121,10 @@ def _runtime() -> LiveServiceRuntime:
         decoder_factory=_Decoder,
         rolling_decoder_factory=None,
         identity_preparer_factory=_Identity,
+        tape_storage_root=storage_owner.name,
     )
+    runtime._test_tape_storage_owner = storage_owner
+    return runtime
 
 
 def _v2_frame(sequence: int, lane: str) -> dict[str, object]:
@@ -155,5 +160,4 @@ def _heartbeat() -> dict[str, object]:
         "state": "capturing",
         "lanes": {"system": dict(lane), "microphone": dict(lane)},
     }
-
 

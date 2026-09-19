@@ -298,6 +298,7 @@ def build_live_runtime_factory(
     runner: Any,
     *,
     terminal_finalizer: Any | None = None,
+    tape_storage_root: str | Path | None = None,
     draft_lane_seconds: float | None = None,
 ) -> Callable[[], LiveServiceRuntime]:
     preflight = config.preflight()
@@ -354,6 +355,7 @@ def build_live_runtime_factory(
             # runner -- the manifest describes the live provider, not the file pipeline.
             # No finalizer, no terminal pass, and every meeting reads `not_started`.
             terminal_finalizer=terminal_finalizer,
+            tape_storage_root=tape_storage_root,
             draft_lane_seconds=draft_lane_seconds,
             draft_decoder_factory=(lambda: bounded_live_inference(
                 runner, max_samples=min(40000, int(config.decoder_config["max_samples"])),

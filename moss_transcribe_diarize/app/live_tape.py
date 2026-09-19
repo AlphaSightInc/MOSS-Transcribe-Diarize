@@ -161,20 +161,25 @@ class CompleteMixedTape:
         *,
         epoch: int,
         capacity_bytes: int,
+        storage_root: str | Path | None = None,
         sample_rate: int = LIVE_SAMPLE_RATE,
     ):
         if capacity_bytes <= 0:
             raise ValueError("complete tape capacity_bytes must be positive.")
+        if storage_root is None:
+            raise ValueError("complete tape storage_root must be configured.")
         if sample_rate <= 0:
             raise ValueError("complete tape sample_rate must be positive.")
         self.epoch = int(epoch)
         self.capacity_bytes = int(capacity_bytes)
         self.sample_rate = int(sample_rate)
+        self.storage_root = Path(storage_root).expanduser()
+        self.storage_root.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
         # The source grows with meeting duration, but Python resident memory does not. This
         # scratch tape is intentionally not durable authority; Phase 2's owner-derived capture
         # stage separately owns restart recovery. TemporaryFile also removes itself on close.
-        self._file = tempfile.TemporaryFile(mode="w+b")
+        self._file = tempfile.TemporaryFile(mode="w+b", dir=self.storage_root)
         self._retained_bytes = 0
         self._covered: list[tuple[int, int]] = []
         self._sample_count = 0

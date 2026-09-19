@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="0.380" timestamp="2026-09-19T19:17:30.420352-04:00" hostname="MacStudio.local"><testcase classname="tests.test_live_terminal_tape.CompleteMixedTapeTest" name="test_a_tape_without_configured_storage_root_is_rejected" time="0.001"><failure message="AssertionError: ValueError not raised">self = &lt;test_live_terminal_tape.CompleteMixedTapeTest testMethod=test_a_tape_without_configured_storage_root_is_rejected&gt;
+
+    def test_a_tape_without_configured_storage_root_is_rejected(self):
+&gt;       with self.assertRaises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: ValueError not raised
+
+tests/test_live_terminal_tape.py:67: AssertionError</failure></testcase><testcase classname="tests.test_live_terminal_tape.CompleteMixedTapeTest" name="test_tape_file_descriptor_resolves_inside_configured_storage_root" time="0.001"><failure message="TypeError: CompleteMixedTape.__init__() got an unexpected keyword argument 'storage_root'">self = &lt;test_live_terminal_tape.CompleteMixedTapeTest testMethod=test_tape_file_descriptor_resolves_inside_configured_storage_root&gt;
+
+    def test_tape_file_descriptor_resolves_inside_configured_storage_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "configured-live-tapes"
+&gt;           tape = CompleteMixedTape(epoch=0, capacity_bytes=1024, storage_root=root)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           TypeError: CompleteMixedTape.__init__() got an unexpected keyword argument 'storage_root'
+
+tests/test_live_terminal_tape.py:73: TypeError</failure></testcase><testcase classname="tests.test_live_coordinator" name="test_mixed_and_lane_tapes_use_one_configured_root_and_release_all_scratch" time="0.001"><failure message="TypeError: LiveCoordinator.__init__() got an unexpected keyword argument 'tape_storage_root'">def test_mixed_and_lane_tapes_use_one_configured_root_and_release_all_scratch():
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "configured-live-tapes"
+            session = LiveSession(max_retained_samples=8000)
+&gt;           live = LiveCoordinator(
+                session_key="session-storage",
+                session=session,
+                endpoint_policy=EndpointPolicy(
+                    EndpointPolicyConfig(
+                        min_speech_samples=1,
+                        min_silence_samples=1,
+                        hard_cap_samples=4000,
+                    )
+                ),
+                speech_provider=WholeFrameSpeech((True,)),
+                decoder=RecordingDecoder(),
+                identity_preparer=PreparingIdentity(),
+                arbiter=InferenceArbiter(),
+                tape_capacity_bytes=1024,
+                tape_storage_root=root,
+            )
+E           TypeError: LiveCoordinator.__init__() got an unexpected keyword argument 'tape_storage_root'
+
+tests/test_live_coordinator.py:160: TypeError</failure></testcase></testsuite></testsuites>

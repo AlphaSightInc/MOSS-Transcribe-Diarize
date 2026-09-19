@@ -12,6 +12,7 @@ import uuid
 from collections import deque
 from dataclasses import asdict, dataclass, field, replace
 from enum import Enum
+from pathlib import Path
 from typing import Any, Awaitable, Callable, Mapping, Protocol, Sequence
 
 from .live_adapters import LiveProviderError
@@ -573,6 +574,7 @@ class LiveServiceRuntime:
         identity_preparer_factory: Callable[[], LiveIdentityPreparer],
         rolling_decoder_factory: Callable[[], Any] | None = None,
         terminal_finalizer: Any | None = None,
+        tape_storage_root: str | Path | None = None,
         draft_lane_seconds: float | None = None,
         draft_decoder_factory: Callable[[], Any] | None = None,
         session_id_factory: Callable[[], str] | None = None,
@@ -605,6 +607,7 @@ class LiveServiceRuntime:
         # names no finalizer never starts a terminal pass and every meeting reads
         # `not_started`, which is what the service does today.
         self._terminal_finalizer = terminal_finalizer
+        self._tape_storage_root = tape_storage_root
         self._session_id_factory = session_id_factory or (lambda: uuid.uuid4().hex)
         self._canonical_scheduler = _canonical_scheduler or _TransientCanonicalPumpScheduler()
         self._terminal_scheduler = _terminal_scheduler or _ThreadTerminalScheduler()
@@ -681,6 +684,7 @@ class LiveServiceRuntime:
                     else self._rolling_decoder_factory()
                 ),
                 tape_capacity_bytes=self.descriptor.bounds.max_tape_bytes,
+                tape_storage_root=self._tape_storage_root,
             )
             state = _RuntimeSession(
                 session_id=session_id,

@@ -6,6 +6,7 @@ import json
 import os
 import sqlite3
 import stat
+import tempfile
 import threading
 import time
 import wave
@@ -256,7 +257,8 @@ def make_runtime(
         ),
         frame_samples=2,
     )
-    return LiveServiceRuntime(
+    storage_owner = tempfile.TemporaryDirectory()
+    runtime = LiveServiceRuntime(
         descriptor=descriptor,
         endpoint_policy_factory=lambda: EndpointPolicy(
             EndpointPolicyConfig(
@@ -275,7 +277,10 @@ def make_runtime(
             else TerminalTranscriptFinalizer(runner=WholeMeetingStub(terminal_text))
         ),
         _terminal_scheduler=terminal_scheduler,
+        tape_storage_root=storage_owner.name,
     )
+    runtime._test_tape_storage_owner = storage_owner
+    return runtime
 
 
 async def provision(database: Path) -> dict[str, str]:

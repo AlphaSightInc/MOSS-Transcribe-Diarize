@@ -560,6 +560,7 @@ def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_fi
         max_new_tokens=12000,
         decoding="greedy",
         temperature=1.0,
+        file_work_root="/tmp/file-work",
     )
 
     assert phase2_web_cli._build_live_runtime_factory(args, file_runner) is runtime_factory
@@ -569,6 +570,7 @@ def test_phase2_live_cli_keeps_live_decode_separate_and_shares_file_only_with_fi
     assert canonical_runner is not file_runner
     assert kwargs == {
         "draft_lane_seconds": None,
+        "tape_storage_root": Path("/tmp/file-work/live-tapes"),
         "terminal_finalizer": (
             "terminal",
             {

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import fcntl
+import tempfile
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 
@@ -20,6 +23,7 @@ from moss_transcribe_diarize.app.live_session import (
     LiveIdentitySnapshot,
     LiveSession,
 )
+from moss_transcribe_diarize.app.live_tape import CompleteMixedTape
 
 
 def pcm(samples: int, byte: bytes = b"\0") -> bytes:
@@ -148,6 +152,62 @@ def test_coordinator_endpoint_queues_and_atomically_commits_frozen_pcm():
     assert snapshot.identity_snapshot.version == 1
     assert snapshot.committed[0].transcript == "[0][S01]stable[0.0625]"
     assert decoder.calls == [((0, 1000), 2000, b"aa")]
+
+
+@pytest.mark.parametrize("lane_count", (0, 1, 2))
+def test_mixed_and_lane_tapes_use_one_configured_root_and_release_all_scratch(lane_count):
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary) / "configured-live-tapes"
+        session = LiveSession(max_retained_samples=8000)
+        live = LiveCoordinator(
+            session_key="session-storage",
+            session=session,
+            endpoint_policy=EndpointPolicy(
+                EndpointPolicyConfig(
+                    min_speech_samples=1,
+                    min_silence_samples=1,
+                    hard_cap_samples=4000,
+                )
+            ),
+            speech_provider=WholeFrameSpeech((True,)),
+            decoder=RecordingDecoder(),
+            identity_preparer=PreparingIdentity(),
+            arbiter=InferenceArbiter(),
+            tape_capacity_bytes=1024,
+            tape_storage_root=root,
+        )
+        mixed = pcm(4, b"m")
+        lane_pcm = (
+            ("system", pcm(4, b"s")),
+            ("microphone", pcm(4, b"u")),
+        ) if lane_count == 2 else ()
+
+        live.accept_frame(
+            AudioFrame(
+                sequence=0,
+                pcm=mixed,
+                sample_count=4,
+                lane_pcm=lane_pcm,
+            )
+        )
+        if lane_count == 1:
+            live.lane_tapes["system"] = CompleteMixedTape(
+                epoch=session.epoch,
+                capacity_bytes=1024,
+                storage_root=root,
+            )
+            live.lane_tapes["system"].append(start_sample=0, pcm=pcm(4, b"s"))
+
+        tapes = (live.tape, *live.lane_tapes.values())
+        assert len(tapes) == 1 + lane_count
+        assert [tape.retained_bytes for tape in tapes] == [8] * (1 + lane_count)
+        for tape in tapes:
+            raw = fcntl.fcntl(tape._file.fileno(), fcntl.F_GETPATH, b"\0" * 1024)
+            assert Path(raw.split(b"\0", 1)[0].decode()).parent.resolve() == root.resolve()
+        released = live.release_tape()
+        assert released.retained_bytes == 0
+        assert all(tape.retained_bytes == 0 for tape in tapes)
+        assert list(root.iterdir()) == []
 
 
 def test_coordinator_prepares_against_captured_identity_snapshot():

@@ -26,6 +26,7 @@ real audio somewhere else.
 from __future__ import annotations
 
 import asyncio
+import tempfile
 import unittest
 from dataclasses import replace
 
@@ -72,8 +73,8 @@ def _runtime(
 
     base, witness = _decoders(rolling=rolling)
     descriptor = _descriptor()
-    return (
-        LiveServiceRuntime(
+    storage_owner = tempfile.TemporaryDirectory()
+    runtime = LiveServiceRuntime(
             descriptor=replace(
                 descriptor, bounds=replace(descriptor.bounds, max_tape_bytes=tape_bytes)
             ),
@@ -85,7 +86,11 @@ def _runtime(
             terminal_finalizer=finalizer,
             session_id_factory=lambda: "terminal-session",
             _terminal_scheduler=scheduler,
-        ),
+            tape_storage_root=storage_owner.name,
+        )
+    runtime._test_tape_storage_owner = storage_owner
+    return (
+        runtime,
         witness,
     )
 

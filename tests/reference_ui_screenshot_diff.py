@@ -214,7 +214,8 @@ def _ui_runtime() -> LiveServiceRuntime:
         ),
         frame_samples=2,
     )
-    return LiveServiceRuntime(
+    storage_owner = tempfile.TemporaryDirectory()
+    runtime = LiveServiceRuntime(
         descriptor=descriptor,
         endpoint_policy_factory=lambda: EndpointPolicy(
             EndpointPolicyConfig(
@@ -227,7 +228,10 @@ def _ui_runtime() -> LiveServiceRuntime:
         decoder_factory=_NoDecode,
         rolling_decoder_factory=None,
         identity_preparer_factory=_NoIdentity,
+        tape_storage_root=storage_owner.name,
     )
+    runtime._test_tape_storage_owner = storage_owner
+    return runtime
 
 
 async def _provision_account(database: Path, fixture: list[dict[str, Any]]) -> str:
