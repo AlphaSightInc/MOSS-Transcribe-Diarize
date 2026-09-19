@@ -11,6 +11,10 @@ from moss_transcribe_diarize.app.inference_scheduler import (
     InferenceDispatchScheduler,
     ScheduledInferenceRunner,
 )
+from tools.qualify.scheduler_timing import (
+    detects_whole_batch_hold,
+    project_dispatch_timings,
+)
 
 
 def _thread(target):
@@ -124,6 +128,12 @@ def test_cancelling_queued_background_never_calls_delegate():
     assert not running_errors
     assert len(queued_errors) == 1
     assert isinstance(queued_errors[0], InferenceDispatchCancelled)
+    cancelled = next(
+        timing for timing in scheduler.dispatch_timings()
+        if timing.owner_key == "cancelled"
+    )
+    assert cancelled.started_monotonic_ns is None
+    assert cancelled.ended_monotonic_ns is None
 
 
 def test_stopped_meeting_settlement_cannot_freeze_other_active_capture():
@@ -208,6 +218,119 @@ def test_scheduled_runner_keeps_scheduler_controls_out_of_decoder_options():
     assert calls == [("audio.wav", {"prompt": "keep"})]
     assert waiting == ["waiting"]
     assert started == ["started"]
+
+
+def test_scheduler_retains_content_free_dispatch_stage_clocks():
+    ticks = iter((10, 20, 30, 40))
+    scheduler = InferenceDispatchScheduler(
+        max_calls=2,
+        max_background_calls=1,
+        monotonic_ns=lambda: next(ticks),
+    )
+
+    assert scheduler.run_background("meeting-one", lambda: "done") == "done"
+
+    timing = scheduler.dispatch_timings()
+    assert len(timing) == 1
+    assert (
+        timing[0].owner_kind,
+        timing[0].owner_key,
+        timing[0].window_index,
+        timing[0].accepted_monotonic_ns,
+        timing[0].wait_started_monotonic_ns,
+        timing[0].started_monotonic_ns,
+        timing[0].ended_monotonic_ns,
+    ) == ("background", "meeting-one", 0, 10, 20, 30, 40)
+
+
+def test_dispatch_instrument_sees_window_yield_and_terminal_contention():
+    scheduler = InferenceDispatchScheduler(max_calls=2, max_background_calls=1)
+    first_started = threading.Event()
+    release_first = threading.Event()
+    trace: list[str] = []
+
+    def windows(owner: str, count: int, *, hold_first: bool = False) -> None:
+        for index in range(count):
+            def call(index=index):
+                trace.append(f"{owner}:{index}")
+                if hold_first and index == 0:
+                    first_started.set()
+                    assert release_first.wait(timeout=2)
+            scheduler.run_background(owner, call)
+
+    terminal_a, errors_a = _thread(
+        lambda: windows("terminal-a", 3, hold_first=True)
+    )
+    assert first_started.wait(timeout=1)
+    terminal_b, errors_b = _thread(lambda: windows("terminal-b", 3))
+    file_job, file_errors = _thread(lambda: windows("file", 1))
+    deadline = time.monotonic() + 1
+    while scheduler.snapshot().waiting_background_calls != 2:
+        assert time.monotonic() < deadline
+        time.sleep(0.001)
+    release_first.set()
+    for worker in (terminal_a, terminal_b, file_job):
+        worker.join(timeout=2)
+        assert not worker.is_alive()
+    assert not errors_a and not errors_b and not file_errors
+
+    file_position = trace.index("file:0")
+    assert any(item.startswith("terminal-") for item in trace[:file_position])
+    assert any(item.startswith("terminal-") for item in trace[file_position + 1:])
+    projection = project_dispatch_timings(
+        scheduler.dispatch_timings(),
+        file_keys={"file"},
+        terminal_keys={"terminal-a", "terminal-b"},
+    )
+    assert projection["file_acceptance_to_first_dispatch_sec"]["file"] >= 0
+    assert projection["terminal_vs_terminal_wait_sec"] > 0
+    assert projection["completed_windows"] == projection["full_denominator"] == 7
+    assert not detects_whole_batch_hold(
+        scheduler.dispatch_timings(), terminal_key="terminal-a", file_key="file"
+    )
+
+
+def test_dispatch_instrument_detects_scheduler_above_window_loop():
+    scheduler = InferenceDispatchScheduler(max_calls=1, max_background_calls=1)
+    first_started = threading.Event()
+    release_first = threading.Event()
+    trace: list[str] = []
+
+    def terminal_batch() -> None:
+        for index in range(3):
+            trace.append(f"terminal-wrong:{index}")
+            if index == 0:
+                first_started.set()
+                assert release_first.wait(timeout=2)
+
+    terminal, terminal_errors = _thread(
+        lambda: scheduler.run_background("terminal-wrong", terminal_batch)
+    )
+    assert first_started.wait(timeout=1)
+    file_job, file_errors = _thread(
+        lambda: scheduler.run_background(
+            "file-wrong", lambda: trace.append("file-wrong:0")
+        )
+    )
+    deadline = time.monotonic() + 1
+    while scheduler.snapshot().waiting_background_calls != 1:
+        assert time.monotonic() < deadline
+        time.sleep(0.001)
+    release_first.set()
+    terminal.join(timeout=2)
+    file_job.join(timeout=2)
+    assert not terminal_errors and not file_errors
+    assert trace == [
+        "terminal-wrong:0",
+        "terminal-wrong:1",
+        "terminal-wrong:2",
+        "file-wrong:0",
+    ]
+    assert detects_whole_batch_hold(
+        scheduler.dispatch_timings(),
+        terminal_key="terminal-wrong",
+        file_key="file-wrong",
+    )
 
 
 def test_scheduler_rejects_invalid_capacity_and_kind():
