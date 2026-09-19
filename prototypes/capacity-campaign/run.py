@@ -421,6 +421,24 @@ def main():
                     and 'committed_samples' in e['payload'] and 'runtime_monotonic_ns' in e['payload']]
                 row['canonical_lags'] = canonical_lags
                 row['p95_canonical_lag'] = percentile(canonical_lags,.95)
+                live_observations = [
+                    ((e['payload']['runtime_monotonic_ns']/1e9-started),
+                     max(0, (e['payload']['runtime_monotonic_ns']/1e9-started)
+                         - e['payload']['committed_samples']/sr))
+                    for e in row['events'] if e['kind']=='canonical_processed'
+                    and e['payload'].get('submitted') is True
+                    and 'runtime_monotonic_ns' in e['payload'] and 'committed_samples' in e['payload']
+                    and e['payload']['runtime_monotonic_ns']/1e9 < stopped]
+                row['live_backlog_measurements'] = dict(
+                    scope='Internal committed-audio frontier, not word-level display latency; pre-Stop only',
+                    observed_items=len(live_observations),
+                    p95_seconds=percentile([lag for _,lag in live_observations],.95),
+                    first_third_median_seconds=percentile([lag for at,lag in live_observations if at<=args.seconds/3],.5),
+                    last_third_median_seconds=percentile([lag for at,lag in live_observations if at>=args.seconds*2/3],.5),
+                    queue_wait_p95_ms=percentile([e['payload']['queue_wait_ms'] for e in row['events']
+                        if e['kind']=='canonical_processed' and e['payload'].get('queue_wait_ms') is not None],.95),
+                    processing_p95_ms=percentile([e['payload']['canonical_processing_elapsed_ms'] for e in row['events']
+                        if e['kind']=='canonical_processed' and e['payload'].get('canonical_processing_elapsed_ms') is not None],.95))
                 row['final_wer_bound_comparison'] = None if row['wer'] is None else row['wer'] <= QUALITY_BOUNDS['final_wer'][1]
                 row['first_text_api_comparison_4s'] = row.get('first_text_seconds',float('inf')) <= 4
                 row['clean'] = (ses['status']=='closed' and ses['finalization_status']=='final'
