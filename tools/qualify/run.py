@@ -206,7 +206,7 @@ class Bundle:
         self.gate('frontend', 'PASS' if code == 0 and result.get('collected',0)>0 else 'FAIL', result, elapsed, code)
         helper_counts = self.work/'helper-counts.json'
         code, elapsed, _ = self.command('bundle_helpers', [PY,'-m','pytest','-q','-p','no:cacheprovider',
-            '-p','tools.qualify.pytest_counts','--basetemp='+str(self.work/'helpers'),'tools/qualify/test_bundle.py'],
+            '-p','tools.qualify.pytest_counts','--basetemp='+str(self.work/'helpers'),'tools/qualify/test_bundle.py','tools/qualify/test_speaker_quality.py'],
             env=dict(self.env, MOSS_QUALIFY_COUNTS=str(helper_counts)))
         result = json.loads(helper_counts.read_text()) if helper_counts.exists() else {}
         self.gate('bundle_helpers', 'PASS' if code==0 and result.get('collected',0)>0 else 'FAIL', result, elapsed, code)
