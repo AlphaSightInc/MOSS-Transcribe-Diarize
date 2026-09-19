@@ -6,8 +6,11 @@ This command makes real decoder calls. --prepare-only performs no network I/O.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import base64
 import concurrent.futures
+import functools
+import http.server
 import importlib.util
 import json
 import math
@@ -21,6 +24,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import uuid
 import wave
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -66,6 +70,37 @@ def inputs(n, names=None):
     return result
 
 
+def upload_file(client, path):
+    boundary = f"moss-{uuid.uuid4().hex}"
+    body = (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="file"; filename="{path.name}"\r\n'
+        "Content-Type: audio/wav\r\n\r\n"
+    ).encode() + path.read_bytes() + f"\r\n--{boundary}--\r\n".encode()
+    headers = {"Content-Type": f"multipart/form-data; boundary={boundary}"}
+    if client._jar:
+        headers["Cookie"] = "; ".join(f"{key}={value}" for key, value in client._jar.items())
+    request = urllib.request.Request(
+        client._base + "/api/meetings/file", data=body, method="POST", headers=headers
+    )
+    with urllib.request.urlopen(request, context=client._context, timeout=60) as response:
+        return json.loads(response.read())
+
+
+def write_short_wav(source, destination, *, seconds=10):
+    with wave.open(str(source)) as reader:
+        frames = reader.readframes(min(reader.getnframes(), reader.getframerate() * seconds))
+        parameters = reader.getparams()
+    with wave.open(str(destination), "wb") as writer:
+        writer.setparams(parameters)
+        writer.writeframes(frames)
+
+
+class _QuietMediaHandler(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        del format, args
+
+
 METRICS_URL='http://127.0.0.1:18106/metrics'
 
 def metrics():
@@ -95,12 +130,26 @@ def main():
     parser.add_argument('--out',type=Path)
     parser.add_argument('--scratch',type=Path)
     parser.add_argument('--allow-contention',action='store_true')
+    parser.add_argument('--stop-first-at', type=int)
+    parser.add_argument('--mixed-background-at', type=float)
+    parser.add_argument('--mixed-url-port', type=int, default=17939)
+    parser.add_argument('--max-decoder-calls', type=int)
     args = parser.parse_args()
     if args.decoder_url:METRICS_URL=args.decoder_url.removesuffix('/v1').rstrip('/')+'/metrics'
     if args.seconds <= 0 or args.port in (7861, 7862):
         parser.error('positive duration and private app port required')
     if args.clips and len(args.clips) != args.sessions:
         parser.error('--clips needs one source per session')
+    if args.stop_first_at is not None and (
+        args.sessions != 2 or args.stop_first_at <= 0 or args.stop_first_at >= args.seconds
+    ):
+        parser.error('--stop-first-at needs two sessions and a boundary inside --seconds')
+    if args.mixed_background_at is not None and (
+        args.sessions != 2 or args.mixed_background_at < 0 or args.mixed_background_at >= args.seconds
+    ):
+        parser.error('--mixed-background-at needs two sessions and a boundary inside --seconds')
+    if args.max_decoder_calls is not None and args.max_decoder_calls <= 0:
+        parser.error('--max-decoder-calls must be positive')
     clips = inputs(args.sessions, args.clips)
     if args.prepare_only:
         print(json.dumps({'prepared': True, 'sessions': args.sessions, 'seconds': args.seconds,
@@ -119,14 +168,26 @@ def main():
     scratch = args.scratch or Path('.wp6-tmp') / stamp
     scratch.mkdir(parents=True)
     os.environ.update(TMPDIR=str(ROOT / scratch), PYTHONDONTWRITEBYTECODE='1', PYTHONPATH=str(ROOT))
+    if args.max_decoder_calls is not None:
+        os.environ['MOSS_MAX_OWN_DECODER_CALLS'] = str(args.max_decoder_calls)
     processes = []
+    media_server = None
     stop_monitor = threading.Event()
     paused = threading.Event()
     contaminated = threading.Event()
     lock = threading.Lock()
     resources, failures, clients, ids, outputs = [], [], [], [], []
+    background_work = None
+    campaign_started = threading.Event()
+    campaign_started_at = [None]
+    session_seconds = [args.stop_first_at or args.seconds, args.seconds]
+    if args.sessions != 2:
+        session_seconds = [args.seconds] * args.sessions
     result = dict(sessions=args.sessions, seconds=args.seconds, clean=False,
-                  quality_bounds=QUALITY_BOUNDS, resources=resources, failures=failures, session_results=outputs)
+                  argv=sys.argv,
+                  scheduled_session_seconds=session_seconds,
+                  quality_bounds=QUALITY_BOUNDS, resources=resources, failures=failures,
+                  session_results=outputs)
     state = scratch / 'state'
     state.mkdir()
 
@@ -200,6 +261,14 @@ def main():
                 emit(dict(kind='resource_failure', error=type(exc).__name__))
 
     try:
+        if args.mixed_background_at is not None:
+            short_media = scratch / 'mixed-short.wav'
+            write_short_wav(CORPUS / 'mono_javier_intro_50s' / 'audio.wav', short_media)
+            handler = functools.partial(_QuietMediaHandler, directory=str(scratch))
+            media_server = http.server.ThreadingHTTPServer(
+                ('127.0.0.1', args.mixed_url_port), handler
+            )
+            threading.Thread(target=media_server.serve_forever, daemon=True).start()
         tunnel = None
         if not args.decoder_url:
             tunnel = subprocess.Popen(['ssh', '-N', '-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes',
@@ -254,6 +323,104 @@ def main():
             clients.append(client)
             descriptor = client.call('GET', '/api/live/descriptor')['descriptor']
             ids.append(client.call('POST', '/api/live/sessions', {'source_revision': descriptor['source_revision']})['id'])
+        background_thread = None
+        if args.mixed_background_at is not None:
+            background_work = {
+                'scheduled_at_seconds': args.mixed_background_at,
+                'source_seconds': 10,
+                'file': {},
+                'url': {},
+                'operator_observations': [],
+                'clean': False,
+            }
+            result['mixed_background'] = background_work
+
+            def background_runner():
+                assert campaign_started.wait(timeout=30)
+                target = campaign_started_at[0] + args.mixed_background_at
+                time.sleep(max(0, target-time.monotonic()))
+                file_client = Client(base, context)
+                url_client = Client(base, context)
+                file_client.call('POST', '/api/workspace/bootstrap')
+                url_client.call('POST', '/api/workspace/bootstrap')
+                launch = threading.Barrier(2)
+
+                def start_file():
+                    launch.wait(timeout=5)
+                    accepted = time.monotonic()
+                    meeting = upload_file(file_client, short_media)
+                    background_work['file'].update(
+                        meeting_id=meeting['id'],
+                        accepted_at_seconds=accepted-campaign_started_at[0],
+                    )
+
+                def start_url():
+                    launch.wait(timeout=5)
+                    accepted = time.monotonic()
+                    meeting = url_client.call(
+                        'POST',
+                        '/api/meetings/url',
+                        {'url': f'http://127.0.0.1:{args.mixed_url_port}/{short_media.name}'},
+                    )
+                    background_work['url'].update(
+                        meeting_id=meeting['id'],
+                        accepted_at_seconds=accepted-campaign_started_at[0],
+                    )
+
+                try:
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                        futures = [pool.submit(start_file), pool.submit(start_url)]
+                        for future in futures:
+                            future.result()
+                    deadline = time.monotonic() + args.finalization_observe_seconds
+                    while True:
+                        meetings = []
+                        terminal = True
+                        for label, client in (('file', file_client), ('url', url_client)):
+                            meeting_id = background_work[label]['meeting_id']
+                            meeting = client.call('GET', f'/api/meetings/{meeting_id}')
+                            meetings.append((label, meeting))
+                            if meeting['status'] == 'active':
+                                terminal = False
+                        from moss_transcribe_diarize.app.phase2_control import request_control
+                        status = asyncio.run(request_control(state / 'control.sock', 'status'))
+                        owned_ids = {
+                            background_work['file']['meeting_id'],
+                            background_work['url']['meeting_id'],
+                        }
+                        background_work['operator_observations'].append({
+                            'at_seconds': time.monotonic()-campaign_started_at[0],
+                            'capacity': status['capacity'],
+                            'meetings': [
+                                row for row in status['active_meetings']
+                                if row.get('meeting_id') in owned_ids
+                            ],
+                        })
+                        if terminal:
+                            for label, meeting in meetings:
+                                background_work[label].update(
+                                    status=meeting['status'],
+                                    transcript_version=meeting.get('transcript_version'),
+                                    segments=len((meeting.get('transcript') or {}).get('segments', [])),
+                                    finished_at_seconds=time.monotonic()-campaign_started_at[0],
+                                )
+                            break
+                        if time.monotonic() >= deadline:
+                            raise RuntimeError('mixed_background_observation_limit_reached')
+                        time.sleep(.1)
+                    background_work['clean'] = all(
+                        background_work[label].get('status') == 'completed'
+                        and background_work[label].get('segments', 0) > 0
+                        for label in ('file', 'url')
+                    )
+                except Exception as exc:
+                    background_work['error'] = f'{type(exc).__name__}:{exc}'
+                    failures.append('mixed_background:'+type(exc).__name__)
+
+            background_thread = threading.Thread(
+                target=background_runner, name='mixed-file-url', daemon=True
+            )
+            background_thread.start()
         (out / 'descriptor.json').write_text(json.dumps(descriptor, indent=2)+'\n')
         # Smoke still needs a distinct foreign owner.
         outsider = Client(base, context)
@@ -263,8 +430,10 @@ def main():
         def worker(index):
             c, ident = clients[index], ids[index]
             name, pcm, reference = clips[index]
+            duration = session_seconds[index]
             row = dict(ordinal=index+1, clip=name, acknowledged_frames=0, retries=0,
-                       foreign_probes=0, wrong_owner_failures=0, updates=[], coverage_lags=[], events=[])
+                       scheduled_seconds=duration, foreign_probes=0, wrong_owner_failures=0,
+                       updates=[], coverage_lags=[], events=[])
             outputs.append(row)
             terminal = False
             event_seq = 0
@@ -301,7 +470,7 @@ def main():
                     row['updates'].append(dict(at_seconds=now, words=count,
                           newest_audio_age_seconds=now-max([s.get('end_sample',0)/sr for s in visible] or [0])))
                     seen = text
-                for bucket in range(min(int(now/cadence), int(args.seconds/cadence))):
+                for bucket in range(min(int(now/cadence), int(duration/cadence))):
                     end_sample = round((bucket+1)*cadence*sr)
                     if bucket not in coverage and any(s.get('start_sample',0) < end_sample and s.get('end_sample',0) >= end_sample for s in visible):
                         coverage.add(bucket)
@@ -323,9 +492,12 @@ def main():
             try:
                 barrier.wait(timeout=30)
                 started = time.monotonic()
+                if index == 0:
+                    campaign_started_at[0] = started
+                    campaign_started.set()
                 row['started_monotonic'] = started
                 paused_seconds = 0.0
-                for seq in range(int(args.seconds/cadence)):
+                for seq in range(int(duration/cadence)):
                     heartbeat()
                     pause_start = time.monotonic()
                     while paused.is_set():
@@ -388,11 +560,11 @@ def main():
                 ref = []
                 clip_seconds = len(pcm)/2/sr
                 partial_reference_rows = 0
-                for loop in range(math.ceil(args.seconds/clip_seconds)):
+                for loop in range(math.ceil(duration/clip_seconds)):
                     for r in reference:
-                        if loop*clip_seconds+r['end'] <= args.seconds:
+                        if loop*clip_seconds+r['end'] <= duration:
                             ref.extend(latency.words(r['text']))
-                        elif loop*clip_seconds+r['start'] < args.seconds:
+                        elif loop*clip_seconds+r['start'] < duration:
                             partial_reference_rows += 1
                 ref_set = set(ref)
                 row.update(status=ses['status'], finalization_status=ses['finalization_status'],
@@ -400,21 +572,21 @@ def main():
                            stop_to_outcome_seconds=ended-stopped,
                            accepted_samples=ses['accepted_samples'], accounted_samples=ses['accounted_samples'],
                            word_count=len(words), reference_word_count=len(ref), partial_reference_rows=partial_reference_rows,
-                           words_per_minute=len(words)/(args.seconds/60),
+                           words_per_minute=len(words)/(duration/60),
                            unique_vocabulary_retention=len(set(words)&ref_set)/len(ref_set) if ref_set else None,
                            wer=latency.edit_wer(ref,words) if not partial_reference_rows else None,
                            speakers=len({s['canonical_speaker'] for s in latency.segments_of(snap) if s.get('canonical_speaker')}),
                            unassigned_segments=sum(not s.get('canonical_speaker') for s in latency.segments_of(snap)),
                            identities_born_count=snap['identity_counts']['identities_born_count'],
                            p95_coverage_lag=percentile(row['coverage_lags'], .95),
-                           covered_buckets=len(coverage), expected_buckets=int(args.seconds/cadence))
+                           covered_buckets=len(coverage), expected_buckets=int(duration/cadence))
                 reopened = c.call('GET', f'/api/meetings/{ident}')
                 row['reopened_status'] = reopened.get('status')
                 from tools.qualify.speaker_quality import score_speakers
                 speaker_refs = [dict(r, start=loop*clip_seconds+r['start'],
-                    end=min(args.seconds,loop*clip_seconds+r['end']))
-                    for loop in range(math.ceil(args.seconds/clip_seconds)) for r in reference
-                    if loop*clip_seconds+r['start'] < args.seconds]
+                    end=min(duration,loop*clip_seconds+r['end']))
+                    for loop in range(math.ceil(duration/clip_seconds)) for r in reference
+                    if loop*clip_seconds+r['start'] < duration]
                 row['speaker_quality'] = score_speakers(speaker_refs, ses['effective_transcript'])
                 canonical_lags = [max(0, (e['payload']['runtime_monotonic_ns']/1e9-started)-e['payload']['committed_samples']/sr)
                     for e in row['events'] if e['kind']=='canonical_processed' and e['payload'].get('submitted') is True
@@ -433,8 +605,8 @@ def main():
                     scope='Internal committed-audio frontier, not word-level display latency; pre-Stop only',
                     observed_items=len(live_observations),
                     p95_seconds=percentile([lag for _,lag in live_observations],.95),
-                    first_third_median_seconds=percentile([lag for at,lag in live_observations if at<=args.seconds/3],.5),
-                    last_third_median_seconds=percentile([lag for at,lag in live_observations if at>=args.seconds*2/3],.5),
+                    first_third_median_seconds=percentile([lag for at,lag in live_observations if at<=duration/3],.5),
+                    last_third_median_seconds=percentile([lag for at,lag in live_observations if at>=duration*2/3],.5),
                     queue_wait_p95_ms=percentile([e['payload']['queue_wait_ms'] for e in row['events']
                         if e['kind']=='canonical_processed' and e['payload'].get('queue_wait_ms') is not None],.95),
                     processing_p95_ms=percentile([e['payload']['canonical_processing_elapsed_ms'] for e in row['events']
@@ -442,7 +614,7 @@ def main():
                 row['final_wer_bound_comparison'] = None if row['wer'] is None else row['wer'] <= QUALITY_BOUNDS['final_wer'][1]
                 row['first_text_api_comparison_4s'] = row.get('first_text_seconds',float('inf')) <= 4
                 row['clean'] = (ses['status']=='closed' and ses['finalization_status']=='final'
-                    and ses['accepted_samples']==ses['accounted_samples']==args.seconds*sr
+                    and ses['accepted_samples']==ses['accounted_samples']==duration*sr
                     and row['wrong_owner_failures']==0 and row['p95_canonical_lag'] is not None
                     and row['p95_canonical_lag']<=10 and row['reopened_status']=='completed')
             except Exception as exc:
@@ -464,17 +636,31 @@ def main():
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=args.sessions) as pool:
             list(pool.map(worker, range(args.sessions)))
+        if background_thread is not None:
+            background_thread.join(timeout=args.finalization_observe_seconds)
+            if background_thread.is_alive():
+                failures.append('mixed_background:join_timeout')
         stop_monitor.set()
         watcher.join(timeout=15)
         sample(app.pid)
         all_events = [e for row in outputs for e in row['events']]
-        lifecycle = sorted([e for e in all_events if e['kind'] in ('canonical_queued','canonical_started','canonical_processed')],
-                           key=lambda e:e['payload'].get('runtime_monotonic_ns',0))
+        overlap_stop = min(
+            row['stop_requested_monotonic'] for row in outputs
+            if row.get('stop_requested_monotonic') is not None
+        )
+        lifecycle = sorted([
+            e for e in all_events
+            if e['kind'] in ('canonical_queued','canonical_started','canonical_processed')
+            and e['payload'].get('runtime_monotonic_ns', 0) / 1e9 <= overlap_stop
+        ], key=lambda e:e['payload'].get('runtime_monotonic_ns',0))
+        result['fairness_scope'] = 'two-session overlap through first Stop'
         result['fairness'] = canonical_lifecycle_fairness(lifecycle,set(ids),maximum_skew=1)
         rss = [r['app_rss_bytes'] for r in resources]
         result['app_rss_growth_bytes'] = max(rss)-rss[0]
         try:
-            result['prestop_inference'] = prestop_inference_projection(all_events, accepted_audio_seconds=args.seconds*args.sessions)
+            result['prestop_inference'] = prestop_inference_projection(
+                all_events, accepted_audio_seconds=sum(session_seconds)
+            )
         except ValueError as exc:
             failures.append('inference_evidence:'+str(exc))
         pending = {}
@@ -494,6 +680,7 @@ def main():
         result['decoder_calls'] = sum(r['kind']=='start' for r in own_requests())
         result['maximum_own_inflight'] = max([r['active'] for r in own_requests()] or [0])
         result['clean'] = (all(r.get('clean') for r in outputs) and len(outputs)==args.sessions and not failures
+                           and (background_work is None or background_work.get('clean') is True)
                            and not contaminated.is_set() and (result['fairness'].get('passes') is True
                                or (args.sessions==1 and result['fairness'].get('applicability')=='not_applicable'))
                            and result['app_rss_growth_bytes']<=4*1024**3
@@ -508,6 +695,9 @@ def main():
         failures.append(type(exc).__name__+(':'+str(exc) if isinstance(exc,RuntimeError) else ''))
     finally:
         stop_monitor.set()
+        if media_server is not None:
+            media_server.shutdown()
+            media_server.server_close()
         for process in reversed(processes):
             if process.poll() is None:
                 process.terminate()

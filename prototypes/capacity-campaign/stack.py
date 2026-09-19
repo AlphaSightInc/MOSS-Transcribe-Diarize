@@ -27,6 +27,7 @@ lock = threading.Lock()
 active = 0
 sent = 0
 completed = 0
+max_calls = int(os.environ.get('MOSS_MAX_OWN_DECODER_CALLS', '0')) or None
 
 
 def record(kind, **extra):
@@ -44,10 +45,23 @@ def counted(self, *args, **kwargs):
         while (state / 'PAUSE').exists():
             time.sleep(.25)
         with lock:
+            if max_calls is not None and sent >= max_calls:
+                record('ceiling_refusal', ceiling=max_calls)
+                raise RuntimeError('campaign_decoder_call_ceiling_reached')
             active += 1
             sent += 1
             ordinal = sent
-            record('start', ordinal=ordinal)
+            try:
+                with wave.open(io.BytesIO(kwargs['file_bytes'])) as wav:
+                    audio_seconds = wav.getnframes() / wav.getframerate()
+            except Exception:
+                audio_seconds = None
+            record(
+                'start',
+                ordinal=ordinal,
+                audio_seconds=audio_seconds,
+                thread=threading.current_thread().name,
+            )
         started = time.monotonic()
         try:
             if stub_latency is not None:

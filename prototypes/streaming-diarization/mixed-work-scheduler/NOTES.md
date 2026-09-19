@@ -58,3 +58,29 @@ Actual File window duration, provider interaction, saved words/identity, and end
 backlog remain pending a counted real run after lease.
 
 `results.json` retains full arrival/start/finish/display records and summary projections.
+
+## Counted mixed confirmation
+
+The root-owned capacity bench is reused; this slice adds only the mixed-work controls needed to
+falsify the production scheduler. The stub dry run dispatched zero central requests and proved:
+two Live sessions, concurrent File+URL admission, a visible queued batch count of one, saved File
+and URL transcripts, asymmetric session durations, peak two calls, and the local hard ceiling.
+
+With the exclusive scheduling lease, global sent 80, ceiling 330, and reserved ports 17930/17939:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. .venv/bin/python \
+  prototypes/capacity-campaign/run.py \
+  --sessions 2 --seconds 180 \
+  --clips mono_javier_intro_50s discussion_jamie_dimon_180s \
+  --stop-first-at 120 --mixed-background-at 15 --mixed-url-port 17939 \
+  --decoder-url http://127.0.0.1:19135/v1 \
+  --stack-port 17930 --scratch .sched-tmp/mixed-180 \
+  --out evidence/round2/scheduling-mixed-180 \
+  --max-decoder-calls 245
+```
+
+Expected usage is 190–220 calls. `--max-decoder-calls 245` refuses locally before the lease's
+250-call increment. The receipt retains exact argv, per-call audio duration/thread/start/finish,
+operator capacity observations, saved File/URL status and segment counts, per-session queue and
+processing clocks, pre-Stop backlog, Stop-to-final time, and provider peak concurrency.
