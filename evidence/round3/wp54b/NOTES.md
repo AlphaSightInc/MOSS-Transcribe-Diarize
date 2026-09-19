@@ -27,5 +27,23 @@ Tool decision: exact ordered Levenshtein alignment reuses
 `lane_word_oracle.distance`; a headed Playwright harness observes existing
 `.utt-text` nodes and live API states and retains content-free server events.
 
-Deterministic pre-spend verdict: **SUPPORTED**, `7 passed in 0.02 s`.
+Deterministic pre-spend verdict: **SUPPORTED**, initially `7 passed in 0.02 s`.
 Decoder use at this verdict: **0/200**.
+
+Headed verdict: **INCOMPLETE / receipt rejected**. One 300-second headed
+Chromium session used 165/200 requests, peak one in flight, with 916 reference
+words, 150 API state changes, 138 DOM state changes, and 586 visibility
+observations. Chrome reported hidden zero times, so hidden-tab behavior is
+UNMEASURED. The session reported `closed` while finalization still reported
+`running`; no terminal event was retained. More importantly, the first flat
+ordered implementation allowed repeated words to align across non-overlapping
+source intervals, producing a minimum near -293 seconds. Those are not valid
+final visible-word latencies. The receipt is retained as a falsifying attempt,
+not evidence. No rerun is possible inside the remaining 35-request budget.
+
+Post-falsifier correction: matching now requires observed and independently
+authored source intervals to overlap, while retaining the existing ordered word
+score separately. A new repeated-word violating control keeps the late
+occurrence missing. Deterministic suite: **8 passed in 0.02 s**. The headed
+harness now also waits for terminal finalization, but is unmeasured after this
+correction.

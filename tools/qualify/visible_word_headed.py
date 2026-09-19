@@ -21,6 +21,7 @@ from urllib.parse import urlsplit
 from tests.phase2.browser_support import BrowserExecutableMissing, browser_executable
 from tools.qualify.visible_words import (
     TranscriptObservation,
+    TranscriptSegment,
     evaluate_visible_word_surfaces,
     reference_words_from_intervals,
 )
@@ -104,15 +105,34 @@ async def _api(page: Any, path: str) -> dict[str, Any]:
     return result["body"]
 
 
-def _snapshot_text(body: dict[str, Any]) -> str:
+def _snapshot_segments(body: dict[str, Any]) -> tuple[TranscriptSegment, ...]:
     session = ((body.get("snapshot") or {}).get("session") or {})
     transcript = session.get("effective_transcript") or []
     segments = transcript.get("segments", []) if isinstance(transcript, dict) else transcript
-    return " ".join(
-        str(segment.get("text", ""))
+    return tuple(
+        TranscriptSegment(
+            float(segment["start_sample"]) / 16_000,
+            float(segment["end_sample"]) / 16_000,
+            str(segment.get("text", "")),
+        )
         for segment in segments
         if isinstance(segment, dict)
+        and float(segment.get("end_sample", 0)) > float(segment.get("start_sample", 0))
     )
+
+
+def _dom_segments(rows: list[dict[str, object]], frontier: float) -> tuple[TranscriptSegment, ...]:
+    result = []
+    for index, row in enumerate(rows):
+        start = float(row["start"])
+        end = (
+            float(rows[index + 1]["start"])
+            if index + 1 < len(rows)
+            else max(start + 0.001, frontier)
+        )
+        if end > start:
+            result.append(TranscriptSegment(start, end, str(row["text"])))
+    return tuple(result)
 
 
 async def _meeting_id(page: Any, before: set[str]) -> str:
@@ -209,25 +229,37 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                     await start_button.click()
                     meeting_id = await _meeting_id(page, before)
                     next_event = -1
-                    last_api = None
-                    last_dom = None
+                    last_api: tuple[TranscriptSegment, ...] | None = None
+                    last_dom: tuple[TranscriptSegment, ...] | None = None
 
                     async def observe() -> None:
                         nonlocal next_event, last_api, last_dom, hidden_observations
                         nonlocal total_visibility_observations, final_status, finalization_status
                         snapshot = await _api(page, f"/api/live/sessions/{meeting_id}/snapshot")
                         api_elapsed = time.monotonic() - started
-                        api_text = _snapshot_text(snapshot)
-                        if api_text != last_api:
-                            api_observations.append(TranscriptObservation(api_elapsed, api_text))
-                            last_api = api_text
-                        dom = await page.locator(".utt-text").evaluate_all(
-                            "nodes => nodes.map(node => node.textContent || '').join(' ')"
+                        api_segments = _snapshot_segments(snapshot)
+                        if api_segments != last_api:
+                            api_observations.append(
+                                TranscriptObservation(api_elapsed, api_segments)
+                            )
+                            last_api = api_segments
+                        dom_rows = await page.locator(".utt").evaluate_all(
+                            """nodes => nodes.map(node => {
+                              const clock = (node.querySelector('.utt-time')?.textContent || '').trim();
+                              const parts = clock.split(':').map(Number);
+                              const start = parts.length === 3
+                                ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+                                : Number.NaN;
+                              return {start, text: node.querySelector('.utt-text')?.textContent || ''};
+                            }).filter(row => Number.isFinite(row.start))"""
                         )
                         dom_elapsed = time.monotonic() - started
-                        if dom != last_dom:
-                            dom_observations.append(TranscriptObservation(dom_elapsed, dom))
-                            last_dom = dom
+                        dom_segments = _dom_segments(dom_rows, min(dom_elapsed, args.seconds))
+                        if dom_segments != last_dom:
+                            dom_observations.append(
+                                TranscriptObservation(dom_elapsed, dom_segments)
+                            )
+                            last_dom = dom_segments
                         hidden = bool(await page.evaluate("document.hidden"))
                         total_visibility_observations += 1
                         hidden_observations += int(hidden)
@@ -254,7 +286,7 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                     while time.monotonic() < terminal_deadline:
                         await asyncio.sleep(args.poll_seconds)
                         await observe()
-                        if final_status in {"closed", "failed", "aborted"}:
+                        if finalization_status in {"final", "failed", "unavailable"}:
                             break
                     else:
                         raise RuntimeError("headed live session did not reach terminal state")

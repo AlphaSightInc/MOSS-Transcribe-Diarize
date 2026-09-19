@@ -21,6 +21,7 @@ class ReferenceWord:
     id: str
     text: str
     source_end_sec: float
+    source_start_sec: float = 0.0
 
     def __post_init__(self) -> None:
         normalized = words(self.text)
@@ -28,16 +29,43 @@ class ReferenceWord:
             raise ValueError("reference words require a unique id and one normalized token")
         if not math.isfinite(self.source_end_sec) or self.source_end_sec < 0:
             raise ValueError("reference source_end_sec must be finite and non-negative")
+        if (
+            not math.isfinite(self.source_start_sec)
+            or self.source_start_sec < 0
+            or self.source_start_sec >= self.source_end_sec
+        ):
+            raise ValueError("reference source interval must have positive duration")
+
+
+@dataclass(frozen=True, slots=True)
+class TranscriptSegment:
+    source_start_sec: float
+    source_end_sec: float
+    text: str
+
+    def __post_init__(self) -> None:
+        if (
+            not math.isfinite(self.source_start_sec)
+            or not math.isfinite(self.source_end_sec)
+            or self.source_start_sec < 0
+            or self.source_start_sec >= self.source_end_sec
+        ):
+            raise ValueError("transcript segment source interval must have positive duration")
 
 
 @dataclass(frozen=True, slots=True)
 class TranscriptObservation:
     elapsed_sec: float
-    text: str
+    segments: tuple[TranscriptSegment, ...]
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.elapsed_sec) or self.elapsed_sec < 0:
             raise ValueError("observation elapsed_sec must be finite and non-negative")
+        if any(
+            later.source_start_sec < earlier.source_start_sec
+            for earlier, later in zip(self.segments, self.segments[1:])
+        ):
+            raise ValueError("transcript segments must be source ordered")
 
 
 def reference_words_from_intervals(
@@ -50,23 +78,49 @@ def reference_words_from_intervals(
     for interval in intervals:
         interval_id = interval.get("id")
         text = interval.get("text")
+        start = interval.get("start")
         end = interval.get("end")
         if not isinstance(interval_id, str) or not isinstance(text, str):
             raise ValueError("each source interval requires string id and text")
-        if not isinstance(end, (int, float)) or isinstance(end, bool):
-            raise ValueError("each source interval requires numeric end")
+        if (
+            not isinstance(start, (int, float))
+            or isinstance(start, bool)
+            or not isinstance(end, (int, float))
+            or isinstance(end, bool)
+        ):
+            raise ValueError("each source interval requires numeric start and end")
         for index, token in enumerate(words(text)):
             word_id = f"{interval_id}:{index}"
             if word_id in seen:
                 raise ValueError(f"duplicate reference word id: {word_id}")
             seen.add(word_id)
-            result.append(ReferenceWord(word_id, token, float(end)))
+            result.append(ReferenceWord(word_id, token, float(end), float(start)))
     if not result:
         raise ValueError("reference population must contain at least one word")
     return tuple(result)
 
 
-def _ordered_statuses(reference: Sequence[str], hypothesis: Sequence[str]) -> list[str]:
+def _overlaps(reference: ReferenceWord, observed: TranscriptSegment) -> bool:
+    return (
+        observed.source_start_sec < reference.source_end_sec
+        and observed.source_end_sec > reference.source_start_sec
+    )
+
+
+def _observed_words(
+    observation: TranscriptObservation,
+) -> list[tuple[str, TranscriptSegment]]:
+    return [
+        (token, segment)
+        for segment in observation.segments
+        for token in words(segment.text)
+    ]
+
+
+def _ordered_statuses(
+    reference: Sequence[ReferenceWord],
+    hypothesis: Sequence[tuple[str, TranscriptSegment]],
+) -> list[str]:
     """Return exact ordered-Levenshtein status for every reference occurrence."""
 
     width = len(hypothesis) + 1
@@ -77,8 +131,8 @@ def _ordered_statuses(reference: Sequence[str], hypothesis: Sequence[str]) -> li
     for i, expected in enumerate(reference, 1):
         current = [(i, 0, i, 0)]
         back[i * width] = 2  # reference deletion
-        for j, observed in enumerate(hypothesis, 1):
-            if expected == observed:
+        for j, (observed, segment) in enumerate(hypothesis, 1):
+            if expected.text == observed and _overlaps(expected, segment):
                 current.append(previous[j - 1])
                 back[i * width + j] = 0
                 continue
@@ -96,16 +150,6 @@ def _ordered_statuses(reference: Sequence[str], hypothesis: Sequence[str]) -> li
             current.append(score)
             back[i * width + j] = operation
         previous = current
-
-    # The existing scorer remains authoritative for the aggregate edit counts.
-    scored = distance(list(reference), list(hypothesis))
-    if previous[-1] != (
-        scored["substitutions"] + scored["omissions"] + scored["additions"],
-        scored["substitutions"],
-        scored["omissions"],
-        scored["additions"],
-    ):
-        raise AssertionError("ordered alignment diverged from lane_word_oracle.distance")
 
     statuses = ["missing"] * len(reference)
     i, j = len(reference), len(hypothesis)
@@ -145,10 +189,10 @@ def evaluate_visible_word_stream(
     ):
         raise ValueError("observations must be monotonic")
 
-    expected = [reference.text for reference in references]
+    observed = [_observed_words(observation) for observation in observations]
     states = [
-        _ordered_statuses(expected, words(observation.text))
-        for observation in observations
+        _ordered_statuses(references, tokens)
+        for tokens in observed
     ]
     word_rows = []
     for index, reference in enumerate(references):
@@ -172,6 +216,7 @@ def evaluate_visible_word_stream(
         word_rows.append(
             {
                 "reference_word_id": reference.id,
+                "source_start_sec": reference.source_start_sec,
                 "source_end_sec": reference.source_end_sec,
                 "final_status": final_status,
                 "final_wrong": final_status == "wrong",
@@ -186,6 +231,7 @@ def evaluate_visible_word_stream(
                 ),
             }
         )
+    final_observed = [token for token, _ in observed[-1]]
     result = {
         "schema": "moss-visible-words.v1",
         "clock": clock_name,
@@ -194,6 +240,9 @@ def evaluate_visible_word_stream(
         "final_correct": sum(row["final_status"] == "correct" for row in word_rows),
         "final_wrong": sum(row["final_wrong"] for row in word_rows),
         "final_missing": sum(row["final_missing"] for row in word_rows),
+        "ordered_word_score": distance(
+            [reference.text for reference in references], final_observed
+        ),
         "words": word_rows,
     }
     result["first_correct_distribution"] = _latency_distribution(
@@ -298,11 +347,24 @@ def visible_word_percentile(
 def _observations(rows: object) -> tuple[TranscriptObservation, ...]:
     if not isinstance(rows, list):
         raise ValueError("observations must be a list")
-    return tuple(
-        TranscriptObservation(float(row["elapsed_sec"]), str(row["text"]))
-        for row in rows
-        if isinstance(row, dict)
-    )
+    result = []
+    for row in rows:
+        if not isinstance(row, dict) or not isinstance(row.get("segments"), list):
+            raise ValueError("each observation requires source-timed segments")
+        result.append(
+            TranscriptObservation(
+                float(row["elapsed_sec"]),
+                tuple(
+                    TranscriptSegment(
+                        float(segment["start"]),
+                        float(segment["end"]),
+                        str(segment["text"]),
+                    )
+                    for segment in row["segments"]
+                ),
+            )
+        )
+    return tuple(result)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -334,6 +396,7 @@ if __name__ == "__main__":
 
 __all__ = [
     "ReferenceWord",
+    "TranscriptSegment",
     "TranscriptObservation",
     "evaluate_visible_word_stream",
     "evaluate_visible_word_surfaces",

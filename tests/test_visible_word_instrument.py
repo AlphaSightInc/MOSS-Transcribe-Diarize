@@ -5,6 +5,7 @@ import pytest
 from tools.qualify.visible_words import (
     ReferenceWord,
     TranscriptObservation,
+    TranscriptSegment,
     evaluate_visible_word_stream,
     evaluate_visible_word_surfaces,
     reference_words_from_intervals,
@@ -15,13 +16,21 @@ from tools.qualify.visible_words import (
 
 def _references(*words: str) -> tuple[ReferenceWord, ...]:
     return tuple(
-        ReferenceWord(id=f"word-{index}", text=word, source_end_sec=float(index))
+        ReferenceWord(
+            id=f"word-{index}",
+            text=word,
+            source_start_sec=float(index),
+            source_end_sec=float(index + 1),
+        )
         for index, word in enumerate(words)
     )
 
 
 def _observe(at: float, text: str) -> TranscriptObservation:
-    return TranscriptObservation(elapsed_sec=at, text=text)
+    return TranscriptObservation(
+        elapsed_sec=at,
+        segments=(TranscriptSegment(0.0, 100.0, text),),
+    )
 
 
 def test_perfect_immediate_fixture_is_finite_and_stable():
@@ -87,10 +96,10 @@ def test_wrong_and_omitted_words_stay_null_and_in_full_denominator():
         "population_p50_sec": None,
         "population_p95_sec": None,
         "finite_only": {
-            "minimum_sec": 4.0,
-            "p50_sec": 4.0,
-            "p95_sec": 4.0,
-            "maximum_sec": 4.0,
+            "minimum_sec": 3.0,
+            "p50_sec": 3.0,
+            "p95_sec": 3.0,
+            "maximum_sec": 3.0,
         },
     }
     by_id = {row["reference_word_id"]: row for row in result["words"]}
@@ -111,16 +120,39 @@ def test_bucket_coverage_only_result_is_refused_as_visible_word_evidence():
 def test_reference_intervals_supply_ordered_ids_and_source_end_times():
     references = reference_words_from_intervals(
         (
-            {"id": "phrase-a", "text": "Alpha one", "end": 1.25},
-            {"id": "phrase-b", "text": "Beta", "end": 2.5},
+            {"id": "phrase-a", "text": "Alpha one", "start": 0.25, "end": 1.25},
+            {"id": "phrase-b", "text": "Beta", "start": 1.25, "end": 2.5},
         )
     )
 
-    assert [(row.id, row.text, row.source_end_sec) for row in references] == [
-        ("phrase-a:0", "alpha", 1.25),
-        ("phrase-a:1", "one", 1.25),
-        ("phrase-b:0", "beta", 2.5),
+    assert [
+        (row.id, row.text, row.source_start_sec, row.source_end_sec)
+        for row in references
+    ] == [
+        ("phrase-a:0", "alpha", 0.25, 1.25),
+        ("phrase-a:1", "one", 0.25, 1.25),
+        ("phrase-b:0", "beta", 1.25, 2.5),
     ]
+
+
+def test_repeated_word_cannot_credit_the_wrong_source_interval():
+    references = (
+        ReferenceWord("early-alpha", "alpha", 1.0, 0.0),
+        ReferenceWord("late-alpha", "alpha", 11.0, 10.0),
+    )
+    result = evaluate_visible_word_stream(
+        references,
+        (
+            TranscriptObservation(
+                2.0, (TranscriptSegment(0.0, 1.0, "alpha"),)
+            ),
+        ),
+        clock_name="api_arrival",
+    )
+
+    assert result["words"][0]["final_status"] == "correct"
+    assert result["words"][1]["final_status"] == "missing"
+    assert result["words"][1]["first_correct_sec"] is None
 
 
 def test_api_and_dom_clocks_remain_separate():
