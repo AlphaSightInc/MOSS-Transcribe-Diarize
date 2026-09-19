@@ -2125,10 +2125,10 @@ def active_live_session_count(runtime: LiveServiceRuntime) -> int:
     """Count raw capture/drain sessions, excluding closed terminal background work."""
 
     with runtime._lock:
-        snapshots = (runtime._snapshot(state).session for state in runtime._sessions.values())
         return sum(
-            snapshot.status not in LIVE_TERMINAL_SESSION_STATUSES
-            for snapshot in snapshots
+            state.terminal_failure is None
+            and state.session.lifecycle_status not in LIVE_TERMINAL_SESSION_STATUSES
+            for state in runtime._sessions.values()
         )
 
 

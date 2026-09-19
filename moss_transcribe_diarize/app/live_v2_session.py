@@ -92,6 +92,12 @@ class LiveV2Session:
         with self._lock:
             return self._status
 
+    @property
+    def lifecycle_status(self) -> str:
+        """Return lifecycle state without projecting lane accounting details."""
+
+        return self.status
+
     def accept(self, frame: LiveV2Frame) -> LiveV2Ack:
         if not isinstance(frame, LiveV2Frame):
             raise ValueError("frame must be LiveV2Frame.")

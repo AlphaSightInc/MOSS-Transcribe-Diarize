@@ -9,6 +9,8 @@ from moss_transcribe_diarize.app.live_endpoint import (
     EndpointSpan,
     SpeechObservation,
 )
+from moss_transcribe_diarize.app.live_session import LiveSession
+from moss_transcribe_diarize.app.live_v2_session import LiveV2Session
 
 
 def obs(start: int, end: int, speech: bool, *, provider_endpoint_sample: int | None = None) -> SpeechObservation:
@@ -113,3 +115,14 @@ def test_observations_must_be_ordered_gap_free_and_valid():
         policy.observe(obs(2, 2, False))
     with pytest.raises(EndpointPolicyError, match="provider endpoint hint"):
         policy.observe(obs(2, 4, False, provider_endpoint_sample=5))
+
+
+def test_session_lifecycle_accessors_do_not_build_snapshots(monkeypatch):
+    mono = LiveSession(max_retained_samples=1)
+    lanes = LiveV2Session(max_retained_samples=1)
+
+    monkeypatch.setattr(mono, "snapshot", lambda: pytest.fail("mono snapshot projected"))
+    monkeypatch.setattr(lanes, "snapshot", lambda: pytest.fail("v2 snapshot projected"))
+
+    assert mono.lifecycle_status == "active"
+    assert lanes.lifecycle_status == "active"

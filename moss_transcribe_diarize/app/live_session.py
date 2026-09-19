@@ -388,6 +388,7 @@ class LiveSession:
         self._lane_revision_frontiers: dict[str, int] = {}
         self._finalization_status = "not_started"
         self._text_revision_refusals: dict[str, int] = {}
+
         # Bumped only by the three things that change what a reader is shown -- a published
         # span, an applied label revision, an applied text revision -- so the effective
         # surface is rebuilt when it changed and not once per poll.
@@ -398,6 +399,12 @@ class LiveSession:
         self._provisional_generation = 0
         self._provisional: ProvisionalSuffix | None = None
         self._waiters: list[asyncio.Event] = []
+
+    @property
+    def lifecycle_status(self) -> str:
+        """Return lifecycle state without projecting transcript or identity state."""
+
+        return self._status
 
     @property
     def epoch(self) -> int:
