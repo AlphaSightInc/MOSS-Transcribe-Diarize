@@ -12,3 +12,12 @@ Run from `/private/tmp/moss-round3-20260919/runner` at
 - `npm --prefix frontend run build` → clean, 34 modules transformed.
 
 No new failure required qualification. `git status --short` remained empty after build.
+
+After fresh attempt 1 exposed the root verification-document layout violation, the contract
+was moved to `docs/verify/wp49-wp53/` and the gates were rerun at `bb576ad0`:
+
+- Layout control: **1 passed**.
+- Backend: **2,052 passed, 5 skipped, 37 subtests**, 0 failed, 184.74 s. A
+  post-summary Playwright `TargetClosedError` cleanup warning did not change exit/status.
+- Frontend: **28 files / 288 tests passed**, 2.68 s; typecheck and build clean.
+- Worktree remained clean after build.
