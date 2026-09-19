@@ -255,7 +255,8 @@ class Bench(Harness):
         outcomes=[]
         for label,url in [('unreachable','http://127.0.0.1:1/no.mp3'),('404',self.media+'/missing.mp3'),('non-media',self.media+'/source.html')]:
             done,visible=await self.upload(url=url)
-            reason=any(x in visible.lower() for x in ('unsupported','error:','unreachable','404','connection refused','resolve','not accepted:'))
+            reason=any(x in visible.lower() for x in ('unsupported','error:','unreachable','404','connection refused','resolve','not accepted:',
+                'url media could not be acquired','the url returned a web page instead of direct media'))
             outcomes.append({'variant':label,'statuses':[r['status'] for r in done],'visible_reason':reason,'ui_message':visible,'ok':reason and all(r['status']!='active' for r in done)})
         return {'variants':outcomes,'ok':all(r['ok'] for r in outcomes)}
     async def downloads(self):

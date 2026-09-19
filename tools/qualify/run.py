@@ -89,7 +89,7 @@ class Bundle:
                          identity=dict(git_sha=self.sha, tree_clean=not dirty, dirty_files=dirty,
                                        python=sys.version.split()[0], node=subprocess.check_output(['node','--version'], text=True).strip(),
                                        decoder_tunnel_url='http://127.0.0.1:18125', decoder_base_url='http://127.0.0.1:19125/v1'),
-                         gates=[], request_budget=args.budget, long=args.long, integrated_candidate='625dbaa97b55fb5be66e06db9bfe4d8c985fd935')
+                         gates=[], request_budget=args.budget, long=args.long, integrated_candidate=self.sha)
         self.current = None
         self.gate('tree_clean', 'PASS' if not dirty else 'FAIL', measurements={'dirty_files':dirty})
 
@@ -393,6 +393,9 @@ class Bundle:
                         meeting=json.loads((scratch/(case+'.meeting.json')).read_text())
                         observed=words(' '.join(r['text'] for r in meeting['transcript']['segments']))
                         projection['ordered_word_score']=distance(reference,observed)
+                        from tools.qualify.speaker_quality import score_speakers
+                        projection['speaker_quality']=score_speakers(
+                            [r for r in refs if r['end']<=seconds], meeting['transcript']['segments'])
                     rows.append(projection)
                 self.gate(name,aggregate(statuses,code),counts(statuses),elapsed,code,
                     reason='Existing WP16 bars: durable outcome, five exact exports for speech, audio download, foreign read 404; failures typed and visible after reload',measurements=rows)
@@ -509,7 +512,7 @@ class Bundle:
             self.data['determinism'] = dict(baseline=str(self.args.compare),status='PASS' if not deltas else 'FAIL',deltas=deltas,
                                            same_candidate=baseline['identity']['git_sha']==self.sha, intentionally_omitted_long_gates=omitted)
         self.flush()
-        print('BUNDLE '+str(self.out.relative_to(ROOT)),flush=True)
+        print('BUNDLE '+str(self.out),flush=True)
 
 
 FILE_FAILURES={'empty.wav':'transcode_failed','text.mp3':'transcode_failed','missing':'acquisition_http_404',
