@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -21,6 +23,9 @@ from tests.test_live_session import publish_prepared
 
 
 SECOND = 16_000
+RESERVED_LABELS = json.loads(
+    (Path(__file__).parents[1] / "fixtures" / "reserved_speaker_labels.json").read_text()
+)["reserved_labels"]
 
 
 async def _seed(app, sign_in_session: str, status: str) -> str:
@@ -160,6 +165,68 @@ def test_passage_correction_rejects_missing_or_ambiguous_targets(tmp_path):
                 f"/api/meetings/{meeting_id}/passages/speaker", json=payload
             )
             assert response.status_code == expected, (payload, response.text)
+
+
+@pytest.mark.parametrize("label", RESERVED_LABELS)
+def test_passage_correction_rejects_reserved_new_person_labels(tmp_path, label):
+    database = tmp_path / "m.sqlite"
+    sessions = asyncio.run(provision(database))
+    app = create_phase2_app(database_path=database)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.portal.call(_seed, app, sessions["a"], "completed")
+        before = client.get(f"/api/meetings/{meeting_id}").json()
+
+        rejected = client.put(
+            f"/api/meetings/{meeting_id}/passages/speaker",
+            json={"segment_ids": ["seg_0001"], "label": label},
+        )
+
+        assert rejected.status_code == 400, (label, rejected.text)
+        after = client.get(f"/api/meetings/{meeting_id}").json()
+        assert after["transcript"] == before["transcript"]
+        assert client.get("/api/voiceprints").json() == {"voiceprints": []}
+
+
+def test_passage_correction_accepts_reserved_looking_words_inside_real_names(tmp_path):
+    fixture_labels = json.loads(
+        (Path(__file__).parents[1] / "fixtures" / "reserved_speaker_labels.json").read_text()
+    )["allowed_labels"]
+    database = tmp_path / "m.sqlite"
+    sessions = asyncio.run(provision(database))
+    app = create_phase2_app(database_path=database)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        for label in fixture_labels:
+            meeting_id = client.portal.call(_seed, app, sessions["a"], "completed")
+            accepted = client.put(
+                f"/api/meetings/{meeting_id}/passages/speaker",
+                json={"segment_ids": ["seg_0001"], "label": label},
+            )
+            assert accepted.status_code == 200, (label, accepted.text)
+
+
+def test_interrupted_settled_meeting_remains_correctable_without_voiceprint(tmp_path):
+    database = tmp_path / "m.sqlite"
+    sessions = asyncio.run(provision(database))
+    app = create_phase2_app(database_path=database)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.portal.call(_seed, app, sessions["a"], "interrupted")
+        before = client.get(f"/api/meetings/{meeting_id}").json()
+        words = [segment["text"] for segment in before["transcript"]["segments"]]
+
+        corrected = client.put(
+            f"/api/meetings/{meeting_id}/passages/speaker",
+            json={"segment_ids": ["seg_0002"], "label": "Blair"},
+        )
+
+        assert corrected.status_code == 200, corrected.text
+        after = client.get(f"/api/meetings/{meeting_id}").json()
+        assert after["status"] == "interrupted"
+        assert after["needs_review"] is True
+        assert [segment["text"] for segment in after["transcript"]["segments"]] == words
+        assert client.get("/api/voiceprints").json() == {"voiceprints": []}
 
 
 def test_terminal_mapper_abstention_stays_unknown_after_save_and_reopen(tmp_path):

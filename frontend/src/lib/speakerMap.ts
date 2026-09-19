@@ -6,6 +6,13 @@ export const UNKNOWN_SPEAKER_ID = "UNKNOWN";
 const UNATTRIBUTED_SPEAKER_ID = "S00";
 const UNKNOWN_DISPLAY_LABEL = "Preview";
 const UNCERTAIN_DISPLAY_LABEL = "Speaker uncertain";
+const RESERVED_UNCERTAINTY_LABELS = new Set([
+  "",
+  "s00",
+  "unknown",
+  "speaker uncertain",
+  "preview"
+]);
 
 export function normalizeDisplayNameForStorage(displayName: unknown): string {
   return typeof displayName === "string" ? normalizeInlineWhitespace(displayName) : "";
@@ -65,15 +72,14 @@ export function isBackendUnknownSpeakerId(speakerId: unknown): boolean {
   return normalized === UNKNOWN_SPEAKER_ID || normalized === UNATTRIBUTED_SPEAKER_ID;
 }
 
+export function isReservedUncertaintyLabel(displayName: unknown): boolean {
+  const normalized = normalizeDisplayNameForStorage(displayName).toLocaleLowerCase();
+  return RESERVED_UNCERTAINTY_LABELS.has(normalized) || /^speaker_\d+$/.test(normalized);
+}
+
 export function isUnidentifiedSpeakerLabel(displayName: unknown): boolean {
   const normalizedDisplayName = normalizeDisplayNameForStorage(displayName);
-  if (normalizedDisplayName.length === 0) {
-    return true;
-  }
-
-  return normalizedDisplayName === UNKNOWN_SPEAKER_ID || normalizedDisplayName === UNATTRIBUTED_SPEAKER_ID ||
-    normalizedDisplayName === UNCERTAIN_DISPLAY_LABEL ||
-    SPEAKER_ID_PATTERN.test(normalizedDisplayName);
+  return isReservedUncertaintyLabel(normalizedDisplayName);
 }
 
 export function buildSpeakerColorMap(

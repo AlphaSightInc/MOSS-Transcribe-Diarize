@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
+import reservedSpeakerLabels from "../../../tests/fixtures/reserved_speaker_labels.json";
 import {
   buildConsecutiveSpeakerMap,
   buildSpeakerColorMap,
   buildSpeakerLegendKey,
   isUnidentifiedSpeakerLabel,
+  isReservedUncertaintyLabel,
   resolveDisplayLabel,
   resolveSpeakerColorToken,
   resolveVisibleSpeakerLabel
@@ -58,4 +60,19 @@ describe("speakerMap", () => {
     expect(resolveDisplayLabel("S00")).toBe("Speaker uncertain");
     expect(resolveVisibleSpeakerLabel("S00", new Map())).toBe("Speaker uncertain");
   });
+
+  it.each(reservedSpeakerLabels.reserved_labels)(
+    "keeps backend and frontend reserved-label contract for %s",
+    label => {
+      expect(isReservedUncertaintyLabel(label)).toBe(true);
+      expect(isUnidentifiedSpeakerLabel(label)).toBe(true);
+    }
+  );
+
+  it.each(reservedSpeakerLabels.allowed_labels)(
+    "does not reserve real person label %s",
+    label => {
+      expect(isReservedUncertaintyLabel(label)).toBe(false);
+    }
+  );
 });

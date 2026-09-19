@@ -129,8 +129,10 @@ export function MeetingHistory() {
       return;
     }
     setError(null);
+    const generation = refreshGenerationRef.current;
     try {
       const opened = await openMeeting(meetingId);
+      if (generation !== refreshGenerationRef.current) return;
       replaceSelection(opened);
       publishMeeting(opened, true);
       const panel = document.getElementById("transcript-panel");

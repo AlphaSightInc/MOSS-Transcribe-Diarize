@@ -1,0 +1,16 @@
+{
+  "reserved_labels": [
+    "S00",
+    "s00",
+    "  S00  ",
+    "UNKNOWN",
+    "Speaker uncertain",
+    "Preview",
+    "SPEAKER_01"
+  ],
+  "allowed_labels": [
+    "Alex",
+    "Speaker",
+    "Preview guest"
+  ]
+}
