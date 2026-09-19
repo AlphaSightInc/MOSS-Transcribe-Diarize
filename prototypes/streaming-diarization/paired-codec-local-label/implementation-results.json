@@ -1,0 +1,278 @@
+{
+  "implementation": [
+    {
+      "arm": "wav",
+      "summary": {
+        "resolver": "album",
+        "canonical_speakers": 3,
+        "unattributed_segments": 3
+      },
+      "refinement": {
+        "evaluated": 117,
+        "reassigned": 3,
+        "abstained": 3,
+        "unchanged": 111
+      },
+      "baseline_source_score": {
+        "canonical_person": {
+          "S01": "Bill Ackman",
+          "S03": "Keyu Jin",
+          "S02": "Lex Fridman"
+        },
+        "people": {
+          "Bill Ackman": {
+            "correct": 157.11,
+            "confused": 11.97,
+            "unknown": 0.0,
+            "missed": 7.92
+          },
+          "Keyu Jin": {
+            "correct": 118.62,
+            "confused": 5.1,
+            "unknown": 0.0,
+            "missed": 11.28
+          },
+          "Lex Fridman": {
+            "correct": 56.28,
+            "confused": 1.98,
+            "unknown": 0.0,
+            "missed": 4.74
+          }
+        }
+      },
+      "candidate_source_score": {
+        "canonical_person": {
+          "S01": "Bill Ackman",
+          "S03": "Keyu Jin",
+          "S02": "Lex Fridman"
+        },
+        "people": {
+          "Bill Ackman": {
+            "correct": 161.88,
+            "confused": 5.31,
+            "unknown": 1.89,
+            "missed": 7.92
+          },
+          "Keyu Jin": {
+            "correct": 118.62,
+            "confused": 2.04,
+            "unknown": 3.06,
+            "missed": 11.28
+          },
+          "Lex Fridman": {
+            "correct": 56.28,
+            "confused": 1.98,
+            "unknown": 0.0,
+            "missed": 4.74
+          }
+        }
+      }
+    },
+    {
+      "arm": "mp3",
+      "summary": {
+        "resolver": "album",
+        "canonical_speakers": 3,
+        "unattributed_segments": 3
+      },
+      "refinement": {
+        "evaluated": 134,
+        "reassigned": 3,
+        "abstained": 3,
+        "unchanged": 128
+      },
+      "baseline_source_score": {
+        "canonical_person": {
+          "S01": "Bill Ackman",
+          "S03": "Keyu Jin",
+          "S02": "Lex Fridman"
+        },
+        "people": {
+          "Bill Ackman": {
+            "correct": 162.85,
+            "confused": 13.62,
+            "unknown": 0.0,
+            "missed": 0.53
+          },
+          "Keyu Jin": {
+            "correct": 127.32,
+            "confused": 7.68,
+            "unknown": 0.0,
+            "missed": 0.0
+          },
+          "Lex Fridman": {
+            "correct": 58.65,
+            "confused": 4.35,
+            "unknown": 0.0,
+            "missed": 0.0
+          }
+        }
+      },
+      "candidate_source_score": {
+        "canonical_person": {
+          "S01": "Bill Ackman",
+          "S03": "Keyu Jin",
+          "S02": "Lex Fridman"
+        },
+        "people": {
+          "Bill Ackman": {
+            "correct": 168.9,
+            "confused": 5.83,
+            "unknown": 1.74,
+            "missed": 0.53
+          },
+          "Keyu Jin": {
+            "correct": 127.32,
+            "confused": 4.53,
+            "unknown": 3.15,
+            "missed": 0.0
+          },
+          "Lex Fridman": {
+            "correct": 58.65,
+            "confused": 4.35,
+            "unknown": 0.0,
+            "missed": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "retained_wav": [
+    {
+      "minutes": 6,
+      "summary": {
+        "resolver": "album",
+        "canonical_speakers": 3,
+        "unattributed_segments": 3
+      },
+      "refinement": {
+        "evaluated": 107,
+        "reassigned": 2,
+        "abstained": 3,
+        "unchanged": 102
+      },
+      "baseline_source_score": {
+        "canonical_person": {
+          "S01": "Bill Ackman",
+          "S03": "Keyu Jin",
+          "S02": "Lex Fridman"
+        },
+        "people": {
+          "Bill Ackman": {
+            "correct": 147.21,
+            "confused": 8.76,
+            "unknown": 0.0,
+            "missed": 6.03
+          },
+          "Keyu Jin": {
+            "correct": 119.01,
+            "confused": 5.1,
+            "unknown": 0.0,
+            "missed": 10.89
+          },
+          "Lex Fridman": {
+            "correct": 56.19,
+            "confused": 2.07,
+            "unknown": 0.0,
+            "missed": 4.74
+          }
+        }
+      },
+      "candidate_source_score": {
+        "canonical_person": {
+          "S01": "Bill Ackman",
+          "S03": "Keyu Jin",
+          "S02": "Lex Fridman"
+        },
+        "people": {
+          "Bill Ackman": {
+            "correct": 149.79,
+            "confused": 4.32,
+            "unknown": 1.86,
+            "missed": 6.03
+          },
+          "Keyu Jin": {
+            "correct": 119.01,
+            "confused": 2.04,
+            "unknown": 3.06,
+            "missed": 10.89
+          },
+          "Lex Fridman": {
+            "correct": 56.19,
+            "confused": 2.07,
+            "unknown": 0.0,
+            "missed": 4.74
+          }
+        }
+      }
+    },
+    {
+      "minutes": 30,
+      "summary": {
+        "resolver": "album",
+        "canonical_speakers": 3,
+        "unattributed_segments": 15
+      },
+      "refinement": {
+        "evaluated": 575,
+        "reassigned": 14,
+        "abstained": 15,
+        "unchanged": 546
+      },
+      "baseline_source_score": {
+        "canonical_person": {
+          "S01": "Bill Ackman",
+          "S03": "Keyu Jin",
+          "S02": "Lex Fridman"
+        },
+        "people": {
+          "Bill Ackman": {
+            "correct": 720.3,
+            "confused": 56.61,
+            "unknown": 0.0,
+            "missed": 33.09
+          },
+          "Keyu Jin": {
+            "correct": 593.46,
+            "confused": 25.5,
+            "unknown": 0.0,
+            "missed": 56.04
+          },
+          "Lex Fridman": {
+            "correct": 281.25,
+            "confused": 9.9,
+            "unknown": 0.0,
+            "missed": 23.85
+          }
+        }
+      },
+      "candidate_source_score": {
+        "canonical_person": {
+          "S01": "Bill Ackman",
+          "S03": "Keyu Jin",
+          "S02": "Lex Fridman"
+        },
+        "people": {
+          "Bill Ackman": {
+            "correct": 741.93,
+            "confused": 25.53,
+            "unknown": 9.45,
+            "missed": 33.09
+          },
+          "Keyu Jin": {
+            "correct": 593.46,
+            "confused": 10.2,
+            "unknown": 15.3,
+            "missed": 56.04
+          },
+          "Lex Fridman": {
+            "correct": 281.25,
+            "confused": 9.9,
+            "unknown": 0.0,
+            "missed": 23.85
+          }
+        }
+      }
+    }
+  ]
+}

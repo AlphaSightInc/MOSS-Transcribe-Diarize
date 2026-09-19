@@ -1,0 +1,7955 @@
+{
+  "canonical_person_for_scoring_only": {
+    "S01": "Bill Ackman",
+    "S02": "Lex Fridman",
+    "S03": "Keyu Jin"
+  },
+  "clean_control_seconds": {
+    "candidate_correct_seconds": 1309.26,
+    "seconds": 1309.26
+  },
+  "decisions": [
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.73,
+      "local": "S01",
+      "scores": {
+        "S01": 0.824963,
+        "S02": 0.251212,
+        "S03": 0.038218
+      },
+      "segment": 0,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.8,
+      "local": "S01",
+      "scores": {
+        "S01": 0.915674,
+        "S02": 0.038751,
+        "S03": 0.027578
+      },
+      "segment": 1,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.66,
+      "local": "S01",
+      "scores": {
+        "S01": 0.67942,
+        "S02": 0.091895,
+        "S03": 0.08475
+      },
+      "segment": 2,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.79,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 0
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 0
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 0
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 0
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 0
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 0
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 0
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 0
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 0
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 0
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 0
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 0
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 0
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 0
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 1
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 1
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 1
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 1
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 1
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 1
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 1
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 1
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 1
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 1
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 1
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.83,
+      "local": "S03",
+      "scores": {
+        "S01": 0.081344,
+        "S02": 0.131724,
+        "S03": 0.868953
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 1
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 1
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 1
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 2
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 2
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 2
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 2
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 2
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 2
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 2
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 2
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 2
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 2
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 2
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 2
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 2
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 2
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 3
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 3
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 3
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 3
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 3
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 3
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 3
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 3
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 3
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 3
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 3
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 3
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 3
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 3
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 4
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 4
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 4
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 4
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 4
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 4
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 4
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 4
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 4
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 4
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 4
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 4
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 4
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 4
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 5
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 5
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 5
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 5
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 5
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 5
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 5
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 5
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 5
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 5
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 5
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 5
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 5
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 5
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 6
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 6
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 6
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 6
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 6
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 6
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 6
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 6
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 6
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 6
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 6
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 6
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 6
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 6
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 7
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 7
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 7
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 7
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 7
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 7
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 7
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 7
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 7
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 7
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 7
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 7
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 7
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 7
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 8
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 8
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 8
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 8
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 8
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 8
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 8
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 8
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 8
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 8
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 8
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 8
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 8
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 8
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 9
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 9
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 9
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 9
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 9
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 9
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 9
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 9
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 9
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 9
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 9
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 9
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 9
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 9
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 10
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 10
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 10
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 10
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 10
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 10
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 10
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 10
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 10
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 10
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 10
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.83,
+      "local": "S03",
+      "scores": {
+        "S01": 0.081344,
+        "S02": 0.131724,
+        "S03": 0.868953
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 10
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 10
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 10
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 11
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 11
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 11
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 11
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 11
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 11
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 11
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 11
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 11
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 11
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 11
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 11
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 11
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 11
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 12
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 12
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 12
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 12
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 12
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 12
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 12
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 12
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 12
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 12
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 12
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.83,
+      "local": "S03",
+      "scores": {
+        "S01": 0.081344,
+        "S02": 0.131724,
+        "S03": 0.868953
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 12
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 12
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 12
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.33,
+      "local": "S01",
+      "scores": {
+        "S01": 0.917064,
+        "S02": 0.168153,
+        "S03": 0.008769
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.05,
+      "local": "S01",
+      "scores": {
+        "S01": 0.922636,
+        "S02": 0.064314,
+        "S03": 0.088316
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S01",
+      "scores": {
+        "S01": 0.815494,
+        "S02": 0.0,
+        "S03": 0.081497
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.5,
+      "local": "S01",
+      "scores": {
+        "S01": 0.83746,
+        "S02": 0.06851,
+        "S03": 0.030203
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S01",
+      "scores": {
+        "S01": 0.897538,
+        "S02": 0.032512,
+        "S03": 0.006481
+      },
+      "segment": 31,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S01",
+      "scores": {
+        "S01": 0.76528,
+        "S02": 0.033746,
+        "S03": 0.112933
+      },
+      "segment": 32,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 5.12,
+      "local": "S01",
+      "scores": {
+        "S01": 0.895511,
+        "S02": 0.190709,
+        "S03": 0.0
+      },
+      "segment": 33,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.663598,
+        "S02": 0.055341,
+        "S03": 0.039071
+      },
+      "segment": 34,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 13
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 13
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 13
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 13
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 6.06,
+      "local": "S02",
+      "scores": {
+        "S01": 0.037904,
+        "S02": 0.823593,
+        "S03": 0.083655
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": false,
+      "duration": 2.22,
+      "local": "S02",
+      "scores": {
+        "S01": 0.755945,
+        "S02": 0.273938,
+        "S03": 0.038264
+      },
+      "segment": 30,
+      "truth": "Bill Ackman",
+      "window": 13
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 13
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 13
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 13
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 13
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 13
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 13
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 13
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 13
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 13
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 0.27,
+      "local": "S01",
+      "scores": {
+        "S01": 0.918109,
+        "S02": 0.166058,
+        "S03": 0.008391
+      },
+      "segment": 3,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.11,
+      "local": "S01",
+      "scores": {
+        "S01": 0.919568,
+        "S02": 0.07729,
+        "S03": 0.093902
+      },
+      "segment": 4,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.44,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851945,
+        "S02": 0.035598,
+        "S03": 0.045166
+      },
+      "segment": 5,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S01",
+      "scores": {
+        "S01": 0.913017,
+        "S02": 0.117697,
+        "S03": 0.075132
+      },
+      "segment": 6,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 2.31,
+      "local": "S01",
+      "scores": {
+        "S01": 0.840725,
+        "S02": 0.0,
+        "S03": 0.026559
+      },
+      "segment": 7,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.23,
+      "local": "S01",
+      "scores": {
+        "S01": 0.816233,
+        "S02": 0.000244,
+        "S03": 0.072672
+      },
+      "segment": 8,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 6.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.879227,
+        "S02": 0.181755,
+        "S03": 0.0
+      },
+      "segment": 10,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 4.53,
+      "local": "S01",
+      "scores": {
+        "S01": 0.851119,
+        "S02": 0.05222,
+        "S03": 0.039347
+      },
+      "segment": 13,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 8.34,
+      "local": "S01",
+      "scores": {
+        "S01": 0.888677,
+        "S02": 0.154303,
+        "S03": 0.008852
+      },
+      "segment": 14,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 3.21,
+      "local": "S01",
+      "scores": {
+        "S01": 0.850782,
+        "S02": 0.039805,
+        "S03": 0.043699
+      },
+      "segment": 15,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S01",
+      "candidate_correct": true,
+      "current": "S01",
+      "current_correct": true,
+      "duration": 1.08,
+      "local": "S01",
+      "scores": {
+        "S01": 0.801352,
+        "S02": 0.083629,
+        "S03": 0.012343
+      },
+      "segment": 16,
+      "truth": "Bill Ackman",
+      "window": 14
+    },
+    {
+      "candidate": "S00",
+      "candidate_correct": false,
+      "current": "S01",
+      "current_correct": false,
+      "duration": 1.65,
+      "local": "S01",
+      "scores": {
+        "S01": 0.501005,
+        "S02": 0.052984,
+        "S03": 0.525474
+      },
+      "segment": 17,
+      "truth": "Keyu Jin",
+      "window": 14
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.14,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.814885,
+        "S03": 0.020309
+      },
+      "segment": 9,
+      "truth": "Lex Fridman",
+      "window": 14
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 0.72,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.615441,
+        "S03": 0.024027
+      },
+      "segment": 12,
+      "truth": "Lex Fridman",
+      "window": 14
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.41,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.793012,
+        "S03": 0.070042
+      },
+      "segment": 23,
+      "truth": "Lex Fridman",
+      "window": 14
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 5.88,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.779318,
+        "S03": 0.112819
+      },
+      "segment": 24,
+      "truth": "Lex Fridman",
+      "window": 14
+    },
+    {
+      "candidate": "S02",
+      "candidate_correct": true,
+      "current": "S02",
+      "current_correct": true,
+      "duration": 4.89,
+      "local": "S02",
+      "scores": {
+        "S01": 0.0,
+        "S02": 0.792557,
+        "S03": 0.083807
+      },
+      "segment": 29,
+      "truth": "Lex Fridman",
+      "window": 14
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 1.2,
+      "local": "S03",
+      "scores": {
+        "S01": 0.021395,
+        "S02": 0.091923,
+        "S03": 0.827944
+      },
+      "segment": 18,
+      "truth": "Keyu Jin",
+      "window": 14
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 2.22,
+      "local": "S03",
+      "scores": {
+        "S01": 0.028165,
+        "S02": 0.039085,
+        "S03": 0.827451
+      },
+      "segment": 19,
+      "truth": "Keyu Jin",
+      "window": 14
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.82,
+      "local": "S03",
+      "scores": {
+        "S01": 0.106457,
+        "S02": 0.053107,
+        "S03": 0.926251
+      },
+      "segment": 20,
+      "truth": "Keyu Jin",
+      "window": 14
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.12,
+      "local": "S03",
+      "scores": {
+        "S01": 0.103289,
+        "S02": 0.078987,
+        "S03": 0.891888
+      },
+      "segment": 21,
+      "truth": "Keyu Jin",
+      "window": 14
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.48,
+      "local": "S03",
+      "scores": {
+        "S01": 0.084916,
+        "S02": 0.094439,
+        "S03": 0.909333
+      },
+      "segment": 22,
+      "truth": "Keyu Jin",
+      "window": 14
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 0.84,
+      "local": "S03",
+      "scores": {
+        "S01": 0.038753,
+        "S02": 0.057398,
+        "S03": 0.570514
+      },
+      "segment": 25,
+      "truth": "Keyu Jin",
+      "window": 14
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 4.86,
+      "local": "S03",
+      "scores": {
+        "S01": 0.083356,
+        "S02": 0.13104,
+        "S03": 0.870813
+      },
+      "segment": 26,
+      "truth": "Keyu Jin",
+      "window": 14
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 5.85,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068457,
+        "S02": 0.040146,
+        "S03": 0.908229
+      },
+      "segment": 27,
+      "truth": "Keyu Jin",
+      "window": 14
+    },
+    {
+      "candidate": "S03",
+      "candidate_correct": true,
+      "current": "S03",
+      "current_correct": true,
+      "duration": 6.18,
+      "local": "S03",
+      "scores": {
+        "S01": 0.068195,
+        "S02": 0.063128,
+        "S03": 0.892685
+      },
+      "segment": 28,
+      "truth": "Keyu Jin",
+      "window": 14
+    }
+  ],
+  "inputs": {
+    "audio": "/private/tmp/moss-independent-assessment-20260918/.wp25runtime/20260919T033906530769Z/files/media/long.wav",
+    "eligible_interval_seconds": 0.5,
+    "fixture": "/private/tmp/moss-round2-20260919/identity/evidence/mvpfix/wp28/fixture-30.json",
+    "match_margin": 0.1,
+    "match_score": 0.35,
+    "reference": "/private/tmp/moss-independent-assessment-20260918/.wp25runtime/20260919T033906530769Z/files/media/reference.jsonl"
+  },
+  "outcome_seconds": {
+    "candidate_correct_seconds": 1657.32,
+    "candidate_unknown_seconds": 24.75,
+    "changed_seconds": 55.83,
+    "current_confused_seconds": 55.83,
+    "current_correct_seconds": 1626.24,
+    "scored_seconds": 1682.07
+  },
+  "population": {
+    "eligible_intervals": 575,
+    "local_labels": 45,
+    "windows": 15
+  },
+  "purity": [
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 0
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 0
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 0
+    },
+    {
+      "aligned_seconds": 76.14,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978986,
+      "truth_seconds": {
+        "Bill Ackman": 74.54,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 1
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 1
+    },
+    {
+      "aligned_seconds": 39.54,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.54
+      },
+      "window": 1
+    },
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 2
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 2
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 2
+    },
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 3
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 3
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 3
+    },
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 4
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 4
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 4
+    },
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 5
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 5
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 5
+    },
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 6
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 6
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 6
+    },
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 7
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 7
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 7
+    },
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 8
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 8
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 8
+    },
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 9
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 9
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 9
+    },
+    {
+      "aligned_seconds": 76.14,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978986,
+      "truth_seconds": {
+        "Bill Ackman": 74.54,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 10
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 10
+    },
+    {
+      "aligned_seconds": 39.54,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.54
+      },
+      "window": 10
+    },
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 11
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 11
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 11
+    },
+    {
+      "aligned_seconds": 76.14,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978986,
+      "truth_seconds": {
+        "Bill Ackman": 74.54,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 12
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 12
+    },
+    {
+      "aligned_seconds": 39.54,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.54
+      },
+      "window": 12
+    },
+    {
+      "aligned_seconds": 76.17,
+      "eligible_intervals": 24,
+      "local": "S01",
+      "majority_fraction": 0.978994,
+      "truth_seconds": {
+        "Bill Ackman": 74.57,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.58
+      },
+      "window": 13
+    },
+    {
+      "aligned_seconds": 23.43,
+      "eligible_intervals": 6,
+      "local": "S02",
+      "majority_fraction": 0.800683,
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "window": 13
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 13
+    },
+    {
+      "aligned_seconds": 52.17,
+      "eligible_intervals": 15,
+      "local": "S01",
+      "majority_fraction": 0.974123,
+      "truth_seconds": {
+        "Bill Ackman": 50.82,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.33
+      },
+      "window": 14
+    },
+    {
+      "aligned_seconds": 20.04,
+      "eligible_intervals": 5,
+      "local": "S02",
+      "majority_fraction": 0.928643,
+      "truth_seconds": {
+        "Bill Ackman": 0.75,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.61
+      },
+      "window": 14
+    },
+    {
+      "aligned_seconds": 39.57,
+      "eligible_intervals": 9,
+      "local": "S03",
+      "majority_fraction": 1.0,
+      "truth_seconds": {
+        "Keyu Jin": 39.57
+      },
+      "window": 14
+    }
+  ],
+  "schema": "moss-local-label-purity-prototype.v1"
+}

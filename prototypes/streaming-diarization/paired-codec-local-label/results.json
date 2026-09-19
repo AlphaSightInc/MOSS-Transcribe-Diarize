@@ -1,0 +1,2277 @@
+{
+  "sent_before": 69,
+  "sent_after": 80,
+  "requests": 11,
+  "cases": [
+    {
+      "case": "composite-wav-0",
+      "source": "/private/tmp/moss-independent-assessment-20260918/.wp25runtime/20260919T033906530769Z/files/media/long.wav",
+      "source_start": 0.0,
+      "duration": 150.0,
+      "generated_tokens": 1211,
+      "elapsed_sec": 6.064123,
+      "segments": [
+        {
+          "start": 0.54,
+          "end": 3.27,
+          "speaker": "S01",
+          "text": "To figure out what something's worth and you have to kind of weigh it."
+        },
+        {
+          "start": 4.08,
+          "end": 8.88,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term is a voting"
+        },
+        {
+          "start": 8.88,
+          "end": 9.54,
+          "speaker": "S01",
+          "text": "machine."
+        },
+        {
+          "start": 9.54,
+          "end": 15.33,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the short term."
+        },
+        {
+          "start": 15.33,
+          "end": 19.38,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine, you're much more accurate."
+        },
+        {
+          "start": 19.68,
+          "end": 21.12,
+          "speaker": "S01",
+          "text": "It's going to tell you what something is worth."
+        },
+        {
+          "start": 21.36,
+          "end": 25.5,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage of"
+        },
+        {
+          "start": 25.5,
+          "end": 27.81,
+          "speaker": "S01",
+          "text": "the market because it's really here to to help you."
+        },
+        {
+          "start": 28.05,
+          "end": 29.25,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        },
+        {
+          "start": 29.61,
+          "end": 33.75,
+          "speaker": "S02",
+          "text": "And that same way, there's a kind of difference between speculation and investing."
+        },
+        {
+          "start": 33.87,
+          "end": 40.08,
+          "speaker": "S01",
+          "text": "Yeah, speculation is just, it's a bit like buying, trading crypto, right?"
+        },
+        {
+          "start": 40.11,
+          "end": 40.44,
+          "speaker": "S01",
+          "text": "You're"
+        },
+        {
+          "start": 40.68,
+          "end": 41.4,
+          "speaker": "S02",
+          "text": "Strong words."
+        },
+        {
+          "start": 42.21,
+          "end": 46.71,
+          "speaker": "S01",
+          "text": "Well, short term trading crypto, maybe in the long run, there's intrinsic value."
+        },
+        {
+          "start": 46.74,
+          "end": 55.08,
+          "speaker": "S01",
+          "text": "But the, you know, it's many investors, you know, in a bubble going into the, you know,"
+        },
+        {
+          "start": 55.08,
+          "end": 58.29,
+          "speaker": "S01",
+          "text": "the crash were really just pure speculators."
+        },
+        {
+          "start": 58.29,
+          "end": 59.37,
+          "speaker": "S01",
+          "text": "They didn't know what things were worth."
+        },
+        {
+          "start": 59.37,
+          "end": 61.02,
+          "speaker": "S01",
+          "text": "They just knew they were kind of the same thing."
+        },
+        {
+          "start": 61.02,
+          "end": 62.22,
+          "speaker": "S03",
+          "text": "There's paternalism."
+        },
+        {
+          "start": 63.03,
+          "end": 65.25,
+          "speaker": "S03",
+          "text": "They think that they're responsible for you."
+        },
+        {
+          "start": 66.12,
+          "end": 71.94,
+          "speaker": "S03",
+          "text": "But deference, a certain amount of deference to authority is not blind submission."
+        },
+        {
+          "start": 72.06,
+          "end": 78.18,
+          "speaker": "S03",
+          "text": "It's been written implicitly in our contract for thousands of years that in exchange for"
+        },
+        {
+          "start": 78.18,
+          "end": 84.66,
+          "speaker": "S03",
+          "text": "some deference, we are given stability, security and peace, and hopefully prosperity."
+        },
+        {
+          "start": 85.05,
+          "end": 89.46,
+          "speaker": "S02",
+          "text": "So there is some element that we have in the West of freedom of the individual."
+        },
+        {
+          "start": 89.76,
+          "end": 95.64,
+          "speaker": "S02",
+          "text": "So that a little bit of the rebel is allowed in balance with the deference to authority?"
+        },
+        {
+          "start": 95.88,
+          "end": 96.72,
+          "speaker": "S03",
+          "text": "Yeah, absolutely."
+        },
+        {
+          "start": 96.84,
+          "end": 101.67,
+          "speaker": "S03",
+          "text": "Without that, how can you have this radical dynamic entrepreneurialism you see in China?"
+        },
+        {
+          "start": 102.42,
+          "end": 108.27,
+          "speaker": "S03",
+          "text": "If you don't have a sense of self, a sense of the fact that you can find opportunities,"
+        },
+        {
+          "start": 108.27,
+          "end": 114.45,
+          "speaker": "S03",
+          "text": "you look for opportunities, you, you, you drive opportunities, it's all self motivated."
+        },
+        {
+          "start": 114.96,
+          "end": 121.02,
+          "speaker": "S02",
+          "text": "Is there still a young kid in China that's able to dream to be, to figure out what"
+        },
+        {
+          "start": 121.02,
+          "end": 123.24,
+          "speaker": "S02",
+          "text": "something's worth and you have to kind of weigh it?"
+        },
+        {
+          "start": 124.05,
+          "end": 128.46,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term"
+        },
+        {
+          "start": 128.46,
+          "end": 129.3,
+          "speaker": "S01",
+          "text": "is a voting machine."
+        },
+        {
+          "start": 129.54,
+          "end": 134.66,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the"
+        },
+        {
+          "start": 134.66,
+          "end": 135.18,
+          "speaker": "S01",
+          "text": "short term."
+        },
+        {
+          "start": 135.33,
+          "end": 139.38,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine, you're much more accurate."
+        },
+        {
+          "start": 139.68,
+          "end": 141.09,
+          "speaker": "S01",
+          "text": "It's going to tell you what something is worth."
+        },
+        {
+          "start": 141.36,
+          "end": 145.44,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage"
+        },
+        {
+          "start": 145.44,
+          "end": 147.81,
+          "speaker": "S01",
+          "text": "of the market because it's really here to to help you."
+        },
+        {
+          "start": 148.02,
+          "end": 149.25,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        }
+      ]
+    },
+    {
+      "case": "composite-mp3-0",
+      "source": "/private/tmp/moss-independent-assessment-20260918/.wp25runtime/20260919T033906530769Z/files/media/long.mp3",
+      "source_start": 0.0,
+      "duration": 150.0,
+      "generated_tokens": 1281,
+      "elapsed_sec": 5.760666,
+      "segments": [
+        {
+          "start": 0.53,
+          "end": 3.99,
+          "speaker": "S01",
+          "text": "To figure out what something's worth and you have to kind of weigh it."
+        },
+        {
+          "start": 3.99,
+          "end": 8.53,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term is"
+        },
+        {
+          "start": 8.53,
+          "end": 9.53,
+          "speaker": "S01",
+          "text": "a voting machine."
+        },
+        {
+          "start": 9.53,
+          "end": 14.88,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the short"
+        },
+        {
+          "start": 14.88,
+          "end": 15.88,
+          "speaker": "S01",
+          "text": "term."
+        },
+        {
+          "start": 15.88,
+          "end": 18.23,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine."
+        },
+        {
+          "start": 18.23,
+          "end": 19.68,
+          "speaker": "S01",
+          "text": "You're much more accurate."
+        },
+        {
+          "start": 19.68,
+          "end": 21.35,
+          "speaker": "S01",
+          "text": "It's going to tell you what something's worth."
+        },
+        {
+          "start": 21.35,
+          "end": 25.41,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage"
+        },
+        {
+          "start": 25.41,
+          "end": 28.02,
+          "speaker": "S01",
+          "text": "of the market because it's really here to to help you."
+        },
+        {
+          "start": 28.02,
+          "end": 29.34,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        },
+        {
+          "start": 29.34,
+          "end": 33.82,
+          "speaker": "S02",
+          "text": "And that's same way, there's a kind of difference between speculation and investing."
+        },
+        {
+          "start": 33.82,
+          "end": 34.82,
+          "speaker": "S01",
+          "text": "Yeah."
+        },
+        {
+          "start": 34.82,
+          "end": 40.11,
+          "speaker": "S01",
+          "text": "Speculation is just, it's a bit like buying, trading crypto, right?"
+        },
+        {
+          "start": 40.11,
+          "end": 41.11,
+          "speaker": "S01",
+          "text": "You're"
+        },
+        {
+          "start": 41.11,
+          "end": 42.11,
+          "speaker": "S02",
+          "text": "Strong words."
+        },
+        {
+          "start": 42.11,
+          "end": 44.92,
+          "speaker": "S01",
+          "text": "Well, short term trading crypto."
+        },
+        {
+          "start": 44.92,
+          "end": 52.07,
+          "speaker": "S01",
+          "text": "Maybe in the long run, there's intrinsic value, but the, you know, it's many investors,"
+        },
+        {
+          "start": 52.07,
+          "end": 58.32,
+          "speaker": "S01",
+          "text": "you know, in a bubble going into the, you know, the crash were really just pure speculators."
+        },
+        {
+          "start": 58.32,
+          "end": 59.42,
+          "speaker": "S01",
+          "text": "They didn't know what things were worth."
+        },
+        {
+          "start": 59.42,
+          "end": 61.05,
+          "speaker": "S01",
+          "text": "They just knew they were kind of the same thing."
+        },
+        {
+          "start": 61.05,
+          "end": 63.03,
+          "speaker": "S03",
+          "text": "There's paternalism."
+        },
+        {
+          "start": 63.03,
+          "end": 69.39,
+          "speaker": "S03",
+          "text": "They think that they're responsible for you, but deference, a certain amount of deference"
+        },
+        {
+          "start": 69.39,
+          "end": 72.06,
+          "speaker": "S03",
+          "text": "to authority is not blind submission."
+        },
+        {
+          "start": 72.06,
+          "end": 78.22,
+          "speaker": "S03",
+          "text": "It's been written implicitly in our contract for thousands of years that in exchange for"
+        },
+        {
+          "start": 78.22,
+          "end": 84.68,
+          "speaker": "S03",
+          "text": "some deference, we are given stability, security and peace, and hopefully prosperity."
+        },
+        {
+          "start": 84.68,
+          "end": 89.78,
+          "speaker": "S02",
+          "text": "So there is some element that we have in the West of freedom of the individual."
+        },
+        {
+          "start": 89.78,
+          "end": 95.61,
+          "speaker": "S02",
+          "text": "So that a little bit of the rebel is allowed in balance with the deference to authority?"
+        },
+        {
+          "start": 95.61,
+          "end": 96.86,
+          "speaker": "S03",
+          "text": "Yeah, absolutely."
+        },
+        {
+          "start": 96.86,
+          "end": 101.92,
+          "speaker": "S03",
+          "text": "Without that, how can you have this radical dynamic entrepreneurialism you see in China?"
+        },
+        {
+          "start": 101.92,
+          "end": 108.31,
+          "speaker": "S03",
+          "text": "If you don't have a sense of self, a sense of the fact that you can find opportunities,"
+        },
+        {
+          "start": 108.31,
+          "end": 114.42,
+          "speaker": "S03",
+          "text": "you look for opportunities, you, you, you drive opportunities, it's all self motivated."
+        },
+        {
+          "start": 114.42,
+          "end": 121.0,
+          "speaker": "S02",
+          "text": "Is there still a young kid in China that's able to dream to be, to figure out what"
+        },
+        {
+          "start": 121.0,
+          "end": 123.61,
+          "speaker": "S02",
+          "text": "something's worth and you have to kind of weigh it?"
+        },
+        {
+          "start": 123.61,
+          "end": 128.44,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term"
+        },
+        {
+          "start": 128.44,
+          "end": 129.56,
+          "speaker": "S01",
+          "text": "is a voting machine."
+        },
+        {
+          "start": 129.56,
+          "end": 134.87,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the short"
+        },
+        {
+          "start": 134.87,
+          "end": 135.87,
+          "speaker": "S01",
+          "text": "term."
+        },
+        {
+          "start": 135.87,
+          "end": 138.22,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine."
+        },
+        {
+          "start": 138.22,
+          "end": 139.69,
+          "speaker": "S01",
+          "text": "You're much more accurate."
+        },
+        {
+          "start": 139.69,
+          "end": 141.37,
+          "speaker": "S01",
+          "text": "It's going to tell you what something's worth."
+        },
+        {
+          "start": 141.37,
+          "end": 145.41,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage"
+        },
+        {
+          "start": 145.41,
+          "end": 147.97,
+          "speaker": "S01",
+          "text": "of the market because it's really here to to help you."
+        },
+        {
+          "start": 147.97,
+          "end": 149.22,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        }
+      ]
+    },
+    {
+      "case": "composite-wav-120",
+      "source": "/private/tmp/moss-independent-assessment-20260918/.wp25runtime/20260919T033906530769Z/files/media/long.wav",
+      "source_start": 120.0,
+      "duration": 150.0,
+      "generated_tokens": 1211,
+      "elapsed_sec": 5.278774,
+      "segments": [
+        {
+          "start": 0.54,
+          "end": 3.27,
+          "speaker": "S01",
+          "text": "To figure out what something's worth and you have to kind of weigh it."
+        },
+        {
+          "start": 4.08,
+          "end": 8.88,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term is a voting"
+        },
+        {
+          "start": 8.88,
+          "end": 9.54,
+          "speaker": "S01",
+          "text": "machine."
+        },
+        {
+          "start": 9.54,
+          "end": 15.33,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the short term."
+        },
+        {
+          "start": 15.33,
+          "end": 19.38,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine, you're much more accurate."
+        },
+        {
+          "start": 19.68,
+          "end": 21.12,
+          "speaker": "S01",
+          "text": "It's going to tell you what something is worth."
+        },
+        {
+          "start": 21.36,
+          "end": 25.5,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage of"
+        },
+        {
+          "start": 25.5,
+          "end": 27.81,
+          "speaker": "S01",
+          "text": "the market because it's really here to to help you."
+        },
+        {
+          "start": 28.05,
+          "end": 29.25,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        },
+        {
+          "start": 29.61,
+          "end": 33.75,
+          "speaker": "S02",
+          "text": "And that same way, there's a kind of difference between speculation and investing."
+        },
+        {
+          "start": 33.87,
+          "end": 40.08,
+          "speaker": "S01",
+          "text": "Yeah, speculation is just, it's a bit like buying, trading crypto, right?"
+        },
+        {
+          "start": 40.11,
+          "end": 40.44,
+          "speaker": "S01",
+          "text": "You're"
+        },
+        {
+          "start": 40.68,
+          "end": 41.4,
+          "speaker": "S02",
+          "text": "Strong words."
+        },
+        {
+          "start": 42.21,
+          "end": 46.71,
+          "speaker": "S01",
+          "text": "Well, short term trading crypto, maybe in the long run, there's intrinsic value."
+        },
+        {
+          "start": 46.74,
+          "end": 55.08,
+          "speaker": "S01",
+          "text": "But the, you know, it's many investors, you know, in a bubble going into the, you know,"
+        },
+        {
+          "start": 55.08,
+          "end": 58.29,
+          "speaker": "S01",
+          "text": "the crash were really just pure speculators."
+        },
+        {
+          "start": 58.29,
+          "end": 59.37,
+          "speaker": "S01",
+          "text": "They didn't know what things were worth."
+        },
+        {
+          "start": 59.37,
+          "end": 61.02,
+          "speaker": "S01",
+          "text": "They just knew they were kind of the same thing."
+        },
+        {
+          "start": 61.02,
+          "end": 62.22,
+          "speaker": "S03",
+          "text": "There's paternalism."
+        },
+        {
+          "start": 63.03,
+          "end": 65.25,
+          "speaker": "S03",
+          "text": "They think that they're responsible for you."
+        },
+        {
+          "start": 66.12,
+          "end": 71.94,
+          "speaker": "S03",
+          "text": "But deference, a certain amount of deference to authority is not blind submission."
+        },
+        {
+          "start": 72.06,
+          "end": 78.18,
+          "speaker": "S03",
+          "text": "It's been written implicitly in our contract for thousands of years that in exchange for"
+        },
+        {
+          "start": 78.18,
+          "end": 84.66,
+          "speaker": "S03",
+          "text": "some deference, we are given stability, security and peace, and hopefully prosperity."
+        },
+        {
+          "start": 85.05,
+          "end": 89.46,
+          "speaker": "S02",
+          "text": "So there is some element that we have in the West of freedom of the individual."
+        },
+        {
+          "start": 89.76,
+          "end": 95.64,
+          "speaker": "S02",
+          "text": "So that a little bit of the rebel is allowed in balance with the deference to authority?"
+        },
+        {
+          "start": 95.88,
+          "end": 96.72,
+          "speaker": "S03",
+          "text": "Yeah, absolutely."
+        },
+        {
+          "start": 96.84,
+          "end": 101.67,
+          "speaker": "S03",
+          "text": "Without that, how can you have this radical dynamic entrepreneurialism you see in China?"
+        },
+        {
+          "start": 102.42,
+          "end": 108.27,
+          "speaker": "S03",
+          "text": "If you don't have a sense of self, a sense of the fact that you can find opportunities,"
+        },
+        {
+          "start": 108.27,
+          "end": 114.45,
+          "speaker": "S03",
+          "text": "you look for opportunities, you, you, you drive opportunities, it's all self motivated."
+        },
+        {
+          "start": 114.96,
+          "end": 121.02,
+          "speaker": "S02",
+          "text": "Is there still a young kid in China that's able to dream to be, to figure out what"
+        },
+        {
+          "start": 121.02,
+          "end": 123.24,
+          "speaker": "S02",
+          "text": "something's worth and you have to kind of weigh it?"
+        },
+        {
+          "start": 124.05,
+          "end": 128.46,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term"
+        },
+        {
+          "start": 128.46,
+          "end": 129.3,
+          "speaker": "S01",
+          "text": "is a voting machine."
+        },
+        {
+          "start": 129.54,
+          "end": 134.66,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the"
+        },
+        {
+          "start": 134.66,
+          "end": 135.18,
+          "speaker": "S01",
+          "text": "short term."
+        },
+        {
+          "start": 135.33,
+          "end": 139.38,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine, you're much more accurate."
+        },
+        {
+          "start": 139.68,
+          "end": 141.09,
+          "speaker": "S01",
+          "text": "It's going to tell you what something is worth."
+        },
+        {
+          "start": 141.36,
+          "end": 145.44,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage"
+        },
+        {
+          "start": 145.44,
+          "end": 147.81,
+          "speaker": "S01",
+          "text": "of the market because it's really here to to help you."
+        },
+        {
+          "start": 148.02,
+          "end": 149.25,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        }
+      ]
+    },
+    {
+      "case": "composite-mp3-120",
+      "source": "/private/tmp/moss-independent-assessment-20260918/.wp25runtime/20260919T033906530769Z/files/media/long.mp3",
+      "source_start": 120.0,
+      "duration": 150.0,
+      "generated_tokens": 1296,
+      "elapsed_sec": 5.819021,
+      "segments": [
+        {
+          "start": 0.53,
+          "end": 3.99,
+          "speaker": "S01",
+          "text": "To figure out what something's worth and you have to kind of weigh it."
+        },
+        {
+          "start": 3.99,
+          "end": 8.53,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term is"
+        },
+        {
+          "start": 8.53,
+          "end": 9.53,
+          "speaker": "S01",
+          "text": "a voting machine."
+        },
+        {
+          "start": 9.53,
+          "end": 14.63,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the"
+        },
+        {
+          "start": 14.63,
+          "end": 15.63,
+          "speaker": "S01",
+          "text": "short term."
+        },
+        {
+          "start": 15.63,
+          "end": 18.23,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine."
+        },
+        {
+          "start": 18.23,
+          "end": 19.68,
+          "speaker": "S01",
+          "text": "You're much more accurate."
+        },
+        {
+          "start": 19.68,
+          "end": 21.35,
+          "speaker": "S01",
+          "text": "It's going to tell you what something's worth."
+        },
+        {
+          "start": 21.35,
+          "end": 25.41,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage"
+        },
+        {
+          "start": 25.41,
+          "end": 28.02,
+          "speaker": "S01",
+          "text": "of the market because it's really here to to help you."
+        },
+        {
+          "start": 28.02,
+          "end": 29.34,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        },
+        {
+          "start": 29.34,
+          "end": 33.82,
+          "speaker": "S02",
+          "text": "And that's same way, there's a kind of difference between speculation and investing."
+        },
+        {
+          "start": 33.82,
+          "end": 34.82,
+          "speaker": "S01",
+          "text": "Yeah."
+        },
+        {
+          "start": 34.82,
+          "end": 40.11,
+          "speaker": "S01",
+          "text": "Speculation is just, it's a bit like buying, trading crypto, right?"
+        },
+        {
+          "start": 40.11,
+          "end": 41.11,
+          "speaker": "S01",
+          "text": "You're"
+        },
+        {
+          "start": 41.11,
+          "end": 42.11,
+          "speaker": "S02",
+          "text": "Strong words."
+        },
+        {
+          "start": 42.11,
+          "end": 44.92,
+          "speaker": "S01",
+          "text": "Well, short term trading crypto."
+        },
+        {
+          "start": 44.92,
+          "end": 46.78,
+          "speaker": "S01",
+          "text": "Maybe in the long run, there's intrinsic value."
+        },
+        {
+          "start": 46.78,
+          "end": 55.14,
+          "speaker": "S01",
+          "text": "But the, you know, it's many investors, you know, in a bubble going into the, you know,"
+        },
+        {
+          "start": 55.14,
+          "end": 58.32,
+          "speaker": "S01",
+          "text": "the crash were really just pure speculators."
+        },
+        {
+          "start": 58.32,
+          "end": 59.42,
+          "speaker": "S01",
+          "text": "They didn't know what things were worth."
+        },
+        {
+          "start": 59.42,
+          "end": 61.05,
+          "speaker": "S01",
+          "text": "They just knew they were kind of the same thing."
+        },
+        {
+          "start": 61.05,
+          "end": 63.05,
+          "speaker": "S03",
+          "text": "There's paternalism."
+        },
+        {
+          "start": 63.05,
+          "end": 66.11,
+          "speaker": "S03",
+          "text": "They think that they're responsible for you."
+        },
+        {
+          "start": 66.11,
+          "end": 72.06,
+          "speaker": "S03",
+          "text": "But deference, a certain amount of deference to authority is not blind submission."
+        },
+        {
+          "start": 72.06,
+          "end": 78.22,
+          "speaker": "S03",
+          "text": "It's been written implicitly in our contract for thousands of years that in exchange for"
+        },
+        {
+          "start": 78.22,
+          "end": 84.68,
+          "speaker": "S03",
+          "text": "some deference, we are given stability, security and peace, and hopefully prosperity."
+        },
+        {
+          "start": 84.68,
+          "end": 89.78,
+          "speaker": "S02",
+          "text": "So there is some element that we have in the West of freedom of the individual."
+        },
+        {
+          "start": 89.78,
+          "end": 95.61,
+          "speaker": "S02",
+          "text": "So that a little bit of the rebel is allowed in balance with the deference to authority?"
+        },
+        {
+          "start": 95.61,
+          "end": 96.86,
+          "speaker": "S03",
+          "text": "Yeah, absolutely."
+        },
+        {
+          "start": 96.86,
+          "end": 101.92,
+          "speaker": "S03",
+          "text": "Without that, how can you have this radical dynamic entrepreneurialism you see in China?"
+        },
+        {
+          "start": 101.92,
+          "end": 108.32,
+          "speaker": "S03",
+          "text": "If you don't have a sense of self, a sense of the fact that you can find opportunities,"
+        },
+        {
+          "start": 108.32,
+          "end": 114.42,
+          "speaker": "S03",
+          "text": "you look for opportunities, you, you, you drive opportunities, it's all self motivated."
+        },
+        {
+          "start": 114.42,
+          "end": 121.02,
+          "speaker": "S02",
+          "text": "Is there still a young kid in China that's able to dream to be, to figure out what"
+        },
+        {
+          "start": 121.02,
+          "end": 123.61,
+          "speaker": "S02",
+          "text": "something's worth and you have to kind of weigh it?"
+        },
+        {
+          "start": 123.61,
+          "end": 128.44,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term"
+        },
+        {
+          "start": 128.44,
+          "end": 129.56,
+          "speaker": "S01",
+          "text": "is a voting machine."
+        },
+        {
+          "start": 129.56,
+          "end": 134.66,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the"
+        },
+        {
+          "start": 134.66,
+          "end": 135.66,
+          "speaker": "S01",
+          "text": "short term."
+        },
+        {
+          "start": 135.66,
+          "end": 138.22,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine."
+        },
+        {
+          "start": 138.22,
+          "end": 139.69,
+          "speaker": "S01",
+          "text": "You're much more accurate."
+        },
+        {
+          "start": 139.69,
+          "end": 141.37,
+          "speaker": "S01",
+          "text": "It's going to tell you what something's worth."
+        },
+        {
+          "start": 141.37,
+          "end": 145.41,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage"
+        },
+        {
+          "start": 145.41,
+          "end": 147.97,
+          "speaker": "S01",
+          "text": "of the market because it's really here to to help you."
+        },
+        {
+          "start": 147.97,
+          "end": 149.22,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        }
+      ]
+    },
+    {
+      "case": "composite-wav-240",
+      "source": "/private/tmp/moss-independent-assessment-20260918/.wp25runtime/20260919T033906530769Z/files/media/long.wav",
+      "source_start": 240.0,
+      "duration": 150.0,
+      "generated_tokens": 1211,
+      "elapsed_sec": 5.297372,
+      "segments": [
+        {
+          "start": 0.54,
+          "end": 3.27,
+          "speaker": "S01",
+          "text": "To figure out what something's worth and you have to kind of weigh it."
+        },
+        {
+          "start": 4.08,
+          "end": 8.88,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term is a voting"
+        },
+        {
+          "start": 8.88,
+          "end": 9.54,
+          "speaker": "S01",
+          "text": "machine."
+        },
+        {
+          "start": 9.54,
+          "end": 15.33,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the short term."
+        },
+        {
+          "start": 15.33,
+          "end": 19.38,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine, you're much more accurate."
+        },
+        {
+          "start": 19.68,
+          "end": 21.12,
+          "speaker": "S01",
+          "text": "It's going to tell you what something is worth."
+        },
+        {
+          "start": 21.36,
+          "end": 25.5,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage of"
+        },
+        {
+          "start": 25.5,
+          "end": 27.81,
+          "speaker": "S01",
+          "text": "the market because it's really here to to help you."
+        },
+        {
+          "start": 28.05,
+          "end": 29.25,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        },
+        {
+          "start": 29.61,
+          "end": 33.75,
+          "speaker": "S02",
+          "text": "And that same way, there's a kind of difference between speculation and investing."
+        },
+        {
+          "start": 33.87,
+          "end": 40.08,
+          "speaker": "S01",
+          "text": "Yeah, speculation is just, it's a bit like buying, trading crypto, right?"
+        },
+        {
+          "start": 40.11,
+          "end": 40.44,
+          "speaker": "S01",
+          "text": "You're"
+        },
+        {
+          "start": 40.68,
+          "end": 41.4,
+          "speaker": "S02",
+          "text": "Strong words."
+        },
+        {
+          "start": 42.21,
+          "end": 46.71,
+          "speaker": "S01",
+          "text": "Well, short term trading crypto, maybe in the long run, there's intrinsic value."
+        },
+        {
+          "start": 46.74,
+          "end": 55.08,
+          "speaker": "S01",
+          "text": "But the, you know, it's many investors, you know, in a bubble going into the, you know,"
+        },
+        {
+          "start": 55.08,
+          "end": 58.29,
+          "speaker": "S01",
+          "text": "the crash were really just pure speculators."
+        },
+        {
+          "start": 58.29,
+          "end": 59.37,
+          "speaker": "S01",
+          "text": "They didn't know what things were worth."
+        },
+        {
+          "start": 59.37,
+          "end": 61.02,
+          "speaker": "S01",
+          "text": "They just knew they were kind of the same thing."
+        },
+        {
+          "start": 61.02,
+          "end": 62.22,
+          "speaker": "S03",
+          "text": "There's paternalism."
+        },
+        {
+          "start": 63.03,
+          "end": 65.25,
+          "speaker": "S03",
+          "text": "They think that they're responsible for you."
+        },
+        {
+          "start": 66.12,
+          "end": 71.94,
+          "speaker": "S03",
+          "text": "But deference, a certain amount of deference to authority is not blind submission."
+        },
+        {
+          "start": 72.06,
+          "end": 78.18,
+          "speaker": "S03",
+          "text": "It's been written implicitly in our contract for thousands of years that in exchange for"
+        },
+        {
+          "start": 78.18,
+          "end": 84.66,
+          "speaker": "S03",
+          "text": "some deference, we are given stability, security and peace, and hopefully prosperity."
+        },
+        {
+          "start": 85.05,
+          "end": 89.46,
+          "speaker": "S02",
+          "text": "So there is some element that we have in the West of freedom of the individual."
+        },
+        {
+          "start": 89.76,
+          "end": 95.64,
+          "speaker": "S02",
+          "text": "So that a little bit of the rebel is allowed in balance with the deference to authority?"
+        },
+        {
+          "start": 95.88,
+          "end": 96.72,
+          "speaker": "S03",
+          "text": "Yeah, absolutely."
+        },
+        {
+          "start": 96.84,
+          "end": 101.67,
+          "speaker": "S03",
+          "text": "Without that, how can you have this radical dynamic entrepreneurialism you see in China?"
+        },
+        {
+          "start": 102.42,
+          "end": 108.27,
+          "speaker": "S03",
+          "text": "If you don't have a sense of self, a sense of the fact that you can find opportunities,"
+        },
+        {
+          "start": 108.27,
+          "end": 114.45,
+          "speaker": "S03",
+          "text": "you look for opportunities, you, you, you drive opportunities, it's all self motivated."
+        },
+        {
+          "start": 114.96,
+          "end": 121.02,
+          "speaker": "S02",
+          "text": "Is there still a young kid in China that's able to dream to be, to figure out what"
+        },
+        {
+          "start": 121.02,
+          "end": 123.24,
+          "speaker": "S02",
+          "text": "something's worth and you have to kind of weigh it?"
+        },
+        {
+          "start": 124.05,
+          "end": 128.46,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term"
+        },
+        {
+          "start": 128.46,
+          "end": 129.3,
+          "speaker": "S01",
+          "text": "is a voting machine."
+        },
+        {
+          "start": 129.54,
+          "end": 134.66,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the"
+        },
+        {
+          "start": 134.66,
+          "end": 135.18,
+          "speaker": "S01",
+          "text": "short term."
+        },
+        {
+          "start": 135.33,
+          "end": 139.38,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine, you're much more accurate."
+        },
+        {
+          "start": 139.68,
+          "end": 141.09,
+          "speaker": "S01",
+          "text": "It's going to tell you what something is worth."
+        },
+        {
+          "start": 141.36,
+          "end": 145.44,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage"
+        },
+        {
+          "start": 145.44,
+          "end": 147.81,
+          "speaker": "S01",
+          "text": "of the market because it's really here to to help you."
+        },
+        {
+          "start": 148.02,
+          "end": 149.25,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        }
+      ]
+    },
+    {
+      "case": "composite-mp3-240",
+      "source": "/private/tmp/moss-independent-assessment-20260918/.wp25runtime/20260919T033906530769Z/files/media/long.mp3",
+      "source_start": 240.0,
+      "duration": 150.0,
+      "generated_tokens": 1295,
+      "elapsed_sec": 5.748345,
+      "segments": [
+        {
+          "start": 0.53,
+          "end": 3.99,
+          "speaker": "S01",
+          "text": "To figure out what something's worth and you have to kind of weigh it."
+        },
+        {
+          "start": 3.99,
+          "end": 8.53,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term is"
+        },
+        {
+          "start": 8.53,
+          "end": 9.53,
+          "speaker": "S01",
+          "text": "a voting machine."
+        },
+        {
+          "start": 9.53,
+          "end": 14.63,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the"
+        },
+        {
+          "start": 14.63,
+          "end": 15.63,
+          "speaker": "S01",
+          "text": "short term."
+        },
+        {
+          "start": 15.63,
+          "end": 18.23,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine."
+        },
+        {
+          "start": 18.23,
+          "end": 19.68,
+          "speaker": "S01",
+          "text": "You're much more accurate."
+        },
+        {
+          "start": 19.68,
+          "end": 21.35,
+          "speaker": "S01",
+          "text": "It's going to tell you what something's worth."
+        },
+        {
+          "start": 21.35,
+          "end": 25.41,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage"
+        },
+        {
+          "start": 25.41,
+          "end": 28.02,
+          "speaker": "S01",
+          "text": "of the market because it's really here to to help you."
+        },
+        {
+          "start": 28.02,
+          "end": 29.34,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        },
+        {
+          "start": 29.34,
+          "end": 33.82,
+          "speaker": "S02",
+          "text": "And that same way, there's a kind of difference between speculation and investing."
+        },
+        {
+          "start": 33.82,
+          "end": 34.82,
+          "speaker": "S01",
+          "text": "Yeah."
+        },
+        {
+          "start": 34.82,
+          "end": 40.11,
+          "speaker": "S01",
+          "text": "Speculation is just, it's a bit like buying, trading crypto, right?"
+        },
+        {
+          "start": 40.11,
+          "end": 41.11,
+          "speaker": "S01",
+          "text": "You're"
+        },
+        {
+          "start": 41.11,
+          "end": 42.11,
+          "speaker": "S02",
+          "text": "Strong words."
+        },
+        {
+          "start": 42.11,
+          "end": 44.92,
+          "speaker": "S01",
+          "text": "Well, short term trading crypto."
+        },
+        {
+          "start": 44.92,
+          "end": 46.78,
+          "speaker": "S01",
+          "text": "Maybe in the long run, there's intrinsic value."
+        },
+        {
+          "start": 46.78,
+          "end": 55.14,
+          "speaker": "S01",
+          "text": "But the, you know, it's many investors, you know, in a bubble going into the, you know,"
+        },
+        {
+          "start": 55.14,
+          "end": 58.32,
+          "speaker": "S01",
+          "text": "the crash were really just pure speculators."
+        },
+        {
+          "start": 58.32,
+          "end": 59.42,
+          "speaker": "S01",
+          "text": "They didn't know what things were worth."
+        },
+        {
+          "start": 59.42,
+          "end": 61.05,
+          "speaker": "S01",
+          "text": "They just knew they were kind of the same thing."
+        },
+        {
+          "start": 61.05,
+          "end": 63.05,
+          "speaker": "S03",
+          "text": "There's paternalism."
+        },
+        {
+          "start": 63.05,
+          "end": 66.11,
+          "speaker": "S03",
+          "text": "They think that they're responsible for you."
+        },
+        {
+          "start": 66.11,
+          "end": 72.06,
+          "speaker": "S03",
+          "text": "But deference, a certain amount of deference to authority is not blind submission."
+        },
+        {
+          "start": 72.06,
+          "end": 78.22,
+          "speaker": "S03",
+          "text": "It's been written implicitly in our contract for thousands of years that in exchange for"
+        },
+        {
+          "start": 78.22,
+          "end": 84.68,
+          "speaker": "S03",
+          "text": "some deference, we are given stability, security and peace, and hopefully prosperity."
+        },
+        {
+          "start": 84.68,
+          "end": 89.78,
+          "speaker": "S02",
+          "text": "So there is some element that we have in the West of freedom of the individual."
+        },
+        {
+          "start": 89.78,
+          "end": 95.61,
+          "speaker": "S02",
+          "text": "So that a little bit of the rebel is allowed in balance with the deference to authority?"
+        },
+        {
+          "start": 95.61,
+          "end": 96.86,
+          "speaker": "S03",
+          "text": "Yeah, absolutely."
+        },
+        {
+          "start": 96.86,
+          "end": 101.92,
+          "speaker": "S03",
+          "text": "Without that, how can you have this radical dynamic entrepreneurialism you see in China?"
+        },
+        {
+          "start": 101.92,
+          "end": 108.32,
+          "speaker": "S03",
+          "text": "If you don't have a sense of self, a sense of the fact that you can find opportunities,"
+        },
+        {
+          "start": 108.32,
+          "end": 114.42,
+          "speaker": "S03",
+          "text": "you look for opportunities, you, you, you drive opportunities, it's all self motivated."
+        },
+        {
+          "start": 114.42,
+          "end": 121.02,
+          "speaker": "S02",
+          "text": "Is there still a young kid in China that's able to dream to be, to figure out what"
+        },
+        {
+          "start": 121.02,
+          "end": 123.61,
+          "speaker": "S02",
+          "text": "something's worth and you have to kind of weigh it?"
+        },
+        {
+          "start": 123.61,
+          "end": 128.44,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term"
+        },
+        {
+          "start": 128.44,
+          "end": 129.56,
+          "speaker": "S01",
+          "text": "is a voting machine."
+        },
+        {
+          "start": 129.56,
+          "end": 134.66,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the"
+        },
+        {
+          "start": 134.66,
+          "end": 135.66,
+          "speaker": "S01",
+          "text": "short term."
+        },
+        {
+          "start": 135.66,
+          "end": 138.22,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine."
+        },
+        {
+          "start": 138.22,
+          "end": 139.69,
+          "speaker": "S01",
+          "text": "You're much more accurate."
+        },
+        {
+          "start": 139.69,
+          "end": 141.37,
+          "speaker": "S01",
+          "text": "It's going to tell you what something's worth."
+        },
+        {
+          "start": 141.37,
+          "end": 145.41,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage"
+        },
+        {
+          "start": 145.41,
+          "end": 147.97,
+          "speaker": "S01",
+          "text": "of the market because it's really here to to help you."
+        },
+        {
+          "start": 147.97,
+          "end": 149.22,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        }
+      ]
+    },
+    {
+      "case": "interview_bill_ackman_60s-wav",
+      "source": "/private/tmp/moss-round2-20260919/identity/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/audio.wav",
+      "source_start": 0.0,
+      "duration": 60.0,
+      "generated_tokens": 518,
+      "elapsed_sec": 2.105255,
+      "segments": [
+        {
+          "start": 0.54,
+          "end": 3.27,
+          "speaker": "S01",
+          "text": "To figure out what something's worth and you have to kind of weigh it."
+        },
+        {
+          "start": 4.08,
+          "end": 8.88,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term is a voting"
+        },
+        {
+          "start": 8.88,
+          "end": 9.54,
+          "speaker": "S01",
+          "text": "machine."
+        },
+        {
+          "start": 9.54,
+          "end": 15.27,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the short term."
+        },
+        {
+          "start": 15.27,
+          "end": 19.68,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine, you're much more accurate."
+        },
+        {
+          "start": 19.68,
+          "end": 21.36,
+          "speaker": "S01",
+          "text": "It's going to tell you what something's worth."
+        },
+        {
+          "start": 21.36,
+          "end": 25.5,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage of"
+        },
+        {
+          "start": 25.5,
+          "end": 27.81,
+          "speaker": "S01",
+          "text": "the market because it's really here to to help you."
+        },
+        {
+          "start": 28.02,
+          "end": 29.25,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        },
+        {
+          "start": 29.61,
+          "end": 33.78,
+          "speaker": "S02",
+          "text": "And that same way, there's a kind of difference between speculation and investing."
+        },
+        {
+          "start": 33.87,
+          "end": 40.11,
+          "speaker": "S01",
+          "text": "Yeah, speculation is just, it's a bit like buying, trading crypto, right?"
+        },
+        {
+          "start": 40.11,
+          "end": 40.44,
+          "speaker": "S01",
+          "text": "You're"
+        },
+        {
+          "start": 40.68,
+          "end": 41.43,
+          "speaker": "S02",
+          "text": "Strong words."
+        },
+        {
+          "start": 42.18,
+          "end": 46.71,
+          "speaker": "S01",
+          "text": "Well, short term trading crypto, maybe in the long run, there's intrinsic value."
+        },
+        {
+          "start": 46.71,
+          "end": 55.08,
+          "speaker": "S01",
+          "text": "But the, you know, it's many investors, you know, in a bubble going into the, you know,"
+        },
+        {
+          "start": 55.08,
+          "end": 58.29,
+          "speaker": "S01",
+          "text": "the crash were really just pure speculators."
+        },
+        {
+          "start": 58.29,
+          "end": 59.37,
+          "speaker": "S01",
+          "text": "They didn't know what things were worth."
+        },
+        {
+          "start": 59.37,
+          "end": 59.94,
+          "speaker": "S01",
+          "text": "They just knew they were"
+        }
+      ]
+    },
+    {
+      "case": "interview_bill_ackman_60s-mp3",
+      "source": "/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/identity-paired-codec-qnzppk4k/interview_bill_ackman_60s.mp3",
+      "source_start": 0.0,
+      "duration": 60.0,
+      "generated_tokens": 568,
+      "elapsed_sec": 2.331758,
+      "segments": [
+        {
+          "start": 0.53,
+          "end": 3.99,
+          "speaker": "S01",
+          "text": "To figure out what something's worth and you have to kind of weigh it."
+        },
+        {
+          "start": 3.99,
+          "end": 8.55,
+          "speaker": "S01",
+          "text": "He talked about the difference between, you said the stock market in the short term is"
+        },
+        {
+          "start": 8.55,
+          "end": 9.55,
+          "speaker": "S01",
+          "text": "a voting machine."
+        },
+        {
+          "start": 9.55,
+          "end": 14.63,
+          "speaker": "S01",
+          "text": "It represents speculative interests, you know, supply and demand of people in the"
+        },
+        {
+          "start": 14.63,
+          "end": 15.32,
+          "speaker": "S01",
+          "text": "short term."
+        },
+        {
+          "start": 15.32,
+          "end": 18.27,
+          "speaker": "S01",
+          "text": "But in the long term, the stock market is a weighing machine."
+        },
+        {
+          "start": 18.27,
+          "end": 19.68,
+          "speaker": "S01",
+          "text": "You're much more accurate."
+        },
+        {
+          "start": 19.68,
+          "end": 21.35,
+          "speaker": "S01",
+          "text": "It's going to tell you what something's worth."
+        },
+        {
+          "start": 21.35,
+          "end": 25.41,
+          "speaker": "S01",
+          "text": "And so if you can divine what something's worth, then you can really take advantage"
+        },
+        {
+          "start": 25.41,
+          "end": 28.02,
+          "speaker": "S01",
+          "text": "of the market because it's really here to help you."
+        },
+        {
+          "start": 28.02,
+          "end": 29.34,
+          "speaker": "S01",
+          "text": "And that's kind of the message of the book."
+        },
+        {
+          "start": 29.34,
+          "end": 33.82,
+          "speaker": "S02",
+          "text": "And that's same way, there's a kind of difference between speculation and investing."
+        },
+        {
+          "start": 33.82,
+          "end": 34.22,
+          "speaker": "S01",
+          "text": "Yeah."
+        },
+        {
+          "start": 34.22,
+          "end": 40.11,
+          "speaker": "S01",
+          "text": "Speculation is just, it's a bit like buying, trading crypto, right?"
+        },
+        {
+          "start": 40.11,
+          "end": 40.57,
+          "speaker": "S01",
+          "text": "You're"
+        },
+        {
+          "start": 40.57,
+          "end": 41.46,
+          "speaker": "S02",
+          "text": "Strong words."
+        },
+        {
+          "start": 41.46,
+          "end": 44.92,
+          "speaker": "S01",
+          "text": "Well, short-term trading crypto."
+        },
+        {
+          "start": 44.92,
+          "end": 52.05,
+          "speaker": "S01",
+          "text": "Maybe in the long run, there's intrinsic value, but the, you know, it's many investors,"
+        },
+        {
+          "start": 52.05,
+          "end": 58.32,
+          "speaker": "S01",
+          "text": "you know, in a bubble going into the, you know, the crash were really just pure speculators."
+        },
+        {
+          "start": 58.32,
+          "end": 59.42,
+          "speaker": "S01",
+          "text": "They didn't know what things were worth."
+        },
+        {
+          "start": 59.42,
+          "end": 59.96,
+          "speaker": "S01",
+          "text": "They just knew they were"
+        }
+      ]
+    },
+    {
+      "case": "interview_keyu_jin_60s-wav",
+      "source": "/private/tmp/moss-round2-20260919/identity/evidence/live-policy-sweep-20260825/corpus/interview_keyu_jin_60s/audio.wav",
+      "source_start": 0.0,
+      "duration": 60.0,
+      "generated_tokens": 342,
+      "elapsed_sec": 1.446297,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 5.28,
+          "speaker": "S01",
+          "text": "Kind of the same thing. There's paternalism. They think that they're responsible for you."
+        },
+        {
+          "start": 6.14,
+          "end": 11.96,
+          "speaker": "S01",
+          "text": "But deference, a certain amount of deference to authority is not blind submission."
+        },
+        {
+          "start": 12.06,
+          "end": 19.24,
+          "speaker": "S01",
+          "text": "It's been written implicitly in our contract for thousands of years that in exchange for some deference,"
+        },
+        {
+          "start": 20.12,
+          "end": 24.68,
+          "speaker": "S01",
+          "text": "we are given stability, security, and peace, and hopefully prosperity."
+        },
+        {
+          "start": 25.04,
+          "end": 29.44,
+          "speaker": "S02",
+          "text": "So there is some element that we have in the West of freedom of the individual."
+        },
+        {
+          "start": 29.76,
+          "end": 35.64,
+          "speaker": "S02",
+          "text": "So that a little bit of the rebel is allowed in balance with the deference to authority?"
+        },
+        {
+          "start": 35.88,
+          "end": 41.72,
+          "speaker": "S01",
+          "text": "Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?"
+        },
+        {
+          "start": 42.4,
+          "end": 49.44,
+          "speaker": "S01",
+          "text": "If you don't have a sense of self, a sense of the fact that you can find opportunities, you look for opportunities,"
+        },
+        {
+          "start": 49.46,
+          "end": 54.48,
+          "speaker": "S01",
+          "text": "you you you drive opportunities, it's all self motivated."
+        },
+        {
+          "start": 54.96,
+          "end": 59.88,
+          "speaker": "S02",
+          "text": "Is there still a young kid in China that's able to dream to be?"
+        }
+      ]
+    },
+    {
+      "case": "interview_keyu_jin_60s-mp3",
+      "source": "/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/identity-paired-codec-qnzppk4k/interview_keyu_jin_60s.mp3",
+      "source_start": 0.0,
+      "duration": 60.0,
+      "generated_tokens": 342,
+      "elapsed_sec": 1.455621,
+      "segments": [
+        {
+          "start": 0.0,
+          "end": 5.28,
+          "speaker": "S01",
+          "text": "Kind of the same thing. There's paternalism. They think that they're responsible for you."
+        },
+        {
+          "start": 6.14,
+          "end": 11.96,
+          "speaker": "S01",
+          "text": "But deference, a certain amount of deference to authority is not blind submission."
+        },
+        {
+          "start": 12.06,
+          "end": 19.24,
+          "speaker": "S01",
+          "text": "It's been written implicitly in our contract for thousands of years that in exchange for some deference,"
+        },
+        {
+          "start": 20.12,
+          "end": 24.68,
+          "speaker": "S01",
+          "text": "we are given stability, security, and peace, and hopefully prosperity."
+        },
+        {
+          "start": 25.04,
+          "end": 29.44,
+          "speaker": "S02",
+          "text": "So there is some element that we have in the West of freedom of the individual."
+        },
+        {
+          "start": 29.76,
+          "end": 35.64,
+          "speaker": "S02",
+          "text": "So that a little bit of the rebel is allowed in balance with the deference to authority?"
+        },
+        {
+          "start": 35.88,
+          "end": 41.72,
+          "speaker": "S01",
+          "text": "Yeah, absolutely. Without that, how can you have this radical, dynamic entrepreneurialism you see in China?"
+        },
+        {
+          "start": 42.42,
+          "end": 49.44,
+          "speaker": "S01",
+          "text": "If you don't have a sense of self, a sense of the fact that you can find opportunities, you look for opportunities,"
+        },
+        {
+          "start": 49.46,
+          "end": 54.48,
+          "speaker": "S01",
+          "text": "you you you drive opportunities, it's all self motivated."
+        },
+        {
+          "start": 54.94,
+          "end": 59.88,
+          "speaker": "S02",
+          "text": "Is there still a young kid in China that's able to dream to be?"
+        }
+      ]
+    },
+    {
+      "case": "discussion_jamie_dimon-context",
+      "source": "/private/tmp/moss-round2-20260919/identity/evidence/live-policy-sweep-20260825/corpus/discussion_jamie_dimon_180s/audio.wav",
+      "source_start": 30.0,
+      "duration": 150.0,
+      "generated_tokens": 1402,
+      "elapsed_sec": 6.175417,
+      "segments": [
+        {
+          "start": 0.04,
+          "end": 4.99,
+          "speaker": "S01",
+          "text": "Point on the dominance, they are the most valuable company east of the Mississippi"
+        },
+        {
+          "start": 4.99,
+          "end": 9.36,
+          "speaker": "S01",
+          "text": "in the United States and the only company east of the Mississippi worth more than half"
+        },
+        {
+          "start": 9.36,
+          "end": 10.42,
+          "speaker": "S01",
+          "text": "a trillion dollars."
+        },
+        {
+          "start": 10.86,
+          "end": 11.42,
+          "speaker": "S02",
+          "text": "Incredible."
+        },
+        {
+          "start": 11.72,
+          "end": 14.74,
+          "speaker": "S01",
+          "text": "So the question, of course, is how did he do it?"
+        },
+        {
+          "start": 15.02,
+          "end": 16.14,
+          "speaker": "S01",
+          "text": "I mean, banks fail."
+        },
+        {
+          "start": 16.14,
+          "end": 21.91,
+          "speaker": "S01",
+          "text": "Financial firms often have spectacular blowups and large organizations, period, financial"
+        },
+        {
+          "start": 21.91,
+          "end": 25.18,
+          "speaker": "S01",
+          "text": "or not, can often get so bloated that they slow down to a crawl."
+        },
+        {
+          "start": 25.18,
+          "end": 27.41,
+          "speaker": "S01",
+          "text": "So what did Jamie Dimon do differently?"
+        },
+        {
+          "start": 27.88,
+          "end": 32.04,
+          "speaker": "S01",
+          "text": "Well, today's episode, we have Jamie with us, himself, to tell the story."
+        },
+        {
+          "start": 32.04,
+          "end": 36.51,
+          "speaker": "S01",
+          "text": "We recorded this live in front of 6,000 Acquired fans at Radio City Music Hall in New York"
+        },
+        {
+          "start": 36.51,
+          "end": 37.22,
+          "speaker": "S01",
+          "text": "City."
+        },
+        {
+          "start": 37.22,
+          "end": 40.61,
+          "speaker": "S01",
+          "text": "So you'll notice it's a different format than our usual episode."
+        },
+        {
+          "start": 40.61,
+          "end": 44.51,
+          "speaker": "S01",
+          "text": "We're always trying to figure out what version of Acquired works live with an audience,"
+        },
+        {
+          "start": 44.51,
+          "end": 46.91,
+          "speaker": "S01",
+          "text": "and this is our latest iteration."
+        },
+        {
+          "start": 46.91,
+          "end": 51.35,
+          "speaker": "S01",
+          "text": "The Radio City Show also had a second act, a late-night talk show, where we had conversations"
+        },
+        {
+          "start": 51.35,
+          "end": 56.23,
+          "speaker": "S01",
+          "text": "with the CEO of The New York Times, Meredith Kobit-Levian, and the chairman of IAC, Barry"
+        },
+        {
+          "start": 56.23,
+          "end": 60.23,
+          "speaker": "S01",
+          "text": "Diller, plus some cameos from around the Acquired cinematic universe."
+        },
+        {
+          "start": 60.23,
+          "end": 64.31,
+          "speaker": "S01",
+          "text": "And we cannot wait to share all of that with you at a later date."
+        },
+        {
+          "start": 65.11,
+          "end": 70.48,
+          "speaker": "S01",
+          "text": "Well, if you want to know every time an episode drops, check out our email list, acquired.fm/ email."
+        },
+        {
+          "start": 70.48,
+          "end": 75.81,
+          "speaker": "S01",
+          "text": "Come join the Slack and talk about this with us afterwards, acquired.fm/slash."
+        },
+        {
+          "start": 75.81,
+          "end": 80.45,
+          "speaker": "S01",
+          "text": "If you want more Acquired between each monthly episode, check out ACQ2, our interview show,"
+        },
+        {
+          "start": 80.45,
+          "end": 83.93,
+          "speaker": "S01",
+          "text": "where we talk with founders and CEOs building businesses in areas we've covered on the"
+        },
+        {
+          "start": 83.93,
+          "end": 84.78,
+          "speaker": "S01",
+          "text": "show."
+        },
+        {
+          "start": 84.78,
+          "end": 89.28,
+          "speaker": "S01",
+          "text": "And before we dive in, we want to briefly thank our presenting partner, JP Morgan."
+        },
+        {
+          "start": 90.64,
+          "end": 95.15,
+          "speaker": "S02",
+          "text": "Yes, the same JP Morgan, which is funny, because when we started planning this show"
+        },
+        {
+          "start": 95.15,
+          "end": 100.78,
+          "speaker": "S02",
+          "text": "together, gosh, almost a year ago, it was immediately clear to Ben and me that the very"
+        },
+        {
+          "start": 100.78,
+          "end": 105.42,
+          "speaker": "S02",
+          "text": "best person who Acquired could interview in New York also happened to be their CEO."
+        },
+        {
+          "start": 105.78,
+          "end": 108.61,
+          "speaker": "S01",
+          "text": "And as you all know from the episodes over the last couple of years, JP Morgan"
+        },
+        {
+          "start": 108.61,
+          "end": 112.4,
+          "speaker": "S01",
+          "text": "has been a fantastic partner of ours, and their payments team demoed all kinds of cool"
+        },
+        {
+          "start": 112.4,
+          "end": 113.78,
+          "speaker": "S01",
+          "text": "technology at the event."
+        },
+        {
+          "start": 113.78,
+          "end": 116.78,
+          "speaker": "S01",
+          "text": "Our huge thanks to the JP Morgan team for putting on the show with us."
+        },
+        {
+          "start": 116.78,
+          "end": 119.75,
+          "speaker": "S01",
+          "text": "And if you ever want to learn more, just click the link in the show notes and tell"
+        },
+        {
+          "start": 119.75,
+          "end": 121.82,
+          "speaker": "S01",
+          "text": "them that Ben and David sent you."
+        },
+        {
+          "start": 121.82,
+          "end": 123.72,
+          "speaker": "S01",
+          "text": "So with that, this show is not investment advice."
+        },
+        {
+          "start": 123.72,
+          "end": 127.92,
+          "speaker": "S01",
+          "text": "David and I may have investments in the companies we discuss, and this show is for informational"
+        },
+        {
+          "start": 127.92,
+          "end": 130.0,
+          "speaker": "S01",
+          "text": "and entertainment purposes only."
+        },
+        {
+          "start": 130.0,
+          "end": 132.16,
+          "speaker": "S01",
+          "text": "On to our conversation with Jamie Dimon."
+        },
+        {
+          "start": 133.52,
+          "end": 134.52,
+          "speaker": "S01",
+          "text": "Well, this feels appropriate."
+        },
+        {
+          "start": 135.69,
+          "end": 136.88,
+          "speaker": "S03",
+          "text": "You guys dressed up for me."
+        },
+        {
+          "start": 139.47,
+          "end": 140.34,
+          "speaker": "S01",
+          "text": "You dressed up for us, too."
+        },
+        {
+          "start": 140.34,
+          "end": 140.84,
+          "speaker": "S01",
+          "text": "Thank you."
+        },
+        {
+          "start": 141.69,
+          "end": 144.87,
+          "speaker": "S02",
+          "text": "Last year, we had you on the video board at Jason."
+        },
+        {
+          "start": 144.87,
+          "end": 146.22,
+          "speaker": "S02",
+          "text": "You were looking very summery there."
+        },
+        {
+          "start": 147.11,
+          "end": 147.81,
+          "speaker": "S02",
+          "text": "You look great tonight."
+        },
+        {
+          "start": 148.06,
+          "end": 148.56,
+          "speaker": "S01",
+          "text": "Yes."
+        },
+        {
+          "start": 148.97,
+          "end": 150.01,
+          "speaker": "S01",
+          "text": "Well, we know you're a big history-"
+        }
+      ]
+    }
+  ]
+}

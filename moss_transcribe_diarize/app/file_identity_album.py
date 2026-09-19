@@ -2,10 +2,15 @@
 
 A local label identifies a voice only within its window. Match it to one canonical
 album entry, retain the evidence, then revisit earlier labels with the final album.
+The encoder also retains each interval vector before reducing that local label to a
+mean. Once the album is final, those already-computed vectors get one terminal match:
+confident evidence may repair a mixed decoder label; ambiguous evidence becomes S00.
+No audio is re-embedded and a window-level abstention remains authoritative.
 The resolver owns per-call state; shared runners never share meeting identities.
 """
 from __future__ import annotations
 
+from array import array
 from dataclasses import asdict, replace
 from pathlib import Path
 import tempfile
@@ -18,7 +23,7 @@ from .live_provider_bundle import (
     LiveProviderBundleConfig, _birth_min_seconds, _fingerprint_album,
     _identity_config, _identity_encoder, _vector_values,
 )
-from .speaker_identity import IdentityResolution
+from .speaker_identity import IdentityResolution, _mean_unit_vector
 
 
 class AlbumIdentityResolver:
@@ -43,7 +48,7 @@ class AlbumIdentityResolver:
     def contract(self) -> dict[str, Any]:
         config, encoder = self._providers()
         return {
-            'schema_version': 2, 'resolver': 'album',
+            'schema_version': 3, 'resolver': 'album',
             'config': dict(config.identity_config),
             'provider': dict(config.identity_provider),
             'encoder': dict(encoder.descriptor),
@@ -85,6 +90,7 @@ class AlbumIdentityResolver:
         album = _fingerprint_album(config.identity_provider)
         sweeper = LiveIdentitySweeper(album=album, config=policy)
         labels = {}
+        interval_vectors = {}
         states = []
         for window, segments, path in zip(windows, local_results, window_audio_paths, strict=True):
             local = tuple(dict.fromkeys(s.speaker for s in segments if s.speaker != 'S00'))
@@ -94,16 +100,24 @@ class AlbumIdentityResolver:
             reason = 'ok'
             try:
                 for speaker in local:
-                    intervals = [
-                        (max(0.0, s.start), min(window.duration, s.end)) for s in segments
-                        if s.speaker == speaker
+                    selected = [
+                        (index, max(0.0, s.start), min(window.duration, s.end))
+                        for index, s in enumerate(segments) if s.speaker == speaker
                         and round((min(window.duration, s.end) - max(0.0, s.start)) * 16000)
                         >= config.identity_provider['min_segment_samples']
                     ]
+                    intervals = [(start, end) for _, start, end in selected]
                     durations[speaker] = sum(end - start for start, end in intervals)
                     if not intervals:
                         continue
-                    vectors[speaker] = _vector_values(encoder.embed(path, intervals))
+                    embedded = [_vector_values(vector) for vector in encoder.embed_intervals(path, intervals)]
+                    if len(embedded) != len(selected):
+                        raise ValueError('identity encoder omitted an eligible interval')
+                    vectors[speaker] = _vector_values(_mean_unit_vector(embedded))
+                    for (segment_index, _, _), vector in zip(selected, embedded, strict=True):
+                        # This map lives until the final album exists. Float32 keeps a
+                        # 200-minute file near 4 MiB instead of retaining Python-float tuples.
+                        interval_vectors[window.index, segment_index] = array('f', vector)
                     for canonical in album.speakers():
                         score = cosine_similarity(vectors[speaker], album.reference(canonical))
                         if score is not None:
@@ -112,6 +126,8 @@ class AlbumIdentityResolver:
                 # Same failure boundary as the live preparer: keep words, abstain on
                 # this window, and retain no partial evidence as canonical authority.
                 vectors = {}
+                for key in [key for key in interval_vectors if key[0] == window.index]:
+                    del interval_vectors[key]
                 durations = {speaker: 0.0 for speaker in local}
                 reason = f'evidence_provider_failed:{type(exc).__name__}'
             try:
@@ -154,14 +170,46 @@ class AlbumIdentityResolver:
         revision = sweeper.sweep_now()
         for correction in revision.corrections:
             labels[correction.span_id, correction.local_speaker] = correction.canonical_speaker
-        relabeled = [
-            [replace(segment, speaker=labels.get((window.index, segment.speaker), 'S00'))
-             for segment in segments]
-            for window, segments in zip(windows, local_results, strict=True)
-        ]
+        references = {speaker: album.reference(speaker) for speaker in album.speakers()}
+        refinement = dict(evaluated=0, reassigned=0, abstained=0, unchanged=0)
+        relabeled = []
+        state_by_window = {state['window']: state for state in states}
+        for window, segments in zip(windows, local_results, strict=True):
+            group = []
+            for index, segment in enumerate(segments):
+                current = labels.get((window.index, segment.speaker), 'S00')
+                vector = interval_vectors.get((window.index, index))
+                # A whole-window abstention is a stronger ruling than one interval score.
+                # Refinement repairs mixed labels only after the causal window was accepted.
+                if vector is None or not references or state_by_window[window.index]['reason'] != 'ok':
+                    group.append(replace(segment, speaker=current))
+                    continue
+                refinement['evaluated'] += 1
+                evidence = tuple(
+                    LiveSpeakerEvidence('__interval__', canonical, score)
+                    for canonical, reference in references.items()
+                    if (score := cosine_similarity(vector, reference)) is not None
+                )
+                try:
+                    terminal = dict(assign_speakers(
+                        local_speakers=('__interval__',), canonical_speakers=tuple(references),
+                        evidence=evidence, config=policy,
+                    )).get('__interval__')
+                except LiveIdentityError:
+                    terminal = None
+                final = terminal or 'S00'
+                if terminal is None:
+                    refinement['abstained'] += 1
+                elif terminal == current:
+                    refinement['unchanged'] += 1
+                else:
+                    refinement['reassigned'] += 1
+                group.append(replace(segment, speaker=final))
+            relabeled.append(group)
         return IdentityResolution(
             relabeled_results=relabeled,
             summary=dict(resolver='album', canonical_speakers=len({s.speaker for g in relabeled for s in g if s.speaker != 'S00'}),
                          unattributed_segments=sum(s.speaker == 'S00' for g in relabeled for s in g)),
-            diagnostics=dict(schema_version=2, contract=self.contract(), windows=states, sweep=revision.to_dict()),
+            diagnostics=dict(schema_version=3, contract=self.contract(), windows=states,
+                             sweep=revision.to_dict(), interval_refinement=refinement),
         )

@@ -13,6 +13,8 @@ class Encoder:
     descriptor = {'provider': 'test'}
     def embed(self, path, intervals):
         return path[int(intervals[0][0] // 20) - 1]
+    def embed_intervals(self, path, intervals):
+        return [self.embed(path, [interval]) for interval in intervals]
 
 
 def resolver():
@@ -83,6 +85,38 @@ def test_same_window_conflicting_local_voices_abstain_as_live():
     assert [s.speaker for s in result.relabeled_results[1]] == ['S00','S00']
 
 
+def test_terminal_interval_refinement_repairs_a_mixed_local_label_without_changing_clean_intervals():
+    class IntervalEncoder:
+        descriptor = {'provider': 'test'}
+
+        def embed_intervals(self, path, intervals):
+            if path == 'base':
+                return [[1., 0.] if start == 20 else [0., 1.] for start, _ in intervals]
+            return [[1., 0.] if start == 20 else [0., 1.] for start, _ in intervals]
+
+    mixed = [segment('S03', start) for start in (20, 40, 60, 80)]
+    windows = plan_windows(240, window_seconds=150, stride_seconds=120)
+    result = AlbumIdentityResolver(
+        config=SimpleNamespace(
+            identity_config=dict(max_speakers=16, min_match_score=ALBUM_MIN_MATCH_SCORE,
+                                 min_match_margin=ALBUM_MIN_MATCH_MARGIN),
+            identity_provider=dict(min_segment_samples=8000),
+        ),
+        encoder=IntervalEncoder(),
+    ).resolve(
+        windows,
+        [[segment('S01', 20), segment('S02', 40)], mixed],
+        window_audio_paths=['base', 'mixed'],
+    )
+
+    assert result.diagnostics['windows'][1]['mapping'] == {'S03': 'S02'}
+    assert [item.speaker for item in result.relabeled_results[0]] == ['S01', 'S02']
+    assert [item.speaker for item in result.relabeled_results[1]] == ['S01', 'S02', 'S02', 'S02']
+    assert result.diagnostics['interval_refinement'] == {
+        'evaluated': 6, 'reassigned': 1, 'abstained': 0, 'unchanged': 5,
+    }
+
+
 def test_resolver_state_does_not_leak_between_file_meetings():
     r=resolver(); windows=plan_windows(120,window_seconds=150,stride_seconds=120)
     for vector in ([1,0],[0,1]):
@@ -95,6 +129,7 @@ def test_embedding_failure_preserves_words_and_abstains_as_live():
     class Failed:
         descriptor={}
         def embed(self,*args): raise RuntimeError('provider unavailable')
+        def embed_intervals(self,*args): raise RuntimeError('provider unavailable')
     r._encoder=Failed()
     windows=plan_windows(120)
     original=segment()

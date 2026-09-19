@@ -562,6 +562,9 @@ class GoodEmbedder:
         assert intervals
         return _unit_vector()
 
+    def embed_intervals(self, wav_path, intervals):
+        return [self.embed(wav_path, [interval]) for interval in intervals]
+
 
 class BadEmbedder:
     def __init__(self, vector):

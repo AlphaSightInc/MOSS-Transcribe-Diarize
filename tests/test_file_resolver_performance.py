@@ -74,6 +74,14 @@ def test_parallel_probe_failure_preserves_window_abstention_and_closes_workers()
     assert not [t for t in threads() if t.name.startswith('moss-file-embedding')]
 
 
+def test_interval_vectors_are_exposed_before_the_local_label_mean():
+    encoder = fake_encoder(1)
+    vectors = encoder.embed_intervals('unused', [(0, 2), (40, 42)])
+    assert vectors[0][0] == 1 and vectors[0][1] == 0
+    assert vectors[1][0] == 0 and vectors[1][1] == 1
+    assert encoder.embed('unused', [(0, 2), (40, 42)]) == si._mean_unit_vector(vectors)
+
+
 def test_parallel_probes_are_bounded_and_reduce_in_input_order(monkeypatch):
     lock = Lock()
     all_started = Event()

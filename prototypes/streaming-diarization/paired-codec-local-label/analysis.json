@@ -1,0 +1,219 @@
+{
+  "local_truth": [
+    {
+      "case": "composite-wav-0",
+      "local": "S01",
+      "truth_seconds": {
+        "Bill Ackman": 74.54,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.91
+      },
+      "majority_fraction": 0.974761
+    },
+    {
+      "case": "composite-wav-0",
+      "local": "S02",
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "majority_fraction": 0.800683
+    },
+    {
+      "case": "composite-wav-0",
+      "local": "S03",
+      "truth_seconds": {
+        "Keyu Jin": 39.54
+      },
+      "majority_fraction": 1.0
+    },
+    {
+      "case": "composite-mp3-0",
+      "local": "S01",
+      "truth_seconds": {
+        "Bill Ackman": 77.93,
+        "Keyu Jin": 1.05,
+        "Lex Fridman": 1.67
+      },
+      "majority_fraction": 0.966274
+    },
+    {
+      "case": "composite-mp3-0",
+      "local": "S02",
+      "truth_seconds": {
+        "Bill Ackman": 4.54,
+        "Keyu Jin": 1.51,
+        "Lex Fridman": 19.55
+      },
+      "majority_fraction": 0.763672
+    },
+    {
+      "case": "composite-mp3-0",
+      "local": "S03",
+      "truth_seconds": {
+        "Keyu Jin": 42.44
+      },
+      "majority_fraction": 1.0
+    },
+    {
+      "case": "composite-wav-120",
+      "local": "S01",
+      "truth_seconds": {
+        "Bill Ackman": 74.54,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.91
+      },
+      "majority_fraction": 0.974761
+    },
+    {
+      "case": "composite-wav-120",
+      "local": "S02",
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "majority_fraction": 0.800683
+    },
+    {
+      "case": "composite-wav-120",
+      "local": "S03",
+      "truth_seconds": {
+        "Keyu Jin": 39.54
+      },
+      "majority_fraction": 1.0
+    },
+    {
+      "case": "composite-mp3-120",
+      "local": "S01",
+      "truth_seconds": {
+        "Bill Ackman": 77.93,
+        "Keyu Jin": 1.05,
+        "Lex Fridman": 1.67
+      },
+      "majority_fraction": 0.966274
+    },
+    {
+      "case": "composite-mp3-120",
+      "local": "S02",
+      "truth_seconds": {
+        "Bill Ackman": 4.54,
+        "Keyu Jin": 1.51,
+        "Lex Fridman": 19.55
+      },
+      "majority_fraction": 0.763672
+    },
+    {
+      "case": "composite-mp3-120",
+      "local": "S03",
+      "truth_seconds": {
+        "Keyu Jin": 42.44
+      },
+      "majority_fraction": 1.0
+    },
+    {
+      "case": "composite-wav-240",
+      "local": "S01",
+      "truth_seconds": {
+        "Bill Ackman": 74.54,
+        "Keyu Jin": 1.02,
+        "Lex Fridman": 0.91
+      },
+      "majority_fraction": 0.974761
+    },
+    {
+      "case": "composite-wav-240",
+      "local": "S02",
+      "truth_seconds": {
+        "Bill Ackman": 3.99,
+        "Keyu Jin": 0.68,
+        "Lex Fridman": 18.76
+      },
+      "majority_fraction": 0.800683
+    },
+    {
+      "case": "composite-wav-240",
+      "local": "S03",
+      "truth_seconds": {
+        "Keyu Jin": 39.54
+      },
+      "majority_fraction": 1.0
+    },
+    {
+      "case": "composite-mp3-240",
+      "local": "S01",
+      "truth_seconds": {
+        "Bill Ackman": 77.93,
+        "Keyu Jin": 1.05,
+        "Lex Fridman": 1.67
+      },
+      "majority_fraction": 0.966274
+    },
+    {
+      "case": "composite-mp3-240",
+      "local": "S02",
+      "truth_seconds": {
+        "Bill Ackman": 4.54,
+        "Keyu Jin": 1.51,
+        "Lex Fridman": 19.55
+      },
+      "majority_fraction": 0.763672
+    },
+    {
+      "case": "composite-mp3-240",
+      "local": "S03",
+      "truth_seconds": {
+        "Keyu Jin": 42.44
+      },
+      "majority_fraction": 1.0
+    }
+  ],
+  "paired_vector_similarity": [
+    {
+      "start": 0,
+      "local": "S01",
+      "wav_mp3_cosine": 0.976478
+    },
+    {
+      "start": 0,
+      "local": "S02",
+      "wav_mp3_cosine": 0.938771
+    },
+    {
+      "start": 0,
+      "local": "S03",
+      "wav_mp3_cosine": 0.976161
+    },
+    {
+      "start": 120,
+      "local": "S01",
+      "wav_mp3_cosine": 0.975627
+    },
+    {
+      "start": 120,
+      "local": "S02",
+      "wav_mp3_cosine": 0.933944
+    },
+    {
+      "start": 120,
+      "local": "S03",
+      "wav_mp3_cosine": 0.974694
+    },
+    {
+      "start": 240,
+      "local": "S01",
+      "wav_mp3_cosine": 0.975355
+    },
+    {
+      "start": 240,
+      "local": "S02",
+      "wav_mp3_cosine": 0.936887
+    },
+    {
+      "start": 240,
+      "local": "S03",
+      "wav_mp3_cosine": 0.975498
+    }
+  ]
+}

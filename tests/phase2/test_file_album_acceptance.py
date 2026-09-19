@@ -20,6 +20,8 @@ class Encoder:
     spec=SimpleNamespace(provider='test',revision='one',state_sha256='test')
     def embed(self,path,intervals):
         return [1.,0.] if intervals[0][0] % 120 < 30 else [0.,1.]
+    def embed_intervals(self,path,intervals):
+        return [self.embed(path,[interval]) for interval in intervals]
 
 
 class Decoder:

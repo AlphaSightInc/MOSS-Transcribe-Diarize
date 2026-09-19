@@ -54,6 +54,11 @@ class TierBEmbedder(Protocol):
     def embed(self, wav_path: str | Path, intervals: list[tuple[float, float]]) -> list[float]:
         ...
 
+    def embed_intervals(
+        self, wav_path: str | Path, intervals: list[tuple[float, float]]
+    ) -> list[list[float]]:
+        ...
+
 
 PINNED_TIER_B_ASSET_SPEC = TierBAssetSpec()
 
@@ -534,6 +539,16 @@ class WeSpeakerResNet152LmAdapter:
             raise RuntimeError(f"Tier B provider unavailable: {preflight.reason}")
         return list(self._get_embedder().embed(wav_path, intervals))
 
+    def embed_intervals(
+        self, wav_path: str | Path, intervals: list[tuple[float, float]]
+    ) -> list[list[float]]:
+        """Return each interval vector before the local-label mean discards its identity."""
+
+        preflight = self.preflight()
+        if not preflight.available:
+            raise RuntimeError(f"Tier B provider unavailable: {preflight.reason}")
+        return [list(vector) for vector in self._get_embedder().embed_intervals(wav_path, intervals)]
+
     def _get_embedder(self) -> Any:
         if self.embedder is None:
             loader = self._loader or (
@@ -610,6 +625,11 @@ class _OnnxWeSpeakerEmbedder:
         return tier_b_provider_manifest(device=self.device)
 
     def embed(self, wav_path: str | Path, intervals: list[tuple[float, float]]) -> list[float]:
+        return _mean_unit_vector(self.embed_intervals(wav_path, intervals))
+
+    def embed_intervals(
+        self, wav_path: str | Path, intervals: list[tuple[float, float]]
+    ) -> list[list[float]]:
         session = self._load_session()
         samples, sample_rate = self._load_audio(wav_path)
         if sample_rate != 16000:
@@ -637,7 +657,7 @@ class _OnnxWeSpeakerEmbedder:
                 max_workers=self._interval_workers, thread_name_prefix="moss-file-embedding"
             ) as pool:
                 vectors = list(pool.map(embed_interval, clips))
-        return _mean_unit_vector(vectors)
+        return vectors
 
     def _load_session(self) -> Any:
         if self._session is not None:

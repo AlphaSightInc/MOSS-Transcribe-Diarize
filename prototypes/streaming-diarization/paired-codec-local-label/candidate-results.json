@@ -1,0 +1,241 @@
+{
+  "arms": [
+    {
+      "arm": "wav",
+      "mappings": [
+        {
+          "window": 0,
+          "local": "S01",
+          "canonical": "S01"
+        },
+        {
+          "window": 0,
+          "local": "S02",
+          "canonical": "S02"
+        },
+        {
+          "window": 0,
+          "local": "S03",
+          "canonical": "S03"
+        },
+        {
+          "window": 1,
+          "local": "S01",
+          "canonical": "S01"
+        },
+        {
+          "window": 1,
+          "local": "S02",
+          "canonical": "S02"
+        },
+        {
+          "window": 1,
+          "local": "S03",
+          "canonical": "S03"
+        },
+        {
+          "window": 2,
+          "local": "S01",
+          "canonical": "S01"
+        },
+        {
+          "window": 2,
+          "local": "S02",
+          "canonical": "S02"
+        },
+        {
+          "window": 2,
+          "local": "S03",
+          "canonical": "S03"
+        }
+      ],
+      "canonical_person": {
+        "S01": "Bill Ackman",
+        "S02": "Lex Fridman",
+        "S03": "Keyu Jin"
+      },
+      "totals": {
+        "candidate_correct_seconds": 345.12,
+        "candidate_unknown_seconds": 4.95,
+        "current_confused_seconds": 11.61,
+        "current_correct_seconds": 338.46,
+        "scored_seconds": 350.07
+      },
+      "changed": [
+        {
+          "window": 0,
+          "segment": 17,
+          "local": "S01",
+          "truth": "Keyu Jin",
+          "current": "S01",
+          "candidate": null,
+          "seconds": 1.65
+        },
+        {
+          "window": 0,
+          "segment": 30,
+          "local": "S02",
+          "truth": "Bill Ackman",
+          "current": "S02",
+          "candidate": "S01",
+          "seconds": 2.22
+        },
+        {
+          "window": 1,
+          "segment": 17,
+          "local": "S01",
+          "truth": "Keyu Jin",
+          "current": "S01",
+          "candidate": null,
+          "seconds": 1.65
+        },
+        {
+          "window": 1,
+          "segment": 30,
+          "local": "S02",
+          "truth": "Bill Ackman",
+          "current": "S02",
+          "candidate": "S01",
+          "seconds": 2.22
+        },
+        {
+          "window": 2,
+          "segment": 17,
+          "local": "S01",
+          "truth": "Keyu Jin",
+          "current": "S01",
+          "candidate": null,
+          "seconds": 1.65
+        },
+        {
+          "window": 2,
+          "segment": 30,
+          "local": "S02",
+          "truth": "Bill Ackman",
+          "current": "S02",
+          "candidate": "S01",
+          "seconds": 2.22
+        }
+      ]
+    },
+    {
+      "arm": "mp3",
+      "mappings": [
+        {
+          "window": 0,
+          "local": "S01",
+          "canonical": "S01"
+        },
+        {
+          "window": 0,
+          "local": "S02",
+          "canonical": "S02"
+        },
+        {
+          "window": 0,
+          "local": "S03",
+          "canonical": "S03"
+        },
+        {
+          "window": 1,
+          "local": "S01",
+          "canonical": "S01"
+        },
+        {
+          "window": 1,
+          "local": "S02",
+          "canonical": "S02"
+        },
+        {
+          "window": 1,
+          "local": "S03",
+          "canonical": "S03"
+        },
+        {
+          "window": 2,
+          "local": "S01",
+          "canonical": "S01"
+        },
+        {
+          "window": 2,
+          "local": "S02",
+          "canonical": "S02"
+        },
+        {
+          "window": 2,
+          "local": "S03",
+          "canonical": "S03"
+        }
+      ],
+      "canonical_person": {
+        "S01": "Bill Ackman",
+        "S02": "Lex Fridman",
+        "S03": "Keyu Jin"
+      },
+      "totals": {
+        "candidate_confused_seconds": 3.0,
+        "candidate_correct_seconds": 366.58,
+        "candidate_unknown_seconds": 4.89,
+        "current_confused_seconds": 15.68,
+        "current_correct_seconds": 358.79,
+        "scored_seconds": 374.47
+      },
+      "changed": [
+        {
+          "window": 0,
+          "segment": 20,
+          "local": "S01",
+          "truth": "Keyu Jin",
+          "current": "S01",
+          "candidate": null,
+          "seconds": 1.63
+        },
+        {
+          "window": 0,
+          "segment": 33,
+          "local": "S02",
+          "truth": "Bill Ackman",
+          "current": "S02",
+          "candidate": "S01",
+          "seconds": 2.61
+        },
+        {
+          "window": 1,
+          "segment": 21,
+          "local": "S01",
+          "truth": "Keyu Jin",
+          "current": "S01",
+          "candidate": null,
+          "seconds": 1.63
+        },
+        {
+          "window": 1,
+          "segment": 34,
+          "local": "S02",
+          "truth": "Bill Ackman",
+          "current": "S02",
+          "candidate": "S01",
+          "seconds": 2.59
+        },
+        {
+          "window": 2,
+          "segment": 21,
+          "local": "S01",
+          "truth": "Keyu Jin",
+          "current": "S01",
+          "candidate": null,
+          "seconds": 1.63
+        },
+        {
+          "window": 2,
+          "segment": 34,
+          "local": "S02",
+          "truth": "Bill Ackman",
+          "current": "S02",
+          "candidate": "S01",
+          "seconds": 2.59
+        }
+      ]
+    }
+  ]
+}
