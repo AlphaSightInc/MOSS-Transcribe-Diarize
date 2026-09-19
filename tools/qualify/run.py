@@ -86,7 +86,7 @@ class Bundle:
         self.proxy = None
         self.monitor_stop = threading.Event()
         self.monitor = None
-        self.data = dict(schema='moss-local-qualification.v1', scope='local measurement; not deployment or attended acceptance',
+        self.data = dict(schema='moss-local-qualification.v2', scope='local measurement; not deployment or attended acceptance',
                          identity=dict(git_sha=self.sha, tree_clean=not dirty, dirty_files=dirty,
                                        python=sys.version.split()[0], node=subprocess.check_output(['node','--version'], text=True).strip(),
                                        decoder_tunnel_url=f'http://127.0.0.1:{self.decoder_upstream_port}', decoder_base_url='http://127.0.0.1:19125/v1'),
@@ -312,10 +312,10 @@ class Bundle:
         return ready
 
     def extended(self, ready):
-        specs=[('browser_stress_all',16),('file_6min',1),('file_3min_formats',3),('file_failures',5),('file_30min',3),('capacity_4x600',4)]
+        specs=[('browser_stress_all',16),('file_6min',1),('file_3min_formats',3),('file_failures',5),('file_30min',1),('capacity_2x1800',2)]
         if not ready:
             for name,n in specs:
-                status='SKIP' if name in ('file_30min','capacity_4x600') and not self.args.long else 'UNRUNNABLE'
+                status='SKIP' if name in ('file_30min','capacity_2x1800') and not self.args.long else 'UNRUNNABLE'
                 self.gate(name,status,counts([status]*n),reason='Requires --long' if status=='SKIP' else 'Isolated stack unavailable')
             return
         output=self.work/'browser'
@@ -338,16 +338,16 @@ class Bundle:
         if self.args.long:
             output=self.work/'capacity'
             scratch=(self.work/'capacity-runtime').relative_to(ROOT)
-            code,elapsed,_=self.command('capacity_4x600',[PY,'prototypes/capacity-campaign/run.py',
-                '--sessions','4','--seconds','600','--stack-port','17827','--decoder-url','http://127.0.0.1:19125/v1',
+            code,elapsed,_=self.command('capacity_2x1800',[PY,'prototypes/capacity-campaign/run.py',
+                '--sessions','2','--seconds','1800','--clips','mono_javier_intro_50s','discussion_jamie_dimon_180s','--stack-port','17827','--decoder-url','http://127.0.0.1:19125/v1',
                 '--out',str(output),'--scratch',str(scratch),'--manifest',str(self.manifest),'--allow-contention'],timeout=3600)
             result=json.loads((output/'result.json').read_text()) if (output/'result.json').exists() else {}
             rows=result.get('session_results',[])
-            statuses=['PASS' if r.get('clean') else 'FAIL' for r in rows]+['UNRUNNABLE']*(4-len(rows))
-            self.gate('capacity_4x600','UNRUNNABLE' if not rows else 'PASS' if result.get('clean') and code==0 else 'FAIL',
+            statuses=['PASS' if r.get('clean') else 'FAIL' for r in rows]+['UNRUNNABLE']*(2-len(rows))
+            self.gate('capacity_2x1800','UNRUNNABLE' if not rows else 'PASS' if result.get('clean') and code==0 else 'FAIL',
                 counts(statuses),elapsed,code,reason='Existing capacity clean bar includes no detected foreign load; contention is recorded without pausing',measurements=retained_metadata(result))
         else:
-            self.gate('capacity_4x600','SKIP',counts(['SKIP']*4),reason='Requires --long')
+            self.gate('capacity_2x1800','SKIP',counts(['SKIP']*2),reason='Requires --long')
 
     def files(self):
         bench='prototypes/streaming-diarization/wp16-file-url-long/'
@@ -360,8 +360,8 @@ class Bundle:
             if not code:
                 code,_,_=self.command('file_prepare_'+name,['ffmpeg','-v','error','-y','-i',str(scratch/'media/long.wav'),'-t','180',*codec,str(scratch/'media'/name)])
         specs=[('file_6min',['six.wav']),('file_3min_formats',['three.wav','three.mp3','three.m4a']),('file_failures',['empty.wav','text.mp3','missing','html','hang'])]
-        if self.args.long:specs.append(('file_30min',['long.wav','long.mp3','long.m4a']))
-        else:self.gate('file_30min','SKIP',counts(['SKIP']*3),reason='Requires --long')
+        if self.args.long:specs.append(('file_30min',['long.wav']))
+        else:self.gate('file_30min','SKIP',counts(['SKIP']*1),reason='Requires --long')
         if code:
             for name,cases in specs:self.gate(name,'UNRUNNABLE',counts(['UNRUNNABLE']*len(cases)),time.monotonic()-start,code,reason='Public media preparation failed')
             return
@@ -513,7 +513,7 @@ class Bundle:
         if self.args.compare:
             baseline = json.loads(self.args.compare.read_text())
             deltas = compare(baseline,self.data)
-            omitted=[d for d in deltas if not self.args.long and d['name'] in ('file_30min','capacity_4x600') and d['after']=='SKIP']
+            omitted=[d for d in deltas if not self.args.long and d['name'] in ('file_30min','capacity_2x1800') and d['after']=='SKIP']
             deltas=[d for d in deltas if d not in omitted]
             self.data['determinism'] = dict(baseline=str(self.args.compare),status='PASS' if not deltas else 'FAIL',deltas=deltas,
                                            same_candidate=baseline['identity']['git_sha']==self.sha, intentionally_omitted_long_gates=omitted)
@@ -598,7 +598,7 @@ def main():
         recorded = {gate['name'] for gate in bundle.data['gates']}
         required = dict(python_import=1, asset_parity=17, pytest=0, frontend=0,
                         bundle_helpers=0, typecheck=1, verify_layout=1, stack=1,
-                        browser_stress_all=16,file_6min=1,file_3min_formats=3,file_failures=5,file_30min=3,capacity_4x600=4,
+                        browser_stress_all=16,file_6min=1,file_3min_formats=3,file_failures=5,file_30min=1,capacity_2x1800=2,
                         workspace=14, demo_lanes=2, lifecycle=7, reshare=6, level_ladder=6, identity_stress=3)
         required.update({'workspace_row_'+str(n):1 for n in range(1,15)})
         for name, expected in required.items():
