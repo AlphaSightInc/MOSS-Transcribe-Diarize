@@ -1,0 +1,150 @@
+{
+  "accept_status": 201,
+  "audio_download_status": 200,
+  "audio_state": "available",
+  "backend": "hf",
+  "delegate_calls": 1,
+  "failure_code": null,
+  "meeting_status": "completed",
+  "model": "/Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8",
+  "notice": null,
+  "remote_request_budget": 0,
+  "scheduler": {
+    "running": 0,
+    "waiting_background": 0
+  },
+  "source": "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/audio.wav",
+  "sqlite_runtime": "3.50.4",
+  "sqlite_semantic_store_allowance": true,
+  "transcript": {
+    "segments": [
+      {
+        "end": 3.27,
+        "id": "seg_0001",
+        "speaker": "S01",
+        "start": 0.54,
+        "text": "To figure out what something's worth and you have to kind of weigh it."
+      },
+      {
+        "end": 8.88,
+        "id": "seg_0002",
+        "speaker": "S01",
+        "start": 4.08,
+        "text": "He talked about the difference between, you said the stock market in the short term is a voting"
+      },
+      {
+        "end": 9.54,
+        "id": "seg_0003",
+        "speaker": "S01",
+        "start": 8.88,
+        "text": "machine."
+      },
+      {
+        "end": 15.33,
+        "id": "seg_0004",
+        "speaker": "S01",
+        "start": 9.54,
+        "text": "It represents speculative interests, you know, supply and demand of people in the short term."
+      },
+      {
+        "end": 19.68,
+        "id": "seg_0005",
+        "speaker": "S01",
+        "start": 15.33,
+        "text": "But in the long term, the stock market is a weighing machine, you're much more accurate."
+      },
+      {
+        "end": 21.36,
+        "id": "seg_0006",
+        "speaker": "S01",
+        "start": 19.68,
+        "text": "It's going to tell you what something's worth."
+      },
+      {
+        "end": 25.5,
+        "id": "seg_0007",
+        "speaker": "S01",
+        "start": 21.36,
+        "text": "And so if you can divine what something's worth, then you can really take advantage of"
+      },
+      {
+        "end": 28.02,
+        "id": "seg_0008",
+        "speaker": "S01",
+        "start": 25.5,
+        "text": "the market because it's really here to to help you."
+      },
+      {
+        "end": 29.25,
+        "id": "seg_0009",
+        "speaker": "S01",
+        "start": 28.02,
+        "text": "And that's kind of the message of the book."
+      },
+      {
+        "end": 33.78,
+        "id": "seg_0010",
+        "speaker": "S02",
+        "start": 29.61,
+        "text": "And that same way, there's a kind of difference between speculation and investing."
+      },
+      {
+        "end": 40.11,
+        "id": "seg_0011",
+        "speaker": "S01",
+        "start": 33.87,
+        "text": "Yeah, speculation is just, it's a bit like buying, trading crypto, right?"
+      },
+      {
+        "end": 40.47,
+        "id": "seg_0012",
+        "speaker": "S01",
+        "start": 40.11,
+        "text": "You're"
+      },
+      {
+        "end": 41.43,
+        "id": "seg_0013",
+        "speaker": "S02",
+        "start": 40.68,
+        "text": "Strong words."
+      },
+      {
+        "end": 46.74,
+        "id": "seg_0014",
+        "speaker": "S01",
+        "start": 42.21,
+        "text": "Well, short term trading crypto, maybe in the long run, there's intrinsic value."
+      },
+      {
+        "end": 55.11,
+        "id": "seg_0015",
+        "speaker": "S01",
+        "start": 46.74,
+        "text": "But the, you know, it's many investors, you know, in a bubble going into the, you know,"
+      },
+      {
+        "end": 58.32,
+        "id": "seg_0016",
+        "speaker": "S01",
+        "start": 55.11,
+        "text": "the crash were really just pure speculators."
+      },
+      {
+        "end": 59.4,
+        "id": "seg_0017",
+        "speaker": "S01",
+        "start": 58.32,
+        "text": "They didn't know what things were worth."
+      },
+      {
+        "end": 59.97,
+        "id": "seg_0018",
+        "speaker": "S01",
+        "start": 59.4,
+        "text": "They just knew they were"
+      }
+    ]
+  },
+  "wall_seconds": 31.934
+}

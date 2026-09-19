@@ -951,9 +951,7 @@ def test_deployed_file_inference_settings_reach_runner(tmp_path: Path):
         await_terminal(client, meeting_id, "completed")
 
     assert len(runner.options) == 1
-    checkpoint_dir = Path(runner.options[0].pop("checkpoint_dir"))
-    assert checkpoint_dir.name == "checkpoint"
-    assert checkpoint_dir.parent.parent == tmp_path / "file-work"
+    assert runner.options[0].pop("checkpoint_dir") is None
     assert runner.options == [{
         "prompt": "deployed prompt",
         "max_length": 16384,

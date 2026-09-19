@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import inspect
 from pathlib import Path
 
 import pytest
@@ -220,6 +221,72 @@ def test_short_input_delegates_without_slicing(tmp_path):
     assert extractor.calls == []
     assert actual.window_count == 1
     assert actual.completed_windows == 1
+
+
+def test_windowed_runner_has_explicit_signature_and_rejects_unknown_fields(tmp_path):
+    expected = result("[0][S01]short[1]")
+    runner, _ = make_runner([expected], 1.0)
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"source")
+
+    signature = inspect.signature(runner.transcribe)
+    assert not any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD
+        for parameter in signature.parameters.values()
+    )
+    with pytest.raises(TypeError, match="unsupported_field"):
+        runner.transcribe(source, unsupported_field="must-not-be-swallowed")
+
+    assert runner.delegate.paths == []
+
+
+@pytest.mark.parametrize(
+    ("minutes", "expected_windows", "tail_start", "tail_duration"),
+    [
+        (199, 100, 11_880.0, 60.0),
+        (200, 100, 11_880.0, 120.0),
+        (201, 101, 12_000.0, 60.0),
+    ],
+)
+def test_represented_long_sources_keep_every_window_tail_and_monotonic_progress(
+    tmp_path, minutes, expected_windows, tail_start, tail_duration
+):
+    class LongDelegate:
+        model_path = "represented-duration"
+
+        def __init__(self):
+            self.calls = 0
+
+        def transcribe(self, audio_path, **kwargs):
+            index = int(Path(audio_path).stem.rsplit("-", 1)[1])
+            self.calls += 1
+            duration = tail_duration if index == expected_windows - 1 else 120
+            return result(f"[{duration - 1}][S01]window-{index:04d}[{duration}]")
+
+    delegate = LongDelegate()
+    extractor = RecordingExtractor()
+    runner = WindowedRunner(
+        delegate,
+        duration_probe=lambda _: minutes * 60.0,
+        window_extractor=extractor,
+        identity_resolver=RecordingIdentityResolver(),
+    )
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"source")
+    progress = []
+
+    stitched = runner.transcribe(
+        source,
+        max_new_tokens=12_000,
+        status_callback=lambda _status, value, _tokens: progress.append(value),
+    )
+
+    assert delegate.calls == stitched.window_count == stitched.completed_windows == expected_windows
+    assert len(extractor.calls) == expected_windows
+    assert extractor.calls[-1][2:] == (tail_start, tail_duration)
+    assert progress == sorted(progress)
+    assert progress[-1] == pytest.approx(0.85)
+    assert f"window-{expected_windows - 1:04d}" in stitched.text
 
 
 @pytest.mark.parametrize(
