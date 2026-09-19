@@ -1,7 +1,7 @@
 import { compareTranscriptOrder } from "./transcriptOrder.ts";
 import type { SourceLane } from "./transcriptOrder.ts";
 import type { TranscriptTurn } from "./mergeTranscript";
-import { isBackendUnknownSpeakerId, UNKNOWN_SPEAKER_ID } from "./speakerMap";
+import { isBackendUnknownSpeakerId, UNKNOWN_SPEAKER_ID } from "./speakerMap.ts";
 
 export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json", "srt", "vtt"] as const;
 export type TranscriptExportFormat = (typeof TRANSCRIPT_EXPORT_FORMATS)[number];

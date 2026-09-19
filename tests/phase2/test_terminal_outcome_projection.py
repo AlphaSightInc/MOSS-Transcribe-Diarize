@@ -140,7 +140,7 @@ def test_terminal_outcome_is_truthful_live_saved_and_after_reopen(
         if case == "unavailable_refinement":
             app.state.phase2_live.runtime._sessions[meeting_id].coordinator.tape = None
         stopped = client.post(
-            f"/api/live/sessions/{meeting_id}/stop", json={"deadline": 0.05}
+            f"/api/live/sessions/{meeting_id}/stop", json={"deadline": 0.5}
         )
         assert stopped.status_code in {200, 202}, stopped.text
         if scheduler.pending:

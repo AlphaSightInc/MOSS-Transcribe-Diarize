@@ -1,5 +1,5 @@
 import type { TranscriptItem } from "../api/types";
-import { normalizeInlineWhitespace } from "./text";
+import { normalizeInlineWhitespace } from "./text.ts";
 
 const SPEAKER_ID_PATTERN = /^SPEAKER_(\d+)$/;
 export const UNKNOWN_SPEAKER_ID = "UNKNOWN";

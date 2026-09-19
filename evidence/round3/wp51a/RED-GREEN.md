@@ -28,3 +28,9 @@
 ## Format naming adjudication
 
 The PANE prose names CSV, but the binding implementation plan says preserve the **five existing serializers**, and both production UI and end-to-end oracle define those five as Markdown, plain text, JSON, SubRip, and WebVTT. This WP exercised and preserved those five; it did not add a sixth CSV format.
+
+## Full-suite correction
+
+- The serializer's new speaker-map dependency initially used extensionless runtime imports. Node's direct TypeScript export oracle could not resolve them; explicit `.ts` imports restore that supported path.
+- The JSON oracle now asserts the publication boundary: saved source identity `S00` becomes downloaded machine identity `UNKNOWN`, while every downloaded format contains **0 literal `S00`**.
+- Terminal projection plus export oracle: **88 passed / 88** under the mandated Python 3.12 venv.

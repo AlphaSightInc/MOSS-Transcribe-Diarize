@@ -30,7 +30,7 @@ from .live_transport import (
     LiveTransportSnapshotView,
     attach_live_routes,
 )
-from .phase2 import Account, AccountRevoked, SESSION_COOKIE
+from .phase2 import Account, AccountRevoked, SESSION_COOKIE, _meeting_needs_review
 
 
 _LOG = logging.getLogger("moss_transcribe_diarize.phase2.speaker_identity")
@@ -855,7 +855,9 @@ class Phase2LiveMeetings:
             binding.durable_version = version
         else:
             await binding.handle.finish(status, **outcome)
-        binding.durable_needs_review = (await binding.handle.snapshot()).needs_review
+        binding.durable_needs_review = _meeting_needs_review(
+            status, document, None, notice
+        )
 
     async def _recover_terminal_locked(
         self,
