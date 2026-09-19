@@ -1131,6 +1131,10 @@ class Phase2Store:
                 target_label = label.strip() if label is not None else ""
                 if not target_label:
                     raise ValueError("New person name must not be empty.")
+                if _is_unknown_speaker_value(target_label):
+                    raise ValueError(
+                        "Choose a person name that is not an uncertainty label."
+                    )
                 target_id = f"manual-{secrets.token_urlsafe(12)}"
 
             for passage_id in selected:
@@ -2442,12 +2446,13 @@ def _now_ms() -> int:
 
 
 def _is_unknown_speaker_value(value: object) -> bool:
-    """True only for unknown values emitted by the saved/legacy transcript paths."""
+    """Normalize and identify the product's reserved uncertainty vocabulary."""
 
-    normalized = value.strip() if isinstance(value, str) else ""
-    # Saved Live emits S00. The legacy transcript normalizer emits UNKNOWN.
-    # Speaker uncertain is this module's terminal presentation of either value.
-    return normalized in {"S00", "UNKNOWN", "Speaker uncertain"}
+    normalized = " ".join(value.split()).casefold() if isinstance(value, str) else ""
+    if normalized in {"", "s00", "unknown", "speaker uncertain", "preview"}:
+        return True
+    prefix = "speaker_"
+    return normalized.startswith(prefix) and normalized.removeprefix(prefix).isdigit()
 
 
 def _segment_speaker_id(segment: Mapping[str, object]) -> str | None:

@@ -164,11 +164,11 @@ describe("TranscriptPane", () => {
     expect([...root.querySelectorAll(".utt")].map(row => row.getAttribute("data-new-speaker"))).toEqual(["true", "true", "false"]);
   });
 
-  it("preserves committed unattributed text but never offers to name S00", () => {
+  it("renders committed S00 as uncertain and never offers to name it", () => {
     showSpeakers();
     act(() => replaceTranscript([{ start: 0, end: 1, text: "Unattributed speech", speaker: "S00", speaker_entity_id: "S00", display_name: "S00", state: "confirmed" }]));
     expect(root.querySelector<HTMLButtonElement>(".legend-chip")?.disabled).toBe(true);
-    expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("S00");
+    expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Speaker uncertain");
     expect(root.querySelector(".utt-text")?.textContent).toBe("Unattributed speech");
   });
 
@@ -268,6 +268,11 @@ describe("TranscriptPane", () => {
       ]);
     });
 
+    expect(root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.disabled).toBe(true);
+    act(() => {
+      sessionId.value = "empty-meeting";
+      replaceTranscript([]);
+    });
     expect(root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.disabled).toBe(true);
   });
 

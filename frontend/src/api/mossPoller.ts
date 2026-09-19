@@ -51,6 +51,7 @@ interface MossSnapshot {
   persistenceFailure: string | null;
   finalizationStatus: FinalizationStatus;
   statusLine: string | null;
+  needsReview?: boolean;
   labelRevisionVersion: number;
   canonicalSpeakers: string[];
   committed: MossCanonicalCommit[];
@@ -244,7 +245,8 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
             snapshot.failureReason ??
             snapshot.terminalFailureReason ??
             snapshot.persistenceFailure,
-          status_line: snapshot.statusLine
+          status_line: snapshot.statusLine,
+          needs_review: snapshot.needsReview
         });
         lastRenderedItems = renderedSnapshot.event.items;
         dispatch({ ...renderedSnapshot.event, items: applySpeakerLabels(lastRenderedItems, labelState.labels) });
@@ -669,6 +671,7 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
     persistenceFailure: optionalString(response.persistence_failure),
     finalizationStatus: parseFinalizationStatus(session.finalization_status),
     statusLine: optionalString(response.status_line),
+    ...(typeof response.needs_review === "boolean" ? { needsReview: response.needs_review } : {}),
     labelRevisionVersion: requiredNonNegativeNumber(
       session.label_revision_version ?? 0,
       "label revision version"

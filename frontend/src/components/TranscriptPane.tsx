@@ -16,7 +16,6 @@ import {
   buildSpeakerColorMap,
   buildSpeakerLegendKey,
   isBackendUnknownSpeakerId,
-  isUnidentifiedSpeakerLabel,
   resolveSpeakerColorToken,
   resolveVisibleSpeakerLabel
 } from "../lib/speakerMap";
@@ -42,6 +41,11 @@ interface TranscriptLegendEntry {
   speakerId: string;
   committed: boolean;
   isUnidentified: boolean;
+}
+
+interface PassageCorrectionTarget {
+  meetingId: string;
+  passageIds: string[];
 }
 
 function matchesFindShortcut(event: KeyboardEvent): boolean {
@@ -108,7 +112,7 @@ export function TranscriptPane() {
   const [namingError, setNamingError] = useState<string | null>(null);
   const namingDialogRef = useRef<HTMLDialogElement | null>(null);
   const namingInputRef = useRef<HTMLInputElement | null>(null);
-  const [correctionTarget, setCorrectionTarget] = useState<TranscriptTurn | null>(null);
+  const [correctionTarget, setCorrectionTarget] = useState<PassageCorrectionTarget | null>(null);
   const [correctionMode, setCorrectionMode] = useState<"existing" | "new">("existing");
   const [correctionSpeakerId, setCorrectionSpeakerId] = useState("");
   const [correctionName, setCorrectionName] = useState("");
@@ -159,6 +163,11 @@ export function TranscriptPane() {
     setNamingMessage(null);
     setNamingError(null);
   }, [activeSessionId, canNameSpeakers]);
+
+  useEffect(() => {
+    setCorrectionTarget(null);
+    setCorrectionError(null);
+  }, [activeSessionId]);
 
   useEffect(() => {
     if (!namingTarget) return;
@@ -240,7 +249,7 @@ export function TranscriptPane() {
   function openPassageCorrection(turn: TranscriptTurn): void {
     if (!canCorrectPassages || turn.segment_ids.length === 0) return;
     const existing = correctionSpeakers.find(entry => entry.speakerId !== turn.speaker_entity_id);
-    setCorrectionTarget(turn);
+    setCorrectionTarget({ meetingId: activeSessionId!, passageIds: [...turn.segment_ids] });
     setCorrectionMode(existing ? "existing" : "new");
     setCorrectionSpeakerId(existing?.speakerId ?? "");
     setCorrectionName("");
@@ -250,13 +259,17 @@ export function TranscriptPane() {
   async function savePassageCorrection(event: Event): Promise<void> {
     event.preventDefault();
     if (!correctionTarget || !activeSessionId || savingCorrection) return;
-    const meetingId = activeSessionId;
+    const meetingId = correctionTarget.meetingId;
+    if (activeSessionId !== meetingId) {
+      setCorrectionTarget(null);
+      return;
+    }
     setSavingCorrection(true);
     setCorrectionError(null);
     try {
       const result = await reassignMeetingPassages(
         meetingId,
-        correctionTarget.segment_ids,
+        correctionTarget.passageIds,
         correctionMode === "existing"
           ? { speaker_id: correctionSpeakerId }
           : { label: correctionName.trim() }
@@ -273,7 +286,9 @@ export function TranscriptPane() {
       setNamingMessage(`Reassigned selected passage to ${result.label}.`);
       setCorrectionTarget(null);
     } catch (error) {
-      setCorrectionError(error instanceof Error ? error.message : "Passage correction failed.");
+      if (sessionId.value === meetingId) {
+        setCorrectionError(error instanceof Error ? error.message : "Passage correction failed.");
+      }
     } finally {
       setSavingCorrection(false);
     }
@@ -686,9 +701,12 @@ export function TranscriptPane() {
 }
 
 function visibleSpeakerName(
-  item: { speaker: string; display_name: string },
+  item: { speaker: string; speaker_entity_id: string; display_name: string },
   consecutiveSpeakerMap: ReadonlyMap<string, string>
 ): string {
+  if (isBackendUnknownSpeakerId(item.speaker_entity_id)) {
+    return resolveVisibleSpeakerLabel(item.speaker_entity_id, consecutiveSpeakerMap);
+  }
   // A user may choose a label that looks like a generic speaker tag. Names are
   // literal display text, not input to automatic numbering.
   return item.display_name !== item.speaker
@@ -718,7 +736,7 @@ function buildLegendEntries(
         visibleLabel,
         speakerId: item.speaker_entity_id,
         committed: item.state !== "provisional",
-        isUnidentified: isUnidentifiedSpeakerLabel(visibleLabel),
+        isUnidentified: isBackendUnknownSpeakerId(item.speaker_entity_id),
         colorToken: resolveSpeakerColorToken(item.speaker, speakerColorMap)
       });
     } else if (item.state !== "provisional") {

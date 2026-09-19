@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
+import reservedSpeakerLabels from "../../../tests/fixtures/reserved_speaker_labels.json";
 import {
   buildConsecutiveSpeakerMap,
   buildSpeakerColorMap,
   buildSpeakerLegendKey,
   isUnidentifiedSpeakerLabel,
+  isReservedUncertaintyLabel,
   resolveDisplayLabel,
   resolveSpeakerColorToken,
   resolveVisibleSpeakerLabel
@@ -42,6 +44,7 @@ describe("speakerMap", () => {
   it("treats default labels as unidentified and namespaces unknown legend keys by label", () => {
     expect(isUnidentifiedSpeakerLabel("SPEAKER_04")).toBe(true);
     expect(isUnidentifiedSpeakerLabel("UNKNOWN")).toBe(true);
+    expect(isUnidentifiedSpeakerLabel("S00")).toBe(true);
     expect(isUnidentifiedSpeakerLabel("Alex Rivera")).toBe(false);
 
     expect(buildSpeakerLegendKey("UNKNOWN", "SPEAKER_01")).toBe("unknown:SPEAKER_01");
@@ -52,4 +55,24 @@ describe("speakerMap", () => {
     expect(resolveDisplayLabel("UNKNOWN")).toBe("Preview");
     expect(resolveVisibleSpeakerLabel("UNKNOWN", new Map())).toBe("Preview");
   });
+
+  it("displays backend S00 as Speaker uncertain", () => {
+    expect(resolveDisplayLabel("S00")).toBe("Speaker uncertain");
+    expect(resolveVisibleSpeakerLabel("S00", new Map())).toBe("Speaker uncertain");
+  });
+
+  it.each(reservedSpeakerLabels.reserved_labels)(
+    "keeps backend and frontend reserved-label contract for %s",
+    label => {
+      expect(isReservedUncertaintyLabel(label)).toBe(true);
+      expect(isUnidentifiedSpeakerLabel(label)).toBe(true);
+    }
+  );
+
+  it.each(reservedSpeakerLabels.allowed_labels)(
+    "does not reserve real person label %s",
+    label => {
+      expect(isReservedUncertaintyLabel(label)).toBe(false);
+    }
+  );
 });

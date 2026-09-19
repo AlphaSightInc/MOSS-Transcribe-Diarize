@@ -187,6 +187,163 @@ it("keeps adjacent unknown passages as separate correction targets", async () =>
   ])).toHaveLength(1);
 });
 
+it("closes an A correction opened during delayed B Open and never sends A passages to B", async () => {
+  const openedB = deferred<Response>();
+  const correctionRequests: string[] = [];
+  const meeting = (id: string, speaker: string, text: string) => ({
+    id,
+    title: id,
+    title_source: "manual" as const,
+    mode: "live" as const,
+    status: "completed" as const,
+    created_at_ms: 1,
+    transcript_version: 1,
+    audio: null,
+    transcript: { segments: [{
+      id: "seg_0001",
+      start: 0,
+      end: 1,
+      speaker_entity_id: speaker,
+      speaker,
+      text
+    }] }
+  });
+  const meetingA = meeting("meeting-a", "Alex", "A words");
+  const meetingB = meeting("meeting-b", "Blair", "B words");
+  vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const path = String(input);
+    if (path === "/api/meetings") return Response.json({ meetings: [meetingA, meetingB] });
+    if (path === "/api/meetings/meeting-b") return openedB.promise;
+    if (path.endsWith("/summary")) return Response.json({ summary: null });
+    if (init?.method === "PUT") {
+      correctionRequests.push(path);
+      return Response.json({
+        meeting_id: path.includes("meeting-b") ? "meeting-b" : "meeting-a",
+        segment_ids: ["seg_0001"],
+        speaker_id: "manual-person",
+        label: "Casey",
+        transcript_version: 2,
+        needs_review: false
+      });
+    }
+    throw new Error(`unexpected request: ${path}`);
+  }));
+  await act(async () => {
+    sessionId.value = "meeting-a";
+    sessionStatus.value = "closed";
+    replaceTranscript([{
+      segment_id: "seg_0001",
+      start: 0,
+      end: 1,
+      text: "A words",
+      speaker: "person-a",
+      speaker_entity_id: "person-a",
+      display_name: "Alex",
+      state: "final"
+    }]);
+    render(<><TranscriptPane /><MeetingHistory /></>, root);
+  });
+  await vi.waitFor(() =>
+    expect(root.querySelector('[data-open-meeting="meeting-b"]')).not.toBeNull()
+  );
+  act(() => root.querySelector<HTMLButtonElement>('[data-open-meeting="meeting-b"]')!.click());
+  act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="seg_0001"]')!.click());
+  const radios = root.querySelectorAll<HTMLInputElement>('dialog input[type="radio"]');
+  act(() => radios[1].click());
+  act(() => {
+    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New person name"]')!;
+    input.value = "Casey";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+
+  await act(async () => openedB.resolve(Response.json(meetingB)));
+  await vi.waitFor(() => expect(sessionId.value).toBe("meeting-b"));
+  const staleForm = root.querySelector<HTMLFormElement>("dialog form");
+  if (staleForm) {
+    await act(async () => {
+      staleForm.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    });
+  }
+
+  expect(root.querySelector("dialog")).toBeNull();
+  expect(correctionRequests).not.toContain("/api/meetings/meeting-b/passages/speaker");
+  expect(transcript.value.map(item => item.text)).toEqual(["B words"]);
+});
+
+it.each(["correction-first", "open-first", "open-first-error"] as const)(
+  "keeps delayed A correction owned by A when B Open resolves %s",
+  async order => {
+    const openedB = deferred<Response>();
+    const correctedA = deferred<Response>();
+    const requests: string[] = [];
+    const meetingB = {
+      id: "meeting-b", title: "B", title_source: "manual" as const,
+      mode: "live" as const, status: "completed" as const, created_at_ms: 1,
+      transcript_version: 1, audio: null,
+      transcript: { segments: [{ id: "seg_0001", start: 0, end: 1,
+        speaker_entity_id: "person-b", speaker: "Blair", text: "B words" }] }
+    };
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const path = String(input);
+      if (path === "/api/meetings") return Response.json({ meetings: [meetingB] });
+      if (path === "/api/meetings/meeting-b") return openedB.promise;
+      if (path === "/api/meetings/meeting-a/passages/speaker") {
+        requests.push(path);
+        return correctedA.promise;
+      }
+      if (path.endsWith("/summary")) return Response.json({ summary: null });
+      if (init?.method === "PUT") requests.push(path);
+      throw new Error(`unexpected request: ${path}`);
+    }));
+    await act(async () => {
+      sessionId.value = "meeting-a";
+      sessionStatus.value = "closed";
+      replaceTranscript([{ segment_id: "seg_0001", start: 0, end: 1, text: "A words",
+        speaker: "person-a", speaker_entity_id: "person-a", display_name: "Alex", state: "final" }]);
+      render(<><TranscriptPane /><MeetingHistory /></>, root);
+    });
+    await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="meeting-b"]')).not.toBeNull());
+    act(() => root.querySelector<HTMLButtonElement>('[data-open-meeting="meeting-b"]')!.click());
+    act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="seg_0001"]')!.click());
+    const radios = root.querySelectorAll<HTMLInputElement>('dialog input[type="radio"]');
+    act(() => radios[1].click());
+    act(() => {
+      const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New person name"]')!;
+      input.value = "Casey";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    act(() => {
+      root.querySelector<HTMLFormElement>("dialog form")!.dispatchEvent(
+        new Event("submit", { bubbles: true, cancelable: true })
+      );
+    });
+    const correctionResponse = order === "open-first-error"
+      ? Response.json({ detail: "controlled correction failure" }, { status: 500 })
+      : Response.json({
+      meeting_id: "meeting-a", segment_ids: ["seg_0001"], speaker_id: "manual-a",
+      label: "Casey", transcript_version: 2, needs_review: false
+    });
+    if (order === "correction-first") {
+      await act(async () => correctedA.resolve(correctionResponse));
+      await vi.waitFor(() =>
+        expect(transcript.value.map(item => item.display_name)).toEqual(["Casey"])
+      );
+      await act(async () => openedB.resolve(Response.json(meetingB)));
+    } else {
+      await act(async () => openedB.resolve(Response.json(meetingB)));
+      await act(async () => correctedA.resolve(correctionResponse));
+    }
+    const expectedMeeting = order === "correction-first" ? "meeting-a" : "meeting-b";
+    await vi.waitFor(() => expect(sessionId.value).toBe(expectedMeeting));
+
+    expect(requests).toEqual(["/api/meetings/meeting-a/passages/speaker"]);
+    expect(transcript.value.map(item => [item.text, item.display_name])).toEqual(
+      order === "correction-first" ? [["A words", "Casey"]] : [["B words", "Blair"]]
+    );
+    expect(root.querySelector("[role='alert']")).toBeNull();
+  }
+);
+
 it.each(["S00", "UNKNOWN"])("never offers persisted unknown id %s as an existing person", async (unknownId) => {
   await act(async () => {
     sessionId.value = "m";
@@ -285,3 +442,11 @@ it("keeps equal display names independent when one exact speaker is renamed", as
   expect([...root.querySelectorAll('[data-speaker-id="speaker-b"] .utt-speaker-label, [data-speaker-id="speaker-b"].legend-chip .legend-chip-name')]
     .map(node => node.textContent)).toEqual(["E2E Rowan", "E2E Rowan"]);
 });
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(accept => {
+    resolve = accept;
+  });
+  return { promise, resolve };
+}

@@ -8,7 +8,7 @@ import {
   OPEN_MEETING_EVENT,
   MEETING_HISTORY_REFRESH_EVENT
 } from "../lib/meetingEvents";
-import { resetSessionState, sessionTitle, sessionId, sessionMode, sessionNeedsReview, sessionStatus, transcript } from "../state/session";
+import { replaceTranscript, resetSessionState, sessionTitle, sessionId, sessionMode, sessionNeedsReview, sessionStatus, transcript } from "../state/session";
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
 
@@ -288,6 +288,114 @@ describe("MeetingHistory", () => {
     expect(downloads.every((name) => name.startsWith("transcript-export-meeting-"))).toBe(true);
   });
 
+  it("keeps reopened review truth through failed History and real five-format downloads", async () => {
+    const savedReview = meeting({
+      id: "review-meeting",
+      needs_review: true,
+      transcript: {
+        segments: [{
+          id: "seg_0001",
+          start: 0,
+          end: 1,
+          speaker: "S00",
+          speaker_entity_id: "S00",
+          text: "words kept after partial processing"
+        }]
+      }
+    });
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === "/api/meetings") throw new Error("controlled History failure");
+      if (path.endsWith("/summary")) return response({ summary: null });
+      if (path === "/api/meetings/review-meeting") return response(savedReview);
+      throw new Error(`unexpected request: ${path}`);
+    }));
+    const blobs: Blob[] = [];
+    const downloads: string[] = [];
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn((blob: Blob) => {
+        blobs.push(blob);
+        return `blob:review-${blobs.length}`;
+      }),
+      revokeObjectURL: vi.fn()
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement
+    ) {
+      downloads.push(this.download);
+    });
+
+    await act(async () => render(<div><App /><MeetingHistory /></div>, root));
+    await act(async () => {
+      document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, {
+        detail: { meetingId: "review-meeting" }
+      }));
+    });
+    await vi.waitFor(() =>
+      expect(root.querySelector("#tr-body")?.textContent).toContain(
+        "words kept after partial processing"
+      )
+    );
+
+    expect(root.textContent).toContain("Needs review.");
+    expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Speaker uncertain");
+    for (const label of [
+      "Markdown (.md)",
+      "Plain text (.txt)",
+      "JSON (.json)",
+      "SubRip (.srt)",
+      "WebVTT (.vtt)"
+    ]) {
+      act(() => {
+        root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.click();
+      });
+      const item = [...root.querySelectorAll<HTMLButtonElement>("[role='menuitem']")]
+        .find(candidate => candidate.textContent === label);
+      if (!item) throw new Error(`missing ${label} export`);
+      act(() => item.click());
+    }
+
+    expect(downloads.map(name => name.split(".").at(-1))).toEqual([
+      "md", "txt", "json", "srt", "vtt"
+    ]);
+    const downloadedText = await Promise.all(blobs.map(blob => blob.text()));
+    expect(downloadedText).toHaveLength(5);
+    for (const content of downloadedText) {
+      expect(content).toContain("Needs review");
+      expect(content).toContain("Speaker uncertain");
+      expect(content).not.toContain("S00");
+    }
+  });
+
+  it.each([
+    ["absent", undefined, true],
+    ["explicit healthy", false, false]
+  ] as const)("treats reopened %s review truth without inventing false", async (
+    _case,
+    needsReview,
+    expected
+  ) => {
+    const saved = meeting({ id: "review-source", needs_review: needsReview });
+    sessionNeedsReview.value = true;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === "/api/meetings") throw new Error("controlled History failure");
+      if (path.endsWith("/summary")) return response({ summary: null });
+      if (path === "/api/meetings/review-source") return response(saved);
+      throw new Error(`unexpected request: ${path}`);
+    }));
+
+    await act(async () => render(<div><App /><MeetingHistory /></div>, root));
+    await act(async () => {
+      document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, {
+        detail: { meetingId: "review-source" }
+      }));
+    });
+    await vi.waitFor(() => expect(sessionId.value).toBe("review-source"));
+
+    expect(sessionNeedsReview.value).toBe(expected);
+  });
+
   it("renames durably and refresh repairs the selected record to another client's title", async () => {
     const original = meeting({ id: "shared", title: "Original" });
     const renamed = { ...original, title: "Owner title", title_source: "manual" as const };
@@ -360,6 +468,74 @@ describe("MeetingHistory", () => {
     });
     expect(root.textContent).toContain("Newest response");
     expect(root.textContent).not.toContain("Older response");
+  });
+
+  it("does not let an Open in flight across correction acknowledgement revert view or export", async () => {
+    const staleOpen = deferred<Response>();
+    const original = meeting({
+      id: "corrected",
+      transcript: { segments: [{ id: "seg_0001", start: 0, end: 1,
+        speaker: "Alex", speaker_entity_id: "person-a", text: "kept words" }] }
+    });
+    const corrected = meeting({
+      id: "corrected",
+      transcript_version: 2,
+      transcript: { segments: [{ id: "seg_0001", start: 0, end: 1,
+        speaker: "Casey", speaker_entity_id: "person-c", text: "kept words" }] }
+    });
+    let listCount = 0;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input);
+      if (path === "/api/meetings") {
+        listCount += 1;
+        return response({ meetings: [listCount === 1 ? original : corrected] });
+      }
+      if (path === "/api/meetings/corrected") return staleOpen.promise;
+      if (path.endsWith("/summary")) return response({ summary: null });
+      throw new Error(`unexpected request: ${path}`);
+    }));
+    const blobs: Blob[] = [];
+    vi.stubGlobal("URL", {
+      createObjectURL: vi.fn((blob: Blob) => {
+        blobs.push(blob);
+        return "blob:corrected";
+      }),
+      revokeObjectURL: vi.fn()
+    });
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+
+    await act(async () => render(<div><App /><MeetingHistory /></div>, root));
+    await vi.waitFor(() =>
+      expect(root.querySelector('[data-open-meeting="corrected"]')).not.toBeNull()
+    );
+    act(() => root.querySelector<HTMLButtonElement>('[data-open-meeting="corrected"]')!.click());
+    act(() => {
+      sessionId.value = "corrected";
+      sessionStatus.value = "closed";
+      replaceTranscript([{ segment_id: "seg_0001", start: 0, end: 1, text: "kept words",
+        speaker: "person-c", speaker_entity_id: "person-c", display_name: "Casey", state: "final" }]);
+      document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT));
+    });
+    await vi.waitFor(() => expect(listCount).toBe(2));
+    await vi.waitFor(() =>
+      expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Casey")
+    );
+
+    await act(async () => {
+      staleOpen.resolve(response(original));
+      await Promise.resolve();
+      await Promise.resolve();
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Casey");
+    expect(transcript.value.map(item => item.display_name)).toEqual(["Casey"]);
+    act(() => root.querySelector<HTMLButtonElement>("button[title='Export transcript']")!.click());
+    const textExport = [...root.querySelectorAll<HTMLButtonElement>("[role='menuitem']")]
+      .find(button => button.textContent === "Plain text (.txt)");
+    if (!textExport) throw new Error("missing plain text export");
+    act(() => textExport.click());
+    expect(await blobs[0].text()).toContain("Casey");
+    expect(await blobs[0].text()).not.toContain("Alex");
   });
 
   it("does not let an older in-flight refresh overwrite a successful rename", async () => {

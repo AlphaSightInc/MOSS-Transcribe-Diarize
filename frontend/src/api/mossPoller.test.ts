@@ -17,6 +17,42 @@ describe("MOSS session poller", () => {
     resetSessionState();
   });
 
+  it.each([true, false])("publishes durable needs_review=%s from the Live snapshot", async needsReview => {
+    const dispatched: WsEvent[] = [];
+    const poller = createMossSessionPoller({
+      sessionId: "review-truth",
+      dispatch: event => dispatched.push(event),
+      fetch: vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/events")) return jsonResponse({ events: [] });
+        return jsonResponse({
+          needs_review: needsReview,
+          unchanged: false,
+          snapshot: {
+            session_id: "review-truth",
+            descriptor: { sample_rate: 16_000 },
+            session: {
+              committed_samples: 0,
+              status: "closed",
+              finalization_status: "final",
+              version: 1,
+              failure_reason: null,
+              label_revision_version: 0,
+              identity_snapshot: { canonical_speakers: [] },
+              committed: [],
+              provisional: null
+            }
+          }
+        });
+      }) as typeof fetch
+    });
+
+    await poller.poll();
+
+    expect(dispatched.find(event => event.type === "session_state")).toMatchObject({
+      needs_review: needsReview
+    });
+  });
+
   it("renders label-only revisions once, preserves duplicate identities and retains the speech cursor", async () => {
     let round = 0;
     const dispatched: WsEvent[] = [];

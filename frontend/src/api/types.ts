@@ -50,6 +50,7 @@ export type WsEvent =
       status: SessionLifecycle;
       error?: string | null;
       status_line?: string | null;
+      needs_review?: boolean;
     }
   | {
       type: "transcript_update";
