@@ -53,3 +53,9 @@ Round 2: use `--decoder-upstream-port PORT` to share an already-owned counted de
 The source-turn speaker score has no boundary collar or fitted time offset; it is not a fine
 acoustic diarization benchmark. Physical microphones, attended echo cancellation, and any
 browser state the harness cannot actually produce remain unmeasured.
+
+Round 3 WP54b uses `python -m tools.qualify.visible_words INPUT` for offline
+source-word evaluation. Its one authorized headed campaign uses
+`python -m tools.qualify.visible_word_headed` against an isolated stack. Both
+retain the full ordered reference denominator, keep API/DOM/server clocks
+separate, and define no latency acceptance threshold.
