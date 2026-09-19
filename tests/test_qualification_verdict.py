@@ -1,5 +1,6 @@
 """Required SKIP must remain visible and cannot grant CLI or bundle acceptance."""
 import asyncio
+import copy
 import json
 import os
 from pathlib import Path
@@ -15,6 +16,82 @@ from tests.e2e.verify_workspace import (
     verdict_exit_code,
 )
 from tools.qualify.run import Bundle, bundle_verdict
+from moss_transcribe_diarize import phase2_acceptance as acceptance
+from tests.phase2.test_wave1_qualification import _capacity_raw
+
+
+def _two_meeting_capacity_raw():
+    raw = _capacity_raw()
+    raw["sessions"] = 2
+    raw["session_observations"] = raw["session_observations"][:2]
+    raw["wrong_owner_observations"] = [
+        item
+        for item in raw["wrong_owner_observations"]
+        if item["session_ordinal"] <= 2
+    ]
+    raw["transcript_lag_seconds"] = {
+        key: value
+        for key, value in raw["transcript_lag_seconds"].items()
+        if key in {"s0", "s1"}
+    }
+    events = sorted(
+        (
+            {
+                "session_id": str(session["session_ordinal"]),
+                "kind": event["kind"],
+                "payload": {
+                    key: value for key, value in event.items() if key != "kind"
+                },
+            }
+            for session in raw["session_observations"]
+            for event in session["events"]
+            if event["kind"].startswith("canonical_")
+        ),
+        key=lambda event: event["payload"]["runtime_monotonic_ns"],
+    )
+    raw["fairness_observation"] = acceptance.canonical_lifecycle_fairness(
+        events, {"1", "2"}, maximum_skew=1
+    )
+    return raw
+
+
+def test_two_meeting_capacity_is_the_supported_population():
+    assert acceptance._validate_capacity({"raw": _two_meeting_capacity_raw()})
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "missing_peer",
+        "wrong_owner",
+        "missing_owner_probe",
+        "sample_accounting_loss",
+        "lag_violation",
+        "false_fairness",
+        "false_real_time_factor",
+        "missing_event_time",
+    ],
+)
+def test_two_meeting_capacity_retains_all_eight_violating_controls(mutation):
+    raw = copy.deepcopy(_two_meeting_capacity_raw())
+    if mutation == "missing_peer":
+        raw["session_observations"].pop()
+    elif mutation == "wrong_owner":
+        raw["wrong_owner_observations"][0]["foreign_matches"] = 1
+    elif mutation == "missing_owner_probe":
+        raw["wrong_owner_observations"].pop()
+    elif mutation == "sample_accounting_loss":
+        raw["session_observations"][0]["accounted_samples"] -= 1
+    elif mutation == "lag_violation":
+        raw["session_observations"][0]["lags"] = [11.0, 11.0]
+    elif mutation == "false_fairness":
+        raw["fairness_observation"]["passes"] = False
+    elif mutation == "false_real_time_factor":
+        raw["prestop_inference_rtf"] = 0.1
+    else:
+        del raw["session_observations"][0]["events"][0]["runtime_monotonic_ns"]
+
+    assert not acceptance._validate_capacity({"raw": raw})
 
 
 @pytest.mark.parametrize('statuses,verdict,code', [

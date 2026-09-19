@@ -105,7 +105,7 @@ def test_exception_records_ignore_payloads_without_a_quality_predicate():
     assert quality_exception_records({}, layer="deployed") == []
     assert quality_exception_records({"predicates": []}, layer="deployed") == []
     assert quality_exception_records(
-        {"predicates": [{"id": "four_session_capacity", "raw": {"macro": {}}}]},
+        {"predicates": [{"id": "two_session_capacity", "raw": {"macro": {}}}]},
         layer="deployed",
     ) == []
 

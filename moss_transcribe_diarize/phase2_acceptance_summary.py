@@ -215,7 +215,7 @@ def measure_browser_summary(campaign):
                     checks["serial_worker"] = len(provider.requests("hold")) == 1
                     configure(pages[1], "b", "hold"); start(pages[1]); count("hold", 2, pages[1])
                     with ThreadPoolExecutor(max_workers=1) as pool:
-                        future = pool.submit(load.four_session_capacity)
+                        future = pool.submit(load.two_session_capacity)
                         while not future.done(): pages[0].wait_for_timeout(1000)
                         capacity = future.result()
                     held = provider.requests("hold")

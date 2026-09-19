@@ -15,7 +15,7 @@ from moss_transcribe_diarize.phase2_acceptance_measure import measure_layer
 from moss_transcribe_diarize.phase2_acceptance_completion import (
     SUMMARY_CHECKS, VOICEPRINT_CHECKS, RELAY_SUMMARY_CHECKS, measure_voiceprint_workspace, validate_completion_observation,
 )
-from tests.phase2.test_wave1_qualification import _capacity_raw
+from tests.phase2.test_wave1_qualification import _capacity_raw, _overload_raw
 from tests.phase2.test_owner_bound_live_meeting import EligibleIdentity, make_app, provision, session, feed_two_lane_span, wait_snapshot
 
 
@@ -27,6 +27,61 @@ def rule_report():
             "known_wrong": 0, "unknown_abstain": total, "unknown_false": 0}}
     return {"fresh_embeddings": True, "production_rule": True, "model_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
             "profiles": 5, "enrollment_samples": 14, "results": results}
+
+
+def _two_meeting_overload_raw():
+    raw = _overload_raw()
+    raw["sessions"] = 2
+    raw["session_observations"] = raw["session_observations"][:2]
+    raw["wrong_owner_observations"] = [
+        item
+        for item in raw["wrong_owner_observations"]
+        if item["session_ordinal"] <= 2
+    ]
+    raw["backpressure_observation"]["campaign_session_ordinals"] = [1, 2]
+    events = sorted(
+        (
+            {
+                "session_id": str(session["session_ordinal"]),
+                "kind": event["kind"],
+                "payload": {
+                    key: value for key, value in event.items() if key != "kind"
+                },
+            }
+            for session in raw["session_observations"]
+            for event in session["events"]
+            if event["kind"].startswith("canonical_")
+        ),
+        key=lambda event: event["payload"]["runtime_monotonic_ns"],
+    )
+    fairness = acceptance.canonical_lifecycle_fairness(
+        events, {"1", "2"}, maximum_skew=1
+    )
+    raw["fairness_observation"] = fairness
+    raw["dispatch_skew"] = fairness["maximum_contended_pair_dispatch_skew"]
+    raw["admission_observation"] = {
+        "accepted_sessions": 2,
+        "excess_attempts": 1,
+        "excess_status": 409,
+        "refusal_code": "live_capacity_full",
+        "accepted_active_after_refusal": True,
+    }
+    return raw
+
+
+def test_overload_retains_two_accepted_meetings_and_refuses_excess_admission():
+    raw = _two_meeting_overload_raw()
+    assert acceptance._validate_overload({"raw": raw})
+    for key, value in (
+        ("accepted_sessions", 1),
+        ("excess_attempts", 0),
+        ("excess_status", 201),
+        ("refusal_code", "wrong"),
+        ("accepted_active_after_refusal", False),
+    ):
+        invalid = copy.deepcopy(raw)
+        invalid["admission_observation"][key] = value
+        assert not acceptance._validate_overload({"raw": invalid}), key
 
 
 @pytest.mark.parametrize("mutation", ["missing_unknown", "missing_known", "cached", "wrong_name", "unknown_false", "wrong_count", "duplicate", "missing_surface"])

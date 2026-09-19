@@ -127,7 +127,7 @@ def _case() -> dict[str, object]:
 
 def _capacity_raw() -> dict[str, object]:
     sessions = []
-    for ordinal in range(1, 5):
+    for ordinal in range(1, 3):
         sessions.append(
             {
                 "session_ordinal": ordinal,
@@ -193,10 +193,10 @@ def _capacity_raw() -> dict[str, object]:
         )
     ]
     fairness = acceptance.canonical_lifecycle_fairness(
-        lifecycle, {"1", "2", "3", "4"}, maximum_skew=1
+        lifecycle, {"1", "2"}, maximum_skew=1
     )
     return {
-        "sessions": 4,
+        "sessions": 2,
         "accounts": 2,
         "requested_duration_seconds": 600,
         "duration_seconds": 600,
@@ -207,7 +207,7 @@ def _capacity_raw() -> dict[str, object]:
         "real_human_speech": True,
         "ingress_cadence_seconds": 0.5,
         "continuous_wrong_owner_probes": True,
-        "transcript_lag_seconds": {f"s{index}": [1.0, 2.0] for index in range(4)},
+        "transcript_lag_seconds": {f"s{index}": [1.0, 2.0] for index in range(2)},
         "dispatch_skew": 1,
         "fairness_measured": True,
         "fairness_observation": fairness,
@@ -226,7 +226,7 @@ def _capacity_raw() -> dict[str, object]:
                 "foreign_matches": 0,
             }
             for sequence in range(1200)
-            for ordinal in range(1, 5)
+            for ordinal in range(1, 3)
         ],
         "log_match_counts": {"oom": 0, "accelerator": 0},
         "backpressure_observation": {
@@ -243,8 +243,8 @@ def _overload_raw(duration_seconds: float = 120.5, capacity_samples: int = 960_0
     value = _capacity_raw()
     template = value["session_observations"]
     sessions = []
-    for ordinal in range(1, 9):
-        item = copy.deepcopy(template[(ordinal - 1) % 4])
+    for ordinal in range(1, 3):
+        item = copy.deepcopy(template[(ordinal - 1) % 2])
         item.update(
             {
                 "session_ordinal": ordinal,
@@ -282,11 +282,11 @@ def _overload_raw(duration_seconds: float = 120.5, capacity_samples: int = 960_0
         )
     ]
     fairness = acceptance.canonical_lifecycle_fairness(
-        lifecycle, {str(ordinal) for ordinal in range(1, 9)}, maximum_skew=1
+        lifecycle, {str(ordinal) for ordinal in range(1, 3)}, maximum_skew=1
     )
     value.update(
         {
-            "sessions": 8,
+            "sessions": 2,
             "terminal_failures": 0,
             "accounts": 2,
             "requested_duration_seconds": duration_seconds,
@@ -304,7 +304,7 @@ def _overload_raw(duration_seconds: float = 120.5, capacity_samples: int = 960_0
                     "foreign_matches": 0,
                 }
                 for sequence in range(frames)
-                for ordinal in range(1, 9)
+                for ordinal in range(1, 3)
             ],
             "isolation_failures": 0,
             "fairness_failures": 0,
@@ -319,12 +319,19 @@ def _overload_raw(duration_seconds: float = 120.5, capacity_samples: int = 960_0
                 "observed_429": True,
                 "peer_progress": True,
                 "same_sequence_retry": True,
-                "campaign_session_ordinals": list(range(1, 9)),
+                "campaign_session_ordinals": [1, 2],
                 "target_session_ordinal": 1,
                 "peer_session_ordinal": 2,
                 "refused_monotonic_ns": 10_000_000_000,
                 "peer_progress_monotonic_ns": 11_000_000_000,
                 "retry_monotonic_ns": 12_000_000_000,
+            },
+            "admission_observation": {
+                "accepted_sessions": 2,
+                "excess_attempts": 1,
+                "excess_status": 409,
+                "refusal_code": "live_capacity_full",
+                "accepted_active_after_refusal": True,
             },
         }
     )
@@ -653,7 +660,7 @@ def test_live_load_success_reaches_authoritative_result_projection(tmp_path, mon
 
 
 def test_campaign_backpressure_retries_exact_target_frame_after_same_campaign_peer():
-    probe = external._CampaignBackpressure(8)
+    probe = external._CampaignBackpressure(2)
     target_calls: list[dict[str, object]] = []
 
     class Target:
@@ -689,7 +696,7 @@ def test_campaign_backpressure_retries_exact_target_frame_after_same_campaign_pe
     assert target_result
     assert target_calls[0] is target_calls[1]
     observation = probe.observation()
-    assert observation["campaign_session_ordinals"] == list(range(1, 9))
+    assert observation["campaign_session_ordinals"] == [1, 2]
     assert observation["target_session_ordinal"] == 1
     assert observation["peer_session_ordinal"] == 2
     assert observation["observed_429"] is True
@@ -791,8 +798,8 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
         "revocation_lifecycle": {"cases": 4, "failures": 0, "late_commits": 0, "stale_authority_revived": 0, "durable_prefix_preserved": True, "partial_audio_playable": True},
         "meeting_modes_history_restart": {"modes": ["live", "file", "multi_file", "url", "serial_batch"], "same_account_clients": 2, "history_mismatches": 0, "restart_failures": 0, "one_item_failure_isolated": True, "submissions": {"single_file": 1, "multi_file": 2, "url": 2, "serial_batch": 6, "browser_closed_after_accept": 1, "accepted_failure": 1, "input_boundary_rejection": 1}},
         "crash_recovery": {"cases": 2, "nonempty_durable_prefix": True, "lost_commits": 0, "durable_document_mismatches": 0, "audio_prefix_failures": 0, "process_replaced": True, "resumed_capture": 0, "non_interrupted_active_rows": 0},
-        "four_session_capacity": _capacity_raw(),
-        "eight_session_overload": _overload_raw(),
+        "two_session_capacity": _capacity_raw(),
+        "excess_admission_overload": _overload_raw(),
         "quality_corpus": {
             "cases": 6,
             "passes": 2,
@@ -857,7 +864,7 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
         "transcript_pane_fidelity": {"viewports": [{"width": 1440, "height": 900, "total_difference": 0.02, "largest_connected_difference": 0.01}, {"width": 1280, "height": 800, "total_difference": 0.02, "largest_connected_difference": 0.01}], "reference_identity": {"head": "6a8d0c1fafe8a1a8d6ea449036dd1ca330309d70", "clean": True}},
     }
     raw = values[predicate_id]
-    if predicate_id in {"sentinel_absence", "operator_control", "four_session_capacity", "eight_session_overload"}:
+    if predicate_id in {"sentinel_absence", "operator_control", "two_session_capacity", "excess_admission_overload"}:
         units = ["moss-web.service"] if predicate_id == "operator_control" else ["moss-web.service", "moss-vllm.service"]
         raw["journal_sources"] = [
             {"source": "systemd-user-journal", "unit": unit, "baseline_cursor_observed": True,
@@ -947,7 +954,7 @@ def test_revocation_snapshot_refuses_unbound_candidate_state(monkeypatch, tmp_pa
     assert len(calls) == 1
 
 
-@pytest.mark.parametrize("predicate_id", ["sentinel_absence", "operator_control", "four_session_capacity", "eight_session_overload"])
+@pytest.mark.parametrize("predicate_id", ["sentinel_absence", "operator_control", "two_session_capacity", "excess_admission_overload"])
 @pytest.mark.parametrize("field,value", [
     ("unit", "unrelated.service"), ("source", "caller-log-file"),
     ("baseline_cursor_observed", False), ("read_succeeded", False),
@@ -985,7 +992,7 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
     assert all(outcomes.values())
     assert errors == []
 
-    capacity = next(item for item in report["predicates"] if item["id"] == "four_session_capacity")
+    capacity = next(item for item in report["predicates"] if item["id"] == "two_session_capacity")
     capacity["raw"]["session_observations"][0]["lags"] = [10.000001]
     outcomes, errors = acceptance.evaluate_external_report(
         report,
@@ -998,11 +1005,11 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
         dependency_projection_sha256="e" * 64,
     )
     assert outcomes["G4"] is False
-    assert "deployed:G4:four_session_capacity:failed" in errors
+    assert "deployed:G4:two_session_capacity:failed" in errors
 
     report = _report("deployed", sha, wheel)
     capacity = next(
-        item for item in report["predicates"] if item["id"] == "four_session_capacity"
+        item for item in report["predicates"] if item["id"] == "two_session_capacity"
     )
     for session in capacity["raw"]["session_observations"]:
         session["events"] = [
@@ -1033,10 +1040,10 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
         dependency_projection_sha256="e" * 64,
     )
     assert outcomes["G4"] is False
-    assert "deployed:G4:four_session_capacity:failed" in errors
+    assert "deployed:G4:two_session_capacity:failed" in errors
 
     report = _report("deployed", sha, wheel)
-    capacity = next(item for item in report["predicates"] if item["id"] == "four_session_capacity")
+    capacity = next(item for item in report["predicates"] if item["id"] == "two_session_capacity")
     capacity["raw"]["session_observations"].pop()
     quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
     quality["raw"]["macro"]["final_wer"] = math.nan
@@ -1051,7 +1058,7 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
         dependency_projection_sha256="e" * 64,
     )
     assert outcomes["G4"] is False
-    assert "deployed:G4:four_session_capacity:failed" in errors
+    assert "deployed:G4:two_session_capacity:failed" in errors
     assert "deployed:G4:quality_corpus:failed" in errors
 
     report = _report("deployed", sha, wheel)
@@ -1149,7 +1156,7 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
     quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
     quality["raw"]["per_case"][0]["metrics"]["final"]["wer"] = 1.0
     overload = next(
-        item for item in report["predicates"] if item["id"] == "eight_session_overload"
+        item for item in report["predicates"] if item["id"] == "excess_admission_overload"
     )
     overload["raw"]["wrong_owner_observations"].pop()
     outcomes, errors = acceptance.evaluate_external_report(
@@ -1164,7 +1171,7 @@ def test_external_predicates_recompute_exact_raw_bounds_and_reject_summary_only(
     )
     assert outcomes["G4"] is False
     assert "deployed:G4:quality_corpus:failed" in errors
-    assert "deployed:G4:eight_session_overload:failed" in errors
+    assert "deployed:G4:excess_admission_overload:failed" in errors
 
     report = _report("deployed", sha, wheel)
     oauth = next(item for item in report["predicates"] if item["id"] == "browser_workspace_identity")
@@ -1215,23 +1222,23 @@ def test_external_denominators_expose_exact_campaign_units_and_fail_units_togeth
         name: values["collected"] for name, values in projection.items()
     } == {
         "cross_owner_actions": 15,
-        "four_session_capacity": 4,
-        "eight_session_overload": 8,
+        "two_session_capacity": 2,
+        "excess_admission_overload": 2,
         "quality_sessions": 12,
         "quality_windows": 122,
     }
     assert all(values["passed"] == values["collected"] for values in projection.values())
 
     capacity = next(
-        item for item in report["predicates"] if item["id"] == "four_session_capacity"
+        item for item in report["predicates"] if item["id"] == "two_session_capacity"
     )
     capacity["raw"]["fairness_measured"] = False
     failed = acceptance.external_denominator_projection(report)
-    assert failed["four_session_capacity"] == {
-        "collected": 4,
-        "executed": 4,
+    assert failed["two_session_capacity"] == {
+        "collected": 2,
+        "executed": 2,
         "passed": 0,
-        "failed": 4,
+        "failed": 2,
         "skipped": 0,
         "unmeasured": 0,
     }
@@ -2168,8 +2175,8 @@ def test_real_g3_g4_and_g10_producers_use_fixed_browser_load_and_history_seams(
         "_backpressure_probe",
         lambda: {"observed_429": True, "peer_progress": True, "same_sequence_retry": True},
     )
-    assert campaign.four_session_capacity()["continuous_wrong_owner_probes"] is True
-    assert campaign.eight_session_overload()["sessions"] == 8
+    assert campaign.two_session_capacity()["continuous_wrong_owner_probes"] is True
+    assert campaign.excess_admission_overload()["sessions"] == 2
     monkeypatch.setattr(campaign, "_new_live_id", lambda owner: "active-live")
     monkeypatch.setattr(
         campaign,
@@ -3758,9 +3765,9 @@ def test_overload_rejects_terminal_failure_or_any_session_not_finalized(failure)
     if failure == "terminal_count":
         raw["terminal_failures"] = 1
     elif failure == "one_not_final":
-        raw["session_observations"][7]["finalization_status"] = "failed"
+        raw["session_observations"][1]["finalization_status"] = "failed"
     else:
-        del raw["session_observations"][7]["finalization_status"]
+        del raw["session_observations"][1]["finalization_status"]
     assert acceptance._validate_overload({"raw": raw}) is False
 
 
@@ -3789,4 +3796,3 @@ def test_measurement_directories_use_attempt_owned_root(monkeypatch, tmp_path):
         monkeypatch, tmp_path, wave=1, expected=14, refused=True)
     assert len(created) == 2
     assert all(path.parent == root and not path.exists() for path in created)
-
