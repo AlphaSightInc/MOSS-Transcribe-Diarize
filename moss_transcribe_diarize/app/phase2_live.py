@@ -86,6 +86,7 @@ class _LiveBinding:
     public_events: tuple[LiveServiceEvent, ...] = ()
     durable_document: dict[str, object] = field(default_factory=lambda: {"segments": []})
     durable_version: int = 0
+    durable_needs_review: bool = False
     public_event_high_water: int = -1
     raw_event_high_water: int = -1
     terminal_persisted: bool = False
@@ -805,22 +806,13 @@ class Phase2LiveMeetings:
                 return
 
             try:
-                notice = None
-                if status == "completed" and (
-                    terminal_snapshot.session.finalization_status == "unavailable"
-                    or any(
-                        event.kind.startswith("terminal_finalization_")
-                        and event.payload.get("tape_gaps", 0)
-                        # The final text revision can enqueue publication before
-                        # its terminal accounting event. Read the settled runtime
-                        # event stream under its lock, not that earlier enqueue.
-                        for event in self.runtime.events(binding.handle.meeting_id)
-                    )
-                ):
-                    notice = (
-                        "Final transcript refinement was unavailable for some audio. "
-                        "Previously committed words were kept."
-                    )
+                # The final revision can enqueue publication before its accounting event.
+                # Project the settled runtime outcome once, at the durable finish seam.
+                notice = _terminal_publication_notice(
+                    status,
+                    terminal_snapshot,
+                    self.runtime.events(binding.handle.meeting_id),
+                )
                 await self._finish_terminal(binding, document, status, notice=notice)
             except AccountRevoked:
                 await self._complete_revoked_terminal_locked(
@@ -863,6 +855,7 @@ class Phase2LiveMeetings:
             binding.durable_version = version
         else:
             await binding.handle.finish(status, **outcome)
+        binding.durable_needs_review = (await binding.handle.snapshot()).needs_review
 
     async def _recover_terminal_locked(
         self,
@@ -1237,6 +1230,7 @@ class _Phase2LiveTransportAdapter:
                 "persistence_failure": binding.persistence_failure,
                 "speaker_labels": dict(binding.speaker_labels),
                 "speaker_label_revision": binding.speaker_label_revision,
+                "needs_review": binding.durable_needs_review,
             },
         )
 
@@ -1361,6 +1355,53 @@ def _durable_terminal_status(
         and not finalizer_configured
     ):
         return "completed"
+    return None
+
+
+def _terminal_publication_notice(
+    status: str,
+    snapshot: LiveServiceSnapshot,
+    events: tuple[LiveServiceEvent, ...],
+) -> str | None:
+    """Project terminal accounting into one durable, user-visible outcome."""
+
+    if status != "completed":
+        return None
+    terminal = next(
+        (
+            event
+            for event in reversed(events)
+            if event.kind.startswith("terminal_finalization_")
+        ),
+        None,
+    )
+    payload = {} if terminal is None else terminal.payload
+    outcome = payload.get("outcome")
+    reason = payload.get("reason")
+    if outcome == "no_transcript" and reason in {"digital_silence", "all_lanes_zero"}:
+        return None
+    if (
+        snapshot.session.finalization_status == "unavailable"
+        or bool(payload.get("tape_gaps", 0))
+    ):
+        return (
+            "Final transcript refinement was unavailable for some audio. "
+            "Previously committed words were kept."
+        )
+    if (
+        snapshot.session.finalization_status == "failed"
+        or outcome in {"decode_failed", "no_transcript"}
+        or isinstance(reason, str)
+        and reason.startswith("lane_terminal_failed:")
+        or terminal is not None
+        and terminal.kind == "terminal_finalization_failed"
+    ):
+        return (
+            "Final transcript refinement failed for some audio. "
+            "Previously committed words were kept."
+        )
+    if bool(payload.get("possibly_truncated")):
+        return "The speech decoder reached its output limit. This transcript may be incomplete."
     return None
 
 
