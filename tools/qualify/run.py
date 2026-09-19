@@ -312,7 +312,7 @@ class Bundle:
         return ready
 
     def extended(self, ready):
-        specs=[('browser_stress_all',16),('file_6min',1),('file_failures',5),('file_30min',3),('capacity_4x600',4)]
+        specs=[('browser_stress_all',16),('file_6min',1),('file_3min_formats',3),('file_failures',5),('file_30min',3),('capacity_4x600',4)]
         if not ready:
             for name,n in specs:
                 status='SKIP' if name in ('file_30min','capacity_4x600') and not self.args.long else 'UNRUNNABLE'
@@ -356,7 +356,10 @@ class Bundle:
         code,_,_=self.command('file_prepare',[PY,bench+'prepare.py','--scratch',str(scratch),'--out',str(output)])
         if not code:
             code,_,_=self.command('file_six_minute',['ffmpeg','-v','error','-y','-i',str(scratch/'media/long.wav'),'-t','360',str(scratch/'media/six.wav')])
-        specs=[('file_6min',['six.wav']),('file_failures',['empty.wav','text.mp3','missing','html','hang'])]
+        for name,codec in [('three.wav',[]),('three.mp3',['-c:a','libmp3lame','-b:a','64k']),('three.m4a',['-c:a','aac','-b:a','64k'])]:
+            if not code:
+                code,_,_=self.command('file_prepare_'+name,['ffmpeg','-v','error','-y','-i',str(scratch/'media/long.wav'),'-t','180',*codec,str(scratch/'media'/name)])
+        specs=[('file_6min',['six.wav']),('file_3min_formats',['three.wav','three.mp3','three.m4a']),('file_failures',['empty.wav','text.mp3','missing','html','hang'])]
         if self.args.long:specs.append(('file_30min',['long.wav','long.mp3','long.m4a']))
         else:self.gate('file_30min','SKIP',counts(['SKIP']*3),reason='Requires --long')
         if code:
@@ -390,7 +393,7 @@ class Bundle:
                     projection['observed_failure_code']=value if isinstance(value,str) and re.fullmatch(r'[a-z0-9_]+',value) else None
                     if row and case not in FILE_FAILURES:
                         from moss_transcribe_diarize.lane_word_oracle import words,distance
-                        seconds=360 if case=='six.wav' else 1800
+                        seconds=360 if case=='six.wav' else 180 if case.startswith('three.') else 1800
                         refs=[json.loads(line) for line in (scratch/'media/reference.jsonl').read_text().splitlines()]
                         reference=words(' '.join(r['text'] for r in refs if r['end']<=seconds))
                         meeting=json.loads((scratch/(case+'.meeting.json')).read_text())
@@ -595,7 +598,7 @@ def main():
         recorded = {gate['name'] for gate in bundle.data['gates']}
         required = dict(python_import=1, asset_parity=17, pytest=0, frontend=0,
                         bundle_helpers=0, typecheck=1, verify_layout=1, stack=1,
-                        browser_stress_all=16,file_6min=1,file_failures=5,file_30min=3,capacity_4x600=4,
+                        browser_stress_all=16,file_6min=1,file_3min_formats=3,file_failures=5,file_30min=3,capacity_4x600=4,
                         workspace=14, demo_lanes=2, lifecycle=7, reshare=6, level_ladder=6, identity_stress=3)
         required.update({'workspace_row_'+str(n):1 for n in range(1,15)})
         for name, expected in required.items():
