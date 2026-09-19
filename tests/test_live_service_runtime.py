@@ -608,6 +608,40 @@ def test_transient_canonical_scheduler_serializes_and_exits_when_idle():
     assert scheduler.worker_count == 0
 
 
+def test_production_canonical_topology_stays_one_serial_pump_across_sessions():
+    decoder = BlockingDecoder()
+    runtime = _runtime(
+        speech=(True, False),
+        decoder=decoder,
+        session_ids=("meeting-one", "meeting-two"),
+    )
+    first = runtime.create()
+    second = runtime.create()
+
+    runtime.accept_frame(first.session_id, _frame(0, byte=b"a"))
+    runtime.accept_frame(first.session_id, _frame(1, byte=b"b"))
+    assert decoder.entered.wait(timeout=1)
+    runtime.accept_frame(second.session_id, _frame(0, byte=b"c"))
+    runtime.accept_frame(second.session_id, _frame(1, byte=b"d"))
+
+    # The shared canonical scheduler has one worker. The dispatch gate adds a separate
+    # background lane; it deliberately does not turn production into two Live pumps.
+    assert runtime._canonical_scheduler.worker_count == 1
+    assert not any(
+        event.kind == "canonical_started"
+        for event in runtime.events(second.session_id)
+    )
+
+    decoder.release.set()
+    deadline = time.monotonic() + 1
+    while runtime.snapshot(second.session_id).pending_work_items and time.monotonic() < deadline:
+        time.sleep(0.001)
+
+    assert runtime.snapshot(first.session_id).pending_work_items == 0
+    assert runtime.snapshot(second.session_id).pending_work_items == 0
+    assert decoder.calls == [(0, 1000), (0, 1000)]
+
+
 def test_ready_sessions_drain_round_robin_without_hot_session_starvation():
     scheduler = _ManualCanonicalPumpScheduler()
     decoder = LabelingDecoder()

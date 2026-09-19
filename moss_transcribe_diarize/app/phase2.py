@@ -1666,6 +1666,7 @@ def create_phase2_app(
     control_socket_path: str | Path | None = None,
     llm_upstreams: str | None = None,
     open_workspace: bool = False,
+    inference_scheduler: Any | None = None,
 ):
     """Create the sole Phase-2 product surface: `/`, auth, and Account-owned meetings."""
 
@@ -1710,6 +1711,7 @@ def create_phase2_app(
             **dict(file_inference_options or {}),
             url_acquirer=url_acquirer or UrlMediaAcquirer(),
             audio_archive=audio_archive,
+            inference_scheduler=inference_scheduler,
         )
 
     phase2_live = None

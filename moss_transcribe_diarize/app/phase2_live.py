@@ -22,6 +22,7 @@ from .live_service_runtime import (
     LiveServiceEvent,
     LiveServiceRuntime,
     LiveServiceSnapshot,
+    active_live_session_count,
 )
 from .live_transport import (
     LiveTransportCreated,
@@ -33,6 +34,7 @@ from .phase2 import Account, AccountRevoked, SESSION_COOKIE
 
 
 _LOG = logging.getLogger("moss_transcribe_diarize.phase2.speaker_identity")
+LIVE_MEETING_LIMIT = 2
 
 
 class LiveMeetingNotFound(KeyError):
@@ -44,6 +46,10 @@ class LiveMeetingReadOnly(PermissionError):
 
 
 class LiveMeetingTerminal(RuntimeError):
+    pass
+
+
+class LiveMeetingCapacityFull(RuntimeError):
     pass
 
 
@@ -142,6 +148,7 @@ class Phase2LiveMeetings:
         self._accepting_publications = False
         self._publication_observer = self._observe_raw
         self._speaker_identity: Any | None = None
+        self._creation_lock = asyncio.Lock()
 
     def bind_speaker_identity(self, identity: Any) -> None:
         if self._speaker_identity is not None and self._speaker_identity is not identity:
@@ -210,35 +217,41 @@ class Phase2LiveMeetings:
         origin_session: str,
         echo_mode: str | None,
     ) -> _LiveBinding:
-        handle = await workspace.create_meeting("live")
-        try:
-            # This single pre-capture fsync uses the same measured local stage seam as
-            # frame appends and cannot outlive a cancelled creation task in a worker.
-            self.audio_stages.reserve(account.account_id, handle.meeting_id)
-        except BaseException:
-            await self._finish_failed_create_if_stage_absent(account.account_id, handle)
-            raise
-        binding = _LiveBinding(
-            owner_key=(account.account_id, account.authority_generation),
-            origin_session=origin_session,
-            handle=handle,
-            queue=asyncio.Queue(),
-        )
-        binding.worker = asyncio.create_task(
-            self._publish(binding), name=f"phase2-live-publish-{handle.meeting_id}"
-        )
-        self._bindings[handle.meeting_id] = binding
-        try:
-            self.runtime.create(echo_mode=echo_mode, session_id=handle.meeting_id)
-            await self.sync_and_flush(handle.meeting_id)
-        except BaseException:
-            self._bindings.pop(handle.meeting_id, None)
-            binding.queue.put_nowait(None)
-            if binding.worker is not None:
-                await binding.worker
-            await self._finish_failed_create_if_stage_absent(account.account_id, handle)
-            raise
-        return binding
+        async with self._creation_lock:
+            if (
+                isinstance(self.runtime, LiveServiceRuntime)
+                and active_live_session_count(self.runtime) >= LIVE_MEETING_LIMIT
+            ):
+                raise LiveMeetingCapacityFull("Two Live meetings are already active.")
+            handle = await workspace.create_meeting("live")
+            try:
+                # This single pre-capture fsync uses the same measured local stage seam as
+                # frame appends and cannot outlive a cancelled creation task in a worker.
+                self.audio_stages.reserve(account.account_id, handle.meeting_id)
+            except BaseException:
+                await self._finish_failed_create_if_stage_absent(account.account_id, handle)
+                raise
+            binding = _LiveBinding(
+                owner_key=(account.account_id, account.authority_generation),
+                origin_session=origin_session,
+                handle=handle,
+                queue=asyncio.Queue(),
+            )
+            binding.worker = asyncio.create_task(
+                self._publish(binding), name=f"phase2-live-publish-{handle.meeting_id}"
+            )
+            self._bindings[handle.meeting_id] = binding
+            try:
+                self.runtime.create(echo_mode=echo_mode, session_id=handle.meeting_id)
+                await self.sync_and_flush(handle.meeting_id)
+            except BaseException:
+                self._bindings.pop(handle.meeting_id, None)
+                binding.queue.put_nowait(None)
+                if binding.worker is not None:
+                    await binding.worker
+                await self._finish_failed_create_if_stage_absent(account.account_id, handle)
+                raise
+            return binding
 
     async def _finish_failed_create_if_stage_absent(
         self,
@@ -1172,12 +1185,20 @@ class _Phase2LiveTransportAdapter:
     ) -> LiveTransportCreated:
         if not isinstance(authority, _Phase2CreateAuthority):
             raise TypeError("Phase-2 Live creation requires Account authority.")
-        binding = await self.live.create(
-            account=authority.account,
-            workspace=authority.workspace,
-            origin_session=authority.origin_session,
-            echo_mode=payload.get("echo_mode"),
-        )
+        try:
+            binding = await self.live.create(
+                account=authority.account,
+                workspace=authority.workspace,
+                origin_session=authority.origin_session,
+                echo_mode=payload.get("echo_mode"),
+            )
+        except LiveMeetingCapacityFull as exc:
+            from fastapi import HTTPException
+
+            raise HTTPException(
+                status_code=409,
+                detail={"code": "live_capacity_full", "message": str(exc)},
+            ) from exc
         return LiveTransportCreated(
             session_id=binding.handle.meeting_id,
             authority=binding,

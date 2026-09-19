@@ -96,6 +96,7 @@ def _build_file_runner(args: argparse.Namespace):
         vllm_timeout=args.vllm_timeout,
         file_identity=args.file_identity,
         identity_manifest=args.live_provider_manifest,
+        inference_scheduler=getattr(args, "_inference_scheduler", None),
     )
 
 
@@ -115,6 +116,7 @@ def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
         vllm_model=args.vllm_model,
         vllm_api_key=args.vllm_api_key,
         vllm_timeout=args.vllm_timeout,
+        inference_scheduler=getattr(args, "_inference_scheduler", None),
     )
     return build_live_runtime_factory(
         config,
@@ -139,6 +141,12 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit("Install uvicorn to run mtd-phase2-web.") from exc
 
     args = parse_args(argv)
+    from .inference_scheduler import InferenceDispatchScheduler
+
+    args._inference_scheduler = InferenceDispatchScheduler(
+        max_calls=2,
+        max_background_calls=1,
+    )
     from .phase2_llm import parse_upstreams
     parse_upstreams(args.llm_upstreams)
     from .phase2_operator import configure_operator_journal
@@ -163,6 +171,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         control_socket_path=Path(args.control_socket).expanduser(),
         llm_upstreams=args.llm_upstreams,
         open_workspace=os.environ.get("MOSS_OPEN_WORKSPACE") == "1",
+        inference_scheduler=args._inference_scheduler,
     )
     from .tls_reload import serve_with_certificate_reload
 

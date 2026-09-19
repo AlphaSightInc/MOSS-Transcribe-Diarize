@@ -475,7 +475,12 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         ]
     )
 
-    assert seen["app"] == {
+    app_arguments = dict(seen["app"])
+    inference_scheduler = app_arguments.pop("inference_scheduler")
+    from moss_transcribe_diarize.app.inference_scheduler import InferenceDispatchScheduler
+
+    assert isinstance(inference_scheduler, InferenceDispatchScheduler)
+    assert app_arguments == {
         "database_path": DEFAULT_PHASE2_DATABASE_PATH,
         "llm_upstreams": "[]",
         "file_runner": file_runner,

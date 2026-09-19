@@ -120,6 +120,9 @@ def measure_voiceprint_workspace(campaign):
         bank, _ = a.json("GET", "/api/voiceprints", 200)
         checks["compatible_profile"] = len(bank["voiceprints"]) == 1 and bank["voiceprints"][0].get("compatibility") == "compatible"
         samples = bank["voiceprints"][0]["sample_count"]
+        a.json("POST", f"/api/live/sessions/{first}/stop", 200, json={"deadline": ACCEPTANCE_STOP_DEADLINE_SECONDS})
+        frozen, _ = a.json("GET", f"/api/meetings/{first}", 200)
+        campaign._summary_voiceprint_meeting = first
         second, second_speaker = live()
         snapshot, _ = a.json("GET", f"/api/live/sessions/{second}/snapshot", 200)
         checks["recognized_new_meeting"] = snapshot["speaker_labels"].get(second_speaker) == "Qualification speaker"
@@ -133,9 +136,6 @@ def measure_voiceprint_workspace(campaign):
         profiles_created.append(duplicate_id)
         bank, _ = a.json("GET", "/api/voiceprints", 200)
         duplicate_row = next(row for row in bank["voiceprints"] if row["id"] == duplicate_id)
-        a.json("POST", f"/api/live/sessions/{first}/stop", 200, json={"deadline": ACCEPTANCE_STOP_DEADLINE_SECONDS})
-        frozen, _ = a.json("GET", f"/api/meetings/{first}", 200)
-        campaign._summary_voiceprint_meeting = first
         a.json("PUT", f"/api/voiceprints/{profile}/name", 200, json={"label": "Renamed qualification speaker"})
         active, _ = a.json("GET", f"/api/live/sessions/{second}/snapshot", 200)
         checks["active_bank_rename"] = active["speaker_labels"].get(second_speaker) == "Renamed qualification speaker"

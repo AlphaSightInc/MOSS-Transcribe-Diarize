@@ -629,6 +629,33 @@ def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durabl
         assert client.get(f"/api/meetings/{meeting_id}/audio/download").status_code == 401
 
 
+def test_third_active_live_meeting_is_refused_before_durable_creation(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    app = make_app(database)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        first = client.post("/api/live/sessions")
+        second = client.post("/api/live/sessions")
+        refused = client.post("/api/live/sessions")
+
+        assert first.status_code == second.status_code == 201
+        assert refused.status_code == 409
+        assert refused.json() == {
+            "detail": {
+                "code": "live_capacity_full",
+                "message": "Two Live meetings are already active.",
+            }
+        }
+        assert len(client.get("/api/meetings").json()["meetings"]) == 2
+
+        aborted = client.post(f"/api/live/sessions/{first.json()['id']}/abort")
+        assert aborted.status_code == 200
+        replacement = client.post("/api/live/sessions")
+        assert replacement.status_code == 201
+
+
 def test_saved_live_transcript_keeps_attributed_id_and_omits_unattributed_id():
     from moss_transcribe_diarize.app.phase2_live import _transcript_document
 

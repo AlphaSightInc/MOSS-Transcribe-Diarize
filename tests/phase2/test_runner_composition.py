@@ -188,3 +188,32 @@ def test_file_album_default_legacy_fallback_and_live_terminal_isolation():
     assert isinstance(file.identity_resolver,AlbumIdentityResolver)
     with pytest.raises(ValueError):
         runner_composition.build_file_runner(**config,file_identity='typo')
+
+
+def test_terminal_finalizer_retains_background_dispatch_classification():
+    from moss_transcribe_diarize.app.inference_scheduler import (
+        InferenceDispatchScheduler,
+        ScheduledInferenceRunner,
+    )
+
+    class Delegate:
+        model_path = "test"
+
+        def transcribe(self, audio_path, **kwargs):
+            return None
+
+    scheduled = ScheduledInferenceRunner(
+        Delegate(), InferenceDispatchScheduler(), kind="background"
+    )
+    terminal = runner_composition.build_terminal_finalizer(
+        runner=scheduled,
+        prompt=None,
+        max_length=16384,
+        max_new_tokens=12000,
+        decoding="greedy",
+        temperature=None,
+        max_length_cap=16384,
+    )
+
+    assert terminal.runner is scheduled
+    assert terminal.runner.kind == "background"

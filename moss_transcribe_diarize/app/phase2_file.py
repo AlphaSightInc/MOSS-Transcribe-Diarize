@@ -114,6 +114,7 @@ class FileMeetingTasks:
         temperature: float | None = None,
         url_acquirer: Any | None = None,
         audio_archive: Any | None = None,
+        inference_scheduler: Any | None = None,
     ):
         self._runner = runner
         self._work_root = Path(work_root).expanduser()
@@ -126,6 +127,7 @@ class FileMeetingTasks:
         self._temperature = temperature if decoding == "sample" else None
         self._url_acquirer = url_acquirer
         self._audio_archive = audio_archive
+        self._inference_scheduler = inference_scheduler
         self._tasks: dict[str, _OwnedFileTask] = {}
         self._fenced_owner_keys: set[tuple[str, int]] = set()
         self._fenced_meeting_ids: set[str] = set()
@@ -212,8 +214,9 @@ class FileMeetingTasks:
         """Fence coroutine commits before the owning SQLite connection closes."""
 
         tasks = tuple(entry.task for entry in self._tasks.values())
-        for task in tasks:
-            task.cancel()
+        for meeting_id, entry in tuple(self._tasks.items()):
+            self._cancel_queued_inference(meeting_id)
+            entry.task.cancel()
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -242,6 +245,7 @@ class FileMeetingTasks:
             if entry.handle.owner_key == owner_key
         )
         for entry in entries:
+            self._cancel_queued_inference(entry.handle.meeting_id)
             entry.task.cancel()
         return entries
 
@@ -252,6 +256,7 @@ class FileMeetingTasks:
         if entry is None:
             return None
         self._fenced_meeting_ids.add(meeting_id)
+        self._cancel_queued_inference(meeting_id)
         entry.task.cancel()
         return entry
 
@@ -320,6 +325,10 @@ class FileMeetingTasks:
         if task.exception() is not None:
             LOGGER.error("File Meeting background task failed.")
 
+    def _cancel_queued_inference(self, meeting_id: str) -> None:
+        if self._inference_scheduler is not None:
+            self._inference_scheduler.cancel_background(meeting_id)
+
     def _remove_work_dir(self, work_dir: Path) -> None:
         if work_dir.parent != self._work_root:
             raise RuntimeError("Refusing cleanup outside the File work root.")
@@ -356,6 +365,7 @@ class FileMeetingTasks:
         await self._run(handle, input_path, asyncio.Event())
 
     async def _run(self, handle: Any, input_path: Path, started: asyncio.Event) -> None:
+        loop = asyncio.get_running_loop()
         options = {
             name: value
             for name, value in {
@@ -367,10 +377,21 @@ class FileMeetingTasks:
             }.items()
             if value is not None
         }
+        if self._inference_scheduler is not None:
+            options.update(
+                _dispatch_key=handle.meeting_id,
+                _dispatch_on_wait=lambda: loop.call_soon_threadsafe(
+                    self._set_phase, handle.meeting_id, "queued"
+                ),
+                _dispatch_on_start=lambda: loop.call_soon_threadsafe(
+                    self._set_phase, handle.meeting_id, "running"
+                ),
+            )
         runner_task = asyncio.create_task(
             asyncio.to_thread(self._transcribe_from_one_mix, input_path, options)
         )
-        self._set_phase(handle.meeting_id, "running")
+        if self._inference_scheduler is None:
+            self._set_phase(handle.meeting_id, "running")
         started.set()
         try:
             await self._complete(handle, input_path, runner_task)

@@ -82,6 +82,9 @@ def test_live_one_second_recognition_is_private_never_enrolls_and_delete_fences_
                 assert changes == {}
         client.portal.call(stale)
         assert client.get("/api/voiceprints").json() == {"voiceprints": []}
+        assert client.post(
+            f"/api/live/sessions/{recognized}/stop", json={"deadline": 2.0}
+        ).status_code == 200
 
         session(client, sessions["b"])
         foreign = client.post("/api/live/sessions").json()["id"]

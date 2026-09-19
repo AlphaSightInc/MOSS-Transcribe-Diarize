@@ -26,6 +26,11 @@ def test_bank_rename_delete_are_exact_id_private_and_freeze_stopped_history(tmp_
             named = client.put(f"/api/meetings/{meeting_id}/speakers/speaker-0001/name", json={"label": "Alex"})
             assert named.status_code == 200
             profiles.append(named.json()["voiceprint_id"])
+            if len(meetings) == 2:
+                assert client.post(
+                    f"/api/live/sessions/{meetings[0]}/stop",
+                    json={"deadline": 2.0},
+                ).status_code == 200
         # Model a previously recognized exact link. Recognition quality is not
         # supplied by this fixture; it isolates bank propagation and persistence.
         async def link():
@@ -36,7 +41,6 @@ def test_bank_rename_delete_are_exact_id_private_and_freeze_stopped_history(tmp_
                     (profiles[0], meetings[1]),
                 )
         client.portal.call(link)
-        assert client.post(f"/api/live/sessions/{meetings[0]}/stop", json={"deadline": 2.0}).status_code == 200
         stopped = client.get(f"/api/meetings/{meetings[0]}").json()
 
         session(client, sessions["b"])

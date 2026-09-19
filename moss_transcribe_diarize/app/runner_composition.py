@@ -82,6 +82,7 @@ def build_file_runner(
     vllm_timeout: float,
     file_identity: str = "album",
     identity_manifest: str | Path | None = None,
+    inference_scheduler: Any | None = None,
 ):
     """Build Account File inference; retain legacy identity as a one-release fallback."""
 
@@ -96,20 +97,34 @@ def build_file_runner(
         from .vllm_runner import VllmRunner
         from .windowed_transcription import WindowedRunner
 
+        delegate: Any = VllmRunner(
+            base_url=vllm_base_url,
+            model=vllm_model or str(model_path),
+            api_key=vllm_api_key,
+            timeout=vllm_timeout,
+        )
+        if inference_scheduler is not None:
+            from .inference_scheduler import ScheduledInferenceRunner
+
+            delegate = ScheduledInferenceRunner(
+                delegate, inference_scheduler, kind="background"
+            )
         return WindowedRunner(
-            VllmRunner(
-                base_url=vllm_base_url,
-                model=vllm_model or str(model_path),
-                api_key=vllm_api_key,
-                timeout=vllm_timeout,
-            ),
+            delegate,
             identity_resolver=(AlbumIdentityResolver(manifest_path=identity_manifest)
                                if file_identity == "album"
                                else IdentityResolver(config=IdentityResolverConfig())),
         )
     from .model_runner import ModelRunner
 
-    return ModelRunner(Path(model_path), device=device, dtype=dtype)
+    runner: Any = ModelRunner(Path(model_path), device=device, dtype=dtype)
+    if inference_scheduler is not None:
+        from .inference_scheduler import ScheduledInferenceRunner
+
+        runner = ScheduledInferenceRunner(
+            runner, inference_scheduler, kind="background"
+        )
+    return runner
 
 
 class LazyLiveRunner:
@@ -126,6 +141,7 @@ class LazyLiveRunner:
         vllm_model: str | None,
         vllm_api_key: str | None,
         vllm_timeout: float,
+        inference_scheduler: Any | None = None,
     ) -> None:
         self._configuration = {
             "model_path": model_path,
@@ -136,6 +152,7 @@ class LazyLiveRunner:
             "vllm_model": vllm_model,
             "vllm_api_key": vllm_api_key,
             "vllm_timeout": vllm_timeout,
+            "inference_scheduler": inference_scheduler,
         }
         self._runner: Any | None = None
         self.model_path = str(vllm_model or model_path)
@@ -153,19 +170,27 @@ class LazyLiveRunner:
                 raise ValueError("--vllm-base-url is required when backend='vllm'.")
             from .vllm_runner import VllmRunner
 
-            return VllmRunner(
+            runner: Any = VllmRunner(
                 base_url=config["vllm_base_url"],
                 model=config["vllm_model"] or str(config["model_path"]),
                 api_key=config["vllm_api_key"],
                 timeout=config["vllm_timeout"],
             )
-        from .model_runner import ModelRunner
+        else:
+            from .model_runner import ModelRunner
 
-        return ModelRunner(
-            Path(config["model_path"]).expanduser(),
-            device=str(config["device"]),
-            dtype=str(config["dtype"]),
-        )
+            runner = ModelRunner(
+                Path(config["model_path"]).expanduser(),
+                device=str(config["device"]),
+                dtype=str(config["dtype"]),
+            )
+        if config["inference_scheduler"] is not None:
+            from .inference_scheduler import ScheduledInferenceRunner
+
+            runner = ScheduledInferenceRunner(
+                runner, config["inference_scheduler"], kind="live"
+            )
+        return runner
 
 
 def build_terminal_finalizer(

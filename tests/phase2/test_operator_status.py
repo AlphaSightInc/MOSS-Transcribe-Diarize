@@ -303,7 +303,7 @@ def test_real_store_projection_reconciles_counts_and_excludes_content(tmp_path: 
             status = await operator.snapshot()
             assert status["schema"] == OPERATOR_STATUS_SCHEMA
             assert status["capacity"] == {
-                "live": {"active": 1, "limit": 4},
+                "live": {"active": 1, "limit": 2},
                 "file": {"active": 1},
                 "inference_worker": "busy",
                 "queues": {
@@ -1028,5 +1028,58 @@ def test_file_registry_reports_url_acquisition_queued_then_inference_running(tmp
         runner.release.set()
         await tasks.stop()
         assert tasks.operator_snapshot() == {}
+
+    asyncio.run(exercise())
+
+
+def test_file_registry_cancels_queued_decoder_dispatch_before_delegate(tmp_path: Path):
+    from moss_transcribe_diarize.app.inference_scheduler import (
+        InferenceDispatchScheduler,
+        ScheduledInferenceRunner,
+    )
+
+    async def exercise() -> None:
+        scheduler = InferenceDispatchScheduler(max_calls=2, max_background_calls=1)
+        occupying_started = threading.Event()
+        release_occupying = threading.Event()
+
+        def occupy_background() -> None:
+            scheduler.run_background(
+                "already-running",
+                lambda: (
+                    occupying_started.set(),
+                    release_occupying.wait(timeout=5),
+                ),
+            )
+
+        occupying = threading.Thread(target=occupy_background)
+        occupying.start()
+        assert await asyncio.to_thread(occupying_started.wait, 1)
+
+        delegate = _HeldRunner()
+        runner = ScheduledInferenceRunner(delegate, scheduler, kind="background")
+        acquirer = _HeldAcquirer()
+        tasks = FileMeetingTasks(
+            runner,
+            tmp_path / "file-work",
+            url_acquirer=acquirer,
+            inference_scheduler=scheduler,
+        )
+        handle = await tasks.accept_url(_Workspace(), "https://example.com/audio.wav")
+        acquirer.release.set()
+        deadline = time.monotonic() + 1
+        while scheduler.snapshot().waiting_background_calls != 1:
+            assert time.monotonic() < deadline
+            await asyncio.sleep(0.001)
+
+        assert tasks.operator_snapshot() == {handle.meeting_id: "queued"}
+        await tasks.stop()
+        assert not delegate.started.is_set()
+        assert scheduler.snapshot().waiting_background_calls == 0
+        assert tasks.operator_snapshot() == {}
+
+        release_occupying.set()
+        occupying.join(timeout=2)
+        assert not occupying.is_alive()
 
     asyncio.run(exercise())

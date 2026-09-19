@@ -17,12 +17,12 @@ from typing import Any, Callable, Mapping
 
 from .live_capture_status import LiveCaptureHealthPolicy, project_live_capture_status
 from .live_lane_contract import LiveLane
+from .phase2_live import LIVE_MEETING_LIMIT
 
 
 OPERATOR_STATUS_SCHEMA = "moss-operator-status.v1"
 OPERATOR_EVENT_SCHEMA = "moss-operator-event.v1"
 OPERATOR_JOURNAL_LIMIT = 64
-LIVE_MEETING_LIMIT = 4
 LOGGER = logging.getLogger("moss_transcribe_diarize.operator")
 
 _STATUS_KEYS = frozenset(
