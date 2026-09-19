@@ -4,6 +4,9 @@ Run literally from `/private/tmp/moss-round3-20260919/identity` with no prior co
 Do not edit product code. Record exact outputs/counts in
 `docs/verify/wp55/VERIFY-RESULT.md`.
 
+Preflight at `5c05c4a400111be8311a4152de0be72a9f746802`: backend 2,037 passed /
+5 skipped / 37 subtests / 0 failed; frontend 288/288; typecheck/build clean.
+
 1. Confirm custody and scope:
 
 ```bash
