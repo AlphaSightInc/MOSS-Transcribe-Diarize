@@ -1,7 +1,8 @@
 # Fresh verification — PANE 3.3
 
 Run literally from `/private/tmp/moss-round3-20260919/runner`. Do not edit production or
-tests. Record every command and exact result in `VERIFY-RESULT.md`.
+tests. Record every command and exact result in
+`docs/verify/wp49-wp53/VERIFY-RESULT.md`.
 
 1. `git branch --show-current && git status --short`
    - Expect `round3/runner` and no status output.
