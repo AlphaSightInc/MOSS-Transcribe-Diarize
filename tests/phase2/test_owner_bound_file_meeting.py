@@ -886,11 +886,13 @@ def test_deployed_file_inference_settings_reach_runner(tmp_path: Path):
         ).json()["id"]
         await_terminal(client, meeting_id, "completed")
 
-    assert runner.options == [
-        {
-            "prompt": "deployed prompt",
-            "max_length": 16384,
-            "max_new_tokens": 12000,
-            "decoding": "greedy",
-        }
-    ]
+    assert len(runner.options) == 1
+    checkpoint_dir = Path(runner.options[0].pop("checkpoint_dir"))
+    assert checkpoint_dir.name == "checkpoint"
+    assert checkpoint_dir.parent.parent == tmp_path / "file-work"
+    assert runner.options == [{
+        "prompt": "deployed prompt",
+        "max_length": 16384,
+        "max_new_tokens": 12000,
+        "decoding": "greedy",
+    }]

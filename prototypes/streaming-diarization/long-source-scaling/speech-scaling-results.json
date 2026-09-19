@@ -1,0 +1,48 @@
+{
+  "decoder_calls": 0,
+  "growth": {
+    "feed_time_30m_over_5m": 26.800625786711723,
+    "peak_bytes_30m_over_5m": 1.9668895309536054,
+    "segments_30m_over_5m": 6.0
+  },
+  "rows": [
+    {
+      "canonical_calls": 120,
+      "feed_elapsed_seconds": 0.21592691700789146,
+      "final_status": "closed",
+      "frames": 300,
+      "peak_python_bytes": 717477,
+      "published_segments": 120,
+      "retained_events": 904,
+      "seconds": 300,
+      "snapshot_elapsed_seconds": 2.4083012249320745e-05,
+      "stop_elapsed_seconds": 0.000747791986213997
+    },
+    {
+      "canonical_calls": 360,
+      "feed_elapsed_seconds": 1.5266439580009319,
+      "final_status": "closed",
+      "frames": 900,
+      "peak_python_bytes": 1056854,
+      "published_segments": 360,
+      "retained_events": 1000,
+      "seconds": 900,
+      "snapshot_elapsed_seconds": 2.4249980924651027e-05,
+      "stop_elapsed_seconds": 0.0006696670025121421
+    },
+    {
+      "canonical_calls": 720,
+      "feed_elapsed_seconds": 5.786976500006858,
+      "final_status": "closed",
+      "frames": 1800,
+      "peak_python_bytes": 1411198,
+      "published_segments": 720,
+      "retained_events": 1000,
+      "seconds": 1800,
+      "snapshot_elapsed_seconds": 2.824998227879405e-05,
+      "stop_elapsed_seconds": 0.0008764160156715661
+    }
+  ],
+  "schema_version": 1,
+  "scope": "deterministic speech publication scaling; not acoustic qualification"
+}

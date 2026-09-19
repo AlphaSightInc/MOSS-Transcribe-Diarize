@@ -409,6 +409,13 @@ class FileMeetingTasks:
         options: dict[str, object],
     ) -> tuple[Any, Path | None, list[str]]:
         notices: list[str] = []
+        transcribe_options = {
+            **options,
+            # WindowedRunner commits each completed 150-second window atomically here.
+            # Short-input delegates ignore the path; long File and URL meetings reuse the
+            # same existing checkpoint seam without gaining a new job identity.
+            "checkpoint_dir": input_path.parent / "checkpoint",
+        }
         mix_path: Path | None = None
         mix_failed = False
         if self._audio_archive is not None:
@@ -431,7 +438,7 @@ class FileMeetingTasks:
                 }],
             ), mix_path, notices
         try:
-            result = self._runner.transcribe(mix_path or input_path, **options)
+            result = self._runner.transcribe(mix_path or input_path, **transcribe_options)
         except Exception as exc:
             if mix_failed or getattr(exc, "condition", None) == "extraction_exception":
                 raise FileProcessingError("transcode_failed", "Media could not be decoded. The format may be unsupported or damaged.") from exc

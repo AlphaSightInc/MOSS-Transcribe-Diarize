@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -36,6 +37,8 @@ class RecordingExtractor:
 
 
 class RecordingIdentityResolver:
+    requires_window_audio = True
+
     def __init__(self):
         self.calls: list[dict[str, int]] = []
 
@@ -356,3 +359,73 @@ def test_merged_tail_keeps_last_words_once_and_checkpoint_resume(tmp_path):
     assert len(extractor.calls) == 2
     assert resumed.window_diagnostics == first.window_diagnostics
     assert resumed.window_diagnostics[-1]['condition'] == 'short_tail_window_merged'
+
+
+def test_checkpoint_resume_rehydrates_completed_window_audio_for_identical_identity(tmp_path):
+    class FailOnceRunner:
+        model_path = "fake-vllm"
+
+        def __init__(self, fail_at=None):
+            self.fail_at = fail_at
+            self.calls = []
+
+        def transcribe(self, audio_path, **kwargs):
+            del kwargs
+            index = int(Path(audio_path).stem.rsplit("-", 1)[1])
+            self.calls.append(index)
+            if self.fail_at == index:
+                self.fail_at = None
+                raise RuntimeError("interrupted")
+            return result(f"[60][S01]window {index}[61]")
+
+    class AudioPathIdentity:
+        requires_window_audio = True
+
+        def contract(self):
+            return {"schema_version": 1, "resolver": "audio-path-control"}
+
+        def resolve(self, windows, local_results, *, window_audio_paths):
+            missing = []
+            relabeled = []
+            for window, segments, audio_path in zip(
+                windows, local_results, window_audio_paths, strict=True
+            ):
+                available = audio_path is not None and Path(audio_path).is_file()
+                if not available:
+                    missing.append(window.index)
+                relabeled.append(
+                    [replace(segment, speaker="S01" if available else "S00") for segment in segments]
+                )
+            return IdentityResolution(
+                relabeled_results=relabeled,
+                summary={"missing_audio_windows": missing},
+                diagnostics={"schema_version": 1, "missing_audio_windows": missing},
+            )
+
+    source = tmp_path / "source.wav"
+    source.write_bytes(b"source")
+    clean_decoder = FailOnceRunner()
+    clean = WindowedRunner(
+        clean_decoder,
+        duration_probe=lambda _: 360,
+        window_extractor=RecordingExtractor(),
+        identity_resolver=AudioPathIdentity(),
+    ).transcribe(source, max_new_tokens=12000)
+
+    resumed_decoder = FailOnceRunner(fail_at=2)
+    extractor = RecordingExtractor()
+    runner = WindowedRunner(
+        resumed_decoder,
+        duration_probe=lambda _: 360,
+        window_extractor=extractor,
+        identity_resolver=AudioPathIdentity(),
+    )
+    checkpoint = tmp_path / "checkpoint"
+    with pytest.raises(WindowTranscriptionError):
+        runner.transcribe(source, max_new_tokens=12000, checkpoint_dir=checkpoint)
+    resumed = runner.transcribe(source, max_new_tokens=12000, checkpoint_dir=checkpoint)
+
+    assert resumed.text == clean.text
+    assert resumed.identity_summary == clean.identity_summary == {"missing_audio_windows": []}
+    assert resumed_decoder.calls == [0, 1, 2, 2]
+    assert [call[2] for call in extractor.calls] == [0, 120, 240, 0, 120, 240]

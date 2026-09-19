@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 from types import ModuleType
+import wave
 
 import pytest
 
@@ -143,8 +144,13 @@ def test_launcher_without_prompt_finalizer_builds_http_request(monkeypatch):
         temperature=args.temperature, max_length_cap=args.max_len,
     )
     class Tape:
+        has_signal = True
         def gaps(self, end_sample): return ()
-        def read(self, *, start_sample, end_sample): return b'\1\0' * (end_sample-start_sample)
+        def write_wav(self, destination, *, start_sample, end_sample):
+            with wave.open(str(destination), 'wb') as output:
+                output.setnchannels(1); output.setsampwidth(2); output.setframerate(16000)
+                output.writeframes(b'\1\0' * (end_sample-start_sample))
+            return end_sample-start_sample
     finalizer.finalize(
         plan=TerminalDecodePlan(epoch=0, end_sample=40000, rolling_through_sample=0,
             rolling_status=RollingStatus.ROLLING, windows_completed=0, windows_failed=0),

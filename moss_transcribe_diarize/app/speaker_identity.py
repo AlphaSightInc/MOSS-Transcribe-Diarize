@@ -139,6 +139,16 @@ class _UnionFind:
 
 
 class IdentityResolver:
+    # Tier A is timestamp-only. This resolver's optional Tier B consumes window audio only
+    # when an encoder is present and its static preflight admitted the configured provider.
+    @property
+    def requires_window_audio(self) -> bool:
+        return bool(
+            self.tier_b_encoder is not None
+            and self.config.tier_b_enabled
+            and self._tier_b_static_preflight.available
+        )
+
     def __init__(self, *, config: IdentityResolverConfig | None = None, tier_b_encoder: Any = None):
         self.config = config or IdentityResolverConfig()
         self.tier_b_encoder = tier_b_encoder

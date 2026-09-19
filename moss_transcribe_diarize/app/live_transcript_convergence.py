@@ -70,11 +70,7 @@ from typing import Any, Callable, Mapping, Protocol, Sequence
 
 from scipy.optimize import linear_sum_assignment
 
-from .live_adapters import (
-    InferenceTranscript,
-    canonical_decode_token_cap,
-    write_pcm16_wav,
-)
+from .live_adapters import InferenceTranscript, canonical_decode_token_cap
 from .live_session import (
     EffectiveTranscriptSegment,
     LIVE_SAMPLE_RATE,
@@ -743,35 +739,27 @@ class TerminalFinalization:
 class CompleteAudioTape(Protocol):
     """The whole seam between a meeting's retained audio and its last listener.
 
-    Two methods and one optional observation, and the finalizer knows nothing else about where
-    the audio lives -- memory (ADR-0003 D8) or a declared disk root (ADR-0003 D2) are the same
-    tape from here. `read` refuses rather than returning short, which is why the adapter has
-    no completeness check of its own; `gaps` is what turns that refusal into evidence a reader
-    can act on.
-
-    `has_signal` is read through `_tape_holds_signal` and is optional in the same sense, and
-    for the same reason, as `InferenceTranscript.empty_cause`: a tape that does not track it
-    is not lying, it simply has nothing to say, and a tape that has nothing to say must not be
-    treated as a silent meeting.
+    The finalizer knows nothing about where the audio lives. The interface requires streamed
+    WAV materialization because a whole-source `bytes` return makes resident memory grow with
+    meeting duration. It also requires the arrival-time signal observation so an established
+    silent meeting can be refused before creating a duration-sized WAV.
     """
+
+    @property
+    def has_signal(self) -> bool:
+        ...
 
     def gaps(self, through_sample: int) -> tuple[Any, ...]:
         ...
 
-    def read(self, *, start_sample: int = 0, end_sample: int | None = None) -> bytes:
+    def write_wav(
+        self,
+        destination: str | Path,
+        *,
+        start_sample: int = 0,
+        end_sample: int | None = None,
+    ) -> int:
         ...
-
-
-def _tape_holds_signal(tape: CompleteAudioTape) -> bool:
-    """Did this tape ever accept a sample that was not an exact digital zero?
-
-    `True` from a tape that does not answer. Silence has to be *established* before a decode
-    is withheld -- withholding the meeting's last pass on a tape that never claimed to be
-    silent would lose real transcripts to a missing attribute.
-    """
-
-    return bool(getattr(tape, "has_signal", True))
-
 
 class WholeMeetingRunner(Protocol):
     """What the finalizer needs from the file-mode pipeline: one call, on a path.
@@ -912,28 +900,35 @@ class TerminalTranscriptFinalizer:
         """
 
         gaps = tuple(tape.gaps(plan.end_sample))
-        try:
-            pcm = tape.read(start_sample=0, end_sample=plan.end_sample)
-        except CompleteMixedTapeUnavailable as exc:
-            return self._refused(plan, TerminalOutcome.TAPE_UNAVAILABLE, str(exc), gaps=gaps)
-
-        tape_samples = len(pcm) // PCM16_BYTES_PER_SAMPLE
-        if not _tape_holds_signal(tape):
-            # A meeting of exact digital zeros is refused here rather than decoded, because a
-            # decoder asked for words about silence invents them (WP3 measured ~40 on one
-            # span) and this pass is the *last* listener: what it proposes replaces the
-            # rolling surface for good. The tape is asked rather than the bytes -- it saw
-            # every sample once, on the way in -- so the question costs nothing and cannot
-            # mistake a fixture's placeholder PCM for a silent meeting.
+        if gaps:
             return self._refused(
-                plan, TerminalOutcome.NO_TRANSCRIPT, "digital_silence",
-                gaps=gaps, tape_samples=tape_samples, decode_elapsed_sec=0.0,
+                plan,
+                TerminalOutcome.TAPE_UNAVAILABLE,
+                "the complete tape has gaps.",
+                gaps=gaps,
             )
-        started = time.monotonic()
+        if not tape.has_signal:
+            # The tape established this while frames arrived. Refuse before creating a
+            # duration-sized WAV; scanning or copying 200 minutes of zeros here is needless.
+            return self._refused(
+                plan,
+                TerminalOutcome.NO_TRANSCRIPT,
+                "digital_silence",
+                gaps=gaps,
+                tape_samples=plan.end_sample,
+                decode_elapsed_sec=0.0,
+            )
         with tempfile.TemporaryDirectory(prefix="mtd-terminal-", dir=self.scratch_dir) as scratch:
             wav_path = Path(scratch) / f"terminal-{plan.epoch:04d}.wav"
-            write_pcm16_wav(wav_path, pcm)
-            del pcm
+            try:
+                tape_samples = int(
+                    tape.write_wav(wav_path, start_sample=0, end_sample=plan.end_sample)
+                )
+            except CompleteMixedTapeUnavailable as exc:
+                return self._refused(
+                    plan, TerminalOutcome.TAPE_UNAVAILABLE, str(exc), gaps=gaps
+                )
+            started = time.monotonic()
             try:
                 result = self.runner.transcribe(wav_path, **self.transcribe_kwargs)
             except Exception as exc:

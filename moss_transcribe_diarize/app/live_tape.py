@@ -1,7 +1,7 @@
 """Bounded terminal audio and the shared live capture recorder.
 
 Phase 2 owns durable Meeting audio staging. This module retains only two neutral
-primitives: a complete mixed in-memory tape for terminal transcript convergence and a
+primitives: a complete mixed spill-to-disk tape for terminal transcript convergence and a
 failure-isolating recorder over an injected capture-stage sink. It contains no retention
 root, TTL, product authority, or legacy filesystem store.
 """
@@ -10,8 +10,11 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import tempfile
 import threading
+import wave
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Mapping, Protocol, Sequence
 
 from .live_lane_contract import LiveV2Frame
@@ -22,6 +25,7 @@ _TAPE_LOG = logging.getLogger("moss_transcribe_diarize.live.tape")
 
 TAPE_CAPACITY_EXHAUSTED = "tape_capacity_exhausted"
 TAPE_FRAME_NOT_ADMISSIBLE = "tape_frame_not_admissible"
+TAPE_STORAGE_FAILED = "tape_storage_failed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -126,16 +130,16 @@ class CompleteMixedTapeAccounting:
 
 
 class CompleteMixedTape:
-    """One meeting's whole mixed track, in memory, on the session sample clock.
+    """One meeting's whole mixed track, in bounded-memory scratch, on its sample clock.
 
     This tape answers one question -- *give me `[0, meeting_end)` of what this session
     decoded* -- which is the only thing a terminal finalization pass needs, and it answers
-    it without a disk:
+    it without retaining whole-source PCM in Python memory:
 
     * **D2 -- opt-in.** There is no default capacity. A deployment that declares none never
       constructs one, and the service retains exactly what it retains today. The campaign's
       measured worst case is a five-minute meeting at 9 600 000 bytes, but the number is the
-      deployment's to state: a memory posture must not arrive as a side effect either.
+      deployment's to state: a storage posture must not arrive as a side effect either.
     * **D5 -- pressure degrades the tape, never the meeting.** `append` never raises. A
       frame past the declared capacity, a frame that is not the tape's next sample, or a
       partial sample records a typed degradation naming the reason and the byte counts,
@@ -167,7 +171,11 @@ class CompleteMixedTape:
         self.capacity_bytes = int(capacity_bytes)
         self.sample_rate = int(sample_rate)
         self._lock = threading.RLock()
-        self._buffer = bytearray()
+        # The source grows with meeting duration, but Python resident memory does not. This
+        # scratch tape is intentionally not durable authority; Phase 2's owner-derived capture
+        # stage separately owns restart recovery. TemporaryFile also removes itself on close.
+        self._file = tempfile.TemporaryFile(mode="w+b")
+        self._retained_bytes = 0
         self._covered: list[tuple[int, int]] = []
         self._sample_count = 0
         self._refused_samples = 0
@@ -209,7 +217,7 @@ class CompleteMixedTape:
 
     @property
     def retained_bytes(self) -> int:
-        return len(self._buffer)
+        return self._retained_bytes
 
     @property
     def peak_retained_bytes(self) -> int:
@@ -240,7 +248,7 @@ class CompleteMixedTape:
                 epoch=self.epoch,
                 sample_count=self._sample_count,
                 through_sample=int(through_sample),
-                retained_bytes=len(self._buffer),
+                retained_bytes=self._retained_bytes,
                 capacity_bytes=self.capacity_bytes,
                 peak_retained_bytes=self._peak_retained_bytes,
                 refused_samples=self._refused_samples,
@@ -288,17 +296,41 @@ class CompleteMixedTape:
                 )
             if not samples:
                 return LiveTapeAppendResult(taping=True, written=False, duplicate=False)
-            if len(self._buffer) + len(pcm) > self.capacity_bytes:
+            if self._retained_bytes + len(pcm) > self.capacity_bytes:
                 self._refused_samples += samples
                 return self._degrade(
                     TAPE_CAPACITY_EXHAUSTED,
                     {
                         "capacity_bytes": self.capacity_bytes,
-                        "retained_bytes": len(self._buffer),
+                        "retained_bytes": self._retained_bytes,
                         "requested_bytes": len(pcm),
                     },
                 )
-            self._buffer.extend(pcm)
+            operation = "seek"
+            try:
+                self._file.seek(0, 2)
+                remaining = memoryview(pcm)
+                while remaining:
+                    operation = "write"
+                    written = self._file.write(remaining)
+                    if not written:
+                        raise OSError("temporary tape write made no progress")
+                    remaining = remaining[written:]
+                # Buffered files may defer ENOSPC until flush or close. The frame is not
+                # part of the tape's accounting until its bytes have crossed that boundary.
+                operation = "flush"
+                self._file.flush()
+            except OSError:
+                self._refused_samples += samples
+                return self._degrade(
+                    TAPE_STORAGE_FAILED,
+                    {
+                        "operation": operation,
+                        "retained_bytes": self._retained_bytes,
+                        "requested_bytes": len(pcm),
+                    },
+                )
+            self._retained_bytes += len(pcm)
             self._digest.update(pcm)
             # Established while the audio is in hand and never recomputed. The alternative is
             # scanning tens of megabytes on the stop path of a meeting that is being polled,
@@ -307,7 +339,7 @@ class CompleteMixedTape:
             self._has_signal = self._has_signal or not is_digital_silence(pcm)
             self._covered = _merge(self._covered, self._sample_count, self._sample_count + samples)
             self._sample_count += samples
-            self._peak_retained_bytes = max(self._peak_retained_bytes, len(self._buffer))
+            self._peak_retained_bytes = max(self._peak_retained_bytes, self._retained_bytes)
             return LiveTapeAppendResult(taping=True, written=True, duplicate=False)
 
     # -- reading -----------------------------------------------------------------
@@ -328,7 +360,56 @@ class CompleteMixedTape:
                 raise CompleteMixedTapeUnavailable(
                     f"the complete tape does not cover [{start}, {end})."
                 )
-            return bytes(self._buffer[start * PCM16_BYTES_PER_SAMPLE : end * PCM16_BYTES_PER_SAMPLE])
+            byte_count = (end - start) * PCM16_BYTES_PER_SAMPLE
+            try:
+                self._file.seek(start * PCM16_BYTES_PER_SAMPLE)
+                pcm = self._file.read(byte_count)
+            except OSError as exc:
+                raise CompleteMixedTapeUnavailable("the complete tape could not be read.") from exc
+            if len(pcm) != byte_count:
+                raise CompleteMixedTapeUnavailable("the complete tape returned a short read.")
+            return pcm
+
+    def write_wav(
+        self,
+        destination: str | Path,
+        *,
+        start_sample: int = 0,
+        end_sample: int | None = None,
+    ) -> int:
+        """Stream one complete range to mono PCM16 WAV without materializing it in memory."""
+
+        with self._lock:
+            end = self._sample_count if end_sample is None else int(end_sample)
+            start = int(start_sample)
+            if self._released:
+                raise CompleteMixedTapeUnavailable("the complete tape has been released.")
+            if self._degradation is not None:
+                raise CompleteMixedTapeUnavailable(
+                    f"the complete tape stopped: {self._degradation.reason}."
+                )
+            if not self.covers(start, end):
+                raise CompleteMixedTapeUnavailable(
+                    f"the complete tape does not cover [{start}, {end})."
+                )
+            remaining = (end - start) * PCM16_BYTES_PER_SAMPLE
+            try:
+                self._file.seek(start * PCM16_BYTES_PER_SAMPLE)
+                with wave.open(str(Path(destination)), "wb") as output:
+                    output.setnchannels(1)
+                    output.setsampwidth(PCM16_BYTES_PER_SAMPLE)
+                    output.setframerate(self.sample_rate)
+                    while remaining:
+                        chunk = self._file.read(min(1024 * 1024, remaining))
+                        if not chunk:
+                            raise OSError("temporary tape returned a short read")
+                        output.writeframesraw(chunk)
+                        remaining -= len(chunk)
+            except (OSError, wave.Error) as exc:
+                raise CompleteMixedTapeUnavailable(
+                    "the complete tape could not be materialized."
+                ) from exc
+            return end - start
 
     # -- lifecycle ---------------------------------------------------------------
 
@@ -336,8 +417,21 @@ class CompleteMixedTape:
         """Drop the audio and keep the accounting. Idempotent, and never raises."""
 
         with self._lock:
-            self._buffer = bytearray()
-            self._released = True
+            if not self._released:
+                try:
+                    self._file.close()
+                except OSError:
+                    if self._degradation is None:
+                        self._degrade(
+                            TAPE_STORAGE_FAILED,
+                            {
+                                "operation": "close",
+                                "retained_bytes": self._retained_bytes,
+                            },
+                        )
+                finally:
+                    self._retained_bytes = 0
+                    self._released = True
 
     def _degrade(self, reason: str, detail: Mapping[str, object]) -> LiveTapeAppendResult:
         degradation = LiveTapeDegradation(reason=reason, detail=detail)

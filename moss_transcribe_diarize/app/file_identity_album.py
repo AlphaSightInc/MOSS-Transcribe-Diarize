@@ -22,6 +22,8 @@ from .speaker_identity import IdentityResolution
 
 
 class AlbumIdentityResolver:
+    requires_window_audio = True
+
     def __init__(self, *, manifest_path: str | Path | None = None,
                  config: LiveProviderBundleConfig | None = None, encoder: Any = None):
         self.manifest_path = Path(manifest_path) if manifest_path is not None else (

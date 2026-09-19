@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import tracemalloc
 import unittest
 from dataclasses import replace
 
@@ -36,6 +37,7 @@ from moss_transcribe_diarize.app.live_tape import (
     CompleteMixedTapeUnavailable,
     TAPE_CAPACITY_EXHAUSTED,
     TAPE_FRAME_NOT_ADMISSIBLE,
+    TAPE_STORAGE_FAILED,
 )
 
 from tests.test_live_rolling_wiring import (
@@ -154,6 +156,54 @@ class CompleteMixedTapeTest(unittest.TestCase):
         self.assertFalse(result.written)
         self.assertEqual(tape.accounting(through_sample=4).sample_count, 4)
 
+    def test_a_deferred_flush_failure_degrades_the_tape_before_accepting_the_frame(self):
+        class FlushFailureFile:
+            def seek(self, *args):
+                return 0
+
+            def write(self, payload):
+                return len(payload)
+
+            def flush(self):
+                raise OSError("disk full during buffered flush")
+
+            def close(self):
+                return None
+
+        tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
+        tape._file.close()
+        tape._file = FlushFailureFile()
+
+        result = tape.append(start_sample=0, pcm=_pcm(12))
+
+        self.assertFalse(result.written)
+        self.assertEqual(result.degradation.reason, TAPE_STORAGE_FAILED)
+        self.assertEqual(result.degradation.detail["operation"], "flush")
+        accounting = tape.accounting(through_sample=12)
+        self.assertEqual(accounting.sample_count, 0)
+        self.assertEqual(accounting.refused_samples, 12)
+        self.assertFalse(accounting.complete)
+
+    def test_release_never_raises_when_close_reports_a_deferred_storage_failure(self):
+        class CloseFailureFile:
+            def close(self):
+                raise OSError("disk full during close")
+
+        tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
+        tape.append(start_sample=0, pcm=_pcm(12))
+        tape._file.close()
+        tape._file = CloseFailureFile()
+
+        tape.release()
+        tape.release()
+
+        accounting = tape.accounting(through_sample=12)
+        self.assertTrue(accounting.released)
+        self.assertEqual(accounting.retained_bytes, 0)
+        self.assertEqual(accounting.degradation.reason, TAPE_STORAGE_FAILED)
+        self.assertEqual(accounting.degradation.detail["operation"], "close")
+        self.assertFalse(accounting.complete)
+
     def test_release_drops_the_audio_and_keeps_the_evidence(self):
         tape = CompleteMixedTape(epoch=0, capacity_bytes=1024)
         tape.append(start_sample=0, pcm=_pcm(12))
@@ -177,6 +227,27 @@ class CompleteMixedTapeTest(unittest.TestCase):
     def test_a_capacity_must_be_declared_as_a_positive_number_of_bytes(self):
         with self.assertRaises(ValueError):
             CompleteMixedTape(epoch=0, capacity_bytes=0)
+
+    def test_long_tape_retention_does_not_keep_the_whole_source_in_python_memory(self):
+        retained_bytes = 32 * 1024 * 1024
+        chunk = b"\x11\x22" * (512 * 1024)
+        tape = CompleteMixedTape(epoch=0, capacity_bytes=retained_bytes)
+
+        tracemalloc.start()
+        cursor = 0
+        while cursor * PCM16_BYTES_PER_SAMPLE < retained_bytes:
+            tape.append(start_sample=cursor, pcm=chunk)
+            cursor += len(chunk) // PCM16_BYTES_PER_SAMPLE
+        _, peak = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
+        self.assertEqual(tape.retained_bytes, retained_bytes)
+        self.assertLess(peak, 8 * 1024 * 1024)
+        self.assertEqual(
+            tape.read(start_sample=cursor - 16, end_sample=cursor),
+            b"\x11\x22" * 16,
+        )
+        tape.release()
 
 
 def _tape_descriptor(max_tape_bytes: int | None) -> LiveServiceDescriptor:

@@ -291,6 +291,24 @@ class WindowedRunner:
             self.scratch_dir.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix="mtd-window-", dir=self.scratch_dir) as scratch:
             scratch_path = Path(scratch)
+            # A checkpoint retains the decoder answer, not the source evidence consumed by
+            # identity resolution. Re-extract the committed prefix into bounded scratch so a
+            # resumed run presents the identity module exactly the audio paths an uninterrupted
+            # run would. Re-decoding that prefix would waste the durable progress; passing
+            # `None` changes speaker attribution after a restart.
+            if self.identity_resolver.requires_window_audio:
+                for window in windows[:completed]:
+                    window_audio = scratch_path / f"window-{window.index:04d}.wav"
+                    try:
+                        self.window_extractor(
+                            source,
+                            window_audio,
+                            start_seconds=window.start,
+                            duration_seconds=window.duration,
+                        )
+                    except Exception as exc:
+                        raise _window_error(window, "extraction_exception", exc) from exc
+                    window_audio_paths[window.index] = window_audio
             for window in windows[completed:]:
                 window_audio = scratch_path / f"window-{window.index:04d}.wav"
 

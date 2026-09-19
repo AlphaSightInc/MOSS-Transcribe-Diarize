@@ -139,6 +139,23 @@ class TerminalFinalizerTest(unittest.TestCase):
         # decoded with different arguments is not the file arm's comparator.
         assert kwargs == {"decoding": "greedy", "max_new_tokens": 2048}
 
+    def test_terminal_finalizer_streams_to_wav_without_a_whole_tape_read(self):
+        runner = WholeMeetingStub("[0][S01]words[4]")
+        tape = tape_of(MEETING, fill=b"\x07\x08")
+
+        def forbid_whole_read(**kwargs):
+            raise AssertionError(f"whole-tape read attempted: {kwargs}")
+
+        tape.read = forbid_whole_read
+        result = TerminalTranscriptFinalizer(runner=runner).finalize(
+            plan=plan_for(), tape=tape, base_text_revision_version=0,
+        )
+
+        assert result.outcome is TerminalOutcome.FINALIZED
+        pcm, rate, channels, _ = runner.calls[0]
+        assert pcm == b"\x07\x08" * MEETING
+        assert (rate, channels) == (LIVE_SAMPLE_RATE, 1)
+
     def test_a_tape_that_cannot_serve_the_meeting_reports_unavailable_and_names_its_gaps(self):
         tape = tape_of(MEETING)
         tape.append(start_sample=MEETING + SECOND, pcm=b"\x00\x00" * SECOND)  # a hole
@@ -153,6 +170,36 @@ class TerminalFinalizerTest(unittest.TestCase):
         assert result.proposal is None
         assert result.accounting.tape_gaps == 1
         assert runner.calls == []
+
+    def test_known_gaps_are_refused_before_terminal_wav_materialization(self):
+        tape = tape_of(MEETING)
+        tape.append(start_sample=MEETING + SECOND, pcm=b"\x00\x00" * SECOND)
+
+        def forbid_materialization(*args, **kwargs):
+            raise AssertionError(f"gapped tape materialized: {args!r} {kwargs!r}")
+
+        tape.write_wav = forbid_materialization
+        result = TerminalTranscriptFinalizer(runner=WholeMeetingStub("never")).finalize(
+            plan=plan_for(MEETING + 2 * SECOND), tape=tape, base_text_revision_version=0,
+        )
+
+        assert result.outcome is TerminalOutcome.TAPE_UNAVAILABLE
+        assert result.accounting.tape_gaps == 1
+
+    def test_established_silence_is_refused_before_terminal_wav_materialization(self):
+        tape = tape_of(MEETING, fill=b"\x00\x00")
+
+        def forbid_materialization(*args, **kwargs):
+            raise AssertionError(f"silent tape materialized: {args!r} {kwargs!r}")
+
+        tape.write_wav = forbid_materialization
+        result = TerminalTranscriptFinalizer(runner=WholeMeetingStub("never")).finalize(
+            plan=plan_for(), tape=tape, base_text_revision_version=0,
+        )
+
+        assert result.outcome is TerminalOutcome.NO_TRANSCRIPT
+        assert result.accounting.reason == "digital_silence"
+        assert result.accounting.tape_samples == MEETING
 
     def test_a_tape_that_is_merely_short_serves_nothing_rather_than_its_prefix(self):
         """The dangerous tape is the healthy one that stopped early, not the broken one.
