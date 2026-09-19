@@ -46,10 +46,10 @@ def percentile(values, p):
     return values[lo] + (values[math.ceil(index)]-values[lo])*(index-lo)
 
 
-def inputs(n):
+def inputs(n, names=None):
     result = []
     for index in range(n):
-        name = NAMES[index] if index < 6 else NAMES[index-3]
+        name = names[index] if names else (NAMES[index] if index < 6 else NAMES[index-3])
         directory = CORPUS / name
         with wave.open(str(directory / 'audio.wav')) as source:
             assert (source.getframerate(), source.getnchannels(), source.getsampwidth()) == (16000, 1, 2)
@@ -85,6 +85,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--sessions', type=int, choices=(1, 2, 4, 8), required=True)
     parser.add_argument('--seconds', type=int, required=True)
+    parser.add_argument('--clips', nargs='+', choices=NAMES, help='Explicit stress population; one source per session')
+    parser.add_argument('--finalization-observe-seconds', type=float, default=900, help='Harness observation limit, not a product finalization SLA')
     parser.add_argument('--prepare-only', action='store_true')
     parser.add_argument('--port','--stack-port',dest='port', type=int, default=17866)
     parser.add_argument('--four-session-result', type=Path)
@@ -97,7 +99,9 @@ def main():
     if args.decoder_url:METRICS_URL=args.decoder_url.removesuffix('/v1').rstrip('/')+'/metrics'
     if args.seconds <= 0 or args.port in (7861, 7862):
         parser.error('positive duration and private app port required')
-    clips = inputs(args.sessions)
+    if args.clips and len(args.clips) != args.sessions:
+        parser.error('--clips needs one source per session')
+    clips = inputs(args.sessions, args.clips)
     if args.prepare_only:
         print(json.dumps({'prepared': True, 'sessions': args.sessions, 'seconds': args.seconds,
                           'clips': [{'clip': name, 'samples': len(pcm)//2, 'reference_rows': len(rows)} for name, pcm, rows in clips]}))
@@ -311,6 +315,7 @@ def main():
                     row['events'].append(dict(kind=event['kind'], seq=event['seq'], session_id=ident,
                         payload={k:p[k] for k in ('runtime_monotonic_ns','item_id','submitted','admitted',
                         'committed_samples','canonical_decode_elapsed_sec','frozen_span_duration_sec',
+                        'queue_wait_ms','canonical_processing_elapsed_ms',
                         'rolling_decode_elapsed_sec','windows_failed','stale_completions','outcome','reason','decode_failure',
                         'finalization_status','accepted_samples','accounted_samples','identities_born_count') if k in p}))
                 return snap
@@ -372,8 +377,8 @@ def main():
                     ses = snap['session']
                     if ses['finalization_status'] in ('final','failed','unavailable') or (ses['status']=='closed' and ses['finalization_status']=='not_started'):
                         break
-                    if time.monotonic()-stopped > 90:
-                        raise RuntimeError('finalization_timeout_90s')
+                    if time.monotonic()-stopped > args.finalization_observe_seconds:
+                        raise RuntimeError('finalization_observation_limit_reached')
                     time.sleep(.25)
                 terminal = True
                 ended = time.monotonic()
@@ -405,6 +410,12 @@ def main():
                            covered_buckets=len(coverage), expected_buckets=int(args.seconds/cadence))
                 reopened = c.call('GET', f'/api/meetings/{ident}')
                 row['reopened_status'] = reopened.get('status')
+                from tools.qualify.speaker_quality import score_speakers
+                speaker_refs = [dict(r, start=loop*clip_seconds+r['start'],
+                    end=min(args.seconds,loop*clip_seconds+r['end']))
+                    for loop in range(math.ceil(args.seconds/clip_seconds)) for r in reference
+                    if loop*clip_seconds+r['start'] < args.seconds]
+                row['speaker_quality'] = score_speakers(speaker_refs, ses['effective_transcript'])
                 canonical_lags = [max(0, (e['payload']['runtime_monotonic_ns']/1e9-started)-e['payload']['committed_samples']/sr)
                     for e in row['events'] if e['kind']=='canonical_processed' and e['payload'].get('submitted') is True
                     and 'committed_samples' in e['payload'] and 'runtime_monotonic_ns' in e['payload']]
