@@ -10,6 +10,10 @@ import math
 import re
 from moss_transcribe_diarize.lane_word_oracle import words
 
+UNKNOWN_SPEAKER_IDS = frozenset({'S00', 'UNKNOWN'})
+NEEDS_REVIEW_NOTICE = 'Needs review: one or more speaker assignments remain uncertain or processing ended partially.'
+MARKDOWN_NEEDS_REVIEW_NOTICE = '> **Needs review:** One or more speaker assignments remain uncertain or processing ended partially.'
+
 
 def clock(value):
     hours,minutes,seconds=value.replace(',', '.').split(':')
@@ -27,42 +31,62 @@ def expected_rows(meeting):
         identity=segment.get('speaker_entity_id') or segment['speaker']
         label=labels.get(segment['speaker'], 'Preview' if segment['speaker']=='UNKNOWN' else segment['speaker'])
         row=dict(start=segment['start'],end=segment['end'],label=label,identity=identity,
-                 tokens=words(segment['text']),lane=segment.get('source_lane'))
-        if rows and all(rows[-1][key]==row[key] for key in ('identity','label','lane')):
-            rows[-1]['tokens'].extend(row['tokens']); rows[-1]['end']=row['end']
+                 tokens=words(segment['text']),lane=segment.get('source_lane'),
+                 segment_ids=[segment['id']] if isinstance(segment.get('id'),str) and segment['id'] else [])
+        if (rows and identity not in UNKNOWN_SPEAKER_IDS
+                and all(rows[-1][key]==row[key] for key in ('identity','label','lane'))):
+            rows[-1]['tokens'].extend(row['tokens']); rows[-1]['segment_ids'].extend(row['segment_ids'])
+            rows[-1]['end']=row['end']
         else: rows.append(row)
     return rows
 
 
-def downloaded_rows(fmt,text):
+def downloaded_export(fmt,text):
     if fmt=='json':
         body=json.loads(text)
-        return [dict(start=r['start'],end=r['end'],label=r['speaker_label'],identity=r['speaker_entity_id'],
-                     tokens=words(r['text']),lane=r.get('source_lane')) for r in body['turns']]
+        review=body.get('review_status')
+        if review not in (None, 'Needs review'): raise ValueError('Unexpected review status')
+        rows=[dict(start=r['start'],end=r['end'],label=r['speaker_label'],speaker=r['speaker'],identity=r['speaker_entity_id'],
+                   tokens=words(r['text']),lane=r.get('source_lane'),segment_ids=r['segment_ids'])
+              for r in body['turns']]
+        return rows, review == 'Needs review'
     if fmt in ('txt','md'):
+        notice=MARKDOWN_NEEDS_REVIEW_NOTICE if fmt=='md' else NEEDS_REVIEW_NOTICE
+        marker=notice+'\n\n'
+        review=text.startswith(marker)
+        if review: text=text[len(marker):]
         pattern = r'^## \[(\d{2}:\d{2}:\d{2})\] (.+)\n\n' if fmt=='md' else r'^\[(\d{2}:\d{2}:\d{2})\] (.+):\n'
         matches=list(re.finditer(pattern,text,re.M))
         if not matches or text[:matches[0].start()].strip(): raise ValueError('Unexpected export header')
-        return [dict(start=clock(m[1]),label=m[2],tokens=words(text[m.end():matches[i+1].start() if i+1<len(matches) else len(text)])) for i,m in enumerate(matches)]
+        rows=[dict(start=clock(m[1]),label=m[2],tokens=words(text[m.end():matches[i+1].start() if i+1<len(matches) else len(text)])) for i,m in enumerate(matches)]
+        return rows, review
+    review=False
     if fmt=='vtt':
         if not text.startswith('WEBVTT\n\n'): raise ValueError('Missing WEBVTT')
         text=text[len('WEBVTT\n\n'):]
+        marker=f'NOTE {NEEDS_REVIEW_NOTICE}\n\n'
+        review=text.startswith(marker)
+        if review: text=text[len(marker):]
     result=[]
-    for cue in re.split(r'\n\s*\n',text.strip()):
+    for index,cue in enumerate(re.split(r'\n\s*\n',text.strip())):
         match=re.fullmatch(r'\d+\n(\d{2}:\d{2}:\d{2}[.,]\d{3}) --> (\d{2}:\d{2}:\d{2}[.,]\d{3})\n([^\n]+?): (.*)',cue,re.S)
         if not match: raise ValueError('Malformed cue')
-        result.append(dict(start=clock(match[1]),end=clock(match[2]),label=html.unescape(match[3]),tokens=words(html.unescape(match[4]))))
-    return result
+        label=html.unescape(match[3])
+        if fmt=='srt' and index==0 and label.startswith('[Needs review] '):
+            review=True; label=label[len('[Needs review] '):]
+        result.append(dict(start=clock(match[1]),end=clock(match[2]),label=label,tokens=words(html.unescape(match[4]))))
+    return result,review
 
 
 def compare_export(fmt,text,meeting):
     expected=expected_rows(meeting)
-    try: actual=downloaded_rows(fmt,text)
+    try: actual,review=downloaded_export(fmt,text)
     except (ValueError,KeyError,TypeError):
         return dict(ok=False,expected_turns=len(expected),parse_error=True)
     same_count=len(actual)==len(expected) and bool(expected)
-    checks=dict(words=same_count,labels=same_count,timing=same_count,identity=same_count)
-    if fmt=='json': checks['lane']=same_count
+    checks=dict(words=same_count,labels=same_count,timing=same_count,identity=same_count,
+                review=review is (meeting.get('needs_review') is True))
+    if fmt=='json': checks.update(lane=same_count,ids=same_count)
     for a,b in zip(actual,expected):
         checks['words'] &= a['tokens']==b['tokens']
         checks['labels'] &= a['label']==b['label']
@@ -74,6 +98,7 @@ def compare_export(fmt,text,meeting):
         checks['timing'] &= math.isclose(a['start'],start,abs_tol=1e-9)
         if 'end' in a: checks['timing'] &= math.isclose(a['end'],end,abs_tol=1e-9)
         if fmt=='json':
-            checks['identity'] &= a['identity']==b['identity']
+            checks['identity'] &= a['speaker']==b['identity'] and a['identity']==b['identity']
             checks['lane'] &= a['lane']==b['lane']
+            checks['ids'] &= a['segment_ids']==b['segment_ids']
     return dict(ok=all(checks.values()),expected_turns=len(expected),downloaded_turns=len(actual),**checks)

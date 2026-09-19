@@ -3,10 +3,30 @@ import json
 import subprocess
 from pathlib import Path
 import pytest
-from tests.e2e.export_oracle import compare_export
+from tests.e2e.export_oracle import compare_export, expected_rows
 from tests.e2e.verify_workspace import Harness
 
 FORMATS=('md','txt','json','srt','vtt')
+
+UNKNOWN_MEETING = {
+    'needs_review': True,
+    'transcript': {'segments': [
+        {'id':'known-a','start':0.0,'end':1.0,'speaker':'Alex','speaker_entity_id':'person-a','text':'First known','source_lane':'system'},
+        {'id':'unknown-a','start':1.0,'end':2.0,'speaker':'Speaker uncertain','speaker_entity_id':'S00','text':'First unknown','source_lane':'microphone'},
+        {'id':'unknown-b','start':2.0,'end':3.0,'speaker':'Speaker uncertain','speaker_entity_id':'S00','text':'Second unknown','source_lane':'microphone'},
+        {'id':'known-b1','start':3.0,'end':4.0,'speaker':'Blair','speaker_entity_id':'person-b','text':'Known part one','source_lane':'system'},
+        {'id':'known-b2','start':4.0,'end':5.0,'speaker':'Blair','speaker_entity_id':'person-b','text':'Known part two','source_lane':'system'},
+    ]}
+}
+
+
+def test_expected_rows_keep_unknown_passages_separate_and_known_turns_grouped():
+    assert expected_rows(UNKNOWN_MEETING) == [
+        {'start':0.0,'end':1.0,'label':'Alex','identity':'person-a','tokens':['first','known'],'lane':'system','segment_ids':['known-a']},
+        {'start':1.0,'end':2.0,'label':'Speaker uncertain','identity':'S00','tokens':['first','unknown'],'lane':'microphone','segment_ids':['unknown-a']},
+        {'start':2.0,'end':3.0,'label':'Speaker uncertain','identity':'S00','tokens':['second','unknown'],'lane':'microphone','segment_ids':['unknown-b']},
+        {'start':3.0,'end':5.0,'label':'Blair','identity':'person-b','tokens':['known','part','one','known','part','two'],'lane':'system','segment_ids':['known-b1','known-b2']},
+    ]
 
 @pytest.fixture(scope='module', params=['legacy', 'overlap'])
 def meeting(request):
@@ -17,20 +37,80 @@ def meeting(request):
 
 @pytest.fixture(scope='module')
 def real_exports(meeting):
+    return serialize_exports(meeting)
+
+
+@pytest.fixture(scope='module')
+def unknown_exports():
+    return serialize_exports(UNKNOWN_MEETING)
+
+
+def serialize_exports(meeting):
     # Production serializer; contiguous turns are supplied as the UI would group them.
     script = """import { serializeTranscriptExport } from './frontend/src/lib/transcriptExport.ts';
 const doc = JSON.parse(process.argv[1]);
 const turns = [];
 for (const s of doc.transcript.segments) {
  const last = turns.at(-1);
- if (last && last.speaker_entity_id === s.speaker_entity_id && last.source_lane === s.source_lane) {
+ const identity = s.speaker_entity_id ?? s.speaker;
+ if (last && !['S00','UNKNOWN'].includes(identity) && last.speaker_entity_id === identity &&
+     last.source_lane === s.source_lane && last.display_name === s.speaker) {
   last.end = s.end; last.text += ' ' + s.text; last.segment_ids.push(s.id); last.target_segment_keys.push(s.id);
- } else turns.push({...s,speaker:s.speaker_entity_id,display_name:s.speaker,state:'final',segment_ids:[s.id],target_segment_keys:[s.id],provisional_stale:false});
+ } else turns.push({...s,speaker:identity,speaker_entity_id:identity,display_name:s.speaker,state:'final',segment_ids:[s.id],target_segment_keys:[s.id],provisional_stale:false});
 }
-console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,turns,t=>t.display_name,{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"""
+console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,turns,t=>t.display_name,{sessionId:'meeting',exportedAt:new Date(0)},{needsReview:doc.needs_review===true}).content]))));"""
     return json.loads(subprocess.check_output(
         ['node', '--experimental-strip-types', '--input-type=module', '-e', script, json.dumps(meeting)],
         text=True, cwd=Path(__file__).resolve().parents[2]))
+
+
+@pytest.mark.parametrize('fmt', FORMATS)
+def test_unknown_passage_exports_round_trip_with_review_metadata(fmt, unknown_exports):
+    result = compare_export(fmt, unknown_exports[fmt], UNKNOWN_MEETING)
+    assert result['ok']
+    assert result['review'] is True
+
+
+@pytest.mark.parametrize('fmt', FORMATS)
+@pytest.mark.parametrize('mutation,failed_check', [
+    ('wrong_speaker','labels'),
+    ('dropped_word','words'),
+    ('changed_time','timing'),
+    ('missing_review','review'),
+])
+def test_unknown_passage_export_corruptions_fail(fmt, mutation, failed_check, unknown_exports):
+    text=unknown_exports[fmt]
+    if mutation=='wrong_speaker': text=text.replace('Speaker uncertain','Wrong speaker')
+    if mutation=='dropped_word': text=text.replace('Second unknown','Second')
+    if mutation=='changed_time':
+        if fmt=='json':
+            body=json.loads(text);body['turns'][0]['start']=8.0;text=json.dumps(body)
+        else: text=text.replace('00:00:00','00:00:08',1)
+    if mutation=='missing_review':
+        if fmt=='json':
+            body=json.loads(text);body.pop('review_status');text=json.dumps(body)
+        elif fmt=='md': text=text.replace('> **Needs review:** One or more speaker assignments remain uncertain or processing ended partially.\n\n','',1)
+        elif fmt=='txt': text=text.replace('Needs review: one or more speaker assignments remain uncertain or processing ended partially.\n\n','',1)
+        elif fmt=='srt': text=text.replace('[Needs review] ','',1)
+        else: text=text.replace('NOTE Needs review: one or more speaker assignments remain uncertain or processing ended partially.\n\n','',1)
+    result=compare_export(fmt,text,UNKNOWN_MEETING)
+    assert not result['ok']
+    assert result[failed_check] is False
+
+
+@pytest.mark.parametrize('mutation,failed_check', [
+    ('speaker','identity'),
+    ('speaker_entity_id','identity'),
+    ('segment_id','ids'),
+])
+def test_unknown_json_identity_corruptions_fail(mutation, failed_check, unknown_exports):
+    body=json.loads(unknown_exports['json'])
+    if mutation=='speaker': body['turns'][0]['speaker']='wrong-person'
+    if mutation=='speaker_entity_id': body['turns'][0]['speaker_entity_id']='wrong-person'
+    if mutation=='segment_id': body['turns'][0]['segment_ids'][0]='wrong-segment'
+    result=compare_export('json',json.dumps(body),UNKNOWN_MEETING)
+    assert not result['ok']
+    assert result[failed_check] is False
 
 @pytest.mark.parametrize('fmt', FORMATS)
 def test_real_exports_match_api(fmt,real_exports,meeting):
