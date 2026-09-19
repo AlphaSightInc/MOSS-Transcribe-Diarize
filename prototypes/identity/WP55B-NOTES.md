@@ -37,3 +37,8 @@ Jamie at 0%, and 0/3 overlap recovery remain blocked exactly as stated in the br
 
 Evidence: `short-speaker-results.json` and
 `../../evidence/round3/wp55b-p/short-speaker-results.json`.
+
+Fresh verification attempt 1 exposed a deterministic-evidence defect: the result
+encoded the moving pane `HEAD`. It now records the fixed candidate SHA, base ancestry,
+and unchanged product/test/frontend tree. A rerun again exited 2 with 0/3 snippets and
+0 decoder requests.

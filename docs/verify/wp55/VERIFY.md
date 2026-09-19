@@ -1,7 +1,8 @@
 # PANE 3.2 fresh-context verification
 
 Run literally from `/private/tmp/moss-round3-20260919/identity` with no prior context.
-Do not edit product code. Record exact outputs/counts in `VERIFY-RESULT.md`.
+Do not edit product code. Record exact outputs/counts in
+`docs/verify/wp55/VERIFY-RESULT.md`.
 
 1. Confirm custody and scope:
 
@@ -72,7 +73,11 @@ Expected: backend 2,037 passed / 5 skipped / 37 subtests / 0 failed; frontend
 git status --short
 git diff --exit-code
 if lsof -nP -iTCP:18312 -sTCP:LISTEN; then exit 1; else true; fi
-pgrep -af 'ssh .*127.0.0.1:18312:127.0.0.1:8000' && exit 1 || true
+if ps -axo comm=,args= | awk '$1 == "ssh" && $0 ~ /127\.0\.0\.1:18312:127\.0\.0\.1:8000/ {found=1} END {exit !found}'; then
+  exit 1
+else
+  true
+fi
 ```
 
 Expected: clean worktree; no listener/tunnel on 18312. Any different count, policy

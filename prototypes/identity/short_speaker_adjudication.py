@@ -31,11 +31,21 @@ def git(cwd: Path, *args: str) -> str:
 
 
 def main() -> int:
-    if git(ROOT, "rev-parse", "HEAD") == EXPECTED_SHA:
-        pane_revision = EXPECTED_SHA
-    else:
-        # WP55a-P is the only allowed predecessor commit; retain its exact revision.
-        pane_revision = git(ROOT, "rev-parse", "HEAD")
+    base_is_ancestor = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", EXPECTED_SHA, "HEAD"],
+        cwd=ROOT,
+    ).returncode == 0
+    product_tree_unchanged = subprocess.run(
+        [
+            "git", "diff", "--quiet", EXPECTED_SHA, "--",
+            "moss_transcribe_diarize", "tests", "frontend",
+        ],
+        cwd=ROOT,
+    ).returncode == 0
+    if not base_is_ancestor or not product_tree_unchanged:
+        raise SystemExit(
+            "WP55b-P requires a7a738cf ancestry and its unchanged product/test tree"
+        )
     manifest = json.loads((ORACLE / "manifest.json").read_text())
     analysis = json.loads((ORACLE / "oracle-analysis.json").read_text())
     by_case = {row["case_id"]: row for row in analysis["cases"]}
@@ -75,7 +85,9 @@ def main() -> int:
     result = {
         "schema": "moss-round3-wp55b-step1.v1",
         "scope": {
-            "pane_revision": pane_revision,
+            "candidate_sha": EXPECTED_SHA,
+            "candidate_is_ancestor": base_is_ancestor,
+            "product_test_frontend_tree_unchanged": product_tree_unchanged,
             "source_revision": git(CANDIDATE, "rev-parse", "HEAD"),
             "decoder_requests": 0,
             "network_calls": 0,

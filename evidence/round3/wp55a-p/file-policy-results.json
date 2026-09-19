@@ -9579,17 +9579,10 @@
       "synthetic_case2_pass": true
     }
   },
-  "git_status_after": [
-    "?? evidence/round3/",
-    "?? prototypes/identity/"
-  ],
-  "git_status_before": [
-    "?? evidence/round3/",
-    "?? prototypes/identity/"
-  ],
   "qualifying_policies": [],
   "schema": "moss-round3-wp55a-file-policy-prototype.v1",
   "scope": {
+    "candidate_is_ancestor": true,
     "candidate_sha": "a7a738cf9f9ff246f64c52c112e0bf597ba58241",
     "composite_independence_limit": "The 30-minute source repeats 120 seconds: observed recurring behavior is effectively two source halves, not 15 independent samples.",
     "decoder_requests": 0,
@@ -9606,6 +9599,7 @@
     "min_match_score": 0.35,
     "min_segment_samples": 8000,
     "network_calls": 0,
+    "product_test_frontend_tree_unchanged": true,
     "scorer": "score_live_speaker_accuracy plus 10 ms union transition accounting",
     "source_revision": "retained 120-second periodic composite; 135 reference rows / 1800 seconds",
     "splice_rule": "Report separately any changed interval that touches a documented 60-second composite seam; exclude it only from the non-splice correct-to-wrong gate."

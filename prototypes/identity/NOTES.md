@@ -60,3 +60,10 @@ two source halves, not 15 independent observations.
 Evidence: `file-policy-results.json` and
 `../../evidence/round3/wp55a-p/file-policy-results.json`. Production source was
 unchanged; decoder/network/GPU requests: 0.
+
+Fresh verification attempt 1 exposed an evidence-harness defect: the first script
+required `HEAD` itself to equal the base SHA, although this branch changes only
+prototype/evidence documents. The corrected guard requires base ancestry plus an
+unchanged product/test/frontend tree. Tracked output no longer records transient git
+status, so a literal rerun is deterministic. The corrected CPU replay again exited 2
+with no qualifying policy.

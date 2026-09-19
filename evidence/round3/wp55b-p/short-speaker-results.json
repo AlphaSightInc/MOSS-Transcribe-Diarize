@@ -73,10 +73,12 @@
   "schema": "moss-round3-wp55b-step1.v1",
   "scope": {
     "audio_playback": 0,
+    "candidate_is_ancestor": true,
+    "candidate_sha": "a7a738cf9f9ff246f64c52c112e0bf597ba58241",
     "constraint": "COMMON.md forbids unmuting or playing audio",
     "decoder_requests": 0,
     "network_calls": 0,
-    "pane_revision": "e47b345a214207313b462b3e72aeaddee3a94dda",
+    "product_test_frontend_tree_unchanged": true,
     "source_revision": "a7a738cf9f9ff246f64c52c112e0bf597ba58241"
   },
   "structural_question": "Can three complete source-owned utterances be frozen without adjacent speaker spill before any decoder lease is justified?"

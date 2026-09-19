@@ -673,9 +673,21 @@ def policy_gate(codec_results: list[dict[str, Any]], synthetic: dict[str, Any]) 
 
 
 def main() -> int:
-    if git("rev-parse", "HEAD") != EXPECTED_SHA:
-        raise SystemExit("WP55a-P must run on unmodified a7a738cf")
-    before = git("status", "--porcelain")
+    base_is_ancestor = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", EXPECTED_SHA, "HEAD"],
+        cwd=ROOT,
+    ).returncode == 0
+    product_tree_unchanged = subprocess.run(
+        [
+            "git", "diff", "--quiet", EXPECTED_SHA, "--",
+            "moss_transcribe_diarize", "tests", "frontend",
+        ],
+        cwd=ROOT,
+    ).returncode == 0
+    if not base_is_ancestor or not product_tree_unchanged:
+        raise SystemExit(
+            "WP55a-P requires a7a738cf ancestry and its unchanged product/test tree"
+        )
     config = LiveProviderBundleConfig.from_manifest(MANIFEST)
     encoder = _identity_encoder(config, interval_workers=4)
     reference = RUNTIME / "media/reference.jsonl"
@@ -711,6 +723,8 @@ def main() -> int:
         "schema": "moss-round3-wp55a-file-policy-prototype.v1",
         "scope": {
             "candidate_sha": EXPECTED_SHA,
+            "candidate_is_ancestor": base_is_ancestor,
+            "product_test_frontend_tree_unchanged": product_tree_unchanged,
             "decoder_requests": 0,
             "network_calls": 0,
             "encoder": encoder.descriptor,
@@ -736,8 +750,6 @@ def main() -> int:
         "qualifying_policies": qualifiers,
         "selected_policy": "P3" if gates["P3"]["qualifies"] else None,
         "gate_verdict": "PASS" if gates["P3"]["qualifies"] else "FAIL",
-        "git_status_before": before.splitlines(),
-        "git_status_after": git("status", "--porcelain").splitlines(),
     }
     output = HERE / "file-policy-results.json"
     output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
