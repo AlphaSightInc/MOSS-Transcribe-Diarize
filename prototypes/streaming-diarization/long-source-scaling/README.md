@@ -7,13 +7,19 @@ Minimum state: source duration, fixed production windows, atomic checkpoint pref
 decoder results, and the window audio paths consumed by identity resolution.
 
 Invariants: no hidden duration cap or tail loss; every window is at most 150 seconds;
-identical decoder results produce identical final text/identity after resume; File/URL
-supplies durable checkpoint storage; source/output storage may grow linearly while active
-Python memory never contains whole-source PCM.
+identical decoder results produce identical final text/identity when a retained checkpoint is
+resumed; File/URL writes completed windows atomically inside its transient per-job work;
+source/output storage may grow linearly while active Python memory never contains whole-source
+PCM.
 
 Assumptions: the deterministic decoder says nothing about acoustic quality or real GPU
 throughput. Tiny extracted files exercise control flow, not PCM disk cost. The report
 therefore projects PCM/scratch bytes from the production 16 kHz mono PCM16 contract.
+
+Checkpoint durability is limited to atomic writes while that transient job directory survives.
+The File/URL owner deletes the directory on task failure and at application restart; restart marks
+the meeting interrupted rather than resuming its decode. This prototype proves the checkpoint
+format's semantic resume behavior, not a cross-process File/URL resume product promise.
 
 Falsifier: omitted/duplicated tail ownership, a resume mismatch, missing production
 checkpoint routing, or superlinear control-state growth.

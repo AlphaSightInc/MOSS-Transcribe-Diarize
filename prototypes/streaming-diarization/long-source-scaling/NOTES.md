@@ -11,9 +11,12 @@ grow linearly with duration, but Python audio memory and per-window inference re
 - File plans at 199/200/201/400 minutes contain 100/100/101/200 windows, cover the full tail,
   retain contiguous ownership, and never exceed 150 seconds per window. Planning peak Python
   allocation was 18–38 KB.
-- Interrupted three-window decoding resumed from two atomic records without re-decoding the
-  prefix. Re-extracting prefix audio only for resolvers that require it restored identical
-  text and identity; missing prefix audio was the falsifying control.
+- In the direct `WindowedRunner` control, interrupted three-window decoding resumed from two
+  atomic records without re-decoding the prefix. Re-extracting prefix audio only for resolvers
+  that require it restored identical text and identity; missing prefix audio was the falsifying
+  control. Production File/URL stores those records inside transient per-job work, which its
+  owner deletes on task failure and application restart. Product restart marks the meeting
+  interrupted; cross-process File/URL decode resumption is not implemented or claimed.
 - The owner-bound File application completed 101 accelerated windows for 201 minutes, saved
   the exact final segment at `[12,059, 12,060]`, and returned that tail after app/database
   reopen.
