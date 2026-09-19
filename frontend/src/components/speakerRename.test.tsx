@@ -141,6 +141,52 @@ it("reassigns only a selected settled passage to a new recording-local person", 
   expect(sessionNeedsReview.value).toBe(false);
 });
 
+it("keeps adjacent unknown passages as separate correction targets", async () => {
+  vi.stubGlobal("fetch", vi.fn(async (url, init) => {
+    expect(String(url)).toBe("/api/meetings/m/passages/speaker");
+    expect(JSON.parse(init.body)).toEqual({ segment_ids: ["unknown-two"], label: "Blair" });
+    return Response.json({
+      meeting_id: "m", segment_ids: ["unknown-two"], speaker_id: "manual-two", label: "Blair",
+      transcript_version: 2, needs_review: true
+    });
+  }));
+  await act(async () => {
+    sessionId.value = "m";
+    sessionStatus.value = "closed";
+    sessionNeedsReview.value = true;
+    replaceTranscript([
+      {segment_id:"unknown-one",start:0,end:1,text:"First unknown",speaker:"S00",speaker_entity_id:"S00",display_name:"Speaker uncertain",state:"final"},
+      {segment_id:"unknown-two",start:1,end:2,text:"Second unknown",speaker:"S00",speaker_entity_id:"S00",display_name:"Speaker uncertain",state:"final"}
+    ]);
+    render(<TranscriptPane />, root);
+  });
+
+  expect(root.querySelectorAll(".utt")).toHaveLength(2);
+  act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="unknown-two"]')!.click());
+  act(() => {
+    const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New person name"]')!;
+    input.value = "Blair";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => {
+    root.querySelector('dialog form')!.dispatchEvent(
+      new Event("submit", { bubbles: true, cancelable: true })
+    );
+  });
+
+  await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
+  expect(transcript.value.map(row => [row.segment_id, row.display_name, row.speaker_entity_id])).toEqual([
+    ["unknown-one", "Speaker uncertain", "S00"],
+    ["unknown-two", "Blair", "manual-two"]
+  ]);
+  expect(sessionNeedsReview.value).toBe(true);
+
+  expect(groupSegmentsIntoTurns([
+    {segment_id:"known-one",start:0,end:1,text:"First known",speaker:"person-a",speaker_entity_id:"person-a",display_name:"Alex",state:"final"},
+    {segment_id:"known-two",start:1,end:2,text:"Second known",speaker:"person-a",speaker_entity_id:"person-a",display_name:"Alex",state:"final"}
+  ])).toHaveLength(1);
+});
+
 it.each(["S00", "UNKNOWN"])("never offers persisted unknown id %s as an existing person", async (unknownId) => {
   await act(async () => {
     sessionId.value = "m";

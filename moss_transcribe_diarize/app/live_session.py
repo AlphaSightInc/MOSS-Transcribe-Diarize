@@ -918,11 +918,14 @@ class LiveSession:
         if not self._revision_segments and not self._lane_revision_frontiers:
             return base
         frontier = self._canonical_through_sample
+        # Rolling `None` asks the session to project from its base. Terminal `None` is the
+        # whole-meeting mapper's explicit abstention and must remain unattributed.
         revised = tuple(
             (
                 segment
                 if segment.canonical_speaker is not None
                 or segment.source_lane is not None
+                or segment.authority == "terminal"
                 else replace(
                     segment,
                     canonical_speaker=_project_canonical_speaker(

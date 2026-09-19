@@ -1,6 +1,7 @@
 import { compareTranscriptOrder } from "./transcriptOrder";
 import type { SourceLane } from "./transcriptOrder";
 import type { TranscriptItem, TranscriptUpdateMetadata } from "../api/types";
+import { isBackendUnknownSpeakerId } from "./speakerMap";
 import { buildTranscriptTargetKey } from "./transcriptKeys";
 import { normalizeInlineWhitespace, trimString } from "./text";
 
@@ -164,12 +165,17 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
       last !== null && last.source_lane === segment.source_lane &&
       ((last.state === "provisional" && segment.state === "provisional") ||
         (isCommittedState(last) && isCommittedState(segment)));
+    const lastIdentity = last === null
+      ? ""
+      : trimString(last.speaker_entity_id) || last.speaker;
+    const segmentIdentity = trimString(segment.speaker_entity_id) || segment.speaker;
     const sameEntity =
       last !== null &&
-      trimString(last.speaker_entity_id) &&
-      trimString(segment.speaker_entity_id)
+      !isBackendUnknownSpeakerId(lastIdentity) &&
+      !isBackendUnknownSpeakerId(segmentIdentity) &&
+      (trimString(last.speaker_entity_id) && trimString(segment.speaker_entity_id)
         ? last.speaker_entity_id === segment.speaker_entity_id
-        : last !== null && last.speaker === segment.speaker;
+        : last.speaker === segment.speaker);
     const sameDisplayName =
       last !== null &&
       normalizeTurnDisplayName(last.display_name) === normalizeTurnDisplayName(segment.display_name);

@@ -39,3 +39,36 @@ Diagnosis: `_fail` releases tape unconditionally before scheduler `finally`; nei
 - The isolated browser stub performed a real UI/API/storage round trip: one merged selected passage changed from Alex to Blair, transcript version advanced 1→2, reload/reopen retained Blair and the untouched uncertain passage, all five export actions remained available, browser errors/console were empty, and the voiceprint table stayed empty. No capture, microphone, decoder, GPU, or external network was used.
 
 Machine-readable measurements are in `results.json`. Physical capture remains for the attended guide; this prototype makes no microphone, acoustic quality, or deployment claim.
+
+## Follow-up: truthful terminal unknowns
+
+- **Question:** when the terminal mapper abstains over a known base, does that explicit unknown
+  stay unknown through save/reopen; and can two adjacent unknown passages be corrected
+  independently without disabling known-person turn grouping?
+- **Minimum state:** terminal segment authority, nullable canonical identity, stable passage ID,
+  and display turn.
+- **Invariants:** terminal `None` remains `S00`; `S00` is not one person; adjacent unknown passage
+  IDs remain separate targets; adjacent passages with the same known person still group.
+- **Falsifier:** nearest-base projection invents a known person, two unknown IDs become one
+  correction request, or known-person grouping splits.
+- **Tool decision:** production `LiveSession` plus the real terminal mapper exposes attribution;
+  the rendered transcript pane exposes the correction request. No decoder, GPU, or network call
+  can add evidence for either state rule.
+
+The throwaway terminal and Vite state probes were absorbed into the production-interface
+regressions. Before repair they printed:
+
+```text
+terminal mapping: {}
+terminal surface: [(16000, 32000, 'new voice words', 'person-a', 'terminal')]
+unknown input passages: 2; rendered turns: 1; target IDs: ['unknown-one', 'unknown-two']
+known input passages: 2; rendered turns: 1
+```
+
+**Verdict:** reject nearest-base projection for terminal-owned `None`, and reject identity-based
+grouping for backend unknown IDs. Keep projection for rolling segments and keep grouping for a
+known shared person. The accepted rules are exercised with:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q tests/phase2/test_settled_passage_correction.py::test_terminal_mapper_abstention_stays_unknown_after_save_and_reopen && (cd frontend && npm test -- --run src/components/speakerRename.test.tsx -t "keeps adjacent unknown passages as separate correction targets")
+```

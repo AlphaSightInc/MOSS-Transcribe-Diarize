@@ -3,12 +3,24 @@
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
+from moss_transcribe_diarize.app.live_session import (
+    EffectiveTranscriptSegment,
+    LiveSession,
+    TextRevisionProposal,
+)
+from moss_transcribe_diarize.app.live_transcript_convergence import terminal_speaker_mapping
 from moss_transcribe_diarize.app.phase2 import create_phase2_app
+from moss_transcribe_diarize.app.phase2_live import _transcript_document
 from test_owner_bound_live_meeting import provision, session
+from tests.test_live_session import publish_prepared
+
+
+SECOND = 16_000
 
 
 async def _seed(app, sign_in_session: str, status: str) -> str:
@@ -148,6 +160,85 @@ def test_passage_correction_rejects_missing_or_ambiguous_targets(tmp_path):
                 f"/api/meetings/{meeting_id}/passages/speaker", json=payload
             )
             assert response.status_code == expected, (payload, response.text)
+
+
+def test_terminal_mapper_abstention_stays_unknown_after_save_and_reopen(tmp_path):
+    """Terminal-owned unknown is a fact, not a request for nearest-base projection."""
+
+    live = LiveSession(max_retained_samples=4 * SECOND)
+    publish_prepared(
+        live,
+        2 * SECOND,
+        0,
+        text="[0][S01]known base[1]",
+        canonical_speakers=("person-a",),
+        local_speakers=("S01",),
+    )
+    before = live.snapshot()
+    placed = (("S02", SECOND, 2 * SECOND, "new voice words"),)
+    mapping = terminal_speaker_mapping(
+        placed,
+        base_surface=before.effective_transcript,
+        canonical_speakers=before.identity_snapshot.canonical_speakers,
+    )
+    assert mapping == {}
+    outcome = live.apply_text_revision(
+        TextRevisionProposal(
+            epoch=before.epoch,
+            base_text_revision_version=before.text_revision_version,
+            source="terminal",
+            start_sample=0,
+            end_sample=2 * SECOND,
+            segments=(
+                EffectiveTranscriptSegment(
+                    start_sample=SECOND,
+                    end_sample=2 * SECOND,
+                    text="new voice words",
+                    canonical_speaker=mapping.get("S02"),
+                    authority="terminal",
+                ),
+            ),
+        )
+    )
+    assert outcome.applied is True
+    final = live.snapshot()
+    assert final.effective_transcript[0].canonical_speaker is None
+    document = _transcript_document(
+        SimpleNamespace(
+            descriptor=SimpleNamespace(sample_rate=SECOND),
+            session=final,
+        )
+    )
+
+    database = tmp_path / "m.sqlite"
+    sessions = asyncio.run(provision(database))
+    app = create_phase2_app(database_path=database)
+
+    async def seed() -> str:
+        account = await app.state.phase2_store.account_for_session(sessions["a"])
+        handle = await app.state.phase2_store.workspace(account).create_meeting("live")
+        await handle.finish_with_transcript(document, "completed")
+        return handle.meeting_id
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.portal.call(seed)
+
+    reopened_app = create_phase2_app(database_path=database)
+    with TestClient(reopened_app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        reopened = client.get(f"/api/meetings/{meeting_id}").json()
+        assert reopened["needs_review"] is True
+        assert reopened["transcript"]["segments"] == [
+            {
+                "id": "seg_0001",
+                "start": 1.0,
+                "end": 2.0,
+                "speaker_entity_id": "S00",
+                "speaker": "Speaker uncertain",
+                "text": "new voice words",
+            }
+        ]
 
 
 @pytest.mark.parametrize("unknown_id", ["S00", "UNKNOWN"])
