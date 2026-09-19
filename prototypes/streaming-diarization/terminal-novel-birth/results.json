@@ -1,0 +1,274 @@
+{
+  "config": {
+    "min_match_score": 0.35,
+    "min_match_margin": 0.1,
+    "birth_min_seconds": 1.0,
+    "album_admission_seconds": 2.0
+  },
+  "probes": {
+    "known_ben_1.00": {
+      "duration_sec": 1.0,
+      "truth": "speaker-ben",
+      "scores": {
+        "speaker-ben": 0.464969,
+        "speaker-david": 0.098393
+      },
+      "outcome": "matched",
+      "canonical_speaker": "speaker-ben",
+      "album_disposition": "rejected_below_admission",
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    },
+    "known_ben_1.03": {
+      "duration_sec": 1.03,
+      "truth": "speaker-ben",
+      "scores": {
+        "speaker-ben": 0.585536,
+        "speaker-david": 0.095568
+      },
+      "outcome": "matched",
+      "canonical_speaker": "speaker-ben",
+      "album_disposition": "rejected_below_admission",
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    },
+    "known_david_1.37": {
+      "duration_sec": 1.37,
+      "truth": "speaker-david",
+      "scores": {
+        "speaker-ben": 0.203751,
+        "speaker-david": 0.393161
+      },
+      "outcome": "matched",
+      "canonical_speaker": "speaker-david",
+      "album_disposition": "rejected_below_admission",
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    },
+    "known_david_1.35": {
+      "duration_sec": 1.35,
+      "truth": "speaker-david",
+      "scores": {
+        "speaker-ben": 0.135018,
+        "speaker-david": 0.570767
+      },
+      "outcome": "matched",
+      "canonical_speaker": "speaker-david",
+      "album_disposition": "rejected_below_admission",
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    },
+    "terminal_novel_exact_1.19": {
+      "duration_sec": 1.19,
+      "truth": null,
+      "scores": {
+        "speaker-ben": 0.076518,
+        "speaker-david": 0.00917
+      },
+      "outcome": "birth",
+      "canonical_speaker": "speaker-terminal-new",
+      "album_disposition": "provisional",
+      "birth_floor_sec": 1.0,
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    },
+    "terminal_novel_trim_left_1.09": {
+      "duration_sec": 1.09,
+      "truth": null,
+      "scores": {
+        "speaker-ben": 0.071779,
+        "speaker-david": 0.041037
+      },
+      "outcome": "birth",
+      "canonical_speaker": "speaker-terminal-new",
+      "album_disposition": "provisional",
+      "birth_floor_sec": 1.0,
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    },
+    "terminal_novel_trim_right_1.09": {
+      "duration_sec": 1.09,
+      "truth": null,
+      "scores": {
+        "speaker-ben": 0.066111,
+        "speaker-david": 0.020039
+      },
+      "outcome": "birth",
+      "canonical_speaker": "speaker-terminal-new",
+      "album_disposition": "provisional",
+      "birth_floor_sec": 1.0,
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    },
+    "boundary_left_1.19": {
+      "duration_sec": 1.19,
+      "truth": null,
+      "scores": {
+        "speaker-ben": 0.075895,
+        "speaker-david": 0.074793
+      },
+      "outcome": "birth",
+      "canonical_speaker": "speaker-terminal-new",
+      "album_disposition": "provisional",
+      "birth_floor_sec": 1.0,
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    },
+    "boundary_right_1.19": {
+      "duration_sec": 1.19,
+      "truth": null,
+      "scores": {
+        "speaker-ben": 0.101546,
+        "speaker-david": 0.172202
+      },
+      "outcome": "birth",
+      "canonical_speaker": "speaker-terminal-new",
+      "album_disposition": "provisional",
+      "birth_floor_sec": 1.0,
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    },
+    "boundary_coarse_3.83": {
+      "duration_sec": 3.83,
+      "truth": null,
+      "scores": {
+        "speaker-ben": 0.145131,
+        "speaker-david": 0.135766
+      },
+      "outcome": "birth",
+      "canonical_speaker": "speaker-terminal-new",
+      "album_disposition": "admitted",
+      "birth_floor_sec": 1.0,
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    },
+    "adjacent_live_laugh_1.85": {
+      "duration_sec": 1.85,
+      "truth": null,
+      "scores": {
+        "speaker-ben": 0.068229,
+        "speaker-david": 0.187033
+      },
+      "outcome": "birth",
+      "canonical_speaker": "speaker-terminal-new",
+      "album_disposition": "provisional",
+      "birth_floor_sec": 1.0,
+      "enrollment": {
+        "speaker-ben:0": "admitted",
+        "speaker-ben:1": "admitted",
+        "speaker-ben:2": "admitted",
+        "speaker-ben:3": "admitted",
+        "speaker-ben:4": "admitted",
+        "speaker-ben:5": "admitted",
+        "speaker-david:0": "admitted",
+        "speaker-david:1": "admitted",
+        "speaker-david:2": "admitted"
+      }
+    }
+  },
+  "terminal_exact_boundary_sensitivity": {
+    "terminal_novel_trim_left_1.09": 0.96468,
+    "terminal_novel_trim_right_1.09": 0.984351,
+    "boundary_left_1.19": 0.956588,
+    "boundary_right_1.19": 0.0,
+    "boundary_coarse_3.83": 0.879987,
+    "adjacent_live_laugh_1.85": 0.0
+  },
+  "assertions": {
+    "all_known_short_controls_match_truth": true,
+    "known_short_false_births_zero": true,
+    "terminal_candidate_births": true,
+    "terminal_candidate_uses_existing_provisional_tier": true
+  },
+  "supported": true
+}
