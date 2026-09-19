@@ -34,5 +34,7 @@ has no corrected headed measurement. Any test failure, changed owned range,
 live process, budget mismatch, or claim that the rejected headed receipt passed
 falsifies verification.
 
-After running, create `VERIFY-RESULT.md` with final SHA, commands, exact counts,
-PASS/FAIL, the WP54b qualification, and any unexpected working-tree change.
+After running, create `docs/verify/pane-3.1/VERIFY-RESULT.md` with final SHA,
+commands, exact counts, PASS/FAIL, the WP54b qualification, and any unexpected
+working-tree change. The retained `VERIFY-RESULT-initial-fail.md` documents the
+prior root-layout failure; do not overwrite it.
