@@ -394,6 +394,7 @@ export function TranscriptPane() {
             key={entry.legendKey}
             type="button"
             className={`legend-chip${entry.isUnidentified ? " is-unidentified" : ""}`}
+            data-speaker-id={entry.speakerId}
             disabled={!canNameSpeakers || !entry.committed || entry.speakerId === "S00"}
             aria-label={`Name speaker ${entry.visibleLabel}`}
             title={entry.speakerId === "S00" ? "This speech has no identified speaker yet" : canNameSpeakers ? "Name this speaker" : "Open a meeting to name its speakers"}
@@ -641,7 +642,8 @@ export function TranscriptPane() {
                   style={{ "--sp": colorToken } as JSX.CSSProperties}
                 >
                   <div className="utt-meta">
-                    <button type="button" className="utt-speaker" aria-label={`Name speaker ${speakerLabel}`}
+                    <button type="button" className="utt-speaker" data-speaker-id={turn.speaker_entity_id}
+                      aria-label={`Name speaker ${speakerLabel}`}
                       onClick={() => openSpeakerName(legendEntries.find(entry => entry.speakerId === turn.speaker_entity_id))}>
                       <span className="utt-speaker-label">
                         {renderSearchParts(speakerParts, activeSearchMatchId)}

@@ -251,3 +251,37 @@ it("allows the same voiceprint result for independent speakers on both lanes", a
   expect(transcript.value.map(s=>s.speaker_entity_id)).toEqual(["system-person","mic-person"]);
   expect(root.querySelectorAll('.legend-chip')).toHaveLength(2);
 });
+
+it("keeps equal display names independent when one exact speaker is renamed", async () => {
+  vi.stubGlobal("fetch", vi.fn(async (url) => Response.json({
+    meeting_id: "m",
+    speaker_id: String(url).includes("speaker-a") ? "speaker-a" : "speaker-b",
+    label: "E2E Morgan",
+    enrollment: "not_requested"
+  })));
+  await act(async () => {
+    sessionId.value = "m";
+    sessionStatus.value = "active";
+    replaceTranscript([
+      {start:0,end:1,text:"First",speaker:"speaker-a",speaker_entity_id:"speaker-a",display_name:"E2E Rowan",state:"confirmed"},
+      {start:1,end:2,text:"Second",speaker:"speaker-b",speaker_entity_id:"speaker-b",display_name:"E2E Rowan",state:"confirmed"}
+    ]);
+    render(<TranscriptPane />, root);
+  });
+
+  act(() => root.querySelector<HTMLButtonElement>('[data-speaker-id="speaker-a"].utt-speaker')!.click());
+  act(() => {
+    const input = root.querySelector<HTMLInputElement>('#speaker-name-input')!;
+    input.value = "E2E Morgan";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => {
+    root.querySelector('dialog form')!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+  await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
+
+  expect([...root.querySelectorAll('[data-speaker-id="speaker-a"] .utt-speaker-label, [data-speaker-id="speaker-a"].legend-chip .legend-chip-name')]
+    .map(node => node.textContent)).toEqual(["E2E Morgan", "E2E Morgan"]);
+  expect([...root.querySelectorAll('[data-speaker-id="speaker-b"] .utt-speaker-label, [data-speaker-id="speaker-b"].legend-chip .legend-chip-name')]
+    .map(node => node.textContent)).toEqual(["E2E Rowan", "E2E Rowan"]);
+});

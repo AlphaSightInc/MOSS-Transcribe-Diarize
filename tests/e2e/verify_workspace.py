@@ -111,6 +111,12 @@ def verdict_exit_code(verdict):
     return {'PASS': 0, 'FAIL': 1, 'INCOMPLETE': 2}[verdict]
 
 
+def target_speaker_labels_updated(rendered, speaker_id, expected_label):
+    """Judge a rename by stable identity; display labels are not unique identities."""
+    target = [label.strip() for ident, label in rendered if ident == speaker_id]
+    return bool(target) and all(label == expected_label for label in target)
+
+
 class Harness:
     def __init__(self, args):
         self.args = args
@@ -281,7 +287,7 @@ class Harness:
         outcomes=[]
         for selector,name in [('.utt[data-state=confirmed] .utt-speaker:not([disabled]), .utt[data-state=final] .utt-speaker:not([disabled])','E2E Rowan'),('.legend-chip:not([disabled])','E2E Morgan')]:
             button=self.page.locator(selector).first
-            await button.wait_for(timeout=75000); old=await button.inner_text()
+            await button.wait_for(timeout=75000)
             await button.click(); await self.page.get_by_label('Display name',exact=True).fill(name)
             async with self.page.expect_response(lambda r: '/speakers/' in r.url and r.request.method=='PUT') as ack:
                 await self.page.get_by_role('button',name='Save name',exact=True).click()
@@ -289,14 +295,17 @@ class Harness:
             self.state['named']=name; write(self.out/'results.json',self.state)
             await self.page.locator('dialog[open]').wait_for(state='hidden')
             await asyncio.sleep(.3)
-            labels=await self.page.locator('.utt-speaker-label, .legend-chip-name').all_text_contents()
+            rendered=await self.page.locator('.utt-speaker, .legend-chip').evaluate_all('''controls => controls.map(control => [
+                control.dataset.speakerId || '',
+                (control.querySelector('.utt-speaker-label, .legend-chip-name')?.textContent || '').trim()
+            ])''')
             meeting=(await self.api('/api/meetings/'+(self.state['meetings'].get('enrollment_live') or self.state['meetings']['live'])))['body']
             segments=(meeting.get('transcript') or {}).get('segments',[])
             selected=[s for s in segments if s.get('speaker_entity_id')==body.get('speaker_id')]
             self.event({'rename_ack':{'name':name,'http':response.status,'speaker_id':body.get('speaker_id'),'enrollment':body.get('enrollment')}})
             await self.snapshot(5,f'-ack-{len(outcomes)+1}')
             outcomes.append({'name':name,'http':response.status,'speaker_id':body.get('speaker_id'),'enrollment':body.get('enrollment'),
-                'rows_legend_updated':name in labels and old.strip() not in labels,
+                'rows_legend_updated':target_speaker_labels_updated(rendered, body.get('speaker_id'), name),
                 'history_updated':bool(selected) and all(s['speaker']==name for s in selected),
                 'export_updated':None})
             await self.snapshot(5,f'-rename-{len(outcomes)}')

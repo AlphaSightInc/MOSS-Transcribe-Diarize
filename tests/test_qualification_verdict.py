@@ -7,7 +7,13 @@ import subprocess
 from types import SimpleNamespace
 
 import pytest
-from tests.e2e.verify_workspace import Harness, required_rows_verdict, verdict_exit_code, retained_metadata
+from tests.e2e.verify_workspace import (
+    Harness,
+    required_rows_verdict,
+    retained_metadata,
+    target_speaker_labels_updated,
+    verdict_exit_code,
+)
 from tools.qualify.run import Bundle, bundle_verdict
 
 
@@ -21,6 +27,27 @@ def test_required_workspace_rows(statuses, verdict, code):
     assert required_rows_verdict(rows) == verdict
     assert verdict_exit_code(verdict) == code
     assert retained_metadata({'verdict': verdict}) == {'verdict': verdict}
+
+
+def test_rename_oracle_scopes_equal_display_names_to_acknowledged_id():
+    rendered = [
+        ('speaker-a', 'E2E Morgan'),
+        ('speaker-a', 'E2E Morgan'),
+        ('speaker-b', 'E2E Rowan'),
+        ('speaker-b', 'E2E Rowan'),
+    ]
+    labels = [label for _, label in rendered]
+    assert not ('E2E Morgan' in labels and 'E2E Rowan' not in labels)
+    assert target_speaker_labels_updated(rendered, 'speaker-a', 'E2E Morgan')
+
+
+def test_rename_oracle_rejects_any_stale_label_for_acknowledged_id():
+    rendered = [
+        ('speaker-a', 'E2E Morgan'),
+        ('speaker-a', 'E2E Rowan'),
+        ('speaker-b', 'E2E Rowan'),
+    ]
+    assert not target_speaker_labels_updated(rendered, 'speaker-a', 'E2E Morgan')
 
 
 def test_missing_relay_runs_real_summary_check_and_retains_skip(tmp_path):
