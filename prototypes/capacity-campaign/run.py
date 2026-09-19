@@ -89,8 +89,11 @@ def upload_file(client, path):
 
 def write_short_wav(source, destination, *, seconds=10):
     with wave.open(str(source)) as reader:
-        frames = reader.readframes(min(reader.getnframes(), reader.getframerate() * seconds))
+        frames = reader.readframes(reader.getnframes())
         parameters = reader.getparams()
+        target_bytes = reader.getframerate() * seconds * reader.getnchannels() * reader.getsampwidth()
+    # Repetition extends a known source for load testing, not acoustic diversity.
+    frames = (frames * ((target_bytes + len(frames) - 1) // len(frames)))[:target_bytes]
     with wave.open(str(destination), "wb") as writer:
         writer.setparams(parameters)
         writer.writeframes(frames)
@@ -132,6 +135,7 @@ def main():
     parser.add_argument('--allow-contention',action='store_true')
     parser.add_argument('--stop-first-at', type=int)
     parser.add_argument('--mixed-background-at', type=float)
+    parser.add_argument('--mixed-background-seconds', type=int, default=10)
     parser.add_argument('--mixed-url-port', type=int, default=17939)
     parser.add_argument('--max-decoder-calls', type=int)
     args = parser.parse_args()
@@ -148,6 +152,8 @@ def main():
         args.sessions != 2 or args.mixed_background_at < 0 or args.mixed_background_at >= args.seconds
     ):
         parser.error('--mixed-background-at needs two sessions and a boundary inside --seconds')
+    if args.mixed_background_seconds <= 0:
+        parser.error('--mixed-background-seconds must be positive')
     if args.max_decoder_calls is not None and args.max_decoder_calls <= 0:
         parser.error('--max-decoder-calls must be positive')
     clips = inputs(args.sessions, args.clips)
@@ -263,7 +269,7 @@ def main():
     try:
         if args.mixed_background_at is not None:
             short_media = scratch / 'mixed-short.wav'
-            write_short_wav(CORPUS / 'mono_javier_intro_50s' / 'audio.wav', short_media)
+            write_short_wav(CORPUS / 'mono_javier_intro_50s' / 'audio.wav', short_media, seconds=args.mixed_background_seconds)
             handler = functools.partial(_QuietMediaHandler, directory=str(scratch))
             media_server = http.server.ThreadingHTTPServer(
                 ('127.0.0.1', args.mixed_url_port), handler
@@ -327,7 +333,7 @@ def main():
         if args.mixed_background_at is not None:
             background_work = {
                 'scheduled_at_seconds': args.mixed_background_at,
-                'source_seconds': 10,
+                'source_seconds': args.mixed_background_seconds,
                 'file': {},
                 'url': {},
                 'operator_observations': [],
