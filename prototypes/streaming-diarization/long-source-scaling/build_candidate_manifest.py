@@ -29,7 +29,7 @@ def main() -> int:
     payload = json.loads(source.read_text())
     # The isolated output does not share the source manifest's directory. Make its existing
     # model asset reference absolute; no asset is copied or changed.
-    for asset in payload["assets"]:
+    for asset in [*payload["assets"], payload["golden"]["input"]]:
         asset_path = Path(asset["path"])
         if not asset_path.is_absolute():
             asset["path"] = str((source.parent / asset_path).resolve())
@@ -55,6 +55,10 @@ def main() -> int:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(final, indent=2, sort_keys=True) + "\n")
     admitted = verify_admission(final, base_dir=output.parent)
+    from moss_transcribe_diarize.app.live_provider_bundle import LiveProviderBundleConfig
+    preflight = LiveProviderBundleConfig.from_manifest(output).preflight()
+    if not preflight.available:
+        raise RuntimeError(f"candidate runtime preflight failed: {preflight.failures}")
     print(json.dumps({
         "output": str(output),
         "max_tape_bytes": final["bounds_config"]["max_tape_bytes"],
