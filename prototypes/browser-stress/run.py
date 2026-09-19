@@ -4,7 +4,7 @@ Run: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <python> prototypes/browser-stress/r
 Start stack.py on 17865 and own decoder forward 18105 first. No microphone evidence.
 """
 from __future__ import annotations
-import argparse, asyncio, functools, http.server, json, os, re, signal, sqlite3, subprocess, sys, threading, time
+import argparse, asyncio, functools, http.server, json, os, re, shutil, signal, sqlite3, subprocess, sys, threading, time
 from difflib import SequenceMatcher
 from pathlib import Path
 from types import SimpleNamespace
@@ -20,6 +20,7 @@ from tests.e2e.export_oracle import compare_export
 from tests.phase2.browser_support import browser_executable
 from playwright.async_api import async_playwright
 CORPUS=Path('/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s')
+TRANSCRIPT_EXPORT_FORMATS=('md','txt','json','srt','vtt')
 PREDICATES={
 1:'Two Stop events within 200ms yield one terminal meeting, no UI error.',
 2:'Stop at 1s before text yields terminal truth and permits a new capture.',
@@ -37,6 +38,19 @@ PREDICATES={
 14:'Own idle server restart preserves credential, history and transcripts.',
 15:'Actual headed hidden tab for 60s advances frames and words, restores, completes.',
 16:'25s outage recovers without losing acknowledged content; 35s expires truthfully and permits new capture.'}
+
+
+def retain_case_10_artifacts(out, mode, meeting, exports):
+    if set(exports)!=set(TRANSCRIPT_EXPORT_FORMATS):
+        raise ValueError('Case 10 requires exactly five transcript exports')
+    target=Path(out)/'case-10-artifacts'/mode
+    target.mkdir(parents=True,exist_ok=True)
+    (target/'meeting.json').write_text(json.dumps(meeting,indent=2)+'\n')
+    for fmt in TRANSCRIPT_EXPORT_FORMATS:
+        path=exports[fmt]
+        shutil.copyfile(path,target/f'transcript.{fmt}')
+
+
 class Bench(Harness):
     def __init__(self,out,base='https://127.0.0.1:17865',microphone_file=None,headed=False,lease_seconds=(25,35),runtime=None):
         super().__init__(SimpleNamespace(output=out,base=base))
@@ -270,9 +284,12 @@ class Bench(Harness):
             lanes=sorted({s.get('source_lane') for s in (meeting.get('transcript') or {}).get('segments',[]) if s.get('source_lane')})
             if mode=='live' and self.microphone_file:
                 assert lanes==['microphone','system'],f'Expected two speech lanes, got {lanes}'
-            for fmt in ('md','txt','json','srt','vtt'):
+            exports={}
+            for fmt in TRANSCRIPT_EXPORT_FORMATS:
                 path=await self.export(fmt,mode)
+                exports[fmt]=path
                 outcomes.append({'mode':mode,'format':fmt,'bytes':path.stat().st_size,'lanes':lanes,**compare_export(fmt,path.read_text(),meeting)})
+            retain_case_10_artifacts(self.out,mode,meeting,exports)
             url=f'/api/meetings/{ident}/audio/download'
             # Streaming browser fetch cancellation, then full retry and ffmpeg decode.
             cdp=await self.context.new_cdp_session(self.page)
