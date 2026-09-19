@@ -1,6 +1,6 @@
 # Saved-transcript browser rendering probe
 
-**THROWAWAY — prepared, not run.** Do not execute until the root agent confirms shared capacity work has ended.
+**Retained measurement bench, originally throwaway.** The bounded saved-desktop check passed; see `NOTES.md` and `results.json`. Run only when other performance workloads have ended.
 
 ## Contract
 

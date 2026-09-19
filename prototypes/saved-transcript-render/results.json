@@ -1,0 +1,62 @@
+{
+  "prototype": "saved-transcript-render",
+  "status": "PASS",
+  "candidate_commit": "be2dd06d45cca24ce3e56eff843a4d245f168c09",
+  "built_assets": "moss_transcribe_diarize/app/frontend_assets",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "timing_contract": "Measured only; no acceptance threshold has been authorized.",
+  "cases": [
+    {
+      "case": "5min",
+      "minutes": 5,
+      "source_passages": 120,
+      "snapshot_bytes": 50360,
+      "rendered_passages": 120,
+      "rendered_after_search": 120,
+      "load_to_tail_visible_ms": 563.739,
+      "search_tail_ms": 15.666,
+      "tail_token": "TAIL120SENTINEL",
+      "expected_tail_words": "Public tail TAIL120SENTINEL keeps every final word exactly retained.",
+      "tail_before_search": "Public tail TAIL120SENTINEL keeps every final word exactly retained.",
+      "tail_after_search": "Public tail TAIL120SENTINEL keeps every final word exactly retained.",
+      "browser_errors": [],
+      "status": "PASS"
+    },
+    {
+      "case": "30min",
+      "minutes": 30,
+      "source_passages": 720,
+      "snapshot_bytes": 302403,
+      "rendered_passages": 720,
+      "rendered_after_search": 720,
+      "load_to_tail_visible_ms": 632.276,
+      "search_tail_ms": 25.33,
+      "tail_token": "TAIL720SENTINEL",
+      "expected_tail_words": "Public tail TAIL720SENTINEL keeps every final word exactly retained.",
+      "tail_before_search": "Public tail TAIL720SENTINEL keeps every final word exactly retained.",
+      "tail_after_search": "Public tail TAIL720SENTINEL keeps every final word exactly retained.",
+      "browser_errors": [],
+      "status": "PASS"
+    },
+    {
+      "case": "201min",
+      "minutes": 201,
+      "source_passages": 4824,
+      "snapshot_bytes": 2031839,
+      "rendered_passages": 4824,
+      "rendered_after_search": 4824,
+      "load_to_tail_visible_ms": 1258.286,
+      "search_tail_ms": 71.27,
+      "tail_token": "TAIL4824SENTINEL",
+      "expected_tail_words": "Public tail TAIL4824SENTINEL keeps every final word exactly retained.",
+      "tail_before_search": "Public tail TAIL4824SENTINEL keeps every final word exactly retained.",
+      "tail_after_search": "Public tail TAIL4824SENTINEL keeps every final word exactly retained.",
+      "browser_errors": [],
+      "status": "PASS"
+    }
+  ],
+  "browser_version": "153.0.8010.53"
+}
