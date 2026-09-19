@@ -656,6 +656,74 @@ def test_third_active_live_meeting_is_refused_before_durable_creation(tmp_path: 
         assert replacement.status_code == 201
 
 
+def test_stop_frees_recording_admission_while_terminal_finalization_runs(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    socket = Path("/tmp") / f"moss-stop-admission-{os.getpid()}-{time.time_ns()}.sock"
+    sessions = asyncio.run(provision(database))
+    terminal_scheduler = _ManualTerminalScheduler()
+    app = make_app(
+        database,
+        terminal_text="[0][S01]held terminal words[0.000375]",
+        terminal_scheduler=terminal_scheduler,
+        control_socket=socket,
+    )
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        first = client.post("/api/live/sessions")
+        second = client.post("/api/live/sessions")
+        refused_third = client.post("/api/live/sessions")
+
+        assert first.status_code == second.status_code == 201
+        assert refused_third.status_code == 409
+        assert refused_third.json()["detail"]["code"] == "live_capacity_full"
+        assert len(client.get("/api/meetings").json()["meetings"]) == 2
+
+        first_id = first.json()["id"]
+        feed_two_lane_span(client, first_id)
+        wait_snapshot(
+            client,
+            first_id,
+            lambda body: body["meeting_transcript_version"] == 1,
+        )
+        stopped = client.post(
+            f"/api/live/sessions/{first_id}/stop",
+            json={"deadline": 0.05},
+        )
+        assert stopped.status_code == 202
+        wait_snapshot(
+            client,
+            first_id,
+            lambda body: (
+                body["snapshot"]["session"]["status"] == "closed"
+                and body["snapshot"]["session"]["finalization_status"] == "running"
+            ),
+        )
+        assert terminal_scheduler.pending == 1
+        before_replacement = client.portal.call(
+            app.state.phase2_operator_status.snapshot
+        )
+        assert before_replacement["capacity"]["live"] == {"active": 1, "limit": 2}
+
+        replacement = client.post("/api/live/sessions")
+        refused_fourth = client.post("/api/live/sessions")
+
+        assert replacement.status_code == 201
+        assert refused_fourth.status_code == 409
+        assert refused_fourth.json()["detail"]["code"] == "live_capacity_full"
+        assert len(client.get("/api/meetings").json()["meetings"]) == 3
+        after_replacement = client.portal.call(app.state.phase2_operator_status.snapshot)
+        assert after_replacement["capacity"]["live"] == {"active": 2, "limit": 2}
+
+        assert terminal_scheduler.run_one() is True
+        wait_snapshot(
+            client,
+            first_id,
+            lambda body: body["snapshot"]["session"]["finalization_status"]
+            != "running",
+        )
+
+
 def test_saved_live_transcript_keeps_attributed_id_and_omits_unattributed_id():
     from moss_transcribe_diarize.app.phase2_live import _transcript_document
 

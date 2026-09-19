@@ -139,6 +139,8 @@ class _FakeV2Sessions:
 
 class _ShutdownRuntime:
     def __init__(self) -> None:
+        self._lock = threading.RLock()
+        self._sessions = {}
         self.descriptor = SimpleNamespace(
             frame_samples=160,
             sample_rate=16_000,

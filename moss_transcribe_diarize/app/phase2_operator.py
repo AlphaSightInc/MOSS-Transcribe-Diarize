@@ -280,7 +280,12 @@ class Phase2OperatorStatus:
                 latest_current_error = error or latest_current_error
             active_meetings.append(meeting)
 
-        active_live = sum(1 for row in meeting_rows if row.get("mode") == "live")
+        active_live = _non_negative(
+            live.get(
+                "active_admissions",
+                sum(1 for row in meeting_rows if row.get("mode") == "live"),
+            )
+        )
         active_file = sum(1 for row in meeting_rows if row.get("mode") == "file")
         file_running = any(phase == "running" for phase in file_phases.values())
         worker_busy = bool(live_queues.get("worker_busy")) or file_running

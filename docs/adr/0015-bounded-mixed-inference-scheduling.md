@@ -24,8 +24,9 @@ simulation result but does not describe production and initially violated per-me
 ## Decision
 
 1. Keep one serial canonical Live pump across both admitted Live meetings.
-2. Admit no more than two active Live meetings. Refuse the third before durable creation with a
-   stable `live_capacity_full` response.
+2. Admit no more than two active Live meetings. Active means raw capture or raw drain, not a
+   closed meeting's terminal background finalization. Refuse the third before durable creation
+   with a stable `live_capacity_full` response.
 3. Put decoder calls through one process-local gate: at most two calls total and at most one bulk
    background call. Queued realtime capture precedes queued background work. Running calls remain
    non-preemptible.

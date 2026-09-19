@@ -190,6 +190,7 @@ class Phase2LiveMeetings:
                 ),
             }
         return {
+            "active_admissions": active_live_session_count(self.runtime),
             "queues": self.runtime._operator_queue_snapshot(),
             "meetings": meetings,
         }

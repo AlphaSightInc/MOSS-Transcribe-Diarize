@@ -100,3 +100,44 @@ Identity qualification did **not** pass. The panel's word error rate was 6.97%, 
 hypothesis speakers represented three references; Jamie had zero correctly attributed speech.
 The run therefore cannot support a general semantic qualification claim. Exact metrics and raw
 evidence locations are in `real-mixed-180-receipt.json`.
+
+## Stop admission falsifier (final candidate follow-up)
+
+- **Question:** does a stopped meeting's background terminal finalizer still consume one of the
+  two recording admissions?
+- **Minimum state:** raw session status, terminal-finalization status, active admission count,
+  HTTP creation result, and durable Meeting count. Removing any field loses the distinction
+  between recording, background settlement, refusal, and leaked persistence.
+- **Invariant:** raw capture or raw drain consumes Live admission; `closed` terminal background
+  work does not. Two actual recordings still refuse a third before durable creation. Terminal
+  owners and decoder scheduling remain unchanged.
+- **Assumption/unknown:** the semantic-test host uses SQLite 3.50.4, so the probe used the same
+  test-only runtime allowance as `tests/conftest.py`; production SQLite 3.53.4 was not exercised.
+- **Falsifier:** a replacement remains 409 after raw status becomes `closed`, a third actual
+  recording becomes 201, or either refusal adds a durable Meeting.
+- **Tool decision:** a held manual terminal scheduler isolates admission state without decoder
+  traffic. Its causal control runs the same terminal job; if admission changes only then, terminal
+  background state is the cause.
+
+Executed throwaway command (the probe was deleted after its state was retained):
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:tests:tests/phase2 \
+  .venv/bin/python .sched-tmp/stop_admission_probe.py
+```
+
+The absorbed repeatable product control is:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. .venv/bin/python -m pytest -q \
+  tests/phase2/test_owner_bound_live_meeting.py::test_stop_frees_recording_admission_while_terminal_finalization_runs
+```
+
+On exact candidate `203b7f044d7aa294898cc958e445361cc5c44d8b`, two recordings produced
+`active=2`, third start 409, and two durable rows. After Stop reached raw `closed` with terminal
+finalization held `running`, admission incorrectly remained 2 and replacement remained 409; the
+durable count stayed 2. Running that terminal job changed admission to 1 and replacement to 201.
+
+**Verdict:** count active capture/raw drain, not `closed` terminal-background finalization. The
+repair belongs only in admission counting; do not release terminal owners early or change the
+shared inference scheduler. Exact state is retained in `stop-admission-prototype-receipt.json`.

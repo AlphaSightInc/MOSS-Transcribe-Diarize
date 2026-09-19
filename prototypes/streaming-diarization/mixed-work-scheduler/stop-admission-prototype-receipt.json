@@ -1,0 +1,43 @@
+{
+  "after_finalizing": {
+    "active_live_session_count_before_replacement": 1,
+    "durable_meeting_count": 3,
+    "replacement_status": 201
+  },
+  "before_stop": {
+    "active_live_session_count": 2,
+    "durable_meeting_count": 2,
+    "first_status": 201,
+    "second_status": 201,
+    "third_recording_body": {
+      "detail": {
+        "code": "live_capacity_full",
+        "message": "Two Live meetings are already active."
+      }
+    },
+    "third_recording_status": 409
+  },
+  "candidate": "203b7f044d7aa294898cc958e445361cc5c44d8b",
+  "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:tests:tests/phase2 .venv/bin/python .sched-tmp/stop_admission_probe.py",
+  "environment": {
+    "decoder_calls": 0,
+    "host_sqlite_test_override": true,
+    "production_sqlite_qualified": false
+  },
+  "verdict": "closed terminal background finalization incorrectly consumed recording admission",
+  "while_finalizing": {
+    "active_live_session_count": 2,
+    "durable_meeting_count": 2,
+    "finalization_status": "running",
+    "pending_terminal_jobs": 1,
+    "raw_status": "closed",
+    "replacement_body": {
+      "detail": {
+        "code": "live_capacity_full",
+        "message": "Two Live meetings are already active."
+      }
+    },
+    "replacement_status": 409,
+    "stop_status": 202
+  }
+}
