@@ -52,5 +52,31 @@ PYTHONPATH=. .venv/bin/python \
   prototypes/streaming-diarization/contained-interruption-prompt/probe.py
 ```
 
-After root grants an identity lease, one execution command will be recorded here with its exact
-lease limit. Verdict: **pending; no calls authorized yet.**
+Executed once under the identity-only lease:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. .venv/bin/python \
+  prototypes/streaming-diarization/contained-interruption-prompt/probe.py \
+  --execute --endpoint http://127.0.0.1:19135/v1 --lease-limit 983
+```
+
+## Result
+
+**REJECTED.** The generic output-contract change did not recover the contained interruption.
+
+- Requests: global 977→982, five serial calls, peak one for this run, no retries. The sixth
+  authorized call was not used.
+- Clean outer-only control: one speaker under default and variant; no interruption text invented;
+  ordered word error rate stayed 0.097345 (delta 0.000000).
+- Sequential control: both default and variant emitted the exact nine-word source turn, `How long
+  do we think each one will take?`, as the non-dominant `S02`. Variant timing was 20.20–21.48 s.
+- True overlap at 0 dB and +3 dB: both variant outputs remained one-speaker `S01`; neither emitted
+  a source-matching non-dominant turn. This is unchanged from the retained default outputs.
+
+All five safety/audibility controls pass, but recovery is false in 0/2 overlap arms. The omission
+therefore persists despite an explicit generic overlap instruction. On this source-backed matrix,
+the limiting seam is the current decoder/model path, not merely the default prompt contract.
+
+No production prompt or transcript architecture change is supported. `results.json` retains every
+raw response; `analysis.json` retains the adjudication. The lease was explicitly released at global
+982 with active zero.

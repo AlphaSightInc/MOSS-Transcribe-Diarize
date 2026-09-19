@@ -1,0 +1,200 @@
+{
+  "prompt_appendix": "如果音频中有清晰可闻的短暂语音或多人同时说话，请转写每位说话人的可听内容；允许不同说话人的时间范围重叠。不要猜测或补充听不清的内容。",
+  "comparisons": {
+    "sequential": {
+      "default": {
+        "speaker_count": 2,
+        "speakers": [
+          "S01",
+          "S02"
+        ],
+        "dominant_speaker": "S01",
+        "target_interval_segments": [
+          {
+            "start": 19.27,
+            "end": 20.27,
+            "speaker": "S01",
+            "text": "He stepped",
+            "target_lcs_words": 0,
+            "non_dominant": false
+          },
+          {
+            "start": 20.27,
+            "end": 21.51,
+            "speaker": "S02",
+            "text": "How long do we think each one will take?",
+            "target_lcs_words": 9,
+            "non_dominant": true
+          }
+        ],
+        "source_matching_non_dominant_turn": true,
+        "word_stream": "The following is a conversation with Javier Malé, the president of Argentina. He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy of the state. He stepped How long do we think each one will take? into the presidency one year ago, with the country on the brink of hyperinflation, deep in debt and suffering from mass unemployment and poverty. He took this crisis head-on, transforming one of Latin America's largest economies through pure free-market principles. In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years, and not just avoided the hyperinflation, but brought inflation down"
+      },
+      "variant": {
+        "speaker_count": 2,
+        "speakers": [
+          "S01",
+          "S02"
+        ],
+        "dominant_speaker": "S01",
+        "target_interval_segments": [
+          {
+            "start": 19.25,
+            "end": 20.17,
+            "speaker": "S01",
+            "text": "He stepped",
+            "target_lcs_words": 0,
+            "non_dominant": false
+          },
+          {
+            "start": 20.2,
+            "end": 21.48,
+            "speaker": "S02",
+            "text": "How long do we think each one will take?",
+            "target_lcs_words": 9,
+            "non_dominant": true
+          }
+        ],
+        "source_matching_non_dominant_turn": true,
+        "word_stream": "The following is a conversation with Javier Malé, the president of Argentina. He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy of the state. He stepped How long do we think each one will take? into the presidency one year ago, with the country on the brink of hyperinflation, deep in debt and suffering from mass unemployment and poverty. He took this crisis head-on, transforming one of Latin America's largest economies through pure free-market principles. In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+      }
+    },
+    "overlap_0db": {
+      "default": {
+        "speaker_count": 1,
+        "speakers": [
+          "S01"
+        ],
+        "dominant_speaker": "S01",
+        "target_interval_segments": [
+          {
+            "start": 19.27,
+            "end": 24.93,
+            "speaker": "S01",
+            "text": "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,",
+            "target_lcs_words": 1,
+            "non_dominant": false
+          }
+        ],
+        "source_matching_non_dominant_turn": false,
+        "word_stream": "The following is a conversation with Javier Malé, the president of Argentina. He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy of the state. He stepped into the presidency one year ago, with the country on the brink of hyperinflation, deep in debt and suffering from mass unemployment and poverty. He took this crisis head-on, transforming one of Latin America's largest economies through pure free-market principles. In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+      },
+      "variant": {
+        "speaker_count": 1,
+        "speakers": [
+          "S01"
+        ],
+        "dominant_speaker": "S01",
+        "target_interval_segments": [
+          {
+            "start": 19.25,
+            "end": 22.66,
+            "speaker": "S01",
+            "text": "He stepped into the presidency one year ago,",
+            "target_lcs_words": 1,
+            "non_dominant": false
+          }
+        ],
+        "source_matching_non_dominant_turn": false,
+        "word_stream": "The following is a conversation with Javier Malé, the president of Argentina. He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy of the state. He stepped into the presidency one year ago, with a country on the brink of hyperinflation, deep in debt and suffering from mass unemployment and poverty. He took this crisis head-on, transforming one of Latin America's largest economies through pure free-market principles. In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+      }
+    },
+    "overlap_plus3db": {
+      "default": {
+        "speaker_count": 1,
+        "speakers": [
+          "S01"
+        ],
+        "dominant_speaker": "S01",
+        "target_interval_segments": [
+          {
+            "start": 19.32,
+            "end": 24.93,
+            "speaker": "S01",
+            "text": "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,",
+            "target_lcs_words": 1,
+            "non_dominant": false
+          }
+        ],
+        "source_matching_non_dominant_turn": false,
+        "word_stream": "The following is a conversation with Javier Malé, the president of Argentina. He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy of the state. He stepped into the presidency one year ago, with the country on the brink of hyperinflation, deep in debt and suffering from mass unemployment and poverty. He took this crisis head-on, transforming one of Latin America's largest economies through pure free-market principles. In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+      },
+      "variant": {
+        "speaker_count": 1,
+        "speakers": [
+          "S01"
+        ],
+        "dominant_speaker": "S01",
+        "target_interval_segments": [
+          {
+            "start": 19.25,
+            "end": 22.66,
+            "speaker": "S01",
+            "text": "He stepped into the presidency one year ago",
+            "target_lcs_words": 1,
+            "non_dominant": false
+          }
+        ],
+        "source_matching_non_dominant_turn": false,
+        "word_stream": "The following is a conversation with Javier Malé, the president of Argentina. He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy of the state. He stepped into the presidency one year ago with a country on the brink of hyperinflation, deep in debt and suffering from mass unemployment and poverty. He took this crisis head-on, transforming one of Latin America's largest economies through pure free-market principles. In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years and not just avoided the hyperinflation, but brought inflation down to"
+      }
+    },
+    "outer": {
+      "default": {
+        "speaker_count": 1,
+        "speakers": [
+          "S01"
+        ],
+        "dominant_speaker": "S01",
+        "target_interval_segments": [
+          {
+            "start": 19.32,
+            "end": 24.93,
+            "speaker": "S01",
+            "text": "He stepped into the presidency one year ago, with the country on the brink of hyperinflation,",
+            "target_lcs_words": 1,
+            "non_dominant": false
+          }
+        ],
+        "source_matching_non_dominant_turn": false,
+        "word_stream": "The following is a conversation with Javier Malé, the president of Argentina. He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy of the state. He stepped into the presidency one year ago, with the country on the brink of hyperinflation, deep in debt and suffering from mass unemployment and poverty. He took this crisis head-on, transforming one of Latin America's largest economies through pure free-market principles. In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+      },
+      "variant": {
+        "speaker_count": 1,
+        "speakers": [
+          "S01"
+        ],
+        "dominant_speaker": "S01",
+        "target_interval_segments": [
+          {
+            "start": 19.26,
+            "end": 22.66,
+            "speaker": "S01",
+            "text": "He stepped into the presidency one year ago,",
+            "target_lcs_words": 1,
+            "non_dominant": false
+          }
+        ],
+        "source_matching_non_dominant_turn": false,
+        "word_stream": "The following is a conversation with Javier Malé, the president of Argentina. He is a libertarian, a narco-capitalist and economist who campaigned with a chainsaw that symbolized his promise to slash the corrupt bureaucracy of the state. He stepped into the presidency one year ago, with the country on the brink of hyperinflation, deep in debt and suffering from mass unemployment and poverty. He took this crisis head-on, transforming one of Latin America's largest economies through pure free-market principles. In just a few months in office, he already achieved Argentina's first fiscal surplus in 16 years, and not just avoided the hyperinflation, but brought inflation down to"
+      }
+    }
+  },
+  "outer_wer": {
+    "default": 0.097345,
+    "variant": 0.097345,
+    "delta": 0.0
+  },
+  "controls": {
+    "outer_stays_one_speaker": true,
+    "outer_has_no_source_matching_interruption": true,
+    "outer_wer_delta_at_most_0_01": true,
+    "sequential_source_turn_survives": true,
+    "sequential_has_two_speakers": true
+  },
+  "overlap_recovered": {
+    "overlap_0db": false,
+    "overlap_plus3db": false
+  },
+  "candidate_supported": false
+}
