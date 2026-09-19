@@ -543,7 +543,25 @@ export class CaptureClient {
       cache: "no-store",
       credentials: "same-origin",
     });
-    if (!response.ok) throw new Error(`session create failed: HTTP ${response.status}`);
+    if (!response.ok) {
+      const failure = response.status === 409
+        ? await response.json().catch(() => null)
+        : null;
+      const detail = failure !== null && typeof failure === "object" && !Array.isArray(failure)
+        ? (failure as Record<string, unknown>).detail
+        : null;
+      if (
+        detail !== null &&
+        typeof detail === "object" &&
+        !Array.isArray(detail) &&
+        (detail as Record<string, unknown>).code === "live_capacity_full"
+      ) {
+        throw new Error(
+          "Two live meetings are already recording. Stop one before starting another.",
+        );
+      }
+      throw new Error(`session create failed: HTTP ${response.status}`);
+    }
     const payload = record(await response.json(), "session response");
     const id = payload.id;
     if (typeof id !== "string" || !id) {

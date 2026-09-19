@@ -413,6 +413,49 @@ describe("browser capture frame contract", () => {
     expect((fetchSpy.mock.calls[0][1] as RequestInit).headers).toBeUndefined();
   });
 
+  it("explains the typed live capacity refusal without retrying", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: async () => ({
+        detail: {
+          code: "live_capacity_full",
+          message: "Two Live meetings are already active.",
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = activeFrameClient();
+    client.session = null;
+    client.lanes.set("system", testLaneState());
+    client.onWorkletFrame("microphone", workletFrame(0));
+    client.onWorkletFrame("system", { ...workletFrame(0), lane: "system" });
+
+    await expect((client as unknown as CaptureClient).createSession()).rejects.toThrow(
+      "Two live meetings are already recording. Stop one before starting another.",
+    );
+    expect(fetchSpy).toHaveBeenCalledOnce();
+  });
+
+  it("preserves the generic session-create error for other typed refusals", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: async () => ({ detail: { code: "different_conflict", message: "Different." } }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = activeFrameClient();
+    client.session = null;
+    client.lanes.set("system", testLaneState());
+    client.onWorkletFrame("microphone", workletFrame(0));
+    client.onWorkletFrame("system", { ...workletFrame(0), lane: "system" });
+
+    await expect((client as unknown as CaptureClient).createSession()).rejects.toThrow(
+      "session create failed: HTTP 409",
+    );
+    expect(fetchSpy).toHaveBeenCalledOnce();
+  });
+
   it("rejects an invalid stop deadline before issuing a request", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
