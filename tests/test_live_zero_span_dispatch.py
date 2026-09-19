@@ -262,20 +262,14 @@ class TerminalSurfaceTest(unittest.TestCase):
         tape.append(start_sample=2 * FRAME_SAMPLES, pcm=b"\0\0" * FRAME_SAMPLES)
         self.assertTrue(tape.has_signal)
 
-    def test_a_tape_that_does_not_track_signal_is_never_assumed_silent(self):
-        """Silence must be established. A missing observation is not a silent meeting."""
+    def test_a_tape_that_explicitly_reports_signal_still_decodes(self):
+        """The owned terminal-tape interface carries the arrival-time observation."""
 
-        class SilentAboutItself:
-            def gaps(self, through_sample):
-                return ()
-
-            def read(self, *, start_sample=0, end_sample=None):
-                return b"\0\0" * (end_sample - start_sample)
-
+        tape = tape_of(FRAME_SAMPLES, fill=b"\x01\0")
         runner = MustNotDecode()
         finalization = TerminalTranscriptFinalizer(runner=runner).finalize(
             plan=plan_for(FRAME_SAMPLES),
-            tape=SilentAboutItself(),
+            tape=tape,
             base_text_revision_version=0,
         )
 

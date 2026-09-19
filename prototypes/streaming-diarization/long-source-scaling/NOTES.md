@@ -14,6 +14,9 @@ grow linearly with duration, but Python audio memory and per-window inference re
 - Interrupted three-window decoding resumed from two atomic records without re-decoding the
   prefix. Re-extracting prefix audio only for resolvers that require it restored identical
   text and identity; missing prefix audio was the falsifying control.
+- The owner-bound File application completed 101 accelerated windows for 201 minutes, saved
+  the exact final segment at `[12,059, 12,060]`, and returned that tail after app/database
+  reopen.
 - Actual live runtime at 201 minutes retained 192,960,000 samples / 385,920,000 bytes. Stop
   ran 101 terminal windows, published `final`, and released the tape. Abort released the same
   complete source without terminal work. Peak traced Python memory was 6.85/6.86 MB.
@@ -40,12 +43,36 @@ empty canonical answers and deterministic terminal text. It proves source custod
 Stop/abort, terminal geometry, and memory behavior—not acoustic quality or real decoder
 throughput. Decoder requests: zero.
 
-Word-producing deterministic speech at 5/15/30 minutes kept peak Python memory to
+Before repair, word-producing deterministic speech at 5/15/30 minutes kept peak Python memory to
 0.72/1.06/1.41 MB, retained events at the configured 1,000 cap, and kept snapshot/Stop below
 0.03/0.9 ms. However, feed CPU grew 1×/7.07×/26.8× while output grew 1×/3×/6×. The interrupted
 201-minute control reached 193.36 MB after 5:44 at about 100% CPU. The stack showed repeated
 full base-surface parsing during publication. Verdict: source storage passes; transcript
-surface construction is an O(duration²) blocker until its cache/invalidation seam is fixed
-and the scaling receipt is rerun.
+surface construction was an O(duration²) blocker.
 
-Machine receipts: `results.json`, `speech-scaling-results.json`.
+The narrow repair caches each committed span's parsed base segments, appends only the new
+span while canonical label meaning is stable, rebuilds on label revision or changed label
+meaning, and fast-returns the base when no text-revision overlay exists. It does not change
+overlap admission or revision validation. The red unit control counted 65 transcript parses
+for 10 commits; green counts 20 (one validation and one surface parse per commit).
+
+After repair, 5/15/30/201 minutes produced 120/360/720/4,824 segments in
+0.064/0.188/0.381/3.105 seconds of accelerated feed CPU. Output grew 6× from 5→30 minutes
+while CPU grew 5.95×; output grew 6.7× from 30→201 minutes while CPU grew 8.14×, far below
+the former quadratic 44.9× shape. The 201-minute point used 4.42 MB peak Python, a
+~0.034 ms snapshot, and ~0.84 ms Stop. Verdict: duration control/state passes; acoustic
+quality and real-decoder throughput remain deliberately unmeasured without this lane's GPU
+lease.
+
+Machine receipts: `results.json`, `speech-scaling-before.json`,
+`speech-scaling-results.json`.
+
+Final product denominator: `pytest -q tests` = 1,986 passed, 5 skipped, 37 subtests.
+The broader repository run produced 2,105 passes, 5 skips and six failures: three preserved
+prototype controls (intentional L15 product-tree hash drift; two unavailable legacy 92-row
+archive tests), plus three initially stale test adapters. The latter were corrected to expect
+File `checkpoint_dir` and implement the explicit terminal `has_signal`/`write_wav` seam; their
+focused rerun passed 4/4. No production compatibility fallback was restored.
+
+All memory numbers above are traced Python allocations from `tracemalloc`, not whole-process
+resident set size (RSS), ffmpeg memory, kernel cache, or aggregate concurrent-service memory.

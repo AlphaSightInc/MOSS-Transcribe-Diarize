@@ -28,6 +28,8 @@ from moss_transcribe_diarize.app.phase2_admin import (
     execute_interrupt,
 )
 from moss_transcribe_diarize.app.phase2_control import Phase2ControlError
+from moss_transcribe_diarize.app.model_runner import TranscriptionResult
+from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner
 
 
 
@@ -174,6 +176,68 @@ def test_upload_runs_after_browser_leaves_and_remains_owner_bound(tmp_path: Path
         connection.close()
     assert runner.inputs == [("input.wav", b"owner-audio")]
     assert list((tmp_path / "file-work").glob("**/*")) == []
+
+
+def test_201_minute_file_tail_is_saved_and_survives_app_reopen(tmp_path: Path):
+    class TailDecoder:
+        model_path = "duration-tail-stub"
+
+        def transcribe(self, audio_path: str | Path, **kwargs: object):
+            del kwargs
+            index = int(Path(audio_path).stem.rsplit("-", 1)[1])
+            start = 59 if index == 100 else 60
+            text = f"window-{index:04d}" + ("-tail" if index == 100 else "")
+            return TranscriptionResult(
+                text=f"[{start}][S01]{text}[{start + 1}]",
+                prompt_len=1,
+                generated_tokens=1,
+                elapsed_sec=0.0,
+                model=self.model_path,
+                audio=str(audio_path),
+                decoding="greedy",
+                temperature=None,
+            )
+
+    def extract(_source, destination, *, start_seconds, duration_seconds):
+        del start_seconds, duration_seconds
+        Path(destination).write_bytes(b"bounded-window")
+
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    work_root = tmp_path / "file-work"
+    runner = WindowedRunner(
+        TailDecoder(),
+        duration_probe=lambda _path: 12_060.0,
+        window_extractor=extract,
+    )
+    app = make_app(database, runner, work_root)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        accepted = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", b"accelerated-source", "audio/wav")},
+        )
+        assert accepted.status_code == 201
+        meeting_id = accepted.json()["id"]
+        completed = await_terminal(client, meeting_id, "completed")
+        assert len(completed["transcript"]["segments"]) == 101
+        tail = completed["transcript"]["segments"][-1]
+        assert tail["id"] == "seg_0101"
+        assert (tail["start"], tail["end"], tail["text"]) == (
+            12_059.0,
+            12_060.0,
+            "window-0100-tail",
+        )
+
+    reopened = make_app(database, None, work_root)
+    with TestClient(reopened, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a-second"])
+        saved = client.get(f"/api/meetings/{meeting_id}")
+        assert saved.status_code == 200
+        assert saved.json()["status"] == "completed"
+        assert saved.json()["transcript"]["segments"][-1]["text"] == "window-0100-tail"
+        assert saved.json()["transcript"]["segments"][-1]["end"] == 12_060.0
 
 
 def test_lost_browser_cookie_does_not_cancel_accepted_file_work(tmp_path: Path):

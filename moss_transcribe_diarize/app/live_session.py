@@ -363,6 +363,12 @@ class LiveSession:
         self._span_order: list[int] = []
         self._pending_results: dict[int, CanonicalResult] = {}
         self._committed: list[CanonicalCommit] = []
+        # Parsed publication surface for `_committed`. Canonical commits are append-only in
+        # the common path, so reparsing every earlier transcript after each new span turns a
+        # long meeting into O(spans^2) work. Label revisions or a changed label vocabulary
+        # rebuild this cache explicitly because those are the two events that can change an
+        # older segment's rendered identity.
+        self._base_segment_cache: tuple[EffectiveTranscriptSegment, ...] = ()
         # Per committed span, the decoder's own local speaker for each published segment, in
         # segment order. It is the only thing that survives publication which a correction can
         # be addressed to: the words carry a *canonical* label (or `S00`), and the local
@@ -663,6 +669,7 @@ class LiveSession:
             revised_units += applied
 
         if revised_spans:
+            self._base_segment_cache = self._parse_all_base_segments()
             self._label_revision_version += 1
             self._surface_version += 1
             self._bump()
@@ -905,6 +912,8 @@ class LiveSession:
 
     def _build_effective_transcript(self) -> tuple[EffectiveTranscriptSegment, ...]:
         base = self._base_segments()
+        if not self._revision_segments and not self._lane_revision_frontiers:
+            return base
         frontier = self._canonical_through_sample
         revised = tuple(
             (
@@ -955,30 +964,41 @@ class LiveSession:
         Account browser renders.
         """
 
+        return self._base_segment_cache
+
+    def _parse_all_base_segments(self) -> tuple[EffectiveTranscriptSegment, ...]:
+        return tuple(
+            segment
+            for commit in self._committed
+            for segment in self._base_segments_of(commit)
+        )
+
+    def _base_segments_of(
+        self, commit: CanonicalCommit
+    ) -> tuple[EffectiveTranscriptSegment, ...]:
+        published = (
+            commit.revised_transcript
+            if commit.revised_transcript is not None
+            else commit.transcript
+        )
         segments: list[EffectiveTranscriptSegment] = []
-        for commit in self._committed:
-            published = commit.revised_transcript if commit.revised_transcript is not None else commit.transcript
-            for index, parsed in enumerate(
-                span_segments(
-                    published, sample_count=commit.end_sample - commit.start_sample
+        for index, parsed in enumerate(
+            span_segments(published, sample_count=commit.end_sample - commit.start_sample)
+        ):
+            start = commit.start_sample + int(round(parsed.start * LIVE_SAMPLE_RATE))
+            end = commit.start_sample + int(round(parsed.end * LIVE_SAMPLE_RATE))
+            if end <= start or not parsed.text.strip():
+                continue
+            segments.append(
+                EffectiveTranscriptSegment(
+                    start_sample=start,
+                    end_sample=end,
+                    text=parsed.text,
+                    canonical_speaker=self._canonical_speaker_of(parsed.speaker),
+                    authority="provisional",
+                    source_lane=(commit.source_lanes[index] if commit.source_lanes else None),
                 )
-            ):
-                start = commit.start_sample + int(round(parsed.start * LIVE_SAMPLE_RATE))
-                end = commit.start_sample + int(round(parsed.end * LIVE_SAMPLE_RATE))
-                if end <= start or not parsed.text.strip():
-                    continue
-                segments.append(
-                    EffectiveTranscriptSegment(
-                        start_sample=start,
-                        end_sample=end,
-                        text=parsed.text,
-                        canonical_speaker=self._canonical_speaker_of(parsed.speaker),
-                        authority="provisional",
-                        source_lane=(
-                            commit.source_lanes[index] if commit.source_lanes else None
-                        ),
-                    )
-                )
+            )
         return tuple(segments)
 
     def _canonical_speaker_of(self, label: str) -> str | None:
@@ -1198,7 +1218,15 @@ class LiveSession:
         self._retain_label_track(span, result)
         self._committed_samples = span.end_sample
         self._prefix_hash = prefix_hash
+        label_meaning_changed = (
+            identity_snapshot.canonical_speakers
+            != self._identity_snapshot.canonical_speakers
+        )
         self._identity_snapshot = identity_snapshot
+        if label_meaning_changed:
+            self._base_segment_cache = self._parse_all_base_segments()
+        else:
+            self._base_segment_cache += self._base_segments_of(commit)
         if self._provisional is not None and self._provisional.start_sample < self._committed_samples:
             self._provisional = None
         self._prune_committed_frames()

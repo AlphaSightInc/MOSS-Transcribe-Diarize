@@ -4,6 +4,8 @@ import asyncio
 
 import pytest
 
+import moss_transcribe_diarize.app.live_session as live_session_module
+
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
     CanonicalResult,
@@ -96,6 +98,28 @@ def test_frozen_spans_are_independent_and_publish_only_in_order():
     assert published.committed[0].prefix_hash != published.committed[1].prefix_hash
     with pytest.raises(ValueError):
         session.freeze_until(8000, reason="duplicate")
+
+
+def test_each_published_span_is_parsed_once_for_the_effective_surface(monkeypatch):
+    """Appending span N must not reparse spans 0..N-1 on every publication."""
+
+    original = live_session_module.span_segments
+    parsed = []
+
+    def counted(*args, **kwargs):
+        parsed.append(args[0])
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(live_session_module, "span_segments", counted)
+    session = LiveSession(max_retained_samples=16_000)
+    for sequence in range(10):
+        session.accept_frame(frame(sequence, 1_600))
+        span = session.freeze_until((sequence + 1) * 1_600, reason="hard_cap")
+        assert session.submit_canonical(result(span, transcript(0.1, f"word-{sequence}")))
+        assert len(session.snapshot().effective_transcript) == sequence + 1
+
+    # Once for canonical-result validation and once for the cached public surface.
+    assert len(parsed) == 20
 
 
 def test_provisional_suffix_is_replace_only_and_stale_generations_are_ignored():

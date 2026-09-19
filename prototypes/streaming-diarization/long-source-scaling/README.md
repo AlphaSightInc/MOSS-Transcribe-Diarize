@@ -26,7 +26,9 @@ The 201-minute live run is narrower: it proves production runtime source retenti
 terminal windowing, and abort release with nonzero PCM and deterministic empty canonical
 answers. It is not end-to-end speech or acoustic qualification. `speech_scaling.py` separately
 measures word-producing canonical publication at 5/15/30 minutes with one regular scheduler
-drain per frame; it avoids an artificial ingest-faster-than-decoder backlog.
+drain per frame; it avoids an artificial ingest-faster-than-decoder backlog. The post-fix
+receipt also includes a direct 201-minute point; `speech-scaling-before.json` preserves the
+quadratic falsifier.
 
 `build_candidate_manifest.py` produces an **isolated** candidate manifest with a
 460,800,000-byte per-tape resource provision (240 minutes of 16 kHz mono PCM16). This is a

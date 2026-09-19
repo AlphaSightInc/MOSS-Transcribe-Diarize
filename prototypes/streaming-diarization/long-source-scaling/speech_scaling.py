@@ -67,16 +67,18 @@ def measure(seconds: int) -> dict[str, object]:
 
 
 def main() -> int:
-    rows = [measure(seconds) for seconds in (300, 900, 1_800)]
+    rows = [measure(seconds) for seconds in (300, 900, 1_800, 12_060)]
     report = {
         "schema_version": 1,
         "decoder_calls": 0,
         "scope": "deterministic speech publication scaling; not acoustic qualification",
         "rows": rows,
         "growth": {
-            "peak_bytes_30m_over_5m": rows[-1]["peak_python_bytes"] / rows[0]["peak_python_bytes"],
-            "feed_time_30m_over_5m": rows[-1]["feed_elapsed_seconds"] / rows[0]["feed_elapsed_seconds"],
-            "segments_30m_over_5m": rows[-1]["published_segments"] / rows[0]["published_segments"],
+            "peak_bytes_30m_over_5m": rows[2]["peak_python_bytes"] / rows[0]["peak_python_bytes"],
+            "feed_time_30m_over_5m": rows[2]["feed_elapsed_seconds"] / rows[0]["feed_elapsed_seconds"],
+            "segments_30m_over_5m": rows[2]["published_segments"] / rows[0]["published_segments"],
+            "feed_time_201m_over_30m": rows[3]["feed_elapsed_seconds"] / rows[2]["feed_elapsed_seconds"],
+            "segments_201m_over_30m": rows[3]["published_segments"] / rows[2]["published_segments"],
         },
     }
     (HERE / "speech-scaling-results.json").write_text(
