@@ -63,6 +63,7 @@ def bundle_verdict(gates):
 class Bundle:
     def __init__(self, args):
         self.args = args
+        self.decoder_upstream_port = args.decoder_upstream_port or 18125
         self.started = time.monotonic()
         self.sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
         dirty = subprocess.check_output(['git', 'status', '--porcelain=v1', '--untracked-files=all'], text=True).splitlines()
@@ -88,7 +89,7 @@ class Bundle:
         self.data = dict(schema='moss-local-qualification.v1', scope='local measurement; not deployment or attended acceptance',
                          identity=dict(git_sha=self.sha, tree_clean=not dirty, dirty_files=dirty,
                                        python=sys.version.split()[0], node=subprocess.check_output(['node','--version'], text=True).strip(),
-                                       decoder_tunnel_url='http://127.0.0.1:18125', decoder_base_url='http://127.0.0.1:19125/v1'),
+                                       decoder_tunnel_url=f'http://127.0.0.1:{self.decoder_upstream_port}', decoder_base_url='http://127.0.0.1:19125/v1'),
                          gates=[], request_budget=args.budget, long=args.long, integrated_candidate=self.sha)
         self.current = None
         self.gate('tree_clean', 'PASS' if not dirty else 'FAIL', measurements={'dirty_files':dirty})
@@ -215,7 +216,7 @@ class Bundle:
             self.gate(name, 'PASS' if code == 0 else 'FAIL', duration=elapsed, code=code)
 
     def metrics(self):
-        with urllib.request.urlopen('http://127.0.0.1:18125/metrics', timeout=5) as r:
+        with urllib.request.urlopen(f'http://127.0.0.1:{self.decoder_upstream_port}/metrics', timeout=5) as r:
             source = r.read().decode()
         result = {}
         for key in ('num_requests_running','num_requests_waiting','request_success_total'):
@@ -241,12 +242,14 @@ class Bundle:
                 if sock.connect_ex(('127.0.0.1',port)) == 0:
                     self.gate('stack', 'UNRUNNABLE', reason=f'Own required port {port} already occupied; no reuse or termination')
                     return False
-        tunnel = self.start('tunnel', ['ssh','-N','-o','BatchMode=yes','-o','ExitOnForwardFailure=yes',
-            '-o','ControlMaster=no','-o','ControlPath=none','-o','UpdateHostKeys=no','-o','StrictHostKeyChecking=yes',
-            '-L','127.0.0.1:18125:127.0.0.1:8000',HOST])
+        tunnel = None
+        if self.args.decoder_upstream_port is None:
+            tunnel = self.start('tunnel', ['ssh','-N','-o','BatchMode=yes','-o','ExitOnForwardFailure=yes',
+                '-o','ControlMaster=no','-o','ControlPath=none','-o','UpdateHostKeys=no','-o','StrictHostKeyChecking=yes',
+                '-L','127.0.0.1:18125:127.0.0.1:8000',HOST])
         initial = None
         for _ in range(30):
-            if tunnel.poll() is not None:
+            if tunnel is not None and tunnel.poll() is not None:
                 break
             try:
                 initial = self.metrics()
@@ -258,7 +261,7 @@ class Bundle:
             return False
         self.data['initial_contention'] = initial
         try:
-            with urllib.request.urlopen('http://127.0.0.1:18125/version', timeout=5) as r:
+            with urllib.request.urlopen(f'http://127.0.0.1:{self.decoder_upstream_port}/version', timeout=5) as r:
                 value = json.load(r).get('version')
                 self.data['identity']['vllm_version'] = value if isinstance(value,str) and re.fullmatch(r'[A-Za-z0-9.+_-]{1,100}',value) else None
         except Exception:
@@ -284,7 +287,7 @@ class Bundle:
         ca.write_bytes(Path(certifi.where()).read_bytes()+b'\n'+cert.read_bytes())
         self.env['SSL_CERT_FILE']=str(ca)
         self.manifest,self.cert,self.key=manifest,cert,key
-        self.proxy = Decoder(19125,18125,self.args.budget,self.out/'decoder-requests.jsonl')
+        self.proxy = Decoder(19125,self.decoder_upstream_port,self.args.budget,self.out/'decoder-requests.jsonl')
         self.proxy.start()
         self.monitor = threading.Thread(target=self.sample, daemon=True)
         self.monitor.start()
@@ -566,6 +569,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--long',action='store_true')
     parser.add_argument('--budget',type=int,default=2000)
+    parser.add_argument('--decoder-upstream-port',type=int,help='Use an existing owned loopback decoder/proxy instead of opening another SSH tunnel')
     parser.add_argument('--out',type=Path)
     parser.add_argument('--compare',type=Path)
     parser.add_argument('--ladder',type=Path,default=LADDER)
