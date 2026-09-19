@@ -401,6 +401,19 @@ def test_a_terminal_pass_that_does_not_own_the_whole_surface_is_refused():
         )
         == "terminal_must_replace_full_surface"
     )
+    assert (
+        refused(
+            session,
+            proposal(
+                session,
+                0,
+                SECOND,
+                (EffectiveTranscriptSegment(0, SECOND, "a", None, "final"),),
+                source="terminal",
+            ),
+        )
+        == "terminal_must_replace_full_surface"
+    )
 
 
 def test_a_closed_session_still_accepts_the_terminal_pass_it_is_waiting_for():

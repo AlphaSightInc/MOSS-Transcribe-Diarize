@@ -60,9 +60,18 @@ After repair, 5/15/30/201 minutes produced 120/360/720/4,824 segments in
 0.064/0.188/0.381/3.105 seconds of accelerated feed CPU. Output grew 6× from 5→30 minutes
 while CPU grew 5.95×; output grew 6.7× from 30→201 minutes while CPU grew 8.14×, far below
 the former quadratic 44.9× shape. The 201-minute point used 4.42 MB peak Python, a
-~0.034 ms snapshot, and ~0.84 ms Stop. Verdict: duration control/state passes; acoustic
-quality and real-decoder throughput remain deliberately unmeasured without this lane's GPU
-lease.
+~0.034 ms snapshot, and ~0.84 ms Stop. This is measured near-output-proportional growth over
+5/30/201 minutes, not a strict asymptotic claim: immutable tuple append still copies the
+accumulated segment references, so arbitrary-duration behavior remains unmeasured. Verdict:
+the tested duration control/state passes; acoustic quality and real-decoder throughput remain
+deliberately unmeasured without this lane's GPU lease.
+
+A follow-up authority falsifier extended the existing partial-terminal test from a nonzero
+start to a zero-start proposal whose end stopped short of the committed frontier. Before the
+repair, that short proposal was accepted and finalized the partial surface. The central
+terminal guard now requires exact ownership of `[0, committed_end)`; both partial shapes are
+refused as `terminal_must_replace_full_surface`. The focused live revision/session/terminal/
+window suite passed 110 tests plus 19 subtests. No external trigger or decoder was used.
 
 Machine receipts: `results.json`, `speech-scaling-before.json`,
 `speech-scaling-results.json`.

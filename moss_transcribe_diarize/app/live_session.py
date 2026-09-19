@@ -842,7 +842,10 @@ class LiveSession:
             # Terminal finalization is exempt from the frontier rule precisely because it
             # *replaces* the rolling surface rather than extending it -- and for that it must
             # own all of it, from the first sample.
-            if proposal.start_sample != 0:
+            if (
+                proposal.start_sample != 0
+                or proposal.end_sample != self._committed_samples
+            ):
                 return "terminal_must_replace_full_surface"
         elif proposal.start_sample != self._canonical_through_sample:
             return "not_at_frontier"
