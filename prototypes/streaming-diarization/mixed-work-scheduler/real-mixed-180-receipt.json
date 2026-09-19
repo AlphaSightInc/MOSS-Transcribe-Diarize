@@ -1,0 +1,158 @@
+{
+  "verdict": {
+    "scheduling": "PASS",
+    "transport_and_accounting": "PASS",
+    "identity_qualification": "FAIL",
+    "qualification_scope": "One local asymmetric mixed-work confirmation; not the six-case quality corpus or remote process-tree qualification."
+  },
+  "command_argv": [
+    "prototypes/capacity-campaign/run.py",
+    "--sessions",
+    "2",
+    "--seconds",
+    "180",
+    "--clips",
+    "mono_javier_intro_50s",
+    "discussion_jamie_dimon_180s",
+    "--stop-first-at",
+    "120",
+    "--mixed-background-at",
+    "15",
+    "--mixed-url-port",
+    "17939",
+    "--decoder-url",
+    "http://127.0.0.1:19135/v1",
+    "--stack-port",
+    "17930",
+    "--scratch",
+    ".sched-tmp/mixed-180",
+    "--out",
+    "evidence/round2/scheduling-mixed-180",
+    "--max-decoder-calls",
+    "245"
+  ],
+  "retained_raw_evidence": {
+    "result": "evidence/round2/scheduling-mixed-180/result.json",
+    "decoder_calls": "evidence/round2/scheduling-mixed-180/decoder.jsonl",
+    "scratch": ".sched-tmp/mixed-180"
+  },
+  "lease_accounting": {
+    "central_decoder": "http://127.0.0.1:19135/v1",
+    "global_calls_before": 80,
+    "new_calls": 171,
+    "global_calls_after": 251,
+    "active_calls_after": 0,
+    "retries": 0,
+    "foreign_load_detected": false,
+    "lease_transferred_by_root_after_run": true
+  },
+  "topology": {
+    "maximum_own_inflight": 2,
+    "decoder_start_threads": {
+      "moss-live-canonical-pump": 166,
+      "moss-lane-terminal_0": 3,
+      "asyncio_0": 1,
+      "asyncio_1": 1
+    },
+    "background_calls": 5,
+    "background_overlap_pairs": 0,
+    "realtime_calls_overlapping_background": 5,
+    "maximum_refinement_queue_depth": 1
+  },
+  "mixed_background": {
+    "scheduled_at_seconds": 15.0,
+    "source_seconds_each": 10,
+    "file": {
+      "status": "completed",
+      "segments": 3,
+      "accepted_at_seconds": 15.006568000011612,
+      "finished_at_seconds": 16.05793291601003
+    },
+    "url": {
+      "status": "completed",
+      "segments": 3,
+      "accepted_at_seconds": 15.006478958006483,
+      "finished_at_seconds": 16.057935666001868
+    },
+    "maximum_observed_batch_queue": 1,
+    "maximum_observed_live_active": 2
+  },
+  "asymmetric_stop": {
+    "first_session_stop_seconds": 120,
+    "other_session_stop_seconds": 180,
+    "first_stop_to_final_seconds": 3.9154792919871397,
+    "other_canonical_items_processed_during_first_settlement": 2,
+    "other_canonical_items_processed_after_first_stop_before_own_stop": 26
+  },
+  "prestop_inference": {
+    "canonical_processed_items": 140,
+    "rolling_completed_items": 28,
+    "stop_items": 2,
+    "decode_seconds": 36.85407078714343,
+    "accepted_audio_seconds": 300,
+    "real_time_factor": 0.12284690262381143
+  },
+  "fairness": {
+    "scope": "Two-session overlap through first Stop.",
+    "contended_pair_dispatch_observations": 12,
+    "maximum_contended_pair_dispatch_skew": 1,
+    "gate": 1,
+    "passes": true
+  },
+  "sessions": [
+    {
+      "clip": "mono_javier_intro_50s:0:800000",
+      "scheduled_seconds": 120,
+      "accepted_samples": 1920000,
+      "accounted_samples": 1920000,
+      "first_text_seconds": 1.5220189160027076,
+      "stop_to_final_seconds": 3.9154792919871397,
+      "p95_canonical_lag_seconds": 2.6122793204955475,
+      "prestop_backlog_p95_seconds": 2.629076701744395,
+      "prestop_first_third_median_seconds": 1.0745364580105523,
+      "prestop_last_third_median_seconds": 0.8062552500143596,
+      "queue_wait_p95_ms": 1725.8717874999995,
+      "processing_p95_ms": 625.1258503,
+      "speaker_accuracy": 0.992083,
+      "reference_coverage": 0.992083,
+      "diarization_error_rate": 0.007917,
+      "participant_presence_witness": "PASS"
+    },
+    {
+      "clip": "discussion_jamie_dimon_180s:0:2880000",
+      "scheduled_seconds": 180,
+      "accepted_samples": 2880000,
+      "accounted_samples": 2880000,
+      "first_text_seconds": 2.0416651249979623,
+      "stop_to_final_seconds": 11.273054459015839,
+      "word_error_rate": 0.06968641114982578,
+      "p95_canonical_lag_seconds": 1.6958403701862519,
+      "prestop_backlog_p95_seconds": 1.7025834493858243,
+      "prestop_first_third_median_seconds": 0.8125650409900089,
+      "prestop_last_third_median_seconds": 0.6942001665011048,
+      "queue_wait_p95_ms": 972.1007999999995,
+      "processing_p95_ms": 714.0752711,
+      "speaker_accuracy": 0.940618,
+      "reference_coverage": 0.94207,
+      "diarization_error_rate": 0.061728,
+      "reference_speaker_count": 3,
+      "hypothesis_speaker_count": 2,
+      "two_sided_mapping": false,
+      "speaker_correctness": {
+        "Ben": 0.969572,
+        "David": 0.924015,
+        "Jamie": 0.0
+      },
+      "zero_correct_reference_speakers": [
+        "Jamie"
+      ],
+      "participant_presence_witness": "FAIL"
+    }
+  ],
+  "interpretation": [
+    "The first meeting's bulk terminal settlement did not monopolize both decoder slots: the other live meeting processed two canonical items during that settlement and 26 before its own Stop.",
+    "All five background calls were serialized, while five realtime calls overlapped background work; observed peak decoder concurrency was two.",
+    "Both short File and URL jobs completed while both live sessions were active.",
+    "The panel transcript met its retained WER bound, but identity qualification failed because Jamie had zero correctly attributed reference speech and only two hypothesis speakers represented three reference speakers."
+  ]
+}

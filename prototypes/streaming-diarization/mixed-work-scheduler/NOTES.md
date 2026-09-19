@@ -84,3 +84,19 @@ Expected usage is 190–220 calls. `--max-decoder-calls 245` refuses locally bef
 250-call increment. The receipt retains exact argv, per-call audio duration/thread/start/finish,
 operator capacity observations, saved File/URL status and segment counts, per-session queue and
 processing clocks, pre-Stop backlog, Stop-to-final time, and provider peak concurrency.
+
+### Measured verdict
+
+The one authorized run used **171 calls** (global 80 → 251), with no retries, foreign load,
+or unfinished calls. Scheduling passed: peak concurrency was two, all five background calls
+were serialized, both 10-second File/URL jobs completed, and realtime calls overlapped each
+background class. After the 120-second meeting stopped, the 180-second meeting processed two
+canonical items during the first meeting's 3.92-second settlement and 26 before its own Stop.
+Its pre-Stop backlog p95 was 1.70 seconds and fell from a 0.81-second first-third median to a
+0.69-second last-third median. This confirms bounded mixed scheduling on the retained case; it
+does not establish a simulated p95 transfer or a multi-worker Live topology.
+
+Identity qualification did **not** pass. The panel's word error rate was 6.97%, but only two
+hypothesis speakers represented three references; Jamie had zero correctly attributed speech.
+The run therefore cannot support a general semantic qualification claim. Exact metrics and raw
+evidence locations are in `real-mixed-180-receipt.json`.
