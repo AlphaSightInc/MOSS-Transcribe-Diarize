@@ -10,9 +10,9 @@ One focused invocation collected `tests/test_live_lane_decode.py` without its im
 `ModuleNotFoundError: _browser_workspace_fixtures`; collecting that fixture in the same
 command passed `186 tests + 19 subtests`. This was invocation topology, not product behavior.
 
-**Out-of-scope finding:** `live_lane_decode.py` aggregates existing meeting-level decode
-fields across lanes but, without an edit, copies the new preparation/total fields from one
-template lane. Two-lane meeting totals therefore remain incomplete. That file is explicitly
-owned by another pane and MUST NOT be changed here. The fields are honest per finalizer call;
-an integrated two-lane aggregate requires its owner to sum reached lane clocks with null
-preservation before claiming meeting-level totals.
+**Lead ruling resolved the initial scope blocker:** this pane received narrow ownership of
+`live_lane_decode.py` timing aggregation only. Reached per-lane preparation, post-finalize,
+and total clocks are now null-preserving sums, matching the existing summed decode-work
+clock and preserving the additive partition. Lane decode, mapping, outcomes, and failure
+reasons are unchanged. Exact production-file ranges after the edit: lines 344-350 and
+365-367.

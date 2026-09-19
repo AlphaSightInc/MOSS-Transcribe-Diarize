@@ -337,6 +337,36 @@ def test_terminal_lane_decode_and_failure_preserves_committed_lane(
         assert result.accounting.reason == "lane_terminal_failed:" + lane
 
 
+def test_terminal_lane_stage_clocks_aggregate_all_reached_lanes(tmp_path):
+    c, _, session, arbiter = make()
+    c.accept_frame(frame())
+    commit(c, arbiter)
+    snapshot = session.snapshot()
+
+    result = finalize_lanes(
+        c,
+        TerminalTranscriptFinalizer(runner=Runner(None), scratch_dir=tmp_path),
+        plan=TerminalDecodePlan(
+            session.epoch, 40000, 0, RollingStatus.STOPPED, 0, 0
+        ),
+        tape=c.tape,
+        base_text_revision_version=0,
+        base_surface=snapshot.effective_transcript,
+        canonical_speakers=snapshot.identity_snapshot.canonical_speakers,
+    )
+
+    accounting = result.accounting
+    assert accounting.preparation_elapsed_sec is not None
+    assert accounting.decode_elapsed_sec is not None
+    assert accounting.other_finalize_elapsed_sec is not None
+    assert accounting.total_elapsed_sec == pytest.approx(
+        accounting.preparation_elapsed_sec
+        + accounting.decode_elapsed_sec
+        + accounting.other_finalize_elapsed_sec,
+        abs=1e-9,
+    )
+
+
 @pytest.mark.parametrize("same_voice", [False, True])
 def test_terminal_overlap_uses_own_lane_without_acoustic_probes(tmp_path, monkeypatch, same_voice):
     import moss_transcribe_diarize.app.live_lane_decode as lanes
