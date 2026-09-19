@@ -1,0 +1,93 @@
+{
+  "cancel_on_resume": {
+    "artifacts_exist": false,
+    "decoder_calls": 1,
+    "decoder_windows": [
+      40
+    ],
+    "order": [
+      "resume_cancelled_before_later_dispatch",
+      "durable_terminal_transition",
+      "artifacts_removed"
+    ],
+    "publication_calls": 0,
+    "status": "interrupted"
+  },
+  "positive_file": {
+    "artifacts_exist_after_terminal": false,
+    "committed_before_restart": 40,
+    "first_new_window": 40,
+    "ingress": "file",
+    "last_new_window": 100,
+    "new_decoder_calls": 61,
+    "published_version": 1,
+    "remote_url_fetches_on_resume": 0,
+    "reopened_segments": 101,
+    "reopened_status": "completed",
+    "retained_local_source": true,
+    "second_publication_refused": true,
+    "unique_reopened_segments": 101
+  },
+  "positive_url": {
+    "artifacts_exist_after_terminal": false,
+    "committed_before_restart": 40,
+    "first_new_window": 40,
+    "ingress": "url",
+    "last_new_window": 100,
+    "new_decoder_calls": 61,
+    "published_version": 1,
+    "remote_url_fetches_on_resume": 0,
+    "reopened_segments": 101,
+    "reopened_status": "completed",
+    "retained_local_source": true,
+    "second_publication_refused": true,
+    "unique_reopened_segments": 101
+  },
+  "production_change": "prototype only; no production implementation",
+  "question": "Can one retained active File Meeting remain the sole restart owner?",
+  "sqlite_runtime": "3.50.4",
+  "sqlite_semantic_store_allowance": true,
+  "verdict": "SUPPORTED",
+  "violating_controls": [
+    {
+      "control": "wrong_account",
+      "decoder_calls": 0,
+      "publication_calls": 0,
+      "reason": "retained work owner mismatch",
+      "reason_type": "RuntimeError",
+      "refused": true
+    },
+    {
+      "control": "wrong_meeting",
+      "decoder_calls": 0,
+      "publication_calls": 0,
+      "reason": "retained work owner mismatch",
+      "reason_type": "RuntimeError",
+      "refused": true
+    },
+    {
+      "control": "wrong_source",
+      "decoder_calls": 0,
+      "publication_calls": 0,
+      "reason": "checkpoint source SHA mismatch",
+      "reason_type": "_CheckpointError",
+      "refused": true
+    },
+    {
+      "control": "changed_inference",
+      "decoder_calls": 0,
+      "publication_calls": 0,
+      "reason": "checkpoint contract fingerprint mismatch",
+      "reason_type": "_CheckpointError",
+      "refused": true
+    },
+    {
+      "control": "broken_prefix",
+      "decoder_calls": 0,
+      "publication_calls": 0,
+      "reason": "checkpoint committed prefix has a gap",
+      "reason_type": "_CheckpointError",
+      "refused": true
+    }
+  ]
+}
