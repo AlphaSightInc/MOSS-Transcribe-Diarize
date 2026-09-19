@@ -42,6 +42,7 @@ describe("speakerMap", () => {
   it("treats default labels as unidentified and namespaces unknown legend keys by label", () => {
     expect(isUnidentifiedSpeakerLabel("SPEAKER_04")).toBe(true);
     expect(isUnidentifiedSpeakerLabel("UNKNOWN")).toBe(true);
+    expect(isUnidentifiedSpeakerLabel("S00")).toBe(true);
     expect(isUnidentifiedSpeakerLabel("Alex Rivera")).toBe(false);
 
     expect(buildSpeakerLegendKey("UNKNOWN", "SPEAKER_01")).toBe("unknown:SPEAKER_01");
@@ -51,5 +52,10 @@ describe("speakerMap", () => {
   it("displays backend UNKNOWN as Preview", () => {
     expect(resolveDisplayLabel("UNKNOWN")).toBe("Preview");
     expect(resolveVisibleSpeakerLabel("UNKNOWN", new Map())).toBe("Preview");
+  });
+
+  it("displays backend S00 as Speaker uncertain", () => {
+    expect(resolveDisplayLabel("S00")).toBe("Speaker uncertain");
+    expect(resolveVisibleSpeakerLabel("S00", new Map())).toBe("Speaker uncertain");
   });
 });

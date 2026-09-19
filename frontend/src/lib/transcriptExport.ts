@@ -1,6 +1,7 @@
 import { compareTranscriptOrder } from "./transcriptOrder.ts";
 import type { SourceLane } from "./transcriptOrder.ts";
 import type { TranscriptTurn } from "./mergeTranscript";
+import { isBackendUnknownSpeakerId, UNKNOWN_SPEAKER_ID } from "./speakerMap";
 
 export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json", "srt", "vtt"] as const;
 export type TranscriptExportFormat = (typeof TRANSCRIPT_EXPORT_FORMATS)[number];
@@ -135,20 +136,24 @@ export function buildTranscriptExportJsonDocument(
     ...(hasProvisionalAttribution(turns)
       ? { provisional_attribution_notice: TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT }
       : {}),
-    turns: [...turns].sort(compareTranscriptOrder).map((turn) => ({
-      ...(turn.source_lane ? { source_lane: turn.source_lane } : {}),
-      start: turn.start,
-      end: turn.end,
-      speaker: turn.speaker,
-      speaker_entity_id: turn.speaker_entity_id,
-      display_name: turn.display_name,
-      speaker_label: resolveExportLabel(turn, resolveLabel),
-      state: turn.state,
-      text: turn.text,
-      segment_ids: [...turn.segment_ids],
-      target_segment_keys: [...turn.target_segment_keys],
-      provisional_stale: turn.provisional_stale
-    }))
+    turns: [...turns].sort(compareTranscriptOrder).map((turn) => {
+      const speakerLabel = resolveExportLabel(turn, resolveLabel);
+      const unidentified = isBackendUnknownSpeakerId(turn.speaker_entity_id);
+      return {
+        ...(turn.source_lane ? { source_lane: turn.source_lane } : {}),
+        start: turn.start,
+        end: turn.end,
+        speaker: unidentified ? UNKNOWN_SPEAKER_ID : turn.speaker,
+        speaker_entity_id: unidentified ? UNKNOWN_SPEAKER_ID : turn.speaker_entity_id,
+        display_name: unidentified ? speakerLabel : turn.display_name,
+        speaker_label: speakerLabel,
+        state: turn.state,
+        text: turn.text,
+        segment_ids: [...turn.segment_ids],
+        target_segment_keys: [...turn.target_segment_keys],
+        provisional_stale: turn.provisional_stale
+      };
+    })
   };
 }
 

@@ -162,5 +162,17 @@ it.each(["md", "txt", "json", "srt", "vtt"] as const)(
     );
     expect(file.content).toContain("Needs review");
     expect(file.content).toContain("Speaker uncertain");
+    expect(file.content).not.toContain("S00");
   }
 );
+
+it("does not synthesize an SRT artifact for an empty review transcript", () => {
+  const file = serializeTranscriptExport(
+    "srt",
+    [],
+    () => "Speaker uncertain",
+    { sessionId: "empty-review", exportedAt: new Date(0) },
+    { needsReview: true }
+  );
+  expect(file.content).toBe("");
+});

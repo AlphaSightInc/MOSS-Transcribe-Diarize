@@ -16,7 +16,6 @@ import {
   buildSpeakerColorMap,
   buildSpeakerLegendKey,
   isBackendUnknownSpeakerId,
-  isUnidentifiedSpeakerLabel,
   resolveSpeakerColorToken,
   resolveVisibleSpeakerLabel
 } from "../lib/speakerMap";
@@ -686,9 +685,12 @@ export function TranscriptPane() {
 }
 
 function visibleSpeakerName(
-  item: { speaker: string; display_name: string },
+  item: { speaker: string; speaker_entity_id: string; display_name: string },
   consecutiveSpeakerMap: ReadonlyMap<string, string>
 ): string {
+  if (isBackendUnknownSpeakerId(item.speaker_entity_id)) {
+    return resolveVisibleSpeakerLabel(item.speaker_entity_id, consecutiveSpeakerMap);
+  }
   // A user may choose a label that looks like a generic speaker tag. Names are
   // literal display text, not input to automatic numbering.
   return item.display_name !== item.speaker
@@ -718,7 +720,7 @@ function buildLegendEntries(
         visibleLabel,
         speakerId: item.speaker_entity_id,
         committed: item.state !== "provisional",
-        isUnidentified: isUnidentifiedSpeakerLabel(visibleLabel),
+        isUnidentified: isBackendUnknownSpeakerId(item.speaker_entity_id),
         colorToken: resolveSpeakerColorToken(item.speaker, speakerColorMap)
       });
     } else if (item.state !== "provisional") {

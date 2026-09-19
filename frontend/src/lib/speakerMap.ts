@@ -2,7 +2,7 @@ import type { TranscriptItem } from "../api/types";
 import { normalizeInlineWhitespace } from "./text";
 
 const SPEAKER_ID_PATTERN = /^SPEAKER_(\d+)$/;
-const UNKNOWN_SPEAKER_ID = "UNKNOWN";
+export const UNKNOWN_SPEAKER_ID = "UNKNOWN";
 const UNATTRIBUTED_SPEAKER_ID = "S00";
 const UNKNOWN_DISPLAY_LABEL = "Preview";
 const UNCERTAIN_DISPLAY_LABEL = "Speaker uncertain";
@@ -55,7 +55,9 @@ export function resolveVisibleSpeakerLabel(
 
 export function resolveDisplayLabel(displayName: string): string {
   const normalizedDisplayName = normalizeDisplayNameForStorage(displayName);
-  return normalizedDisplayName === UNKNOWN_SPEAKER_ID ? UNKNOWN_DISPLAY_LABEL : normalizedDisplayName;
+  if (normalizedDisplayName === UNKNOWN_SPEAKER_ID) return UNKNOWN_DISPLAY_LABEL;
+  if (normalizedDisplayName === UNATTRIBUTED_SPEAKER_ID) return UNCERTAIN_DISPLAY_LABEL;
+  return normalizedDisplayName;
 }
 
 export function isBackendUnknownSpeakerId(speakerId: unknown): boolean {
@@ -69,7 +71,8 @@ export function isUnidentifiedSpeakerLabel(displayName: unknown): boolean {
     return true;
   }
 
-  return normalizedDisplayName === UNKNOWN_SPEAKER_ID || normalizedDisplayName === UNCERTAIN_DISPLAY_LABEL ||
+  return normalizedDisplayName === UNKNOWN_SPEAKER_ID || normalizedDisplayName === UNATTRIBUTED_SPEAKER_ID ||
+    normalizedDisplayName === UNCERTAIN_DISPLAY_LABEL ||
     SPEAKER_ID_PATTERN.test(normalizedDisplayName);
 }
 

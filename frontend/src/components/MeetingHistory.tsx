@@ -352,7 +352,6 @@ export function MeetingHistory() {
 
 function publishMeeting(meeting: Meeting, observeActive: boolean): void {
   sessionTitle.value = meetingTitle(meeting);
-  sessionNeedsReview.value = meeting.needs_review === true;
   dispatchWsEvent({
     type: "session_state",
     session_id: meeting.id,
@@ -362,7 +361,8 @@ function publishMeeting(meeting: Meeting, observeActive: boolean): void {
     error: meeting.status === "failed" || meeting.status === "interrupted"
       ? meeting.failure_reason || statusLabel(meeting.status)
       : null,
-    status_line: meeting.failure_reason || meeting.notice || (meeting.status === "active" ? "Meeting active" : statusLabel(meeting.status))
+    status_line: meeting.failure_reason || meeting.notice || (meeting.status === "active" ? "Meeting active" : statusLabel(meeting.status)),
+    needs_review: meeting.needs_review
   });
   dispatchWsEvent({
     type: "transcript_update",

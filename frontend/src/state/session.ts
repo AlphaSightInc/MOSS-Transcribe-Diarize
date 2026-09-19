@@ -34,7 +34,8 @@ export function applySessionStateEvent(
   sessionStatus.value = event.status;
   sessionError.value = event.error ?? null;
   sessionStatusLine.value = event.status_line ?? null;
-  if (event.status === "active") sessionNeedsReview.value = false;
+  if (typeof event.needs_review === "boolean") sessionNeedsReview.value = event.needs_review;
+  else if (event.status === "active") sessionNeedsReview.value = false;
 }
 
 export function applyTranscriptUpdate(
