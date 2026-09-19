@@ -1,0 +1,190 @@
+{
+  "scope": "deterministic lifecycle only; no acoustic-quality claim",
+  "cases": [
+    {
+      "case": "nonzero_empty_then_later_speech",
+      "after_empty": {
+        "nonzero_pcm": true,
+        "lane_failure": "lane_refinement_failed",
+        "failed_lanes": [
+          "system"
+        ],
+        "stopped_lanes": [
+          "system"
+        ],
+        "rolling": {
+          "status": "window_failed",
+          "windows_planned": 1,
+          "windows_completed": 0,
+          "windows_failed": 1,
+          "proposal_refusals": 0,
+          "last_proposal_refusal": null,
+          "stale_completions": 0,
+          "decoded_audio_samples": 160000,
+          "accepted_samples": 160000,
+          "observed_frontier_sample": 0,
+          "retained_samples": 0,
+          "retained_high_water_samples": 160000,
+          "max_retained_samples": 320000,
+          "in_flight_request_id": null
+        },
+        "rolling_calls": [
+          {
+            "start_sample": 0,
+            "end_sample": 160000
+          }
+        ],
+        "base_words": [
+          "base opening survives",
+          "base later speech survives"
+        ]
+      },
+      "later_plan_counts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "rolling_calls_total": 1,
+      "stop_plan": {
+        "rolling_status": "window_failed",
+        "windows_completed": 0,
+        "windows_failed": 1
+      },
+      "terminal_calls": 1,
+      "terminal_outcome": "finalized",
+      "publication_applied": true,
+      "finalization_status": "final",
+      "saved_words": [
+        "terminal opening",
+        "terminal later speech"
+      ],
+      "terminal_words_saved": true
+    },
+    {
+      "case": "repeated_empty_attempts_are_suppressed",
+      "after_empty": {
+        "nonzero_pcm": true,
+        "lane_failure": "lane_refinement_failed",
+        "failed_lanes": [
+          "system"
+        ],
+        "stopped_lanes": [
+          "system"
+        ],
+        "rolling": {
+          "status": "window_failed",
+          "windows_planned": 1,
+          "windows_completed": 0,
+          "windows_failed": 1,
+          "proposal_refusals": 0,
+          "last_proposal_refusal": null,
+          "stale_completions": 0,
+          "decoded_audio_samples": 160000,
+          "accepted_samples": 160000,
+          "observed_frontier_sample": 0,
+          "retained_samples": 0,
+          "retained_high_water_samples": 160000,
+          "max_retained_samples": 320000,
+          "in_flight_request_id": null
+        },
+        "rolling_calls": [
+          {
+            "start_sample": 0,
+            "end_sample": 160000
+          }
+        ],
+        "base_words": [
+          "base opening survives",
+          "base later speech survives"
+        ]
+      },
+      "later_plan_counts": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "rolling_calls_total": 1,
+      "stop_plan": {
+        "rolling_status": "window_failed",
+        "windows_completed": 0,
+        "windows_failed": 1
+      },
+      "terminal_calls": 1,
+      "terminal_outcome": "finalized",
+      "publication_applied": true,
+      "finalization_status": "final",
+      "saved_words": [
+        "terminal opening",
+        "terminal later speech"
+      ],
+      "terminal_words_saved": true
+    },
+    {
+      "case": "stop_immediately_after_empty",
+      "after_empty": {
+        "nonzero_pcm": true,
+        "lane_failure": "lane_refinement_failed",
+        "failed_lanes": [
+          "system"
+        ],
+        "stopped_lanes": [
+          "system"
+        ],
+        "rolling": {
+          "status": "window_failed",
+          "windows_planned": 1,
+          "windows_completed": 0,
+          "windows_failed": 1,
+          "proposal_refusals": 0,
+          "last_proposal_refusal": null,
+          "stale_completions": 0,
+          "decoded_audio_samples": 160000,
+          "accepted_samples": 160000,
+          "observed_frontier_sample": 0,
+          "retained_samples": 0,
+          "retained_high_water_samples": 160000,
+          "max_retained_samples": 320000,
+          "in_flight_request_id": null
+        },
+        "rolling_calls": [
+          {
+            "start_sample": 0,
+            "end_sample": 160000
+          }
+        ],
+        "base_words": [
+          "base opening survives",
+          "base later speech survives"
+        ]
+      },
+      "later_plan_counts": [],
+      "rolling_calls_total": 1,
+      "stop_plan": {
+        "rolling_status": "window_failed",
+        "windows_completed": 0,
+        "windows_failed": 1
+      },
+      "terminal_calls": 1,
+      "terminal_outcome": "finalized",
+      "publication_applied": true,
+      "finalization_status": "final",
+      "saved_words": [
+        "terminal opening",
+        "terminal later speech"
+      ],
+      "terminal_words_saved": true
+    }
+  ],
+  "assertions": {
+    "all_nonzero_empty_windows_stop_rolling": true,
+    "later_windows_make_no_more_rolling_calls": true,
+    "later_plans_are_suppressed": true,
+    "stop_preserves_failure_reason": true,
+    "terminal_runs_once_and_publishes": true,
+    "terminal_words_reach_saved_document": true
+  },
+  "keep_current_policy": true,
+  "retry_design": "defer_without_real_benefit_and_hallucination_evidence"
+}
