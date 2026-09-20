@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 from pathlib import Path
 
@@ -17,4 +18,7 @@ def permit_test_runner_sqlite(request: pytest.FixtureRequest, monkeypatch: pytes
     if request.node.path.is_relative_to(Path(__file__).parent / "phase2"):
         from moss_transcribe_diarize.app import phase2
 
+        if os.environ.get("MOSS_TEST_REAL_SQLITE") == "1":
+            assert sqlite3.sqlite_version == phase2.REQUIRED_SQLITE_RUNTIME
+            return
         monkeypatch.setattr(phase2, "REQUIRED_SQLITE_RUNTIME", sqlite3.sqlite_version)
