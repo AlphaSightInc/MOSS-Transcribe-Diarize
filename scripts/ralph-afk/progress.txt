@@ -239,3 +239,5 @@ default budget (S17, third mismatch). This run repairs both without touching pro
   prototype verdict there; this is the B7-permitted justification, so the note is not moved.
 - Next: rewrite `docs/verify/round4-run-a/VERIFY.md` for segment-granular custody and honest inherited-control claims,
   then rerun the required full backend/frontend/typecheck checkpoint.
+
+[loop 20260920-221141-79363] budget exhausted after 6 iterations
