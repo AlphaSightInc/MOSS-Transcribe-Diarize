@@ -3,6 +3,7 @@ import importlib.util
 import io
 import math
 import os
+import dataclasses
 import wave
 import json
 import sys
@@ -14,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from moss_transcribe_diarize.app.vllm_runner import VllmRunner
 from moss_transcribe_diarize.app.live_coordinator import LiveCoordinator
+from moss_transcribe_diarize.app.inference_scheduler import InferenceDispatchScheduler
 
 state = Path(sys.argv[sys.argv.index('--state') + 1])
 state.mkdir(parents=True, exist_ok=True)
@@ -28,6 +30,37 @@ active = 0
 sent = 0
 completed = 0
 max_calls = int(os.environ.get('MOSS_MAX_OWN_DECODER_CALLS', '0')) or None
+stage_lock = threading.Lock()
+schedulers = []
+
+
+# Prototype-only in-process observation. Production scheduling is unchanged.
+original_scheduler_init = InferenceDispatchScheduler.__init__
+original_scheduler_run = InferenceDispatchScheduler._run
+
+
+def captured_scheduler_init(self, *args, **kwargs):
+    original_scheduler_init(self, *args, **kwargs)
+    schedulers.append(self)
+
+
+def captured_scheduler_run(self, *args, **kwargs):
+    try:
+        return original_scheduler_run(self, *args, **kwargs)
+    finally:
+        with stage_lock:
+            rows = [
+                dataclasses.asdict(timing)
+                for scheduler in schedulers
+                for timing in scheduler.dispatch_timings()
+            ]
+            temporary = state / 'dispatch-timings.tmp'
+            temporary.write_text(json.dumps(rows, indent=2) + '\n')
+            temporary.replace(state / 'dispatch-timings.json')
+
+
+InferenceDispatchScheduler.__init__ = captured_scheduler_init
+InferenceDispatchScheduler._run = captured_scheduler_run
 
 
 def record(kind, **extra):

@@ -1,0 +1,8 @@
+{
+  "source": "/Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json",
+  "destination": ".fix-runner-tmp/manifest-240m.json",
+  "minutes": 240,
+  "max_tape_bytes": 460800000,
+  "max_tape_seconds": 14400.0,
+  "shared_source_unchanged": true
+}
