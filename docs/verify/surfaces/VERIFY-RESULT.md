@@ -18,10 +18,11 @@ reachability, and real-provider semantics remain unverified as stated in `NOTES.
 
 ## Lead-issued fresh context — 2026-09-20
 
-**FAIL.** Steps 2–6 passed; step 1 failed its literal HEAD requirement.
+**PASS.** Steps 1–6 passed.
 
-1. **FAIL** — branch `round4/surfaces`; starting HEAD
-   `de0a44129fa609ed71e3b655d9d250f2e205d94d`, not prefix `89f833ac`.
+1. **PASS** — `git merge-base HEAD 89f833acd4c654dd702664a17ed19783a2999c95`
+   printed `89f833acd4c654dd702664a17ed19783a2999c95`; `git branch --show-current`
+   printed `round4/surfaces`.
 2. **PASS** — Python compile `4/4`; `sh -n` `1/1`.
 3. **PASS** — Background gate exit `77`; `BLOCKED-ON-SESSION` `1/1`; no browser
    launch path reached.

@@ -2,7 +2,9 @@
 
 Run from this clone with `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.`.
 
-1. `git rev-parse HEAD` starts at `89f833ac`; branch is `round4/surfaces`.
+1. `git merge-base HEAD 89f833acd4c654dd702664a17ed19783a2999c95` prints
+   `89f833acd4c654dd702664a17ed19783a2999c95`; `git branch --show-current` prints
+   `round4/surfaces`.
 2. Compile the four Python files under `prototypes/surfaces/` and run
    `sh -n prototypes/surfaces/run-summaries.sh`; expect success.
 3. Run `prototypes/surfaces/run_hidden_cases.py 3,15 --headed`. In this Background
