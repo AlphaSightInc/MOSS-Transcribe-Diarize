@@ -40,8 +40,9 @@ or message another pane. Use the Python below with `PYTHONDONTWRITEBYTECODE=1 PY
 
    Expect backend 2,103 passed / 5 skipped / 37 subtests; frontend 310/310 in
    28 files; typecheck/build exit 0. Record any failure; do not waive it.
-6. Confirm `lsof` has no listener on 18271, 17990, or 17991; GPU lease file says
-   `FREE`; `git diff --exit-code` and `git status --short` are empty after build.
+6. Confirm `lsof` has no listener on 18271, 17990, or 17991; GPU lease is not held
+   by PANE-3.3 (another pane may legitimately acquire it after PANE-3.3 released it);
+   `git diff --exit-code` and `git status --short` are empty after build.
 7. Write `docs/verify/fix-runner/VERIFY-RESULT.md` with fresh-context provenance,
    inspected SHA, commands, exact counts/timings, all falsifiers, cleanup, and limits.
    Commit only that result locally. Final status must be clean. No further `/new`.
