@@ -1,0 +1,3951 @@
+{
+  "causal_spans": [
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [],
+          "provisional": true
+        }
+      },
+      "album_before": {},
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "provisional",
+        "duration_sec": 1.42,
+        "span_id": 0
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "0",
+        "span_samples": "0:40000",
+        "status": "prepared"
+      },
+      "end_sec": 2.5,
+      "local_speech_sec": {
+        "S101": 1.8599999999999999
+      },
+      "retained_transcript": "[0.57][S01]Yeah, that's the question, right?[1.99][2.06][S01]The amazing.[2.5]",
+      "scores_before_commit": {
+        "S101": {}
+      },
+      "span_id": 0,
+      "span_sec": 2.5,
+      "start_sec": 0.0,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [],
+          "provisional": true
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.48,
+        "span_id": 1
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "1",
+        "span_samples": "40000:80000",
+        "status": "prepared"
+      },
+      "end_sec": 5.0,
+      "local_speech_sec": {
+        "S101": 2.48
+      },
+      "retained_transcript": "[0][S01]thing is that after two and a half[2.48]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.6525260634161919
+        }
+      },
+      "span_id": 1,
+      "span_sec": 2.5,
+      "start_sec": 2.5,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.36,
+        "span_id": 2
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "2",
+        "span_samples": "80000:120000",
+        "status": "prepared"
+      },
+      "end_sec": 7.5,
+      "local_speech_sec": {
+        "S101": 2.36
+      },
+      "retained_transcript": "[0.08][S01]millennia of, you know, people yelling at each[2.44]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.7093369212457374
+        }
+      },
+      "span_id": 2,
+      "span_sec": 2.5,
+      "start_sec": 5.0,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.48,
+        "span_id": 3
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "3",
+        "span_samples": "120000:160000",
+        "status": "prepared"
+      },
+      "end_sec": 10.0,
+      "local_speech_sec": {
+        "S101": 2.48
+      },
+      "retained_transcript": "[0][S01]each other or setting each other on fire occasionally over the[2.48]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.7510585378362914
+        }
+      },
+      "span_id": 3,
+      "span_sec": 2.5,
+      "start_sec": 7.5,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.42,
+        "span_id": 4
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "4",
+        "span_samples": "160000:200000",
+        "status": "prepared"
+      },
+      "end_sec": 12.5,
+      "local_speech_sec": {
+        "S101": 2.42
+      },
+      "retained_transcript": "[0.08][S01]answer, we now actually have the capacity.[2.5]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.8503609730382039
+        }
+      },
+      "span_id": 4,
+      "span_sec": 2.5,
+      "start_sec": 10.0,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.46,
+        "span_id": 5
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "5",
+        "span_samples": "200000:240000",
+        "status": "prepared"
+      },
+      "end_sec": 15.0,
+      "local_speech_sec": {
+        "S101": 2.46
+      },
+      "retained_transcript": "[0][S01]To answer that question. So in the next[2.46]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.8594230664101974
+        }
+      },
+      "span_id": 5,
+      "span_sec": 2.5,
+      "start_sec": 12.5,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.46,
+        "span_id": 6
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "6",
+        "span_samples": "240000:280000",
+        "status": "prepared"
+      },
+      "end_sec": 17.5,
+      "local_speech_sec": {
+        "S101": 2.46
+      },
+      "retained_transcript": "[0][S01]Ten, twenty, thirty years, we're gonna have[2.46]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.8636579876270896
+        }
+      },
+      "span_id": 6,
+      "span_sec": 2.5,
+      "start_sec": 15.0,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.5,
+        "span_id": 7
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "7",
+        "span_samples": "280000:320000",
+        "status": "prepared"
+      },
+      "end_sec": 20.0,
+      "local_speech_sec": {
+        "S101": 2.5
+      },
+      "retained_transcript": "[0][S01]data relevant to the answer to that question.[2.5]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.8897014263066351
+        }
+      },
+      "span_id": 7,
+      "span_sec": 2.5,
+      "start_sec": 17.5,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.04,
+        "span_id": 8
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "8",
+        "span_samples": "320000:360000",
+        "status": "prepared"
+      },
+      "end_sec": 22.5,
+      "local_speech_sec": {
+        "S101": 2.04
+      },
+      "retained_transcript": "[0.41][S01]We're gonna have hard data finally.[2.45]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.8265158988491863
+        }
+      },
+      "span_id": 8,
+      "span_sec": 2.5,
+      "start_sec": 20.0,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.08,
+        "span_id": 9
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "9",
+        "span_samples": "360000:400000",
+        "status": "prepared"
+      },
+      "end_sec": 25.0,
+      "local_speech_sec": {
+        "S101": 2.08
+      },
+      "retained_transcript": "[0.39][S01]That will, one way or the other, you know, even[2.47]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.7955346115258571
+        }
+      },
+      "span_id": 9,
+      "span_sec": 2.5,
+      "start_sec": 22.5,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "digital_silence_guard",
+      "end_sec": 25.25,
+      "retained_transcript": "",
+      "span_id": 10,
+      "span_sec": 0.25,
+      "start_sec": 25.0,
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "digital_silence_guard",
+      "end_sec": 27.75,
+      "retained_transcript": "",
+      "span_id": 11,
+      "span_sec": 2.5,
+      "start_sec": 25.25,
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "digital_silence_guard",
+      "end_sec": 30.25,
+      "retained_transcript": "",
+      "span_id": 12,
+      "span_sec": 2.5,
+      "start_sec": 27.75,
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "digital_silence_guard",
+      "end_sec": 32.75,
+      "retained_transcript": "",
+      "span_id": 13,
+      "span_sec": 2.5,
+      "start_sec": 30.25,
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "digital_silence_guard",
+      "end_sec": 34.9,
+      "retained_transcript": "",
+      "span_id": 14,
+      "span_sec": 2.15,
+      "start_sec": 32.75,
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.36,
+        "span_id": 15
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "15",
+        "span_samples": "558400:598400",
+        "status": "prepared"
+      },
+      "end_sec": 37.4,
+      "local_speech_sec": {
+        "S101": 2.36
+      },
+      "retained_transcript": "[0.08][S01]I can tell you, uh, which is was an important part of the.[2.44]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.8366065754329858
+        }
+      },
+      "span_id": 15,
+      "span_sec": 2.5,
+      "start_sec": 34.9,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.32,
+              "span_id": 16
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.04,
+              "span_id": 8
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.32,
+        "span_id": 16
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "16",
+        "span_samples": "598400:638400",
+        "status": "prepared"
+      },
+      "end_sec": 39.9,
+      "local_speech_sec": {
+        "S101": 2.32
+      },
+      "retained_transcript": "[0][S01]Problem is, how many planets are there?[2.32]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.7963727420705264
+        }
+      },
+      "span_id": 16,
+      "span_sec": 2.5,
+      "start_sec": 37.4,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.32,
+              "span_id": 16
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.32,
+              "span_id": 16
+            },
+            {
+              "duration_sec": 2.08,
+              "span_id": 9
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.46,
+        "span_id": 17
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "17",
+        "span_samples": "638400:678400",
+        "status": "prepared"
+      },
+      "end_sec": 42.4,
+      "local_speech_sec": {
+        "S101": 2.46
+      },
+      "retained_transcript": "[0][S01]Right? And just like people have been arguing.[2.46]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.8444054092896263
+        }
+      },
+      "span_id": 17,
+      "span_sec": 2.5,
+      "start_sec": 39.9,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.32,
+              "span_id": 16
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.32,
+              "span_id": 16
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "rejected_below_admission",
+        "duration_sec": 1.88,
+        "span_id": 18
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "18",
+        "span_samples": "678400:718400",
+        "status": "prepared"
+      },
+      "end_sec": 44.9,
+      "local_speech_sec": {
+        "S101": 1.88
+      },
+      "retained_transcript": "[0.11][S01]About the existence of life else.[1.99]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.7976618813087786
+        }
+      },
+      "span_id": 18,
+      "span_sec": 2.5,
+      "start_sec": 42.4,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.32,
+              "span_id": 16
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.44,
+        "span_id": 19
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "19",
+        "span_samples": "718400:758400",
+        "status": "prepared"
+      },
+      "end_sec": 47.4,
+      "local_speech_sec": {
+        "S101": 2.44
+      },
+      "retained_transcript": "[0][S01]where for 2,500 years[2.44]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.8575843244884502
+        }
+      },
+      "span_id": 19,
+      "span_sec": 2.5,
+      "start_sec": 44.9,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "rejected_weaker_than_bank",
+        "duration_sec": 2.34,
+        "span_id": 20
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "20",
+        "span_samples": "758400:798400",
+        "status": "prepared"
+      },
+      "end_sec": 49.9,
+      "local_speech_sec": {
+        "S101": 2.34
+      },
+      "retained_transcript": "[0.08][S01]have been arguing about planets for the exact same[2.42]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.8772315087685407
+        }
+      },
+      "span_id": 20,
+      "span_sec": 2.5,
+      "start_sec": 47.4,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "rejected_weaker_than_bank",
+        "duration_sec": 2.34,
+        "span_id": 21
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "21",
+        "span_samples": "798400:838400",
+        "status": "prepared"
+      },
+      "end_sec": 52.4,
+      "local_speech_sec": {
+        "S101": 2.34
+      },
+      "retained_transcript": "[0][S01]On a time, right? You can see Aristotle yelling.[2.34]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.9062955849028755
+        }
+      },
+      "span_id": 21,
+      "span_sec": 2.5,
+      "start_sec": 49.9,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "rejected_weaker_than_bank",
+        "duration_sec": 2.31,
+        "span_id": 22
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "22",
+        "span_samples": "838400:878400",
+        "status": "prepared"
+      },
+      "end_sec": 54.9,
+      "local_speech_sec": {
+        "S101": 2.31
+      },
+      "retained_transcript": "[0.12][S01]At Democratists about this, you know, you can see they had.[2.43]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.897831273791559
+        }
+      },
+      "span_id": 22,
+      "span_sec": 2.5,
+      "start_sec": 52.4,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 2
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "admitted",
+        "duration_sec": 2.5,
+        "span_id": 23
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "23",
+        "span_samples": "878400:918400",
+        "status": "prepared"
+      },
+      "end_sec": 57.4,
+      "local_speech_sec": {
+        "S101": 2.5
+      },
+      "retained_transcript": "[0][S01]very wildly different opinions about how common plant[2.5]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.9008859120354503
+        }
+      },
+      "span_id": 23,
+      "span_sec": 2.5,
+      "start_sec": 54.9,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_observation": {
+        "canonical_speaker": "speaker-0001",
+        "disposition": "rejected_below_admission",
+        "duration_sec": 1.9200000000000002,
+        "span_id": 24
+      },
+      "diagnostics": {
+        "assignments": "S101->speaker-0001",
+        "canonical_speakers": "speaker-0001",
+        "deferred_births": "",
+        "local_speakers": "S101",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "24",
+        "span_samples": "918400:958400",
+        "status": "prepared"
+      },
+      "end_sec": 59.9,
+      "local_speech_sec": {
+        "S101": 1.9200000000000002
+      },
+      "retained_transcript": "[0.45][S01]We're going to be and how unique Earth was.[2.37]",
+      "scores_before_commit": {
+        "S101": {
+          "speaker-0001": 0.8617050792542983
+        }
+      },
+      "span_id": 24,
+      "span_sec": 2.5,
+      "start_sec": 57.4,
+      "status": "prepared",
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    },
+    {
+      "album_after": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "album_before": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "retained_unattributed_local_trace_unavailable",
+      "end_sec": 60.0,
+      "retained_transcript": "[0][S00]I[0.06]",
+      "span_id": 25,
+      "span_sec": 0.1,
+      "start_sec": 59.9,
+      "thresholds": {
+        "album_admission_sec": 2.0,
+        "birth_min_sec": 1.0,
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "min_segment_samples": 8000,
+        "min_segment_sec": 0.5
+      }
+    }
+  ],
+  "decoder_requests": 0,
+  "hypotheses": {
+    "a_evidence_or_admission_floor": {
+      "state": {
+        "album_admission_sec": 2.0,
+        "duration_sec": 0.27,
+        "min_segment_samples": 8000,
+        "samples": 4320
+      },
+      "verdict": "SUPPORTED_min_segment_only"
+    },
+    "b_birth_floor": {
+      "state": {
+        "birth_min_sec": 1.0,
+        "duration_sec": 0.27,
+        "fallback_assignment": "S01->speaker-0002",
+        "revision_reader_has_album": false
+      },
+      "verdict": "EXCLUDED_as_guard_at_revision_seam"
+    },
+    "c_match_score_margin": {
+      "state": {
+        "min_match_margin": 0.1,
+        "min_match_score": 0.35,
+        "scores": {}
+      },
+      "verdict": "EXCLUDED_no_vector_no_score"
+    },
+    "d_deferred_birth": {
+      "state": {
+        "assignments": "S01->speaker-0002",
+        "canonical_speakers": "speaker-0001,speaker-0002",
+        "deferred_births": "",
+        "local_speakers": "S01",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "10012",
+        "span_samples": "808160:812480",
+        "status": "prepared"
+      },
+      "verdict": "EXCLUDED_revision_reader_has_no_album_deferral"
+    },
+    "e_terminal_mapping": {
+      "state": {
+        "fallback_display_label": "S02",
+        "pre_terminal_covered": false,
+        "projected_canonical": null
+      },
+      "verdict": "SUPPORTED"
+    },
+    "f_silence_reseed": {
+      "state": {
+        "canonical_after_first_speech": {
+          "speaker-0001": {
+            "exemplars": [],
+            "provisional": true
+          }
+        },
+        "canonical_after_silence": {
+          "speaker-0001": {
+            "exemplars": [
+              {
+                "duration_sec": 2.48,
+                "span_id": 1
+              },
+              {
+                "duration_sec": 2.36,
+                "span_id": 2
+              },
+              {
+                "duration_sec": 2.48,
+                "span_id": 3
+              },
+              {
+                "duration_sec": 2.42,
+                "span_id": 4
+              },
+              {
+                "duration_sec": 2.46,
+                "span_id": 5
+              },
+              {
+                "duration_sec": 2.46,
+                "span_id": 6
+              },
+              {
+                "duration_sec": 2.5,
+                "span_id": 7
+              },
+              {
+                "duration_sec": 2.04,
+                "span_id": 8
+              },
+              {
+                "duration_sec": 2.08,
+                "span_id": 9
+              },
+              {
+                "duration_sec": 2.36,
+                "span_id": 15
+              }
+            ],
+            "provisional": false
+          }
+        }
+      },
+      "verdict": "EXCLUDED"
+    }
+  },
+  "mechanism": "terminal-only uncovered 0.27 s segment -> below 8000-sample evidence floor -> no score -> revision-only temporary birth -> label index absent from settled canonical set -> None/S00",
+  "model": "/Users/gao/.local/share/moss-transcribe-diarize/live/voxceleb_resnet152_LM.onnx",
+  "model_expected_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8",
+  "remedy_controls": {
+    "candidate": "aggregate eligible intervals only within one terminal-local partition",
+    "falsifier_control": {
+      "decision": "abstain",
+      "intervals_sec": [
+        [
+          0.0,
+          3.18
+        ]
+      ],
+      "score_to_adam_album": 0.017032664777344816,
+      "voice": "Keyu"
+    },
+    "healthy_control": {
+      "decision": "match",
+      "intervals_sec": [
+        [
+          50.81,
+          53.99
+        ]
+      ],
+      "score_to_adam_album": 0.9090907357636286,
+      "voice": "Adam"
+    },
+    "invariants": {
+      "individual_interval_floor_samples": 8000,
+      "match_margin": 0.1,
+      "match_score": 0.35,
+      "no_temporal_neighbor_assignment": true
+    },
+    "s17_raw_terminal_partition": "UNMEASURED: decoder-local labels were not retained"
+  },
+  "saved_spans": [
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 1.47,
+      "eligible_samples": 23520,
+      "end_sec": 2.04,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0001",
+      "scores": {
+        "speaker-0001": 0.7506851984226607
+      },
+      "start_sec": 0.57,
+      "text": "Yeah, that's the question, right?"
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 4.56,
+      "eligible_samples": 72960,
+      "end_sec": 6.63,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0002",
+      "scores": {
+        "speaker-0001": 0.9120067147893282
+      },
+      "start_sec": 2.07,
+      "text": "The amazing thing is that after two and a half millennia of, you know,"
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 3.96,
+      "eligible_samples": 63360,
+      "end_sec": 10.62,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0003",
+      "scores": {
+        "speaker-0001": 0.9009176282875286
+      },
+      "start_sec": 6.66,
+      "text": "people yelling at each other or setting each other on fire occasionally over the answer,"
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 3.69,
+      "eligible_samples": 59040,
+      "end_sec": 14.34,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0004",
+      "scores": {
+        "speaker-0001": 0.9204497301037753
+      },
+      "start_sec": 10.65,
+      "text": "we now actually have the capacity to answer that question."
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 6.0,
+      "eligible_samples": 96000,
+      "end_sec": 20.37,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0005",
+      "scores": {
+        "speaker-0001": 0.9661830913516997
+      },
+      "start_sec": 14.37,
+      "text": "So in the next 10, 20, 30 years, we're going to have data relevant to the answer to that question."
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 4.38,
+      "eligible_samples": 70080,
+      "end_sec": 24.78,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0006",
+      "scores": {
+        "speaker-0001": 0.8791629213532096
+      },
+      "start_sec": 20.4,
+      "text": "We're going to have hard data, finally, that will, one way or the other, you know,"
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 0.24,
+      "eligible_samples": 3840,
+      "end_sec": 25.05,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0007",
+      "scores": {},
+      "start_sec": 24.81,
+      "text": "even if"
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 4.86,
+      "eligible_samples": 77760,
+      "end_sec": 39.83,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0008",
+      "scores": {
+        "speaker-0001": 0.8904386454687973
+      },
+      "start_sec": 34.97,
+      "text": "I can tell you, which was an important part of the problem, is how many planets are there?"
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 0.57,
+      "eligible_samples": 9120,
+      "end_sec": 40.43,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": false,
+      "saved_span": "seg_0009",
+      "scores": {
+        "speaker-0001": 0.47633902446450455
+      },
+      "start_sec": 39.86,
+      "text": "Right?"
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 6.75,
+      "eligible_samples": 108000,
+      "end_sec": 47.21,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0010",
+      "scores": {
+        "speaker-0001": 0.9493189712518244
+      },
+      "start_sec": 40.46,
+      "text": "And just like people have been arguing about the existence of life elsewhere for 2,500 years,"
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 3.24,
+      "eligible_samples": 51840,
+      "end_sec": 50.48,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0011",
+      "scores": {
+        "speaker-0001": 0.8973965529225493
+      },
+      "start_sec": 47.24,
+      "text": "people have been arguing about planets for the exact same amount of time."
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_probe_below_evidence_floor_then_unprojectable_birth",
+      "duration_sec": 0.27,
+      "eligible_samples": 4320,
+      "end_sec": 50.78,
+      "fallback_diagnostics": {
+        "assignments": "S01->speaker-0002",
+        "canonical_speakers": "speaker-0001,speaker-0002",
+        "deferred_births": "",
+        "local_speakers": "S01",
+        "reason": "ok",
+        "schema_version": "1",
+        "span_id": "10012",
+        "span_samples": "808160:812480",
+        "status": "prepared"
+      },
+      "fallback_display_label": "S02",
+      "fallback_status": "prepared",
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": null,
+      "pre_terminal_covered": false,
+      "projected_canonical": null,
+      "saved_span": "seg_0012",
+      "scores": {},
+      "start_sec": 50.51,
+      "text": "Right?"
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 3.18,
+      "eligible_samples": 50880,
+      "end_sec": 53.99,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0013",
+      "scores": {
+        "speaker-0001": 0.9090907357636286
+      },
+      "start_sec": 50.81,
+      "text": "You can see Aristotle yelling at Democritus about this."
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 3.87,
+      "eligible_samples": 61920,
+      "end_sec": 57.89,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": true,
+      "saved_span": "seg_0014",
+      "scores": {
+        "speaker-0001": 0.9318527201506828
+      },
+      "start_sec": 54.02,
+      "text": "You know, you can see they had very wildly different opinions about how common planets"
+    },
+    {
+      "album": {
+        "speaker-0001": {
+          "exemplars": [
+            {
+              "duration_sec": 2.48,
+              "span_id": 1
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 23
+            },
+            {
+              "duration_sec": 2.48,
+              "span_id": 3
+            },
+            {
+              "duration_sec": 2.42,
+              "span_id": 4
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 5
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 6
+            },
+            {
+              "duration_sec": 2.5,
+              "span_id": 7
+            },
+            {
+              "duration_sec": 2.44,
+              "span_id": 19
+            },
+            {
+              "duration_sec": 2.46,
+              "span_id": 17
+            },
+            {
+              "duration_sec": 2.36,
+              "span_id": 15
+            }
+          ],
+          "provisional": false
+        }
+      },
+      "decision": "terminal_partition_mapping_or_acoustic_match",
+      "duration_sec": 1.86,
+      "eligible_samples": 29760,
+      "end_sec": 59.78,
+      "match_margin_threshold": 0.1,
+      "match_score_threshold": 0.35,
+      "min_segment_samples": 8000,
+      "observed_canonical": "speaker-0001",
+      "pre_terminal_covered": false,
+      "saved_span": "seg_0015",
+      "scores": {
+        "speaker-0001": 0.8608722091560905
+      },
+      "start_sec": 57.92,
+      "text": "were going to be and how unique Earth was."
+    }
+  ],
+  "schema": "moss-r4-gap-diagnosis.v1"
+}
