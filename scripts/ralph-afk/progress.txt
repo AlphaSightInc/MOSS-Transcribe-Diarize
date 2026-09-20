@@ -18,3 +18,5 @@ Started: 2026-09-20 - branch round4/integration @ 89f833ac (round-3 candidate, s
 qualification instruments are known-untrustworthy: the headed visible-word instrument swaps source-occurrence custody
 (Codex F4, reproduced offline), and the qualification bundle cannot fund its own 2×1800 s capacity gate under the
 default budget (S17, third mismatch). This run repairs both without touching product code.
+
+[loop 20260920-210721-35143] start budget=12 agent=codex branch=round4/ralph-a
