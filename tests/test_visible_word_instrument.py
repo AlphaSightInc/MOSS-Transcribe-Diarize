@@ -7,6 +7,7 @@ import pytest
 
 from tools.qualify.visible_word_headed import (
     _chromium_args,
+    _dom_segments,
     _frame_payload,
     _read_pcm16,
     _read_reference,
@@ -248,6 +249,33 @@ def test_repeated_word_cannot_credit_the_wrong_source_interval():
     assert result["words"][0]["final_status"] == "correct"
     assert result["words"][1]["final_status"] == "missing"
     assert result["words"][1]["first_correct_sec"] is None
+
+
+def test_dom_row_cannot_credit_later_same_word_outside_its_owned_span():
+    """Falsifies inventing a row end from the playback frontier."""
+
+    references = reference_words_from_intervals(
+        (
+            {"id": "earlier", "text": "alpha", "start": 0.0, "end": 1.0},
+            {"id": "later", "text": "alpha", "start": 10.0, "end": 11.0},
+        )
+    )
+    segments = _dom_segments(
+        [{"start": 0.0, "end": 1.0, "text": "alpha"}],
+        12.0,
+    )
+    result = evaluate_visible_word_stream(
+        references,
+        (TranscriptObservation(12.0, segments),),
+        clock_name="rendered_dom",
+    )
+
+    earlier, later = result["words"]
+    assert earlier["final_status"] == "correct"
+    assert earlier["first_correct_sec"] == 12.0
+    assert earlier["first_correct_latency_sec"] == 11.0
+    assert later["final_status"] == "missing"
+    assert later["first_correct_sec"] is None
 
 
 def test_word_is_not_credited_before_its_source_interval_finishes():

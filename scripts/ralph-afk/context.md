@@ -33,6 +33,11 @@
 
 ## Current state
 
+- 2026-09-20 iteration 1: ported the F4 earlier/later `alpha` counterexample to
+  `tests/test_visible_word_instrument.py`. Before the test edit, `89f833ac..51d35ef1` changed only loop/orchestration
+  files, so the instrument was still the unpatched base. The module now reports the expected RED: **1 failed, 14
+  passed**. `_dom_segments` expands the displayed 0-1 s row to 0-12 s, leaving the earlier word `missing` and falsely
+  crediting the later word at 1 s latency. Keep this test failing until row-span custody is implemented.
 - 2026-09-20: Codex's offline falsifier reproduced by the lead on `89f833ac`: `dom-time-repro.py` → earlier "alpha"
   0–1 s `missing`, later "alpha" 10–11 s `correct` at 1.0 s. Retained S9 (`evidence/round3/fix-3.1/s9-headed.json`)
   cannot be recomputed unbiased (raw observations not retained) — leave it as history.
@@ -69,8 +74,8 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Candidates
 
-1. **Port the falsifier as a failing test** (`tests/test_visible_word_instrument.py`): earlier/later "alpha"; assert
-   later `missing`, earlier credited. Run it on the unpatched tree first and record the failure in progress.txt.
+1. **DONE (iteration 1) — Port the falsifier as a failing test** (`tests/test_visible_word_instrument.py`): RED is
+   recorded on the base-equivalent instrument; expected final behavior remains asserted.
 2. **Publish the turn span on the row** (`TranscriptPane.tsx:649-658`): `data-turn-start`, `data-turn-end`,
    `data-target-keys`; frontend test asserting they equal the turn; `npm --prefix frontend run typecheck && npm --prefix
    frontend run build`; commit the rebuilt `frontend_assets` with the source; then re-run the build and confirm

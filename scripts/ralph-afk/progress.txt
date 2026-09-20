@@ -20,3 +20,15 @@ qualification instruments are known-untrustworthy: the headed visible-word instr
 default budget (S17, third mismatch). This run repairs both without touching product code.
 
 [loop 20260920-210721-35143] start budget=12 agent=codex branch=round4/ralph-a
+
+## Iteration 1 - port DOM occurrence-custody falsifier
+- Target: candidate 1, port the earlier/later repeated-word falsifier as a failing regression test.
+- Files: `tests/test_visible_word_instrument.py`, `scripts/ralph-afk/context.md`, `scripts/ralph-afk/progress.txt`.
+- Validation: `git diff --name-only 89f833ac..51d35ef1` -> only loop/orchestration files; `PYTHONDONTWRITEBYTECODE=1
+  PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider tests/test_visible_word_instrument.py` -> expected RED,
+  **1 failed / 14 passed**; original `dom-time-repro.py` reproduced the same swap.
+- Evidence: `tests/test_visible_word_instrument.py`; failing assertion reports earlier `missing`; reproducer reports the
+  invented DOM span 0-12 s, later word `correct` at 1 s instead of `missing`, earlier word `missing` instead of 11 s.
+- Learned: the regression is isolated to invented DOM span custody; all 14 pre-existing module controls still pass.
+- Next: candidate 2, publish `data-turn-start`, `data-turn-end`, and `data-target-keys` from turn model state with one
+  frontend test and rebuilt asset parity.
