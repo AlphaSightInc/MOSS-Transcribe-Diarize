@@ -12,3 +12,11 @@
 - Attribution classes: `b=0`, `c=0`.
 - Product files modified: 0.
 - Falsifiers hit: 0 (none).
+
+## lead-issued fresh context
+
+- Step 1 PASS — source custody resolved inside this clone.
+- Step 2 PASS — 83 rows; raw words 105; demo `a=3,d=10`; both ladder rows `a=2,d=33`; stream inequalities 0.
+- Step 3 PASS — 10 passed, 2 xfailed, 0 xpassed, 0 other failures.
+- Step 4 PASS — requests 1/40; peak in flight 1; retries 0; proposal only; classes `b=0,c=0`; product/evidence diffs 0.
+- Overall PASS — falsifiers hit 0; no GPU, tunnel, network, or product change.
