@@ -1,0 +1,21 @@
+Initial backend gate:
+  1 failed, 2115 passed, 5 skipped, 37 subtests passed in 189.19s
+  Failure: tests/phase2/test_tls_preparation.py::test_verify_layout_current_tree
+  Cause: this slice initially placed VERIFY.md at repository root.
+  Action: moved it to docs/verify/surfaces/VERIFY.md.
+
+Targeted violating control after correction:
+  tests/phase2/test_tls_preparation.py::test_verify_layout_current_tree
+  1 passed in 0.10s
+
+Final backend gate:
+  2116 passed, 5 skipped, 21 warnings, 37 subtests passed in 202.94s
+
+Frontend gate:
+  Test Files 28 passed (28)
+  Tests 311 passed (311)
+  TypeScript typecheck clean
+  Vite build clean, 34 modules transformed
+  app.js 131.70 kB, styles.css 53.79 kB
+
+Generated assets match the base: git status contains no tracked asset change.

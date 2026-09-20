@@ -1,0 +1,21 @@
+Disabled control, browser-stress case 13:
+  status: PASS
+  provider_posts: 0
+  explained: true
+
+verify_summaries exit 0 path:
+  served bundle sends response_format: true
+  50 s: PASS, current
+  180 s: PASS, current
+  denominator: 2/2 current
+
+verify_summaries exit 1 path:
+  50 s: PASS, current
+  180 s: FAIL, invalid_output
+  denominator: 1/2 current
+
+verify_summaries exit 77 path:
+  external provider unconfigured
+  denominator: 0 attempted
+
+All runs were inside the loopback-only sandbox. Provider receipt contains 4 local POSTs.

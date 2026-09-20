@@ -1,0 +1,4 @@
+{"request": 1, "path": "/v1/chat/completions", "model": "fixture-pass", "transcript": "50s", "result": "valid"}
+{"request": 2, "path": "/v1/chat/completions", "model": "fixture-pass", "transcript": "180s", "result": "valid"}
+{"request": 3, "path": "/v1/chat/completions", "model": "fixture-one-fail", "transcript": "50s", "result": "valid"}
+{"request": 4, "path": "/v1/chat/completions", "model": "fixture-one-fail", "transcript": "180s", "result": "invalid"}
