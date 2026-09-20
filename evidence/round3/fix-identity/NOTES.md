@@ -1,6 +1,6 @@
 # FIX-3.2 two-lane WER diagnosis
 
-Status: **BLOCKED — 1/4 prescribed revision×hop arms complete.**
+Status: **COMPLETE — classification (c), unchanged known limitation L1.**
 
 ## Structural contract
 
@@ -12,35 +12,44 @@ Status: **BLOCKED — 1/4 prescribed revision×hop arms complete.**
 - Falsifier: a direct-hop difference between `a7a738cf` and `738cdfdd` would
   require bisection across the four merge commits.
 
-## Completed arm
+## Completed direct arms
 
-`738cdfdd`, direct tunnel, both cases consumed **59/80** authorized requests.
-Exact lane numerators/denominators are in `integrated-direct-summary.json`.
-The result matches S16 profile A exactly. Therefore the extra counting-proxy hop
-is **not necessary** to reproduce S16 and cannot alone explain it.
+The lead narrowed the remaining work to one base-direct arm and raised the total
+budget to 150. `738cdfdd` and fresh detached `a7a738cf`, each direct tunnel with
+no proxy, consumed **59 requests each: 118/150 total**. Their exact numerators
+are identical:
+
+- Alternation pre-terminal: system **16/106**, microphone **11/53**; final:
+  system **9/106**, microphone **5/53**.
+- Overlap pre-terminal: system **24/106**, microphone **6/53**; final: system
+  **13/106**, microphone **5/53**.
+
+Both revisions reproduce S16 profile A exactly. The extra counting-proxy hop is
+not necessary for the miss, and the round-3 merges did not change these direct
+results. Classification is **(c), unchanged known limitation L1**. No bisection,
+product fix, threshold change, or proxy arm is required.
 
 The local wrapper failed only after the completed measurement because it assigned
 zsh's read-only `status` variable. The JSON and 59-line request receipt were
 already complete; no decoder retry occurred.
 
-## Budget blocker
+## Test boundary
 
-Only **21/80** requests remain. One required two-case arm consumed 59, so the
-three remaining arms cannot be run within authorization. The second case alone
-occupied the final approximately 27 requests of the completed arm. A full matrix
-projects near 236 requests; exact future use remains unknown until run.
-
-No (a)/(b)/(c) classification is made. `docs/known-limitations-20260918.md` is
-unchanged because the base revision and proxy comparisons are absent. No product
-fix, threshold change, bisection, or new regression test is justified.
+This diagnosis changes documentation and evidence only. The existing production-
+seam lane tests contain healthy and rejecting controls and pass 10/10. A new
+red-on-`a7a738cf` regression test is inapplicable: the measured base behavior is
+identical, so there is no defect fixed by this pass for such a test to distinguish.
 
 ## Commands and custody
 
-- Clone: `/private/tmp/moss-round3-20260919/fix-identity`, branch
-  `round3/fix-identity`, base `738cdfdd`.
+- Integrated clone: `/private/tmp/moss-round3-20260919/fix-identity`, branch
+  `round3/fix-identity`, base `738cdfdd`. Base clone:
+  `/private/tmp/moss-round3-20260919/fix-identity-a7`, detached `a7a738cf`.
 - Harness: `tests/e2e/verify_demo_lanes.py --base https://127.0.0.1:17861
   --allow-local-self-signed --case both`.
 - Stack decoder URL: `http://127.0.0.1:18261/v1` through the owned SSH tunnel.
 - Initial vLLM metrics: running 0, waiting 0.
 - Tunnel and stack were stopped; ports 17861 and 18261 were clear; lease returned
-  to `FREE` immediately after the blocker was established.
+  to `FREE`. Raw retained output stays outside Git; counts-only summaries are
+  `integrated-direct-summary.json`, `base-direct-summary.json`, and
+  `comparison-summary.json`.
