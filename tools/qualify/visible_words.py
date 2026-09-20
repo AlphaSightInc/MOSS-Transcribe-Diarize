@@ -190,10 +190,17 @@ def evaluate_visible_word_stream(
         raise ValueError("observations must be monotonic")
 
     observed = [_observed_words(observation) for observation in observations]
-    states = [
-        _ordered_statuses(references, tokens)
-        for tokens in observed
-    ]
+    states = []
+    for observation, tokens in zip(observations, observed):
+        statuses = _ordered_statuses(references, tokens)
+        states.append(
+            [
+                "missing"
+                if observation.elapsed_sec < reference.source_end_sec
+                else status
+                for reference, status in zip(references, statuses)
+            ]
+        )
     word_rows = []
     for index, reference in enumerate(references):
         history = [state[index] for state in states]

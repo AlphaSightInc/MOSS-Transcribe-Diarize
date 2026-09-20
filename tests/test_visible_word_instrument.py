@@ -182,6 +182,25 @@ def test_repeated_word_cannot_credit_the_wrong_source_interval():
     assert result["words"][1]["first_correct_sec"] is None
 
 
+def test_word_is_not_credited_before_its_source_interval_finishes():
+    reference = (ReferenceWord("interval-alpha", "alpha", 10.0, 0.0),)
+    result = evaluate_visible_word_stream(
+        reference,
+        (
+            TranscriptObservation(
+                3.0, (TranscriptSegment(0.0, 5.0, "alpha"),)
+            ),
+            TranscriptObservation(
+                11.0, (TranscriptSegment(0.0, 5.0, "alpha"),)
+            ),
+        ),
+        clock_name="api_arrival",
+    )
+
+    assert result["words"][0]["first_correct_sec"] == 11.0
+    assert result["words"][0]["first_correct_latency_sec"] == 1.0
+
+
 def test_api_and_dom_clocks_remain_separate():
     result = evaluate_visible_word_surfaces(
         _references("alpha"),
