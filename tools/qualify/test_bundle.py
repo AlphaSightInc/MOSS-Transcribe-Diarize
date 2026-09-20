@@ -89,7 +89,7 @@ def test_proxy_caps_real_dispatch_and_records_no_body(tmp_path):
             conn.request('POST','/v1/audio/transcriptions',b'PRIVATE AUDIO PAYLOAD')
             response=conn.getresponse(); statuses.append(response.status); response.read(); conn.close()
         assert statuses==[200,200,429]
-        assert len(received)==2 and proxy.sent==2 and proxy.rejected==1 and proxy.peak==1
+        assert (len(received), proxy.sent, proxy.completed, proxy.rejected, proxy.peak) == (2, 2, 2, 1, 1)
         assert proxy.active==0
         log=(tmp_path/'requests.jsonl').read_text()
         assert 'PRIVATE' not in log

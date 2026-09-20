@@ -106,3 +106,19 @@ default budget (S17, third mismatch). This run repairs both without touching pro
   and workspace File/URL inputs, not from the 2×1,800 capacity row alone.
 - Next: candidate 6, classify any `rejected_by_budget > 0` bundle as budget-censored `INCOMPLETE` and report accepted,
   completed and rejected request counts separately.
+
+## Iteration 7 - classify budget-censored runs
+- Target: candidate 6, make any decoder budget rejection produce `INCOMPLETE`, never a quality `FAIL`, with separate
+  accepted/completed/rejected request counts.
+- Files: `tools/qualify/decoder.py`, `tools/qualify/run.py`, `tools/qualify/test_bundle.py`,
+  `tests/test_qualification_verdict.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused controls first RED **2 failed / 36 passed**; then `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
+  <pinned-python> -m pytest -q -p no:cacheprovider tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py
+  tests/test_qualification_verdict.py` -> **46/46 passed**; `git diff --check` -> clean.
+- Evidence: `test_budget_rejection_censors_quality_verdict_and_retains_request_counts` proves a gate `FAIL` is superseded
+  by budget-censored `INCOMPLETE`; the real loopback proxy control proves 2 accepted / 2 completed / 1 rejected.
+- Learned: accepted requests were counted, but completion was only implicit in request-log end events; one explicit
+  counter is sufficient. Budget exhaustion is only censorship after an actual rejection, not merely when the cap is
+  exactly consumed.
+- Next: candidate 7, add the default 2x300 development capacity row, retain long 2x1800 as required-not-run by default,
+  and derive the default budget from the selected population.

@@ -560,7 +560,8 @@ class Bundle:
             self.proxy.close()
         for handle in self.handles:
             handle.close()
-        self.data['decoder'] = dict(requests=self.proxy.sent if self.proxy else 0,
+        self.data['decoder'] = dict(accepted_requests=self.proxy.sent if self.proxy else 0,
+                                    completed_requests=self.proxy.completed if self.proxy else 0,
                                     peak_in_flight=self.proxy.peak if self.proxy else 0,
                                     rejected_by_budget=self.proxy.rejected if self.proxy else 0,
                                     active_at_teardown=self.proxy.active if self.proxy else 0,
@@ -575,7 +576,11 @@ class Bundle:
                 pass
         self.gate('teardown','FAIL' if alive else 'PASS',measurements={'owned_process_groups_remaining':alive})
         self.data['gate_counts'] = dict(Counter(g['status'] for g in self.data['gates']))
-        self.data['verdict'] = bundle_verdict(self.data['gates'])
+        self.data['budget_censored'] = self.data['decoder']['rejected_by_budget'] > 0
+        self.data['verdict'] = ('INCOMPLETE' if self.data['budget_censored']
+                                else bundle_verdict(self.data['gates']))
+        if self.data['budget_censored']:
+            self.data['verdict_reason'] = 'budget_censored'
         self.data['qualified'] = self.data['verdict'] == 'PASS'
         if self.args.compare:
             baseline = json.loads(self.args.compare.read_text())

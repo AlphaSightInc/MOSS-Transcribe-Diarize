@@ -32,6 +32,11 @@
 
 ## Current state
 
+- 2026-09-20 iteration 7: candidate 6 is complete. The owned decoder proxy now counts accepted, completed and
+  budget-rejected requests independently. Bundle cleanup records those three populations and, when any request was
+  rejected by the budget, sets `budget_censored: true`, `verdict_reason: budget_censored`, and the overall verdict to
+  `INCOMPLETE` even when downstream gates reported `FAIL`; censored evidence therefore cannot become a quality failure.
+  The focused control was RED **2 failed / 36 passed**, then the qualification helper set was GREEN **46/46 passed**.
 - 2026-09-20 iteration 6: candidate 5 is complete. `request_plan(long)` enumerates every selected decoder-producing
   live bench as session durations: workspace, demo lanes, lifecycle, reshare, identity stress, level ladder and browser
   stress. Workspace File/URL inputs are also included in production `WindowedRunner` arithmetic. The plan now covers
@@ -109,8 +114,9 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 5. **DONE (iterations 5-6) — Budget preflight** in `tools/qualify/run.py`: the pure planner, summary fields, production
    file windows, browser case ids, every selected live-bench session duration, and refusal-before-`Bundle` control are
    implemented. The plan derives 754 default / 3,068 long requests; no historical request count is added as population.
-6. **Censored classification**: `rejected_by_budget > 0` ⇒ `INCOMPLETE`, never quality `FAIL`; accepted/completed/
-   rejected reported separately; test.
+6. **DONE (iteration 7) — Censored classification**: `rejected_by_budget > 0` now forces a budget-censored
+   `INCOMPLETE`, never quality `FAIL`; accepted/completed/rejected counts are separate and the proxy control proves the
+   completed count.
 7. **Capacity rows**: add a default 2×300 s development row (two-meeting population); `--long` = 2×1800 with preflight
    and a required sufficient budget; every default summary emits `capacity_2x1800: REQUIRED-NOT-RUN`; raise the default
    `--budget` to what the preflight derives for the default population and show the derivation; test.
