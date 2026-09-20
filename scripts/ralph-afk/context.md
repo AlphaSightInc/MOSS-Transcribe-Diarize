@@ -8,11 +8,9 @@
   `evidence/round3/fix-3.1/s9-result.md` (what the instrument reported last round and why it is not citable),
   `/Users/gao/Documents/Codex/2026-09-20/moss-current-review/assessment-and-plan.md` findings F4, F5, F6 (read-only).
 - Key code paths and why they matter:
-  - `tools/qualify/visible_word_headed.py:176-187` `_dom_segments` — invents a displayed row's end from the next row's
-    start or the playback frontier (`:181-183`; frontier = `min(dom_elapsed, args.seconds)` at `:278`). This is the
-    custody defect.
-  - `tools/qualify/visible_word_headed.py:268-276` — DOM rows are read from `.utt` nodes; `start` is parsed from the
-    `.utt-time` clock text; rows without an `HH:MM:SS` clock are dropped. No span or id is captured today.
+  - `tools/qualify/visible_word_headed.py` `_dom_segments` now accepts only each row's published start/end; it returns
+    no segments plus a reason when a row lacks a finite positive model-state span. The collector reads all three
+    `data-` custody attributes and no longer reads `.utt-time`, the next row, or the playback frontier.
   - `frontend/src/components/TranscriptPane.tsx:649-661` — the `.utt` `<article>` now publishes
     `data-turn-start`, `data-turn-end`, and `data-target-keys` directly from the merged React turn. Live segment ids are
     positional (`frontend/src/api/mossPoller.ts:598,714` `effective:${index}`) and a row is a merged, overlap-trimmed
@@ -31,6 +29,11 @@
 
 ## Current state
 
+- 2026-09-20 iteration 3: DOM custody now comes only from `data-turn-start` / `data-turn-end`; `data-target-keys` is
+  read with the row but no id join is invented. A sample containing a row without a valid published span clears DOM
+  observations and reports `rendered_dom` as `UNMEASURED` with the reason and denominator, with no word credit. The
+  original earlier/later `alpha` falsifier is GREEN and the focused module is **16/16 passed**. Ordered one-to-one
+  occurrence matching was already enforced by `_ordered_statuses`, so it was preserved rather than replaced.
 - 2026-09-20 iteration 2: `.utt` rows publish the turn's model-state start/end/target keys. The dedicated frontend
   control went RED on missing attributes, then GREEN **18/18** after the three-attribute change; frontend typecheck is
   clean. Vite rebuilt the 17-file committed asset tree (only `app.js` and `app.js.map` changed), and a second fresh
@@ -80,9 +83,8 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
    recorded on the base-equivalent instrument; expected final behavior remains asserted.
 2. **DONE (iteration 2) — Publish the turn span on the row** (`TranscriptPane.tsx:649-661`): the three attributes,
    model-state frontend control, clean typecheck, and deterministic 17-file Vite asset rebuild are recorded.
-3. **Replace `_dom_segments` custody** with row-published spans; remove next-start/frontier end invention; matcher pairs
-   occurrences in source order, one displayed occurrence credits at most one reference occurrence; rows without spans
-   ⇒ no DOM credit and `UNMEASURED` DOM result with the reason. Validate: candidate 1 passes, `:233/:253/:272` still pass.
+3. **DONE (iteration 3) — Replace `_dom_segments` custody** with row-published spans; next-start/frontier invention is
+   removed, existing ordered one-to-one matching is preserved, and spanless rows make DOM `UNMEASURED` with no credit.
 4. **Add the remaining violating controls** (repeated word + omitted later phrase; merged rows; revision of earlier
    text; unchanged text across phrase end) and the separate phrase-end diagnostic key.
 5. **Budget preflight** in `tools/qualify/run.py`: `planned_requests` from the gate population × `measured_rate`

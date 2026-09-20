@@ -10,6 +10,7 @@ import argparse
 import asyncio
 import base64
 import json
+import math
 from pathlib import Path
 import time
 from typing import Any, Sequence
@@ -173,18 +174,20 @@ def _snapshot_segments(body: dict[str, Any]) -> tuple[TranscriptSegment, ...]:
     )
 
 
-def _dom_segments(rows: list[dict[str, object]], frontier: float) -> tuple[TranscriptSegment, ...]:
+def _dom_segments(
+    rows: list[dict[str, object]],
+) -> tuple[tuple[TranscriptSegment, ...], str | None]:
     result = []
-    for index, row in enumerate(rows):
-        start = float(row["start"])
-        end = (
-            float(rows[index + 1]["start"])
-            if index + 1 < len(rows)
-            else max(start + 0.001, frontier)
-        )
-        if end > start:
-            result.append(TranscriptSegment(start, end, str(row["text"])))
-    return tuple(result)
+    for row in rows:
+        try:
+            start = float(row["start"])
+            end = float(row["end"])
+        except (KeyError, TypeError, ValueError):
+            return (), "rendered row lacks its model-state source span"
+        if not math.isfinite(start) or not math.isfinite(end) or end <= start:
+            return (), "rendered row lacks a finite positive model-state source span"
+        result.append(TranscriptSegment(start, end, str(row["text"])))
+    return tuple(result), None
 
 
 async def _run(args: argparse.Namespace) -> dict[str, object]:
@@ -202,6 +205,7 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
     total_visibility_observations = 0
     final_status = None
     finalization_status = None
+    dom_unmeasured_reason = None
 
     async with async_playwright() as playwright:
         try:
@@ -256,6 +260,7 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                     async def observe() -> None:
                         nonlocal next_event, last_api, last_dom, hidden_observations
                         nonlocal total_visibility_observations, final_status, finalization_status
+                        nonlocal dom_unmeasured_reason
                         snapshot = await _api(page, f"/api/live/sessions/{meeting_id}/snapshot")
                         api_elapsed = time.monotonic() - started
                         api_segments = _snapshot_segments(snapshot)
@@ -266,17 +271,21 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                             last_api = api_segments
                         dom_rows = await page.locator(".utt").evaluate_all(
                             """nodes => nodes.map(node => {
-                              const clock = (node.querySelector('.utt-time')?.textContent || '').trim();
-                              const parts = clock.split(':').map(Number);
-                              const start = parts.length === 3
-                                ? parts[0] * 3600 + parts[1] * 60 + parts[2]
-                                : Number.NaN;
-                              return {start, text: node.querySelector('.utt-text')?.textContent || ''};
-                            }).filter(row => Number.isFinite(row.start))"""
+                              return {
+                                start: node.dataset.turnStart ?? null,
+                                end: node.dataset.turnEnd ?? null,
+                                targetKeys: node.dataset.targetKeys ?? null,
+                                text: node.querySelector('.utt-text')?.textContent || ''
+                              };
+                            })"""
                         )
                         dom_elapsed = time.monotonic() - started
-                        dom_segments = _dom_segments(dom_rows, min(dom_elapsed, args.seconds))
-                        if dom_segments != last_dom:
+                        dom_segments, span_error = _dom_segments(dom_rows)
+                        if span_error is not None:
+                            dom_unmeasured_reason = span_error
+                            dom_observations.clear()
+                            last_dom = None
+                        elif dom_unmeasured_reason is None and dom_segments != last_dom:
                             dom_observations.append(
                                 TranscriptObservation(dom_elapsed, dom_segments)
                             )
@@ -359,6 +368,7 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                         references,
                         api_observations=api_observations,
                         rendered_observations=dom_observations,
+                        rendered_unmeasured_reason=dom_unmeasured_reason,
                         decoder_queue_clocks=decoder_queue_clocks,
                     )
                     return {

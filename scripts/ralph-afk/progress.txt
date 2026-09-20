@@ -48,3 +48,15 @@ default budget (S17, third mismatch). This run repairs both without touching pro
   or changing merge semantics; the Python collector remains the only consumer gap.
 - Next: candidate 3, read these row attributes in `visible_word_headed.py`, remove invented next-row/frontier ends, and
   report rows lacking spans as DOM `UNMEASURED`.
+
+## Iteration 3 - consume rendered-row custody
+- Target: candidate 3, replace invented DOM spans with each rendered turn's published model-state span.
+- Files: `tools/qualify/visible_word_headed.py`, `tools/qualify/visible_words.py`,
+  `tests/test_visible_word_instrument.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tests/test_visible_word_instrument.py` -> **16/16 passed**; call-site scan found no stale `_dom_segments` callers.
+- Evidence: the ported two-`alpha` control now credits only the 0-1 s row at its 11 s delay and leaves the 10-11 s
+  occurrence missing; the new spanless-row control produces no segments and `rendered_dom: UNMEASURED` with a reason.
+- Learned: ordered one-to-one matching already existed; the defect was solely DOM interval custody and silent row
+  dropping. The collector now reads the three row attributes and never reconstructs ends from clocks or frontier.
+- Next: candidate 4, add the remaining revision/merge/phrase-end violating controls and separate phrase-end diagnostics.

@@ -296,19 +296,29 @@ def evaluate_visible_word_surfaces(
     *,
     api_observations: Sequence[TranscriptObservation],
     rendered_observations: Sequence[TranscriptObservation],
+    rendered_unmeasured_reason: str | None = None,
     decoder_queue_clocks: Sequence[Mapping[str, object]] = (),
 ) -> dict[str, Any]:
     """Keep browser/API observations and server clocks as separate projections."""
 
+    rendered: dict[str, Any]
+    if rendered_unmeasured_reason is None:
+        rendered = evaluate_visible_word_stream(
+            references, rendered_observations, clock_name="rendered_dom"
+        )
+    else:
+        rendered = {
+            "status": "UNMEASURED",
+            "reason": rendered_unmeasured_reason,
+            "full_denominator": len(references),
+        }
     return {
         "schema": "moss-visible-word-surfaces.v1",
         "full_denominator": len(references),
         "api": evaluate_visible_word_stream(
             references, api_observations, clock_name="api_arrival"
         ),
-        "rendered_dom": evaluate_visible_word_stream(
-            references, rendered_observations, clock_name="rendered_dom"
-        ),
+        "rendered_dom": rendered,
         "decoder_queue_clocks": [dict(row) for row in decoder_queue_clocks],
         "clock_relation": "separate; no cross-clock subtraction",
     }

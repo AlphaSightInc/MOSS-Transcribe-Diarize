@@ -260,10 +260,10 @@ def test_dom_row_cannot_credit_later_same_word_outside_its_owned_span():
             {"id": "later", "text": "alpha", "start": 10.0, "end": 11.0},
         )
     )
-    segments = _dom_segments(
+    segments, reason = _dom_segments(
         [{"start": 0.0, "end": 1.0, "text": "alpha"}],
-        12.0,
     )
+    assert reason is None
     result = evaluate_visible_word_stream(
         references,
         (TranscriptObservation(12.0, segments),),
@@ -276,6 +276,27 @@ def test_dom_row_cannot_credit_later_same_word_outside_its_owned_span():
     assert earlier["first_correct_latency_sec"] == 11.0
     assert later["final_status"] == "missing"
     assert later["first_correct_sec"] is None
+
+
+def test_dom_rows_without_published_spans_are_unmeasured_and_earn_no_credit():
+    """Falsifies silently dropping spanless rows or inventing their custody."""
+
+    references = _references("alpha")
+    segments, reason = _dom_segments([{"text": "alpha"}])
+    result = evaluate_visible_word_surfaces(
+        references,
+        api_observations=(_observe(1.0, "alpha"),),
+        rendered_observations=(TranscriptObservation(1.0, segments),),
+        rendered_unmeasured_reason=reason,
+    )
+
+    assert segments == ()
+    assert result["rendered_dom"] == {
+        "status": "UNMEASURED",
+        "reason": "rendered row lacks its model-state source span",
+        "full_denominator": 1,
+    }
+    assert "words" not in result["rendered_dom"]
 
 
 def test_word_is_not_credited_before_its_source_interval_finishes():
