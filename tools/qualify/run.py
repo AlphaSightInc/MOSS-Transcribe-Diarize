@@ -32,7 +32,23 @@ CASES = ['system@1', 'mic@1', 'overlap@1', 'overlap@0.316', 'overlap@0.1', 'over
 BROWSER_CASES = tuple(range(1, 17))
 MEASURED_REQUEST_RATE = .51
 REQUEST_RATE_SOURCE = 'evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl'
-REQUEST_HEADROOM = 1.18
+REQUEST_HEADROOM = 1.25
+LIVE_BENCH_SESSION_SECONDS = {
+    # verify_workspace: primary capture, two controlled lane cases, recognition,
+    # two bounded outage cases, then three eight-second repeat captures.
+    'workspace': (18, 54, 29, 30, 70, 87, 8, 8, 8),
+    'demo_lanes': (54, 29),
+    # Six sessions: three four-frame captures, one empty capture, then two
+    # one-frame concurrent captures. The production wire frame is 0.5 seconds.
+    'lifecycle': (2, 2, 2, 0, .5, .5),
+    'reshare': (20,),
+    'identity_stress': (60, 60, 60),
+    'level_ladder': (24, 24, 24, 24, 24, 24),
+    # Cases 1-6, 11, 15 and 16 create these bounded live sessions. The other
+    # browser cases are still represented by BROWSER_CASES below.
+    'browser_stress_all': (8, 1, 1, 68, 19, 36, 16, 8, 50, 73, 45, 58),
+}
+WORKSPACE_FILE_SECONDS = (50, 50)
 DEFAULT_FILE_SECONDS = (360, 180, 180, 180)
 LONG_FILE_SECONDS = (1800,)
 
@@ -51,18 +67,26 @@ def request_plan(long):
     """Return the selected decoder population before any bundle work starts."""
     from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner, plan_windows
 
-    file_seconds = [*DEFAULT_FILE_SECONDS, *(LONG_FILE_SECONDS if long else ())]
+    live_benches = {
+        name: dict(session_seconds=list(seconds), sessions=len(seconds), seconds=sum(seconds))
+        for name, seconds in LIVE_BENCH_SESSION_SECONDS.items()
+    }
+    if long:
+        live_benches['capacity_2x1800'] = dict(
+            session_seconds=[1800, 1800], sessions=2, seconds=3600,
+        )
+    live_sessions = sum(bench['sessions'] for bench in live_benches.values())
+    live_session_seconds = sum(bench['seconds'] for bench in live_benches.values())
+    file_seconds = [*WORKSPACE_FILE_SECONDS, *DEFAULT_FILE_SECONDS,
+                    *(LONG_FILE_SECONDS if long else ())]
     file_windows = sum(len(plan_windows(
         seconds,
         window_seconds=WindowedRunner.window_seconds,
         stride_seconds=WindowedRunner.stride_seconds,
     )) for seconds in file_seconds)
-    live_sessions = 2 if long else 0
-    seconds_per_live_session = 1800 if long else 0
-    live_session_seconds = live_sessions * seconds_per_live_session
     population = dict(
+        live_benches=live_benches,
         live_sessions=live_sessions,
-        seconds_per_live_session=seconds_per_live_session,
         live_session_seconds=live_session_seconds,
         file_seconds=file_seconds,
         file_windows=file_windows,

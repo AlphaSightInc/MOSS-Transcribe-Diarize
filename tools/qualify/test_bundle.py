@@ -18,17 +18,27 @@ def test_request_plan_uses_selected_gate_population_and_retains_provenance():
     default = qualify_run.request_plan(long=False)
     assert default['measured_rate'] == .51
     assert default['source_receipt'] == 'evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl'
-    assert default['headroom'] == 1.18
-    assert default['population'] == dict(
-        live_sessions=0, seconds_per_live_session=0, live_session_seconds=0,
-        file_seconds=[360, 180, 180, 180], file_windows=9,
-        window_seconds=150, stride_seconds=120, browser_cases=list(range(1, 17)))
-    assert default['planned_requests'] == 30
+    assert default['headroom'] == 1.25
+    population = default['population']
+    assert set(population['live_benches']) == {
+        'workspace', 'demo_lanes', 'lifecycle', 'reshare',
+        'identity_stress', 'level_ladder', 'browser_stress_all',
+    }
+    assert population['live_sessions'] == 39
+    assert population['live_session_seconds'] == 1129
+    assert population['file_seconds'] == [50, 50, 360, 180, 180, 180]
+    assert population['file_windows'] == 11
+    assert population['window_seconds'] == 150
+    assert population['stride_seconds'] == 120
+    assert population['browser_cases'] == list(range(1, 17))
+    assert default['planned_requests'] == 754
 
     long = qualify_run.request_plan(long=True)
-    assert long['population']['live_session_seconds'] == 3600
-    assert long['population']['file_windows'] == 24
-    assert long['planned_requests'] == 2214
+    assert long['population']['live_benches']['capacity_2x1800']['session_seconds'] == [1800, 1800]
+    assert long['population']['live_sessions'] == 41
+    assert long['population']['live_session_seconds'] == 4729
+    assert long['population']['file_windows'] == 26
+    assert long['planned_requests'] == 3068
 
 
 def test_unfunded_plan_refuses_before_bundle_or_decoder_start(monkeypatch, capsys):
@@ -36,9 +46,9 @@ def test_unfunded_plan_refuses_before_bundle_or_decoder_start(monkeypatch, capsy
         raise AssertionError('bundle started before budget admission')
 
     monkeypatch.setattr(qualify_run, 'Bundle', forbidden_start)
-    assert qualify_run.main(['--budget', '29']) == 2
+    assert qualify_run.main(['--budget', '753']) == 2
     error = capsys.readouterr().err
-    assert 'planned_requests=30' in error
+    assert 'planned_requests=754' in error
     assert 'shortfall=1' in error
 
 

@@ -90,3 +90,19 @@ default budget (S17, third mismatch). This run repairs both without touching pro
   planning also needs explicit populations for the existing live benches; a historical request count is not a design.
 - Next: finish candidate 5 by enumerating every request-producing live bench from its declared sessions/durations, then
   update the expected totals and shortfall control before moving to censored classification.
+
+## Iteration 6 - complete decoder population planning
+- Target: candidate 5, enumerate every selected decoder-producing live bench and workspace File/URL input before
+  budget admission.
+- Files: `tools/qualify/run.py`, `tools/qualify/test_bundle.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused planner controls first RED **2 failed** (old 30-request plan admitted budget 753), then
+  `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py` -> **19/19 passed**.
+- Evidence: `request_plan(False)` = 39 live sessions / 1,129 s / 11 file windows / 16 browser cases / **754 planned**;
+  `request_plan(True)` = 41 sessions / 4,729 s / 26 windows / **3,068 planned**. Retained
+  `evidence/mvpfix/wp25/ab4744511b41-20260918T073411045029Z/summary.json` calibrates 1.25 headroom: 727 default-path
+  requests versus 602.79 unadjusted (1.206 observed); the retained count is evidence, never added as population.
+- Learned: the missing 733 pre-capacity requests came from six live-bench families plus workspace/browser live sessions
+  and workspace File/URL inputs, not from the 2×1,800 capacity row alone.
+- Next: candidate 6, classify any `rejected_by_budget > 0` bundle as budget-censored `INCOMPLETE` and report accepted,
+  completed and rejected request counts separately.
