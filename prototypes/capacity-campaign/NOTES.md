@@ -266,3 +266,18 @@ The earlier subset recorded 87 passed / 2 failed: both failures were imports of
 directory. Full collection resolves the fixture import; both pass. No fixture or
 production change was made for those invocation failures. New lifecycle tests
 all pass for final, failed terminal and absent terminal reader.
+
+## 2026-09-20 qualification-bundle population prototype
+
+Question: can the short bundle run the established two-session development step
+without hiding the required 30-minute confirmation or underfunding either selected
+population? The minimum primitives are selected session durations, retained decoder
+rate, file windows, browser cases, and headroom. The invariant is admission before
+any bundle or decoder startup; the 2x300 and 2x1800 rows are mutually exclusive.
+
+The focused production-path control in `tools/qualify/test_bundle.py` was RED 4/4,
+then GREEN 4/4. It measured the short plan as 1,729 live seconds plus 11 file windows
+and 16 browser cases: `ceil((1729 * 0.51 + 11 + 16) * 1.25) = 1136`. The long plan
+remains 3,068. A bare long run with the short default therefore refuses with a 1,932
+request shortfall. A changed population, admitted shortfall, wrong runner duration,
+or missing `capacity_2x1800: REQUIRED-NOT-RUN` would falsify the policy.

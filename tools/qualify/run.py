@@ -4,6 +4,7 @@ from collections import Counter
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -28,6 +29,43 @@ PY = sys.executable
 HOST = 'gyauo@ga0-alienware-rtx4070ti.tailnet.aisight.us'
 LADDER = Path('/Users/gao/Documents/Codex/2026-09-17/new-realtime-voice-chat-2/moss-mvp-review/evidence/independent-review/probes/ir_lane_ladder.py')
 CASES = ['system@1', 'mic@1', 'overlap@1', 'overlap@0.316', 'overlap@0.1', 'overlapsysquiet@0.316']
+BROWSER_CASES = tuple(range(1, 17))
+MEASURED_REQUEST_RATE = .51
+MEASURED_REQUEST_RATE_UNIT = 'requests_per_lane_second'
+REQUEST_RATE_EVIDENCE = (
+    dict(source_receipt='evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl',
+         unique_request_ids=2440, sessions=4, lanes_per_session=2, seconds_per_session=600),
+    dict(source_receipt='evidence/mvpfix/wp30/20260918-064644-1r-8x300/requests.jsonl',
+         unique_request_ids=2448, sessions=8, lanes_per_session=2, seconds_per_session=300),
+)
+REQUEST_RATE_SOURCE = REQUEST_RATE_EVIDENCE[0]['source_receipt']
+REQUEST_HEADROOM = 1.25
+REQUEST_HEADROOM_PROVENANCE = dict(
+    status='UNMEASURED',
+    source='planner_policy',
+    source_receipt=None,
+    calculation='1.25 policy multiplier; no receipt-derived arithmetic',
+    reason='no retained receipt isolates planner error after the lane-second rate correction',
+)
+LIVE_BENCH_SESSIONS = {
+    # verify_workspace: primary capture, two controlled lane cases, recognition,
+    # two bounded outage cases, then three eight-second repeat captures.
+    'workspace': ((18, 2), (54, 2), (29, 2), (30, 2), (70, 2), (87, 2), (8, 2), (8, 2), (8, 2)),
+    'demo_lanes': ((54, 2), (29, 2)),
+    # Six sessions: three four-frame captures, one empty capture, then two
+    # system-only one-frame concurrent captures. The wire frame is 0.5 seconds.
+    'lifecycle': ((2, 2), (2, 2), (2, 2), (0, 0), (.5, 1), (.5, 1)),
+    'reshare': ((20, 2),),
+    'identity_stress': ((60, 2), (60, 2), (60, 2)),
+    'level_ladder': ((24, 2), (24, 2), (24, 2), (24, 2), (24, 2), (24, 2)),
+    # Cases 1-6, 11, 15 and 16 create these bounded live sessions. The other
+    # browser cases are still represented by BROWSER_CASES below.
+    'browser_stress_all': ((8, 2), (1, 2), (1, 2), (68, 2), (19, 2), (36, 2),
+                           (16, 2), (8, 2), (50, 2), (73, 2), (45, 2), (58, 2)),
+}
+WORKSPACE_FILE_SECONDS = (50, 50)
+DEFAULT_FILE_SECONDS = (360, 180, 180, 180)
+LONG_FILE_SECONDS = (1800,)
 
 
 def write(path, value):
@@ -38,6 +76,79 @@ def counts(statuses):
     c = Counter(statuses)
     return dict(expected=len(statuses), executed=sum(v for k, v in c.items() if k not in ('UNRUNNABLE', 'SKIP')),
                 passed=c['PASS'], failed=c['FAIL'], skipped=c['SKIP'], unrunnable=c['UNRUNNABLE'])
+
+
+def request_plan(long):
+    """Return the selected decoder population before any bundle work starts."""
+    from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner, plan_windows
+
+    def live_bench(sessions):
+        seconds = [duration for duration, _ in sessions]
+        lanes = [count for _, count in sessions]
+        return dict(session_seconds=seconds, lanes_per_session=lanes, sessions=len(sessions),
+                    seconds=sum(seconds), lane_seconds=sum(duration * count for duration, count in sessions))
+
+    live_benches = {
+        name: live_bench(sessions) for name, sessions in LIVE_BENCH_SESSIONS.items()
+    }
+    if long:
+        live_benches['capacity_2x1800'] = live_bench(((1800, 2), (1800, 2)))
+    else:
+        live_benches['capacity_2x300'] = live_bench(((300, 2), (300, 2)))
+    live_sessions = sum(bench['sessions'] for bench in live_benches.values())
+    live_session_seconds = sum(bench['seconds'] for bench in live_benches.values())
+    live_lane_seconds = sum(bench['lane_seconds'] for bench in live_benches.values())
+    file_seconds = [*WORKSPACE_FILE_SECONDS, *DEFAULT_FILE_SECONDS,
+                    *(LONG_FILE_SECONDS if long else ())]
+    file_windows = sum(len(plan_windows(
+        seconds,
+        window_seconds=WindowedRunner.window_seconds,
+        stride_seconds=WindowedRunner.stride_seconds,
+    )) for seconds in file_seconds)
+    population = dict(
+        live_benches=live_benches,
+        live_sessions=live_sessions,
+        live_session_seconds=live_session_seconds,
+        live_lane_seconds=live_lane_seconds,
+        file_seconds=file_seconds,
+        file_windows=file_windows,
+        window_seconds=WindowedRunner.window_seconds,
+        stride_seconds=WindowedRunner.stride_seconds,
+        browser_cases=list(BROWSER_CASES),
+    )
+    measured_rate_evidence = []
+    for evidence in REQUEST_RATE_EVIDENCE:
+        lane_seconds = evidence['sessions'] * evidence['lanes_per_session'] * evidence['seconds_per_session']
+        observed_rate = evidence['unique_request_ids'] / lane_seconds
+        measured_rate_evidence.append(dict(
+            **evidence, lane_seconds=lane_seconds, observed_rate=round(observed_rate, 6),
+            rounded_rate=round(observed_rate, 2),
+            calculation=(f"{evidence['unique_request_ids']} unique requests / "
+                         f"({evidence['sessions']} sessions * {evidence['lanes_per_session']} lanes/session * "
+                         f"{evidence['seconds_per_session']} seconds/session) = {observed_rate:.6f} "
+                         f"{MEASURED_REQUEST_RATE_UNIT}; rounded to 2 decimals = {observed_rate:.2f}"),
+        ))
+    live_lane_requests = live_lane_seconds * MEASURED_REQUEST_RATE
+    unadjusted = live_lane_requests + file_windows + len(BROWSER_CASES)
+    return dict(
+        measured_rate=MEASURED_REQUEST_RATE,
+        measured_rate_unit=MEASURED_REQUEST_RATE_UNIT,
+        measured_rate_evidence=measured_rate_evidence,
+        source_receipt=REQUEST_RATE_SOURCE,
+        headroom=REQUEST_HEADROOM,
+        headroom_provenance=dict(REQUEST_HEADROOM_PROVENANCE),
+        planned_requests=math.ceil(unadjusted * REQUEST_HEADROOM),
+        request_derivation=dict(
+            live_lane_requests=round(live_lane_requests, 3),
+            file_window_requests=file_windows,
+            browser_case_requests=len(BROWSER_CASES),
+            unadjusted_requests=round(unadjusted, 3),
+            calculation=(f"ceil(({live_lane_seconds:g} lane_seconds * {MEASURED_REQUEST_RATE:g} "
+                         f"{MEASURED_REQUEST_RATE_UNIT} + {file_windows} file_window_requests + "
+                         f"{len(BROWSER_CASES)} browser_case_requests) * {REQUEST_HEADROOM:g} headroom)"),
+        ),
+        population=population,
+    )
 
 
 def ready_descriptor(base):
@@ -61,7 +172,7 @@ def bundle_verdict(gates):
 
 
 class Bundle:
-    def __init__(self, args):
+    def __init__(self, args, plan):
         self.args = args
         self.decoder_upstream_port = args.decoder_upstream_port or 18125
         self.started = time.monotonic()
@@ -90,7 +201,13 @@ class Bundle:
                          identity=dict(git_sha=self.sha, tree_clean=not dirty, dirty_files=dirty,
                                        python=sys.version.split()[0], node=subprocess.check_output(['node','--version'], text=True).strip(),
                                        decoder_tunnel_url=f'http://127.0.0.1:{self.decoder_upstream_port}', decoder_base_url='http://127.0.0.1:19125/v1'),
-                         gates=[], request_budget=args.budget, long=args.long, integrated_candidate=self.sha)
+                         gates=[], request_budget=args.budget, long=args.long, integrated_candidate=self.sha,
+                         measured_rate=plan['measured_rate'], measured_rate_unit=plan['measured_rate_unit'],
+                         measured_rate_evidence=plan['measured_rate_evidence'], source_receipt=plan['source_receipt'],
+                         headroom=plan['headroom'], headroom_provenance=plan['headroom_provenance'],
+                         planned_requests=plan['planned_requests'],
+                         request_derivation=plan['request_derivation'],
+                         request_population=plan['population'])
         self.current = None
         self.gate('tree_clean', 'PASS' if not dirty else 'FAIL', measurements={'dirty_files':dirty})
 
@@ -100,6 +217,11 @@ class Bundle:
         lines = ['# Local qualification', '', f"Candidate `{self.sha}`; clean at start: {self.data['identity']['tree_clean']}.",
                  f"Verdict: {self.data.get('verdict', 'INCOMPLETE')}.",
                  'Local measurement only; no deployment or attended-capture acceptance.', '',
+                 f"Request rate: {self.data['measured_rate']} {self.data['measured_rate_unit']}.",
+                 f"Request-rate evidence: {json.dumps(self.data['measured_rate_evidence'], separators=(',', ':'))}.",
+                 f"Headroom: {self.data['headroom']}.",
+                 f"Headroom provenance: {json.dumps(self.data['headroom_provenance'], separators=(',', ':'))}.",
+                 f"Request derivation: {json.dumps(self.data['request_derivation'], separators=(',', ':'))}.", '',
                  '| Gate | Status | Counts | Seconds |', '|---|---|---|---|']
         reasons = []
         for g in self.data['gates']:
@@ -312,11 +434,12 @@ class Bundle:
         return ready
 
     def extended(self, ready):
-        specs=[('browser_stress_all',16),('file_6min',1),('file_3min_formats',3),('file_failures',5),('file_30min',1),('capacity_2x1800',2)]
+        specs=[('browser_stress_all',16),('file_6min',1),('file_3min_formats',3),('file_failures',5),('file_30min',1)]
         if not ready:
             for name,n in specs:
-                status='SKIP' if name in ('file_30min','capacity_2x1800') and not self.args.long else 'UNRUNNABLE'
+                status='SKIP' if name == 'file_30min' and not self.args.long else 'UNRUNNABLE'
                 self.gate(name,status,counts([status]*n),reason='Requires --long' if status=='SKIP' else 'Isolated stack unavailable')
+            self.capacity(ready=False)
             return
         output=self.work/'browser'
         state=(self.work/'browser-state').relative_to(ROOT)
@@ -325,29 +448,40 @@ class Bundle:
             '--out',str(output),'--state',str(state),'--cert',str(self.cert),'--key',str(self.key),
             '--manifest',str(self.manifest)],timeout=3600)
         rows=json.loads((output/'campaign-results.json').read_text()) if (output/'campaign-results.json').exists() else {}
-        statuses=[('UNRUNNABLE' if rows.get(str(i),{}).get('status')=='BLOCKED' else rows.get(str(i),{}).get('status','UNRUNNABLE')) for i in range(1,17)]
+        statuses=[('UNRUNNABLE' if rows.get(str(i),{}).get('status')=='BLOCKED' else rows.get(str(i),{}).get('status','UNRUNNABLE')) for i in BROWSER_CASES]
         import ast
         module=ast.parse((ROOT/'prototypes/browser-stress/run.py').read_text())
         predicates=next(ast.literal_eval(node.value) for node in module.body if isinstance(node,ast.Assign)
             and any(isinstance(t,ast.Name) and t.id=='PREDICATES' for t in node.targets))
         measurements={str(i):dict(status=statuses[i-1],predicate=predicates[i],
-            observation=retained_metadata(rows.get(str(i),{}))) for i in range(1,17)}
+            observation=retained_metadata(rows.get(str(i),{}))) for i in BROWSER_CASES}
         self.gate('browser_stress_all',aggregate(statuses,code),counts(statuses),elapsed,code,
             reason='Native hidden-tab cases are UNRUNNABLE if Chromium never becomes hidden; missing rows mean bench could not execute',measurements=measurements)
         self.files()
-        if self.args.long:
-            output=self.work/'capacity'
-            scratch=(self.work/'capacity-runtime').relative_to(ROOT)
-            code,elapsed,_=self.command('capacity_2x1800',[PY,'prototypes/capacity-campaign/run.py',
-                '--sessions','2','--seconds','1800','--clips','mono_javier_intro_50s','discussion_jamie_dimon_180s','--stack-port','17827','--decoder-url','http://127.0.0.1:19125/v1',
-                '--out',str(output),'--scratch',str(scratch),'--manifest',str(self.manifest),'--allow-contention'],timeout=3600)
-            result=json.loads((output/'result.json').read_text()) if (output/'result.json').exists() else {}
-            rows=result.get('session_results',[])
-            statuses=['PASS' if r.get('clean') else 'FAIL' for r in rows]+['UNRUNNABLE']*(2-len(rows))
-            self.gate('capacity_2x1800','UNRUNNABLE' if not rows else 'PASS' if result.get('clean') and code==0 else 'FAIL',
-                counts(statuses),elapsed,code,reason='Existing capacity clean bar includes no detected foreign load; contention is recorded without pausing',measurements=retained_metadata(result))
-        else:
-            self.gate('capacity_2x1800','SKIP',counts(['SKIP']*2),reason='Requires --long')
+        self.capacity(ready=True)
+
+    def capacity(self, ready):
+        if not ready:
+            if self.args.long:
+                self.gate('capacity_2x1800','UNRUNNABLE',counts(['UNRUNNABLE']*2),reason='Isolated stack unavailable')
+            else:
+                self.gate('capacity_2x300','UNRUNNABLE',counts(['UNRUNNABLE']*2),reason='Isolated stack unavailable')
+                self.gate('capacity_2x1800','REQUIRED-NOT-RUN',counts(['SKIP']*2),reason='Requires --long and a sufficient explicit --budget')
+            return
+        name = 'capacity_2x1800' if self.args.long else 'capacity_2x300'
+        seconds = 1800 if self.args.long else 300
+        output=self.work/'capacity'
+        scratch=(self.work/'capacity-runtime').relative_to(ROOT)
+        code,elapsed,_=self.command(name,[PY,'prototypes/capacity-campaign/run.py',
+            '--sessions','2','--seconds',str(seconds),'--clips','mono_javier_intro_50s','discussion_jamie_dimon_180s','--stack-port','17827','--decoder-url','http://127.0.0.1:19125/v1',
+            '--out',str(output),'--scratch',str(scratch),'--manifest',str(self.manifest),'--allow-contention'],timeout=3600)
+        result=json.loads((output/'result.json').read_text()) if (output/'result.json').exists() else {}
+        rows=result.get('session_results',[])
+        statuses=['PASS' if r.get('clean') else 'FAIL' for r in rows]+['UNRUNNABLE']*(2-len(rows))
+        self.gate(name,'UNRUNNABLE' if not rows else 'PASS' if result.get('clean') and code==0 else 'FAIL',
+            counts(statuses),elapsed,code,reason='Existing capacity clean bar includes no detected foreign load; contention is recorded without pausing',measurements=retained_metadata(result))
+        if not self.args.long:
+            self.gate('capacity_2x1800','REQUIRED-NOT-RUN',counts(['SKIP']*2),reason='Requires --long and a sufficient explicit --budget')
 
     def files(self):
         bench='prototypes/streaming-diarization/wp16-file-url-long/'
@@ -493,7 +627,8 @@ class Bundle:
             self.proxy.close()
         for handle in self.handles:
             handle.close()
-        self.data['decoder'] = dict(requests=self.proxy.sent if self.proxy else 0,
+        self.data['decoder'] = dict(accepted_requests=self.proxy.sent if self.proxy else 0,
+                                    completed_requests=self.proxy.completed if self.proxy else 0,
                                     peak_in_flight=self.proxy.peak if self.proxy else 0,
                                     rejected_by_budget=self.proxy.rejected if self.proxy else 0,
                                     active_at_teardown=self.proxy.active if self.proxy else 0,
@@ -508,12 +643,17 @@ class Bundle:
                 pass
         self.gate('teardown','FAIL' if alive else 'PASS',measurements={'owned_process_groups_remaining':alive})
         self.data['gate_counts'] = dict(Counter(g['status'] for g in self.data['gates']))
-        self.data['verdict'] = bundle_verdict(self.data['gates'])
+        self.data['budget_censored'] = self.data['decoder']['rejected_by_budget'] > 0
+        self.data['verdict'] = ('INCOMPLETE' if self.data['budget_censored']
+                                else bundle_verdict(self.data['gates']))
+        if self.data['budget_censored']:
+            self.data['verdict_reason'] = 'budget_censored'
         self.data['qualified'] = self.data['verdict'] == 'PASS'
         if self.args.compare:
             baseline = json.loads(self.args.compare.read_text())
             deltas = compare(baseline,self.data)
-            omitted=[d for d in deltas if not self.args.long and d['name'] in ('file_30min','capacity_2x1800') and d['after']=='SKIP']
+            omitted=[d for d in deltas if not self.args.long and d['name'] in ('file_30min','capacity_2x1800')
+                     and d['after'] in ('SKIP','REQUIRED-NOT-RUN')]
             deltas=[d for d in deltas if d not in omitted]
             self.data['determinism'] = dict(baseline=str(self.args.compare),status='PASS' if not deltas else 'FAIL',deltas=deltas,
                                            same_candidate=baseline['identity']['git_sha']==self.sha, intentionally_omitted_long_gates=omitted)
@@ -567,20 +707,26 @@ def score_ladder(rows):
     return result
 
 
-def main():
+def main(argv=None):
     global LADDER
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--long',action='store_true')
-    parser.add_argument('--budget',type=int,default=2000)
+    parser.add_argument('--budget',type=int,default=request_plan(False)['planned_requests'])
     parser.add_argument('--decoder-upstream-port',type=int,help='Use an existing owned loopback decoder/proxy instead of opening another SSH tunnel')
     parser.add_argument('--out',type=Path)
     parser.add_argument('--compare',type=Path)
     parser.add_argument('--ladder',type=Path,default=LADDER)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.budget < 1:
         parser.error('budget must be positive')
+    plan = request_plan(args.long)
+    if plan['planned_requests'] > args.budget:
+        shortfall = plan['planned_requests'] - args.budget
+        print(f"REQUEST BUDGET INSUFFICIENT: planned_requests={plan['planned_requests']} "
+              f"budget={args.budget} shortfall={shortfall}", file=sys.stderr)
+        return 2
     LADDER = args.ladder
-    bundle = Bundle(args)
+    bundle = Bundle(args, plan)
     def interrupted(signum, frame):
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM,interrupted)
@@ -596,10 +742,16 @@ def main():
         (bundle.work/'runner-error.raw').write_text(traceback.format_exc())
     finally:
         recorded = {gate['name'] for gate in bundle.data['gates']}
+        if not args.long and 'capacity_2x1800' not in recorded:
+            bundle.gate('capacity_2x1800','REQUIRED-NOT-RUN',counts(['SKIP']*2),
+                        reason='Requires --long and a sufficient explicit --budget')
+            recorded.add('capacity_2x1800')
         required = dict(python_import=1, asset_parity=17, pytest=0, frontend=0,
                         bundle_helpers=0, typecheck=1, verify_layout=1, stack=1,
                         browser_stress_all=16,file_6min=1,file_3min_formats=3,file_failures=5,file_30min=1,capacity_2x1800=2,
                         workspace=14, demo_lanes=2, lifecycle=7, reshare=6, level_ladder=6, identity_stress=3)
+        if not args.long:
+            required['capacity_2x300'] = 2
         required.update({'workspace_row_'+str(n):1 for n in range(1,15)})
         for name, expected in required.items():
             if name not in recorded:

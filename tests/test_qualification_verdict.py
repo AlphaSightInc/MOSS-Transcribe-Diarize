@@ -193,3 +193,34 @@ def test_real_bundle_cleanup_records_overall_verdict(tmp_path, status, verdict, 
     b.cleanup()
     assert b.data['verdict'] == verdict
     assert b.data['qualified'] is (verdict == 'PASS')
+
+
+def test_budget_rejection_censors_quality_verdict_and_retains_request_counts(tmp_path, monkeypatch):
+    """A refused decoder request means quality was not fully observed, not that it failed."""
+    import tools.qualify.run as module
+    monkeypatch.setattr(module, 'ROOT', tmp_path)
+    b = object.__new__(Bundle)
+    b.processes, b.handles, b.monitor = [], [], None
+    b.monitor_stop = SimpleNamespace(set=lambda: None)
+    b.proxy = SimpleNamespace(
+        sent=2,
+        completed=2,
+        rejected=1,
+        peak=1,
+        active=0,
+        close=lambda: None,
+    )
+    b.args = SimpleNamespace(budget=2, compare=None)
+    b.out = tmp_path/'bundle'
+    b.data = {'gates': [{'name': 'quality', 'status': 'FAIL'}]}
+    b.gate = lambda name, status, **kw: b.data['gates'].append({'name': name, 'status': status})
+    b.flush = lambda: None
+
+    b.cleanup()
+
+    assert b.data['decoder']['accepted_requests'] == 2
+    assert b.data['decoder']['completed_requests'] == 2
+    assert b.data['decoder']['rejected_by_budget'] == 1
+    assert b.data['budget_censored'] is True
+    assert b.data['verdict'] == 'INCOMPLETE'
+    assert b.data['qualified'] is False

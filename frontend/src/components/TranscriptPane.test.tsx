@@ -70,6 +70,44 @@ describe("TranscriptPane", () => {
     expect(root.querySelectorAll("button.utt-speaker")).toHaveLength(2);
   });
 
+  it("publishes each rendered turn's model-state custody", () => {
+    act(() => {
+      render(<TranscriptPane />, root);
+      replaceTranscript([
+        {
+          start: 3.25,
+          end: 4,
+          text: "First part.",
+          speaker: "SPEAKER_07",
+          speaker_entity_id: "speaker-7",
+          display_name: "Named person",
+          state: "final",
+          segment_id: "segment-a"
+        },
+        {
+          start: 4,
+          end: 6.5,
+          text: "Second part.",
+          speaker: "SPEAKER_07",
+          speaker_entity_id: "speaker-7",
+          display_name: "Named person",
+          state: "final",
+          segment_id: "segment-b"
+        }
+      ]);
+    });
+
+    const row = root.querySelector(".utt");
+    expect(root.querySelectorAll(".utt")).toHaveLength(1);
+    expect(row?.getAttribute("data-turn-start")).toBe("3.25");
+    expect(row?.getAttribute("data-turn-end")).toBe("6.5");
+    expect(row?.getAttribute("data-target-keys")).toBe("segment:segment-a|segment:segment-b");
+    expect(JSON.parse(row?.getAttribute("data-segments") ?? "null")).toEqual([
+      { start: 3.25, end: 4, text: "First part." },
+      { start: 4, end: 6.5, text: "Second part." }
+    ]);
+  });
+
   function showSpeakers(originating = true): void {
     act(() => {
       sessionId.value = "meeting/one";

@@ -1,0 +1,262 @@
+# Ralph Progress Journal - MOSS round 4, ralph run A
+
+Append-only. Agents add one entry per iteration; the launcher adds one-line
+"[loop <run-id>] ..." markers at run boundaries. Never rewrite or delete
+entries — context.md is the place for current state, this file is history.
+
+Entry format (concise, a few lines each):
+
+  ## Iteration <n> - <short focus>
+  - Target: <candidate from context.md, or off-list + justification>
+  - Files: <paths>
+  - Validation: <command> -> <result>
+  - Evidence: <artifact/log paths>
+  - Learned: <what changed in understanding>
+  - Next: <recommended next step>
+
+Started: 2026-09-20 - branch round4/integration @ 89f833ac (round-3 candidate, suites 2,116/0/5 + 311/311). Two
+qualification instruments are known-untrustworthy: the headed visible-word instrument swaps source-occurrence custody
+(Codex F4, reproduced offline), and the qualification bundle cannot fund its own 2×1800 s capacity gate under the
+default budget (S17, third mismatch). This run repairs both without touching product code.
+
+[loop 20260920-210721-35143] start budget=12 agent=codex branch=round4/ralph-a
+
+## Iteration 1 - port DOM occurrence-custody falsifier
+- Target: candidate 1, port the earlier/later repeated-word falsifier as a failing regression test.
+- Files: `tests/test_visible_word_instrument.py`, `scripts/ralph-afk/context.md`, `scripts/ralph-afk/progress.txt`.
+- Validation: `git diff --name-only 89f833ac..51d35ef1` -> only loop/orchestration files; `PYTHONDONTWRITEBYTECODE=1
+  PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider tests/test_visible_word_instrument.py` -> expected RED,
+  **1 failed / 14 passed**; original `dom-time-repro.py` reproduced the same swap.
+- Evidence: `tests/test_visible_word_instrument.py`; failing assertion reports earlier `missing`; reproducer reports the
+  invented DOM span 0-12 s, later word `correct` at 1 s instead of `missing`, earlier word `missing` instead of 11 s.
+- Learned: the regression is isolated to invented DOM span custody; all 14 pre-existing module controls still pass.
+- Next: candidate 2, publish `data-turn-start`, `data-turn-end`, and `data-target-keys` from turn model state with one
+  frontend test and rebuilt asset parity.
+
+## Iteration 2 - publish turn custody on rendered rows
+- Target: candidate 2, expose each merged turn's model-state span and target keys on its `.utt` article.
+- Files: `frontend/src/components/TranscriptPane.tsx`, `frontend/src/components/TranscriptPane.test.tsx`,
+  `moss_transcribe_diarize/app/frontend_assets/app.js{,.map}`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused component test first RED on absent `data-turn-start`, then
+  `npm --prefix frontend test -- --run src/components/TranscriptPane.test.tsx` -> **18/18 passed**;
+  `npm --prefix frontend run typecheck` -> clean; two `npm --prefix frontend run build` runs -> 17 assets, second build
+  left no unstaged asset diff against the first build's staged bytes (**17/17 parity**).
+- Evidence: `.utt` now carries `data-turn-start={turn.start}`, `data-turn-end={turn.end}`, and
+  `data-target-keys={turn.target_segment_keys.join("|")}`; the control verifies a two-segment merged turn publishes
+  `3.25`, `6.5`, and both model target keys.
+- Learned: the required custody is already present in the React turn and can be exposed without reconstructing spans
+  or changing merge semantics; the Python collector remains the only consumer gap.
+- Next: candidate 3, read these row attributes in `visible_word_headed.py`, remove invented next-row/frontier ends, and
+  report rows lacking spans as DOM `UNMEASURED`.
+
+## Iteration 3 - consume rendered-row custody
+- Target: candidate 3, replace invented DOM spans with each rendered turn's published model-state span.
+- Files: `tools/qualify/visible_word_headed.py`, `tools/qualify/visible_words.py`,
+  `tests/test_visible_word_instrument.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tests/test_visible_word_instrument.py` -> **16/16 passed**; call-site scan found no stale `_dom_segments` callers.
+- Evidence: the ported two-`alpha` control now credits only the 0-1 s row at its 11 s delay and leaves the 10-11 s
+  occurrence missing; the new spanless-row control produces no segments and `rendered_dom: UNMEASURED` with a reason.
+- Learned: ordered one-to-one matching already existed; the defect was solely DOM interval custody and silent row
+  dropping. The collector now reads the three row attributes and never reconstructs ends from clocks or frontier.
+- Next: candidate 4, add the remaining revision/merge/phrase-end violating controls and separate phrase-end diagnostics.
+
+## Iteration 4 - separate phrase-end diagnostics
+- Target: candidate 4, add the four remaining custody controls and stop presenting source-phrase ends as word latency.
+- Files: `tools/qualify/visible_words.py`, `tools/qualify/visible_word_headed.py`, `tools/qualify/README.md`,
+  `tests/test_visible_word_instrument.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused test first RED at missing `_observation_due`; after implementation,
+  `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tests/test_visible_word_instrument.py` -> **20/20 passed**. The external historical reproducer now raises `TypeError`
+  because it calls the retired `_dom_segments(rows, frontier)` signature; its ported maintained control is GREEN.
+- Evidence: four falsifier docstrings in `tests/test_visible_word_instrument.py`; `moss-visible-words.v2` now emits one
+  `phrase_end_diagnostics` row per retained source interval and no `*latency*` field on word rows.
+- Learned: ordered matching already handled omission, merged rows and revision. The missing primitives were retained
+  source-interval identity and an unchanged observation at the first poll crossing each phrase end.
+- Next: candidate 5, add gate-population request planning and refuse an unfundable bundle before decoder traffic.
+
+## Iteration 5 - establish budget preflight seam
+- Target: candidate 5, compute and retain the selected population plan and refuse a short budget before bundle or
+  decoder startup; partial because the full live-bench population is not yet enumerated.
+- Files: `tools/qualify/run.py`, `tools/qualify/test_bundle.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: throwaway one-command prototype -> default 9 file windows / 16 browser cases / 30 planned, long 24
+  windows / 2×1800 live seconds / 2,214 planned; focused controls first RED **2 failed**, then helper modules
+  `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py` -> **19/19 passed**.
+- Evidence: `request_plan()` summary fields and `test_unfunded_plan_refuses_before_bundle_or_decoder_start`; retained
+  S17 evidence in `context.md` says earlier gates used 733 requests, falsifying completeness of the current literal
+  capacity/file/browser-only population.
+- Learned: the admission seam can run before all bundle work and uses production file windowing, but truthful total
+  planning also needs explicit populations for the existing live benches; a historical request count is not a design.
+- Next: finish candidate 5 by enumerating every request-producing live bench from its declared sessions/durations, then
+  update the expected totals and shortfall control before moving to censored classification.
+
+## Iteration 6 - complete decoder population planning
+- Target: candidate 5, enumerate every selected decoder-producing live bench and workspace File/URL input before
+  budget admission.
+- Files: `tools/qualify/run.py`, `tools/qualify/test_bundle.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused planner controls first RED **2 failed** (old 30-request plan admitted budget 753), then
+  `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py` -> **19/19 passed**.
+- Evidence: `request_plan(False)` = 39 live sessions / 1,129 s / 11 file windows / 16 browser cases / **754 planned**;
+  `request_plan(True)` = 41 sessions / 4,729 s / 26 windows / **3,068 planned**. Retained
+  `evidence/mvpfix/wp25/ab4744511b41-20260918T073411045029Z/summary.json` calibrates 1.25 headroom: 727 default-path
+  requests versus 602.79 unadjusted (1.206 observed); the retained count is evidence, never added as population.
+- Learned: the missing 733 pre-capacity requests came from six live-bench families plus workspace/browser live sessions
+  and workspace File/URL inputs, not from the 2×1,800 capacity row alone.
+- Next: candidate 6, classify any `rejected_by_budget > 0` bundle as budget-censored `INCOMPLETE` and report accepted,
+  completed and rejected request counts separately.
+
+## Iteration 7 - classify budget-censored runs
+- Target: candidate 6, make any decoder budget rejection produce `INCOMPLETE`, never a quality `FAIL`, with separate
+  accepted/completed/rejected request counts.
+- Files: `tools/qualify/decoder.py`, `tools/qualify/run.py`, `tools/qualify/test_bundle.py`,
+  `tests/test_qualification_verdict.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused controls first RED **2 failed / 36 passed**; then `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
+  <pinned-python> -m pytest -q -p no:cacheprovider tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py
+  tests/test_qualification_verdict.py` -> **46/46 passed**; `git diff --check` -> clean.
+- Evidence: `test_budget_rejection_censors_quality_verdict_and_retains_request_counts` proves a gate `FAIL` is superseded
+  by budget-censored `INCOMPLETE`; the real loopback proxy control proves 2 accepted / 2 completed / 1 rejected.
+- Learned: accepted requests were counted, but completion was only implicit in request-log end events; one explicit
+  counter is sufficient. Budget exhaustion is only censorship after an actual rejection, not merely when the cap is
+  exactly consumed.
+- Next: candidate 7, add the default 2x300 development capacity row, retain long 2x1800 as required-not-run by default,
+  and derive the default budget from the selected population.
+
+## Iteration 8 - fund and expose selected capacity row
+- Target: candidate 7, add default 2x300 capacity, preserve required 2x1800 visibility, and derive the default budget.
+- Files: `tools/qualify/run.py`, `tools/qualify/test_bundle.py`, `tools/qualify/README.md`,
+  `prototypes/capacity-campaign/NOTES.md`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused policy controls first RED **4/4**; then `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
+  <pinned-python> -m pytest -q -p no:cacheprovider tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py
+  tests/test_qualification_verdict.py` -> **50/50 passed**; bare `tools/qualify/run.py --long` -> exit 2 before startup,
+  `planned_requests=3068 budget=1136 shortfall=1932`; `git diff --check` -> clean.
+- Evidence: default derivation `ceil((1729 * 0.51 + 11 + 16) * 1.25) = 1136`; long remains 3,068 and bare `--long`
+  refuses before `Bundle` with shortfall 1,932; runner controls prove 2x300 default / 2x1800 long and default
+  `capacity_2x1800: REQUIRED-NOT-RUN`, including an unavailable stack.
+- Learned: capacity mode is a replacement choice, not an additive population; deriving the short default makes it
+  runnable while requiring an explicit larger cap for the 30-minute confirmation.
+- Next: candidate 8, run full backend/frontend suites and write `docs/verify/round4-run-a/VERIFY.md` with falsifiers.
+
+## Iteration 9 - close offline verification
+- Target: candidate 8, run the full offline suites and write the self-contained verification record with falsifiers.
+- Files: `docs/verify/round4-run-a/VERIFY.md`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider tests` ->
+  **2,123 passed / 0 failed / 5 skipped / 37 subtests** in 192.01 s; `npm --prefix frontend test -- --run` -> **312/312
+  passed** across 28 files; `npm --prefix frontend run typecheck` -> clean.
+- Evidence: `docs/verify/round4-run-a/VERIFY.md`; the maintained falsifiers in
+  `tests/test_visible_word_instrument.py` and `tools/qualify/test_bundle.py`; iterations 1-8 above retain RED/GREEN,
+  17/17 generated-asset parity, refusal shortfall, and budget-censorship evidence.
+- Learned: the final tree exceeds both suite floors with no regression; offline instrument acceptance is complete, while
+  real headed latency and the 2×1,800 confirmation correctly remain unmeasured/not run.
+- Next: none for this Ralph run; hand the committed branch to the integration lead without push, merge, or live rerun.
+
+[loop 20260920-210721-35143] complete at iteration 9
+
+[loop 20260920-221141-79363] start budget=6 agent=codex branch=round4/ralph-a
+
+## Iteration 1 - prove merged-turn constituent custody gap
+- Target: candidate 1 / B1, add the required merged-row constituent-state violating control and retain it RED.
+- Files: `tests/test_visible_word_instrument.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tests/test_visible_word_instrument.py` -> expected RED, **1 failed / 20 passed**; `git diff --name-only
+  3a56ce7b..HEAD` -> only loop-state files, so the exercised instrument is byte-identical to reviewed HEAD `3a56ce7b`.
+- Evidence: `test_merged_dom_row_keeps_custody_with_each_constituent_segment`; current actual is
+  `[early missing/null, late correct/12.0]`, required is `[early correct/12.0, late missing/null]`.
+- Learned: `_dom_segments` ignores constituent state and lets one row's 0-11 s outer span transfer its sole displayed
+  `alpha` from the owned 0-1 s segment to the absent 10-11 s occurrence; inherited controls remain green.
+- Next: candidate 1 / B2, carry each merged turn's constituent `start`/`end`/`text` and publish it in one row attribute.
+
+## Iteration 2 - publish merged-turn constituent state
+- Target: candidate 1 / B2, retain each merged turn's constituent model-state span/text and expose it in one `.utt`
+  attribute.
+- Files: `frontend/src/lib/mergeTranscript.ts`, `frontend/src/components/TranscriptPane.tsx`, their focused/type-fixture
+  tests, rebuilt `moss_transcribe_diarize/app/frontend_assets/app.js{,.map}`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused component control first RED **1 failed / 17 passed** on absent `data-segments`; then
+  `npm --prefix frontend test -- --run src/components/TranscriptPane.test.tsx` -> **18/18 passed**;
+  `npm --prefix frontend run typecheck` -> clean; two `npm --prefix frontend run build` runs -> **17/17 byte-identical**
+  generated assets; `git diff --check` -> clean.
+- Evidence: the two-segment row publishes exact ordered JSON `[{start:3.25,end:4,text:"First part."},
+  {start:4,end:6.5,text:"Second part."}]`; only generated `app.js` and `app.js.map` changed in the 17-file asset tree.
+- Learned: the merge seam already owns the exact constituent state; one array on `TranscriptTurn` preserves custody
+  without id joins or reconstructed spans. The Python instrument does not consume it yet, so B1 remains RED.
+- Next: candidate 1 / B3, parse `data-segments` and emit one `TranscriptSegment` per valid constituent; spanless or
+  unusable constituent state must remain DOM `UNMEASURED` with no credit.
+
+## Iteration 3 - consume merged-turn constituent state
+- Target: candidate 1 / B3, replace outer-row custody with each rendered turn's published constituent state.
+- Files: `tools/qualify/visible_word_headed.py`, `tests/test_visible_word_instrument.py`,
+  `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tests/test_visible_word_instrument.py` -> **21/21 passed**.
+- Evidence: the merged-row control now emits two constituent `TranscriptSegment`s, credits `alpha@0-1` at 12 s, and
+  leaves the absent `alpha@10-11` `missing/null`; a row without usable constituent state produces no DOM credit and
+  `rendered_dom: UNMEASURED` with an explicit reason.
+- Learned: `data-segments` is sufficient custody; outer-row start/end/text and target keys are unnecessary for the
+  instrument. Parsing in Python preserves an evidence result for malformed or absent state instead of crashing the
+  browser evaluation.
+- Next: candidate 1 / B1, add the single-speaker whole-turn and long-gap constituent-custody controls.
+
+## Iteration 4 - cover whole-turn and long-gap custody
+- Target: candidate 1 / B1, add the remaining same-speaker whole-transcript and long-gap constituent controls.
+- Files: `tests/test_visible_word_instrument.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tests/test_visible_word_instrument.py` -> **23/23 passed**.
+- Evidence: `test_single_speaker_whole_transcript_turn_keeps_segment_custody` keeps three constituents distinct inside
+  one rendered row; `test_merged_dom_row_across_long_gap_keeps_segment_custody` prevents an early `alpha` from
+  satisfying an absent repetition after a 120-second gap.
+- Learned: the B3 parser already generalizes to both required shapes, so no production change was needed.
+- Next: candidate 1 / B4, correct planning from session-seconds to lane-seconds and reproduce the rate from both wp30
+  receipts.
+
+## Iteration 5 - plan decoder requests in lane-seconds
+- Target: candidate 1 / B4; the unit correction also closes B5's derived budget and refusal controls.
+- Files: `tools/qualify/run.py`, `tools/qualify/test_bundle.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: throwaway one-command prototype reproduced **2,440/2,440 unique** over 4×2×600 and **2,448/2,448
+  unique** over 8×2×300, both rounding to 0.51 requests/lane-second; focused controls first RED **4 failed / 12
+  passed**, then `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py` -> **24/24 passed**; bare `tools/qualify/run.py
+  --long` -> exit 2 before startup, `planned_requests=6082 budget=2238 shortfall=3844`; `git diff --check` -> clean.
+- Evidence: the two `evidence/mvpfix/wp30/*/requests.jsonl` receipts and their `result.json`; probe source establishes
+  per-session lane counts. Default = **3,457 lane-seconds / 2,238 requests**; long = **9,457 / 6,082**. Bare long with
+  the derived default budget refuses before `Bundle`, shortfall **3,844**.
+- Learned: session-seconds erased the decoder's lane multiplicity. Lifecycle is the only mixed family: three two-lane
+  sessions, one empty session, then two system-only half-second sessions; all other selected live families drive two
+  lanes per session.
+- Next: candidate 1, record B6 headroom provenance and resolve B7's out-of-scope prototype note.
+
+## Iteration 6 - classify request headroom provenance
+- Target: candidate 1 / B6–B7, record honest headroom provenance and resolve the run-A prototype-note scope.
+- Files: `tools/qualify/run.py`, `tools/qualify/test_bundle.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused provenance control first RED **1 failed** on absent `headroom_provenance`; then its planner and
+  summary controls GREEN **2/2**; `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p
+  no:cacheprovider tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py` -> **25/25 passed**.
+- Evidence: `request_plan()` and both JSON/Markdown summaries retain `headroom=1.25` with status `UNMEASURED`, source
+  `planner_policy`, `source_receipt=null`, and `no receipt-derived arithmetic`. The old 727/602.79 comparison used the
+  superseded session-second estimate and therefore cannot justify headroom after the lane-second repair.
+- Learned: request rate is receipt-measured; headroom is an explicit conservative policy, not a measured quantity.
+  `prototypes/capacity-campaign/NOTES.md` belongs beside the population prototype because `AGENTS.md` requires the
+  prototype verdict there; this is the B7-permitted justification, so the note is not moved.
+- Next: rewrite `docs/verify/round4-run-a/VERIFY.md` for segment-granular custody and honest inherited-control claims,
+  then rerun the required full backend/frontend/typecheck checkpoint.
+
+[loop 20260920-221141-79363] budget exhausted after 6 iterations
+
+[loop 20260920-223622-11052] start budget=3 agent=codex branch=round4/ralph-a
+
+## Iteration 1 - close run A2 offline verification
+- Target: sole open candidate, rewrite the verification record for segment-granular custody and run the required full
+  offline checkpoint.
+- Files: `docs/verify/round4-run-a/VERIFY.md`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider tests` ->
+  **2,126 passed / 0 failed / 5 skipped / 37 subtests** in 182.75 s; `npm --prefix frontend test -- --run` ->
+  **312/312 passed** across 28 files; `npm --prefix frontend run typecheck` -> clean.
+- Evidence: the rewritten verification record distinguishes the required base-RED merged-row control (**1 failed / 20
+  passed**) from inherited GREEN behavior controls; records final constituent custody (**23/23**), 17/17 asset parity,
+  receipt-derived lane-second rates, 2,238 / 6,082 budgets, `UNMEASURED` headroom, and explicit headed/long-capacity
+  boundaries.
+- Learned: run A2 meets every offline acceptance item without converting historical S9 or unrun 2×1,800 capacity into
+  current qualification evidence.
+- Next: none for this Ralph run; hand the committed branch to the integration lead without push, merge, or live rerun.
+
+[loop 20260920-223622-11052] complete at iteration 1

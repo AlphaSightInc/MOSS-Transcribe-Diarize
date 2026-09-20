@@ -2,7 +2,10 @@
 import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+from types import SimpleNamespace
 import threading
+import pytest
+from tools.qualify import run as qualify_run
 from tools.qualify.decoder import Decoder
 from tools.qualify.run import compare, counts, score_ladder
 
@@ -10,6 +13,182 @@ from tools.qualify.run import compare, counts, score_ladder
 def test_missing_is_not_pass():
     assert counts(['PASS','FAIL','UNRUNNABLE','SKIP']) == dict(
         expected=4, executed=2, passed=1, failed=1, skipped=1, unrunnable=1)
+
+
+def test_request_plan_uses_selected_gate_population_and_retains_provenance():
+    default = qualify_run.request_plan(long=False)
+    assert default['measured_rate'] == .51
+    assert default['measured_rate_unit'] == 'requests_per_lane_second'
+    assert default['source_receipt'] == 'evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl'
+    assert default['headroom'] == 1.25
+    assert default['headroom_provenance'] == {
+        'status': 'UNMEASURED',
+        'source': 'planner_policy',
+        'source_receipt': None,
+        'calculation': '1.25 policy multiplier; no receipt-derived arithmetic',
+        'reason': 'no retained receipt isolates planner error after the lane-second rate correction',
+    }
+    population = default['population']
+    assert set(population['live_benches']) == {
+        'workspace', 'demo_lanes', 'lifecycle', 'reshare',
+        'identity_stress', 'level_ladder', 'browser_stress_all',
+        'capacity_2x300',
+    }
+    assert population['live_benches']['capacity_2x300']['session_seconds'] == [300, 300]
+    assert population['live_benches']['capacity_2x300']['lanes_per_session'] == [2, 2]
+    assert population['live_benches']['level_ladder']['lanes_per_session'] == [2] * 6
+    assert population['live_benches']['lifecycle']['lanes_per_session'] == [2, 2, 2, 0, 1, 1]
+    assert population['live_sessions'] == 41
+    assert population['live_session_seconds'] == 1729
+    assert population['live_lane_seconds'] == 3457
+    assert population['file_seconds'] == [50, 50, 360, 180, 180, 180]
+    assert population['file_windows'] == 11
+    assert population['window_seconds'] == 150
+    assert population['stride_seconds'] == 120
+    assert population['browser_cases'] == list(range(1, 17))
+    assert default['request_derivation'] == {
+        'live_lane_requests': 1763.07,
+        'file_window_requests': 11,
+        'browser_case_requests': 16,
+        'unadjusted_requests': 1790.07,
+        'calculation': 'ceil((3457 lane_seconds * 0.51 requests_per_lane_second + 11 file_window_requests + 16 browser_case_requests) * 1.25 headroom)',
+    }
+    assert default['planned_requests'] == 2238
+
+    long = qualify_run.request_plan(long=True)
+    assert 'capacity_2x300' not in long['population']['live_benches']
+    assert long['population']['live_benches']['capacity_2x1800']['session_seconds'] == [1800, 1800]
+    assert long['population']['live_benches']['capacity_2x1800']['lanes_per_session'] == [2, 2]
+    assert long['population']['live_sessions'] == 41
+    assert long['population']['live_session_seconds'] == 4729
+    assert long['population']['live_lane_seconds'] == 9457
+    assert long['population']['file_windows'] == 26
+    assert long['planned_requests'] == 6082
+
+
+def test_measured_request_rate_recomputes_from_each_retained_receipt():
+    plan = qualify_run.request_plan(long=False)
+    assert plan['source_receipt'] == plan['measured_rate_evidence'][0]['source_receipt']
+    for evidence in plan['measured_rate_evidence']:
+        receipt = qualify_run.ROOT / evidence['source_receipt']
+        rows = [json.loads(line) for line in receipt.read_text().splitlines()]
+        result = json.loads((receipt.parent / 'result.json').read_text())
+        unique_requests = {row['request'] for row in rows}
+        assert len(rows) == len(unique_requests) == evidence['unique_request_ids']
+        assert result['sessions'] == evidence['sessions']
+        assert result['seconds'] == evidence['seconds_per_session']
+        rate = len(unique_requests) / (
+            evidence['sessions'] * evidence['lanes_per_session'] * evidence['seconds_per_session']
+        )
+        assert round(rate, 2) == plan['measured_rate'] == evidence['rounded_rate']
+
+
+def test_bundle_summary_records_unmeasured_headroom_provenance(monkeypatch, tmp_path):
+    plan = qualify_run.request_plan(long=False)
+    monkeypatch.setattr(qualify_run, 'ROOT', tmp_path)
+    args = SimpleNamespace(
+        decoder_upstream_port=18125,
+        out=tmp_path / 'out',
+        budget=plan['planned_requests'],
+        long=False,
+    )
+
+    bundle = qualify_run.Bundle(args, plan)
+    bundle.flush()
+
+    summary = json.loads((bundle.out / 'summary.json').read_text())
+    assert summary['headroom_provenance'] == plan['headroom_provenance']
+    markdown = (bundle.out / 'summary.md').read_text()
+    assert 'Headroom: 1.25.' in markdown
+    assert '"status":"UNMEASURED"' in markdown
+    assert '"source_receipt":null' in markdown
+
+
+def test_unfunded_plan_refuses_before_bundle_or_decoder_start(monkeypatch, capsys):
+    def forbidden_start(*args, **kwargs):
+        raise AssertionError('bundle started before budget admission')
+
+    monkeypatch.setattr(qualify_run, 'Bundle', forbidden_start)
+    assert qualify_run.main(['--budget', '2237']) == 2
+    error = capsys.readouterr().err
+    assert 'planned_requests=2238' in error
+    assert 'shortfall=1' in error
+
+
+def test_default_budget_funds_default_but_not_long_population(monkeypatch, capsys):
+    class DefaultPlanReached(Exception):
+        pass
+
+    def capture_default(args, plan):
+        assert args.budget == plan['planned_requests'] == 2238
+        raise DefaultPlanReached
+
+    monkeypatch.setattr(qualify_run, 'Bundle', capture_default)
+    with pytest.raises(DefaultPlanReached):
+        qualify_run.main([])
+    assert qualify_run.main(['--long']) == 2
+    assert 'planned_requests=6082 budget=2238 shortfall=3844' in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(('long', 'name', 'seconds'), [
+    (False, 'capacity_2x300', '300'),
+    (True, 'capacity_2x1800', '1800'),
+])
+def test_capacity_row_matches_selected_population(monkeypatch, tmp_path, long, name, seconds):
+    monkeypatch.setattr(qualify_run, 'ROOT', tmp_path)
+    bundle = object.__new__(qualify_run.Bundle)
+    bundle.args = SimpleNamespace(long=long)
+    bundle.work = tmp_path / 'work'
+    bundle.work.mkdir()
+    bundle.manifest = tmp_path / 'manifest.json'
+    commands = []
+    gates = []
+
+    def command(command_name, argv, timeout):
+        commands.append((command_name, argv, timeout))
+        output = bundle.work / 'capacity'
+        output.mkdir()
+        (output / 'result.json').write_text(json.dumps({
+            'clean': True,
+            'session_results': [{'clean': True}, {'clean': True}],
+        }))
+        return 0, 1.0, None
+
+    bundle.command = command
+    bundle.gate = lambda gate_name, status, *args, **kwargs: gates.append((gate_name, status, args, kwargs))
+    bundle.capacity(ready=True)
+
+    assert len(commands) == 1
+    command_name, argv, timeout = commands[0]
+    assert command_name == name
+    assert argv[argv.index('--sessions') + 1] == '2'
+    assert argv[argv.index('--seconds') + 1] == seconds
+    assert timeout == 3600
+    assert [(gate_name, status) for gate_name, status, _, _ in gates][:1] == [(name, 'PASS')]
+    if long:
+        assert len(gates) == 1
+    else:
+        assert [(gate_name, status) for gate_name, status, _, _ in gates][1:] == [
+            ('capacity_2x1800', 'REQUIRED-NOT-RUN'),
+        ]
+
+
+def test_default_summary_retains_required_long_capacity_when_stack_is_unavailable():
+    bundle = object.__new__(qualify_run.Bundle)
+    bundle.args = SimpleNamespace(long=False)
+    gates = []
+    bundle.gate = lambda name, status, *args, **kwargs: gates.append((name, status, args))
+
+    bundle.capacity(ready=False)
+
+    assert [(name, status) for name, status, _ in gates] == [
+        ('capacity_2x300', 'UNRUNNABLE'),
+        ('capacity_2x1800', 'REQUIRED-NOT-RUN'),
+    ]
+    assert gates[1][2][0] == {
+        'expected': 2, 'executed': 0, 'passed': 0,
+        'failed': 0, 'skipped': 2, 'unrunnable': 0,
+    }
 
 
 def test_determinism_detects_added_removed_and_changed_gates():
@@ -49,7 +228,7 @@ def test_proxy_caps_real_dispatch_and_records_no_body(tmp_path):
             conn.request('POST','/v1/audio/transcriptions',b'PRIVATE AUDIO PAYLOAD')
             response=conn.getresponse(); statuses.append(response.status); response.read(); conn.close()
         assert statuses==[200,200,429]
-        assert len(received)==2 and proxy.sent==2 and proxy.rejected==1 and proxy.peak==1
+        assert (len(received), proxy.sent, proxy.completed, proxy.rejected, proxy.peak) == (2, 2, 2, 1, 1)
         assert proxy.active==0
         log=(tmp_path/'requests.jsonl').read_text()
         assert 'PRIVATE' not in log

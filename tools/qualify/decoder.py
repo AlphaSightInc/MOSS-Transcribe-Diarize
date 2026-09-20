@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 class Decoder:
     def __init__(self, port, tunnel_port, budget, log):
-        self.sent = self.active = self.peak = self.rejected = 0
+        self.sent = self.completed = self.active = self.peak = self.rejected = 0
         self.budget, self.tunnel_port, self.log = budget, tunnel_port, log
         self.lock = threading.Lock()
         self.slots = threading.BoundedSemaphore(2)
@@ -51,6 +51,7 @@ class Decoder:
                         conn.close()
                         with owner.lock:
                             owner.active -= 1
+                            owner.completed += 1
                             owner.event('end')
 
             def do_GET(self):

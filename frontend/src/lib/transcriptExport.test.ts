@@ -95,6 +95,7 @@ function makeTurn(
     text,
     segment_ids: [],
     target_segment_keys: [],
+    segments: [{ start, end: start + 1, text }],
     provisional_stale: false,
     ...overrides
   };

@@ -11,17 +11,20 @@ retains failures and missing observations. Results live in
 `evidence/mvpfix/wp25/<measured-sha>-<utc>/summary.{json,md}`; `--out DIR` changes the parent.
 `--compare SUMMARY` compares every gate's status. A short rerun explicitly separates
 file_30min/capacity_2x1800 omissions from unexpected changes; SHA equality is reported.
-The short run includes three-minute WAV/MP3/M4A files and a six-minute WAV.
-`--long` adds one 30-minute WAV and two simultaneous 30-minute Live sessions
+The short run includes three-minute WAV/MP3/M4A files, a six-minute WAV, and
+two simultaneous five-minute Live sessions. `--long` replaces that capacity row
+with one 30-minute WAV and two simultaneous 30-minute Live sessions
 (monologue plus panel). Four-live capacity is historical, superseded by the two-meeting contract.
-Without it those gates are SKIP, never measured PASS.
+Without `--long`, `capacity_2x1800` is `REQUIRED-NOT-RUN`, never measured PASS.
 
 Requires existing Python venv (`MOSS_QUALIFY_PYTHON` override), node_modules symlink,
 npm/Node, ffmpeg/ffprobe, local model metadata/provider assets, SSH access, Playwright
 browser. No install, host trust update, service restart, or deployment occurs.
 Ports: owned SSH tunnel 18125; counted proxy 19125; main/browser/capacity stacks
 17825/17826/17827; HTTPS/hung media origins 17828/17829. Occupied ports are UNRUNNABLE.
-Default budget 2000; `--budget N` sets the exact dispatch ceiling across every stack
+The default 1,136-request budget is the derived short-population plan; bare `--long`
+refuses before startup and requires an explicit budget of at least the long plan.
+`--budget N` sets the exact dispatch ceiling across every stack
 and browser restart. Maximum two own requests in flight. Shared GPU contention is
 sampled every two seconds; no sibling-load pause. Existing capacity clean verdict
 still rejects detected foreign load and reports its other measurements separately.
@@ -58,4 +61,7 @@ Round 3 WP54b uses `python -m tools.qualify.visible_words INPUT` for offline
 source-word evaluation. Its one authorized headed campaign uses
 `python -m tools.qualify.visible_word_headed` against an isolated stack. Both
 retain the full ordered reference denominator, keep API/DOM/server clocks
-separate, and define no latency acceptance threshold.
+separate, and define no latency acceptance threshold. The v2 receipt keeps
+word occurrence clocks free of inferred latency and reports one
+`phrase_end_diagnostics` row per source interval; unchanged rendered content is
+sampled again when its source-phrase end is first crossed.
