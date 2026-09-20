@@ -1,79 +1,84 @@
-# PRD - MOSS round 4, ralph run A: trustworthy qualification instruments
+# PRD - MOSS round 4, ralph run A2: close the acceptance review's blocking gaps
+
+Run A (iterations 1–9, HEAD `3a56ce7b`) removed the invented-span path and built the budget preflight. An adversarial
+acceptance review then found that the custody repair is **half done** and that the request rate has the wrong unit.
+This run closes exactly those gaps. Everything run A already achieved must stay achieved.
 
 ## Goal
 
-> Make the two qualification instruments that round 3 proved untrustworthy tell the truth: the headed visible-word
-> instrument must credit a reference word only through a displayed occurrence that genuinely covers it, and the formal
-> qualification bundle must refuse to start a population its decoder budget cannot fund and must never label budget
-> exhaustion as a quality failure. The only product change permitted is publishing the transcript turn's model-state
-> span on the rendered row (three `data-` attributes) so the instrument can read custody instead of reconstructing it.
+> Make DOM word custody as fine-grained as the model state actually is — a rendered row is a *merged turn* that can
+> cover many segments and many minutes, so crediting a reference word anywhere inside the row's outer span still lets
+> an earlier occurrence pay for a later one that was never displayed. Custody must be per constituent segment. And make
+> the decoder request rate reproduce from the receipt it cites, in the unit the planner multiplies.
 
 ## Acceptance bar
 
-The loop is complete only when every point below holds, with evidence
-(commands run, artifacts inspected, before/after deltas) recorded in
+The loop is complete only when every point below holds, with evidence (commands, exact counts, before/after) recorded in
 progress.txt:
 
-- A test ported from `/Users/gao/Documents/Codex/2026-09-20/moss-current-review/dom-time-repro.py` (earlier displayed
-  "alpha" at 0–1 s, later reference "alpha" at 10–11 s never displayed) exists under `tests/`, is shown to FAIL on the
-  unpatched base `89f833ac` (record the run), and PASSES on the final tree: the later occurrence is `missing`, the earlier
-  occurrence is credited with its own delay, and no reference word is credited by a displayed row whose end was invented
-  from a neighbouring row or the playback frontier.
-- Additional violating controls exist and pass: repeated words with an omitted later phrase; two reference phrases merged
-  into one displayed row; a revision that changes earlier displayed text; unchanged text across a phrase end. Each is
-  documented in its docstring with what it falsifies.
-- The `.utt` article in `frontend/src/components/TranscriptPane.tsx` publishes `data-turn-start`, `data-turn-end` and
-  `data-target-keys` (the turn's own `start`, `end`, `target_segment_keys.join("|")` from `lib/mergeTranscript.ts`);
-  a frontend test asserts the attributes equal the turn's model state; vite is rebuilt and the committed
-  `moss_transcribe_diarize/app/frontend_assets/*` are byte-identical to a fresh build (asset parity, 17/17); frontend
-  typecheck clean.
-- `tools/qualify/visible_word_headed.py` no longer derives a displayed row's source span from the next row's start or
-  the playback frontier; custody is read from those row attributes; a DOM sample whose rows lack spans produces **no**
-  DOM credit and the DOM result is reported `UNMEASURED` with the reason. Phrase-end diagnostics are reported under a
-  separate summary key, never as per-word latency. Wrong and missing words keep `null` clocks and stay in the denominator.
-- `tools/qualify/run.py` computes `planned_requests` from the actual gate population (live sessions × seconds ×
-  `measured_rate`, file windows from `WindowedRunner.window_seconds`/`stride_seconds`, browser cases from their case
-  list) with an explicit `headroom`; the summary records `measured_rate`, `source_receipt` (the retained
-  `evidence/mvpfix/wp30/…` receipt it was derived from), `headroom` and `planned_requests`; the bundle **refuses to
-  start** when `planned_requests > --budget`, printing the shortfall. A test proves refusal happens before any decoder
-  request is sent.
-- A run whose proxy counter reports `rejected_by_budget > 0` is classified `INCOMPLETE` (budget-censored) in the
-  summary, never a quality `FAIL`; accepted, completed and rejected requests are reported separately. A test proves it.
-- The default bundle gains a two-live-sessions × 300 s development capacity row (two-meeting population); `--long`
-  selects the 2×1800 s confirmation and requires a sufficient `--budget` (preflight applies). Every default summary
-  emits `capacity_2x1800: REQUIRED-NOT-RUN` — the long requirement may never silently disappear. The default `--budget`
-  is set so the default population is fundable under the preflight, and the summary shows the derivation.
-- Full backend suite `python -m pytest -q -p no:cacheprovider tests` ≥ 2,116 passed / 0 failed / 5 skipped and frontend
-  `npm --prefix frontend test -- --run` ≥ 311/311 on the final tree, counts recorded in progress.txt.
+- **B1 — segment-granular custody.** A violating control exists, is shown to FAIL on the current HEAD `3a56ce7b`
+  (record the failing run), and passes at the end: **one** rendered `.utt` row whose published outer span is 0–11 s and
+  whose constituent model segments are 0–1 s ("alpha") and 10–11 s (a different, later phrase that was never emitted),
+  with references "alpha"@0–1 and "alpha"@10–11 — the later reference must be `missing` and the earlier one credited at
+  its own observation time. Equivalent controls for: a single-speaker clip whose whole transcript merges into one turn
+  (custody must still be per segment); and a turn whose segments are separated by a long gap.
+- **B2 — the row publishes its constituent segments' model state.** `frontend/src/components/TranscriptPane.tsx`
+  publishes, for each `.utt` article, the per-segment spans and texts that the turn was merged from (the merge site is
+  `frontend/src/lib/mergeTranscript.ts:183-199`, which already pushes `target_segment_keys`; carry the same per-segment
+  `start`/`end`/`text` through the turn and render them in one additional data attribute). A frontend test asserts the
+  published value equals the model state for a two-segment merged turn. `npm --prefix frontend run typecheck` clean,
+  `npm --prefix frontend run build` run and the committed `frontend_assets` byte-identical to a fresh build (17/17).
+- **B3 — the instrument consumes it.** `tools/qualify/visible_word_headed.py::_dom_segments` emits one
+  `TranscriptSegment` per **constituent segment** (span + that segment's text), never one per row; a row that publishes
+  no usable per-segment state produces no DOM credit and the DOM result stays `UNMEASURED` with a reason. No credit path
+  may use the row's outer span alone.
+- **B4 — request rate reproduces.** `tools/qualify/run.py`'s `measured_rate` is stated **in the unit the planner
+  multiplies** and is reproducible from its `source_receipt` by an arithmetic the summary prints. Verified facts:
+  `evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl` has **2,440 lines = 2,440 unique request ids** over
+  **4 sessions × 2 lanes × 600 s** ⇒ **0.508 requests per lane-second** (= 1.017 per session-second);
+  `…/20260918-064644-1r-8x300/` has **2,448** over **8 × 2 × 300 s** ⇒ **0.510 per lane-second**. The current code
+  multiplies session-seconds by 0.51, which under-counts any two-lane family by 2×. Fix by planning in **lane-seconds**:
+  every live family in the population declares its lanes per session, and `planned_requests` uses
+  `sessions × lanes × seconds × rate × headroom`. A test recomputes the rate from the receipt file and asserts the
+  constant matches it. The summary records the unit explicitly (e.g. `"measured_rate_unit": "requests_per_lane_second"`).
+- **B5 — the plan is not silently wrong for the default bundle.** After the unit fix, print and record the new
+  `planned_requests` for default and `--long`, set the default `--budget` to the value the preflight derives (show the
+  derivation), and keep `--long` refusing when unfunded. A control asserts that a family whose probe drives two lanes
+  (e.g. the level ladder, `tools/qualify/run.py:30` `CASES` fed at `:452`) is planned with lanes=2.
+- **B6 — headroom provenance.** `REQUEST_HEADROOM` carries the same treatment as the rate: a named source and the
+  arithmetic that justifies it, recorded in the summary; if no receipt justifies a value, say so in the summary rather
+  than presenting it as measured.
+- **B7 — file scope.** `prototypes/capacity-campaign/NOTES.md` was edited by run A outside the permitted set; either
+  move that content under `docs/verify/round4-run-a/` or state in progress.txt why it belongs there. No other file
+  outside the permitted set is touched by this run.
+- Everything run A achieved still holds: the frontier/neighbour-row invention stays deleted; wrong/missing words keep
+  `null` clocks and stay in the denominator; phrase-end diagnostics stay under their own key and are never presented as
+  per-word latency; the preflight still refuses before any request; `rejected_by_budget > 0` ⇒ `INCOMPLETE`;
+  `capacity_2x1800: REQUIRED-NOT-RUN` still appears in every default summary.
+- Full backend suite ≥ 2,123 passed / 0 failed / 5 skipped and frontend ≥ 312/312; typecheck clean;
+  `docs/verify/round4-run-a/VERIFY.md` updated so its falsifier list states the **segment-granular** claim (the current
+  wording only claims the frontier path is gone, which is why the review's counterexample slipped through).
 
 ## Constraints
 
 Non-negotiable, in addition to the rules in prompt.md:
 
-- Python: `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python`,
-  always with `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.` and cwd = this repo. Frontend uses the symlinked
-  `frontend/node_modules` (never `npm install`).
-- No GPU, no remote decoder, no tunnel, no network, no microphone, no audio playback, no headed browser run in this
-  loop. Offline controls only; the headed trial belongs to a later measurement pass.
-- Product code you may touch: **only** the `.utt` article markup in `frontend/src/components/TranscriptPane.tsx`
-  (adding the three data attributes), one frontend test, and the rebuilt `frontend_assets`. Nothing else under
-  `moss_transcribe_diarize/` or `frontend/`; never `QUALITY_BOUNDS`, any gate bar, identity constants, or
-  `docs/known-limitations-20260918.md`. Otherwise instrument and bundle code only: `tools/qualify/`,
-  `tests/test_visible_word_instrument.py`, new tests under `tests/`, `docs/verify/round4-run-a/`.
-- Never invent a numeric latency or quality bar; never lower a bar to make a row pass.
+- Python `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python`,
+  always `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.`, cwd = this repo; frontend via the symlinked `frontend/node_modules`.
+- No GPU, no decoder, no tunnel, no network, no microphone, no audio, no headed browser in this loop. Offline only.
+- Product code you may touch: **only** `frontend/src/components/TranscriptPane.tsx`, `frontend/src/lib/mergeTranscript.ts`
+  (and the types it needs), their tests, and the rebuilt `frontend_assets`. Nothing under `moss_transcribe_diarize/`
+  except the regenerated assets. Never `QUALITY_BOUNDS`, any gate bar, identity constants, or
+  `docs/known-limitations-20260918.md`. Otherwise: `tools/qualify/`, `tests/`, `docs/verify/round4-run-a/`.
+- Do not weaken or delete any control run A added. Do not invent a numeric latency or quality bar.
+- Never read or print `~/.config/moss/openrouter.env` or any `OPENROUTER_API_KEY`.
 - Never `git push`; never merge or rebase; commit only on branch `round4/ralph-a`.
-- Never read, copy or print `~/.config/moss/openrouter.env` or any `OPENROUTER_API_KEY`; this run needs no credential.
-  Never write files under `tools/qualify/out/`, `playwright-report/`, `test-results/` into git (they are ignored).
-- Historical evidence files under `evidence/` are read-only history; never rewrite or reinterpret them.
-- If the custody design requires data the UI/API does not expose, record exactly what is missing in progress.txt and
-  context.md and stop that candidate — do not fall back to reconstructing spans from clock text.
+- If publishing per-segment state honestly is impossible without a larger product change, record exactly what is missing
+  in progress.txt and context.md and stop that candidate — do not narrow the falsifier to fit what the markup allows.
 
 ## Budget and stop
 
-- The launcher argument sets the iteration budget; one logical change per
-  iteration.
-- Stop early only via the completion contract: acceptance bar met with
-  evidence, or every remaining item blocked on input the loop cannot obtain,
-  recorded in progress.txt.
-- A blocker ends the iteration, not the loop: record it, commit anything
-  useful, and let the next iteration attack it or route around it.
+- The launcher argument sets the iteration budget; one logical change per iteration.
+- Stop early only via the completion contract: acceptance bar met with evidence, or every remaining item blocked on
+  input the loop cannot obtain, recorded in progress.txt.
+- A blocker ends the iteration, not the loop: record it, commit anything useful, and let the next iteration attack it.
