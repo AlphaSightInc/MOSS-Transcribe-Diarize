@@ -24,3 +24,8 @@ Result: 2,078 passed, 38 failed, 5 skipped, 2 xfailed, 37 subtests. This is not 
 - Frontend: 311/311 passed.
 - TypeScript typecheck: passed.
 - Vite production build: passed, 34 modules transformed.
+
+## Verification-layout resolution
+
+- Root verification files moved to `docs/verify/r4-6-overlap/` as required by repository policy.
+- Full backend rerun: **2,119 passed, 5 skipped, 3 xfailed, 37 subtests passed, 0 failed** in 174.09 s.

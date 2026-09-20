@@ -1,3 +1,5 @@
+**UNMEASURED arms:** alternation pre-terminal system 16/106 and microphone 11/53; measuring them requires rerunning the retained round-3 alternation path while preserving both exact pre-terminal word streams (and their raw/canonical/publication stage streams) for per-edit alignment.
+
 # R4 alternation and microphone attribution
 
 **Verdict: final SUPPORTED; pre-terminal UNMEASURED.** All 19 retained final edits are attributable: 12 class-(a), 7 class-(d), 0 class-(b), 0 class-(c). Round 3 retained exact pre-terminal counts but not the 27 edited word rows.

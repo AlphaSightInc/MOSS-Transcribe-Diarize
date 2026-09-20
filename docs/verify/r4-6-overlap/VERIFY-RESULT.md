@@ -43,3 +43,11 @@ Falsifiers hit: 0.
 - Falsifiers: nonmatching local replay (15/106, 13/53) rejected instead of replacing retained pre-terminal evidence. No final-layer falsifier hit.
 
 **Overall: FAIL only on mandated-root verification-layout conflict; diagnosis and all product/frontend controls pass.**
+
+## Post-relocation fix — 2026-09-20
+
+- Verification documents relocated to `docs/verify/r4-6-overlap/`; all earlier result sections retained above.
+- Attribution lead line names both `UNMEASURED` pre-terminal alternation arms and the exact retained stage streams required to measure them.
+- Full backend — **PASS**: 2,119 passed, 5 skipped, 3 xfailed, 37 subtests passed, 0 failed in 174.09 s.
+
+**Overall: PASS.**
