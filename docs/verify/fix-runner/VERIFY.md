@@ -40,9 +40,12 @@ or message another pane. Use the Python below with `PYTHONDONTWRITEBYTECODE=1 PY
 
    Expect backend 2,103 passed / 5 skipped / 37 subtests; frontend 310/310 in
    28 files; typecheck/build exit 0. Record any failure; do not waive it.
-6. Confirm `lsof` has no listener on 18271, 17990, or 17991; GPU lease is not held
-   by PANE-3.3 (another pane may legitimately acquire it after PANE-3.3 released it);
-   `git diff --exit-code` and `git status --short` are empty after build.
+6. Check only PANE-3.3-owned resource state: `lsof` must show no listener on decoder
+   port 18271 or any stack/proxy port 17990–17999; `ps` must show no process whose
+   command references this clone; and `GPU-LEASE.md` must contain no PANE-3.3 lease
+   entry. A lease held by another pane is **PASS with a note**, not a failure; do not
+   wait for it to become FREE or contact its holder. Finally, `git diff --exit-code`
+   and `git status --short` must be empty after build.
 7. Write `docs/verify/fix-runner/VERIFY-RESULT.md` with fresh-context provenance,
    inspected SHA, commands, exact counts/timings, all falsifiers, cleanup, and limits.
    Commit only that result locally. Final status must be clean. No further `/new`.
