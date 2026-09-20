@@ -93,6 +93,17 @@ def _read_reference(path: Path, seconds: float) -> tuple[dict[str, object], ...]
     return tuple(result)
 
 
+def _chromium_args(microphone_wav: Path) -> list[str]:
+    return [
+        "--mute-audio",
+        "--use-fake-device-for-media-stream",
+        "--auto-accept-camera-and-microphone-capture",
+        f"--use-file-for-fake-audio-capture={microphone_wav.resolve()}",
+        "--auto-select-tab-capture-source-by-title=MOSS Visible Word Audio Source",
+        "--autoplay-policy=no-user-gesture-required",
+    ]
+
+
 async def _api(page: Any, path: str) -> dict[str, Any]:
     result = await page.evaluate(
         """async path => {
@@ -189,14 +200,7 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                     executable_path=str(executable),
                     channel="chromium",
                     headless=False,
-                    ignore_default_args=["--mute-audio"],
-                    args=[
-                        "--use-fake-device-for-media-stream",
-                        "--auto-accept-camera-and-microphone-capture",
-                        f"--use-file-for-fake-audio-capture={args.microphone_wav.resolve()}",
-                        "--auto-select-tab-capture-source-by-title=MOSS Visible Word Audio Source",
-                        "--autoplay-policy=no-user-gesture-required",
-                    ],
+                    args=_chromium_args(args.microphone_wav),
                 )
                 context = await browser.new_context(
                     ignore_https_errors=urlsplit(args.base).hostname in {"127.0.0.1", "localhost"},

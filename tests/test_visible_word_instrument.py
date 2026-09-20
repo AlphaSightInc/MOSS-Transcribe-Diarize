@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from tools.qualify.visible_word_headed import _read_reference
+from tools.qualify.visible_word_headed import _chromium_args, _read_reference
 from tools.qualify.visible_words import (
     ReferenceWord,
     TranscriptObservation,
@@ -160,6 +160,13 @@ def test_headed_reference_reader_preserves_intervals_for_word_expansion(tmp_path
         ("kept:0", "alpha", 0.25, 1.25),
         ("kept:1", "one", 0.25, 1.25),
     ]
+
+
+def test_headed_chromium_stays_muted_while_using_fake_capture(tmp_path):
+    args = _chromium_args(tmp_path / "microphone.wav")
+
+    assert args.count("--mute-audio") == 1
+    assert any(value.startswith("--use-file-for-fake-audio-capture=") for value in args)
 
 
 def test_repeated_word_cannot_credit_the_wrong_source_interval():
