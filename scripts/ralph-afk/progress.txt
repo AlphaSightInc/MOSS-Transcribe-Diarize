@@ -258,3 +258,5 @@ default budget (S17, third mismatch). This run repairs both without touching pro
 - Learned: run A2 meets every offline acceptance item without converting historical S9 or unrun 2×1,800 capacity into
   current qualification evidence.
 - Next: none for this Ralph run; hand the committed branch to the integration lead without push, merge, or live rerun.
+
+[loop 20260920-223622-11052] complete at iteration 1
