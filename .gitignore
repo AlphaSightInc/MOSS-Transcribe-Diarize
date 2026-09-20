@@ -18,6 +18,13 @@ examples/*
 runs/
 live-runs/
 
+# Secrets and browser/qualification transients (never committed by an agent loop).
+*.env
+**/trace.zip
+playwright-report/
+test-results/
+tools/qualify/out/
+
 # Large or transient runtime files.
 *.safetensors
 *.bin

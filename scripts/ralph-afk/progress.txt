@@ -1,0 +1,20 @@
+# Ralph Progress Journal - MOSS round 4, ralph run A
+
+Append-only. Agents add one entry per iteration; the launcher adds one-line
+"[loop <run-id>] ..." markers at run boundaries. Never rewrite or delete
+entries — context.md is the place for current state, this file is history.
+
+Entry format (concise, a few lines each):
+
+  ## Iteration <n> - <short focus>
+  - Target: <candidate from context.md, or off-list + justification>
+  - Files: <paths>
+  - Validation: <command> -> <result>
+  - Evidence: <artifact/log paths>
+  - Learned: <what changed in understanding>
+  - Next: <recommended next step>
+
+Started: 2026-09-20 - branch round4/integration @ 89f833ac (round-3 candidate, suites 2,116/0/5 + 311/311). Two
+qualification instruments are known-untrustworthy: the headed visible-word instrument swaps source-occurrence custody
+(Codex F4, reproduced offline), and the qualification bundle cannot fund its own 2×1800 s capacity gate under the
+default budget (S17, third mismatch). This run repairs both without touching product code.

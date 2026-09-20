@@ -1,0 +1,103 @@
+# Context - MOSS round 4, ralph run A
+
+## Ground
+
+- Repo: `/Users/gao/Documents/Codex/2026-09-20/moss-round4/candidate` — branch `round4/ralph-a` (base `89f833ac`; the
+  lead merges this branch into `round4/integration` after the run)
+- Read before editing: `AGENTS.md` (structural-primitive contract), `docs/adr/0014-documented-quality-exception-band.md`,
+  `evidence/round3/fix-3.1/s9-result.md` (what the instrument reported last round and why it is not citable),
+  `/Users/gao/Documents/Codex/2026-09-20/moss-current-review/assessment-and-plan.md` findings F4, F5, F6 (read-only).
+- Key code paths and why they matter:
+  - `tools/qualify/visible_word_headed.py:176-187` `_dom_segments` — invents a displayed row's end from the next row's
+    start or the playback frontier (`:181-183`; frontier = `min(dom_elapsed, args.seconds)` at `:278`). This is the
+    custody defect.
+  - `tools/qualify/visible_word_headed.py:268-276` — DOM rows are read from `.utt` nodes; `start` is parsed from the
+    `.utt-time` clock text; rows without an `HH:MM:SS` clock are dropped. No span or id is captured today.
+  - `frontend/src/components/TranscriptPane.tsx:649-658` — the `.utt` `<article>` carries only
+    `data-continuation/new-speaker/preview-stale/state/source-lane`. The React turn already holds `turn.start`,
+    `turn.end` (`frontend/src/lib/mergeTranscript.ts:184,211`), `turn.segment_ids` (used in the `key` at `:650`) and
+    `turn.target_segment_keys` (`mergeTranscript.ts:30,198,218`, built by `lib/transcriptKeys.ts`). Live segment ids are
+    positional (`frontend/src/api/mossPoller.ts:598,714` `effective:${index}`) and a row is a merged, overlap-trimmed
+    turn (`mergeTranscript.ts:183-199`) — so the honest custody primitive is the turn's own span published on the row,
+    not a per-segment id join.
+  - `tools/qualify/visible_words.py:103-107` `_overlaps`, `:135` match rule, `:174-200` `evaluate_visible_word_stream`
+    (interval-end gate at `:196-199` — keep).
+  - `tests/test_visible_word_instrument.py` — existing controls `:233` repeated-word, `:253` not-before-interval-end,
+    `:272` API/DOM clocks separate; `:189` launch args must be exactly `["--mute-audio"]`.
+  - `tools/qualify/run.py:574` `--budget` default 2000; `:315` gate spec table (`capacity_2x1800`, 2); `:341-342` the
+    2×1800 s invocation; `:117-118`, `:496-500` reactive budget accounting; `tools/qualify/decoder.py:9-82` counting
+    proxy (`sent/active/peak/rejected`, `BoundedSemaphore(2)`, 429 at `:26-29`). No estimate/preflight exists.
+  - `tools/qualify/test_bundle.py` — 9 tests, none about budget; `:35` proxy cap test is the closest.
+  - `moss_transcribe_diarize/app/windowed_transcription.py:164-165` — `window_seconds = 150`, `stride_seconds = 120`
+    (file-window request arithmetic).
+
+## Current state
+
+- 2026-09-20: Codex's offline falsifier reproduced by the lead on `89f833ac`: `dom-time-repro.py` → earlier "alpha"
+  0–1 s `missing`, later "alpha" 10–11 s `correct` at 1.0 s. Retained S9 (`evidence/round3/fix-3.1/s9-headed.json`)
+  cannot be recomputed unbiased (raw observations not retained) — leave it as history.
+- 2026-09-20: S17 bundle on `89f833ac` exhausted `--budget 2000` at t≈1,165 s of the 2×1800 gate after earlier gates
+  used 733 requests (13 rejected, 0 active at teardown, peak_in_flight 1) — third budget/population mismatch of the
+  campaign. The S17 receipt is budget-censored with no per-gate attribution, so it cannot supply a rate. **Retained clean
+  receipts in this repo:** `evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl` = 1,220 requests over
+  4×600 s = **0.508 req/s**; `evidence/mvpfix/wp30/20260918-064644-1r-8x300/` = 1,224 over 8×300 s = **0.510** (both
+  with a 0.15 s stub decoder, `evidence/mvpfix/wp30/NOTES.md:36`). Use 0.51 as `measured_rate` with that provenance and
+  an explicit `headroom` (0.6/0.51 ≈ 1.18 is what past estimates implicitly used); record all three in the summary.
+- 2026-09-20: `capacity_2x1800` already runs only under `--long` (`run.py:315`, `:338-342`) — the default bundle has
+  **no** capacity row today. Adding a 2×300 s development row (D12 ladder) adds coverage; the 2×1800 requirement must
+  stay visible as `REQUIRED-NOT-RUN`.
+- 2026-09-20: `launchctl managername` in this shell is `Background`; no headed browser is run in this loop anyway.
+- Baseline suites on `89f833ac`: backend 2,116 passed / 0 failed / 5 skipped / 37 subtests (~209 s); frontend 311/311.
+- Established (lead + reviewer, 2026-09-20): the rendered `.utt` markup carries **no** span or id; the design is to
+  publish `data-turn-start` / `data-turn-end` / `data-target-keys` on the article from the turn's own model state and
+  read those in the instrument. Frontend tests live under `frontend/src/**/__tests__` or `*.test.tsx` (vitest); look at
+  how `TranscriptPane` is already tested before adding one.
+
+## Validation
+
+```bash
+export PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
+PY=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python
+# narrowest: the falsifier (must fail on unpatched base, pass after)
+$PY /Users/gao/Documents/Codex/2026-09-20/moss-current-review/dom-time-repro.py | tail -40
+$PY -m pytest -q -p no:cacheprovider tests/test_visible_word_instrument.py
+$PY -m pytest -q -p no:cacheprovider tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py
+# widest checkpoint (required before claiming completion)
+$PY -m pytest -q -p no:cacheprovider tests
+npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
+```
+
+## Candidates
+
+1. **Port the falsifier as a failing test** (`tests/test_visible_word_instrument.py`): earlier/later "alpha"; assert
+   later `missing`, earlier credited. Run it on the unpatched tree first and record the failure in progress.txt.
+2. **Publish the turn span on the row** (`TranscriptPane.tsx:649-658`): `data-turn-start`, `data-turn-end`,
+   `data-target-keys`; frontend test asserting they equal the turn; `npm --prefix frontend run typecheck && npm --prefix
+   frontend run build`; commit the rebuilt `frontend_assets` with the source; then re-run the build and confirm
+   `git status` is empty (asset parity).
+3. **Replace `_dom_segments` custody** with row-published spans; remove next-start/frontier end invention; matcher pairs
+   occurrences in source order, one displayed occurrence credits at most one reference occurrence; rows without spans
+   ⇒ no DOM credit and `UNMEASURED` DOM result with the reason. Validate: candidate 1 passes, `:233/:253/:272` still pass.
+4. **Add the remaining violating controls** (repeated word + omitted later phrase; merged rows; revision of earlier
+   text; unchanged text across phrase end) and the separate phrase-end diagnostic key.
+5. **Budget preflight** in `tools/qualify/run.py`: `planned_requests` from the gate population × `measured_rate`
+   (0.51 from the wp30 receipts, provenance recorded) × `headroom`; refuse before any request when `planned > budget`;
+   summary keys `measured_rate`, `source_receipt`, `headroom`, `planned_requests`; tests in `tools/qualify/test_bundle.py`.
+6. **Censored classification**: `rejected_by_budget > 0` ⇒ `INCOMPLETE`, never quality `FAIL`; accepted/completed/
+   rejected reported separately; test.
+7. **Capacity rows**: add a default 2×300 s development row (two-meeting population); `--long` = 2×1800 with preflight
+   and a required sufficient budget; every default summary emits `capacity_2x1800: REQUIRED-NOT-RUN`; raise the default
+   `--budget` to what the preflight derives for the default population and show the derivation; test.
+8. **Full suites + `docs/verify/round4-run-a/VERIFY.md`** (what to run, expected counts, what would falsify).
+
+## Non-candidates
+
+- Any change under `moss_transcribe_diarize/` or `frontend/` beyond the three `.utt` data attributes, their test and
+  the rebuilt assets — product code is owned by the parallel Codex panes and a later run; touching it here would
+  collide with their merges.
+- Any numeric visible-word latency bar or any change to `QUALITY_BOUNDS`, gate bars, identity constants — user
+  decisions / invariants (D10, COMMON §3).
+- Re-running or re-scoring the retained S9 300 s session — its raw observations were not retained; it is history.
+- The 1–3 minute headed trial with a manually aligned reference — needs a browser + decoder; belongs to the round-4
+  measurement pass, not this loop.
+- Rewriting `docs/known-limitations-20260918.md` — lead-owned.
