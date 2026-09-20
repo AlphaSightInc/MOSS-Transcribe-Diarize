@@ -162,9 +162,25 @@ it.each(["md", "txt", "json", "srt", "vtt"] as const)(
     );
     expect(file.content).toContain("Needs review");
     expect(file.content).toContain("Speaker uncertain");
-    expect(file.content).not.toContain("S00");
+    if (format !== "json") expect(file.content).not.toContain("S00");
   }
 );
+
+it("keeps the API unresolved identity in JSON exports", () => {
+  const file = serializeTranscriptExport(
+    "json",
+    [makeTurn(0, "Speaker uncertain", "Uncertain words", {
+      speaker: "S00", speaker_entity_id: "S00"
+    })],
+    item => item.display_name,
+    { sessionId: "review", exportedAt: new Date(0) },
+    { needsReview: true }
+  );
+  const [turn] = JSON.parse(file.content).turns;
+  expect(turn.speaker).toBe("S00");
+  expect(turn.speaker_entity_id).toBe("S00");
+  expect(turn.display_name).toBe("Speaker uncertain");
+});
 
 it("does not synthesize an SRT artifact for an empty review transcript", () => {
   const file = serializeTranscriptExport(

@@ -65,22 +65,25 @@ console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].ma
         text=True, cwd=Path(__file__).resolve().parents[2]))
 
 
-def export_expectation(fmt, meeting):
-    if fmt != 'json':
-        return meeting
-    expected = copy.deepcopy(meeting)
-    for segment in expected['transcript']['segments']:
-        if segment.get('speaker_entity_id') == 'S00':
-            segment['speaker_entity_id'] = 'UNKNOWN'
-    return expected
-
-
+@pytest.mark.parametrize('source_mode', ('live', 'file'))
 @pytest.mark.parametrize('fmt', FORMATS)
-def test_unknown_passage_exports_round_trip_with_review_metadata(fmt, unknown_exports):
-    result = compare_export(fmt, unknown_exports[fmt], export_expectation(fmt, UNKNOWN_MEETING))
+def test_unknown_passage_exports_round_trip_with_review_metadata(fmt, source_mode):
+    meeting = copy.deepcopy(UNKNOWN_MEETING)
+    meeting['mode'] = source_mode
+    if source_mode == 'file':
+        for segment in meeting['transcript']['segments']:
+            segment.pop('source_lane', None)
+    exported = serialize_exports(meeting)[fmt]
+    result = compare_export(fmt, exported, meeting)
     assert result['ok']
     assert result['review'] is True
-    assert 'S00' not in unknown_exports[fmt]
+    if fmt == 'json':
+        unresolved = [turn for turn in json.loads(exported)['turns']
+                      if turn['speaker_label'] == 'Speaker uncertain']
+        assert unresolved
+        assert all(turn['speaker_entity_id'] == 'S00' for turn in unresolved)
+    else:
+        assert 'S00' not in exported
 
 
 @pytest.mark.parametrize('fmt', FORMATS)
@@ -105,7 +108,7 @@ def test_unknown_passage_export_corruptions_fail(fmt, mutation, failed_check, un
         elif fmt=='txt': text=text.replace('Needs review: one or more speaker assignments remain uncertain or processing ended partially.\n\n','',1)
         elif fmt=='srt': text=text.replace('[Needs review] ','',1)
         else: text=text.replace('NOTE Needs review: one or more speaker assignments remain uncertain or processing ended partially.\n\n','',1)
-    result=compare_export(fmt,text,export_expectation(fmt, UNKNOWN_MEETING))
+    result=compare_export(fmt,text,UNKNOWN_MEETING)
     assert not result['ok']
     assert result[failed_check] is False
 
@@ -120,13 +123,13 @@ def test_unknown_json_identity_corruptions_fail(mutation, failed_check, unknown_
     if mutation=='speaker': body['turns'][0]['speaker']='wrong-person'
     if mutation=='speaker_entity_id': body['turns'][0]['speaker_entity_id']='wrong-person'
     if mutation=='segment_id': body['turns'][0]['segment_ids'][0]='wrong-segment'
-    result=compare_export('json',json.dumps(body),export_expectation('json', UNKNOWN_MEETING))
+    result=compare_export('json',json.dumps(body),UNKNOWN_MEETING)
     assert not result['ok']
     assert result[failed_check] is False
 
 @pytest.mark.parametrize('fmt', FORMATS)
 def test_real_exports_match_api(fmt,real_exports,meeting):
-    assert compare_export(fmt,real_exports[fmt],export_expectation(fmt, meeting))['ok']
+    assert compare_export(fmt,real_exports[fmt],meeting)['ok']
 
 @pytest.mark.parametrize('fmt', FORMATS)
 @pytest.mark.parametrize('mutation', ['words','label','time'])
@@ -138,7 +141,7 @@ def test_download_corruptions_fail(fmt,mutation,real_exports,meeting):
         if fmt=='json':
             body=json.loads(text);body['turns'][0]['start']=8.0;text=json.dumps(body)
         else: text=text.replace('00:00:00','00:00:08')
-    assert not compare_export(fmt,text,export_expectation(fmt, meeting))['ok']
+    assert not compare_export(fmt,text,meeting)['ok']
 
 @pytest.mark.parametrize('corrupt',[True,False])
 def test_harness_all_five_downloads(tmp_path,real_exports,corrupt,meeting):

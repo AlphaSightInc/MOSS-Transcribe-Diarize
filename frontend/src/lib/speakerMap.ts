@@ -3,7 +3,7 @@ import { normalizeInlineWhitespace } from "./text.ts";
 
 const SPEAKER_ID_PATTERN = /^SPEAKER_(\d+)$/;
 export const UNKNOWN_SPEAKER_ID = "UNKNOWN";
-const UNATTRIBUTED_SPEAKER_ID = "S00";
+export const UNRESOLVED_SPEAKER_ID = "S00";
 const UNKNOWN_DISPLAY_LABEL = "Preview";
 const UNCERTAIN_DISPLAY_LABEL = "Speaker uncertain";
 const RESERVED_UNCERTAINTY_LABELS = new Set([
@@ -63,13 +63,13 @@ export function resolveVisibleSpeakerLabel(
 export function resolveDisplayLabel(displayName: string): string {
   const normalizedDisplayName = normalizeDisplayNameForStorage(displayName);
   if (normalizedDisplayName === UNKNOWN_SPEAKER_ID) return UNKNOWN_DISPLAY_LABEL;
-  if (normalizedDisplayName === UNATTRIBUTED_SPEAKER_ID) return UNCERTAIN_DISPLAY_LABEL;
+  if (normalizedDisplayName === UNRESOLVED_SPEAKER_ID) return UNCERTAIN_DISPLAY_LABEL;
   return normalizedDisplayName;
 }
 
 export function isBackendUnknownSpeakerId(speakerId: unknown): boolean {
   const normalized = normalizeDisplayNameForStorage(speakerId);
-  return normalized === UNKNOWN_SPEAKER_ID || normalized === UNATTRIBUTED_SPEAKER_ID;
+  return normalized === UNKNOWN_SPEAKER_ID || normalized === UNRESOLVED_SPEAKER_ID;
 }
 
 export function isReservedUncertaintyLabel(displayName: unknown): boolean {
