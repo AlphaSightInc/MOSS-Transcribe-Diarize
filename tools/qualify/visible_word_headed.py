@@ -8,15 +8,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import functools
-import http.server
+import base64
 import json
 from pathlib import Path
-import tempfile
-import threading
 import time
 from typing import Any, Sequence
 from urllib.parse import urlsplit
+import wave
 
 from tests.phase2.browser_support import BrowserExecutableMissing, browser_executable
 from tools.qualify.visible_words import (
@@ -25,11 +23,6 @@ from tools.qualify.visible_words import (
     evaluate_visible_word_surfaces,
     reference_words_from_intervals,
 )
-
-
-class _QuietHandler(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, *_: object) -> None:
-        pass
 
 
 _CLOCK_FIELDS = frozenset(
@@ -93,15 +86,8 @@ def _read_reference(path: Path, seconds: float) -> tuple[dict[str, object], ...]
     return tuple(result)
 
 
-def _chromium_args(microphone_wav: Path) -> list[str]:
-    return [
-        "--mute-audio",
-        "--use-fake-device-for-media-stream",
-        "--auto-accept-camera-and-microphone-capture",
-        f"--use-file-for-fake-audio-capture={microphone_wav.resolve()}",
-        "--auto-select-tab-capture-source-by-title=MOSS Visible Word Audio Source",
-        "--autoplay-policy=no-user-gesture-required",
-    ]
+def _chromium_args() -> list[str]:
+    return ["--mute-audio"]
 
 
 async def _api(page: Any, path: str) -> dict[str, Any]:
@@ -115,6 +101,60 @@ async def _api(page: Any, path: str) -> dict[str, Any]:
     if result["status"] >= 400:
         raise RuntimeError(f"API {path} returned HTTP {result['status']}")
     return result["body"]
+
+
+async def _api_post(page: Any, path: str, body: dict[str, object]) -> dict[str, Any]:
+    result = await page.evaluate(
+        """async request => {
+          const response = await fetch(request.path, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(request.body)
+          });
+          return {status: response.status, body: await response.json()};
+        }""",
+        {"path": path, "body": body},
+    )
+    if result["status"] >= 400:
+        raise RuntimeError(f"API {path} returned HTTP {result['status']}: {result['body']}")
+    return result["body"]
+
+
+def _read_pcm16(path: Path, sample_rate: int, seconds: float) -> bytes:
+    with wave.open(str(path), "rb") as source:
+        if (
+            source.getnchannels() != 1
+            or source.getsampwidth() != 2
+            or source.getframerate() != sample_rate
+        ):
+            raise ValueError(f"{path} must be mono 16-bit PCM at {sample_rate} Hz")
+        expected = round(seconds * sample_rate)
+        if source.getnframes() != expected:
+            raise ValueError(f"{path} must contain exactly {seconds:g} seconds")
+        return source.readframes(expected)
+
+
+def _frame_payload(
+    lane: str,
+    sequence: int,
+    pcm: bytes,
+    *,
+    frame_samples: int,
+    sample_rate: int,
+    device_epoch: int,
+) -> dict[str, object]:
+    return {
+        "lane": lane,
+        "sequence": sequence,
+        "capture_timestamp_ns": device_epoch
+        + round(sequence * frame_samples / sample_rate * 1_000_000_000),
+        "device_epoch": device_epoch,
+        "pcm_base64": base64.b64encode(pcm).decode("ascii"),
+        "sample_count": frame_samples,
+        "sample_rate": sample_rate,
+        "silent": not any(pcm),
+        "discontinuity": False,
+    }
 
 
 def _snapshot_segments(body: dict[str, Any]) -> tuple[TranscriptSegment, ...]:
@@ -147,21 +187,6 @@ def _dom_segments(rows: list[dict[str, object]], frontier: float) -> tuple[Trans
     return tuple(result)
 
 
-async def _meeting_id(page: Any, before: set[str]) -> str:
-    deadline = time.monotonic() + 15
-    while time.monotonic() < deadline:
-        rows = (await _api(page, "/api/meetings")).get("meetings", [])
-        created = [
-            str(row["id"])
-            for row in rows
-            if row.get("mode") == "live" and str(row.get("id")) not in before
-        ]
-        if created:
-            return created[0]
-        await asyncio.sleep(0.2)
-    raise RuntimeError("headed live meeting was not admitted")
-
-
 async def _run(args: argparse.Namespace) -> dict[str, object]:
     try:
         from playwright.async_api import async_playwright
@@ -178,61 +203,52 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
     final_status = None
     finalization_status = None
 
-    with tempfile.TemporaryDirectory(prefix="moss-visible-word-browser-") as temporary:
-        media = Path(temporary)
-        (media / "source.wav").symlink_to(args.system_wav.resolve())
-        (media / "source.html").write_text(
-            '<title>MOSS Visible Word Audio Source</title>'
-            '<audio src="source.wav" controls autoplay></audio>'
-        )
-        server = http.server.ThreadingHTTPServer(
-            ("127.0.0.1", 0), functools.partial(_QuietHandler, directory=str(media))
-        )
-        server_thread = threading.Thread(target=server.serve_forever, daemon=True)
-        server_thread.start()
+    async with async_playwright() as playwright:
         try:
-            async with async_playwright() as playwright:
-                try:
-                    executable = browser_executable(playwright)
-                except BrowserExecutableMissing as exc:
-                    raise RuntimeError(str(exc)) from exc
-                browser = await playwright.chromium.launch(
-                    executable_path=str(executable),
-                    channel="chromium",
-                    headless=False,
-                    args=_chromium_args(args.microphone_wav),
-                )
-                context = await browser.new_context(
-                    ignore_https_errors=urlsplit(args.base).hostname in {"127.0.0.1", "localhost"},
-                    viewport={"width": 1440, "height": 1100},
-                )
-                page = await context.new_page()
-                source = await context.new_page()
-                try:
-                    await source.goto(f"http://127.0.0.1:{server.server_port}/source.html")
-                    await source.locator("audio").evaluate("audio => audio.play()")
-                    await page.bring_to_front()
+            executable = browser_executable(playwright)
+        except BrowserExecutableMissing as exc:
+            raise RuntimeError(str(exc)) from exc
+        browser = await playwright.chromium.launch(
+            executable_path=str(executable),
+            channel="chromium",
+            headless=False,
+            args=_chromium_args(),
+        )
+        context = await browser.new_context(
+            ignore_https_errors=urlsplit(args.base).hostname in {"127.0.0.1", "localhost"},
+            viewport={"width": 1440, "height": 1100},
+        )
+        page = await context.new_page()
+        try:
                     await page.goto(args.base)
                     await page.locator('[data-auth-state="signed-in"]').wait_for(timeout=30_000)
                     await page.locator('[data-boot="ready"]').wait_for(timeout=30_000)
-                    await page.get_by_label("Listening setup", exact=True).select_option("headphones")
-                    await page.get_by_role("button", name="Enable microphone", exact=True).click()
-                    await page.wait_for_function(
-                        'document.querySelector(".capture-status")?.textContent.includes("Microphone connected")'
-                    )
-                    await page.get_by_role("button", name="Share audio", exact=True).click()
-                    start_button = page.get_by_role("button", name="Start capture", exact=True)
-                    await start_button.wait_for(timeout=20_000)
-                    before = {
-                        str(row["id"])
-                        for row in (await _api(page, "/api/meetings")).get("meetings", [])
+                    descriptor = (await _api(page, "/api/live/descriptor"))["descriptor"]
+                    frame_samples = int(descriptor["frame_samples"])
+                    sample_rate = int(descriptor["sample_rate"])
+                    cadence = frame_samples / sample_rate
+                    if cadence != 0.5:
+                        raise RuntimeError("headed arm requires 0.5-second live frames")
+                    lane_pcm = {
+                        "system": _read_pcm16(args.system_wav, sample_rate, args.seconds),
+                        "microphone": _read_pcm16(
+                            args.microphone_wav, sample_rate, args.seconds
+                        ),
                     }
-                    await source.locator("audio").evaluate(
-                        "audio => { audio.currentTime = 0; return audio.play(); }"
+                    created = await _api_post(
+                        page,
+                        "/api/live/sessions",
+                        {"source_revision": descriptor["source_revision"]},
+                    )
+                    meeting_id = str(created["id"])
+                    await page.evaluate(
+                        """meetingId => document.dispatchEvent(new CustomEvent(
+                          "moss:observe-live-meeting", {detail: {meetingId}}
+                        ))""",
+                        meeting_id,
                     )
                     started = time.monotonic()
-                    await start_button.click()
-                    meeting_id = await _meeting_id(page, before)
+                    device_epoch = time.time_ns()
                     next_event = -1
                     last_api: tuple[TranscriptSegment, ...] | None = None
                     last_dom: tuple[TranscriptSegment, ...] | None = None
@@ -282,11 +298,54 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                         final_status = session.get("status")
                         finalization_status = session.get("finalization_status")
 
-                    await observe()
-                    while time.monotonic() - started < args.seconds:
-                        await asyncio.sleep(min(args.poll_seconds, args.seconds - (time.monotonic() - started)))
+                    frame_bytes = frame_samples * 2
+                    total_frames = round(args.seconds / cadence)
+                    for sequence in range(total_frames):
+                        target = started + sequence * cadence
+                        await asyncio.sleep(max(0, target - time.monotonic()))
+                        health = {
+                            "state": "capturing",
+                            "device_epoch": device_epoch,
+                            "dropped_frames": 0,
+                            "discontinuities": 0,
+                            "failure_code": None,
+                        }
+                        await _api_post(
+                            page,
+                            f"/api/live/sessions/{meeting_id}/heartbeat",
+                            {
+                                "schema": "moss-live-helper-health.v1",
+                                "instance_id": "visible-word-headed",
+                                "sequence": sequence,
+                                "sent_monotonic_ns": time.monotonic_ns(),
+                                "helper_version": "qualification",
+                                "state": "capturing",
+                                "lanes": {
+                                    "system": health,
+                                    "microphone": dict(health),
+                                },
+                            },
+                        )
+                        offset = sequence * frame_bytes
+                        for lane, pcm in lane_pcm.items():
+                            chunk = pcm[offset : offset + frame_bytes]
+                            await _api_post(
+                                page,
+                                f"/api/live/sessions/{meeting_id}/frames",
+                                _frame_payload(
+                                    lane,
+                                    sequence,
+                                    chunk,
+                                    frame_samples=frame_samples,
+                                    sample_rate=sample_rate,
+                                    device_epoch=device_epoch,
+                                ),
+                            )
                         await observe()
-                    await page.get_by_role("button", name="Stop and finalize", exact=True).click()
+                    await asyncio.sleep(max(0, started + args.seconds - time.monotonic()))
+                    await _api_post(
+                        page, f"/api/live/sessions/{meeting_id}/stop", {"deadline": 30}
+                    )
                     terminal_deadline = time.monotonic() + args.terminal_timeout
                     while time.monotonic() < terminal_deadline:
                         await asyncio.sleep(args.poll_seconds)
@@ -305,6 +364,7 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                     return {
                         "schema": "moss-visible-word-headed.v1",
                         "browser": "headed Chromium",
+                        "capture_path": "production live-frame API",
                         "session_seconds": args.seconds,
                         "reference_intervals": len(intervals),
                         "reference_words": len(references),
@@ -320,13 +380,9 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                         "measurement": measured,
                         "numeric_latency_target": "USER_DECISION",
                     }
-                finally:
-                    await context.close()
-                    await browser.close()
         finally:
-            server.shutdown()
-            server.server_close()
-            server_thread.join()
+            await context.close()
+            await browser.close()
 
 
 def main(argv: Sequence[str] | None = None) -> int:

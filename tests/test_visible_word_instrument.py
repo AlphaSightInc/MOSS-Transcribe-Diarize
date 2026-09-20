@@ -1,10 +1,16 @@
 from __future__ import annotations
 
 import json
+import wave
 
 import pytest
 
-from tools.qualify.visible_word_headed import _chromium_args, _read_reference
+from tools.qualify.visible_word_headed import (
+    _chromium_args,
+    _frame_payload,
+    _read_pcm16,
+    _read_reference,
+)
 from tools.qualify.visible_words import (
     ReferenceWord,
     TranscriptObservation,
@@ -162,11 +168,51 @@ def test_headed_reference_reader_preserves_intervals_for_word_expansion(tmp_path
     ]
 
 
-def test_headed_chromium_stays_muted_while_using_fake_capture(tmp_path):
-    args = _chromium_args(tmp_path / "microphone.wav")
+def test_headed_chromium_stays_muted_without_physical_capture():
+    args = _chromium_args()
 
-    assert args.count("--mute-audio") == 1
-    assert any(value.startswith("--use-file-for-fake-audio-capture=") for value in args)
+    assert args == ["--mute-audio"]
+
+
+def test_headed_live_frame_preserves_lane_sequence_pcm_and_silence():
+    payload = _frame_payload(
+        "microphone",
+        3,
+        b"\0\0\0\0",
+        frame_samples=2,
+        sample_rate=4,
+        device_epoch=7,
+    )
+
+    assert set(payload) == {
+        "lane",
+        "sequence",
+        "capture_timestamp_ns",
+        "device_epoch",
+        "pcm_base64",
+        "sample_count",
+        "sample_rate",
+        "silent",
+        "discontinuity",
+    }
+    assert payload["lane"] == "microphone"
+    assert payload["sequence"] == 3
+    assert payload["capture_timestamp_ns"] == 1_500_000_007
+    assert payload["pcm_base64"] == "AAAAAA=="
+    assert payload["silent"] is True
+
+
+def test_headed_lane_reader_accepts_only_the_exact_pcm_contract(tmp_path):
+    source = tmp_path / "lane.wav"
+    with wave.open(str(source), "wb") as target:
+        target.setnchannels(1)
+        target.setsampwidth(2)
+        target.setframerate(4)
+        target.writeframes(b"\1\0" * 4)
+
+    assert _read_pcm16(source, 4, 1.0) == b"\1\0" * 4
+    with pytest.raises(ValueError, match="exactly 2 seconds"):
+        _read_pcm16(source, 4, 2.0)
 
 
 def test_repeated_word_cannot_credit_the_wrong_source_interval():
