@@ -1,7 +1,7 @@
 import { compareTranscriptOrder } from "./transcriptOrder.ts";
 import type { SourceLane } from "./transcriptOrder.ts";
 import type { TranscriptTurn } from "./mergeTranscript";
-import { isBackendUnknownSpeakerId, UNKNOWN_SPEAKER_ID } from "./speakerMap.ts";
+import { isBackendUnknownSpeakerId, UNRESOLVED_SPEAKER_ID } from "./speakerMap.ts";
 
 export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json", "srt", "vtt"] as const;
 export type TranscriptExportFormat = (typeof TRANSCRIPT_EXPORT_FORMATS)[number];
@@ -143,8 +143,8 @@ export function buildTranscriptExportJsonDocument(
         ...(turn.source_lane ? { source_lane: turn.source_lane } : {}),
         start: turn.start,
         end: turn.end,
-        speaker: unidentified ? UNKNOWN_SPEAKER_ID : turn.speaker,
-        speaker_entity_id: unidentified ? UNKNOWN_SPEAKER_ID : turn.speaker_entity_id,
+        speaker: unidentified ? UNRESOLVED_SPEAKER_ID : turn.speaker,
+        speaker_entity_id: unidentified ? UNRESOLVED_SPEAKER_ID : turn.speaker_entity_id,
         display_name: unidentified ? speakerLabel : turn.display_name,
         speaker_label: speakerLabel,
         state: turn.state,
