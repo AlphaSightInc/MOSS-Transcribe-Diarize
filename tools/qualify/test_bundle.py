@@ -3,6 +3,8 @@ import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import threading
+import pytest
+from tools.qualify import run as qualify_run
 from tools.qualify.decoder import Decoder
 from tools.qualify.run import compare, counts, score_ladder
 
@@ -10,6 +12,34 @@ from tools.qualify.run import compare, counts, score_ladder
 def test_missing_is_not_pass():
     assert counts(['PASS','FAIL','UNRUNNABLE','SKIP']) == dict(
         expected=4, executed=2, passed=1, failed=1, skipped=1, unrunnable=1)
+
+
+def test_request_plan_uses_selected_gate_population_and_retains_provenance():
+    default = qualify_run.request_plan(long=False)
+    assert default['measured_rate'] == .51
+    assert default['source_receipt'] == 'evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl'
+    assert default['headroom'] == 1.18
+    assert default['population'] == dict(
+        live_sessions=0, seconds_per_live_session=0, live_session_seconds=0,
+        file_seconds=[360, 180, 180, 180], file_windows=9,
+        window_seconds=150, stride_seconds=120, browser_cases=list(range(1, 17)))
+    assert default['planned_requests'] == 30
+
+    long = qualify_run.request_plan(long=True)
+    assert long['population']['live_session_seconds'] == 3600
+    assert long['population']['file_windows'] == 24
+    assert long['planned_requests'] == 2214
+
+
+def test_unfunded_plan_refuses_before_bundle_or_decoder_start(monkeypatch, capsys):
+    def forbidden_start(*args, **kwargs):
+        raise AssertionError('bundle started before budget admission')
+
+    monkeypatch.setattr(qualify_run, 'Bundle', forbidden_start)
+    assert qualify_run.main(['--budget', '29']) == 2
+    error = capsys.readouterr().err
+    assert 'planned_requests=30' in error
+    assert 'shortfall=1' in error
 
 
 def test_determinism_detects_added_removed_and_changed_gates():

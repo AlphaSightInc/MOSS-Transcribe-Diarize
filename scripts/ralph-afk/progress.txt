@@ -74,3 +74,19 @@ default budget (S17, third mismatch). This run repairs both without touching pro
 - Learned: ordered matching already handled omission, merged rows and revision. The missing primitives were retained
   source-interval identity and an unchanged observation at the first poll crossing each phrase end.
 - Next: candidate 5, add gate-population request planning and refuse an unfundable bundle before decoder traffic.
+
+## Iteration 5 - establish budget preflight seam
+- Target: candidate 5, compute and retain the selected population plan and refuse a short budget before bundle or
+  decoder startup; partial because the full live-bench population is not yet enumerated.
+- Files: `tools/qualify/run.py`, `tools/qualify/test_bundle.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: throwaway one-command prototype -> default 9 file windows / 16 browser cases / 30 planned, long 24
+  windows / 2×1800 live seconds / 2,214 planned; focused controls first RED **2 failed**, then helper modules
+  `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py` -> **19/19 passed**.
+- Evidence: `request_plan()` summary fields and `test_unfunded_plan_refuses_before_bundle_or_decoder_start`; retained
+  S17 evidence in `context.md` says earlier gates used 733 requests, falsifying completeness of the current literal
+  capacity/file/browser-only population.
+- Learned: the admission seam can run before all bundle work and uses production file windowing, but truthful total
+  planning also needs explicit populations for the existing live benches; a historical request count is not a design.
+- Next: finish candidate 5 by enumerating every request-producing live bench from its declared sessions/durations, then
+  update the expected totals and shortfall control before moving to censored classification.

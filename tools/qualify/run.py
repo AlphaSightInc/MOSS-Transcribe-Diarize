@@ -4,6 +4,7 @@ from collections import Counter
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -28,6 +29,12 @@ PY = sys.executable
 HOST = 'gyauo@ga0-alienware-rtx4070ti.tailnet.aisight.us'
 LADDER = Path('/Users/gao/Documents/Codex/2026-09-17/new-realtime-voice-chat-2/moss-mvp-review/evidence/independent-review/probes/ir_lane_ladder.py')
 CASES = ['system@1', 'mic@1', 'overlap@1', 'overlap@0.316', 'overlap@0.1', 'overlapsysquiet@0.316']
+BROWSER_CASES = tuple(range(1, 17))
+MEASURED_REQUEST_RATE = .51
+REQUEST_RATE_SOURCE = 'evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl'
+REQUEST_HEADROOM = 1.18
+DEFAULT_FILE_SECONDS = (360, 180, 180, 180)
+LONG_FILE_SECONDS = (1800,)
 
 
 def write(path, value):
@@ -38,6 +45,39 @@ def counts(statuses):
     c = Counter(statuses)
     return dict(expected=len(statuses), executed=sum(v for k, v in c.items() if k not in ('UNRUNNABLE', 'SKIP')),
                 passed=c['PASS'], failed=c['FAIL'], skipped=c['SKIP'], unrunnable=c['UNRUNNABLE'])
+
+
+def request_plan(long):
+    """Return the selected decoder population before any bundle work starts."""
+    from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner, plan_windows
+
+    file_seconds = [*DEFAULT_FILE_SECONDS, *(LONG_FILE_SECONDS if long else ())]
+    file_windows = sum(len(plan_windows(
+        seconds,
+        window_seconds=WindowedRunner.window_seconds,
+        stride_seconds=WindowedRunner.stride_seconds,
+    )) for seconds in file_seconds)
+    live_sessions = 2 if long else 0
+    seconds_per_live_session = 1800 if long else 0
+    live_session_seconds = live_sessions * seconds_per_live_session
+    population = dict(
+        live_sessions=live_sessions,
+        seconds_per_live_session=seconds_per_live_session,
+        live_session_seconds=live_session_seconds,
+        file_seconds=file_seconds,
+        file_windows=file_windows,
+        window_seconds=WindowedRunner.window_seconds,
+        stride_seconds=WindowedRunner.stride_seconds,
+        browser_cases=list(BROWSER_CASES),
+    )
+    unadjusted = live_session_seconds * MEASURED_REQUEST_RATE + file_windows + len(BROWSER_CASES)
+    return dict(
+        measured_rate=MEASURED_REQUEST_RATE,
+        source_receipt=REQUEST_RATE_SOURCE,
+        headroom=REQUEST_HEADROOM,
+        planned_requests=math.ceil(unadjusted * REQUEST_HEADROOM),
+        population=population,
+    )
 
 
 def ready_descriptor(base):
@@ -61,7 +101,7 @@ def bundle_verdict(gates):
 
 
 class Bundle:
-    def __init__(self, args):
+    def __init__(self, args, plan):
         self.args = args
         self.decoder_upstream_port = args.decoder_upstream_port or 18125
         self.started = time.monotonic()
@@ -90,7 +130,10 @@ class Bundle:
                          identity=dict(git_sha=self.sha, tree_clean=not dirty, dirty_files=dirty,
                                        python=sys.version.split()[0], node=subprocess.check_output(['node','--version'], text=True).strip(),
                                        decoder_tunnel_url=f'http://127.0.0.1:{self.decoder_upstream_port}', decoder_base_url='http://127.0.0.1:19125/v1'),
-                         gates=[], request_budget=args.budget, long=args.long, integrated_candidate=self.sha)
+                         gates=[], request_budget=args.budget, long=args.long, integrated_candidate=self.sha,
+                         measured_rate=plan['measured_rate'], source_receipt=plan['source_receipt'],
+                         headroom=plan['headroom'], planned_requests=plan['planned_requests'],
+                         request_population=plan['population'])
         self.current = None
         self.gate('tree_clean', 'PASS' if not dirty else 'FAIL', measurements={'dirty_files':dirty})
 
@@ -325,13 +368,13 @@ class Bundle:
             '--out',str(output),'--state',str(state),'--cert',str(self.cert),'--key',str(self.key),
             '--manifest',str(self.manifest)],timeout=3600)
         rows=json.loads((output/'campaign-results.json').read_text()) if (output/'campaign-results.json').exists() else {}
-        statuses=[('UNRUNNABLE' if rows.get(str(i),{}).get('status')=='BLOCKED' else rows.get(str(i),{}).get('status','UNRUNNABLE')) for i in range(1,17)]
+        statuses=[('UNRUNNABLE' if rows.get(str(i),{}).get('status')=='BLOCKED' else rows.get(str(i),{}).get('status','UNRUNNABLE')) for i in BROWSER_CASES]
         import ast
         module=ast.parse((ROOT/'prototypes/browser-stress/run.py').read_text())
         predicates=next(ast.literal_eval(node.value) for node in module.body if isinstance(node,ast.Assign)
             and any(isinstance(t,ast.Name) and t.id=='PREDICATES' for t in node.targets))
         measurements={str(i):dict(status=statuses[i-1],predicate=predicates[i],
-            observation=retained_metadata(rows.get(str(i),{}))) for i in range(1,17)}
+            observation=retained_metadata(rows.get(str(i),{}))) for i in BROWSER_CASES}
         self.gate('browser_stress_all',aggregate(statuses,code),counts(statuses),elapsed,code,
             reason='Native hidden-tab cases are UNRUNNABLE if Chromium never becomes hidden; missing rows mean bench could not execute',measurements=measurements)
         self.files()
@@ -567,7 +610,7 @@ def score_ladder(rows):
     return result
 
 
-def main():
+def main(argv=None):
     global LADDER
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--long',action='store_true')
@@ -576,11 +619,17 @@ def main():
     parser.add_argument('--out',type=Path)
     parser.add_argument('--compare',type=Path)
     parser.add_argument('--ladder',type=Path,default=LADDER)
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.budget < 1:
         parser.error('budget must be positive')
+    plan = request_plan(args.long)
+    if plan['planned_requests'] > args.budget:
+        shortfall = plan['planned_requests'] - args.budget
+        print(f"REQUEST BUDGET INSUFFICIENT: planned_requests={plan['planned_requests']} "
+              f"budget={args.budget} shortfall={shortfall}", file=sys.stderr)
+        return 2
     LADDER = args.ladder
-    bundle = Bundle(args)
+    bundle = Bundle(args, plan)
     def interrupted(signum, frame):
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM,interrupted)

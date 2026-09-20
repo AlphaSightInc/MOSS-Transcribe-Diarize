@@ -32,6 +32,13 @@
 
 ## Current state
 
+- 2026-09-20 iteration 5: a pure `request_plan(long)` now records `measured_rate=0.51`, the retained wp30 source
+  receipt, `headroom=1.18`, production file-window arithmetic, browser case ids, and `planned_requests`; `main(argv)`
+  rejects an insufficient budget before constructing `Bundle` (therefore before decoder startup) and prints the
+  shortfall. The current literal population yields **30 default / 2,214 long** requests; focused bundle helpers are
+  **19/19 passed**. **Candidate 5 is partial:** retained S17 used 733 requests before capacity, so the current
+  capacity/file/browser-only plan does not yet demonstrate that every decoder-producing bench is represented. Do not
+  use 2,214 as a trustworthy long-run admission threshold until that population gap is resolved.
 - 2026-09-20 iteration 4: all four remaining custody controls are GREEN and documented by falsifier: repeated token
   with an omitted later phrase, two phrases merged into one row, earlier-text revision, and unchanged text crossing a
   phrase end. Source interval identity now survives word expansion, so the v2 receipt emits one
@@ -97,9 +104,10 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 4. **DONE (iteration 4) — Add the remaining violating controls**: repeated word + omitted later phrase, merged rows,
    revision of earlier text, and unchanged text across phrase end are GREEN. Phrase-end completion is separately
    reported once per source interval; word rows no longer claim inferred per-word latency.
-5. **Budget preflight** in `tools/qualify/run.py`: `planned_requests` from the gate population × `measured_rate`
-   (0.51 from the wp30 receipts, provenance recorded) × `headroom`; refuse before any request when `planned > budget`;
-   summary keys `measured_rate`, `source_receipt`, `headroom`, `planned_requests`; tests in `tools/qualify/test_bundle.py`.
+5. **PARTIAL (iteration 5) — Budget preflight** in `tools/qualify/run.py`: the pure planner, summary fields, production
+   file windows, browser case ids, and refusal-before-`Bundle` control are implemented. Remaining: reconcile the
+   planner with every decoder-producing live bench; the retained 733-request pre-capacity count falsifies treating the
+   current 30-request default plan as complete. Do not replace that gap with a historical magic constant.
 6. **Censored classification**: `rejected_by_budget > 0` ⇒ `INCOMPLETE`, never quality `FAIL`; accepted/completed/
    rejected reported separately; test.
 7. **Capacity rows**: add a default 2×300 s development row (two-meeting population); `--long` = 2×1800 with preflight
