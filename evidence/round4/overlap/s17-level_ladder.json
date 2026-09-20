@@ -1,0 +1,207 @@
+{
+  "name": "level_ladder",
+  "status": "PASS",
+  "required": true,
+  "exit_code": 0,
+  "denominators": {
+    "expected": 6,
+    "executed": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "unrunnable": 0
+  },
+  "duration_seconds": 166.928,
+  "artifacts": [
+    "level_ladder.log"
+  ],
+  "decoder_requests_at_record": 480,
+  "decoder_budget_exhausted_at_record": false,
+  "reason": "PASS means six finalized measurements; retention has no supplied acceptance threshold. Unique vocabulary is not transcript accuracy.",
+  "measurements": [
+    {
+      "case": "system@1",
+      "mic_gain": 1.0,
+      "mic_gain_db": 0.0,
+      "system_lane_dbfs": -20.4,
+      "mic_lane_dbfs": -19.0,
+      "finalization": "final",
+      "final_word_count": 86,
+      "speaker_count": 1,
+      "words_by_speaker": {
+        "speaker-0001": 86
+      },
+      "retention_vs_alone": {
+        "system": {
+          "retained": 37,
+          "alone_unique": 37,
+          "fraction": 1.0
+        },
+        "microphone": {
+          "retained": 0,
+          "alone_unique": 32,
+          "fraction": 0.0
+        }
+      },
+      "lead_reference_retained": {
+        "system": 37,
+        "microphone": 0
+      },
+      "reproduces_lead": true
+    },
+    {
+      "case": "mic@1",
+      "mic_gain": 1.0,
+      "mic_gain_db": 0.0,
+      "system_lane_dbfs": -20.4,
+      "mic_lane_dbfs": -19.0,
+      "finalization": "final",
+      "final_word_count": 56,
+      "speaker_count": 1,
+      "words_by_speaker": {
+        "speaker-0001": 56
+      },
+      "retention_vs_alone": {
+        "system": {
+          "retained": 0,
+          "alone_unique": 37,
+          "fraction": 0.0
+        },
+        "microphone": {
+          "retained": 32,
+          "alone_unique": 32,
+          "fraction": 1.0
+        }
+      },
+      "lead_reference_retained": {
+        "system": 0,
+        "microphone": 32
+      },
+      "reproduces_lead": true
+    },
+    {
+      "case": "overlap@1",
+      "mic_gain": 1.0,
+      "mic_gain_db": 0.0,
+      "system_lane_dbfs": -20.4,
+      "mic_lane_dbfs": -19.0,
+      "finalization": "final",
+      "final_word_count": 142,
+      "speaker_count": 2,
+      "words_by_speaker": {
+        "speaker-0002": 56,
+        "speaker-0001": 86
+      },
+      "retention_vs_alone": {
+        "system": {
+          "retained": 37,
+          "alone_unique": 37,
+          "fraction": 1.0
+        },
+        "microphone": {
+          "retained": 32,
+          "alone_unique": 32,
+          "fraction": 1.0
+        }
+      },
+      "lead_reference_retained": {
+        "system": 37,
+        "microphone": 32
+      },
+      "reproduces_lead": true
+    },
+    {
+      "case": "overlap@0.316",
+      "mic_gain": 0.316,
+      "mic_gain_db": -10.0,
+      "system_lane_dbfs": -20.4,
+      "mic_lane_dbfs": -29.0,
+      "finalization": "final",
+      "final_word_count": 142,
+      "speaker_count": 2,
+      "words_by_speaker": {
+        "speaker-0002": 56,
+        "speaker-0001": 86
+      },
+      "retention_vs_alone": {
+        "system": {
+          "retained": 37,
+          "alone_unique": 37,
+          "fraction": 1.0
+        },
+        "microphone": {
+          "retained": 32,
+          "alone_unique": 32,
+          "fraction": 1.0
+        }
+      },
+      "lead_reference_retained": {
+        "system": 37,
+        "microphone": 32
+      },
+      "reproduces_lead": true
+    },
+    {
+      "case": "overlap@0.1",
+      "mic_gain": 0.1,
+      "mic_gain_db": -20.0,
+      "system_lane_dbfs": -20.4,
+      "mic_lane_dbfs": -39.0,
+      "finalization": "final",
+      "final_word_count": 146,
+      "speaker_count": 2,
+      "words_by_speaker": {
+        "speaker-0002": 60,
+        "speaker-0001": 86
+      },
+      "retention_vs_alone": {
+        "system": {
+          "retained": 37,
+          "alone_unique": 37,
+          "fraction": 1.0
+        },
+        "microphone": {
+          "retained": 32,
+          "alone_unique": 32,
+          "fraction": 1.0
+        }
+      },
+      "lead_reference_retained": {
+        "system": 37,
+        "microphone": 32
+      },
+      "reproduces_lead": true
+    },
+    {
+      "case": "overlapsysquiet@0.316",
+      "mic_gain": 0.316,
+      "mic_gain_db": -10.0,
+      "system_lane_dbfs": -30.4,
+      "mic_lane_dbfs": -19.0,
+      "finalization": "final",
+      "final_word_count": 142,
+      "speaker_count": 2,
+      "words_by_speaker": {
+        "speaker-0002": 56,
+        "speaker-0001": 86
+      },
+      "retention_vs_alone": {
+        "system": {
+          "retained": 37,
+          "alone_unique": 37,
+          "fraction": 1.0
+        },
+        "microphone": {
+          "retained": 32,
+          "alone_unique": 32,
+          "fraction": 1.0
+        }
+      },
+      "lead_reference_retained": {
+        "system": 37,
+        "microphone": 32
+      },
+      "reproduces_lead": true
+    }
+  ]
+}

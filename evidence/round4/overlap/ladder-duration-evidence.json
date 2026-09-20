@@ -1,0 +1,20 @@
+{
+  "schema": "moss-r4-6-ladder-duration.v1",
+  "source_database": "/private/tmp/claude-501/stress/S17/.wp25runtime/20260920T023942866422Z/state/phase2.sqlite",
+  "cases": [
+    {
+      "case": "overlap@1",
+      "meeting_id": "Bcr3hFlW6jDuPROFDDRBrNsQ",
+      "meeting_audio_duration_ms": 24000,
+      "published_max_end_seconds": 23.88
+    },
+    {
+      "case": "overlap@0.316",
+      "meeting_id": "iPQSqfr7dU7CMytytJtN5KvZ",
+      "meeting_audio_duration_ms": 24000,
+      "published_max_end_seconds": 23.88
+    }
+  ],
+  "reference_record_end_seconds": 29.0,
+  "verdict": "reference population overhangs each ladder input by 5 seconds"
+}

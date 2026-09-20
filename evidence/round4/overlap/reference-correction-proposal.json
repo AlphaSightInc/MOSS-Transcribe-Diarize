@@ -1,0 +1,28 @@
+{
+  "schema": "moss-r4-6-reference-correction-proposal.v1",
+  "status": "proposal_only_never_applied",
+  "source_reference": "bill-reference-source.jsonl",
+  "proposals": {
+    "demo_overlap_29s": {
+      "speaker": "Bill Ackman",
+      "start": 0.0,
+      "end": 29.0,
+      "text": "To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, the stock market in the short term is a voting machine. It represents speculative interests, supply and demand of people in the short term. But in the long term, the stock market is a weighing machine. You're much more accurate. It's going to tell you what something's worth. And so if you can divine what something's worth, then you can really take advantage of the market because it's really here to help you. And that's kind of the message of.",
+      "notes": "Exact 29 s population. Removes leading overhang; uses scored spoken forms; excludes the-book because full-audio evidence ends that phrase at 29.25 s. Deliberately retains you-know and repeated-to as decoder additions under the existing clean-reference policy."
+    },
+    "full_corpus_first_record": {
+      "speaker": "Bill Ackman",
+      "start": 0.0,
+      "end": 29.25,
+      "text": "To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, the stock market in the short term is a voting machine. It represents speculative interests, supply and demand of people in the short term. But in the long term, the stock market is a weighing machine. You're much more accurate. It's going to tell you what something's worth. And so if you can divine what something's worth, then you can really take advantage of the market because it's really here to help you. And that's kind of the message of the book.",
+      "notes": "Full-audio proposal. The prior terminal transcript places the-book through 29.25 s."
+    },
+    "ladder_24s": {
+      "speaker": "Bill Ackman",
+      "start": 0.0,
+      "end": 24.0,
+      "text": "To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, the stock market in the short term is a voting machine. It represents speculative interests, supply and demand of people in the short term. But in the long term, the stock market is a weighing machine. You're much more accurate. It's going to tell you what something's worth. And so if you can divine what something's worth.",
+      "notes": "Diagnostic-ladder proposal bounded to its retained 24 s meeting audio."
+    }
+  }
+}
