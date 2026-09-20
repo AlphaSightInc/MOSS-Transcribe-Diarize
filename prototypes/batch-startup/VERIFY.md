@@ -3,7 +3,7 @@
 Run from `/private/tmp/moss-round4-20260920/batch` with no network, tunnel, or GPU lease.
 
 ```sh
-git rev-parse HEAD^
+git merge-base HEAD 89f833acd4c654dd702664a17ed19783a2999c95
 git branch --show-current
 MOSS_R4_NO_WRITE=1 prototypes/batch-startup/run.sh all
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python -m pytest -q -p no:cacheprovider tests/phase2/test_batch_startup_prototype_controls.py
@@ -12,7 +12,7 @@ MOSS_R4_NO_WRITE=1 prototypes/batch-startup/run-real-smoke.sh
 
 Expected:
 
-- Parent `89f833acd4c654dd702664a17ed19783a2999c95`; branch `round4/batch`.
+- Merge base `89f833acd4c654dd702664a17ed19783a2999c95`; branch `round4/batch`.
 - Deterministic verdict `SUPPORTED`; 10/10 cases supported; C1 has 61 calls and
   101/101 unique segments; C10 interrupts Live and leaves zero active rows.
 - Violating controls: `2 xfailed` on unpatched base. XPASS is a failure until run B
