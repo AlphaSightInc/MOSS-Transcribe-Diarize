@@ -1,0 +1,1320 @@
+{
+  "cases": {
+    "cancel-during-restart": {
+      "delegate_calls": [
+        40
+      ],
+      "durable_meeting_status": "interrupted",
+      "durable_outcome": "cancelled",
+      "owner_artifacts_after_terminal": false,
+      "publication_count": 0,
+      "recovery_events": [
+        {
+          "cleanup_before_terminal": false,
+          "decision": "durable_cancelled",
+          "failure_code": "cancelled",
+          "meeting_id": "<meeting-id>",
+          "meeting_status": "interrupted"
+        },
+        {
+          "decision": "cleanup_after_terminal",
+          "meeting_id": "<meeting-id>"
+        }
+      ],
+      "verdict": "SUPPORTED"
+    },
+    "damaged-prefix": {
+      "active_rows_after_recovery": 0,
+      "delegate_calls": [],
+      "durable_status": "interrupted",
+      "publication_count": 0,
+      "received_owner_directory_preserved": true,
+      "recovery_events": [
+        {
+          "decision": "invalid_retained_work",
+          "meeting_id": "<meeting-id>",
+          "reason": "checkpoint committed prefix has a gap",
+          "reason_type": "_CheckpointError"
+        }
+      ],
+      "refused_before_decode": true,
+      "variant": "damaged_prefix",
+      "verdict": "SUPPORTED"
+    },
+    "duplicate-startup": {
+      "delegate_calls": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100
+      ],
+      "publication_count": 1,
+      "recovery_events": [
+        {
+          "decision": "duplicate_refused",
+          "meeting_id": "<meeting-id>"
+        },
+        {
+          "cleanup_before_terminal": false,
+          "committed_before_restart": 40,
+          "decision": "resumed_completed",
+          "meeting_id": "<meeting-id>",
+          "published_version": 1,
+          "second_publication_refused": true
+        },
+        {
+          "decision": "cleanup_after_terminal",
+          "meeting_id": "<meeting-id>"
+        }
+      ],
+      "saved_segments": 101,
+      "second_startup_refused": "retained File Meeting already has a startup owner",
+      "unique_saved_segments": 101,
+      "verdict": "SUPPORTED"
+    },
+    "invalid-owner-source-contract": {
+      "arms": [
+        {
+          "active_rows_after_recovery": 0,
+          "delegate_calls": [],
+          "durable_status": "interrupted",
+          "publication_count": 0,
+          "received_owner_directory_preserved": true,
+          "recovery_events": [
+            {
+              "decision": "invalid_retained_work",
+              "meeting_id": "<meeting-id>",
+              "reason": "retained owner account mismatch",
+              "reason_type": "RuntimeError"
+            }
+          ],
+          "refused_before_decode": true,
+          "variant": "wrong_owner"
+        },
+        {
+          "active_rows_after_recovery": 0,
+          "delegate_calls": [],
+          "durable_status": "interrupted",
+          "publication_count": 0,
+          "received_owner_directory_preserved": true,
+          "recovery_events": [
+            {
+              "decision": "invalid_retained_work",
+              "meeting_id": "<meeting-id>",
+              "reason": "checkpoint source SHA mismatch",
+              "reason_type": "_CheckpointError"
+            }
+          ],
+          "refused_before_decode": true,
+          "variant": "wrong_source_hash"
+        },
+        {
+          "active_rows_after_recovery": 0,
+          "delegate_calls": [],
+          "durable_status": "interrupted",
+          "publication_count": 0,
+          "received_owner_directory_preserved": true,
+          "recovery_events": [
+            {
+              "decision": "invalid_retained_work",
+              "meeting_id": "<meeting-id>",
+              "reason": "retained contract version mismatch",
+              "reason_type": "RuntimeError"
+            }
+          ],
+          "refused_before_decode": true,
+          "variant": "wrong_contract_version"
+        }
+      ],
+      "verdict": "SUPPORTED"
+    },
+    "live-d13-falsifier": {
+      "assert_no_active_meetings_holds": true,
+      "delegate_calls": [],
+      "durable_status": "interrupted",
+      "recovery_events": [],
+      "verdict": "SUPPORTED"
+    },
+    "mid-window-crash": {
+      "first_startup_calls": [
+        40
+      ],
+      "first_startup_error": {
+        "condition": "decoder_exception",
+        "end_seconds": 4950.0,
+        "exception_message": "[redacted: unstructured exception message]",
+        "exception_type": "RuntimeError",
+        "start_seconds": 4800.0,
+        "window_index": 40
+      },
+      "publication_count": 1,
+      "recovery_events": [
+        {
+          "decision": "startup_crashed_mid_window",
+          "meeting_id": "<meeting-id>",
+          "window": 40
+        },
+        {
+          "cleanup_before_terminal": false,
+          "committed_before_restart": 40,
+          "decision": "resumed_completed",
+          "meeting_id": "<meeting-id>",
+          "published_version": 1,
+          "second_publication_refused": true
+        },
+        {
+          "decision": "cleanup_after_terminal",
+          "meeting_id": "<meeting-id>"
+        }
+      ],
+      "saved_segments": 101,
+      "second_startup_calls": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100
+      ],
+      "unique_saved_segments": 101,
+      "verdict": "SUPPORTED",
+      "window_40_attempts_after_crash": 2
+    },
+    "nonresumable-file": {
+      "active_rows_after_recovery": 0,
+      "delegate_calls": [],
+      "durable_status": "interrupted",
+      "publication_count": 0,
+      "recovery_events": [
+        {
+          "decision": "not_resumable",
+          "meeting_id": "<meeting-id>"
+        }
+      ],
+      "verdict": "SUPPORTED"
+    },
+    "per-account-recovery": {
+      "active_rows_after_recovery": 0,
+      "delegate_calls": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100
+      ],
+      "exact_path": "Phase2Store.recover_active_account_meetings",
+      "recovery_events": [
+        {
+          "cleanup_before_terminal": false,
+          "committed_before_restart": 40,
+          "decision": "resumed_completed",
+          "meeting_id": "<meeting-id>",
+          "published_version": 1,
+          "second_publication_refused": true
+        },
+        {
+          "decision": "cleanup_after_terminal",
+          "meeting_id": "<meeting-id>"
+        }
+      ],
+      "resolved_account_session": true,
+      "saved_segments": 101,
+      "unique_saved_segments": 101,
+      "verdict": "SUPPORTED"
+    },
+    "resume-after-40": {
+      "delegate_calls": [
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100
+      ],
+      "new_delegate_call_count": 61,
+      "owner_artifacts_after_terminal": false,
+      "publication_count": 1,
+      "recovery_events": [
+        {
+          "cleanup_before_terminal": false,
+          "committed_before_restart": 40,
+          "decision": "resumed_completed",
+          "meeting_id": "<meeting-id>",
+          "published_version": 1,
+          "second_publication_refused": true
+        },
+        {
+          "decision": "cleanup_after_terminal",
+          "meeting_id": "<meeting-id>"
+        }
+      ],
+      "reopened_exact": true,
+      "saved_segments": 101,
+      "startup_state": {
+        "active_rows_after_recovery": 0,
+        "snapshot": {
+          "audio": null,
+          "created_at_ms": 0,
+          "id": "<meeting-id>",
+          "mode": "file",
+          "needs_review": false,
+          "status": "completed",
+          "title": null,
+          "title_source": "automatic",
+          "transcript": {
+            "segments": [
+              {
+                "end": 60.0,
+                "id": "seg_0001",
+                "speaker": "S01",
+                "start": 59.0,
+                "text": "window-0000"
+              },
+              {
+                "end": 180.0,
+                "id": "seg_0002",
+                "speaker": "S01",
+                "start": 179.0,
+                "text": "window-0001"
+              },
+              {
+                "end": 300.0,
+                "id": "seg_0003",
+                "speaker": "S01",
+                "start": 299.0,
+                "text": "window-0002"
+              },
+              {
+                "end": 420.0,
+                "id": "seg_0004",
+                "speaker": "S01",
+                "start": 419.0,
+                "text": "window-0003"
+              },
+              {
+                "end": 540.0,
+                "id": "seg_0005",
+                "speaker": "S01",
+                "start": 539.0,
+                "text": "window-0004"
+              },
+              {
+                "end": 660.0,
+                "id": "seg_0006",
+                "speaker": "S01",
+                "start": 659.0,
+                "text": "window-0005"
+              },
+              {
+                "end": 780.0,
+                "id": "seg_0007",
+                "speaker": "S01",
+                "start": 779.0,
+                "text": "window-0006"
+              },
+              {
+                "end": 900.0,
+                "id": "seg_0008",
+                "speaker": "S01",
+                "start": 899.0,
+                "text": "window-0007"
+              },
+              {
+                "end": 1020.0,
+                "id": "seg_0009",
+                "speaker": "S01",
+                "start": 1019.0,
+                "text": "window-0008"
+              },
+              {
+                "end": 1140.0,
+                "id": "seg_0010",
+                "speaker": "S01",
+                "start": 1139.0,
+                "text": "window-0009"
+              },
+              {
+                "end": 1260.0,
+                "id": "seg_0011",
+                "speaker": "S01",
+                "start": 1259.0,
+                "text": "window-0010"
+              },
+              {
+                "end": 1380.0,
+                "id": "seg_0012",
+                "speaker": "S01",
+                "start": 1379.0,
+                "text": "window-0011"
+              },
+              {
+                "end": 1500.0,
+                "id": "seg_0013",
+                "speaker": "S01",
+                "start": 1499.0,
+                "text": "window-0012"
+              },
+              {
+                "end": 1620.0,
+                "id": "seg_0014",
+                "speaker": "S01",
+                "start": 1619.0,
+                "text": "window-0013"
+              },
+              {
+                "end": 1740.0,
+                "id": "seg_0015",
+                "speaker": "S01",
+                "start": 1739.0,
+                "text": "window-0014"
+              },
+              {
+                "end": 1860.0,
+                "id": "seg_0016",
+                "speaker": "S01",
+                "start": 1859.0,
+                "text": "window-0015"
+              },
+              {
+                "end": 1980.0,
+                "id": "seg_0017",
+                "speaker": "S01",
+                "start": 1979.0,
+                "text": "window-0016"
+              },
+              {
+                "end": 2100.0,
+                "id": "seg_0018",
+                "speaker": "S01",
+                "start": 2099.0,
+                "text": "window-0017"
+              },
+              {
+                "end": 2220.0,
+                "id": "seg_0019",
+                "speaker": "S01",
+                "start": 2219.0,
+                "text": "window-0018"
+              },
+              {
+                "end": 2340.0,
+                "id": "seg_0020",
+                "speaker": "S01",
+                "start": 2339.0,
+                "text": "window-0019"
+              },
+              {
+                "end": 2460.0,
+                "id": "seg_0021",
+                "speaker": "S01",
+                "start": 2459.0,
+                "text": "window-0020"
+              },
+              {
+                "end": 2580.0,
+                "id": "seg_0022",
+                "speaker": "S01",
+                "start": 2579.0,
+                "text": "window-0021"
+              },
+              {
+                "end": 2700.0,
+                "id": "seg_0023",
+                "speaker": "S01",
+                "start": 2699.0,
+                "text": "window-0022"
+              },
+              {
+                "end": 2820.0,
+                "id": "seg_0024",
+                "speaker": "S01",
+                "start": 2819.0,
+                "text": "window-0023"
+              },
+              {
+                "end": 2940.0,
+                "id": "seg_0025",
+                "speaker": "S01",
+                "start": 2939.0,
+                "text": "window-0024"
+              },
+              {
+                "end": 3060.0,
+                "id": "seg_0026",
+                "speaker": "S01",
+                "start": 3059.0,
+                "text": "window-0025"
+              },
+              {
+                "end": 3180.0,
+                "id": "seg_0027",
+                "speaker": "S01",
+                "start": 3179.0,
+                "text": "window-0026"
+              },
+              {
+                "end": 3300.0,
+                "id": "seg_0028",
+                "speaker": "S01",
+                "start": 3299.0,
+                "text": "window-0027"
+              },
+              {
+                "end": 3420.0,
+                "id": "seg_0029",
+                "speaker": "S01",
+                "start": 3419.0,
+                "text": "window-0028"
+              },
+              {
+                "end": 3540.0,
+                "id": "seg_0030",
+                "speaker": "S01",
+                "start": 3539.0,
+                "text": "window-0029"
+              },
+              {
+                "end": 3660.0,
+                "id": "seg_0031",
+                "speaker": "S01",
+                "start": 3659.0,
+                "text": "window-0030"
+              },
+              {
+                "end": 3780.0,
+                "id": "seg_0032",
+                "speaker": "S01",
+                "start": 3779.0,
+                "text": "window-0031"
+              },
+              {
+                "end": 3900.0,
+                "id": "seg_0033",
+                "speaker": "S01",
+                "start": 3899.0,
+                "text": "window-0032"
+              },
+              {
+                "end": 4020.0,
+                "id": "seg_0034",
+                "speaker": "S01",
+                "start": 4019.0,
+                "text": "window-0033"
+              },
+              {
+                "end": 4140.0,
+                "id": "seg_0035",
+                "speaker": "S01",
+                "start": 4139.0,
+                "text": "window-0034"
+              },
+              {
+                "end": 4260.0,
+                "id": "seg_0036",
+                "speaker": "S01",
+                "start": 4259.0,
+                "text": "window-0035"
+              },
+              {
+                "end": 4380.0,
+                "id": "seg_0037",
+                "speaker": "S01",
+                "start": 4379.0,
+                "text": "window-0036"
+              },
+              {
+                "end": 4500.0,
+                "id": "seg_0038",
+                "speaker": "S01",
+                "start": 4499.0,
+                "text": "window-0037"
+              },
+              {
+                "end": 4620.0,
+                "id": "seg_0039",
+                "speaker": "S01",
+                "start": 4619.0,
+                "text": "window-0038"
+              },
+              {
+                "end": 4740.0,
+                "id": "seg_0040",
+                "speaker": "S01",
+                "start": 4739.0,
+                "text": "window-0039"
+              },
+              {
+                "end": 4860.0,
+                "id": "seg_0041",
+                "speaker": "S01",
+                "start": 4859.0,
+                "text": "window-0040"
+              },
+              {
+                "end": 4980.0,
+                "id": "seg_0042",
+                "speaker": "S01",
+                "start": 4979.0,
+                "text": "window-0041"
+              },
+              {
+                "end": 5100.0,
+                "id": "seg_0043",
+                "speaker": "S01",
+                "start": 5099.0,
+                "text": "window-0042"
+              },
+              {
+                "end": 5220.0,
+                "id": "seg_0044",
+                "speaker": "S01",
+                "start": 5219.0,
+                "text": "window-0043"
+              },
+              {
+                "end": 5340.0,
+                "id": "seg_0045",
+                "speaker": "S01",
+                "start": 5339.0,
+                "text": "window-0044"
+              },
+              {
+                "end": 5460.0,
+                "id": "seg_0046",
+                "speaker": "S01",
+                "start": 5459.0,
+                "text": "window-0045"
+              },
+              {
+                "end": 5580.0,
+                "id": "seg_0047",
+                "speaker": "S01",
+                "start": 5579.0,
+                "text": "window-0046"
+              },
+              {
+                "end": 5700.0,
+                "id": "seg_0048",
+                "speaker": "S01",
+                "start": 5699.0,
+                "text": "window-0047"
+              },
+              {
+                "end": 5820.0,
+                "id": "seg_0049",
+                "speaker": "S01",
+                "start": 5819.0,
+                "text": "window-0048"
+              },
+              {
+                "end": 5940.0,
+                "id": "seg_0050",
+                "speaker": "S01",
+                "start": 5939.0,
+                "text": "window-0049"
+              },
+              {
+                "end": 6060.0,
+                "id": "seg_0051",
+                "speaker": "S01",
+                "start": 6059.0,
+                "text": "window-0050"
+              },
+              {
+                "end": 6180.0,
+                "id": "seg_0052",
+                "speaker": "S01",
+                "start": 6179.0,
+                "text": "window-0051"
+              },
+              {
+                "end": 6300.0,
+                "id": "seg_0053",
+                "speaker": "S01",
+                "start": 6299.0,
+                "text": "window-0052"
+              },
+              {
+                "end": 6420.0,
+                "id": "seg_0054",
+                "speaker": "S01",
+                "start": 6419.0,
+                "text": "window-0053"
+              },
+              {
+                "end": 6540.0,
+                "id": "seg_0055",
+                "speaker": "S01",
+                "start": 6539.0,
+                "text": "window-0054"
+              },
+              {
+                "end": 6660.0,
+                "id": "seg_0056",
+                "speaker": "S01",
+                "start": 6659.0,
+                "text": "window-0055"
+              },
+              {
+                "end": 6780.0,
+                "id": "seg_0057",
+                "speaker": "S01",
+                "start": 6779.0,
+                "text": "window-0056"
+              },
+              {
+                "end": 6900.0,
+                "id": "seg_0058",
+                "speaker": "S01",
+                "start": 6899.0,
+                "text": "window-0057"
+              },
+              {
+                "end": 7020.0,
+                "id": "seg_0059",
+                "speaker": "S01",
+                "start": 7019.0,
+                "text": "window-0058"
+              },
+              {
+                "end": 7140.0,
+                "id": "seg_0060",
+                "speaker": "S01",
+                "start": 7139.0,
+                "text": "window-0059"
+              },
+              {
+                "end": 7260.0,
+                "id": "seg_0061",
+                "speaker": "S01",
+                "start": 7259.0,
+                "text": "window-0060"
+              },
+              {
+                "end": 7380.0,
+                "id": "seg_0062",
+                "speaker": "S01",
+                "start": 7379.0,
+                "text": "window-0061"
+              },
+              {
+                "end": 7500.0,
+                "id": "seg_0063",
+                "speaker": "S01",
+                "start": 7499.0,
+                "text": "window-0062"
+              },
+              {
+                "end": 7620.0,
+                "id": "seg_0064",
+                "speaker": "S01",
+                "start": 7619.0,
+                "text": "window-0063"
+              },
+              {
+                "end": 7740.0,
+                "id": "seg_0065",
+                "speaker": "S01",
+                "start": 7739.0,
+                "text": "window-0064"
+              },
+              {
+                "end": 7860.0,
+                "id": "seg_0066",
+                "speaker": "S01",
+                "start": 7859.0,
+                "text": "window-0065"
+              },
+              {
+                "end": 7980.0,
+                "id": "seg_0067",
+                "speaker": "S01",
+                "start": 7979.0,
+                "text": "window-0066"
+              },
+              {
+                "end": 8100.0,
+                "id": "seg_0068",
+                "speaker": "S01",
+                "start": 8099.0,
+                "text": "window-0067"
+              },
+              {
+                "end": 8220.0,
+                "id": "seg_0069",
+                "speaker": "S01",
+                "start": 8219.0,
+                "text": "window-0068"
+              },
+              {
+                "end": 8340.0,
+                "id": "seg_0070",
+                "speaker": "S01",
+                "start": 8339.0,
+                "text": "window-0069"
+              },
+              {
+                "end": 8460.0,
+                "id": "seg_0071",
+                "speaker": "S01",
+                "start": 8459.0,
+                "text": "window-0070"
+              },
+              {
+                "end": 8580.0,
+                "id": "seg_0072",
+                "speaker": "S01",
+                "start": 8579.0,
+                "text": "window-0071"
+              },
+              {
+                "end": 8700.0,
+                "id": "seg_0073",
+                "speaker": "S01",
+                "start": 8699.0,
+                "text": "window-0072"
+              },
+              {
+                "end": 8820.0,
+                "id": "seg_0074",
+                "speaker": "S01",
+                "start": 8819.0,
+                "text": "window-0073"
+              },
+              {
+                "end": 8940.0,
+                "id": "seg_0075",
+                "speaker": "S01",
+                "start": 8939.0,
+                "text": "window-0074"
+              },
+              {
+                "end": 9060.0,
+                "id": "seg_0076",
+                "speaker": "S01",
+                "start": 9059.0,
+                "text": "window-0075"
+              },
+              {
+                "end": 9180.0,
+                "id": "seg_0077",
+                "speaker": "S01",
+                "start": 9179.0,
+                "text": "window-0076"
+              },
+              {
+                "end": 9300.0,
+                "id": "seg_0078",
+                "speaker": "S01",
+                "start": 9299.0,
+                "text": "window-0077"
+              },
+              {
+                "end": 9420.0,
+                "id": "seg_0079",
+                "speaker": "S01",
+                "start": 9419.0,
+                "text": "window-0078"
+              },
+              {
+                "end": 9540.0,
+                "id": "seg_0080",
+                "speaker": "S01",
+                "start": 9539.0,
+                "text": "window-0079"
+              },
+              {
+                "end": 9660.0,
+                "id": "seg_0081",
+                "speaker": "S01",
+                "start": 9659.0,
+                "text": "window-0080"
+              },
+              {
+                "end": 9780.0,
+                "id": "seg_0082",
+                "speaker": "S01",
+                "start": 9779.0,
+                "text": "window-0081"
+              },
+              {
+                "end": 9900.0,
+                "id": "seg_0083",
+                "speaker": "S01",
+                "start": 9899.0,
+                "text": "window-0082"
+              },
+              {
+                "end": 10020.0,
+                "id": "seg_0084",
+                "speaker": "S01",
+                "start": 10019.0,
+                "text": "window-0083"
+              },
+              {
+                "end": 10140.0,
+                "id": "seg_0085",
+                "speaker": "S01",
+                "start": 10139.0,
+                "text": "window-0084"
+              },
+              {
+                "end": 10260.0,
+                "id": "seg_0086",
+                "speaker": "S01",
+                "start": 10259.0,
+                "text": "window-0085"
+              },
+              {
+                "end": 10380.0,
+                "id": "seg_0087",
+                "speaker": "S01",
+                "start": 10379.0,
+                "text": "window-0086"
+              },
+              {
+                "end": 10500.0,
+                "id": "seg_0088",
+                "speaker": "S01",
+                "start": 10499.0,
+                "text": "window-0087"
+              },
+              {
+                "end": 10620.0,
+                "id": "seg_0089",
+                "speaker": "S01",
+                "start": 10619.0,
+                "text": "window-0088"
+              },
+              {
+                "end": 10740.0,
+                "id": "seg_0090",
+                "speaker": "S01",
+                "start": 10739.0,
+                "text": "window-0089"
+              },
+              {
+                "end": 10860.0,
+                "id": "seg_0091",
+                "speaker": "S01",
+                "start": 10859.0,
+                "text": "window-0090"
+              },
+              {
+                "end": 10980.0,
+                "id": "seg_0092",
+                "speaker": "S01",
+                "start": 10979.0,
+                "text": "window-0091"
+              },
+              {
+                "end": 11100.0,
+                "id": "seg_0093",
+                "speaker": "S01",
+                "start": 11099.0,
+                "text": "window-0092"
+              },
+              {
+                "end": 11220.0,
+                "id": "seg_0094",
+                "speaker": "S01",
+                "start": 11219.0,
+                "text": "window-0093"
+              },
+              {
+                "end": 11340.0,
+                "id": "seg_0095",
+                "speaker": "S01",
+                "start": 11339.0,
+                "text": "window-0094"
+              },
+              {
+                "end": 11460.0,
+                "id": "seg_0096",
+                "speaker": "S01",
+                "start": 11459.0,
+                "text": "window-0095"
+              },
+              {
+                "end": 11580.0,
+                "id": "seg_0097",
+                "speaker": "S01",
+                "start": 11579.0,
+                "text": "window-0096"
+              },
+              {
+                "end": 11700.0,
+                "id": "seg_0098",
+                "speaker": "S01",
+                "start": 11699.0,
+                "text": "window-0097"
+              },
+              {
+                "end": 11820.0,
+                "id": "seg_0099",
+                "speaker": "S01",
+                "start": 11819.0,
+                "text": "window-0098"
+              },
+              {
+                "end": 11940.0,
+                "id": "seg_0100",
+                "speaker": "S01",
+                "start": 11939.0,
+                "text": "window-0099"
+              },
+              {
+                "end": 12060.0,
+                "id": "seg_0101",
+                "speaker": "S01",
+                "start": 12059.0,
+                "text": "window-0100"
+              }
+            ]
+          },
+          "transcript_version": 1
+        },
+        "transient_work_children": []
+      },
+      "unique_saved_segments": 101,
+      "verdict": "SUPPORTED"
+    },
+    "url-local-copy": {
+      "local_copy_arm": {
+        "delegate_calls": [
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73,
+          74,
+          75,
+          76,
+          77,
+          78,
+          79,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          86,
+          87,
+          88,
+          89,
+          90,
+          91,
+          92,
+          93,
+          94,
+          95,
+          96,
+          97,
+          98,
+          99,
+          100
+        ],
+        "durable_status": "completed",
+        "recovery_events": [
+          {
+            "cleanup_before_terminal": false,
+            "committed_before_restart": 40,
+            "decision": "resumed_completed",
+            "meeting_id": "<meeting-id>",
+            "published_version": 1,
+            "second_publication_refused": true
+          },
+          {
+            "decision": "cleanup_after_terminal",
+            "meeting_id": "<meeting-id>"
+          }
+        ],
+        "remote_fetches": 0,
+        "saved_segments": 101,
+        "unique_saved_segments": 101
+      },
+      "missing_copy_arm": {
+        "active_rows_after_recovery": 0,
+        "delegate_calls": [],
+        "durable_status": "interrupted",
+        "publication_count": 0,
+        "received_owner_directory_preserved": true,
+        "recovery_events": [
+          {
+            "decision": "invalid_retained_work",
+            "meeting_id": "<meeting-id>",
+            "reason": "retained normalized local source unavailable",
+            "reason_type": "RuntimeError"
+          }
+        ],
+        "refused_before_decode": true,
+        "remote_fetches": 0,
+        "variant": "missing_local_copy"
+      },
+      "verdict": "SUPPORTED"
+    }
+  },
+  "decoder_requests_used": 0,
+  "model_snapshot_present": true,
+  "production_change": "none; prototype-only recovery composition patch",
+  "question": "Can the existing File Meeting remain sole owner across real app startup?",
+  "real_app_lifespan": true,
+  "selected": "all",
+  "sqlite_required": "3.53.4",
+  "sqlite_runtime": "3.50.4",
+  "sqlite_semantic_store_allowance": true,
+  "verdict": "SUPPORTED"
+}

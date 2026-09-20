@@ -1,0 +1,14 @@
+{
+  "backend": "local-hf",
+  "elapsed_seconds": 10.207,
+  "generated_text_characters": 120,
+  "meeting_status": "completed",
+  "network_allowed": false,
+  "real_app_lifespan": true,
+  "remote_decoder_requests": 0,
+  "source": "mono_javier_intro_50s first 10 seconds",
+  "sqlite_runtime": "3.50.4",
+  "sqlite_semantic_store_allowance": true,
+  "transcript_segments": 3,
+  "verdict": "SUPPORTED"
+}
