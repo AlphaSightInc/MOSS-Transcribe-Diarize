@@ -1,7 +1,16 @@
 from __future__ import annotations
 
+import json
+import wave
+
 import pytest
 
+from tools.qualify.visible_word_headed import (
+    _chromium_args,
+    _frame_payload,
+    _read_pcm16,
+    _read_reference,
+)
 from tools.qualify.visible_words import (
     ReferenceWord,
     TranscriptObservation,
@@ -78,6 +87,21 @@ def test_correct_wrong_correct_moves_stable_to_final_correction():
     assert word["stable_correct_sec"] == 3.0
 
 
+def test_finally_wrong_word_nulls_an_earlier_correct_time():
+    result = evaluate_visible_word_stream(
+        _references("alpha"),
+        (_observe(1.0, "alpha"), _observe(2.0, "wrong")),
+        clock_name="api_arrival",
+    )
+
+    word = result["words"][0]
+    assert word["final_status"] == "wrong"
+    assert word["first_correct_sec"] is None
+    assert word["first_correct_latency_sec"] is None
+    assert word["stable_correct_sec"] is None
+    assert word["stable_correct_latency_sec"] is None
+
+
 def test_wrong_and_omitted_words_stay_null_and_in_full_denominator():
     result = evaluate_visible_word_stream(
         _references("alpha", "beta", "gamma"),
@@ -135,6 +159,77 @@ def test_reference_intervals_supply_ordered_ids_and_source_end_times():
     ]
 
 
+def test_headed_reference_reader_preserves_intervals_for_word_expansion(tmp_path):
+    source = tmp_path / "reference.jsonl"
+    source.write_text(
+        "\n".join(
+            json.dumps(row)
+            for row in (
+                {"id": "kept", "text": "Alpha one", "start": 0.25, "end": 1.25},
+                {"id": "later", "text": "Beta", "start": 2.0, "end": 3.0},
+            )
+        )
+        + "\n"
+    )
+
+    references = reference_words_from_intervals(_read_reference(source, 2.5))
+
+    assert [
+        (row.id, row.text, row.source_start_sec, row.source_end_sec)
+        for row in references
+    ] == [
+        ("kept:0", "alpha", 0.25, 1.25),
+        ("kept:1", "one", 0.25, 1.25),
+    ]
+
+
+def test_headed_chromium_stays_muted_without_physical_capture():
+    args = _chromium_args()
+
+    assert args == ["--mute-audio"]
+
+
+def test_headed_live_frame_preserves_lane_sequence_pcm_and_silence():
+    payload = _frame_payload(
+        "microphone",
+        3,
+        b"\0\0\0\0",
+        frame_samples=2,
+        sample_rate=4,
+        device_epoch=7,
+    )
+
+    assert set(payload) == {
+        "lane",
+        "sequence",
+        "capture_timestamp_ns",
+        "device_epoch",
+        "pcm_base64",
+        "sample_count",
+        "sample_rate",
+        "silent",
+        "discontinuity",
+    }
+    assert payload["lane"] == "microphone"
+    assert payload["sequence"] == 3
+    assert payload["capture_timestamp_ns"] == 1_500_000_007
+    assert payload["pcm_base64"] == "AAAAAA=="
+    assert payload["silent"] is True
+
+
+def test_headed_lane_reader_accepts_only_the_exact_pcm_contract(tmp_path):
+    source = tmp_path / "lane.wav"
+    with wave.open(str(source), "wb") as target:
+        target.setnchannels(1)
+        target.setsampwidth(2)
+        target.setframerate(4)
+        target.writeframes(b"\1\0" * 4)
+
+    assert _read_pcm16(source, 4, 1.0) == b"\1\0" * 4
+    with pytest.raises(ValueError, match="exactly 2 seconds"):
+        _read_pcm16(source, 4, 2.0)
+
+
 def test_repeated_word_cannot_credit_the_wrong_source_interval():
     references = (
         ReferenceWord("early-alpha", "alpha", 1.0, 0.0),
@@ -153,6 +248,25 @@ def test_repeated_word_cannot_credit_the_wrong_source_interval():
     assert result["words"][0]["final_status"] == "correct"
     assert result["words"][1]["final_status"] == "missing"
     assert result["words"][1]["first_correct_sec"] is None
+
+
+def test_word_is_not_credited_before_its_source_interval_finishes():
+    reference = (ReferenceWord("interval-alpha", "alpha", 10.0, 0.0),)
+    result = evaluate_visible_word_stream(
+        reference,
+        (
+            TranscriptObservation(
+                3.0, (TranscriptSegment(0.0, 5.0, "alpha"),)
+            ),
+            TranscriptObservation(
+                11.0, (TranscriptSegment(0.0, 5.0, "alpha"),)
+            ),
+        ),
+        clock_name="api_arrival",
+    )
+
+    assert result["words"][0]["first_correct_sec"] == 11.0
+    assert result["words"][0]["first_correct_latency_sec"] == 1.0
 
 
 def test_api_and_dom_clocks_remain_separate():

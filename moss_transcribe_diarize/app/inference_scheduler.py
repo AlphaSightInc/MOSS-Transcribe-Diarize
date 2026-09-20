@@ -10,6 +10,7 @@ from typing import Any, Callable, Literal, TypeVar
 
 
 InferenceKind = Literal["live", "background"]
+InferenceOwnerClass = Literal["live", "file", "terminal"]
 _T = TypeVar("_T")
 
 
@@ -88,6 +89,7 @@ class InferenceDispatchScheduler:
         self._running_background_calls = 0
         self._monotonic_ns = monotonic_ns
         self._owner_window_counts: dict[tuple[InferenceKind, str], int] = {}
+        self._owner_classes: dict[tuple[InferenceKind, str], InferenceOwnerClass] = {}
         self._dispatch_timings: list[_DispatchTimingState] = []
 
     def run_live(
@@ -98,17 +100,29 @@ class InferenceDispatchScheduler:
         on_wait: Callable[[], None] | None = None,
         on_start: Callable[[], None] | None = None,
     ) -> _T:
-        return self._run("live", key, call, on_wait=on_wait, on_start=on_start)
+        return self._run(
+            "live", key, call, owner_class="live", on_wait=on_wait, on_start=on_start
+        )
 
     def run_background(
         self,
         key: str,
         call: Callable[[], _T],
         *,
+        owner_class: Literal["file", "terminal"] = "terminal",
         on_wait: Callable[[], None] | None = None,
         on_start: Callable[[], None] | None = None,
     ) -> _T:
-        return self._run("background", key, call, on_wait=on_wait, on_start=on_start)
+        if owner_class not in {"file", "terminal"}:
+            raise ValueError("background inference owner class must be file or terminal.")
+        return self._run(
+            "background",
+            key,
+            call,
+            owner_class=owner_class,
+            on_wait=on_wait,
+            on_start=on_start,
+        )
 
     def cancel_background(self, key: str) -> bool:
         if not key:
@@ -143,12 +157,127 @@ class InferenceDispatchScheduler:
                 for timing in self._dispatch_timings
             )
 
+    def stage_clock_summary(
+        self,
+    ) -> dict[str, object]:
+        """Project content-free decoder stages on the server monotonic clock.
+
+        Each owner reports its first acceptance-to-dispatch duration plus cumulative
+        queue-wait and service durations. Background owner class is retained when the
+        call enters arbitration; terminal wait overlap with another terminal owner's
+        service is reported both per owner and in the aggregate.
+        """
+
+        with self._condition:
+            owner_classes = dict(self._owner_classes)
+            timings = tuple(
+                InferenceDispatchTiming(
+                    owner_kind=timing.owner_kind,
+                    owner_key=timing.owner_key,
+                    window_index=timing.window_index,
+                    accepted_monotonic_ns=timing.accepted_monotonic_ns,
+                    wait_started_monotonic_ns=timing.wait_started_monotonic_ns,
+                    started_monotonic_ns=timing.started_monotonic_ns,
+                    ended_monotonic_ns=timing.ended_monotonic_ns,
+                )
+                for timing in self._dispatch_timings
+            )
+        grouped: dict[tuple[InferenceKind, str], list[InferenceDispatchTiming]] = {}
+        for timing in timings:
+            grouped.setdefault((timing.owner_kind, timing.owner_key), []).append(timing)
+
+        terminal_services = {
+            owner: tuple(
+                (row.started_monotonic_ns, row.ended_monotonic_ns)
+                for row in rows
+                if row.started_monotonic_ns is not None
+                and row.ended_monotonic_ns is not None
+            )
+            for owner, rows in grouped.items()
+            if owner_classes[owner] == "terminal"
+        }
+        owners: list[dict[str, object]] = []
+        for owner, rows in grouped.items():
+            kind, key = owner
+            started = [row for row in rows if row.started_monotonic_ns is not None]
+            completed = [row for row in started if row.ended_monotonic_ns is not None]
+            owner_class = owner_classes[owner]
+            contention_ns = 0
+            if owner_class == "terminal":
+                other_services = tuple(
+                    interval
+                    for other, intervals in terminal_services.items()
+                    if other != owner
+                    for interval in intervals
+                )
+                contention_ns = sum(
+                    _covered_ns(
+                        row.wait_started_monotonic_ns,
+                        row.started_monotonic_ns,
+                        other_services,
+                    )
+                    for row in started
+                    if row.started_monotonic_ns is not None
+                )
+            first_started = min(
+                (row.started_monotonic_ns for row in started),
+                default=None,
+            )
+            owners.append(
+                {
+                    "owner_kind": kind,
+                    "owner_key": key,
+                    "owner_class": owner_class,
+                    "window_count": len(rows),
+                    "started_count": len(started),
+                    "completed_count": len(completed),
+                    "acceptance_to_first_dispatch_ms": _elapsed_ms(
+                        min(row.accepted_monotonic_ns for row in rows),
+                        first_started,
+                    ),
+                    "queue_wait_ms": (
+                        None
+                        if not started
+                        else sum(
+                            max(0, row.started_monotonic_ns - row.wait_started_monotonic_ns)
+                            for row in started
+                            if row.started_monotonic_ns is not None
+                        )
+                        / 1_000_000
+                    ),
+                    "service_ms": (
+                        None
+                        if not completed
+                        else sum(
+                            max(0, row.ended_monotonic_ns - row.started_monotonic_ns)
+                            for row in completed
+                            if row.started_monotonic_ns is not None
+                            and row.ended_monotonic_ns is not None
+                        )
+                        / 1_000_000
+                    ),
+                    "terminal_contention_ms": contention_ns / 1_000_000,
+                }
+            )
+        return {
+            "clock": "server_monotonic",
+            "owners": owners,
+            "terminal_vs_terminal_contention_ms": sum(
+                float(owner["terminal_contention_ms"]) for owner in owners
+            ),
+            "completed_windows": sum(
+                timing.ended_monotonic_ns is not None for timing in timings
+            ),
+            "full_denominator": len(timings),
+        }
+
     def _run(
         self,
         kind: InferenceKind,
         key: str,
         call: Callable[[], _T],
         *,
+        owner_class: InferenceOwnerClass,
         on_wait: Callable[[], None] | None,
         on_start: Callable[[], None] | None,
     ) -> _T:
@@ -157,6 +286,7 @@ class InferenceDispatchScheduler:
         accepted_ns = self._monotonic_ns()
         with self._condition:
             owner = (kind, key)
+            self._owner_classes.setdefault(owner, owner_class)
             window_index = self._owner_window_counts.get(owner, 0)
             self._owner_window_counts[owner] = window_index + 1
             timing = _DispatchTimingState(
@@ -243,6 +373,7 @@ class ScheduledInferenceRunner:
 
     def transcribe(self, audio_path: Any, **kwargs: Any) -> Any:
         key = kwargs.pop("_dispatch_key", None)
+        explicit_key = key is not None
         on_wait = kwargs.pop("_dispatch_on_wait", None)
         on_start = kwargs.pop("_dispatch_on_start", None)
         if key is None:
@@ -253,8 +384,41 @@ class ScheduledInferenceRunner:
                 str(key), call, on_wait=on_wait, on_start=on_start
             )
         return self.scheduler.run_background(
-            str(key), call, on_wait=on_wait, on_start=on_start
+            str(key),
+            call,
+            owner_class="file" if explicit_key else "terminal",
+            on_wait=on_wait,
+            on_start=on_start,
         )
+
+
+def _elapsed_ms(start_ns: int, end_ns: int | None) -> float | None:
+    if end_ns is None:
+        return None
+    return max(0, end_ns - start_ns) / 1_000_000
+
+
+def _covered_ns(
+    start_ns: int,
+    end_ns: int,
+    intervals: tuple[tuple[int, int], ...],
+) -> int:
+    covered = sorted(
+        (max(start_ns, left), min(end_ns, right))
+        for left, right in intervals
+        if left < end_ns and right > start_ns
+    )
+    if not covered:
+        return 0
+    total = 0
+    left, right = covered[0]
+    for next_left, next_right in covered[1:]:
+        if next_left <= right:
+            right = max(right, next_right)
+        else:
+            total += right - left
+            left, right = next_left, next_right
+    return total + right - left
 
 
 __all__ = [

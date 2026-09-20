@@ -315,6 +315,13 @@ def test_real_store_projection_reconciles_counts_and_excludes_content(tmp_path: 
                     "batch": 0,
                 },
                 "backpressured_meetings": 0,
+                "dispatch_stage_clocks": {
+                    "clock": "server_monotonic",
+                    "owners": [],
+                    "terminal_vs_terminal_contention_ms": 0.0,
+                    "completed_windows": 0,
+                    "full_denominator": 0,
+                },
             }
             account = status["accounts"][0]
             assert account["account_id"] == "workspace-a"
@@ -341,6 +348,63 @@ def test_real_store_projection_reconciles_counts_and_excludes_content(tmp_path: 
             assert "person@example.com" not in journal_text
         finally:
             await store.close()
+
+    asyncio.run(exercise())
+
+
+def test_operator_status_carries_stage_clocks_after_background_dispatch(tmp_path: Path):
+    from moss_transcribe_diarize.app.inference_scheduler import InferenceDispatchScheduler
+
+    async def exercise() -> None:
+        store = _MutableStore()
+        store.payload["active_meetings"] = [
+            {
+                "account_id": "workspace-a",
+                "meeting_id": "file-one",
+                "mode": "file",
+                "status": "active",
+                "created_at_ms": int(FIXED_NOW.timestamp() * 1000),
+            }
+        ]
+        scheduler = InferenceDispatchScheduler()
+        scheduler.run_background("file-one", lambda: "done", owner_class="file")
+        files = _FakeFiles()
+        files._inference_scheduler = scheduler
+        operator = Phase2OperatorStatus(
+            store,
+            database_path=tmp_path / "moss.sqlite3",
+            audio_root=tmp_path / "meetings",
+            live=None,
+            files=files,
+            now=lambda: FIXED_NOW,
+        )
+        socket = Path("/tmp") / f"moss-stage-clocks-{os.getpid()}-{time.time_ns()}.sock"
+        server = Phase2ControlServer(socket, SimpleNamespace(), operator)
+        await operator.start()
+        await server.start()
+        try:
+            status = await request_control(socket, "status")
+        finally:
+            await server.stop()
+
+        clocks = status["capacity"]["dispatch_stage_clocks"]
+        assert clocks["clock"] == "server_monotonic"
+        assert clocks["completed_windows"] == clocks["full_denominator"] == 1
+        assert clocks["terminal_vs_terminal_contention_ms"] == 0.0
+        assert clocks["owners"] == [
+            {
+                "owner_kind": "background",
+                "owner_key": "file-one",
+                "owner_class": "file",
+                "window_count": 1,
+                "started_count": 1,
+                "completed_count": 1,
+                "acceptance_to_first_dispatch_ms": pytest.approx(0.0, abs=10.0),
+                "queue_wait_ms": pytest.approx(0.0, abs=10.0),
+                "service_ms": pytest.approx(0.0, abs=10.0),
+                "terminal_contention_ms": 0.0,
+            }
+        ]
 
     asyncio.run(exercise())
 

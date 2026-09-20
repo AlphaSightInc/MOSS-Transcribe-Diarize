@@ -218,6 +218,7 @@ def test_scheduled_runner_keeps_scheduler_controls_out_of_decoder_options():
     assert calls == [("audio.wav", {"prompt": "keep"})]
     assert waiting == ["waiting"]
     assert started == ["started"]
+    assert runner.scheduler.stage_clock_summary()["owners"][0]["owner_class"] == "file"
 
 
 def test_scheduler_retains_content_free_dispatch_stage_clocks():
@@ -241,6 +242,69 @@ def test_scheduler_retains_content_free_dispatch_stage_clocks():
         timing[0].started_monotonic_ns,
         timing[0].ended_monotonic_ns,
     ) == ("background", "meeting-one", 0, 10, 20, 30, 40)
+
+
+def test_stage_clock_summary_reports_per_owner_wait_service_and_terminal_contention():
+    ticks = iter(value * 1_000_000_000 for value in range(8))
+    scheduler = InferenceDispatchScheduler(
+        max_calls=1,
+        max_background_calls=1,
+        monotonic_ns=lambda: next(ticks),
+    )
+    first_started = threading.Event()
+    release_first = threading.Event()
+
+    first, first_errors = _thread(
+        lambda: scheduler.run_background(
+            "terminal-a",
+            lambda: (first_started.set(), release_first.wait(timeout=2)),
+        )
+    )
+    assert first_started.wait(timeout=1)
+    second, second_errors = _thread(
+        lambda: scheduler.run_background("terminal-b", lambda: "done")
+    )
+    deadline = time.monotonic() + 1
+    while scheduler.snapshot().waiting_background_calls != 1:
+        assert time.monotonic() < deadline
+        time.sleep(0.001)
+    release_first.set()
+    first.join(timeout=2)
+    second.join(timeout=2)
+    assert not first_errors and not second_errors
+
+    assert scheduler.stage_clock_summary() == {
+        "clock": "server_monotonic",
+        "owners": [
+            {
+                "owner_kind": "background",
+                "owner_key": "terminal-a",
+                "owner_class": "terminal",
+                "window_count": 1,
+                "started_count": 1,
+                "completed_count": 1,
+                "acceptance_to_first_dispatch_ms": 2_000.0,
+                "queue_wait_ms": 1_000.0,
+                "service_ms": 3_000.0,
+                "terminal_contention_ms": 0.0,
+            },
+            {
+                "owner_kind": "background",
+                "owner_key": "terminal-b",
+                "owner_class": "terminal",
+                "window_count": 1,
+                "started_count": 1,
+                "completed_count": 1,
+                "acceptance_to_first_dispatch_ms": 3_000.0,
+                "queue_wait_ms": 2_000.0,
+                "service_ms": 1_000.0,
+                "terminal_contention_ms": 1_000.0,
+            },
+        ],
+        "terminal_vs_terminal_contention_ms": 1_000.0,
+        "completed_windows": 2,
+        "full_denominator": 2,
+    }
 
 
 def test_dispatch_instrument_sees_window_yield_and_terminal_contention():
@@ -340,3 +404,7 @@ def test_scheduler_rejects_invalid_capacity_and_kind():
         InferenceDispatchScheduler(max_calls=2, max_background_calls=3)
     with pytest.raises(ValueError, match="kind"):
         ScheduledInferenceRunner(object(), InferenceDispatchScheduler(), kind="unknown")
+    with pytest.raises(ValueError, match="owner class"):
+        InferenceDispatchScheduler().run_background(
+            "owner", lambda: None, owner_class="unknown"
+        )
