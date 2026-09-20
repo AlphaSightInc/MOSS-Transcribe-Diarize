@@ -1,0 +1,41 @@
+{
+  "schema": "moss-round3-fix-identity-run.v1",
+  "revision": "a7a738cf9f9ff246f64c52c112e0bf597ba58241",
+  "source": "/Users/gao/Documents/Codex/2026-09-19/moss-round2/candidate",
+  "checkout": "fresh_detached_clone",
+  "hop": "direct_tunnel_127.0.0.1_18261_no_proxy",
+  "microphone_gain": 0.03,
+  "remote_requests": 59,
+  "request_budget": 150,
+  "cases": {
+    "alternation": {
+      "elapsed_seconds": 56.874,
+      "stop_seconds": 2.866,
+      "pre_terminal": {
+        "system": {"substitutions": 2, "omissions": 6, "additions": 8, "errors": 16, "reference_words": 106, "wer": 0.1509433962264151},
+        "microphone": {"substitutions": 1, "omissions": 4, "additions": 6, "errors": 11, "reference_words": 53, "wer": 0.20754716981132076}
+      },
+      "final": {
+        "system": {"substitutions": 1, "omissions": 5, "additions": 3, "errors": 9, "reference_words": 106, "wer": 0.08490566037735849},
+        "microphone": {"substitutions": 0, "omissions": 0, "additions": 5, "errors": 5, "reference_words": 53, "wer": 0.09433962264150944}
+      },
+      "reopened_equals_final": true,
+      "accepted": false
+    },
+    "overlap": {
+      "elapsed_seconds": 31.6,
+      "stop_seconds": 2.589,
+      "pre_terminal": {
+        "system": {"substitutions": 2, "omissions": 14, "additions": 8, "errors": 24, "reference_words": 106, "wer": 0.22641509433962265},
+        "microphone": {"substitutions": 0, "omissions": 0, "additions": 6, "errors": 6, "reference_words": 53, "wer": 0.11320754716981132}
+      },
+      "final": {
+        "system": {"substitutions": 2, "omissions": 6, "additions": 5, "errors": 13, "reference_words": 106, "wer": 0.12264150943396226},
+        "microphone": {"substitutions": 0, "omissions": 0, "additions": 5, "errors": 5, "reference_words": 53, "wer": 0.09433962264150944}
+      },
+      "reopened_equals_final": true,
+      "accepted": false
+    }
+  },
+  "verdict": "KNOWN_LIMITATION_L1"
+}
