@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "purpose": "R4-11 attended adjudication only; boundaries are candidates, not frozen truth",
+  "source": "evidence/live-policy-sweep-20260825/corpus/discussion_jamie_dimon_180s/audio.wav",
+  "reference": "evidence/live-policy-sweep-20260825/corpus/discussion_jamie_dimon_180s/reference.jsonl",
+  "reference_sha256": "72a6173d92323d5c7ff5e6ba084063970966d4bd4e146c23e24d57949ad1a01b",
+  "population_note": "The retained 600 s run repeats the same 180 s source three times. Its 12.663 s Jamie denominator is not three independent recordings.",
+  "adjudication_questions": [
+    "Is the candidate interval audibly Jamie only?",
+    "Does either boundary contain another voice or non-speech?",
+    "If spill exists, provide corrected boundaries; do not infer them from this packet."
+  ],
+  "snippets": [
+    {
+      "id": "jamie-r1-turn-1",
+      "repeat_index": 1,
+      "start_sec": 165.6,
+      "end_sec": 169.43,
+      "text": "You guys dressed up for me.",
+      "adjacent_before": {"speaker": "Ben", "text": "Well, this feels appropriate."},
+      "adjacent_after": {"speaker": "David", "text": "You dressed up for us, too. Thank you. Last year we had you on the video board at Chase, and you were looking very summery there. You look great tonight."},
+      "retained_candidate_spans": [
+        {"start_sec": 165.68, "end_sec": 166.46, "text": "You guys dressed up."},
+        {"start_sec": 166.57, "end_sec": 166.95, "text": "For me."}
+      ],
+      "spill_marker": "KNOWN_NONPERSON_INSIDE_REFERENCE_BOUNDARY: decoder labels 167.08-168.93 as (laughing); attended boundary ownership required"
+    },
+    {
+      "id": "jamie-r1-turn-2",
+      "repeat_index": 1,
+      "start_sec": 177.919,
+      "end_sec": 178.31,
+      "text": "Thank you.",
+      "adjacent_before": {"speaker": "David", "text": "You dressed up for us, too. Thank you. Last year we had you on the video board at Chase, and you were looking very summery there. You look great tonight."},
+      "adjacent_after": {"speaker": "Ben", "text": "Yes. Well, we know you're a big history buff."},
+      "retained_candidate_spans": [{"start_sec": 177.96, "end_sec": 178.22, "text": "Thank you."}],
+      "spill_marker": "UNKNOWN_REQUIRES_LISTENING: 10 ms reference gaps on both sides; retained span shares one decoder window with adjacent speakers"
+    },
+    {
+      "id": "jamie-r2-turn-1",
+      "repeat_index": 2,
+      "start_sec": 345.6,
+      "end_sec": 349.43,
+      "text": "You guys dressed up for me.",
+      "adjacent_before": {"speaker": "Ben", "text": "Well, this feels appropriate."},
+      "adjacent_after": {"speaker": "David", "text": "You dressed up for us, too. Thank you. Last year we had you on the video board at Chase, and you were looking very summery there. You look great tonight."},
+      "retained_candidate_spans": [
+        {"start_sec": 345.68, "end_sec": 346.46, "text": "You guys dressed up."},
+        {"start_sec": 346.57, "end_sec": 346.95, "text": "For me."}
+      ],
+      "spill_marker": "KNOWN_NONPERSON_INSIDE_REFERENCE_BOUNDARY: repeated decoder shape contains (laughing); attended boundary ownership required"
+    },
+    {
+      "id": "jamie-r2-turn-2",
+      "repeat_index": 2,
+      "start_sec": 357.919,
+      "end_sec": 358.31,
+      "text": "Thank you.",
+      "adjacent_before": {"speaker": "David", "text": "You dressed up for us, too. Thank you. Last year we had you on the video board at Chase, and you were looking very summery there. You look great tonight."},
+      "adjacent_after": {"speaker": "Ben", "text": "Yes. Well, we know you're a big history buff."},
+      "retained_candidate_spans": [{"start_sec": 357.96, "end_sec": 358.22, "text": "Thank you."}],
+      "spill_marker": "UNKNOWN_REQUIRES_LISTENING: repeated source; retained span shares one decoder window with adjacent speakers"
+    },
+    {
+      "id": "jamie-r3-turn-1",
+      "repeat_index": 3,
+      "start_sec": 525.6,
+      "end_sec": 529.43,
+      "text": "You guys dressed up for me.",
+      "adjacent_before": {"speaker": "Ben", "text": "Well, this feels appropriate."},
+      "adjacent_after": {"speaker": "David", "text": "You dressed up for us, too. Thank you. Last year we had you on the video board at Chase, and you were looking very summery there. You look great tonight."},
+      "retained_candidate_spans": [
+        {"start_sec": 525.68, "end_sec": 526.46, "text": "You guys dressed up."},
+        {"start_sec": 526.57, "end_sec": 526.95, "text": "For me."}
+      ],
+      "spill_marker": "KNOWN_NONPERSON_INSIDE_REFERENCE_BOUNDARY: repeated decoder shape contains (laughing); attended boundary ownership required"
+    },
+    {
+      "id": "jamie-r3-turn-2",
+      "repeat_index": 3,
+      "start_sec": 537.919,
+      "end_sec": 538.31,
+      "text": "Thank you.",
+      "adjacent_before": {"speaker": "David", "text": "You dressed up for us, too. Thank you. Last year we had you on the video board at Chase, and you were looking very summery there. You look great tonight."},
+      "adjacent_after": {"speaker": "Ben", "text": "Yes. Well, we know you're a big history buff."},
+      "retained_candidate_spans": [{"start_sec": 537.96, "end_sec": 538.22, "text": "Thank you."}],
+      "spill_marker": "UNKNOWN_REQUIRES_LISTENING: repeated source; retained span shares one decoder window with adjacent speakers"
+    }
+  ]
+}
