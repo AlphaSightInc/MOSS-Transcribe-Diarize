@@ -204,10 +204,11 @@ def evaluate_visible_word_stream(
     word_rows = []
     for index, reference in enumerate(references):
         history = [state[index] for state in states]
+        final_status = history[-1]
         first_index = next(
             (position for position, status in enumerate(history) if status == "correct"),
             None,
-        )
+        ) if final_status == "correct" else None
         stable_index = next(
             (
                 position
@@ -219,7 +220,6 @@ def evaluate_visible_word_stream(
         )
         first_sec = observations[first_index].elapsed_sec if first_index is not None else None
         stable_sec = observations[stable_index].elapsed_sec if stable_index is not None else None
-        final_status = history[-1]
         word_rows.append(
             {
                 "reference_word_id": reference.id,

@@ -378,8 +378,14 @@ def test_operator_status_carries_stage_clocks_after_background_dispatch(tmp_path
             files=files,
             now=lambda: FIXED_NOW,
         )
-
-        status = await operator.snapshot()
+        socket = Path("/tmp") / f"moss-stage-clocks-{os.getpid()}-{time.time_ns()}.sock"
+        server = Phase2ControlServer(socket, SimpleNamespace(), operator)
+        await operator.start()
+        await server.start()
+        try:
+            status = await request_control(socket, "status")
+        finally:
+            await server.stop()
 
         clocks = status["capacity"]["dispatch_stage_clocks"]
         assert clocks["clock"] == "server_monotonic"

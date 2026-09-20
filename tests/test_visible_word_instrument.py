@@ -87,6 +87,21 @@ def test_correct_wrong_correct_moves_stable_to_final_correction():
     assert word["stable_correct_sec"] == 3.0
 
 
+def test_finally_wrong_word_nulls_an_earlier_correct_time():
+    result = evaluate_visible_word_stream(
+        _references("alpha"),
+        (_observe(1.0, "alpha"), _observe(2.0, "wrong")),
+        clock_name="api_arrival",
+    )
+
+    word = result["words"][0]
+    assert word["final_status"] == "wrong"
+    assert word["first_correct_sec"] is None
+    assert word["first_correct_latency_sec"] is None
+    assert word["stable_correct_sec"] is None
+    assert word["stable_correct_latency_sec"] is None
+
+
 def test_wrong_and_omitted_words_stay_null_and_in_full_denominator():
     result = evaluate_visible_word_stream(
         _references("alpha", "beta", "gamma"),
