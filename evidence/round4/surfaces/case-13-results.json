@@ -1,0 +1,13 @@
+{
+  "13": {
+    "explained": true,
+    "provider_posts": 0,
+    "ok": true,
+    "status": "PASS",
+    "seconds": 0.907,
+    "predicate": "No-provider summary is disabled or explains setup, with zero provider POSTs.",
+    "console_errors": [],
+    "network_failures": [],
+    "screenshot": "case-13.png"
+  }
+}

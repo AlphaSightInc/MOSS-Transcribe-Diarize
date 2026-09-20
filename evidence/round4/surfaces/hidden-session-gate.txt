@@ -1,0 +1,12 @@
+command: launchctl managername
+output: Background
+
+command: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <project-python> prototypes/surfaces/run_hidden_cases.py 3,15 --headed --base https://127.0.0.1:18442 --output evidence/round4/surfaces/hidden-cases
+launchctl managername: Background
+BLOCKED-ON-SESSION: headed Chromium has no Aqua window.
+From the physical Mac console: open -a Terminal; then run the same command in that GUI Terminal.
+exit: 77
+
+Playwright executable: /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+Native mechanism order prepared: AppleScript minimized property; separate-process full-screen occlusion; System Events app-hide (Accessibility TCC required, not granted).
+No Chromium process was launched from this Background session.

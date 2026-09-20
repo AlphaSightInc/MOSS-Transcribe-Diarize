@@ -1,0 +1,17 @@
+Supported runtime import:
+  executable: /private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python
+  sqlite3.sqlite_version: 3.53.4
+  imported clone: /private/tmp/moss-round4-20260920/surfaces/moss_transcribe_diarize/__init__.py
+
+Full candidate-composition command:
+  sandbox-exec -f prototypes/surfaces/loopback.sb env PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <R4-python> prototypes/surfaces/serve_localhost.py --state <scratch> --port 18442 --model . --vllm-base-url http://127.0.0.1:18000/v1 --live-provider-manifest /Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json
+
+Observed after startup:
+  curl http://127.0.0.1:18442/ -> <!doctype html>
+  listener -> TCP 127.0.0.1:18442 (LISTEN)
+  no microphone, playback, browser, capture, meeting, or transcription invoked
+
+Cleanup:
+  server stopped cleanly
+  18442 stopped
+  scratch state moved to Trash
