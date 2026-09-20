@@ -39,3 +39,29 @@ Run `docs/verify/r4-7/VERIFY.md` from a truly fresh `/new` session if strict
 context independence is required. This is a verification-process remainder,
 not a runtime-product falsifier. Its handoff SHA gate checks that the committed
 deliverable's parent is the pinned candidate.
+
+## Lead-issued fresh context — 2026-09-20
+
+**Verdict: FAIL.** The capacity probe aborted before measurement because its
+prototype base gate rejected current `HEAD` `0b60723ca6fc2c6bb38075eab38bac6ee55712fb`.
+All other prescribed checks passed. Per lead instruction, the stale literal
+`HEAD^` equality was replaced only by the intended merge-base equality:
+`git merge-base HEAD 89f833acd4c654dd702664a17ed19783a2999c95` equaled the pinned candidate.
+
+- Branch: **PASS** — `round4/runtime`.
+- Candidate ancestry: **PASS** — pinned candidate is the merge base.
+- Isolated runtime: **PASS** — exact `3.53.4 3.53.4`; CPython 3.12 `_sqlite3`
+  loaded from `/private/tmp/moss-round4-20260920/runtime-prefix/python/`.
+- Capacity probe: **FAIL** — 0 measurements completed; 1 gate error,
+  `RuntimeError: wrong prototype base: 0b60723ca6fc2c6bb38075eab38bac6ee55712fb`.
+- Stopped backup/restore: **PASS** — `SUPPORTED`; 2 copied entries; source,
+  restored, and downloaded audio MD5 all `b7d78ab885378363cc61181f731dc192`.
+- Disk exhaustion: **PASS** — `SUPPORTED`; errno 28 after 645,922,816 B;
+  21,901,312 B free at failure; saved/reopened `failed/decode_failed`.
+- 201-minute File tail: **PASS** — 1 passed, 0 failed, 2 warnings in 3.38 s.
+- Backend: **PASS** — 2,116 passed, 0 failed, 5 skipped, 19 warnings,
+  37 subtests passed in 200.76 s.
+- Frontend tests: **PASS** — 28/28 files; 311/311 tests in 2.90 s.
+- TypeScript: **PASS** — 0 errors.
+- Vite: **PASS** — 34 modules transformed; build completed in 101 ms.
+- Cleanup: **PASS** — 0 matching mounted images; 0 owned processes.
