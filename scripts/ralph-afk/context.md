@@ -51,10 +51,13 @@
   default budget is therefore 2,238; bare `--long` refuses before `Bundle` with shortfall 3,844. Both JSON and Markdown
   summaries retain the explicit unit, source receipts, unique-request counts, denominators, and arithmetic. Focused
   controls first RED **4 failed / 12 passed**, then GREEN **24/24** with speaker-quality helpers.
-- Other review findings to fix: `REQUEST_HEADROOM = 1.25` has no recorded source (B6);
-  `prototypes/capacity-campaign/NOTES.md` was edited outside the permitted file set (B7). Not defects: the four extra
-  falsifier controls mostly pass on base too (the run's own journal says so honestly) — but `VERIFY.md` must not present
-  them as if each one caught a base defect, and its F1 claim must state **segment-granular** custody.
+- **B6–B7 complete.** `REQUEST_HEADROOM = 1.25` remains a planner policy, but its provenance is now explicitly
+  `UNMEASURED`: no retained receipt isolates planner error after the lane-second correction, so the summary names
+  `planner_policy`, records no source receipt, and states there is no receipt-derived arithmetic. The focused control
+  was RED on the absent field, then the qualification helpers were GREEN **25/25**. The run-A population verdict stays
+  in `prototypes/capacity-campaign/NOTES.md` because `AGENTS.md` requires prototype verdicts beside the prototype; B7
+  permits that recorded justification. Remaining: `VERIFY.md` must state **segment-granular** custody and describe the
+  inherited controls honestly, then the final full suites must be rerun.
 - **2026-09-20 A2 iteration 1 — B1 control complete, RED.** The maintained control supplies one rendered row with
   outer span 0-11 s and constituent state 0-1 s `alpha` plus 10-11 s with no emitted reference word. References are
   `alpha` at both spans. Current `_dom_segments` ignores the constituents and assigns the row's sole `alpha` across the outer
@@ -95,9 +98,10 @@
   live bench as session durations: workspace, demo lanes, lifecycle, reshare, identity stress, level ladder and browser
   stress. Workspace File/URL inputs are also included in production `WindowedRunner` arithmetic. The plan now covers
   **39 sessions / 1,129 live seconds / 11 file windows / 16 browser cases = 754 default requests**; long adds
-  2×1,800 s and one 1,800 s file for **41 sessions / 4,729 live seconds / 26 file windows = 3,068 requests**. Headroom
-  is 1.25: the prior 1.18 still underfunded the retained default path (727 actual requests versus 602.79 unadjusted;
-  observed ratio 1.206). Iteration 8 supersedes the 754 default total by adding the required 2×300 capacity row.
+  2×1,800 s and one 1,800 s file for **41 sessions / 4,729 live seconds / 26 file windows = 3,068 requests**. Run A
+  selected 1.25 after comparing 727 actual requests with a 602.79 estimate; that estimate used the now-superseded
+  session-second unit, so A2 iteration 6 classifies 1.25 as unmeasured policy rather than receipt-backed evidence.
+  Iteration 8 supersedes the 754 default total by adding the required 2×300 capacity row.
 - 2026-09-20 iteration 5: established the pure plan and pre-`Bundle` refusal seam, but counted only capacity, extended
   files and browser case ids (**30 default / 2,214 long**). Iteration 6 superseded those incomplete totals.
 - 2026-09-20 iteration 4: all four remaining custody controls are GREEN and documented by falsifier: repeated token
@@ -156,8 +160,7 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Candidates
 
-1. **B6 headroom provenance** and **B7 file scope** (move or justify `prototypes/capacity-campaign/NOTES.md`).
-2. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
+1. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
    described as documentation of behaviour, not as base-RED falsifiers, except the one that genuinely was RED.
 
 ## Non-candidates

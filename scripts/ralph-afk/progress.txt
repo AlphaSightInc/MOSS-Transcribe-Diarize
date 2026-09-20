@@ -224,3 +224,18 @@ default budget (S17, third mismatch). This run repairs both without touching pro
   sessions, one empty session, then two system-only half-second sessions; all other selected live families drive two
   lanes per session.
 - Next: candidate 1, record B6 headroom provenance and resolve B7's out-of-scope prototype note.
+
+## Iteration 6 - classify request headroom provenance
+- Target: candidate 1 / B6–B7, record honest headroom provenance and resolve the run-A prototype-note scope.
+- Files: `tools/qualify/run.py`, `tools/qualify/test_bundle.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused provenance control first RED **1 failed** on absent `headroom_provenance`; then its planner and
+  summary controls GREEN **2/2**; `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p
+  no:cacheprovider tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py` -> **25/25 passed**.
+- Evidence: `request_plan()` and both JSON/Markdown summaries retain `headroom=1.25` with status `UNMEASURED`, source
+  `planner_policy`, `source_receipt=null`, and `no receipt-derived arithmetic`. The old 727/602.79 comparison used the
+  superseded session-second estimate and therefore cannot justify headroom after the lane-second repair.
+- Learned: request rate is receipt-measured; headroom is an explicit conservative policy, not a measured quantity.
+  `prototypes/capacity-campaign/NOTES.md` belongs beside the population prototype because `AGENTS.md` requires the
+  prototype verdict there; this is the B7-permitted justification, so the note is not moved.
+- Next: rewrite `docs/verify/round4-run-a/VERIFY.md` for segment-granular custody and honest inherited-control claims,
+  then rerun the required full backend/frontend/typecheck checkpoint.

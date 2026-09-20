@@ -40,6 +40,13 @@ REQUEST_RATE_EVIDENCE = (
 )
 REQUEST_RATE_SOURCE = REQUEST_RATE_EVIDENCE[0]['source_receipt']
 REQUEST_HEADROOM = 1.25
+REQUEST_HEADROOM_PROVENANCE = dict(
+    status='UNMEASURED',
+    source='planner_policy',
+    source_receipt=None,
+    calculation='1.25 policy multiplier; no receipt-derived arithmetic',
+    reason='no retained receipt isolates planner error after the lane-second rate correction',
+)
 LIVE_BENCH_SESSIONS = {
     # verify_workspace: primary capture, two controlled lane cases, recognition,
     # two bounded outage cases, then three eight-second repeat captures.
@@ -129,6 +136,7 @@ def request_plan(long):
         measured_rate_evidence=measured_rate_evidence,
         source_receipt=REQUEST_RATE_SOURCE,
         headroom=REQUEST_HEADROOM,
+        headroom_provenance=dict(REQUEST_HEADROOM_PROVENANCE),
         planned_requests=math.ceil(unadjusted * REQUEST_HEADROOM),
         request_derivation=dict(
             live_lane_requests=round(live_lane_requests, 3),
@@ -196,7 +204,8 @@ class Bundle:
                          gates=[], request_budget=args.budget, long=args.long, integrated_candidate=self.sha,
                          measured_rate=plan['measured_rate'], measured_rate_unit=plan['measured_rate_unit'],
                          measured_rate_evidence=plan['measured_rate_evidence'], source_receipt=plan['source_receipt'],
-                         headroom=plan['headroom'], planned_requests=plan['planned_requests'],
+                         headroom=plan['headroom'], headroom_provenance=plan['headroom_provenance'],
+                         planned_requests=plan['planned_requests'],
                          request_derivation=plan['request_derivation'],
                          request_population=plan['population'])
         self.current = None
@@ -210,6 +219,8 @@ class Bundle:
                  'Local measurement only; no deployment or attended-capture acceptance.', '',
                  f"Request rate: {self.data['measured_rate']} {self.data['measured_rate_unit']}.",
                  f"Request-rate evidence: {json.dumps(self.data['measured_rate_evidence'], separators=(',', ':'))}.",
+                 f"Headroom: {self.data['headroom']}.",
+                 f"Headroom provenance: {json.dumps(self.data['headroom_provenance'], separators=(',', ':'))}.",
                  f"Request derivation: {json.dumps(self.data['request_derivation'], separators=(',', ':'))}.", '',
                  '| Gate | Status | Counts | Seconds |', '|---|---|---|---|']
         reasons = []

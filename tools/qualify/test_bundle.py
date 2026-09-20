@@ -21,6 +21,13 @@ def test_request_plan_uses_selected_gate_population_and_retains_provenance():
     assert default['measured_rate_unit'] == 'requests_per_lane_second'
     assert default['source_receipt'] == 'evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl'
     assert default['headroom'] == 1.25
+    assert default['headroom_provenance'] == {
+        'status': 'UNMEASURED',
+        'source': 'planner_policy',
+        'source_receipt': None,
+        'calculation': '1.25 policy multiplier; no receipt-derived arithmetic',
+        'reason': 'no retained receipt isolates planner error after the lane-second rate correction',
+    }
     population = default['population']
     assert set(population['live_benches']) == {
         'workspace', 'demo_lanes', 'lifecycle', 'reshare',
@@ -74,6 +81,27 @@ def test_measured_request_rate_recomputes_from_each_retained_receipt():
             evidence['sessions'] * evidence['lanes_per_session'] * evidence['seconds_per_session']
         )
         assert round(rate, 2) == plan['measured_rate'] == evidence['rounded_rate']
+
+
+def test_bundle_summary_records_unmeasured_headroom_provenance(monkeypatch, tmp_path):
+    plan = qualify_run.request_plan(long=False)
+    monkeypatch.setattr(qualify_run, 'ROOT', tmp_path)
+    args = SimpleNamespace(
+        decoder_upstream_port=18125,
+        out=tmp_path / 'out',
+        budget=plan['planned_requests'],
+        long=False,
+    )
+
+    bundle = qualify_run.Bundle(args, plan)
+    bundle.flush()
+
+    summary = json.loads((bundle.out / 'summary.json').read_text())
+    assert summary['headroom_provenance'] == plan['headroom_provenance']
+    markdown = (bundle.out / 'summary.md').read_text()
+    assert 'Headroom: 1.25.' in markdown
+    assert '"status":"UNMEASURED"' in markdown
+    assert '"source_receipt":null' in markdown
 
 
 def test_unfunded_plan_refuses_before_bundle_or_decoder_start(monkeypatch, capsys):
