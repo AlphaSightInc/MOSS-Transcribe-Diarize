@@ -31,6 +31,12 @@
 
 ## Current state
 
+- **2026-09-20 A2 iteration 7 — offline verification complete.** `docs/verify/round4-run-a/VERIFY.md` now states the
+  segment-granular custody claim and distinguishes the one causal base-RED control from inherited GREEN behavior
+  controls. It records exact lane-second rate reproduction, `UNMEASURED` headroom provenance, 2,238 / 6,082 budgets,
+  preflight/censorship invariants, and the headed/long-capacity evidence boundary. Final checkpoints are **2,126
+  backend passed / 0 failed / 5 skipped / 37 subtests**, **312/312 frontend passed**, and clean typecheck. Every A2
+  acceptance item is now evidenced; no open candidate remains.
 - **2026-09-20 ~18:20 — run A2 opened by the lead after an adversarial acceptance review of run A (HEAD `3a56ce7b`).**
   Accepted as correct and not to be undone: the frontier/neighbour-row end invention is gone
   (`visible_word_headed.py:177-190` reads only `dataset.turnStart/turnEnd`); the only credit path is span-gated
@@ -160,8 +166,8 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Candidates
 
-1. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
-   described as documentation of behaviour, not as base-RED falsifiers, except the one that genuinely was RED.
+None. The run A2 offline acceptance bar is complete; hand the committed branch to the integration lead without push,
+merge, or live rerun.
 
 ## Non-candidates
 

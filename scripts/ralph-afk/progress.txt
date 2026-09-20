@@ -243,3 +243,18 @@ default budget (S17, third mismatch). This run repairs both without touching pro
 [loop 20260920-221141-79363] budget exhausted after 6 iterations
 
 [loop 20260920-223622-11052] start budget=3 agent=codex branch=round4/ralph-a
+
+## Iteration 1 - close run A2 offline verification
+- Target: sole open candidate, rewrite the verification record for segment-granular custody and run the required full
+  offline checkpoint.
+- Files: `docs/verify/round4-run-a/VERIFY.md`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider tests` ->
+  **2,126 passed / 0 failed / 5 skipped / 37 subtests** in 182.75 s; `npm --prefix frontend test -- --run` ->
+  **312/312 passed** across 28 files; `npm --prefix frontend run typecheck` -> clean.
+- Evidence: the rewritten verification record distinguishes the required base-RED merged-row control (**1 failed / 20
+  passed**) from inherited GREEN behavior controls; records final constituent custody (**23/23**), 17/17 asset parity,
+  receipt-derived lane-second rates, 2,238 / 6,082 budgets, `UNMEASURED` headroom, and explicit headed/long-capacity
+  boundaries.
+- Learned: run A2 meets every offline acceptance item without converting historical S9 or unrun 2×1,800 capacity into
+  current qualification evidence.
+- Next: none for this Ralph run; hand the committed branch to the integration lead without push, merge, or live rerun.
