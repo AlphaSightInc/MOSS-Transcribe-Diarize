@@ -152,3 +152,5 @@ default budget (S17, third mismatch). This run repairs both without touching pro
 - Next: none for this Ralph run; hand the committed branch to the integration lead without push, merge, or live rerun.
 
 [loop 20260920-210721-35143] complete at iteration 9
+
+[loop 20260920-221141-79363] start budget=6 agent=codex branch=round4/ralph-a
