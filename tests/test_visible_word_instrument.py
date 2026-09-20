@@ -272,7 +272,7 @@ def test_dom_row_cannot_credit_later_same_word_outside_its_owned_span():
         )
     )
     segments, reason = _dom_segments(
-        [{"start": 0.0, "end": 1.0, "text": "alpha"}],
+        [{"segments": '[{"start":0.0,"end":1.0,"text":"alpha"}]'}],
     )
     assert reason is None
     result = evaluate_visible_word_stream(
@@ -307,10 +307,12 @@ def test_merged_dom_row_keeps_custody_with_each_constituent_segment():
                 "start": 0.0,
                 "end": 11.0,
                 "text": "alpha ...",
-                "segments": [
-                    {"start": 0.0, "end": 1.0, "text": "alpha"},
-                    {"start": 10.0, "end": 11.0, "text": "..."},
-                ],
+                "segments": json.dumps(
+                    [
+                        {"start": 0.0, "end": 1.0, "text": "alpha"},
+                        {"start": 10.0, "end": 11.0, "text": "..."},
+                    ]
+                ),
             }
         ]
     )
@@ -342,7 +344,7 @@ def test_dom_rows_without_published_spans_are_unmeasured_and_earn_no_credit():
     assert segments == ()
     assert result["rendered_dom"] == {
         "status": "UNMEASURED",
-        "reason": "rendered row lacks its model-state source span",
+        "reason": "rendered row lacks usable constituent segment state",
         "full_denominator": 1,
     }
     assert "words" not in result["rendered_dom"]

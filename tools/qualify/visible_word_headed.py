@@ -179,14 +179,27 @@ def _dom_segments(
 ) -> tuple[tuple[TranscriptSegment, ...], str | None]:
     result = []
     for row in rows:
-        try:
-            start = float(row["start"])
-            end = float(row["end"])
-        except (KeyError, TypeError, ValueError):
-            return (), "rendered row lacks its model-state source span"
-        if not math.isfinite(start) or not math.isfinite(end) or end <= start:
-            return (), "rendered row lacks a finite positive model-state source span"
-        result.append(TranscriptSegment(start, end, str(row["text"])))
+        constituents = row.get("segments")
+        if isinstance(constituents, str):
+            try:
+                constituents = json.loads(constituents)
+            except json.JSONDecodeError:
+                constituents = None
+        if not isinstance(constituents, list) or not constituents:
+            return (), "rendered row lacks usable constituent segment state"
+        for constituent in constituents:
+            if not isinstance(constituent, dict) or not isinstance(
+                constituent.get("text"), str
+            ):
+                return (), "rendered row lacks usable constituent segment state"
+            try:
+                start = float(constituent["start"])
+                end = float(constituent["end"])
+            except (KeyError, TypeError, ValueError):
+                return (), "rendered row lacks usable constituent segment state"
+            if not math.isfinite(start) or not math.isfinite(end) or end <= start:
+                return (), "rendered row lacks usable constituent segment state"
+            result.append(TranscriptSegment(start, end, constituent["text"]))
     return tuple(result), None
 
 
@@ -301,10 +314,7 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                         dom_rows = await page.locator(".utt").evaluate_all(
                             """nodes => nodes.map(node => {
                               return {
-                                start: node.dataset.turnStart ?? null,
-                                end: node.dataset.turnEnd ?? null,
-                                targetKeys: node.dataset.targetKeys ?? null,
-                                text: node.querySelector('.utt-text')?.textContent || ''
+                                segments: node.dataset.segments ?? null
                               };
                             })"""
                         )

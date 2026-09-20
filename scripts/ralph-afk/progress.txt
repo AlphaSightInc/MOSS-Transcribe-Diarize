@@ -182,3 +182,17 @@ default budget (S17, third mismatch). This run repairs both without touching pro
   without id joins or reconstructed spans. The Python instrument does not consume it yet, so B1 remains RED.
 - Next: candidate 1 / B3, parse `data-segments` and emit one `TranscriptSegment` per valid constituent; spanless or
   unusable constituent state must remain DOM `UNMEASURED` with no credit.
+
+## Iteration 3 - consume merged-turn constituent state
+- Target: candidate 1 / B3, replace outer-row custody with each rendered turn's published constituent state.
+- Files: `tools/qualify/visible_word_headed.py`, `tests/test_visible_word_instrument.py`,
+  `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tests/test_visible_word_instrument.py` -> **21/21 passed**.
+- Evidence: the merged-row control now emits two constituent `TranscriptSegment`s, credits `alpha@0-1` at 12 s, and
+  leaves the absent `alpha@10-11` `missing/null`; a row without usable constituent state produces no DOM credit and
+  `rendered_dom: UNMEASURED` with an explicit reason.
+- Learned: `data-segments` is sufficient custody; outer-row start/end/text and target keys are unnecessary for the
+  instrument. Parsing in Python preserves an evidence result for malformed or absent state instead of crashing the
+  browser evaluation.
+- Next: candidate 1 / B1, add the single-speaker whole-turn and long-gap constituent-custody controls.
