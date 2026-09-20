@@ -1,0 +1,39 @@
+/private/tmp/moss-round4-20260920/runtime-prefix/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+{
+  "copied": [
+    "moss.sqlite3",
+    "meetings/"
+  ],
+  "copy_started_after_store_close": true,
+  "downloaded_audio_md5": "b7d78ab885378363cc61181f731dc192",
+  "expected_transcript": {
+    "segments": [
+      {
+        "end": 1.0,
+        "id": "seg_0001",
+        "speaker": "S01",
+        "start": 0.0,
+        "text": "cold-copy-generation-a"
+      }
+    ]
+  },
+  "restored_audio_md5": "b7d78ab885378363cc61181f731dc192",
+  "restored_database": "/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-r4-runtime-backup-mzs_th1e/restore/moss.sqlite3",
+  "same_generation": true,
+  "source_audio_md5": "b7d78ab885378363cc61181f731dc192",
+  "source_database": "/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/moss-r4-runtime-backup-mzs_th1e/source/moss.sqlite3",
+  "status": "completed",
+  "transcript": {
+    "segments": [
+      {
+        "end": 1.0,
+        "id": "seg_0001",
+        "speaker": "S01",
+        "start": 0.0,
+        "text": "cold-copy-generation-a"
+      }
+    ]
+  },
+  "verdict": "SUPPORTED"
+}

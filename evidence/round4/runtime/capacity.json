@@ -1,0 +1,37 @@
+/private/tmp/moss-round4-20260920/runtime-prefix/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+{
+  "app_descriptor_reported_bytes": 384000000,
+  "candidate_manifest_bytes": 3459,
+  "changes": [
+    "max_tape_bytes",
+    "max_tape_seconds",
+    "frame_samples",
+    "frame_seconds",
+    "hard_cap_samples",
+    "hard_cap_seconds",
+    "max_retained_samples",
+    "max_retained_seconds",
+    "reconnect_burst_samples",
+    "retention_headroom_seconds",
+    "decoder_headroom_samples",
+    "replay_ack_headroom_frames",
+    "identity_max_speakers",
+    "identity_min_match_score",
+    "identity_min_match_margin",
+    "identity_album_admission_seconds",
+    "identity_birth_min_seconds"
+  ],
+  "decoder_requests": 0,
+  "finalizer_reported_bytes": 384000000,
+  "per_meeting_max_tape_bytes": 384000000,
+  "per_meeting_minutes": 200,
+  "provider_manifest_hash": "67521203b03a06db36bd1e552897dcc57cc51404bfd7d063038c8856a2e1c35c",
+  "rolling_ring_bytes": 1920000,
+  "runtime_reported_bytes": 384000000,
+  "source_manifest_bytes": 3351,
+  "two_meeting_total_tape_bytes": 768000000,
+  "verdict": "SUPPORTED",
+  "whole_wire_frames": 24000,
+  "wire_frame_bytes": 16000
+}

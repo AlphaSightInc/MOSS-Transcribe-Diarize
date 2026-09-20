@@ -1,0 +1,41 @@
+{
+  "explicit_saved_failure": true,
+  "first_terminal": {
+    "audio": null,
+    "created_at_ms": 1789940271254,
+    "failure_code": "decode_failed",
+    "failure_reason": "The speech decoder could not transcribe this media.",
+    "id": "HSNIHBRUuRJbR7SiY3LNDURF",
+    "mode": "file",
+    "needs_review": true,
+    "status": "failed",
+    "title": null,
+    "title_source": "automatic",
+    "transcript": null,
+    "transcript_version": 0
+  },
+  "never_completed": true,
+  "reopened": {
+    "audio": null,
+    "created_at_ms": 1789940271254,
+    "failure_code": "decode_failed",
+    "failure_reason": "The speech decoder could not transcribe this media.",
+    "id": "HSNIHBRUuRJbR7SiY3LNDURF",
+    "mode": "file",
+    "needs_review": true,
+    "status": "failed",
+    "title": null,
+    "title_source": "automatic",
+    "transcript": null,
+    "transcript_version": 0
+  },
+  "runner": {
+    "bytes_written_before_failure": 645922816,
+    "enospc_errno": 28,
+    "enospc_observed": true,
+    "free_at_failure": 21901312,
+    "free_before_runner": 667824128
+  },
+  "verdict": "SUPPORTED",
+  "volume": "/private/tmp/moss-r4-enospc.8WQrs4/mount"
+}
