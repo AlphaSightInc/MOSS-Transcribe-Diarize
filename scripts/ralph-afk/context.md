@@ -23,27 +23,34 @@
   - `tests/test_visible_word_instrument.py` — 20 focused controls include repeated/omitted phrases, merged rendered
     rows, revisions, unchanged content across a phrase end, and API/DOM clock separation; launch args remain exactly
     `["--mute-audio"]`.
-  - `tools/qualify/run.py:574` `--budget` default 2000; `:315` gate spec table (`capacity_2x1800`, 2); `:341-342` the
-    2×1800 s invocation; `:117-118`, `:496-500` reactive budget accounting; `tools/qualify/decoder.py:9-82` counting
-    proxy (`sent/active/peak/rejected`, `BoundedSemaphore(2)`, 429 at `:26-29`). No estimate/preflight exists.
-  - `tools/qualify/test_bundle.py` — 9 tests, none about budget; `:35` proxy cap test is the closest.
+  - `tools/qualify/run.py` `request_plan()` selects 2×300 by default or 2×1800 under `--long`, derives 1,136 / 3,068
+    request budgets from the declared population, and refuses short budgets before `Bundle`. `Bundle.capacity()` runs
+    exactly the selected row and retains `capacity_2x1800: REQUIRED-NOT-RUN` in every default summary.
+  - `tools/qualify/test_bundle.py` — focused controls cover population arithmetic, derived default admission, long-mode
+    refusal, exact runner arguments, unavailable-stack reporting, and counted proxy enforcement.
   - `moss_transcribe_diarize/app/windowed_transcription.py:164-165` — `window_seconds = 150`, `stride_seconds = 120`
     (file-window request arithmetic).
 
 ## Current state
 
+- 2026-09-20 iteration 8: candidate 7 is complete. The default population now includes the established 2×300 s
+  development capacity row: **41 sessions / 1,729 live seconds / 11 file windows / 16 browser cases = 1,136 planned
+  requests**. The default `--budget` is that derived value. `--long` replaces (not adds to) the capacity row with
+  2×1,800 s and remains **3,068 planned requests**; bare `--long` refuses before `Bundle` with shortfall 1,932. Default
+  summaries emit `capacity_2x1800: REQUIRED-NOT-RUN`, including when the stack is unavailable or execution is
+  interrupted. Focused controls were RED **4/4**, then the qualification helper set was GREEN **50/50 passed**.
 - 2026-09-20 iteration 7: candidate 6 is complete. The owned decoder proxy now counts accepted, completed and
   budget-rejected requests independently. Bundle cleanup records those three populations and, when any request was
   rejected by the budget, sets `budget_censored: true`, `verdict_reason: budget_censored`, and the overall verdict to
   `INCOMPLETE` even when downstream gates reported `FAIL`; censored evidence therefore cannot become a quality failure.
   The focused control was RED **2 failed / 36 passed**, then the qualification helper set was GREEN **46/46 passed**.
-- 2026-09-20 iteration 6: candidate 5 is complete. `request_plan(long)` enumerates every selected decoder-producing
+- 2026-09-20 iteration 6: candidate 5 established the non-capacity population. `request_plan(long)` enumerated every selected decoder-producing
   live bench as session durations: workspace, demo lanes, lifecycle, reshare, identity stress, level ladder and browser
   stress. Workspace File/URL inputs are also included in production `WindowedRunner` arithmetic. The plan now covers
   **39 sessions / 1,129 live seconds / 11 file windows / 16 browser cases = 754 default requests**; long adds
   2×1,800 s and one 1,800 s file for **41 sessions / 4,729 live seconds / 26 file windows = 3,068 requests**. Headroom
   is 1.25: the prior 1.18 still underfunded the retained default path (727 actual requests versus 602.79 unadjusted;
-  observed ratio 1.206). Insufficient budget still rejects before `Bundle`; focused bundle helpers are **19/19 passed**.
+  observed ratio 1.206). Iteration 8 supersedes the 754 default total by adding the required 2×300 capacity row.
 - 2026-09-20 iteration 5: established the pure plan and pre-`Bundle` refusal seam, but counted only capacity, extended
   files and browser case ids (**30 default / 2,214 long**). Iteration 6 superseded those incomplete totals.
 - 2026-09-20 iteration 4: all four remaining custody controls are GREEN and documented by falsifier: repeated token
@@ -117,9 +124,8 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 6. **DONE (iteration 7) — Censored classification**: `rejected_by_budget > 0` now forces a budget-censored
    `INCOMPLETE`, never quality `FAIL`; accepted/completed/rejected counts are separate and the proxy control proves the
    completed count.
-7. **Capacity rows**: add a default 2×300 s development row (two-meeting population); `--long` = 2×1800 with preflight
-   and a required sufficient budget; every default summary emits `capacity_2x1800: REQUIRED-NOT-RUN`; raise the default
-   `--budget` to what the preflight derives for the default population and show the derivation; test.
+7. **DONE (iteration 8) — Capacity rows**: default runs 2×300 s with derived budget 1,136; `--long` selects 2×1800 and
+   requires at least 3,068; every default summary retains `capacity_2x1800: REQUIRED-NOT-RUN` and the derivation.
 8. **Full suites + `docs/verify/round4-run-a/VERIFY.md`** (what to run, expected counts, what would falsify).
 
 ## Non-candidates

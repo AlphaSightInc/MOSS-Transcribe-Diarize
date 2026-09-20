@@ -75,6 +75,10 @@ def request_plan(long):
         live_benches['capacity_2x1800'] = dict(
             session_seconds=[1800, 1800], sessions=2, seconds=3600,
         )
+    else:
+        live_benches['capacity_2x300'] = dict(
+            session_seconds=[300, 300], sessions=2, seconds=600,
+        )
     live_sessions = sum(bench['sessions'] for bench in live_benches.values())
     live_session_seconds = sum(bench['seconds'] for bench in live_benches.values())
     file_seconds = [*WORKSPACE_FILE_SECONDS, *DEFAULT_FILE_SECONDS,
@@ -94,12 +98,20 @@ def request_plan(long):
         stride_seconds=WindowedRunner.stride_seconds,
         browser_cases=list(BROWSER_CASES),
     )
-    unadjusted = live_session_seconds * MEASURED_REQUEST_RATE + file_windows + len(BROWSER_CASES)
+    live_session_requests = live_session_seconds * MEASURED_REQUEST_RATE
+    unadjusted = live_session_requests + file_windows + len(BROWSER_CASES)
     return dict(
         measured_rate=MEASURED_REQUEST_RATE,
         source_receipt=REQUEST_RATE_SOURCE,
         headroom=REQUEST_HEADROOM,
         planned_requests=math.ceil(unadjusted * REQUEST_HEADROOM),
+        request_derivation=dict(
+            live_session_requests=round(live_session_requests, 3),
+            file_window_requests=file_windows,
+            browser_case_requests=len(BROWSER_CASES),
+            unadjusted_requests=round(unadjusted, 3),
+            calculation='ceil(unadjusted_requests * headroom)',
+        ),
         population=population,
     )
 
@@ -157,6 +169,7 @@ class Bundle:
                          gates=[], request_budget=args.budget, long=args.long, integrated_candidate=self.sha,
                          measured_rate=plan['measured_rate'], source_receipt=plan['source_receipt'],
                          headroom=plan['headroom'], planned_requests=plan['planned_requests'],
+                         request_derivation=plan['request_derivation'],
                          request_population=plan['population'])
         self.current = None
         self.gate('tree_clean', 'PASS' if not dirty else 'FAIL', measurements={'dirty_files':dirty})
@@ -379,11 +392,12 @@ class Bundle:
         return ready
 
     def extended(self, ready):
-        specs=[('browser_stress_all',16),('file_6min',1),('file_3min_formats',3),('file_failures',5),('file_30min',1),('capacity_2x1800',2)]
+        specs=[('browser_stress_all',16),('file_6min',1),('file_3min_formats',3),('file_failures',5),('file_30min',1)]
         if not ready:
             for name,n in specs:
-                status='SKIP' if name in ('file_30min','capacity_2x1800') and not self.args.long else 'UNRUNNABLE'
+                status='SKIP' if name == 'file_30min' and not self.args.long else 'UNRUNNABLE'
                 self.gate(name,status,counts([status]*n),reason='Requires --long' if status=='SKIP' else 'Isolated stack unavailable')
+            self.capacity(ready=False)
             return
         output=self.work/'browser'
         state=(self.work/'browser-state').relative_to(ROOT)
@@ -402,19 +416,30 @@ class Bundle:
         self.gate('browser_stress_all',aggregate(statuses,code),counts(statuses),elapsed,code,
             reason='Native hidden-tab cases are UNRUNNABLE if Chromium never becomes hidden; missing rows mean bench could not execute',measurements=measurements)
         self.files()
-        if self.args.long:
-            output=self.work/'capacity'
-            scratch=(self.work/'capacity-runtime').relative_to(ROOT)
-            code,elapsed,_=self.command('capacity_2x1800',[PY,'prototypes/capacity-campaign/run.py',
-                '--sessions','2','--seconds','1800','--clips','mono_javier_intro_50s','discussion_jamie_dimon_180s','--stack-port','17827','--decoder-url','http://127.0.0.1:19125/v1',
-                '--out',str(output),'--scratch',str(scratch),'--manifest',str(self.manifest),'--allow-contention'],timeout=3600)
-            result=json.loads((output/'result.json').read_text()) if (output/'result.json').exists() else {}
-            rows=result.get('session_results',[])
-            statuses=['PASS' if r.get('clean') else 'FAIL' for r in rows]+['UNRUNNABLE']*(2-len(rows))
-            self.gate('capacity_2x1800','UNRUNNABLE' if not rows else 'PASS' if result.get('clean') and code==0 else 'FAIL',
-                counts(statuses),elapsed,code,reason='Existing capacity clean bar includes no detected foreign load; contention is recorded without pausing',measurements=retained_metadata(result))
-        else:
-            self.gate('capacity_2x1800','SKIP',counts(['SKIP']*2),reason='Requires --long')
+        self.capacity(ready=True)
+
+    def capacity(self, ready):
+        if not ready:
+            if self.args.long:
+                self.gate('capacity_2x1800','UNRUNNABLE',counts(['UNRUNNABLE']*2),reason='Isolated stack unavailable')
+            else:
+                self.gate('capacity_2x300','UNRUNNABLE',counts(['UNRUNNABLE']*2),reason='Isolated stack unavailable')
+                self.gate('capacity_2x1800','REQUIRED-NOT-RUN',counts(['SKIP']*2),reason='Requires --long and a sufficient explicit --budget')
+            return
+        name = 'capacity_2x1800' if self.args.long else 'capacity_2x300'
+        seconds = 1800 if self.args.long else 300
+        output=self.work/'capacity'
+        scratch=(self.work/'capacity-runtime').relative_to(ROOT)
+        code,elapsed,_=self.command(name,[PY,'prototypes/capacity-campaign/run.py',
+            '--sessions','2','--seconds',str(seconds),'--clips','mono_javier_intro_50s','discussion_jamie_dimon_180s','--stack-port','17827','--decoder-url','http://127.0.0.1:19125/v1',
+            '--out',str(output),'--scratch',str(scratch),'--manifest',str(self.manifest),'--allow-contention'],timeout=3600)
+        result=json.loads((output/'result.json').read_text()) if (output/'result.json').exists() else {}
+        rows=result.get('session_results',[])
+        statuses=['PASS' if r.get('clean') else 'FAIL' for r in rows]+['UNRUNNABLE']*(2-len(rows))
+        self.gate(name,'UNRUNNABLE' if not rows else 'PASS' if result.get('clean') and code==0 else 'FAIL',
+            counts(statuses),elapsed,code,reason='Existing capacity clean bar includes no detected foreign load; contention is recorded without pausing',measurements=retained_metadata(result))
+        if not self.args.long:
+            self.gate('capacity_2x1800','REQUIRED-NOT-RUN',counts(['SKIP']*2),reason='Requires --long and a sufficient explicit --budget')
 
     def files(self):
         bench='prototypes/streaming-diarization/wp16-file-url-long/'
@@ -585,7 +610,8 @@ class Bundle:
         if self.args.compare:
             baseline = json.loads(self.args.compare.read_text())
             deltas = compare(baseline,self.data)
-            omitted=[d for d in deltas if not self.args.long and d['name'] in ('file_30min','capacity_2x1800') and d['after']=='SKIP']
+            omitted=[d for d in deltas if not self.args.long and d['name'] in ('file_30min','capacity_2x1800')
+                     and d['after'] in ('SKIP','REQUIRED-NOT-RUN')]
             deltas=[d for d in deltas if d not in omitted]
             self.data['determinism'] = dict(baseline=str(self.args.compare),status='PASS' if not deltas else 'FAIL',deltas=deltas,
                                            same_candidate=baseline['identity']['git_sha']==self.sha, intentionally_omitted_long_gates=omitted)
@@ -643,7 +669,7 @@ def main(argv=None):
     global LADDER
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--long',action='store_true')
-    parser.add_argument('--budget',type=int,default=2000)
+    parser.add_argument('--budget',type=int,default=request_plan(False)['planned_requests'])
     parser.add_argument('--decoder-upstream-port',type=int,help='Use an existing owned loopback decoder/proxy instead of opening another SSH tunnel')
     parser.add_argument('--out',type=Path)
     parser.add_argument('--compare',type=Path)
@@ -674,10 +700,16 @@ def main(argv=None):
         (bundle.work/'runner-error.raw').write_text(traceback.format_exc())
     finally:
         recorded = {gate['name'] for gate in bundle.data['gates']}
+        if not args.long and 'capacity_2x1800' not in recorded:
+            bundle.gate('capacity_2x1800','REQUIRED-NOT-RUN',counts(['SKIP']*2),
+                        reason='Requires --long and a sufficient explicit --budget')
+            recorded.add('capacity_2x1800')
         required = dict(python_import=1, asset_parity=17, pytest=0, frontend=0,
                         bundle_helpers=0, typecheck=1, verify_layout=1, stack=1,
                         browser_stress_all=16,file_6min=1,file_3min_formats=3,file_failures=5,file_30min=1,capacity_2x1800=2,
                         workspace=14, demo_lanes=2, lifecycle=7, reshare=6, level_ladder=6, identity_stress=3)
+        if not args.long:
+            required['capacity_2x300'] = 2
         required.update({'workspace_row_'+str(n):1 for n in range(1,15)})
         for name, expected in required.items():
             if name not in recorded:

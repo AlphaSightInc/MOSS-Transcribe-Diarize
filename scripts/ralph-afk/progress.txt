@@ -122,3 +122,18 @@ default budget (S17, third mismatch). This run repairs both without touching pro
   exactly consumed.
 - Next: candidate 7, add the default 2x300 development capacity row, retain long 2x1800 as required-not-run by default,
   and derive the default budget from the selected population.
+
+## Iteration 8 - fund and expose selected capacity row
+- Target: candidate 7, add default 2x300 capacity, preserve required 2x1800 visibility, and derive the default budget.
+- Files: `tools/qualify/run.py`, `tools/qualify/test_bundle.py`, `tools/qualify/README.md`,
+  `prototypes/capacity-campaign/NOTES.md`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused policy controls first RED **4/4**; then `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
+  <pinned-python> -m pytest -q -p no:cacheprovider tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py
+  tests/test_qualification_verdict.py` -> **50/50 passed**; bare `tools/qualify/run.py --long` -> exit 2 before startup,
+  `planned_requests=3068 budget=1136 shortfall=1932`; `git diff --check` -> clean.
+- Evidence: default derivation `ceil((1729 * 0.51 + 11 + 16) * 1.25) = 1136`; long remains 3,068 and bare `--long`
+  refuses before `Bundle` with shortfall 1,932; runner controls prove 2x300 default / 2x1800 long and default
+  `capacity_2x1800: REQUIRED-NOT-RUN`, including an unavailable stack.
+- Learned: capacity mode is a replacement choice, not an additive population; deriving the short default makes it
+  runnable while requiring an explicit larger cap for the 30-minute confirmation.
+- Next: candidate 8, run full backend/frontend suites and write `docs/verify/round4-run-a/VERIFY.md` with falsifiers.
