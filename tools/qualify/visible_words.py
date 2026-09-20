@@ -22,11 +22,14 @@ class ReferenceWord:
     text: str
     source_end_sec: float
     source_start_sec: float = 0.0
+    source_interval_id: str | None = None
 
     def __post_init__(self) -> None:
         normalized = words(self.text)
         if not self.id or len(normalized) != 1 or normalized[0] != self.text:
             raise ValueError("reference words require a unique id and one normalized token")
+        if self.source_interval_id is not None and not self.source_interval_id:
+            raise ValueError("reference source_interval_id must be non-empty when present")
         if not math.isfinite(self.source_end_sec) or self.source_end_sec < 0:
             raise ValueError("reference source_end_sec must be finite and non-negative")
         if (
@@ -94,7 +97,15 @@ def reference_words_from_intervals(
             if word_id in seen:
                 raise ValueError(f"duplicate reference word id: {word_id}")
             seen.add(word_id)
-            result.append(ReferenceWord(word_id, token, float(end), float(start)))
+            result.append(
+                ReferenceWord(
+                    word_id,
+                    token,
+                    float(end),
+                    float(start),
+                    source_interval_id=interval_id,
+                )
+            )
     if not result:
         raise ValueError("reference population must contain at least one word")
     return tuple(result)
@@ -229,18 +240,12 @@ def evaluate_visible_word_stream(
                 "final_wrong": final_status == "wrong",
                 "final_missing": final_status == "missing",
                 "first_correct_sec": first_sec,
-                "first_correct_latency_sec": (
-                    None if first_sec is None else first_sec - reference.source_end_sec
-                ),
                 "stable_correct_sec": stable_sec,
-                "stable_correct_latency_sec": (
-                    None if stable_sec is None else stable_sec - reference.source_end_sec
-                ),
             }
         )
     final_observed = [token for token, _ in observed[-1]]
     result = {
-        "schema": "moss-visible-words.v1",
+        "schema": "moss-visible-words.v2",
         "clock": clock_name,
         "full_denominator": len(references),
         "observation_count": len(observations),
@@ -251,14 +256,91 @@ def evaluate_visible_word_stream(
             [reference.text for reference in references], final_observed
         ),
         "words": word_rows,
+        "phrase_end_diagnostics": _phrase_end_diagnostics(
+            references, states, observations
+        ),
     }
-    result["first_correct_distribution"] = _latency_distribution(
-        word_rows, "first_correct_latency_sec"
-    )
-    result["stable_correct_distribution"] = _latency_distribution(
-        word_rows, "stable_correct_latency_sec"
-    )
     return result
+
+
+def _phrase_end_diagnostics(
+    references: Sequence[ReferenceWord],
+    states: Sequence[Sequence[str]],
+    observations: Sequence[TranscriptObservation],
+) -> dict[str, object]:
+    groups: list[tuple[str, list[int]]] = []
+    group_by_id: dict[str, list[int]] = {}
+    for index, reference in enumerate(references):
+        interval_id = reference.source_interval_id or reference.id
+        indexes = group_by_id.get(interval_id)
+        if indexes is None:
+            indexes = []
+            group_by_id[interval_id] = indexes
+            groups.append((interval_id, indexes))
+        elif groups[-1][0] != interval_id:
+            raise ValueError("reference source intervals must be contiguous")
+        indexes.append(index)
+
+    phrase_rows = []
+    for interval_id, indexes in groups:
+        first_reference = references[indexes[0]]
+        if any(
+            reference.source_start_sec != first_reference.source_start_sec
+            or reference.source_end_sec != first_reference.source_end_sec
+            for reference in (references[index] for index in indexes[1:])
+        ):
+            raise ValueError("words in a reference source interval must share its span")
+        history = [
+            all(state[index] == "correct" for index in indexes) for state in states
+        ]
+        final_complete = history[-1]
+        first_index = (
+            next((index for index, complete in enumerate(history) if complete), None)
+            if final_complete
+            else None
+        )
+        stable_index = next(
+            (
+                index
+                for index, complete in enumerate(history)
+                if complete and all(history[index:])
+            ),
+            None,
+        )
+        first_sec = observations[first_index].elapsed_sec if first_index is not None else None
+        stable_sec = observations[stable_index].elapsed_sec if stable_index is not None else None
+        phrase_rows.append(
+            {
+                "reference_interval_id": interval_id,
+                "source_start_sec": first_reference.source_start_sec,
+                "source_end_sec": first_reference.source_end_sec,
+                "word_count": len(indexes),
+                "final_complete": final_complete,
+                "first_complete_sec": first_sec,
+                "first_complete_delay_sec": (
+                    None
+                    if first_sec is None
+                    else first_sec - first_reference.source_end_sec
+                ),
+                "stable_complete_sec": stable_sec,
+                "stable_complete_delay_sec": (
+                    None
+                    if stable_sec is None
+                    else stable_sec - first_reference.source_end_sec
+                ),
+            }
+        )
+    return {
+        "basis": "source-interval end; not per-word latency",
+        "full_denominator": len(phrase_rows),
+        "phrases": phrase_rows,
+        "first_complete_distribution": _latency_distribution(
+            phrase_rows, "first_complete_delay_sec"
+        ),
+        "stable_complete_distribution": _latency_distribution(
+            phrase_rows, "stable_complete_delay_sec"
+        ),
+    }
 
 
 def _type7(values: Sequence[float], quantile: float) -> float:
@@ -313,7 +395,7 @@ def evaluate_visible_word_surfaces(
             "full_denominator": len(references),
         }
     return {
-        "schema": "moss-visible-word-surfaces.v1",
+        "schema": "moss-visible-word-surfaces.v2",
         "full_denominator": len(references),
         "api": evaluate_visible_word_stream(
             references, api_observations, clock_name="api_arrival"

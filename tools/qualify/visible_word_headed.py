@@ -190,6 +190,24 @@ def _dom_segments(
     return tuple(result), None
 
 
+def _observation_due(
+    segments: tuple[TranscriptSegment, ...],
+    *,
+    previous_segments: tuple[TranscriptSegment, ...] | None,
+    previous_elapsed_sec: float | None,
+    elapsed_sec: float,
+    source_ends: Sequence[float],
+) -> bool:
+    """Record content changes and the first poll across each source-phrase end."""
+
+    return (
+        previous_segments is None
+        or segments != previous_segments
+        or previous_elapsed_sec is None
+        or any(previous_elapsed_sec < end <= elapsed_sec for end in source_ends)
+    )
+
+
 async def _run(args: argparse.Namespace) -> dict[str, object]:
     try:
         from playwright.async_api import async_playwright
@@ -198,6 +216,7 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
 
     intervals = _read_reference(args.reference, args.seconds)
     references = reference_words_from_intervals(intervals)
+    source_ends = tuple(sorted({reference.source_end_sec for reference in references}))
     api_observations: list[TranscriptObservation] = []
     dom_observations: list[TranscriptObservation] = []
     decoder_queue_clocks: list[dict[str, object]] = []
@@ -256,19 +275,29 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                     next_event = -1
                     last_api: tuple[TranscriptSegment, ...] | None = None
                     last_dom: tuple[TranscriptSegment, ...] | None = None
+                    last_api_elapsed: float | None = None
+                    last_dom_elapsed: float | None = None
 
                     async def observe() -> None:
                         nonlocal next_event, last_api, last_dom, hidden_observations
                         nonlocal total_visibility_observations, final_status, finalization_status
                         nonlocal dom_unmeasured_reason
+                        nonlocal last_api_elapsed, last_dom_elapsed
                         snapshot = await _api(page, f"/api/live/sessions/{meeting_id}/snapshot")
                         api_elapsed = time.monotonic() - started
                         api_segments = _snapshot_segments(snapshot)
-                        if api_segments != last_api:
+                        if _observation_due(
+                            api_segments,
+                            previous_segments=last_api,
+                            previous_elapsed_sec=last_api_elapsed,
+                            elapsed_sec=api_elapsed,
+                            source_ends=source_ends,
+                        ):
                             api_observations.append(
                                 TranscriptObservation(api_elapsed, api_segments)
                             )
                             last_api = api_segments
+                            last_api_elapsed = api_elapsed
                         dom_rows = await page.locator(".utt").evaluate_all(
                             """nodes => nodes.map(node => {
                               return {
@@ -285,11 +314,19 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                             dom_unmeasured_reason = span_error
                             dom_observations.clear()
                             last_dom = None
-                        elif dom_unmeasured_reason is None and dom_segments != last_dom:
+                            last_dom_elapsed = None
+                        elif dom_unmeasured_reason is None and _observation_due(
+                            dom_segments,
+                            previous_segments=last_dom,
+                            previous_elapsed_sec=last_dom_elapsed,
+                            elapsed_sec=dom_elapsed,
+                            source_ends=source_ends,
+                        ):
                             dom_observations.append(
                                 TranscriptObservation(dom_elapsed, dom_segments)
                             )
                             last_dom = dom_segments
+                            last_dom_elapsed = dom_elapsed
                         hidden = bool(await page.evaluate("document.hidden"))
                         total_visibility_observations += 1
                         hidden_observations += int(hidden)

@@ -60,3 +60,17 @@ default budget (S17, third mismatch). This run repairs both without touching pro
 - Learned: ordered one-to-one matching already existed; the defect was solely DOM interval custody and silent row
   dropping. The collector now reads the three row attributes and never reconstructs ends from clocks or frontier.
 - Next: candidate 4, add the remaining revision/merge/phrase-end violating controls and separate phrase-end diagnostics.
+
+## Iteration 4 - separate phrase-end diagnostics
+- Target: candidate 4, add the four remaining custody controls and stop presenting source-phrase ends as word latency.
+- Files: `tools/qualify/visible_words.py`, `tools/qualify/visible_word_headed.py`, `tools/qualify/README.md`,
+  `tests/test_visible_word_instrument.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused test first RED at missing `_observation_due`; after implementation,
+  `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tests/test_visible_word_instrument.py` -> **20/20 passed**. The external historical reproducer now raises `TypeError`
+  because it calls the retired `_dom_segments(rows, frontier)` signature; its ported maintained control is GREEN.
+- Evidence: four falsifier docstrings in `tests/test_visible_word_instrument.py`; `moss-visible-words.v2` now emits one
+  `phrase_end_diagnostics` row per retained source interval and no `*latency*` field on word rows.
+- Learned: ordered matching already handled omission, merged rows and revision. The missing primitives were retained
+  source-interval identity and an unchanged observation at the first poll crossing each phrase end.
+- Next: candidate 5, add gate-population request planning and refuse an unfundable bundle before decoder traffic.

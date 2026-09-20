@@ -9,6 +9,7 @@ from tools.qualify.visible_word_headed import (
     _chromium_args,
     _dom_segments,
     _frame_payload,
+    _observation_due,
     _read_pcm16,
     _read_reference,
 )
@@ -98,9 +99,9 @@ def test_finally_wrong_word_nulls_an_earlier_correct_time():
     word = result["words"][0]
     assert word["final_status"] == "wrong"
     assert word["first_correct_sec"] is None
-    assert word["first_correct_latency_sec"] is None
     assert word["stable_correct_sec"] is None
-    assert word["stable_correct_latency_sec"] is None
+    assert "first_correct_latency_sec" not in word
+    assert "stable_correct_latency_sec" not in word
 
 
 def test_wrong_and_omitted_words_stay_null_and_in_full_denominator():
@@ -114,7 +115,7 @@ def test_wrong_and_omitted_words_stay_null_and_in_full_denominator():
     assert result["final_correct"] == 1
     assert result["final_wrong"] == 1
     assert result["final_missing"] == 1
-    assert result["stable_correct_distribution"] == {
+    assert result["phrase_end_diagnostics"]["stable_complete_distribution"] == {
         "full_denominator": 3,
         "finite_count": 1,
         "null_count": 2,
@@ -132,7 +133,11 @@ def test_wrong_and_omitted_words_stay_null_and_in_full_denominator():
         assert by_id[key]["first_correct_sec"] is None
         assert by_id[key]["stable_correct_sec"] is None
     with pytest.raises(ValueError, match="full denominator"):
-        visible_word_percentile(result, field="stable_correct_latency_sec", quantile=0.95)
+        visible_word_percentile(
+            result,
+            field="stable_correct_sec",
+            quantile=0.95,
+        )
 
 
 def test_bucket_coverage_only_result_is_refused_as_visible_word_evidence():
@@ -151,12 +156,18 @@ def test_reference_intervals_supply_ordered_ids_and_source_end_times():
     )
 
     assert [
-        (row.id, row.text, row.source_start_sec, row.source_end_sec)
+        (
+            row.id,
+            row.source_interval_id,
+            row.text,
+            row.source_start_sec,
+            row.source_end_sec,
+        )
         for row in references
     ] == [
-        ("phrase-a:0", "alpha", 0.25, 1.25),
-        ("phrase-a:1", "one", 0.25, 1.25),
-        ("phrase-b:0", "beta", 1.25, 2.5),
+        ("phrase-a:0", "phrase-a", "alpha", 0.25, 1.25),
+        ("phrase-a:1", "phrase-a", "one", 0.25, 1.25),
+        ("phrase-b:0", "phrase-b", "beta", 1.25, 2.5),
     ]
 
 
@@ -273,9 +284,12 @@ def test_dom_row_cannot_credit_later_same_word_outside_its_owned_span():
     earlier, later = result["words"]
     assert earlier["final_status"] == "correct"
     assert earlier["first_correct_sec"] == 12.0
-    assert earlier["first_correct_latency_sec"] == 11.0
     assert later["final_status"] == "missing"
     assert later["first_correct_sec"] is None
+    assert result["phrase_end_diagnostics"]["phrases"][0][
+        "first_complete_delay_sec"
+    ] == 11.0
+    assert all("latency" not in key for row in result["words"] for key in row)
 
 
 def test_dom_rows_without_published_spans_are_unmeasured_and_earn_no_credit():
@@ -315,7 +329,114 @@ def test_word_is_not_credited_before_its_source_interval_finishes():
     )
 
     assert result["words"][0]["first_correct_sec"] == 11.0
-    assert result["words"][0]["first_correct_latency_sec"] == 1.0
+    assert result["phrase_end_diagnostics"]["phrases"][0][
+        "first_complete_delay_sec"
+    ] == 1.0
+
+
+def test_repeated_word_does_not_credit_an_omitted_later_phrase():
+    """Falsifies reusing an earlier repeated token for an absent later phrase."""
+
+    references = reference_words_from_intervals(
+        (
+            {"id": "early", "text": "alpha", "start": 0.0, "end": 1.0},
+            {"id": "late", "text": "alpha beta", "start": 10.0, "end": 11.0},
+        )
+    )
+    result = evaluate_visible_word_stream(
+        references,
+        (
+            TranscriptObservation(
+                12.0, (TranscriptSegment(0.0, 1.0, "alpha"),)
+            ),
+        ),
+        clock_name="rendered_dom",
+    )
+
+    assert [row["final_status"] for row in result["words"]] == [
+        "correct",
+        "missing",
+        "missing",
+    ]
+
+
+def test_one_displayed_row_can_carry_two_reference_phrases():
+    """Falsifies requiring one rendered row per source phrase."""
+
+    references = reference_words_from_intervals(
+        (
+            {"id": "first", "text": "alpha beta", "start": 0.0, "end": 1.0},
+            {"id": "second", "text": "gamma", "start": 1.0, "end": 2.0},
+        )
+    )
+    result = evaluate_visible_word_stream(
+        references,
+        (
+            TranscriptObservation(
+                3.0, (TranscriptSegment(0.0, 2.0, "alpha beta gamma"),)
+            ),
+        ),
+        clock_name="rendered_dom",
+    )
+
+    diagnostics = result["phrase_end_diagnostics"]
+    assert result["final_correct"] == 3
+    assert diagnostics["full_denominator"] == 2
+    assert [row["first_complete_delay_sec"] for row in diagnostics["phrases"]] == [
+        2.0,
+        1.0,
+    ]
+
+
+def test_revision_that_changes_earlier_text_nulls_its_phrase_clock():
+    """Falsifies retaining credit after an earlier displayed phrase is revised."""
+
+    references = reference_words_from_intervals(
+        ({"id": "first", "text": "alpha", "start": 0.0, "end": 1.0},)
+    )
+    result = evaluate_visible_word_stream(
+        references,
+        (
+            TranscriptObservation(
+                2.0, (TranscriptSegment(0.0, 1.0, "alpha"),)
+            ),
+            TranscriptObservation(
+                3.0, (TranscriptSegment(0.0, 1.0, "beta"),)
+            ),
+        ),
+        clock_name="rendered_dom",
+    )
+
+    assert result["words"][0]["final_status"] == "wrong"
+    assert result["words"][0]["first_correct_sec"] is None
+    assert result["phrase_end_diagnostics"]["phrases"][0][
+        "first_complete_delay_sec"
+    ] is None
+
+
+def test_unchanged_text_is_observed_when_a_phrase_end_is_crossed():
+    """Falsifies recording only text revisions and missing a phrase-end crossing."""
+
+    segments = (TranscriptSegment(0.0, 2.0, "alpha"),)
+    assert _observation_due(
+        segments,
+        previous_segments=segments,
+        previous_elapsed_sec=1.0,
+        elapsed_sec=2.5,
+        source_ends=(2.0,),
+    )
+    result = evaluate_visible_word_stream(
+        reference_words_from_intervals(
+            ({"id": "first", "text": "alpha", "start": 0.0, "end": 2.0},)
+        ),
+        (TranscriptObservation(1.0, segments), TranscriptObservation(2.5, segments)),
+        clock_name="rendered_dom",
+    )
+
+    assert result["words"][0]["first_correct_sec"] == 2.5
+    assert result["phrase_end_diagnostics"]["phrases"][0][
+        "first_complete_delay_sec"
+    ] == 0.5
 
 
 def test_api_and_dom_clocks_remain_separate():

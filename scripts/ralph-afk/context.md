@@ -17,9 +17,12 @@
     turn (`mergeTranscript.ts:183-199`) — the honest custody primitive is therefore the turn's own published span, not
     a per-segment id join.
   - `tools/qualify/visible_words.py:103-107` `_overlaps`, `:135` match rule, `:174-200` `evaluate_visible_word_stream`
-    (interval-end gate at `:196-199` — keep).
-  - `tests/test_visible_word_instrument.py` — existing controls `:233` repeated-word, `:253` not-before-interval-end,
-    `:272` API/DOM clocks separate; `:189` launch args must be exactly `["--mute-audio"]`.
+    (interval-end gate at `:196-199` — keep). The v2 receipt retains source-interval identity and reports interval-end
+    completion once per phrase under `phrase_end_diagnostics`; word rows contain observation clocks, not inferred
+    per-word latency.
+  - `tests/test_visible_word_instrument.py` — 20 focused controls include repeated/omitted phrases, merged rendered
+    rows, revisions, unchanged content across a phrase end, and API/DOM clock separation; launch args remain exactly
+    `["--mute-audio"]`.
   - `tools/qualify/run.py:574` `--budget` default 2000; `:315` gate spec table (`capacity_2x1800`, 2); `:341-342` the
     2×1800 s invocation; `:117-118`, `:496-500` reactive budget accounting; `tools/qualify/decoder.py:9-82` counting
     proxy (`sent/active/peak/rejected`, `BoundedSemaphore(2)`, 429 at `:26-29`). No estimate/preflight exists.
@@ -29,6 +32,13 @@
 
 ## Current state
 
+- 2026-09-20 iteration 4: all four remaining custody controls are GREEN and documented by falsifier: repeated token
+  with an omitted later phrase, two phrases merged into one row, earlier-text revision, and unchanged text crossing a
+  phrase end. Source interval identity now survives word expansion, so the v2 receipt emits one
+  `phrase_end_diagnostics` row per phrase instead of duplicating phrase-end delay as per-word latency. The headed
+  collector records unchanged API/DOM content at the first poll crossing each phrase end. Focused module: **20/20
+  passed**. The external historical `dom-time-repro.py` still calls the retired two-argument `_dom_segments` and now
+  raises `TypeError`; the ported in-repo falsifier is the maintained control and remains GREEN.
 - 2026-09-20 iteration 3: DOM custody now comes only from `data-turn-start` / `data-turn-end`; `data-target-keys` is
   read with the row but no id join is invented. A sample containing a row without a valid published span clears DOM
   observations and reports `rendered_dom` as `UNMEASURED` with the reason and denominator, with no word credit. The
@@ -69,7 +79,6 @@
 export PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
 PY=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python
 # narrowest: the falsifier (must fail on unpatched base, pass after)
-$PY /Users/gao/Documents/Codex/2026-09-20/moss-current-review/dom-time-repro.py | tail -40
 $PY -m pytest -q -p no:cacheprovider tests/test_visible_word_instrument.py
 $PY -m pytest -q -p no:cacheprovider tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py
 # widest checkpoint (required before claiming completion)
@@ -85,8 +94,9 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
    model-state frontend control, clean typecheck, and deterministic 17-file Vite asset rebuild are recorded.
 3. **DONE (iteration 3) — Replace `_dom_segments` custody** with row-published spans; next-start/frontier invention is
    removed, existing ordered one-to-one matching is preserved, and spanless rows make DOM `UNMEASURED` with no credit.
-4. **Add the remaining violating controls** (repeated word + omitted later phrase; merged rows; revision of earlier
-   text; unchanged text across phrase end) and the separate phrase-end diagnostic key.
+4. **DONE (iteration 4) — Add the remaining violating controls**: repeated word + omitted later phrase, merged rows,
+   revision of earlier text, and unchanged text across phrase end are GREEN. Phrase-end completion is separately
+   reported once per source interval; word rows no longer claim inferred per-word latency.
 5. **Budget preflight** in `tools/qualify/run.py`: `planned_requests` from the gate population × `measured_rate`
    (0.51 from the wp30 receipts, provenance recorded) × `headroom`; refuse before any request when `planned > budget`;
    summary keys `measured_rate`, `source_receipt`, `headroom`, `planned_requests`; tests in `tools/qualify/test_bundle.py`.
