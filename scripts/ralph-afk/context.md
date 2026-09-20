@@ -33,6 +33,11 @@
 
 ## Current state
 
+- 2026-09-20 iteration 9: candidate 8 is complete. Final offline validation is **2,123 backend passed / 0 failed / 5
+  skipped / 37 subtests**, **312/312 frontend passed**, and clean frontend typecheck. The self-contained verification
+  record at `docs/verify/round4-run-a/VERIFY.md` ties the base RED, final custody controls, asset parity, budget
+  admission/censorship semantics, full-suite counts, falsifiers, and evidence boundaries together. This completes the
+  run's offline acceptance bar without claiming a headed latency measurement or 2×1,800 capacity qualification.
 - 2026-09-20 iteration 8: candidate 7 is complete. The default population now includes the established 2×300 s
   development capacity row: **41 sessions / 1,729 live seconds / 11 file windows / 16 browser cases = 1,136 planned
   requests**. The default `--budget` is that derived value. `--long` replaces (not adds to) the capacity row with
@@ -126,7 +131,9 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
    completed count.
 7. **DONE (iteration 8) — Capacity rows**: default runs 2×300 s with derived budget 1,136; `--long` selects 2×1800 and
    requires at least 3,068; every default summary retains `capacity_2x1800: REQUIRED-NOT-RUN` and the derivation.
-8. **Full suites + `docs/verify/round4-run-a/VERIFY.md`** (what to run, expected counts, what would falsify).
+8. **DONE (iteration 9) — Full suites + `docs/verify/round4-run-a/VERIFY.md`**: backend **2,123/0/5** plus 37
+   subtests, frontend **312/312**, typecheck clean; the record states reproduction commands, falsifiers, and offline
+   evidence boundaries.
 
 ## Non-candidates
 

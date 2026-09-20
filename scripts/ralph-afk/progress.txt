@@ -137,3 +137,16 @@ default budget (S17, third mismatch). This run repairs both without touching pro
 - Learned: capacity mode is a replacement choice, not an additive population; deriving the short default makes it
   runnable while requiring an explicit larger cap for the 30-minute confirmation.
 - Next: candidate 8, run full backend/frontend suites and write `docs/verify/round4-run-a/VERIFY.md` with falsifiers.
+
+## Iteration 9 - close offline verification
+- Target: candidate 8, run the full offline suites and write the self-contained verification record with falsifiers.
+- Files: `docs/verify/round4-run-a/VERIFY.md`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider tests` ->
+  **2,123 passed / 0 failed / 5 skipped / 37 subtests** in 192.01 s; `npm --prefix frontend test -- --run` -> **312/312
+  passed** across 28 files; `npm --prefix frontend run typecheck` -> clean.
+- Evidence: `docs/verify/round4-run-a/VERIFY.md`; the maintained falsifiers in
+  `tests/test_visible_word_instrument.py` and `tools/qualify/test_bundle.py`; iterations 1-8 above retain RED/GREEN,
+  17/17 generated-asset parity, refusal shortfall, and budget-censorship evidence.
+- Learned: the final tree exceeds both suite floors with no regression; offline instrument acceptance is complete, while
+  real headed latency and the 2×1,800 confirmation correctly remain unmeasured/not run.
+- Next: none for this Ralph run; hand the committed branch to the integration lead without push, merge, or live rerun.
