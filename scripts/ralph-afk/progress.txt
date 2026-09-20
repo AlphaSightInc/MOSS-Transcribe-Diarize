@@ -196,3 +196,15 @@ default budget (S17, third mismatch). This run repairs both without touching pro
   instrument. Parsing in Python preserves an evidence result for malformed or absent state instead of crashing the
   browser evaluation.
 - Next: candidate 1 / B1, add the single-speaker whole-turn and long-gap constituent-custody controls.
+
+## Iteration 4 - cover whole-turn and long-gap custody
+- Target: candidate 1 / B1, add the remaining same-speaker whole-transcript and long-gap constituent controls.
+- Files: `tests/test_visible_word_instrument.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tests/test_visible_word_instrument.py` -> **23/23 passed**.
+- Evidence: `test_single_speaker_whole_transcript_turn_keeps_segment_custody` keeps three constituents distinct inside
+  one rendered row; `test_merged_dom_row_across_long_gap_keeps_segment_custody` prevents an early `alpha` from
+  satisfying an absent repetition after a 120-second gap.
+- Learned: the B3 parser already generalizes to both required shapes, so no production change was needed.
+- Next: candidate 1 / B4, correct planning from session-seconds to lane-seconds and reproduce the rate from both wp30
+  receipts.

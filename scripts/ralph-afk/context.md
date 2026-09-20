@@ -71,6 +71,10 @@
   `TranscriptSegment` per constituent. It does not fall back to the row's outer span. The B1 control and all inherited
   instrument controls are GREEN (**21/21**); a row without usable constituent state still earns no credit and makes DOM
   evidence `UNMEASURED`.
+- **2026-09-20 A2 iteration 4 — B1 extra controls complete.** Two additional maintained controls cover a same-speaker
+  clip whose full transcript is one rendered turn and a merged turn whose constituents are separated by a 120-second
+  gap. Both preserve each constituent's span: earlier displayed words are credited at the observation clock and absent
+  later repetitions remain `missing/null`. The focused module is GREEN (**23/23**); no production change was needed.
 - 2026-09-20 iteration 9: candidate 8 is complete. Final offline validation is **2,123 backend passed / 0 failed / 5
   skipped / 37 subtests**, **312/312 frontend passed**, and clean frontend typecheck. The self-contained verification
   record at `docs/verify/round4-run-a/VERIFY.md` ties the base RED, final custody controls, asset parity, budget
@@ -152,15 +156,14 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Candidates
 
-1. **B1 extra controls.** Single-speaker whole-transcript-as-one-turn case; segments separated by a long gap.
-2. **B4 rate unit.** Plan in **lane-seconds**: each live family declares lanes per session; `measured_rate` becomes
+1. **B4 rate unit.** Plan in **lane-seconds**: each live family declares lanes per session; `measured_rate` becomes
    requests per lane-second with `measured_rate_unit` in the summary; a test recomputes 0.508/0.510 from the two wp30
    receipts and asserts the constant matches. Check every family's lane count against its probe (e.g. the level ladder
    at `run.py:30,452` drives two lanes via `ir_lane_ladder.py`).
-3. **B5 re-derive budgets.** New default and `--long` `planned_requests`; default `--budget` = the derived value with
+2. **B5 re-derive budgets.** New default and `--long` `planned_requests`; default `--budget` = the derived value with
    the derivation printed; `--long` still refuses when unfunded; control asserts a two-lane family plans with lanes=2.
-4. **B6 headroom provenance** and **B7 file scope** (move or justify `prototypes/capacity-campaign/NOTES.md`).
-5. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
+3. **B6 headroom provenance** and **B7 file scope** (move or justify `prototypes/capacity-campaign/NOTES.md`).
+4. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
    described as documentation of behaviour, not as base-RED falsifiers, except the one that genuinely was RED.
 
 ## Non-candidates

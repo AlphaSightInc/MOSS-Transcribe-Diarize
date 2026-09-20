@@ -329,6 +329,82 @@ def test_merged_dom_row_keeps_custody_with_each_constituent_segment():
     ] == [("correct", 12.0), ("missing", None)]
 
 
+def test_single_speaker_whole_transcript_turn_keeps_segment_custody():
+    """Falsifies flattening a same-speaker clip into one custody span."""
+
+    references = reference_words_from_intervals(
+        (
+            {"id": "opening", "text": "alpha", "start": 0.0, "end": 1.0},
+            {"id": "middle", "text": "beta", "start": 1.0, "end": 2.0},
+            {"id": "closing", "text": "alpha", "start": 2.0, "end": 3.0},
+        )
+    )
+    segments, reason = _dom_segments(
+        [
+            {
+                "start": 0.0,
+                "end": 3.0,
+                "text": "alpha beta ...",
+                "segments": json.dumps(
+                    [
+                        {"start": 0.0, "end": 1.0, "text": "alpha"},
+                        {"start": 1.0, "end": 2.0, "text": "beta"},
+                        {"start": 2.0, "end": 3.0, "text": "..."},
+                    ]
+                ),
+            }
+        ]
+    )
+    assert reason is None
+    result = evaluate_visible_word_stream(
+        references,
+        (TranscriptObservation(4.0, segments),),
+        clock_name="rendered_dom",
+    )
+
+    assert [
+        (word["final_status"], word["first_correct_sec"])
+        for word in result["words"]
+    ] == [("correct", 4.0), ("correct", 4.0), ("missing", None)]
+
+
+def test_merged_dom_row_across_long_gap_keeps_segment_custody():
+    """Falsifies letting one turn bridge a long gap for word custody."""
+
+    references = reference_words_from_intervals(
+        (
+            {"id": "early", "text": "alpha", "start": 0.0, "end": 1.0},
+            {"id": "late", "text": "alpha", "start": 120.0, "end": 121.0},
+        )
+    )
+    segments, reason = _dom_segments(
+        [
+            {
+                "start": 0.0,
+                "end": 121.0,
+                "text": "alpha ...",
+                "segments": json.dumps(
+                    [
+                        {"start": 0.0, "end": 1.0, "text": "alpha"},
+                        {"start": 120.0, "end": 121.0, "text": "..."},
+                    ]
+                ),
+            }
+        ]
+    )
+    assert reason is None
+    result = evaluate_visible_word_stream(
+        references,
+        (TranscriptObservation(122.0, segments),),
+        clock_name="rendered_dom",
+    )
+
+    assert [
+        (word["final_status"], word["first_correct_sec"])
+        for word in result["words"]
+    ] == [("correct", 122.0), ("missing", None)]
+
+
 def test_dom_rows_without_published_spans_are_unmeasured_and_earn_no_credit():
     """Falsifies silently dropping spanless rows or inventing their custody."""
 
