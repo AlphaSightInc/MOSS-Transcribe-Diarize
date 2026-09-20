@@ -17,6 +17,12 @@ export interface MergedTranscriptItem extends TranscriptItem {
   isContinuation: boolean;
 }
 
+export interface TranscriptTurnSegment {
+  start: number;
+  end: number;
+  text: string;
+}
+
 export interface TranscriptTurn {
   source_lane?: SourceLane;
   start: number;
@@ -28,6 +34,7 @@ export interface TranscriptTurn {
   text: string;
   segment_ids: string[];
   target_segment_keys: string[];
+  segments: TranscriptTurnSegment[];
   provisional_stale: boolean;
 }
 
@@ -160,6 +167,7 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
   const turns: TranscriptTurn[] = [];
 
   for (const segment of [...segments].sort(compareTranscriptOrder)) {
+    const resolvedText = resolveText(segment);
     const last = turns.at(-1) ?? null;
     const sameTranscriptLane =
       last !== null && last.source_lane === segment.source_lane &&
@@ -184,11 +192,11 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
       last.end = Math.max(last.end, segment.end);
       last.state = segment.state;
       if (preserveResolvedWhitespace) {
-        last.text = joinPreservedTurnText(last.text, resolveText(segment));
+        last.text = joinPreservedTurnText(last.text, resolvedText);
       } else {
         last.text = skipOverlapTrimming
-          ? joinTurnText(last.text, resolveText(segment))
-          : mergeTurnText(last.text, resolveText(segment));
+          ? joinTurnText(last.text, resolvedText)
+          : mergeTurnText(last.text, resolvedText);
       }
       last.provisional_stale ||= segment.provisional_stale === true;
       const segmentId = trimString(segment.segment_id);
@@ -196,6 +204,7 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
         last.segment_ids.push(segmentId);
       }
       last.target_segment_keys.push(buildTranscriptTargetKey(segment));
+      last.segments.push({ start: segment.start, end: segment.end, text: resolvedText });
       continue;
     }
 
@@ -213,9 +222,10 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
       speaker_entity_id: segment.speaker_entity_id,
       display_name: segment.display_name,
       state: segment.state,
-      text: resolveText(segment),
+      text: resolvedText,
       segment_ids: segmentIds,
       target_segment_keys: [buildTranscriptTargetKey(segment)],
+      segments: [{ start: segment.start, end: segment.end, text: resolvedText }],
       provisional_stale: segment.state === "provisional" && segment.provisional_stale === true
     });
   }

@@ -102,6 +102,10 @@ describe("TranscriptPane", () => {
     expect(row?.getAttribute("data-turn-start")).toBe("3.25");
     expect(row?.getAttribute("data-turn-end")).toBe("6.5");
     expect(row?.getAttribute("data-target-keys")).toBe("segment:segment-a|segment:segment-b");
+    expect(JSON.parse(row?.getAttribute("data-segments") ?? "null")).toEqual([
+      { start: 3.25, end: 4, text: "First part." },
+      { start: 4, end: 6.5, text: "Second part." }
+    ]);
   });
 
   function showSpeakers(originating = true): void {

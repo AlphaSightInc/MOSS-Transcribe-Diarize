@@ -13,6 +13,7 @@ function makeTurn(overrides: Partial<TranscriptTurn> = {}): TranscriptTurn {
     text: "alpha beta alpha",
     segment_ids: ["seg-1"],
     target_segment_keys: ["seg-1"],
+    segments: [{ start: 0, end: 1, text: "alpha beta alpha" }],
     provisional_stale: false,
     ...overrides
   };

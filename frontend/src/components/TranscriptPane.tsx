@@ -657,6 +657,7 @@ export function TranscriptPane() {
                   data-turn-start={turn.start}
                   data-turn-end={turn.end}
                   data-target-keys={turn.target_segment_keys.join("|")}
+                  data-segments={JSON.stringify(turn.segments)}
                   style={{ "--sp": colorToken } as JSX.CSSProperties}
                 >
                   <div className="utt-meta">

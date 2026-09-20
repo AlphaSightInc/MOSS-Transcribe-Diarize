@@ -166,3 +166,19 @@ default budget (S17, third mismatch). This run repairs both without touching pro
 - Learned: `_dom_segments` ignores constituent state and lets one row's 0-11 s outer span transfer its sole displayed
   `alpha` from the owned 0-1 s segment to the absent 10-11 s occurrence; inherited controls remain green.
 - Next: candidate 1 / B2, carry each merged turn's constituent `start`/`end`/`text` and publish it in one row attribute.
+
+## Iteration 2 - publish merged-turn constituent state
+- Target: candidate 1 / B2, retain each merged turn's constituent model-state span/text and expose it in one `.utt`
+  attribute.
+- Files: `frontend/src/lib/mergeTranscript.ts`, `frontend/src/components/TranscriptPane.tsx`, their focused/type-fixture
+  tests, rebuilt `moss_transcribe_diarize/app/frontend_assets/app.js{,.map}`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused component control first RED **1 failed / 17 passed** on absent `data-segments`; then
+  `npm --prefix frontend test -- --run src/components/TranscriptPane.test.tsx` -> **18/18 passed**;
+  `npm --prefix frontend run typecheck` -> clean; two `npm --prefix frontend run build` runs -> **17/17 byte-identical**
+  generated assets; `git diff --check` -> clean.
+- Evidence: the two-segment row publishes exact ordered JSON `[{start:3.25,end:4,text:"First part."},
+  {start:4,end:6.5,text:"Second part."}]`; only generated `app.js` and `app.js.map` changed in the 17-file asset tree.
+- Learned: the merge seam already owns the exact constituent state; one array on `TranscriptTurn` preserves custody
+  without id joins or reconstructed spans. The Python instrument does not consume it yet, so B1 remains RED.
+- Next: candidate 1 / B3, parse `data-segments` and emit one `TranscriptSegment` per valid constituent; spanless or
+  unusable constituent state must remain DOM `UNMEASURED` with no credit.

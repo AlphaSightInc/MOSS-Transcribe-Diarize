@@ -11,11 +11,10 @@
   - `tools/qualify/visible_word_headed.py` `_dom_segments` now accepts only each row's published start/end; it returns
     no segments plus a reason when a row lacks a finite positive model-state span. The collector reads all three
     `data-` custody attributes and no longer reads `.utt-time`, the next row, or the playback frontier.
-  - `frontend/src/components/TranscriptPane.tsx:649-661` — the `.utt` `<article>` now publishes
-    `data-turn-start`, `data-turn-end`, and `data-target-keys` directly from the merged React turn. Live segment ids are
-    positional (`frontend/src/api/mossPoller.ts:598,714` `effective:${index}`) and a row is a merged, overlap-trimmed
-    turn (`mergeTranscript.ts:183-199`) — the honest custody primitive is therefore the turn's own published span, not
-    a per-segment id join.
+  - `frontend/src/components/TranscriptPane.tsx:649-662` — the `.utt` `<article>` publishes
+    `data-turn-start`, `data-turn-end`, `data-target-keys`, and an ordered JSON `data-segments` array copied from the
+    merged turn. Each constituent retains its own model-state `start`/`end`/`text`; live positional segment ids are not
+    used to reconstruct custody.
   - `tools/qualify/visible_words.py:103-107` `_overlaps`, `:135` match rule, `:174-200` `evaluate_visible_word_stream`
     (interval-end gate at `:196-199` — keep). The v2 receipt retains source-interval identity and reports interval-end
     completion once per phrase under `phrase_end_diagnostics`; word rows contain observation clocks, not inferred
@@ -40,7 +39,7 @@
   removed and phrase-end diagnostics live under their own key; the preflight refuses before `Bundle(...)`
   (`run.py:679-686`); `rejected_by_budget > 0` ⇒ `INCOMPLETE` (`run.py:604-608`); `capacity_2x300` +
   `capacity_2x1800: REQUIRED-NOT-RUN` on all three paths.
-- **BLOCKING gap (B1–B3).** A rendered `.utt` row is a *merged turn*: `frontend/src/lib/mergeTranscript.ts:183-199`
+- **BLOCKING gap (B3).** A rendered `.utt` row is a *merged turn*: `frontend/src/lib/mergeTranscript.ts:183-201`
   merges consecutive same-speaker/same-lane segments with **no time-gap limit** and takes
   `last.end = Math.max(last.end, segment.end)`. Custody is therefore checked against the turn's **outer** span, so the
   original F4 swap still reproduces inside one row — verified on HEAD: a row published as 0–11 s whose text contains
@@ -48,8 +47,8 @@
   single-speaker clip (`mono_javier_intro_50s`) the whole transcript merges into one turn and the span check is vacuous.
   The turn carries `target_segment_keys` (`mergeTranscript.ts:30,198,218` via `lib/transcriptKeys.ts`), but for live
   rows those keys are `segment:effective:<index>` (positional, `api/mossPoller.ts:598,714`) and carry **no span** — they
-  cannot supply custody alone. The per-segment `start`/`end`/`text` exist at the merge site and must be carried onto the
-  turn and published.
+  cannot supply custody alone. Iteration 2 now publishes the needed constituent state, but `_dom_segments` does not yet
+  read it and the maintained B1 control remains RED until B3.
 - **Rate unit is wrong (B4–B5).** Lead-verified: `evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl` = 2,440
   lines / 2,440 unique `request` ids; its `result.json` says `sessions: 4, seconds: 600`; `evidence/mvpfix/wp30/NOTES.md:36`
   says "four simultaneous **two-lane** sessions" ⇒ 2,440 / (4 × 2 × 600) = **0.508 per lane-second** (= 1.017 per
@@ -66,6 +65,11 @@
   span: actual statuses/clocks are `[early missing/null, late correct/12.0]`; required are
   `[early correct/12.0, late missing/null]`. Focused module: expected **1 failed / 20 passed**. Production remains
   untouched; B2 is next.
+- **2026-09-20 A2 iteration 2 — B2 publication complete.** `groupSegmentsIntoTurns` retains an ordered `segments`
+  array containing each constituent's exact resolved text and model-state span; `TranscriptPane` serializes it as one
+  `data-segments` JSON attribute. The two-segment frontend control was RED **1 failed / 17 passed**, then GREEN
+  **18/18**; typecheck is clean and two builds produced **17/17 byte-identical** assets. The Python consumer is
+  intentionally unchanged, so B1 remains RED and B3 is next.
 - 2026-09-20 iteration 9: candidate 8 is complete. Final offline validation is **2,123 backend passed / 0 failed / 5
   skipped / 37 subtests**, **312/312 frontend passed**, and clean frontend typecheck. The self-contained verification
   record at `docs/verify/round4-run-a/VERIFY.md` ties the base RED, final custody controls, asset parity, budget
@@ -147,22 +151,18 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Candidates
 
-1. **B2 publish per-segment model state.** Carry each constituent segment's `start`/`end`/`text` onto the turn at
-   `mergeTranscript.ts:183-199` (beside `target_segment_keys`) and render it in one additional `data-` attribute on the
-   `.utt` article (`TranscriptPane.tsx:649-659`); frontend test asserts it equals the model state for a two-segment
-   merged turn; typecheck, build, asset parity 17/17.
-2. **B3 consume it.** `_dom_segments` emits one `TranscriptSegment` per constituent segment (span + that segment's
+1. **B3 consume published segment state.** `_dom_segments` emits one `TranscriptSegment` per constituent segment (span + that segment's
    text); a row without usable per-segment state ⇒ no DOM credit, `UNMEASURED` with a reason. Validate: the B1 control
    passes, every run-A control still passes.
-3. **B1 extra controls.** Single-speaker whole-transcript-as-one-turn case; segments separated by a long gap.
-4. **B4 rate unit.** Plan in **lane-seconds**: each live family declares lanes per session; `measured_rate` becomes
+2. **B1 extra controls.** Single-speaker whole-transcript-as-one-turn case; segments separated by a long gap.
+3. **B4 rate unit.** Plan in **lane-seconds**: each live family declares lanes per session; `measured_rate` becomes
    requests per lane-second with `measured_rate_unit` in the summary; a test recomputes 0.508/0.510 from the two wp30
    receipts and asserts the constant matches. Check every family's lane count against its probe (e.g. the level ladder
    at `run.py:30,452` drives two lanes via `ir_lane_ladder.py`).
-5. **B5 re-derive budgets.** New default and `--long` `planned_requests`; default `--budget` = the derived value with
+4. **B5 re-derive budgets.** New default and `--long` `planned_requests`; default `--budget` = the derived value with
    the derivation printed; `--long` still refuses when unfunded; control asserts a two-lane family plans with lanes=2.
-6. **B6 headroom provenance** and **B7 file scope** (move or justify `prototypes/capacity-campaign/NOTES.md`).
-7. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
+5. **B6 headroom provenance** and **B7 file scope** (move or justify `prototypes/capacity-campaign/NOTES.md`).
+6. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
    described as documentation of behaviour, not as base-RED falsifiers, except the one that genuinely was RED.
 
 ## Non-candidates
