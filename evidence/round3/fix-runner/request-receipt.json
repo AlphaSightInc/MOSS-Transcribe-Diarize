@@ -1,0 +1,13 @@
+{
+  "budget": 400,
+  "requests_started": 342,
+  "requests_finished": 342,
+  "receipt_rows": 684,
+  "maximum_own_inflight": 2,
+  "foreign_load_detected": false,
+  "decoder_port": 18271,
+  "tunnel_closed": true,
+  "stack_ports_closed": [17990, 17991],
+  "gpu_lease_released": true,
+  "source": "s7-s8-2x300/decoder.jsonl"
+}

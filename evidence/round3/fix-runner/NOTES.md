@@ -39,3 +39,17 @@ corrected to assert a non-zero, complete denominator. No product behavior change
 `copy_manifest.py --minutes 240` admitted `460,800,000` tape bytes (14,400 seconds).
 The host manifest stayed byte-identical. MG5 SQLite and MG10 host-manifest prerequisites
 remain unchanged.
+
+## Live verdict
+
+The literal combined S7/S8 run passed cleanly. See `campaign-summary.md` for the
+denominator tables and `s7-s8-2x300/result.json` for all 342 attributed window rows.
+The runner used 342/400 decoder requests. No product defect was found.
+
+## Full-suite gate
+
+Frontend passed 310/310 plus typecheck and build. Backend attempt 1 was 2,102 passed,
+1 failed, 5 skipped, 37 subtests: the 151-second multistream test missed its fixed
+5-second poll deadline. It passed alone 1/1 in 5.00 seconds without a change; the full
+rerun passed 2,103 with 5 skipped and 37 subtests in 184.40 seconds. Both attempts are
+retained in `suite-summary.txt`; the transient failure is not hidden or waived.

@@ -1,0 +1,19 @@
+Full frontend gate:
+  npm --prefix frontend test -- --run
+  npm --prefix frontend run typecheck
+  npm --prefix frontend run build
+  PASS: 28 files, 310/310 tests; typecheck clean; vite build clean.
+
+Full backend attempt 1:
+  python -m pytest -q -p no:cacheprovider tests
+  FAIL: 1 failed, 2,102 passed, 5 skipped, 37 subtests; 308.06 s.
+  Failure: test_multi_stream_file_uses_one_mix_for_window_inference_and_retained_mp3
+  missed its fixed 5-second terminal polling deadline.
+
+Targeted attribution:
+  python -m pytest -q -p no:cacheprovider tests/phase2/test_file_mp3_artifact.py::test_multi_stream_file_uses_one_mix_for_window_inference_and_retained_mp3
+  PASS: 1/1 in 5.00 s; no change applied.
+
+Full backend attempt 2:
+  python -m pytest -q -p no:cacheprovider tests
+  PASS: 2,103 passed, 5 skipped, 37 subtests; 184.40 s.
