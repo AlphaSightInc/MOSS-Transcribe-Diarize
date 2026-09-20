@@ -86,6 +86,7 @@ def _read_reference(path: Path, seconds: float) -> tuple[dict[str, object], ...]
                 {
                     "id": str(row.get("id", f"source-{index}")),
                     "text": str(row["text"]),
+                    "start": float(row["start"]),
                     "end": float(row["end"]),
                 }
             )

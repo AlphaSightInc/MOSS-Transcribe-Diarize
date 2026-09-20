@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
+from tools.qualify.visible_word_headed import _read_reference
 from tools.qualify.visible_words import (
     ReferenceWord,
     TranscriptObservation,
@@ -132,6 +135,30 @@ def test_reference_intervals_supply_ordered_ids_and_source_end_times():
         ("phrase-a:0", "alpha", 0.25, 1.25),
         ("phrase-a:1", "one", 0.25, 1.25),
         ("phrase-b:0", "beta", 1.25, 2.5),
+    ]
+
+
+def test_headed_reference_reader_preserves_intervals_for_word_expansion(tmp_path):
+    source = tmp_path / "reference.jsonl"
+    source.write_text(
+        "\n".join(
+            json.dumps(row)
+            for row in (
+                {"id": "kept", "text": "Alpha one", "start": 0.25, "end": 1.25},
+                {"id": "later", "text": "Beta", "start": 2.0, "end": 3.0},
+            )
+        )
+        + "\n"
+    )
+
+    references = reference_words_from_intervals(_read_reference(source, 2.5))
+
+    assert [
+        (row.id, row.text, row.source_start_sec, row.source_end_sec)
+        for row in references
+    ] == [
+        ("kept:0", "alpha", 0.25, 1.25),
+        ("kept:1", "one", 0.25, 1.25),
     ]
 
 
