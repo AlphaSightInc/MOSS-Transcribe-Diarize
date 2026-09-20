@@ -1,0 +1,135 @@
+........................................................................ [  3%]
+........................................................................ [  6%]
+........................................................................ [ 10%]
+.............................................................s.......... [ 13%]
+........................................................................ [ 17%]
+.............................................F.......................... [ 20%]
+........................................................................ [ 23%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 34%]
+........................................................................ [ 37%]
+........................................................................ [ 40%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+...........................................ss........................... [ 51%]
+.................................................................. [ 54%]
+........................................................................ [ 57%]
+....s................................................................... [ 61%]
+........................................................................ [ 64%]
+........................................................................ [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+............................................................... [ 77%]
+..............................................................s......... [ 81%]
+..................................................... [ 83%]
+........................................................................ [ 87%]
+........................................................................ [ 90%]
+........................................................................ [ 94%]
+........................................................................ [ 97%]
+......................................................                [100%]
+=================================== FAILURES ===================================
+__ test_multi_stream_file_uses_one_mix_for_window_inference_and_retained_mp3 ___
+
+tmp_path = PosixPath('/private/var/folders/kf/y7n9glxx1vn_hdk_tj9qkvwm0000gn/T/pytest-of-gao/pytest-960/test_multi_stream_file_uses_on0')
+
+    def test_multi_stream_file_uses_one_mix_for_window_inference_and_retained_mp3(
+        tmp_path: Path,
+    ):
+        fixture = tmp_path / "two-track-151s.mka"
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-nostdin",
+                "-v",
+                "error",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                "sine=frequency=440:duration=151:sample_rate=16000",
+                "-f",
+                "lavfi",
+                "-i",
+                "sine=frequency=880:duration=151:sample_rate=16000",
+                "-map",
+                "0:a:0",
+                "-map",
+                "1:a:0",
+                "-c:a",
+                "pcm_s16le",
+                "-disposition:a:0",
+                "0",
+                "-disposition:a:1",
+                "default",
+                str(fixture),
+            ],
+            check=True,
+            capture_output=True,
+        )
+        assert dominant_frequency(fixture, stream="0:a:0") == 440
+        assert dominant_frequency(fixture) == 880
+    
+        database = tmp_path / "moss.sqlite3"
+        sessions = asyncio.run(provision(database))
+        audio_root = tmp_path / "meetings"
+        runner = WindowMixProbeRunner()
+        app = make_app(
+            database,
+            tmp_path / "file-work",
+            audio_root,
+            runner=runner,
+        )
+    
+        with TestClient(app, base_url="https://moss.test") as client:
+            session(client, sessions["sub-a"])
+            accepted = client.post(
+                "/api/meetings/file",
+                files={"file": (fixture.name, fixture.read_bytes(), "audio/x-matroska")},
+            )
+            meeting_id = accepted.json()["id"]
+>           meeting = await_terminal(client, meeting_id, "completed")
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/phase2/test_file_mp3_artifact.py:512: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x11909dc10>
+meeting_id = '7jztY3h4sBq4-jFFmy7FQQbw', status = 'completed'
+
+    def await_terminal(client: TestClient, meeting_id: str, status: str) -> dict[str, object]:
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            response = client.get(f"/api/meetings/{meeting_id}")
+            if response.status_code == 200 and response.json()["status"] == status:
+                return response.json()
+            time.sleep(0.01)
+>       raise AssertionError(f"Meeting {meeting_id} did not reach {status}")
+E       AssertionError: Meeting 7jztY3h4sBq4-jFFmy7FQQbw did not reach completed
+
+tests/phase2/test_file_mp3_artifact.py:107: AssertionError
+=============================== warnings summary ===============================
+../../../../Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/phase2/test_atomic_cutover.py: 17 warnings
+  /private/tmp/moss-round3-20260919/fix-fix-runner/moss_transcribe_diarize/phase2_cutover.py:1410: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    source.extractall(extraction)
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:16: DeprecationWarning: 'aifc' is deprecated and slated for removal in Python 3.13
+    import aifc
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:17: DeprecationWarning: 'audioop' is deprecated and slated for removal in Python 3.13
+    import audioop
+
+tests/phase2/test_runner_composition.py::test_launcher_without_prompt_finalizer_builds_http_request
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/lib/python3.12/site-packages/audioread/rawread.py:19: DeprecationWarning: 'sunau' is deprecated and slated for removal in Python 3.13
+    import sunau
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/phase2/test_file_mp3_artifact.py::test_multi_stream_file_uses_one_mix_for_window_inference_and_retained_mp3
+1 failed, 2102 passed, 5 skipped, 21 warnings, 37 subtests passed in 308.06s (0:05:08)

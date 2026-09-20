@@ -137,6 +137,7 @@ def main():
     parser.add_argument('--mixed-background-at', type=float)
     parser.add_argument('--mixed-background-seconds', type=int, default=10)
     parser.add_argument('--mixed-url-port', type=int, default=17939)
+    parser.add_argument('--paired-stop-file', action='store_true')
     parser.add_argument('--max-decoder-calls', type=int)
     args = parser.parse_args()
     if args.decoder_url:METRICS_URL=args.decoder_url.removesuffix('/v1').rstrip('/')+'/metrics'
@@ -154,6 +155,8 @@ def main():
         parser.error('--mixed-background-at needs two sessions and a boundary inside --seconds')
     if args.mixed_background_seconds <= 0:
         parser.error('--mixed-background-seconds must be positive')
+    if args.paired_stop_file and args.sessions != 2:
+        parser.error('--paired-stop-file needs two sessions')
     if args.max_decoder_calls is not None and args.max_decoder_calls <= 0:
         parser.error('--max-decoder-calls must be positive')
     clips = inputs(args.sessions, args.clips)
@@ -184,8 +187,15 @@ def main():
     lock = threading.Lock()
     resources, failures, clients, ids, outputs = [], [], [], [], []
     background_work = None
+    paired_stop_work = None
     campaign_started = threading.Event()
     campaign_started_at = [None]
+    paired_stop_event = threading.Event()
+    paired_stop_barrier = (
+        threading.Barrier(args.sessions, action=paired_stop_event.set)
+        if args.paired_stop_file
+        else None
+    )
     session_seconds = [args.stop_first_at or args.seconds, args.seconds]
     if args.sessions != 2:
         session_seconds = [args.seconds] * args.sessions
@@ -267,7 +277,7 @@ def main():
                 emit(dict(kind='resource_failure', error=type(exc).__name__))
 
     try:
-        if args.mixed_background_at is not None:
+        if args.mixed_background_at is not None or args.paired_stop_file:
             short_media = scratch / 'mixed-short.wav'
             write_short_wav(CORPUS / 'mono_javier_intro_50s' / 'audio.wav', short_media, seconds=args.mixed_background_seconds)
             handler = functools.partial(_QuietMediaHandler, directory=str(scratch))
@@ -353,16 +363,17 @@ def main():
 
                 def start_file():
                     launch.wait(timeout=5)
-                    accepted = time.monotonic()
+                    accepted_ns = time.monotonic_ns()
                     meeting = upload_file(file_client, short_media)
                     background_work['file'].update(
                         meeting_id=meeting['id'],
-                        accepted_at_seconds=accepted-campaign_started_at[0],
+                        submission_started_monotonic_ns=accepted_ns,
+                        accepted_at_seconds=accepted_ns / 1e9-campaign_started_at[0],
                     )
 
                 def start_url():
                     launch.wait(timeout=5)
-                    accepted = time.monotonic()
+                    accepted_ns = time.monotonic_ns()
                     meeting = url_client.call(
                         'POST',
                         '/api/meetings/url',
@@ -370,7 +381,8 @@ def main():
                     )
                     background_work['url'].update(
                         meeting_id=meeting['id'],
-                        accepted_at_seconds=accepted-campaign_started_at[0],
+                        submission_started_monotonic_ns=accepted_ns,
+                        accepted_at_seconds=accepted_ns / 1e9-campaign_started_at[0],
                     )
 
                 try:
@@ -427,6 +439,73 @@ def main():
                 target=background_runner, name='mixed-file-url', daemon=True
             )
             background_thread.start()
+        paired_stop_thread = None
+        if args.paired_stop_file:
+            paired_stop_work = {
+                'source_seconds': args.mixed_background_seconds,
+                'stop_requests_monotonic': {},
+                'file': {},
+                'operator_observations': [],
+                'clean': False,
+            }
+            result['paired_stop_file'] = paired_stop_work
+
+            def paired_stop_runner():
+                assert paired_stop_event.wait(timeout=args.seconds + 30)
+                file_client = Client(base, context)
+                file_client.call('POST', '/api/workspace/bootstrap')
+                try:
+                    submitted_ns = time.monotonic_ns()
+                    meeting = upload_file(file_client, short_media)
+                    meeting_id = meeting['id']
+                    paired_stop_work['file'].update(
+                        meeting_id=meeting_id,
+                        submission_started_monotonic_ns=submitted_ns,
+                        accepted_at_seconds=submitted_ns / 1e9-campaign_started_at[0],
+                    )
+                    stops = tuple(paired_stop_work['stop_requests_monotonic'].values())
+                    paired_stop_work['stop_request_gap_sec'] = max(stops) - min(stops)
+                    paired_stop_work['file_submit_after_last_stop_sec'] = (
+                        submitted_ns / 1e9 - max(stops)
+                    )
+                    deadline = time.monotonic() + args.finalization_observe_seconds
+                    while True:
+                        meeting = file_client.call('GET', f'/api/meetings/{meeting_id}')
+                        from moss_transcribe_diarize.app.phase2_control import request_control
+                        status = asyncio.run(request_control(state / 'control.sock', 'status'))
+                        paired_stop_work['operator_observations'].append({
+                            'at_seconds': time.monotonic()-campaign_started_at[0],
+                            'capacity': status['capacity'],
+                            'meetings': [
+                                row for row in status['active_meetings']
+                                if row.get('meeting_id') == meeting_id
+                            ],
+                        })
+                        if meeting['status'] != 'active':
+                            paired_stop_work['file'].update(
+                                status=meeting['status'],
+                                transcript_version=meeting.get('transcript_version'),
+                                segments=len((meeting.get('transcript') or {}).get('segments', [])),
+                                finished_at_seconds=time.monotonic()-campaign_started_at[0],
+                            )
+                            break
+                        if time.monotonic() >= deadline:
+                            raise RuntimeError('paired_stop_file_observation_limit_reached')
+                        time.sleep(.05)
+                    paired_stop_work['clean'] = (
+                        paired_stop_work['stop_request_gap_sec'] < 1
+                        and 0 <= paired_stop_work['file_submit_after_last_stop_sec'] < 1
+                        and paired_stop_work['file'].get('status') == 'completed'
+                        and paired_stop_work['file'].get('segments', 0) > 0
+                    )
+                except Exception as exc:
+                    paired_stop_work['error'] = f'{type(exc).__name__}:{exc}'
+                    failures.append('paired_stop_file:'+type(exc).__name__)
+
+            paired_stop_thread = threading.Thread(
+                target=paired_stop_runner, name='paired-stop-file', daemon=True
+            )
+            paired_stop_thread.start()
         (out / 'descriptor.json').write_text(json.dumps(descriptor, indent=2)+'\n')
         # Smoke still needs a distinct foreign owner.
         outsider = Client(base, context)
@@ -549,6 +628,9 @@ def main():
                     time.sleep(max(0, started+paused_seconds+(seq+1)*cadence-time.monotonic()))
                 stopped = time.monotonic()
                 row['stop_requested_monotonic'] = stopped
+                if paired_stop_barrier is not None:
+                    paired_stop_work['stop_requests_monotonic'][str(index + 1)] = stopped
+                    paired_stop_barrier.wait(timeout=5)
                 c.call('POST', f'/api/live/sessions/{ident}/stop', {'deadline':30})
                 while True:
                     snap = observe()
@@ -646,6 +728,10 @@ def main():
             background_thread.join(timeout=args.finalization_observe_seconds)
             if background_thread.is_alive():
                 failures.append('mixed_background:join_timeout')
+        if paired_stop_thread is not None:
+            paired_stop_thread.join(timeout=args.finalization_observe_seconds)
+            if paired_stop_thread.is_alive():
+                failures.append('paired_stop_file:join_timeout')
         stop_monitor.set()
         watcher.join(timeout=15)
         sample(app.pid)
@@ -685,8 +771,57 @@ def main():
         result['foreign_load_detected'] = contaminated.is_set()
         result['decoder_calls'] = sum(r['kind']=='start' for r in own_requests())
         result['maximum_own_inflight'] = max([r['active'] for r in own_requests()] or [0])
+        timing_path = state / 'dispatch-timings.json'
+        if timing_path.exists():
+            from measurement import summarize_dispatch
+
+            stage_rows = json.loads(timing_path.read_text())
+            file_acceptances = {}
+            if background_work is not None:
+                file_acceptances.update({
+                    background_work[label]['meeting_id']:
+                        background_work[label]['submission_started_monotonic_ns']
+                    for label in ('file', 'url')
+                    if background_work[label].get('meeting_id')
+                })
+            if paired_stop_work is not None and paired_stop_work['file'].get('meeting_id'):
+                file_acceptances[
+                    paired_stop_work['file']['meeting_id']
+                ] = paired_stop_work['file']['submission_started_monotonic_ns']
+            terminal_keys = {
+                row['owner_key'] for row in stage_rows
+                if row.get('owner_kind') == 'background'
+                and row.get('owner_key') not in file_acceptances
+            }
+            result['dispatch_measurement'] = summarize_dispatch(
+                stage_rows,
+                file_acceptances_ns=file_acceptances,
+                terminal_keys=terminal_keys,
+                first_dispatch_limit_sec=12,
+            )
+            if paired_stop_work is not None:
+                file_id = paired_stop_work['file'].get('meeting_id')
+                paired_stop_work['dispatch'] = {
+                    'acceptance_to_first_dispatch_sec': result['dispatch_measurement'][
+                        'file_acceptance_to_first_dispatch_sec'
+                    ].get(file_id),
+                    'fair_interleaving': result['dispatch_measurement'][
+                        'fair_file_interleaving'
+                    ].get(file_id),
+                }
+                paired_stop_work['clean'] = (
+                    paired_stop_work['clean']
+                    and paired_stop_work['dispatch']['acceptance_to_first_dispatch_sec'] is not None
+                    and paired_stop_work['dispatch']['acceptance_to_first_dispatch_sec'] <= 12
+                    and paired_stop_work['dispatch']['fair_interleaving'] is True
+                )
         result['clean'] = (all(r.get('clean') for r in outputs) and len(outputs)==args.sessions and not failures
                            and (background_work is None or background_work.get('clean') is True)
+                           and (paired_stop_work is None or paired_stop_work.get('clean') is True)
+                           and (
+                               (background_work is None and paired_stop_work is None)
+                               or result.get('dispatch_measurement', {}).get('passes') is True
+                           )
                            and not contaminated.is_set() and (result['fairness'].get('passes') is True
                                or (args.sessions==1 and result['fairness'].get('applicability')=='not_applicable'))
                            and result['app_rss_growth_bytes']<=4*1024**3

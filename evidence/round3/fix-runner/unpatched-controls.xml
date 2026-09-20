@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="0.119" timestamp="2026-09-19T21:19:07.327819-04:00" hostname="MacStudio.local"><testcase classname="tests.test_capacity_campaign_fix" name="test_capacity_runner_exposes_paired_stop_file_hook" time="0.090"><failure message="AssertionError: assert '--paired-stop-file' in 'usage: run.py [-h] --sessions {1,2,4,8} --seconds SECONDS\n              [--clips {interview_bill_ackman_60s,intervie...kground-seconds MIXED_BACKGROUND_SECONDS\n  --mixed-url-port MIXED_URL_PORT\n  --max-decoder-calls MAX_DECODER_CALLS\n'&#10; +  where 'usage: run.py [-h] --sessions {1,2,4,8} --seconds SECONDS\n              [--clips {interview_bill_ackman_60s,intervie...kground-seconds MIXED_BACKGROUND_SECONDS\n  --mixed-url-port MIXED_URL_PORT\n  --max-decoder-calls MAX_DECODER_CALLS\n' = CompletedProcess(args=['/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/...nds MIXED_BACKGROUND_SECONDS\n  --mixed-url-port MIXED_URL_PORT\n  --max-decoder-calls MAX_DECODER_CALLS\n', stderr='').stdout">def test_capacity_runner_exposes_paired_stop_file_hook():
+        result = subprocess.run(
+            [sys.executable, str(CAMPAIGN / "run.py"), "--help"],
+            cwd=ROOT,
+            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1", "PYTHONPATH": "."},
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    
+&gt;       assert "--paired-stop-file" in result.stdout
+E       AssertionError: assert '--paired-stop-file' in 'usage: run.py [-h] --sessions {1,2,4,8} --seconds SECONDS\n              [--clips {interview_bill_ackman_60s,intervie...kground-seconds MIXED_BACKGROUND_SECONDS\n  --mixed-url-port MIXED_URL_PORT\n  --max-decoder-calls MAX_DECODER_CALLS\n'
+E        +  where 'usage: run.py [-h] --sessions {1,2,4,8} --seconds SECONDS\n              [--clips {interview_bill_ackman_60s,intervie...kground-seconds MIXED_BACKGROUND_SECONDS\n  --mixed-url-port MIXED_URL_PORT\n  --max-decoder-calls MAX_DECODER_CALLS\n' = CompletedProcess(args=['/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/...nds MIXED_BACKGROUND_SECONDS\n  --mixed-url-port MIXED_URL_PORT\n  --max-decoder-calls MAX_DECODER_CALLS\n', stderr='').stdout
+
+tests/test_capacity_campaign_fix.py:49: AssertionError</failure></testcase><testcase classname="tests.test_capacity_campaign_fix" name="test_attributed_stage_clocks_accept_fair_window_interleaving" time="0.000"><failure message="FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/moss-round3-20260919/fix-fix-runner/prototypes/capacity-campaign/measurement.py'">def test_attributed_stage_clocks_accept_fair_window_interleaving():
+&gt;       measurement = _measurement_module()
+                      ^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_capacity_campaign_fix.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_capacity_campaign_fix.py:23: in _measurement_module
+    spec.loader.exec_module(module)
+&lt;frozen importlib._bootstrap_external&gt;:995: in exec_module
+    ???
+&lt;frozen importlib._bootstrap_external&gt;:1132: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;_frozen_importlib_external.SourceFileLoader object at 0x10af8f7a0&gt;
+path = '/private/tmp/moss-round3-20260919/fix-fix-runner/prototypes/capacity-campaign/measurement.py'
+
+&gt;   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/moss-round3-20260919/fix-fix-runner/prototypes/capacity-campaign/measurement.py'
+
+&lt;frozen importlib._bootstrap_external&gt;:1190: FileNotFoundError</failure></testcase><testcase classname="tests.test_capacity_campaign_fix" name="test_unattributed_proxy_rows_and_whole_batch_hold_are_refused" time="0.000"><failure message="FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/moss-round3-20260919/fix-fix-runner/prototypes/capacity-campaign/measurement.py'">def test_unattributed_proxy_rows_and_whole_batch_hold_are_refused():
+&gt;       measurement = _measurement_module()
+                      ^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_capacity_campaign_fix.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_capacity_campaign_fix.py:23: in _measurement_module
+    spec.loader.exec_module(module)
+&lt;frozen importlib._bootstrap_external&gt;:995: in exec_module
+    ???
+&lt;frozen importlib._bootstrap_external&gt;:1132: in get_code
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;_frozen_importlib_external.SourceFileLoader object at 0x10af8e300&gt;
+path = '/private/tmp/moss-round3-20260919/fix-fix-runner/prototypes/capacity-campaign/measurement.py'
+
+&gt;   ???
+E   FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/moss-round3-20260919/fix-fix-runner/prototypes/capacity-campaign/measurement.py'
+
+&lt;frozen importlib._bootstrap_external&gt;:1190: FileNotFoundError</failure></testcase></testsuite></testsuites>
