@@ -292,6 +292,41 @@ def test_dom_row_cannot_credit_later_same_word_outside_its_owned_span():
     assert all("latency" not in key for row in result["words"] for key in row)
 
 
+def test_merged_dom_row_keeps_custody_with_each_constituent_segment():
+    """Falsifies using a merged row's outer span as word custody."""
+
+    references = reference_words_from_intervals(
+        (
+            {"id": "earlier", "text": "alpha", "start": 0.0, "end": 1.0},
+            {"id": "later", "text": "alpha", "start": 10.0, "end": 11.0},
+        )
+    )
+    segments, reason = _dom_segments(
+        [
+            {
+                "start": 0.0,
+                "end": 11.0,
+                "text": "alpha ...",
+                "segments": [
+                    {"start": 0.0, "end": 1.0, "text": "alpha"},
+                    {"start": 10.0, "end": 11.0, "text": "..."},
+                ],
+            }
+        ]
+    )
+    assert reason is None
+    result = evaluate_visible_word_stream(
+        references,
+        (TranscriptObservation(12.0, segments),),
+        clock_name="rendered_dom",
+    )
+
+    assert [
+        (word["final_status"], word["first_correct_sec"])
+        for word in result["words"]
+    ] == [("correct", 12.0), ("missing", None)]
+
+
 def test_dom_rows_without_published_spans_are_unmeasured_and_earn_no_credit():
     """Falsifies silently dropping spanless rows or inventing their custody."""
 

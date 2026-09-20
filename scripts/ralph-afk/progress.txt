@@ -154,3 +154,15 @@ default budget (S17, third mismatch). This run repairs both without touching pro
 [loop 20260920-210721-35143] complete at iteration 9
 
 [loop 20260920-221141-79363] start budget=6 agent=codex branch=round4/ralph-a
+
+## Iteration 1 - prove merged-turn constituent custody gap
+- Target: candidate 1 / B1, add the required merged-row constituent-state violating control and retain it RED.
+- Files: `tests/test_visible_word_instrument.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tests/test_visible_word_instrument.py` -> expected RED, **1 failed / 20 passed**; `git diff --name-only
+  3a56ce7b..HEAD` -> only loop-state files, so the exercised instrument is byte-identical to reviewed HEAD `3a56ce7b`.
+- Evidence: `test_merged_dom_row_keeps_custody_with_each_constituent_segment`; current actual is
+  `[early missing/null, late correct/12.0]`, required is `[early correct/12.0, late missing/null]`.
+- Learned: `_dom_segments` ignores constituent state and lets one row's 0-11 s outer span transfer its sole displayed
+  `alpha` from the owned 0-1 s segment to the absent 10-11 s occurrence; inherited controls remain green.
+- Next: candidate 1 / B2, carry each merged turn's constituent `start`/`end`/`text` and publish it in one row attribute.

@@ -20,8 +20,8 @@
     (interval-end gate at `:196-199` — keep). The v2 receipt retains source-interval identity and reports interval-end
     completion once per phrase under `phrase_end_diagnostics`; word rows contain observation clocks, not inferred
     per-word latency.
-  - `tests/test_visible_word_instrument.py` — 20 focused controls include repeated/omitted phrases, merged rendered
-    rows, revisions, unchanged content across a phrase end, and API/DOM clock separation; launch args remain exactly
+  - `tests/test_visible_word_instrument.py` — 20 inherited controls remain green; the new merged-turn constituent
+    custody control is intentionally RED until B2-B3 publish and consume per-segment state. Launch args remain exactly
     `["--mute-audio"]`.
   - `tools/qualify/run.py` `request_plan()` selects 2×300 by default or 2×1800 under `--long`, derives 1,136 / 3,068
     request budgets from the declared population, and refuses short budgets before `Bundle`. `Bundle.capacity()` runs
@@ -60,6 +60,12 @@
   `prototypes/capacity-campaign/NOTES.md` was edited outside the permitted file set (B7). Not defects: the four extra
   falsifier controls mostly pass on base too (the run's own journal says so honestly) — but `VERIFY.md` must not present
   them as if each one caught a base defect, and its F1 claim must state **segment-granular** custody.
+- **2026-09-20 A2 iteration 1 — B1 control complete, RED.** The maintained control supplies one rendered row with
+  outer span 0-11 s and constituent state 0-1 s `alpha` plus 10-11 s with no emitted reference word. References are
+  `alpha` at both spans. Current `_dom_segments` ignores the constituents and assigns the row's sole `alpha` across the outer
+  span: actual statuses/clocks are `[early missing/null, late correct/12.0]`; required are
+  `[early correct/12.0, late missing/null]`. Focused module: expected **1 failed / 20 passed**. Production remains
+  untouched; B2 is next.
 - 2026-09-20 iteration 9: candidate 8 is complete. Final offline validation is **2,123 backend passed / 0 failed / 5
   skipped / 37 subtests**, **312/312 frontend passed**, and clean frontend typecheck. The self-contained verification
   record at `docs/verify/round4-run-a/VERIFY.md` ties the base RED, final custody controls, asset parity, budget
@@ -141,26 +147,22 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Candidates
 
-1. **B1 control first (RED on HEAD).** Add the merged-turn custody falsifier to `tests/test_visible_word_instrument.py`:
-   one row, outer span 0–11 s, constituent segments 0–1 s "alpha" and 10–11 s "<later phrase>" that was never emitted;
-   references alpha@0–1 and alpha@10–11 ⇒ later `missing`, earlier credited at its own observation. Record the failure
-   on `3a56ce7b` in progress.txt before fixing anything.
-2. **B2 publish per-segment model state.** Carry each constituent segment's `start`/`end`/`text` onto the turn at
+1. **B2 publish per-segment model state.** Carry each constituent segment's `start`/`end`/`text` onto the turn at
    `mergeTranscript.ts:183-199` (beside `target_segment_keys`) and render it in one additional `data-` attribute on the
    `.utt` article (`TranscriptPane.tsx:649-659`); frontend test asserts it equals the model state for a two-segment
    merged turn; typecheck, build, asset parity 17/17.
-3. **B3 consume it.** `_dom_segments` emits one `TranscriptSegment` per constituent segment (span + that segment's
-   text); a row without usable per-segment state ⇒ no DOM credit, `UNMEASURED` with a reason. Validate: candidate 1
+2. **B3 consume it.** `_dom_segments` emits one `TranscriptSegment` per constituent segment (span + that segment's
+   text); a row without usable per-segment state ⇒ no DOM credit, `UNMEASURED` with a reason. Validate: the B1 control
    passes, every run-A control still passes.
-4. **B1 extra controls.** Single-speaker whole-transcript-as-one-turn case; segments separated by a long gap.
-5. **B4 rate unit.** Plan in **lane-seconds**: each live family declares lanes per session; `measured_rate` becomes
+3. **B1 extra controls.** Single-speaker whole-transcript-as-one-turn case; segments separated by a long gap.
+4. **B4 rate unit.** Plan in **lane-seconds**: each live family declares lanes per session; `measured_rate` becomes
    requests per lane-second with `measured_rate_unit` in the summary; a test recomputes 0.508/0.510 from the two wp30
    receipts and asserts the constant matches. Check every family's lane count against its probe (e.g. the level ladder
    at `run.py:30,452` drives two lanes via `ir_lane_ladder.py`).
-6. **B5 re-derive budgets.** New default and `--long` `planned_requests`; default `--budget` = the derived value with
+5. **B5 re-derive budgets.** New default and `--long` `planned_requests`; default `--budget` = the derived value with
    the derivation printed; `--long` still refuses when unfunded; control asserts a two-lane family plans with lanes=2.
-7. **B6 headroom provenance** and **B7 file scope** (move or justify `prototypes/capacity-campaign/NOTES.md`).
-8. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
+6. **B6 headroom provenance** and **B7 file scope** (move or justify `prototypes/capacity-campaign/NOTES.md`).
+7. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
    described as documentation of behaviour, not as base-RED falsifiers, except the one that genuinely was RED.
 
 ## Non-candidates
