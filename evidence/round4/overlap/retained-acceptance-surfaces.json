@@ -1,0 +1,58 @@
+{
+  "schema": "moss-r4-retained-acceptance-surfaces.v1",
+  "source": "/private/tmp/moss-round3-20260919/fix-identity-runtime/738-direct.json and 738-direct-state/phase2.sqlite opened read-only immutable",
+  "integrated_sha": "738cdfdde092b8ba9341179fb1d33e1c34cbd24c",
+  "cases": {
+    "alternation": {
+      "meeting_id": "wZZag8zoFPhtBz05t-4b_ovl",
+      "pre_terminal": {
+        "system": {"reference_words": 106, "observed_words": 108, "edits": 16, "substitutions": 2, "omissions": 6, "additions": 8, "text_retained": false},
+        "microphone": {"reference_words": 53, "observed_words": 55, "edits": 11, "substitutions": 1, "omissions": 4, "additions": 6, "text_retained": false}
+      },
+      "final": {
+        "version": 28,
+        "reopened_equal": true,
+        "system": {
+          "reference_words": 106,
+          "observed_words": 104,
+          "edits": 9,
+          "substitutions": 1,
+          "omissions": 5,
+          "additions": 3,
+          "text": "To figure out what something's worth, and you have to kind of weigh it. He talked about the difference between, he said, \"The stock market in the short term is a voting machine. It represents speculative interests, you know, supply and demand of people in the short term. But in the long term, the stock market's a weighing machine. You're much more accurate. It's going to tell you what something's worth. And so if you can divine what something's worth, then you can really take advantage of the market because it's really here to help you. And that's kind of the message of the"
+        },
+        "microphone": {
+          "reference_words": 53,
+          "observed_words": 58,
+          "edits": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 5,
+          "text": "Kind of the same thing, there's paternalism. Uh, they think that they're responsible for you. Um, but deference, a certain amount of deference to authority is not blind submission. It's been written implicitly in our contract, uh, for thousands of years that in exchange for some deference, uh, we are given stability, security and peace and hopefully prosperity."
+        }
+      }
+    },
+    "overlap": {
+      "meeting_id": "H1dDoT-z6tc8gfdM1aC6DcPL",
+      "final": {
+        "version": 15,
+        "reopened_equal": true,
+        "microphone": {
+          "reference_words": 53,
+          "observed_words": 58,
+          "edits": 5,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 5,
+          "text": "Kind of the same thing. There's paternalism, uh, they think that they're responsible for you. Um, but deference, a certain amount of deference to authority is not blind submission. It's been written implicitly in our contract, uh, for thousands of years that in exchange for some deference, uh, we are given stability, security and peace and hopefully prosperity."
+        }
+      }
+    }
+  },
+  "pre_terminal_custody": {
+    "verdict": "UNMEASURED",
+    "reason": "The round-3 runner retained exact scores but not the pre-terminal word streams. SQLite retains only terminal documents.",
+    "replay_falsifier": "A same-code local MPS replay produced 15/106 system and 13/53 microphone, not retained 16/106 and 11/53, so it is not substituted for historical text.",
+    "full_replay_cost": "The retained direct run used 59 remote requests; the follow-on cap is 10."
+  }
+}

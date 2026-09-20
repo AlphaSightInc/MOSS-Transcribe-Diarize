@@ -38,3 +38,16 @@ Expected: 83 attributed system edits across the demo, `overlap@1`, and `overlap@
 Per-word acoustic boundaries remain **UNMEASURED** because the source reference has record-level timing only. No listening, new alignment model, separator, alternative decoder, threshold, or product change was authorised or needed for the causal layer result.
 
 The first full-backend attempt used the wrong virtualenv and is retained in `evidence/round4/overlap/suite-attempts.md`; it is excluded from acceptance counts.
+
+## Follow-on: alternation and overlap microphone
+
+- **Question:** Do the retained alternation failures (pre-terminal 16/106 system and 11/53 microphone; final 9/106 and 5/53) and overlap final microphone 5/53 first arise in raw decoding, lane convergence, publication, or reference/cut geometry?
+- **Primitives:** exact retained score, retained terminal word stream, ordered edit alignment, audio-bounded clean reference, and local offline HF witness. A historical per-edit claim requires the corresponding retained word stream.
+- **Invariant:** preserve pre-terminal and final denominators; assign each available edit once; never replace a missing historical stream with a replay that produces different counts.
+- **Unknown:** round 3 retained pre-terminal scores but not its word streams. Those 27 edits are **UNMEASURED** by class.
+- **Falsifier:** recovery of the historical pre-terminal text can overturn its `UNMEASURED` result; loss between raw and publication overturns zero class-(b)/(c).
+- **Tool decision:** retained S17 documents and round-3 summaries answer final surfaces. Two local offline HF witnesses adjudicate Keyu's cut/reference; the existing local Bill witness adjudicates Bill. GPU was leased and checked idle, but no request was necessary, so it was released at 0/10.
+
+Final attribution: alternation system `a=2,b=0,c=0,d=7`; alternation microphone `a=5,b=0,c=0,d=0`; overlap microphone `a=5,b=0,c=0,d=0`. Proposal-only correction replay: 5/102, 5/53, and 5/53 respectively. The Bill replay exposes three decoder-surface errors masked by the old reference; it does not reduce to the original class-(a) count alone.
+
+The Keyu source corpus row omits audible `Kind of the same thing`; the acceptance fixture already corrects it. The new proposal records source-corpus repair only and is not applied. Strict xfails protect both Bill defects and the Keyu source defect. No product code changed.

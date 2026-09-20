@@ -23,6 +23,20 @@
       "end": 24.0,
       "text": "To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, the stock market in the short term is a voting machine. It represents speculative interests, supply and demand of people in the short term. But in the long term, the stock market is a weighing machine. You're much more accurate. It's going to tell you what something's worth. And so if you can divine what something's worth.",
       "notes": "Diagnostic-ladder proposal bounded to its retained 24 s meeting audio."
+    },
+    "alternation_system_29s": {
+      "speaker": "Bill Ackman",
+      "start": 0.0,
+      "end": 29.0,
+      "text": "To figure out what something's worth and you have to kind of weigh it. He talked about the difference between, he said, the stock market in the short term is a voting machine. It represents speculative interests, supply and demand of people in the short term. But in the long term, the stock market is a weighing machine. You're much more accurate. It's going to tell you what something's worth. And so if you can divine what something's worth, then you can really take advantage of the market because it's really here to help you. And that's kind of the message of.",
+      "notes": "Same audited 29 s Bill population as demo_overlap_29s, named explicitly for alternation replay. Proposal only; the retained acceptance fixture is unchanged."
+    },
+    "keyu_microphone_0_25_source_corpus": {
+      "speaker": "Keyu Jin",
+      "start": 0.0,
+      "end": 25.0,
+      "text": "Kind of the same thing. There's paternalism, they think that they're responsible for you. But a certain amount of deference to authority is not blind submission. It's been written implicitly in our contract for thousands of years that in exchange for some deference, we are given stability, security, and peace and hopefully prosperity.",
+      "notes": "Adds the audible five-word leading sentence tail missing from the source corpus row. The acceptance fixture already contains this correction; this proposal is never applied to the source corpus. Fillers and repeated deference remain scoring additions under the clean-reference policy."
     }
   }
 }
