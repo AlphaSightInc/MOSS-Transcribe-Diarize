@@ -208,3 +208,19 @@ default budget (S17, third mismatch). This run repairs both without touching pro
 - Learned: the B3 parser already generalizes to both required shapes, so no production change was needed.
 - Next: candidate 1 / B4, correct planning from session-seconds to lane-seconds and reproduce the rate from both wp30
   receipts.
+
+## Iteration 5 - plan decoder requests in lane-seconds
+- Target: candidate 1 / B4; the unit correction also closes B5's derived budget and refusal controls.
+- Files: `tools/qualify/run.py`, `tools/qualify/test_bundle.py`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: throwaway one-command prototype reproduced **2,440/2,440 unique** over 4×2×600 and **2,448/2,448
+  unique** over 8×2×300, both rounding to 0.51 requests/lane-second; focused controls first RED **4 failed / 12
+  passed**, then `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider
+  tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py` -> **24/24 passed**; bare `tools/qualify/run.py
+  --long` -> exit 2 before startup, `planned_requests=6082 budget=2238 shortfall=3844`; `git diff --check` -> clean.
+- Evidence: the two `evidence/mvpfix/wp30/*/requests.jsonl` receipts and their `result.json`; probe source establishes
+  per-session lane counts. Default = **3,457 lane-seconds / 2,238 requests**; long = **9,457 / 6,082**. Bare long with
+  the derived default budget refuses before `Bundle`, shortfall **3,844**.
+- Learned: session-seconds erased the decoder's lane multiplicity. Lifecycle is the only mixed family: three two-lane
+  sessions, one empty session, then two system-only half-second sessions; all other selected live families drive two
+  lanes per session.
+- Next: candidate 1, record B6 headroom provenance and resolve B7's out-of-scope prototype note.

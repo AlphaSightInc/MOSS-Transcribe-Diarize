@@ -31,22 +31,30 @@ LADDER = Path('/Users/gao/Documents/Codex/2026-09-17/new-realtime-voice-chat-2/m
 CASES = ['system@1', 'mic@1', 'overlap@1', 'overlap@0.316', 'overlap@0.1', 'overlapsysquiet@0.316']
 BROWSER_CASES = tuple(range(1, 17))
 MEASURED_REQUEST_RATE = .51
-REQUEST_RATE_SOURCE = 'evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl'
+MEASURED_REQUEST_RATE_UNIT = 'requests_per_lane_second'
+REQUEST_RATE_EVIDENCE = (
+    dict(source_receipt='evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl',
+         unique_request_ids=2440, sessions=4, lanes_per_session=2, seconds_per_session=600),
+    dict(source_receipt='evidence/mvpfix/wp30/20260918-064644-1r-8x300/requests.jsonl',
+         unique_request_ids=2448, sessions=8, lanes_per_session=2, seconds_per_session=300),
+)
+REQUEST_RATE_SOURCE = REQUEST_RATE_EVIDENCE[0]['source_receipt']
 REQUEST_HEADROOM = 1.25
-LIVE_BENCH_SESSION_SECONDS = {
+LIVE_BENCH_SESSIONS = {
     # verify_workspace: primary capture, two controlled lane cases, recognition,
     # two bounded outage cases, then three eight-second repeat captures.
-    'workspace': (18, 54, 29, 30, 70, 87, 8, 8, 8),
-    'demo_lanes': (54, 29),
+    'workspace': ((18, 2), (54, 2), (29, 2), (30, 2), (70, 2), (87, 2), (8, 2), (8, 2), (8, 2)),
+    'demo_lanes': ((54, 2), (29, 2)),
     # Six sessions: three four-frame captures, one empty capture, then two
-    # one-frame concurrent captures. The production wire frame is 0.5 seconds.
-    'lifecycle': (2, 2, 2, 0, .5, .5),
-    'reshare': (20,),
-    'identity_stress': (60, 60, 60),
-    'level_ladder': (24, 24, 24, 24, 24, 24),
+    # system-only one-frame concurrent captures. The wire frame is 0.5 seconds.
+    'lifecycle': ((2, 2), (2, 2), (2, 2), (0, 0), (.5, 1), (.5, 1)),
+    'reshare': ((20, 2),),
+    'identity_stress': ((60, 2), (60, 2), (60, 2)),
+    'level_ladder': ((24, 2), (24, 2), (24, 2), (24, 2), (24, 2), (24, 2)),
     # Cases 1-6, 11, 15 and 16 create these bounded live sessions. The other
     # browser cases are still represented by BROWSER_CASES below.
-    'browser_stress_all': (8, 1, 1, 68, 19, 36, 16, 8, 50, 73, 45, 58),
+    'browser_stress_all': ((8, 2), (1, 2), (1, 2), (68, 2), (19, 2), (36, 2),
+                           (16, 2), (8, 2), (50, 2), (73, 2), (45, 2), (58, 2)),
 }
 WORKSPACE_FILE_SECONDS = (50, 50)
 DEFAULT_FILE_SECONDS = (360, 180, 180, 180)
@@ -67,20 +75,22 @@ def request_plan(long):
     """Return the selected decoder population before any bundle work starts."""
     from moss_transcribe_diarize.app.windowed_transcription import WindowedRunner, plan_windows
 
+    def live_bench(sessions):
+        seconds = [duration for duration, _ in sessions]
+        lanes = [count for _, count in sessions]
+        return dict(session_seconds=seconds, lanes_per_session=lanes, sessions=len(sessions),
+                    seconds=sum(seconds), lane_seconds=sum(duration * count for duration, count in sessions))
+
     live_benches = {
-        name: dict(session_seconds=list(seconds), sessions=len(seconds), seconds=sum(seconds))
-        for name, seconds in LIVE_BENCH_SESSION_SECONDS.items()
+        name: live_bench(sessions) for name, sessions in LIVE_BENCH_SESSIONS.items()
     }
     if long:
-        live_benches['capacity_2x1800'] = dict(
-            session_seconds=[1800, 1800], sessions=2, seconds=3600,
-        )
+        live_benches['capacity_2x1800'] = live_bench(((1800, 2), (1800, 2)))
     else:
-        live_benches['capacity_2x300'] = dict(
-            session_seconds=[300, 300], sessions=2, seconds=600,
-        )
+        live_benches['capacity_2x300'] = live_bench(((300, 2), (300, 2)))
     live_sessions = sum(bench['sessions'] for bench in live_benches.values())
     live_session_seconds = sum(bench['seconds'] for bench in live_benches.values())
+    live_lane_seconds = sum(bench['lane_seconds'] for bench in live_benches.values())
     file_seconds = [*WORKSPACE_FILE_SECONDS, *DEFAULT_FILE_SECONDS,
                     *(LONG_FILE_SECONDS if long else ())]
     file_windows = sum(len(plan_windows(
@@ -92,25 +102,42 @@ def request_plan(long):
         live_benches=live_benches,
         live_sessions=live_sessions,
         live_session_seconds=live_session_seconds,
+        live_lane_seconds=live_lane_seconds,
         file_seconds=file_seconds,
         file_windows=file_windows,
         window_seconds=WindowedRunner.window_seconds,
         stride_seconds=WindowedRunner.stride_seconds,
         browser_cases=list(BROWSER_CASES),
     )
-    live_session_requests = live_session_seconds * MEASURED_REQUEST_RATE
-    unadjusted = live_session_requests + file_windows + len(BROWSER_CASES)
+    measured_rate_evidence = []
+    for evidence in REQUEST_RATE_EVIDENCE:
+        lane_seconds = evidence['sessions'] * evidence['lanes_per_session'] * evidence['seconds_per_session']
+        observed_rate = evidence['unique_request_ids'] / lane_seconds
+        measured_rate_evidence.append(dict(
+            **evidence, lane_seconds=lane_seconds, observed_rate=round(observed_rate, 6),
+            rounded_rate=round(observed_rate, 2),
+            calculation=(f"{evidence['unique_request_ids']} unique requests / "
+                         f"({evidence['sessions']} sessions * {evidence['lanes_per_session']} lanes/session * "
+                         f"{evidence['seconds_per_session']} seconds/session) = {observed_rate:.6f} "
+                         f"{MEASURED_REQUEST_RATE_UNIT}; rounded to 2 decimals = {observed_rate:.2f}"),
+        ))
+    live_lane_requests = live_lane_seconds * MEASURED_REQUEST_RATE
+    unadjusted = live_lane_requests + file_windows + len(BROWSER_CASES)
     return dict(
         measured_rate=MEASURED_REQUEST_RATE,
+        measured_rate_unit=MEASURED_REQUEST_RATE_UNIT,
+        measured_rate_evidence=measured_rate_evidence,
         source_receipt=REQUEST_RATE_SOURCE,
         headroom=REQUEST_HEADROOM,
         planned_requests=math.ceil(unadjusted * REQUEST_HEADROOM),
         request_derivation=dict(
-            live_session_requests=round(live_session_requests, 3),
+            live_lane_requests=round(live_lane_requests, 3),
             file_window_requests=file_windows,
             browser_case_requests=len(BROWSER_CASES),
             unadjusted_requests=round(unadjusted, 3),
-            calculation='ceil(unadjusted_requests * headroom)',
+            calculation=(f"ceil(({live_lane_seconds:g} lane_seconds * {MEASURED_REQUEST_RATE:g} "
+                         f"{MEASURED_REQUEST_RATE_UNIT} + {file_windows} file_window_requests + "
+                         f"{len(BROWSER_CASES)} browser_case_requests) * {REQUEST_HEADROOM:g} headroom)"),
         ),
         population=population,
     )
@@ -167,7 +194,8 @@ class Bundle:
                                        python=sys.version.split()[0], node=subprocess.check_output(['node','--version'], text=True).strip(),
                                        decoder_tunnel_url=f'http://127.0.0.1:{self.decoder_upstream_port}', decoder_base_url='http://127.0.0.1:19125/v1'),
                          gates=[], request_budget=args.budget, long=args.long, integrated_candidate=self.sha,
-                         measured_rate=plan['measured_rate'], source_receipt=plan['source_receipt'],
+                         measured_rate=plan['measured_rate'], measured_rate_unit=plan['measured_rate_unit'],
+                         measured_rate_evidence=plan['measured_rate_evidence'], source_receipt=plan['source_receipt'],
                          headroom=plan['headroom'], planned_requests=plan['planned_requests'],
                          request_derivation=plan['request_derivation'],
                          request_population=plan['population'])
@@ -180,6 +208,9 @@ class Bundle:
         lines = ['# Local qualification', '', f"Candidate `{self.sha}`; clean at start: {self.data['identity']['tree_clean']}.",
                  f"Verdict: {self.data.get('verdict', 'INCOMPLETE')}.",
                  'Local measurement only; no deployment or attended-capture acceptance.', '',
+                 f"Request rate: {self.data['measured_rate']} {self.data['measured_rate_unit']}.",
+                 f"Request-rate evidence: {json.dumps(self.data['measured_rate_evidence'], separators=(',', ':'))}.",
+                 f"Request derivation: {json.dumps(self.data['request_derivation'], separators=(',', ':'))}.", '',
                  '| Gate | Status | Counts | Seconds |', '|---|---|---|---|']
         reasons = []
         for g in self.data['gates']:

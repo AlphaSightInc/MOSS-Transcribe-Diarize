@@ -18,6 +18,7 @@ def test_missing_is_not_pass():
 def test_request_plan_uses_selected_gate_population_and_retains_provenance():
     default = qualify_run.request_plan(long=False)
     assert default['measured_rate'] == .51
+    assert default['measured_rate_unit'] == 'requests_per_lane_second'
     assert default['source_receipt'] == 'evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl'
     assert default['headroom'] == 1.25
     population = default['population']
@@ -27,29 +28,52 @@ def test_request_plan_uses_selected_gate_population_and_retains_provenance():
         'capacity_2x300',
     }
     assert population['live_benches']['capacity_2x300']['session_seconds'] == [300, 300]
+    assert population['live_benches']['capacity_2x300']['lanes_per_session'] == [2, 2]
+    assert population['live_benches']['level_ladder']['lanes_per_session'] == [2] * 6
+    assert population['live_benches']['lifecycle']['lanes_per_session'] == [2, 2, 2, 0, 1, 1]
     assert population['live_sessions'] == 41
     assert population['live_session_seconds'] == 1729
+    assert population['live_lane_seconds'] == 3457
     assert population['file_seconds'] == [50, 50, 360, 180, 180, 180]
     assert population['file_windows'] == 11
     assert population['window_seconds'] == 150
     assert population['stride_seconds'] == 120
     assert population['browser_cases'] == list(range(1, 17))
     assert default['request_derivation'] == {
-        'live_session_requests': 881.79,
+        'live_lane_requests': 1763.07,
         'file_window_requests': 11,
         'browser_case_requests': 16,
-        'unadjusted_requests': 908.79,
-        'calculation': 'ceil(unadjusted_requests * headroom)',
+        'unadjusted_requests': 1790.07,
+        'calculation': 'ceil((3457 lane_seconds * 0.51 requests_per_lane_second + 11 file_window_requests + 16 browser_case_requests) * 1.25 headroom)',
     }
-    assert default['planned_requests'] == 1136
+    assert default['planned_requests'] == 2238
 
     long = qualify_run.request_plan(long=True)
     assert 'capacity_2x300' not in long['population']['live_benches']
     assert long['population']['live_benches']['capacity_2x1800']['session_seconds'] == [1800, 1800]
+    assert long['population']['live_benches']['capacity_2x1800']['lanes_per_session'] == [2, 2]
     assert long['population']['live_sessions'] == 41
     assert long['population']['live_session_seconds'] == 4729
+    assert long['population']['live_lane_seconds'] == 9457
     assert long['population']['file_windows'] == 26
-    assert long['planned_requests'] == 3068
+    assert long['planned_requests'] == 6082
+
+
+def test_measured_request_rate_recomputes_from_each_retained_receipt():
+    plan = qualify_run.request_plan(long=False)
+    assert plan['source_receipt'] == plan['measured_rate_evidence'][0]['source_receipt']
+    for evidence in plan['measured_rate_evidence']:
+        receipt = qualify_run.ROOT / evidence['source_receipt']
+        rows = [json.loads(line) for line in receipt.read_text().splitlines()]
+        result = json.loads((receipt.parent / 'result.json').read_text())
+        unique_requests = {row['request'] for row in rows}
+        assert len(rows) == len(unique_requests) == evidence['unique_request_ids']
+        assert result['sessions'] == evidence['sessions']
+        assert result['seconds'] == evidence['seconds_per_session']
+        rate = len(unique_requests) / (
+            evidence['sessions'] * evidence['lanes_per_session'] * evidence['seconds_per_session']
+        )
+        assert round(rate, 2) == plan['measured_rate'] == evidence['rounded_rate']
 
 
 def test_unfunded_plan_refuses_before_bundle_or_decoder_start(monkeypatch, capsys):
@@ -57,9 +81,9 @@ def test_unfunded_plan_refuses_before_bundle_or_decoder_start(monkeypatch, capsy
         raise AssertionError('bundle started before budget admission')
 
     monkeypatch.setattr(qualify_run, 'Bundle', forbidden_start)
-    assert qualify_run.main(['--budget', '1135']) == 2
+    assert qualify_run.main(['--budget', '2237']) == 2
     error = capsys.readouterr().err
-    assert 'planned_requests=1136' in error
+    assert 'planned_requests=2238' in error
     assert 'shortfall=1' in error
 
 
@@ -68,14 +92,14 @@ def test_default_budget_funds_default_but_not_long_population(monkeypatch, capsy
         pass
 
     def capture_default(args, plan):
-        assert args.budget == plan['planned_requests'] == 1136
+        assert args.budget == plan['planned_requests'] == 2238
         raise DefaultPlanReached
 
     monkeypatch.setattr(qualify_run, 'Bundle', capture_default)
     with pytest.raises(DefaultPlanReached):
         qualify_run.main([])
     assert qualify_run.main(['--long']) == 2
-    assert 'planned_requests=3068 budget=1136 shortfall=1932' in capsys.readouterr().err
+    assert 'planned_requests=6082 budget=2238 shortfall=3844' in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(('long', 'name', 'seconds'), [

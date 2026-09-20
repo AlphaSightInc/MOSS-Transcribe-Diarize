@@ -19,11 +19,10 @@
     (interval-end gate at `:196-199` — keep). The v2 receipt retains source-interval identity and reports interval-end
     completion once per phrase under `phrase_end_diagnostics`; word rows contain observation clocks, not inferred
     per-word latency.
-  - `tests/test_visible_word_instrument.py` — 20 inherited controls remain green; the new merged-turn constituent
-    custody control is intentionally RED until B2-B3 publish and consume per-segment state. Launch args remain exactly
-    `["--mute-audio"]`.
-  - `tools/qualify/run.py` `request_plan()` selects 2×300 by default or 2×1800 under `--long`, derives 1,136 / 3,068
-    request budgets from the declared population, and refuses short budgets before `Bundle`. `Bundle.capacity()` runs
+  - `tests/test_visible_word_instrument.py` — all 23 controls are green, including the merged-turn, whole-transcript,
+    and long-gap constituent-custody cases. Launch args remain exactly `["--mute-audio"]`.
+  - `tools/qualify/run.py` `request_plan()` selects 2×300 by default or 2×1800 under `--long`, derives 2,238 / 6,082
+    request budgets from declared lane-seconds, and refuses short budgets before `Bundle`. `Bundle.capacity()` runs
     exactly the selected row and retains `capacity_2x1800: REQUIRED-NOT-RUN` in every default summary.
   - `tools/qualify/test_bundle.py` — focused controls cover population arithmetic, derived default admission, long-mode
     refusal, exact runner arguments, unavailable-stack reporting, and counted proxy enforcement.
@@ -45,12 +44,13 @@
   constituent state clears DOM observations and leaves `rendered_dom: UNMEASURED` with a reason. The maintained B1
   repeated-`alpha` control is GREEN: the 0–1 s occurrence is `correct@12.0`, while the absent 10–11 s occurrence is
   `missing/null`. Focused module: **21/21 passed**.
-- **Rate unit is wrong (B4–B5).** Lead-verified: `evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl` = 2,440
-  lines / 2,440 unique `request` ids; its `result.json` says `sessions: 4, seconds: 600`; `evidence/mvpfix/wp30/NOTES.md:36`
-  says "four simultaneous **two-lane** sessions" ⇒ 2,440 / (4 × 2 × 600) = **0.508 per lane-second** (= 1.017 per
-  session-second). The 8×300 receipt gives 2,448 / (8 × 2 × 300) = **0.510 per lane-second**. `run.py:33-34` pins 0.51
-  but `request_plan()` multiplies **session**-seconds, so every two-lane family is planned at half its real cost.
-  The earlier line in this file ("1,220 requests over 4×600 s") was the lead's arithmetic error and is **retracted**.
+- **B4–B5 complete.** Every live family declares `lanes_per_session`; the planner multiplies 0.51
+  `requests_per_lane_second` by lane-seconds. The two retained receipts independently reproduce the rate:
+  2,440 / (4 × 2 × 600) = 0.5083 and 2,448 / (8 × 2 × 300) = 0.5100. Default population is 3,457 lane-seconds,
+  yielding `ceil((3457 × 0.51 + 11 + 16) × 1.25) = 2,238`; long is 9,457 lane-seconds and 6,082 requests. The
+  default budget is therefore 2,238; bare `--long` refuses before `Bundle` with shortfall 3,844. Both JSON and Markdown
+  summaries retain the explicit unit, source receipts, unique-request counts, denominators, and arithmetic. Focused
+  controls first RED **4 failed / 12 passed**, then GREEN **24/24** with speaker-quality helpers.
 - Other review findings to fix: `REQUEST_HEADROOM = 1.25` has no recorded source (B6);
   `prototypes/capacity-campaign/NOTES.md` was edited outside the permitted file set (B7). Not defects: the four extra
   falsifier controls mostly pass on base too (the run's own journal says so honestly) — but `VERIFY.md` must not present
@@ -156,14 +156,8 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Candidates
 
-1. **B4 rate unit.** Plan in **lane-seconds**: each live family declares lanes per session; `measured_rate` becomes
-   requests per lane-second with `measured_rate_unit` in the summary; a test recomputes 0.508/0.510 from the two wp30
-   receipts and asserts the constant matches. Check every family's lane count against its probe (e.g. the level ladder
-   at `run.py:30,452` drives two lanes via `ir_lane_ladder.py`).
-2. **B5 re-derive budgets.** New default and `--long` `planned_requests`; default `--budget` = the derived value with
-   the derivation printed; `--long` still refuses when unfunded; control asserts a two-lane family plans with lanes=2.
-3. **B6 headroom provenance** and **B7 file scope** (move or justify `prototypes/capacity-campaign/NOTES.md`).
-4. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
+1. **B6 headroom provenance** and **B7 file scope** (move or justify `prototypes/capacity-campaign/NOTES.md`).
+2. **VERIFY.md rewrite + full suites.** F1 claim states segment-granular custody; the four inherited controls are
    described as documentation of behaviour, not as base-RED falsifiers, except the one that genuinely was RED.
 
 ## Non-candidates
