@@ -1,0 +1,40 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.0,
+      "end": 5.28,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "Kind of the same thing. There's paternalism. They think that they're responsible for you.",
+      "source_lane": "microphone"
+    },
+    {
+      "id": "seg_0002",
+      "start": 6.14,
+      "end": 11.98,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "But deference, a certain amount of deference to authority is not blind submission.",
+      "source_lane": "microphone"
+    },
+    {
+      "id": "seg_0003",
+      "start": 12.06,
+      "end": 19.28,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "It's been written implicitly in our contract for thousands of years that in exchange for some deference,",
+      "source_lane": "microphone"
+    },
+    {
+      "id": "seg_0004",
+      "start": 20.12,
+      "end": 23.98,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "we are given stability, security, and peace, and hopefully.",
+      "source_lane": "microphone"
+    }
+  ]
+}

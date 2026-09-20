@@ -1,0 +1,90 @@
+{
+  "schema": "moss-r4-6-raw-window.v1",
+  "request": {
+    "request": 1,
+    "case": "R4-6-system-0-29",
+    "samples": 464000,
+    "sample_rate": 16000,
+    "model": "OpenMOSS-Team/MOSS-Transcribe-Diarize",
+    "base_url": "http://127.0.0.1:18314/v1",
+    "decoding": "greedy",
+    "temperature": null,
+    "retry": 0,
+    "in_flight": 1,
+    "started_epoch": 1789939231.9683998,
+    "status": "completed",
+    "ended_epoch": 1789939234.4710531,
+    "elapsed_seconds": 2.502605916990433,
+    "generated_tokens": 301,
+    "peak_in_flight": 1
+  },
+  "raw_text": "[0.54][S01] To figure out what something's worth and you have to kind of weigh it.[3.27][4.08][S01] He talked about the difference between, he said, \"The stock market in the short term is a voting[8.88][8.88][S01] machine.[9.57][9.57][S01] It represents speculative interests, you know, supply and demand of people in the short[14.88][14.88][S01] term.[15.33][15.33][S01] But in the long term, the stock market is a weighing machine.[17.67][18.36][S01] You're much more accurate.[19.38][19.68][S01] It's going to tell you what something's worth.[21.12][21.36][S01] And so if you can divine what something's worth, then you can really take advantage[25.41][25.41][S01] of the market because it's really here to to help you.[27.81][28.02][S01] And that's kind of the message of.[28.98]",
+  "parsed_segments": [
+    {
+      "speaker": "S01",
+      "start": 0.54,
+      "end": 3.27,
+      "text": "To figure out what something's worth and you have to kind of weigh it."
+    },
+    {
+      "speaker": "S01",
+      "start": 4.08,
+      "end": 8.88,
+      "text": "He talked about the difference between, he said, \"The stock market in the short term is a voting"
+    },
+    {
+      "speaker": "S01",
+      "start": 8.88,
+      "end": 9.57,
+      "text": "machine."
+    },
+    {
+      "speaker": "S01",
+      "start": 9.57,
+      "end": 14.88,
+      "text": "It represents speculative interests, you know, supply and demand of people in the short"
+    },
+    {
+      "speaker": "S01",
+      "start": 14.88,
+      "end": 15.33,
+      "text": "term."
+    },
+    {
+      "speaker": "S01",
+      "start": 15.33,
+      "end": 17.67,
+      "text": "But in the long term, the stock market is a weighing machine."
+    },
+    {
+      "speaker": "S01",
+      "start": 18.36,
+      "end": 19.38,
+      "text": "You're much more accurate."
+    },
+    {
+      "speaker": "S01",
+      "start": 19.68,
+      "end": 21.12,
+      "text": "It's going to tell you what something's worth."
+    },
+    {
+      "speaker": "S01",
+      "start": 21.36,
+      "end": 25.41,
+      "text": "And so if you can divine what something's worth, then you can really take advantage"
+    },
+    {
+      "speaker": "S01",
+      "start": 25.41,
+      "end": 27.81,
+      "text": "of the market because it's really here to to help you."
+    },
+    {
+      "speaker": "S01",
+      "start": 28.02,
+      "end": 28.98,
+      "text": "And that's kind of the message of."
+    }
+  ]
+}

@@ -1,0 +1,1596 @@
+{
+  "schema": "moss-r4-6-attribution.v1",
+  "verdict": "SUPPORTED",
+  "finding": "reference/cut defects plus raw decoder additions; zero lane-convergence or publication loss",
+  "stage_invariant": "attribute each edit once at its first causal stage",
+  "layer_checks": {
+    "raw_equals_demo_published_word_stream": true,
+    "ladder_rows_equal_each_other_and_are_raw_prefix": true,
+    "publication_mapping_text_preserving": "moss_transcribe_diarize/app/phase2_live.py:1312-1338",
+    "class_b_count": 0,
+    "class_c_count": 0
+  },
+  "cases": {
+    "demo_overlap_gain_0.03": {
+      "system": {
+        "reference_words": 106,
+        "observed_words": 105,
+        "edits": 13,
+        "substitutions": 2,
+        "omissions": 6,
+        "additions": 5,
+        "classes": {
+          "a": 3,
+          "d": 10
+        }
+      },
+      "microphone": {
+        "reference_words": 53,
+        "observed_words": 58,
+        "edits": 5,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 5,
+        "scope": "denominator only; brief requests system per-word attribution"
+      }
+    },
+    "overlap@1": {
+      "system": {
+        "reference_words": 106,
+        "observed_words": 81,
+        "edits": 35,
+        "substitutions": 2,
+        "omissions": 29,
+        "additions": 4,
+        "classes": {
+          "a": 2,
+          "d": 33
+        }
+      },
+      "microphone": {
+        "reference_words": 53,
+        "observed_words": 53,
+        "edits": 2,
+        "substitutions": 0,
+        "omissions": 1,
+        "additions": 1
+      },
+      "ladder_reported_counts": {
+        "final_words_all_speakers": 142,
+        "speaker_0001_words": 86,
+        "speaker_0002_words": 56,
+        "note": "ladder reporter uses a different token splitter; ordered WER above uses production lane_word_oracle.words"
+      }
+    },
+    "overlap@0.316": {
+      "system": {
+        "reference_words": 106,
+        "observed_words": 81,
+        "edits": 35,
+        "substitutions": 2,
+        "omissions": 29,
+        "additions": 4,
+        "classes": {
+          "a": 2,
+          "d": 33
+        }
+      },
+      "microphone": {
+        "reference_words": 53,
+        "observed_words": 53,
+        "edits": 2,
+        "substitutions": 0,
+        "omissions": 1,
+        "additions": 1
+      },
+      "ladder_reported_counts": {
+        "final_words_all_speakers": 142,
+        "speaker_0001_words": 86,
+        "speaker_0002_words": 56,
+        "note": "ladder reporter uses a different token splitter; ordered WER above uses production lane_word_oracle.words"
+      }
+    }
+  },
+  "rows": [
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 1,
+      "operation": "omission",
+      "reference_index": 0,
+      "hypothesis_index": null,
+      "reference_word": "and",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 2,
+      "operation": "omission",
+      "reference_index": 1,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 3,
+      "operation": "omission",
+      "reference_index": 2,
+      "hypothesis_index": null,
+      "reference_word": "key",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 4,
+      "operation": "omission",
+      "reference_index": 3,
+      "hypothesis_index": null,
+      "reference_word": "is",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 5,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 37,
+      "reference_word": null,
+      "hypothesis_word": "you",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "a",
+      "cause": "raw_decoder_addition",
+      "evidence": "raw-system-0-29.json:23"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 6,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 38,
+      "reference_word": null,
+      "hypothesis_word": "know",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "a",
+      "cause": "raw_decoder_addition",
+      "evidence": "raw-system-0-29.json:23"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 7,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 55,
+      "reference_word": null,
+      "hypothesis_word": "market",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 8,
+      "operation": "substitution",
+      "reference_index": 57,
+      "hypothesis_index": 56,
+      "reference_word": "market's",
+      "hypothesis_word": "is",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 9,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 60,
+      "reference_word": null,
+      "hypothesis_word": "you're",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 10,
+      "operation": "substitution",
+      "reference_index": 77,
+      "hypothesis_index": 77,
+      "reference_word": "define",
+      "hypothesis_word": "divine",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 11,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 94,
+      "reference_word": null,
+      "hypothesis_word": "to",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "a",
+      "cause": "raw_decoder_addition",
+      "evidence": "raw-system-0-29.json:23"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 12,
+      "operation": "omission",
+      "reference_index": 104,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "cut_before_reference_tail",
+      "evidence": "raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:9"
+    },
+    {
+      "case": "demo_overlap_gain_0.03",
+      "lane": "system",
+      "edit_index": 13,
+      "operation": "omission",
+      "reference_index": 105,
+      "hypothesis_index": null,
+      "reference_word": "book",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "cut_before_reference_tail",
+      "evidence": "raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:9"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 1,
+      "operation": "omission",
+      "reference_index": 0,
+      "hypothesis_index": null,
+      "reference_word": "and",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 2,
+      "operation": "omission",
+      "reference_index": 1,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 3,
+      "operation": "omission",
+      "reference_index": 2,
+      "hypothesis_index": null,
+      "reference_word": "key",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 4,
+      "operation": "omission",
+      "reference_index": 3,
+      "hypothesis_index": null,
+      "reference_word": "is",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 5,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 37,
+      "reference_word": null,
+      "hypothesis_word": "you",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "a",
+      "cause": "raw_decoder_addition",
+      "evidence": "raw-system-0-29.json:23"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 6,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 38,
+      "reference_word": null,
+      "hypothesis_word": "know",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "a",
+      "cause": "raw_decoder_addition",
+      "evidence": "raw-system-0-29.json:23"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 7,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 55,
+      "reference_word": null,
+      "hypothesis_word": "market",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 8,
+      "operation": "substitution",
+      "reference_index": 57,
+      "hypothesis_index": 56,
+      "reference_word": "market's",
+      "hypothesis_word": "is",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 9,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 60,
+      "reference_word": null,
+      "hypothesis_word": "you're",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 10,
+      "operation": "substitution",
+      "reference_index": 77,
+      "hypothesis_index": 77,
+      "reference_word": "define",
+      "hypothesis_word": "divine",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 11,
+      "operation": "omission",
+      "reference_index": 81,
+      "hypothesis_index": null,
+      "reference_word": "then",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 12,
+      "operation": "omission",
+      "reference_index": 82,
+      "hypothesis_index": null,
+      "reference_word": "you",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 13,
+      "operation": "omission",
+      "reference_index": 83,
+      "hypothesis_index": null,
+      "reference_word": "can",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 14,
+      "operation": "omission",
+      "reference_index": 84,
+      "hypothesis_index": null,
+      "reference_word": "really",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 15,
+      "operation": "omission",
+      "reference_index": 85,
+      "hypothesis_index": null,
+      "reference_word": "take",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 16,
+      "operation": "omission",
+      "reference_index": 86,
+      "hypothesis_index": null,
+      "reference_word": "advantage",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 17,
+      "operation": "omission",
+      "reference_index": 87,
+      "hypothesis_index": null,
+      "reference_word": "of",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 18,
+      "operation": "omission",
+      "reference_index": 88,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 19,
+      "operation": "omission",
+      "reference_index": 89,
+      "hypothesis_index": null,
+      "reference_word": "market",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 20,
+      "operation": "omission",
+      "reference_index": 90,
+      "hypothesis_index": null,
+      "reference_word": "because",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 21,
+      "operation": "omission",
+      "reference_index": 91,
+      "hypothesis_index": null,
+      "reference_word": "it's",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 22,
+      "operation": "omission",
+      "reference_index": 92,
+      "hypothesis_index": null,
+      "reference_word": "really",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 23,
+      "operation": "omission",
+      "reference_index": 93,
+      "hypothesis_index": null,
+      "reference_word": "here",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 24,
+      "operation": "omission",
+      "reference_index": 94,
+      "hypothesis_index": null,
+      "reference_word": "to",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 25,
+      "operation": "omission",
+      "reference_index": 95,
+      "hypothesis_index": null,
+      "reference_word": "help",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 26,
+      "operation": "omission",
+      "reference_index": 96,
+      "hypothesis_index": null,
+      "reference_word": "you",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 27,
+      "operation": "omission",
+      "reference_index": 97,
+      "hypothesis_index": null,
+      "reference_word": "and",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 28,
+      "operation": "omission",
+      "reference_index": 98,
+      "hypothesis_index": null,
+      "reference_word": "that's",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 29,
+      "operation": "omission",
+      "reference_index": 99,
+      "hypothesis_index": null,
+      "reference_word": "kind",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 30,
+      "operation": "omission",
+      "reference_index": 100,
+      "hypothesis_index": null,
+      "reference_word": "of",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 31,
+      "operation": "omission",
+      "reference_index": 101,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 32,
+      "operation": "omission",
+      "reference_index": 102,
+      "hypothesis_index": null,
+      "reference_word": "message",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 33,
+      "operation": "omission",
+      "reference_index": 103,
+      "hypothesis_index": null,
+      "reference_word": "of",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 34,
+      "operation": "omission",
+      "reference_index": 104,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@1",
+      "lane": "system",
+      "edit_index": 35,
+      "operation": "omission",
+      "reference_index": 105,
+      "hypothesis_index": null,
+      "reference_word": "book",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 1,
+      "operation": "omission",
+      "reference_index": 0,
+      "hypothesis_index": null,
+      "reference_word": "and",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 2,
+      "operation": "omission",
+      "reference_index": 1,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 3,
+      "operation": "omission",
+      "reference_index": 2,
+      "hypothesis_index": null,
+      "reference_word": "key",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 4,
+      "operation": "omission",
+      "reference_index": 3,
+      "hypothesis_index": null,
+      "reference_word": "is",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; prior-full-audio-post-stop.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 5,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 37,
+      "reference_word": null,
+      "hypothesis_word": "you",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "a",
+      "cause": "raw_decoder_addition",
+      "evidence": "raw-system-0-29.json:23"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 6,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 38,
+      "reference_word": null,
+      "hypothesis_word": "know",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "a",
+      "cause": "raw_decoder_addition",
+      "evidence": "raw-system-0-29.json:23"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 7,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 55,
+      "reference_word": null,
+      "hypothesis_word": "market",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 8,
+      "operation": "substitution",
+      "reference_index": 57,
+      "hypothesis_index": 56,
+      "reference_word": "market's",
+      "hypothesis_word": "is",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 9,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 60,
+      "reference_word": null,
+      "hypothesis_word": "you're",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 10,
+      "operation": "substitution",
+      "reference_index": 77,
+      "hypothesis_index": 77,
+      "reference_word": "define",
+      "hypothesis_word": "divine",
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "reference_lexical_or_tokenization_mismatch",
+      "evidence": "bill-reference-source.jsonl:1; raw-system-0-29.json:23; prior-full-audio-post-stop.jsonl:4"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 11,
+      "operation": "omission",
+      "reference_index": 81,
+      "hypothesis_index": null,
+      "reference_word": "then",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 12,
+      "operation": "omission",
+      "reference_index": 82,
+      "hypothesis_index": null,
+      "reference_word": "you",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 13,
+      "operation": "omission",
+      "reference_index": 83,
+      "hypothesis_index": null,
+      "reference_word": "can",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 14,
+      "operation": "omission",
+      "reference_index": 84,
+      "hypothesis_index": null,
+      "reference_word": "really",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 15,
+      "operation": "omission",
+      "reference_index": 85,
+      "hypothesis_index": null,
+      "reference_word": "take",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 16,
+      "operation": "omission",
+      "reference_index": 86,
+      "hypothesis_index": null,
+      "reference_word": "advantage",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 17,
+      "operation": "omission",
+      "reference_index": 87,
+      "hypothesis_index": null,
+      "reference_word": "of",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 18,
+      "operation": "omission",
+      "reference_index": 88,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 19,
+      "operation": "omission",
+      "reference_index": 89,
+      "hypothesis_index": null,
+      "reference_word": "market",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 20,
+      "operation": "omission",
+      "reference_index": 90,
+      "hypothesis_index": null,
+      "reference_word": "because",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 21,
+      "operation": "omission",
+      "reference_index": 91,
+      "hypothesis_index": null,
+      "reference_word": "it's",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 22,
+      "operation": "omission",
+      "reference_index": 92,
+      "hypothesis_index": null,
+      "reference_word": "really",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 23,
+      "operation": "omission",
+      "reference_index": 93,
+      "hypothesis_index": null,
+      "reference_word": "here",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 24,
+      "operation": "omission",
+      "reference_index": 94,
+      "hypothesis_index": null,
+      "reference_word": "to",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 25,
+      "operation": "omission",
+      "reference_index": 95,
+      "hypothesis_index": null,
+      "reference_word": "help",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 26,
+      "operation": "omission",
+      "reference_index": 96,
+      "hypothesis_index": null,
+      "reference_word": "you",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 27,
+      "operation": "omission",
+      "reference_index": 97,
+      "hypothesis_index": null,
+      "reference_word": "and",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 28,
+      "operation": "omission",
+      "reference_index": 98,
+      "hypothesis_index": null,
+      "reference_word": "that's",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 29,
+      "operation": "omission",
+      "reference_index": 99,
+      "hypothesis_index": null,
+      "reference_word": "kind",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 30,
+      "operation": "omission",
+      "reference_index": 100,
+      "hypothesis_index": null,
+      "reference_word": "of",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 31,
+      "operation": "omission",
+      "reference_index": 101,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 32,
+      "operation": "omission",
+      "reference_index": 102,
+      "hypothesis_index": null,
+      "reference_word": "message",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 33,
+      "operation": "omission",
+      "reference_index": 103,
+      "hypothesis_index": null,
+      "reference_word": "of",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 34,
+      "operation": "omission",
+      "reference_index": 104,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    },
+    {
+      "case": "overlap@0.316",
+      "lane": "system",
+      "edit_index": 35,
+      "operation": "omission",
+      "reference_index": 105,
+      "hypothesis_index": null,
+      "reference_word": "book",
+      "hypothesis_word": null,
+      "reference_interval": {
+        "start": 0.0,
+        "end": 29.0,
+        "granularity": "record; word timing unavailable"
+      },
+      "class": "d",
+      "cause": "24s_input_vs_29s_reference",
+      "evidence": "ladder-duration-evidence.json:5; bill-reference-source.jsonl:1"
+    }
+  ],
+  "decoder": {
+    "requests_used": 1,
+    "budget": 40,
+    "peak_in_flight": 1,
+    "retries": 0
+  }
+}

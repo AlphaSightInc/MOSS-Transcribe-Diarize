@@ -1,0 +1,130 @@
+{
+  "segments": [
+    {
+      "id": "seg_0001",
+      "start": 0.05,
+      "end": 5.32,
+      "speaker_entity_id": "speaker-0002",
+      "speaker": "S02",
+      "text": "Kind of the same thing. There's paternalism, uh, they think that they're responsible for you.",
+      "source_lane": "microphone"
+    },
+    {
+      "id": "seg_0002",
+      "start": 0.54,
+      "end": 3.27,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "To figure out what something's worth and you have to kind of weigh it.",
+      "source_lane": "system"
+    },
+    {
+      "id": "seg_0003",
+      "start": 4.08,
+      "end": 8.88,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "He talked about the difference between, he said, \"The stock market in the short term is a voting",
+      "source_lane": "system"
+    },
+    {
+      "id": "seg_0004",
+      "start": 5.65,
+      "end": 11.92,
+      "speaker_entity_id": "speaker-0002",
+      "speaker": "S02",
+      "text": "Um, but deference, a certain amount of deference to authority is not blind submission.",
+      "source_lane": "microphone"
+    },
+    {
+      "id": "seg_0005",
+      "start": 8.88,
+      "end": 9.57,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "machine.",
+      "source_lane": "system"
+    },
+    {
+      "id": "seg_0006",
+      "start": 9.57,
+      "end": 15.33,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "It represents speculative interests, you know, supply and demand of people in the short term.",
+      "source_lane": "system"
+    },
+    {
+      "id": "seg_0007",
+      "start": 12.06,
+      "end": 19.24,
+      "speaker_entity_id": "speaker-0002",
+      "speaker": "S02",
+      "text": "It's been written implicitly in our contract, uh, for thousands of years that in exchange for some deference,",
+      "source_lane": "microphone"
+    },
+    {
+      "id": "seg_0008",
+      "start": 15.33,
+      "end": 17.67,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "But in the long term, the stock market is a weighing machine.",
+      "source_lane": "system"
+    },
+    {
+      "id": "seg_0009",
+      "start": 18.36,
+      "end": 19.38,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "You're much more accurate.",
+      "source_lane": "system"
+    },
+    {
+      "id": "seg_0010",
+      "start": 19.68,
+      "end": 21.12,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "It's going to tell you what something's worth.",
+      "source_lane": "system"
+    },
+    {
+      "id": "seg_0011",
+      "start": 19.71,
+      "end": 24.68,
+      "speaker_entity_id": "speaker-0002",
+      "speaker": "S02",
+      "text": "uh, we are given stability, security and peace and hopefully prosperity.",
+      "source_lane": "microphone"
+    },
+    {
+      "id": "seg_0012",
+      "start": 21.36,
+      "end": 25.5,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "And so if you can divine what something's worth, then you can really take advantage of",
+      "source_lane": "system"
+    },
+    {
+      "id": "seg_0013",
+      "start": 25.5,
+      "end": 27.81,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "the market because it's really here to to help you.",
+      "source_lane": "system"
+    },
+    {
+      "id": "seg_0014",
+      "start": 28.02,
+      "end": 28.98,
+      "speaker_entity_id": "speaker-0001",
+      "speaker": "S01",
+      "text": "And that's kind of the message of.",
+      "source_lane": "system"
+    }
+  ]
+}

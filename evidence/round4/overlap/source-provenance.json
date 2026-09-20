@@ -1,0 +1,22 @@
+{
+  "schema": "moss-r4-6-source-provenance.v1",
+  "s17_bundle": "/private/tmp/claude-501/stress/S17/out/89f833acd4c6-20260920T023942866422Z",
+  "bill_audio": {
+    "source": "/private/tmp/claude-501/stress/S17/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/audio.wav",
+    "duration_seconds": 60.0
+  },
+  "bill_reference": {
+    "source": "/private/tmp/claude-501/stress/S17/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/reference.jsonl",
+    "retained_projection": "bill-reference-source.jsonl",
+    "projection": "first record only; JSON-minified semantic copy"
+  },
+  "microphone_audio": {
+    "source": "/private/tmp/claude-501/stress/S17/evidence/live-policy-sweep-20260825/corpus/interview_keyu_jin_60s/audio.wav",
+    "duration_seconds": 60.0
+  },
+  "microphone_reference": {
+    "source": "/private/tmp/claude-501/stress/S17/tests/e2e/fixtures/lane-microphone-reference.json",
+    "retained_projection": "microphone-reference-source.jsonl",
+    "projection": "JSON-minified semantic copy"
+  }
+}
