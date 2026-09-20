@@ -1,0 +1,47 @@
+{
+  "copied_at": "2026-09-20T21:10:39.618542+00:00",
+  "files": [
+    {
+      "source": "/private/tmp/claude-501/stress/S17/.wp25runtime/20260920T023942866422Z/identity-scratch/gap.json",
+      "copy": "evidence/round4/gap/retained/gap.json",
+      "bytes": 30338
+    },
+    {
+      "source": "/private/tmp/claude-501/stress/S17/.wp25runtime/20260920T023942866422Z/identity/stress-events.jsonl",
+      "copy": "evidence/round4/gap/retained/stress-events.jsonl",
+      "bytes": 30444
+    },
+    {
+      "source": "/private/tmp/claude-501/stress/S17/.wp25runtime/20260920T023942866422Z/identity/stress-results.json",
+      "copy": "evidence/round4/gap/retained/stress-results.json",
+      "bytes": 1125
+    },
+    {
+      "source": "/private/tmp/claude-501/stress/S17/.wp25runtime/20260920T023942866422Z/manifest-30m.json",
+      "copy": "evidence/round4/gap/retained/manifest.json",
+      "bytes": 3458
+    },
+    {
+      "source": "/private/tmp/claude-501/stress/S17/out/89f833acd4c6-20260920T023942866422Z/identity_stress.log",
+      "copy": "evidence/round4/gap/retained/identity-stress.json",
+      "bytes": 4432
+    },
+    {
+      "source": "/private/tmp/claude-501/stress/S17/out/89f833acd4c6-20260920T023942866422Z/summary.json",
+      "copy": "evidence/round4/gap/retained/summary.json",
+      "bytes": 2190518
+    },
+    {
+      "source": "/private/tmp/claude-501/stress/S17/out/89f833acd4c6-20260920T023942866422Z/decoder-requests.jsonl",
+      "copy": "evidence/round4/gap/retained/decoder-requests.jsonl",
+      "bytes": 320625
+    },
+    {
+      "source": "/private/tmp/moss-round4-20260920/gap/evidence/round3/fix-identity/comparison-summary.json",
+      "copy": "evidence/round4/gap/retained/round3-comparison.json",
+      "bytes": 833
+    }
+  ],
+  "raw_decoder_outputs": "not retained in request ledger",
+  "audio": "Retained MP3 only; original PCM reconstructed from identity-stress/run.py source slicing; no audio in git"
+}

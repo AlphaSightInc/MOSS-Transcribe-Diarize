@@ -1,0 +1,24 @@
+{
+  "schema": "moss-round3-fix-identity-comparison.v1",
+  "classification": "c",
+  "verdict": "KNOWN_LIMITATION_L1",
+  "revisions": [
+    "a7a738cf9f9ff246f64c52c112e0bf597ba58241",
+    "738cdfdde092b8ba9341179fb1d33e1c34cbd24c"
+  ],
+  "hop": "direct_tunnel_127.0.0.1_18261_no_proxy",
+  "proxy_arms": "skipped_by_lead_ruling",
+  "exact_numerators_identical": true,
+  "alternation": {
+    "pre_terminal": {"system": "16/106", "microphone": "11/53"},
+    "final": {"system": "9/106", "microphone": "5/53"}
+  },
+  "overlap": {
+    "pre_terminal": {"system": "24/106", "microphone": "6/53"},
+    "final": {"system": "13/106", "microphone": "5/53"}
+  },
+  "remote_requests": {"integrated_direct": 59, "base_direct": 59, "total": 118, "budget": 150},
+  "product_change": false,
+  "threshold_change": false,
+  "bisection_required": false
+}

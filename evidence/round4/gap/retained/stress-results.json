@@ -1,0 +1,58 @@
+[
+  {
+    "kind": "result",
+    "case": "alternating",
+    "meeting": "Q2xFjyA7wDGF2ufpjn2itZWN",
+    "status": "completed",
+    "failure": null,
+    "finalization": "final",
+    "seconds": 63.192,
+    "stop_seconds": 3.178,
+    "identity": {
+      "version": 24,
+      "canonical_speakers": [
+        "speaker-0001",
+        "speaker-0002"
+      ],
+      "diagnostics": [
+        [
+          "status",
+          "prepared"
+        ],
+        [
+          "span_id",
+          "23"
+        ],
+        [
+          "assignments",
+          "S101->speaker-0001"
+        ]
+      ]
+    },
+    "saved_speakers": [
+      "S01",
+      "S02"
+    ],
+    "score": {
+      "ids_by_truth": {
+        "Bill": {
+          "speaker-0001": 12
+        },
+        "Keyu": {
+          "speaker-0002": 5
+        }
+      },
+      "id_switches": {
+        "Bill": 0,
+        "Keyu": 0
+      },
+      "switch_straddling_segments": 1,
+      "unresolved_segments": 0
+    },
+    "recognition_seconds": null,
+    "recognition_bar_seconds": 4.0,
+    "actions": [],
+    "bank": [],
+    "admissions": "not exposed in snapshot; see album-events.jsonl"
+  }
+]
