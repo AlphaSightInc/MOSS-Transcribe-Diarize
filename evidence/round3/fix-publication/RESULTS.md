@@ -53,3 +53,12 @@ PASS, 34 modules, 101ms
 ## Interpretation of “downloaded text”
 
 JSON must contain the canonical `S00` machine field to equal the API document. Therefore the no-literal-sentinel assertion applies to the four human-readable text formats; their visible label is `Speaker uncertain`. Applying it to raw JSON would directly contradict the required JSON/API equality.
+
+## Full-suite gate
+
+- Backend: 2,105/2,105 passed, 5 skipped, 37 subtests; pytest 182.52 s, wall 183.61 s.
+- Initial frontend attempt: 310 passed / 1 failed. `MeetingHistory` still asserted that raw JSON contained no `S00`; this was a stale assertion contradicted by required JSON/API equality, not a product failure. The test was corrected to check 4/4 human-readable downloads and the two JSON identity fields explicitly.
+- Corrected focused History control: 1/1 passed, 17 skipped.
+- Corrected full frontend: 311/311 passed across 28 files in 2.56 s.
+- TypeScript: clean.
+- Production build: clean, 34 modules in 106 ms.

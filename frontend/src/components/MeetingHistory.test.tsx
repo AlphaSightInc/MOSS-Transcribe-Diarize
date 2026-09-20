@@ -363,8 +363,13 @@ describe("MeetingHistory", () => {
     for (const content of downloadedText) {
       expect(content).toContain("Needs review");
       expect(content).toContain("Speaker uncertain");
+    }
+    for (const content of downloadedText.filter((_, index) => index !== 2)) {
       expect(content).not.toContain("S00");
     }
+    const [jsonTurn] = JSON.parse(downloadedText[2]).turns;
+    expect(jsonTurn.speaker).toBe("S00");
+    expect(jsonTurn.speaker_entity_id).toBe("S00");
   });
 
   it.each([
