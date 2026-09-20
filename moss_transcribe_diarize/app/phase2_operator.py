@@ -37,6 +37,22 @@ _STATUS_KEYS = frozenset(
         "file",
         "inference_worker",
         "queues",
+        "dispatch_stage_clocks",
+        "clock",
+        "owners",
+        "owner_kind",
+        "owner_key",
+        "owner_class",
+        "window_count",
+        "started_count",
+        "completed_count",
+        "acceptance_to_first_dispatch_ms",
+        "queue_wait_ms",
+        "service_ms",
+        "terminal_contention_ms",
+        "terminal_vs_terminal_contention_ms",
+        "completed_windows",
+        "full_denominator",
         "live_canonical",
         "live_refinement",
         "live_provisional",
@@ -165,6 +181,7 @@ class Phase2OperatorStatus:
         self._audio_root = Path(audio_root).expanduser()
         self._live = live
         self._files = files
+        self._inference_scheduler = getattr(files, "_inference_scheduler", None)
         self._v2_sessions = v2_sessions
         self._helper_presence = helper_presence
         self._capture_observations = capture_observations
@@ -299,6 +316,11 @@ class Phase2OperatorStatus:
                 + sum(phase == "queued" for phase in file_phases.values())
             ),
         }
+        stage_clocks = (
+            _zero_dispatch_stage_clocks()
+            if self._inference_scheduler is None
+            else self._inference_scheduler.stage_clock_summary()
+        )
         payload = {
             "schema": OPERATOR_STATUS_SCHEMA,
             "observed_at_utc": _utc_text(now),
@@ -313,6 +335,7 @@ class Phase2OperatorStatus:
                 ),
                 "queues": queues,
                 "backpressured_meetings": backpressured,
+                "dispatch_stage_clocks": stage_clocks,
             },
             "accounts": accounts,
             "active_meetings": active_meetings,
@@ -591,6 +614,7 @@ def render_operator_status(payload: Mapping[str, object]) -> str:
     live = _mapping(capacity["live"])
     file_capacity = _mapping(capacity["file"])
     queues = _mapping(capacity["queues"])
+    stage_clocks = _mapping(capacity["dispatch_stage_clocks"])
     storage = _mapping(status["storage"])
     sqlite = _mapping(storage["sqlite"])
     filesystems = _mapping(storage["filesystems"])
@@ -605,6 +629,13 @@ def render_operator_status(payload: Mapping[str, object]) -> str:
             f"live_canonical={queues['live_canonical']} "
             f"live_refinement={queues['live_refinement']} "
             f"live_provisional={queues['live_provisional']} batch={queues['batch']}"
+        ),
+        (
+            "Dispatch stage clocks: "
+            f"clock={stage_clocks['clock']} owners={len(stage_clocks['owners'])} "
+            f"completed={stage_clocks['completed_windows']}/{stage_clocks['full_denominator']} "
+            "terminal_vs_terminal_contention_ms="
+            f"{stage_clocks['terminal_vs_terminal_contention_ms']}"
         ),
         f"Backpressured Meetings: {capacity['backpressured_meetings']}",
         (
@@ -728,12 +759,20 @@ def _validate_status_scopes(payload: Mapping[str, object]) -> None:
     capacity = _mapping(payload["capacity"])
     _exact_keys(
         capacity,
-        {"live", "file", "inference_worker", "queues", "backpressured_meetings"},
+        {
+            "live",
+            "file",
+            "inference_worker",
+            "queues",
+            "backpressured_meetings",
+            "dispatch_stage_clocks",
+        },
         "capacity",
     )
     live_capacity = _mapping(capacity["live"])
     file_capacity = _mapping(capacity["file"])
     queues = _mapping(capacity["queues"])
+    _validate_dispatch_stage_clocks(_mapping(capacity["dispatch_stage_clocks"]))
     _exact_keys(live_capacity, {"active", "limit"}, "live capacity")
     _exact_keys(file_capacity, {"active"}, "File capacity")
     _exact_keys(
@@ -882,6 +921,62 @@ def _validate_audio(audio: Mapping[str, object], name: str) -> None:
         _exact_keys(totals, {"count", "bytes"}, name)
         _non_negative(totals["count"])
         _non_negative(totals["bytes"])
+
+
+def _validate_dispatch_stage_clocks(clocks: Mapping[str, object]) -> None:
+    _exact_keys(
+        clocks,
+        {
+            "clock",
+            "owners",
+            "terminal_vs_terminal_contention_ms",
+            "completed_windows",
+            "full_denominator",
+        },
+        "dispatch stage clocks",
+    )
+    if clocks["clock"] != "server_monotonic":
+        raise OperatorProjectionError("Operator dispatch clock is invalid.")
+    owners = clocks["owners"]
+    if not isinstance(owners, list):
+        raise OperatorProjectionError("Operator dispatch owners must be a list.")
+    for value in owners:
+        owner = _mapping(value)
+        _exact_keys(
+            owner,
+            {
+                "owner_kind",
+                "owner_key",
+                "owner_class",
+                "window_count",
+                "started_count",
+                "completed_count",
+                "acceptance_to_first_dispatch_ms",
+                "queue_wait_ms",
+                "service_ms",
+                "terminal_contention_ms",
+            },
+            "dispatch owner",
+        )
+        if owner["owner_kind"] not in {"live", "background"}:
+            raise OperatorProjectionError("Operator dispatch owner kind is invalid.")
+        if owner["owner_class"] not in {"live", "file", "terminal"}:
+            raise OperatorProjectionError("Operator dispatch owner class is invalid.")
+        if not isinstance(owner["owner_key"], str) or not owner["owner_key"]:
+            raise OperatorProjectionError("Operator dispatch owner key is invalid.")
+        for key in ("window_count", "started_count", "completed_count"):
+            _non_negative(owner[key])
+        for key in (
+            "acceptance_to_first_dispatch_ms",
+            "queue_wait_ms",
+            "service_ms",
+        ):
+            if owner[key] is not None:
+                _non_negative_number(owner[key])
+        _non_negative_number(owner["terminal_contention_ms"])
+    _non_negative_number(clocks["terminal_vs_terminal_contention_ms"])
+    _non_negative(clocks["completed_windows"])
+    _non_negative(clocks["full_denominator"])
 
 
 def _exact_keys(
@@ -1173,6 +1268,16 @@ def _zero_live_queues() -> dict[str, int | bool]:
     }
 
 
+def _zero_dispatch_stage_clocks() -> dict[str, object]:
+    return {
+        "clock": "server_monotonic",
+        "owners": [],
+        "terminal_vs_terminal_contention_ms": 0.0,
+        "completed_windows": 0,
+        "full_denominator": 0,
+    }
+
+
 def _mapping(value: object) -> Mapping[str, object]:
     return value if isinstance(value, Mapping) else {}
 
@@ -1200,6 +1305,16 @@ def _non_negative(value: object) -> int:
     if not isinstance(value, int) or isinstance(value, bool) or value < 0:
         raise OperatorProjectionError("Operator count must be a non-negative integer.")
     return value
+
+
+def _non_negative_number(value: object) -> float:
+    if (
+        not isinstance(value, (int, float))
+        or isinstance(value, bool)
+        or value < 0
+    ):
+        raise OperatorProjectionError("Operator duration must be non-negative.")
+    return float(value)
 
 
 def _utc(value: datetime) -> datetime:
