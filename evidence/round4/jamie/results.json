@@ -1,0 +1,976 @@
+{
+  "verdict": "FALSIFIED",
+  "implementation_disposition": "REJECTED: no run-B product implementation",
+  "reason": "All tried policies leave the one source-owned 0.78 s Jamie vector unresolved; unchanged current birth semantics also give non-person controls an identity. Cross-repeat Jamie pooling is an exact-audio duplicate, not independent evidence.",
+  "runtime": {
+    "device": "cpu",
+    "fresh_encoder_session": true,
+    "decoder_requests": 0,
+    "source_revision": "89f833acd4c654dd702664a17ed19783a2999c95",
+    "scorer": "r4-jamie-policy-scorer-v1",
+    "reference_sha256": "72a6173d92323d5c7ff5e6ba084063970966d4bd4e146c23e24d57949ad1a01b",
+    "audio_sha256": "e68a87f5e05d3b001ed352bc775cc6ec4d3acd4f09603fc180459d69aef1b070",
+    "manifest_sha256": "3e1d397e33bf18ffc8badcd8bf125f5d725967467a09b8c3c4e80895ce089ec9",
+    "model_sha256": "5b734353b4b410e222bbd124dd095537642237ad895727d18a3b9fee330262a8"
+  },
+  "constants": {
+    "min_match_score": 0.35,
+    "min_match_margin": 0.1,
+    "birth_min_seconds": 1.0,
+    "album_admission_seconds": 2.0,
+    "min_segment_samples": 8000
+  },
+  "acoustic_state": {
+    "jamie_interval_filter": {
+      "retained_vector": [
+        165.68,
+        166.46
+      ],
+      "excluded_below_min_segment_samples": [
+        [
+          166.57,
+          166.95
+        ],
+        [
+          177.96,
+          178.22
+        ]
+      ],
+      "min_segment_samples": 8000,
+      "sample_rate": 16000
+    },
+    "same_person_cosines": {
+      "ENG_A": 0.058275,
+      "ENG_B": 0.146357
+    },
+    "closest_different_pair_cosine": 0.267328
+  },
+  "repeated_source_diagnostic": {
+    "population": "retained 600 s run, three exact repeats of one 180 s source",
+    "pair_cosines": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "compatible_support_sec": 2.34,
+    "would_cross_birth_and_admission": true,
+    "valid_generalization_evidence": false
+  },
+  "denominators": {
+    "single_180s_source_jamie_sec": 4.221,
+    "retained_600s_three_repeat_jamie_sec": 12.663,
+    "measured_session_count_claim": 10,
+    "sessions_replayed_here": 0,
+    "adjudicated_jamie_sec": 0.0
+  },
+  "transcript_invariants": {
+    "word_changes": 0,
+    "timestamp_changes": 0
+  },
+  "policies": [
+    {
+      "policy": "P0_current",
+      "decision_state": [
+        {
+          "unit": "ben_return_1",
+          "truth": "Ben",
+          "duration_sec": 1.0,
+          "action": "match",
+          "canonical": "speaker-ben",
+          "canonical_truth": "Ben",
+          "scores": {
+            "speaker-ben": 0.465434,
+            "speaker-david": 0.099411
+          },
+          "runner_up": 0.099411,
+          "phase": "live"
+        },
+        {
+          "unit": "david_return_1",
+          "truth": "David",
+          "duration_sec": 1.37,
+          "action": "match",
+          "canonical": "speaker-david",
+          "canonical_truth": "David",
+          "scores": {
+            "speaker-david": 0.396632,
+            "speaker-ben": 0.20296
+          },
+          "runner_up": 0.20296,
+          "phase": "live"
+        },
+        {
+          "unit": "ben_return_2",
+          "truth": "Ben",
+          "duration_sec": 1.03,
+          "action": "match",
+          "canonical": "speaker-ben",
+          "canonical_truth": "Ben",
+          "scores": {
+            "speaker-ben": 0.581998,
+            "speaker-david": 0.097
+          },
+          "runner_up": 0.097,
+          "phase": "live"
+        },
+        {
+          "unit": "david_return_2",
+          "truth": "David",
+          "duration_sec": 1.35,
+          "action": "match",
+          "canonical": "speaker-david",
+          "canonical_truth": "David",
+          "scores": {
+            "speaker-david": 0.574769,
+            "speaker-ben": 0.137156
+          },
+          "runner_up": 0.137156,
+          "phase": "live"
+        },
+        {
+          "unit": "eng_a_1",
+          "truth": "ENG_A",
+          "duration_sec": 0.885833,
+          "action": "deferred",
+          "scores": {
+            "speaker-david": 0.116692,
+            "speaker-ben": 0.0
+          },
+          "runner_up": 0.0,
+          "phase": "live"
+        },
+        {
+          "unit": "eng_b_1",
+          "truth": "ENG_B",
+          "duration_sec": 0.873413,
+          "action": "deferred",
+          "scores": {
+            "speaker-david": 0.174336,
+            "speaker-ben": 0.040656
+          },
+          "runner_up": 0.040656,
+          "phase": "live"
+        },
+        {
+          "unit": "eng_a_2",
+          "truth": "ENG_A",
+          "duration_sec": 0.5725,
+          "action": "deferred",
+          "scores": {
+            "speaker-david": 0.02803,
+            "speaker-ben": 0.0
+          },
+          "runner_up": 0.0,
+          "phase": "live"
+        },
+        {
+          "unit": "eng_b_2",
+          "truth": "ENG_B",
+          "duration_sec": 0.839999,
+          "action": "deferred",
+          "scores": {
+            "speaker-david": 0.001021,
+            "speaker-ben": 0.0
+          },
+          "runner_up": 0.0,
+          "phase": "live"
+        },
+        {
+          "unit": "jamie_retained",
+          "truth": "Jamie",
+          "duration_sec": 0.78,
+          "action": "deferred",
+          "scores": {
+            "speaker-david": 0.085474,
+            "speaker-ben": 0.081448
+          },
+          "runner_up": 0.081448,
+          "phase": "live"
+        },
+        {
+          "unit": "laughter",
+          "truth": null,
+          "duration_sec": 1.85,
+          "action": "birth",
+          "canonical": "speaker-0003",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-david": 0.187862,
+            "speaker-ben": 0.065894
+          },
+          "runner_up": 0.065894
+        },
+        {
+          "unit": "synthetic_applause_proxy",
+          "truth": null,
+          "duration_sec": 1.5,
+          "action": "birth",
+          "canonical": "speaker-0004",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-david": 0.016509,
+            "speaker-0003": 0.0,
+            "speaker-ben": 0.0
+          },
+          "runner_up": 0.0
+        },
+        {
+          "unit": "synthetic_noise",
+          "truth": null,
+          "duration_sec": 1.5,
+          "action": "birth",
+          "canonical": "speaker-0005",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-0004": 0.374929,
+            "speaker-0003": 0.3129,
+            "speaker-ben": 0.058311,
+            "speaker-david": 0.031897
+          },
+          "runner_up": 0.3129
+        }
+      ],
+      "remaining_pending": [
+        [
+          "eng_a_1"
+        ],
+        [
+          "eng_b_1"
+        ],
+        [
+          "eng_a_2"
+        ],
+        [
+          "eng_b_2"
+        ],
+        [
+          "jamie_retained"
+        ]
+      ],
+      "per_person": {
+        "Ben": {
+          "source_denominator_sec": 2.03,
+          "correct_sec": 2.03,
+          "wrong_sec": 0.0,
+          "unknown_sec": 0.0,
+          "missed_identity_sec": 0.0
+        },
+        "David": {
+          "source_denominator_sec": 2.72,
+          "correct_sec": 2.72,
+          "wrong_sec": 0.0,
+          "unknown_sec": 0.0,
+          "missed_identity_sec": 0.0
+        },
+        "ENG_A": {
+          "source_denominator_sec": 1.458333,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 1.458333,
+          "missed_identity_sec": 1.458333
+        },
+        "ENG_B": {
+          "source_denominator_sec": 1.713412,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 1.713412,
+          "missed_identity_sec": 1.713412
+        },
+        "Jamie": {
+          "source_denominator_sec": 4.221,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 4.221,
+          "missed_identity_sec": 4.221
+        }
+      },
+      "false_births": 3,
+      "nonperson_id_assignments": 3,
+      "duplicate_births": 0,
+      "merges": 0,
+      "provisional_births": 3,
+      "admitted_births": 0,
+      "words_times_unchanged": true
+    },
+    {
+      "policy": "P1_cross_span_pooling",
+      "decision_state": [
+        {
+          "unit": "ben_return_1",
+          "truth": "Ben",
+          "duration_sec": 1.0,
+          "action": "match",
+          "canonical": "speaker-ben",
+          "canonical_truth": "Ben",
+          "scores": {
+            "speaker-ben": 0.465434,
+            "speaker-david": 0.099411
+          },
+          "runner_up": 0.099411,
+          "phase": "live"
+        },
+        {
+          "unit": "david_return_1",
+          "truth": "David",
+          "duration_sec": 1.37,
+          "action": "match",
+          "canonical": "speaker-david",
+          "canonical_truth": "David",
+          "scores": {
+            "speaker-david": 0.396632,
+            "speaker-ben": 0.20296
+          },
+          "runner_up": 0.20296,
+          "phase": "live"
+        },
+        {
+          "unit": "ben_return_2",
+          "truth": "Ben",
+          "duration_sec": 1.03,
+          "action": "match",
+          "canonical": "speaker-ben",
+          "canonical_truth": "Ben",
+          "scores": {
+            "speaker-ben": 0.581998,
+            "speaker-david": 0.097
+          },
+          "runner_up": 0.097,
+          "phase": "live"
+        },
+        {
+          "unit": "david_return_2",
+          "truth": "David",
+          "duration_sec": 1.35,
+          "action": "match",
+          "canonical": "speaker-david",
+          "canonical_truth": "David",
+          "scores": {
+            "speaker-david": 0.574769,
+            "speaker-ben": 0.137156
+          },
+          "runner_up": 0.137156,
+          "phase": "live"
+        },
+        {
+          "unit": "eng_a_1",
+          "truth": "ENG_A",
+          "duration_sec": 0.885833,
+          "action": "deferred",
+          "phase": "live"
+        },
+        {
+          "unit": "eng_b_1",
+          "truth": "ENG_B",
+          "duration_sec": 0.873413,
+          "action": "deferred",
+          "phase": "live"
+        },
+        {
+          "unit": "eng_a_2",
+          "truth": "ENG_A",
+          "duration_sec": 0.5725,
+          "action": "deferred",
+          "phase": "live"
+        },
+        {
+          "unit": "eng_b_2",
+          "truth": "ENG_B",
+          "duration_sec": 0.839999,
+          "action": "deferred",
+          "phase": "live"
+        },
+        {
+          "unit": "jamie_retained",
+          "truth": "Jamie",
+          "duration_sec": 0.78,
+          "action": "deferred",
+          "phase": "live"
+        },
+        {
+          "unit": "laughter",
+          "truth": null,
+          "duration_sec": 1.85,
+          "action": "birth",
+          "canonical": "speaker-0003",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-david": 0.187862,
+            "speaker-ben": 0.065894
+          },
+          "runner_up": 0.065894
+        },
+        {
+          "unit": "synthetic_applause_proxy",
+          "truth": null,
+          "duration_sec": 1.5,
+          "action": "birth",
+          "canonical": "speaker-0004",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-david": 0.016509,
+            "speaker-0003": 0.0,
+            "speaker-ben": 0.0
+          },
+          "runner_up": 0.0
+        },
+        {
+          "unit": "synthetic_noise",
+          "truth": null,
+          "duration_sec": 1.5,
+          "action": "birth",
+          "canonical": "speaker-0005",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-0004": 0.374929,
+            "speaker-0003": 0.3129,
+            "speaker-ben": 0.058311,
+            "speaker-david": 0.031897
+          },
+          "runner_up": 0.3129
+        }
+      ],
+      "remaining_pending": [
+        [
+          "eng_a_1"
+        ],
+        [
+          "eng_b_1"
+        ],
+        [
+          "eng_a_2"
+        ],
+        [
+          "eng_b_2"
+        ],
+        [
+          "jamie_retained"
+        ]
+      ],
+      "per_person": {
+        "Ben": {
+          "source_denominator_sec": 2.03,
+          "correct_sec": 2.03,
+          "wrong_sec": 0.0,
+          "unknown_sec": 0.0,
+          "missed_identity_sec": 0.0
+        },
+        "David": {
+          "source_denominator_sec": 2.72,
+          "correct_sec": 2.72,
+          "wrong_sec": 0.0,
+          "unknown_sec": 0.0,
+          "missed_identity_sec": 0.0
+        },
+        "ENG_A": {
+          "source_denominator_sec": 1.458333,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 1.458333,
+          "missed_identity_sec": 1.458333
+        },
+        "ENG_B": {
+          "source_denominator_sec": 1.713412,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 1.713412,
+          "missed_identity_sec": 1.713412
+        },
+        "Jamie": {
+          "source_denominator_sec": 4.221,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 4.221,
+          "missed_identity_sec": 4.221
+        }
+      },
+      "false_births": 3,
+      "nonperson_id_assignments": 3,
+      "duplicate_births": 0,
+      "merges": 0,
+      "provisional_births": 3,
+      "admitted_births": 0,
+      "words_times_unchanged": true
+    },
+    {
+      "policy": "P2_deferred_re_evaluation",
+      "decision_state": [
+        {
+          "unit": "ben_return_1",
+          "truth": "Ben",
+          "duration_sec": 1.0,
+          "action": "match",
+          "canonical": "speaker-ben",
+          "canonical_truth": "Ben",
+          "scores": {
+            "speaker-ben": 0.465434,
+            "speaker-david": 0.099411
+          },
+          "runner_up": 0.099411,
+          "phase": "live"
+        },
+        {
+          "unit": "david_return_1",
+          "truth": "David",
+          "duration_sec": 1.37,
+          "action": "match",
+          "canonical": "speaker-david",
+          "canonical_truth": "David",
+          "scores": {
+            "speaker-david": 0.396632,
+            "speaker-ben": 0.20296
+          },
+          "runner_up": 0.20296,
+          "phase": "live"
+        },
+        {
+          "unit": "ben_return_2",
+          "truth": "Ben",
+          "duration_sec": 1.03,
+          "action": "match",
+          "canonical": "speaker-ben",
+          "canonical_truth": "Ben",
+          "scores": {
+            "speaker-ben": 0.581998,
+            "speaker-david": 0.097
+          },
+          "runner_up": 0.097,
+          "phase": "live"
+        },
+        {
+          "unit": "david_return_2",
+          "truth": "David",
+          "duration_sec": 1.35,
+          "action": "match",
+          "canonical": "speaker-david",
+          "canonical_truth": "David",
+          "scores": {
+            "speaker-david": 0.574769,
+            "speaker-ben": 0.137156
+          },
+          "runner_up": 0.137156,
+          "phase": "live"
+        },
+        {
+          "unit": "eng_a_1",
+          "truth": "ENG_A",
+          "duration_sec": 0.885833,
+          "action": "deferred",
+          "phase": "live"
+        },
+        {
+          "unit": "eng_b_1",
+          "truth": "ENG_B",
+          "duration_sec": 0.873413,
+          "action": "deferred",
+          "phase": "live"
+        },
+        {
+          "unit": "eng_a_2",
+          "truth": "ENG_A",
+          "duration_sec": 0.5725,
+          "action": "deferred",
+          "phase": "live"
+        },
+        {
+          "unit": "eng_b_2",
+          "truth": "ENG_B",
+          "duration_sec": 0.839999,
+          "action": "deferred",
+          "phase": "live"
+        },
+        {
+          "unit": "jamie_retained",
+          "truth": "Jamie",
+          "duration_sec": 0.78,
+          "action": "deferred",
+          "phase": "live"
+        },
+        {
+          "unit": "laughter",
+          "truth": null,
+          "duration_sec": 1.85,
+          "action": "birth",
+          "canonical": "speaker-0003",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-david": 0.187862,
+            "speaker-ben": 0.065894
+          },
+          "runner_up": 0.065894
+        },
+        {
+          "unit": "synthetic_applause_proxy",
+          "truth": null,
+          "duration_sec": 1.5,
+          "action": "birth",
+          "canonical": "speaker-0004",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-david": 0.016509,
+            "speaker-0003": 0.0,
+            "speaker-ben": 0.0
+          },
+          "runner_up": 0.0
+        },
+        {
+          "unit": "synthetic_noise",
+          "truth": null,
+          "duration_sec": 1.5,
+          "action": "birth",
+          "canonical": "speaker-0005",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-0004": 0.374929,
+            "speaker-0003": 0.3129,
+            "speaker-ben": 0.058311,
+            "speaker-david": 0.031897
+          },
+          "runner_up": 0.3129
+        }
+      ],
+      "remaining_pending": [
+        [
+          "eng_a_1"
+        ],
+        [
+          "eng_b_1"
+        ],
+        [
+          "eng_a_2"
+        ],
+        [
+          "eng_b_2"
+        ],
+        [
+          "jamie_retained"
+        ]
+      ],
+      "per_person": {
+        "Ben": {
+          "source_denominator_sec": 2.03,
+          "correct_sec": 2.03,
+          "wrong_sec": 0.0,
+          "unknown_sec": 0.0,
+          "missed_identity_sec": 0.0
+        },
+        "David": {
+          "source_denominator_sec": 2.72,
+          "correct_sec": 2.72,
+          "wrong_sec": 0.0,
+          "unknown_sec": 0.0,
+          "missed_identity_sec": 0.0
+        },
+        "ENG_A": {
+          "source_denominator_sec": 1.458333,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 1.458333,
+          "missed_identity_sec": 1.458333
+        },
+        "ENG_B": {
+          "source_denominator_sec": 1.713412,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 1.713412,
+          "missed_identity_sec": 1.713412
+        },
+        "Jamie": {
+          "source_denominator_sec": 4.221,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 4.221,
+          "missed_identity_sec": 4.221
+        }
+      },
+      "false_births": 3,
+      "nonperson_id_assignments": 3,
+      "duplicate_births": 0,
+      "merges": 0,
+      "provisional_births": 3,
+      "admitted_births": 0,
+      "words_times_unchanged": true
+    },
+    {
+      "policy": "P3_terminal_retrospective",
+      "decision_state": [
+        {
+          "unit": "ben_return_1",
+          "truth": "Ben",
+          "duration_sec": 1.0,
+          "action": "match",
+          "canonical": "speaker-ben",
+          "canonical_truth": "Ben",
+          "scores": {
+            "speaker-ben": 0.465434,
+            "speaker-david": 0.099411
+          },
+          "runner_up": 0.099411,
+          "phase": "live"
+        },
+        {
+          "unit": "david_return_1",
+          "truth": "David",
+          "duration_sec": 1.37,
+          "action": "match",
+          "canonical": "speaker-david",
+          "canonical_truth": "David",
+          "scores": {
+            "speaker-david": 0.396632,
+            "speaker-ben": 0.20296
+          },
+          "runner_up": 0.20296,
+          "phase": "live"
+        },
+        {
+          "unit": "ben_return_2",
+          "truth": "Ben",
+          "duration_sec": 1.03,
+          "action": "match",
+          "canonical": "speaker-ben",
+          "canonical_truth": "Ben",
+          "scores": {
+            "speaker-ben": 0.581998,
+            "speaker-david": 0.097
+          },
+          "runner_up": 0.097,
+          "phase": "live"
+        },
+        {
+          "unit": "david_return_2",
+          "truth": "David",
+          "duration_sec": 1.35,
+          "action": "match",
+          "canonical": "speaker-david",
+          "canonical_truth": "David",
+          "scores": {
+            "speaker-david": 0.574769,
+            "speaker-ben": 0.137156
+          },
+          "runner_up": 0.137156,
+          "phase": "live"
+        },
+        {
+          "unit": "eng_a_1",
+          "truth": "ENG_A",
+          "duration_sec": 0.885833,
+          "action": "deferred",
+          "scores": {
+            "speaker-david": 0.116692,
+            "speaker-ben": 0.0
+          },
+          "runner_up": 0.0,
+          "phase": "live"
+        },
+        {
+          "unit": "eng_b_1",
+          "truth": "ENG_B",
+          "duration_sec": 0.873413,
+          "action": "deferred",
+          "scores": {
+            "speaker-david": 0.174336,
+            "speaker-ben": 0.040656
+          },
+          "runner_up": 0.040656,
+          "phase": "live"
+        },
+        {
+          "unit": "eng_a_2",
+          "truth": "ENG_A",
+          "duration_sec": 0.5725,
+          "action": "deferred",
+          "scores": {
+            "speaker-david": 0.02803,
+            "speaker-ben": 0.0
+          },
+          "runner_up": 0.0,
+          "phase": "live"
+        },
+        {
+          "unit": "eng_b_2",
+          "truth": "ENG_B",
+          "duration_sec": 0.839999,
+          "action": "deferred",
+          "scores": {
+            "speaker-david": 0.001021,
+            "speaker-ben": 0.0
+          },
+          "runner_up": 0.0,
+          "phase": "live"
+        },
+        {
+          "unit": "jamie_retained",
+          "truth": "Jamie",
+          "duration_sec": 0.78,
+          "action": "deferred",
+          "scores": {
+            "speaker-david": 0.085474,
+            "speaker-ben": 0.081448
+          },
+          "runner_up": 0.081448,
+          "phase": "live"
+        },
+        {
+          "unit": "laughter",
+          "truth": null,
+          "duration_sec": 1.85,
+          "action": "birth",
+          "canonical": "speaker-0003",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-david": 0.187862,
+            "speaker-ben": 0.065894
+          },
+          "runner_up": 0.065894
+        },
+        {
+          "unit": "synthetic_applause_proxy",
+          "truth": null,
+          "duration_sec": 1.5,
+          "action": "birth",
+          "canonical": "speaker-0004",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-david": 0.016509,
+            "speaker-0003": 0.0,
+            "speaker-ben": 0.0
+          },
+          "runner_up": 0.0
+        },
+        {
+          "unit": "synthetic_noise",
+          "truth": null,
+          "duration_sec": 1.5,
+          "action": "birth",
+          "canonical": "speaker-0005",
+          "phase": "live",
+          "disposition": "provisional",
+          "scores": {
+            "speaker-0004": 0.374929,
+            "speaker-0003": 0.3129,
+            "speaker-ben": 0.058311,
+            "speaker-david": 0.031897
+          },
+          "runner_up": 0.3129
+        },
+        {
+          "unit": "eng_a_1",
+          "truth": "ENG_A",
+          "duration_sec": 0.885833,
+          "action": "deferred",
+          "phase": "terminal"
+        },
+        {
+          "unit": "eng_b_1",
+          "truth": "ENG_B",
+          "duration_sec": 0.873413,
+          "action": "deferred",
+          "phase": "terminal"
+        },
+        {
+          "unit": "eng_a_2",
+          "truth": "ENG_A",
+          "duration_sec": 0.5725,
+          "action": "deferred",
+          "phase": "terminal"
+        },
+        {
+          "unit": "eng_b_2",
+          "truth": "ENG_B",
+          "duration_sec": 0.839999,
+          "action": "deferred",
+          "phase": "terminal"
+        },
+        {
+          "unit": "jamie_retained",
+          "truth": "Jamie",
+          "duration_sec": 0.78,
+          "action": "deferred",
+          "phase": "terminal"
+        }
+      ],
+      "remaining_pending": [
+        [
+          "eng_a_1"
+        ],
+        [
+          "eng_b_1"
+        ],
+        [
+          "eng_a_2"
+        ],
+        [
+          "eng_b_2"
+        ],
+        [
+          "jamie_retained"
+        ]
+      ],
+      "per_person": {
+        "Ben": {
+          "source_denominator_sec": 2.03,
+          "correct_sec": 2.03,
+          "wrong_sec": 0.0,
+          "unknown_sec": 0.0,
+          "missed_identity_sec": 0.0
+        },
+        "David": {
+          "source_denominator_sec": 2.72,
+          "correct_sec": 2.72,
+          "wrong_sec": 0.0,
+          "unknown_sec": 0.0,
+          "missed_identity_sec": 0.0
+        },
+        "ENG_A": {
+          "source_denominator_sec": 1.458333,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 1.458333,
+          "missed_identity_sec": 1.458333
+        },
+        "ENG_B": {
+          "source_denominator_sec": 1.713412,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 1.713412,
+          "missed_identity_sec": 1.713412
+        },
+        "Jamie": {
+          "source_denominator_sec": 4.221,
+          "correct_sec": 0.0,
+          "wrong_sec": 0.0,
+          "unknown_sec": 4.221,
+          "missed_identity_sec": 4.221
+        }
+      },
+      "false_births": 3,
+      "nonperson_id_assignments": 3,
+      "duplicate_births": 0,
+      "merges": 0,
+      "provisional_births": 3,
+      "admitted_births": 0,
+      "words_times_unchanged": true
+    }
+  ],
+  "unmeasured": [
+    "all six snippets in prototypes/jamie/snippets.json: human speaker identity and spill boundaries were not attended-adjudicated",
+    "real applause: no source-owned labelled applause interval exists in the retained corpus; synthetic proxy reported separately"
+  ],
+  "target_proposal": {
+    "Ben_selected_return_controls": "correct 2.03/2.03 s; wrong 0 s",
+    "David_selected_return_controls": "correct 2.72/2.72 s; wrong 0 s",
+    "Jamie": "UNMEASURED; no numeric target proposed before R4-11 adjudication",
+    "all_people": "misattribution 0 s; no denominator exclusions",
+    "nonperson": "0 identity assignments and 0 births"
+  }
+}
