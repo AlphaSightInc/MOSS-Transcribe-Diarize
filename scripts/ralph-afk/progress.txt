@@ -32,3 +32,19 @@ default budget (S17, third mismatch). This run repairs both without touching pro
 - Learned: the regression is isolated to invented DOM span custody; all 14 pre-existing module controls still pass.
 - Next: candidate 2, publish `data-turn-start`, `data-turn-end`, and `data-target-keys` from turn model state with one
   frontend test and rebuilt asset parity.
+
+## Iteration 2 - publish turn custody on rendered rows
+- Target: candidate 2, expose each merged turn's model-state span and target keys on its `.utt` article.
+- Files: `frontend/src/components/TranscriptPane.tsx`, `frontend/src/components/TranscriptPane.test.tsx`,
+  `moss_transcribe_diarize/app/frontend_assets/app.js{,.map}`, `scripts/ralph-afk/context.md`, this journal.
+- Validation: focused component test first RED on absent `data-turn-start`, then
+  `npm --prefix frontend test -- --run src/components/TranscriptPane.test.tsx` -> **18/18 passed**;
+  `npm --prefix frontend run typecheck` -> clean; two `npm --prefix frontend run build` runs -> 17 assets, second build
+  left no unstaged asset diff against the first build's staged bytes (**17/17 parity**).
+- Evidence: `.utt` now carries `data-turn-start={turn.start}`, `data-turn-end={turn.end}`, and
+  `data-target-keys={turn.target_segment_keys.join("|")}`; the control verifies a two-segment merged turn publishes
+  `3.25`, `6.5`, and both model target keys.
+- Learned: the required custody is already present in the React turn and can be exposed without reconstructing spans
+  or changing merge semantics; the Python collector remains the only consumer gap.
+- Next: candidate 3, read these row attributes in `visible_word_headed.py`, remove invented next-row/frontier ends, and
+  report rows lacking spans as DOM `UNMEASURED`.

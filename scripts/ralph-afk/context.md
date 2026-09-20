@@ -13,13 +13,11 @@
     custody defect.
   - `tools/qualify/visible_word_headed.py:268-276` — DOM rows are read from `.utt` nodes; `start` is parsed from the
     `.utt-time` clock text; rows without an `HH:MM:SS` clock are dropped. No span or id is captured today.
-  - `frontend/src/components/TranscriptPane.tsx:649-658` — the `.utt` `<article>` carries only
-    `data-continuation/new-speaker/preview-stale/state/source-lane`. The React turn already holds `turn.start`,
-    `turn.end` (`frontend/src/lib/mergeTranscript.ts:184,211`), `turn.segment_ids` (used in the `key` at `:650`) and
-    `turn.target_segment_keys` (`mergeTranscript.ts:30,198,218`, built by `lib/transcriptKeys.ts`). Live segment ids are
+  - `frontend/src/components/TranscriptPane.tsx:649-661` — the `.utt` `<article>` now publishes
+    `data-turn-start`, `data-turn-end`, and `data-target-keys` directly from the merged React turn. Live segment ids are
     positional (`frontend/src/api/mossPoller.ts:598,714` `effective:${index}`) and a row is a merged, overlap-trimmed
-    turn (`mergeTranscript.ts:183-199`) — so the honest custody primitive is the turn's own span published on the row,
-    not a per-segment id join.
+    turn (`mergeTranscript.ts:183-199`) — the honest custody primitive is therefore the turn's own published span, not
+    a per-segment id join.
   - `tools/qualify/visible_words.py:103-107` `_overlaps`, `:135` match rule, `:174-200` `evaluate_visible_word_stream`
     (interval-end gate at `:196-199` — keep).
   - `tests/test_visible_word_instrument.py` — existing controls `:233` repeated-word, `:253` not-before-interval-end,
@@ -33,6 +31,10 @@
 
 ## Current state
 
+- 2026-09-20 iteration 2: `.utt` rows publish the turn's model-state start/end/target keys. The dedicated frontend
+  control went RED on missing attributes, then GREEN **18/18** after the three-attribute change; frontend typecheck is
+  clean. Vite rebuilt the 17-file committed asset tree (only `app.js` and `app.js.map` changed), and a second fresh
+  build was byte-identical to the staged assets. The Python instrument does not consume these attributes yet.
 - 2026-09-20 iteration 1: ported the F4 earlier/later `alpha` counterexample to
   `tests/test_visible_word_instrument.py`. Before the test edit, `89f833ac..51d35ef1` changed only loop/orchestration
   files, so the instrument was still the unpatched base. The module now reports the expected RED: **1 failed, 14
@@ -76,10 +78,8 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 1. **DONE (iteration 1) — Port the falsifier as a failing test** (`tests/test_visible_word_instrument.py`): RED is
    recorded on the base-equivalent instrument; expected final behavior remains asserted.
-2. **Publish the turn span on the row** (`TranscriptPane.tsx:649-658`): `data-turn-start`, `data-turn-end`,
-   `data-target-keys`; frontend test asserting they equal the turn; `npm --prefix frontend run typecheck && npm --prefix
-   frontend run build`; commit the rebuilt `frontend_assets` with the source; then re-run the build and confirm
-   `git status` is empty (asset parity).
+2. **DONE (iteration 2) — Publish the turn span on the row** (`TranscriptPane.tsx:649-661`): the three attributes,
+   model-state frontend control, clean typecheck, and deterministic 17-file Vite asset rebuild are recorded.
 3. **Replace `_dom_segments` custody** with row-published spans; remove next-start/frontier end invention; matcher pairs
    occurrences in source order, one displayed occurrence credits at most one reference occurrence; rows without spans
    ⇒ no DOM credit and `UNMEASURED` DOM result with the reason. Validate: candidate 1 passes, `:233/:253/:272` still pass.

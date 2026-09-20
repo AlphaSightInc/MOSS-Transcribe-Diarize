@@ -654,6 +654,9 @@ export function TranscriptPane() {
                   data-preview-stale={String(turn.state === "provisional" && turn.provisional_stale)}
                   data-state={turn.state}
                   data-source-lane={turn.source_lane}
+                  data-turn-start={turn.start}
+                  data-turn-end={turn.end}
+                  data-target-keys={turn.target_segment_keys.join("|")}
                   style={{ "--sp": colorToken } as JSX.CSSProperties}
                 >
                   <div className="utt-meta">
