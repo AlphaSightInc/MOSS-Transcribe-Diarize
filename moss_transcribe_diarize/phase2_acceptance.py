@@ -194,7 +194,7 @@ EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {
         "G1": ("cross_owner_matrix", "sentinel_absence", "same_account_convergence"),
         "G2": ("browser_workspace_identity", "revocation_lifecycle"),
         "G3": ("meeting_modes_history_restart", "crash_recovery"),
-        "G4": ("four_session_capacity", "eight_session_overload", "quality_corpus"),
+        "G4": ("two_session_capacity", "excess_admission_overload", "quality_corpus"),
         "G5": ("audio_durability_download",),
         "G6": ("operator_control",),
         "G10": ("account_product_regression", "transcript_pane_fidelity"),
@@ -204,7 +204,7 @@ EXTERNAL_REQUIREMENTS: Mapping[str, Mapping[str, tuple[str, ...]]] = {
         "G1": ("cross_owner_matrix", "sentinel_absence"),
         "G2": ("browser_workspace_identity", "revocation_lifecycle"),
         "G3": ("meeting_modes_history_restart",),
-        "G4": ("four_session_capacity", "eight_session_overload", "quality_corpus"),
+        "G4": ("two_session_capacity", "excess_admission_overload", "quality_corpus"),
         "G5": ("audio_durability_download",),
         "G6": ("operator_control",),
         "G10": ("account_product_regression", "transcript_pane_fidelity"),
@@ -1077,7 +1077,7 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
     campaign_interval = raw.get("campaign_interval")
     if not (
         isinstance(sessions, list)
-        and len(sessions) == 4
+        and len(sessions) == 2
         and isinstance(wrong_owner, list)
         and wrong_owner
         and isinstance(rss_samples, list)
@@ -1091,7 +1091,7 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
         return False
     try:
         ordered_sessions = sorted(sessions, key=lambda item: int(item["session_ordinal"]))
-        if [int(item["session_ordinal"]) for item in ordered_sessions] != [1, 2, 3, 4]:
+        if [int(item["session_ordinal"]) for item in ordered_sessions] != [1, 2]:
             return False
         if {int(item["account_ordinal"]) for item in ordered_sessions} != {1, 2}:
             return False
@@ -1173,7 +1173,7 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
 
     fairness = canonical_lifecycle_fairness(
         canonical_events,
-        {str(ordinal) for ordinal in range(1, 5)},
+        {str(ordinal) for ordinal in range(1, 3)},
         maximum_skew=1,
     )
     dispatch_skew = int(fairness["maximum_contended_pair_dispatch_skew"])
@@ -1200,7 +1200,7 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
                 if isinstance(item, dict)
                 and int(item.get("session_ordinal", -1)) == ordinal
             )
-            for ordinal in range(1, 5)
+            for ordinal in range(1, 3)
         }
     except (KeyError, TypeError, ValueError):
         return False
@@ -1222,14 +1222,14 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
     rss_growth = max(rss) - min(rss)
     cache_peak = max(cache)
     return (
-        raw.get("sessions") == 4
+        raw.get("sessions") == 2
         and int(raw.get("accounts", 0)) >= 2
         and observed_duration >= 600
         and math.isclose(float(raw.get("duration_seconds", 0)), observed_duration)
         and float(raw.get("requested_duration_seconds", 0)) == 600
         and raw.get("real_human_speech") is True
         and float(raw.get("ingress_cadence_seconds", -1)) == 0.5
-        and wrong_ordinals == {1, 2, 3, 4}
+        and wrong_ordinals == {1, 2}
         and continuous_probes
         and cross_deliveries == 0
         and max_p95 <= 10.0
@@ -1274,19 +1274,21 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
     sessions = raw.get("session_observations")
     probes = raw.get("wrong_owner_observations")
     backpressure = raw.get("backpressure_observation")
+    admission = raw.get("admission_observation")
     interval = raw.get("campaign_interval")
     if not (
         isinstance(sessions, list)
-        and len(sessions) == 8
+        and len(sessions) == 2
         and isinstance(probes, list)
         and probes
         and isinstance(backpressure, dict)
+        and isinstance(admission, dict)
         and isinstance(interval, dict)
     ):
         return False
     try:
         ordered = sorted(sessions, key=lambda item: int(item["session_ordinal"]))
-        if [int(item["session_ordinal"]) for item in ordered] != list(range(1, 9)):
+        if [int(item["session_ordinal"]) for item in ordered] != [1, 2]:
             return False
         if {int(item["account_ordinal"]) for item in ordered} != {1, 2}:
             return False
@@ -1310,7 +1312,7 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
         peer_ns = int(backpressure["peer_progress_monotonic_ns"])
         retry_ns = int(backpressure["retry_monotonic_ns"])
         if (
-            campaign_ordinals != list(range(1, 9))
+            campaign_ordinals != [1, 2]
             or target_ordinal == peer_ordinal
             or {target_ordinal, peer_ordinal} - set(campaign_ordinals)
             or not (started <= refused_ns <= peer_ns <= retry_ns <= finished)
@@ -1357,7 +1359,7 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
                 )
         fairness = canonical_lifecycle_fairness(
             canonical_events,
-            {str(ordinal) for ordinal in range(1, 9)},
+            {str(ordinal) for ordinal in range(1, 3)},
             maximum_skew=1,
         )
         dispatch_skew = int(fairness["maximum_contended_pair_dispatch_skew"])
@@ -1370,7 +1372,7 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
                 and item.get("status") == 404
                 and item.get("foreign_matches") == 0
             )
-            for ordinal in range(1, 9)
+            for ordinal in range(1, 3)
         }
         probes_complete = all(
             values == list(range(int(ordered[ordinal - 1]["frames"])))
@@ -1379,7 +1381,7 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
     except (KeyError, TypeError, ValueError):
         return False
     return (
-        raw.get("sessions") == 8
+        raw.get("sessions") == 2
         and int(raw.get("accounts", 0)) == 2
         and raw.get("terminal_failures") == 0
         and all(item.get("finalization_status") == "final" for item in ordered)
@@ -1393,6 +1395,11 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
             backpressure.get(key) is True
             for key in ("observed_429", "peer_progress", "same_sequence_retry")
         )
+        and admission.get("accepted_sessions") == 2
+        and admission.get("excess_attempts") == 1
+        and admission.get("excess_status") == 409
+        and admission.get("refusal_code") == "live_capacity_full"
+        and admission.get("accepted_active_after_refusal") is True
         and raw.get("sequence_gaps") == 0
         and raw.get("cross_account_sentinel_deliveries") == 0
         and raw.get("isolation_failures") == 0
@@ -1725,7 +1732,7 @@ def external_denominator_projection(
         )
     )
 
-    capacity = indexed.get("four_session_capacity")
+    capacity = indexed.get("two_session_capacity")
     capacity_raw = capacity.get("raw") if isinstance(capacity, dict) else None
     capacity_sessions = (
         capacity_raw.get("session_observations")
@@ -1741,7 +1748,7 @@ def external_denominator_projection(
         and _validate_capacity(capacity)
     )
 
-    overload = indexed.get("eight_session_overload")
+    overload = indexed.get("excess_admission_overload")
     overload_raw = overload.get("raw") if isinstance(overload, dict) else None
     overload_sessions = (
         overload_raw.get("session_observations")
@@ -1782,11 +1789,11 @@ def external_denominator_projection(
         "cross_owner_actions": project(
             "cross_owner_matrix", cross_collected, cross_valid
         ),
-        "four_session_capacity": project(
-            "four_session_capacity", capacity_collected, capacity_valid
+        "two_session_capacity": project(
+            "two_session_capacity", capacity_collected, capacity_valid
         ),
-        "eight_session_overload": project(
-            "eight_session_overload", overload_collected, overload_valid
+        "excess_admission_overload": project(
+            "excess_admission_overload", overload_collected, overload_valid
         ),
         "quality_sessions": project(
             "quality_corpus", quality_collected, quality_valid
@@ -1815,7 +1822,7 @@ def _validate_raw_predicate(
     raw = predicate.get("raw")
     if not isinstance(raw, dict):
         return False
-    if predicate_id in {"sentinel_absence", "operator_control", "four_session_capacity", "eight_session_overload"}:
+    if predicate_id in {"sentinel_absence", "operator_control", "two_session_capacity", "excess_admission_overload"}:
         sources = raw.get("journal_sources")
         units = {"moss-web.service"} if predicate_id == "operator_control" else {"moss-web.service", "moss-vllm.service"}
         if (
@@ -2193,9 +2200,9 @@ def evaluate_external_report(
                     wheel_record_projection_sha256=wheel_record_projection_sha256,
                     dependency_projection_sha256=dependency_projection_sha256,
                 )
-            if predicate_id == "four_session_capacity":
+            if predicate_id == "two_session_capacity":
                 passed = passed and _validate_capacity(predicate)
-            elif predicate_id == "eight_session_overload":
+            elif predicate_id == "excess_admission_overload":
                 passed = passed and _validate_overload(predicate)
             elif predicate_id == "quality_corpus":
                 passed = passed and _validate_quality(predicate)

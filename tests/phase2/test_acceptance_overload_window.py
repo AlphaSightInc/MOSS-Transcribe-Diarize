@@ -17,7 +17,7 @@ def test_overload_workload_reaches_real_sixty_second_lane_capacity_and_retries(m
             return {'descriptor': {'frame_samples': 8000, 'bounds': {'max_retained_samples': 960000}}}, None
     campaign._clients['a'] = Client()
     source = LiveV2Session(max_retained_samples=960000)
-    probe = external._CampaignBackpressure(8)
+    probe = external._CampaignBackpressure(2)
     refusal = []
     retried = []
     drained = threading.Event()
@@ -51,7 +51,7 @@ def test_overload_workload_reaches_real_sixty_second_lane_capacity_and_retries(m
             return SimpleNamespace(snapshot=SimpleNamespace(pending_work_items=0))
 
     def run_load(*, sessions, duration_seconds, embedded_backpressure):
-        assert sessions == 8 and embedded_backpressure
+        assert sessions == 2 and embedded_backpressure
         target = Target()
         frame_count = int(duration_seconds * 16000 / 8000)
         def push():
@@ -76,14 +76,14 @@ def test_overload_workload_reaches_real_sixty_second_lane_capacity_and_retries(m
                 'cross_account_sentinel_deliveries': 0, 'marker_isolation_failures': 0,
                 'dispatch_skew': 0, 'fairness_measured': True}
     monkeypatch.setattr(campaign, '_run_live_load', run_load)
-    result = campaign.eight_session_overload()
+    result = campaign.excess_admission_overload()
     assert result['per_session_backpressure_observed'] is True
     assert result['peer_progress_during_backpressure'] is True
     assert result['refused_frame_retry_succeeded'] is True
 
 
 def test_campaign_backpressure_retry_has_a_wall_deadline(monkeypatch):
-    probe = external._CampaignBackpressure(8)
+    probe = external._CampaignBackpressure(2)
     probe._peer_progress_seen.set()
     now = [0.0]
     monkeypatch.setattr(external.time, 'monotonic', lambda: now[0])

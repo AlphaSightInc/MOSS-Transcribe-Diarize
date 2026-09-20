@@ -16,6 +16,7 @@ import pytest
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_endpoint import EndpointPolicy, EndpointPolicyConfig, SpeechObservation
 from moss_transcribe_diarize.app.live_service_runtime import (
+    LIVE_TERMINAL_SESSION_STATUSES,
     LiveServiceConfigHashes,
     LiveServiceBounds,
     LiveServiceDescriptor,
@@ -24,19 +25,23 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceFailureKind,
     LiveServiceProviderConfigFailure,
     LiveServiceRuntime,
+    LiveServiceIntegrityFailure,
     LiveServiceTransportPacingFailure,
     _ManualCanonicalPumpScheduler,
     _TransientCanonicalPumpScheduler,
+    active_live_session_count,
     hash_config,
 )
 from moss_transcribe_diarize.app.live_session import (
     AudioFrame,
+    CanonicalCommit,
     FrozenSpan,
     LIVE_SAMPLE_RATE,
     LiveIdentityPreparation,
     LiveIdentitySnapshot,
     LiveSessionClosed,
 )
+from moss_transcribe_diarize.app.phase2_live import Phase2LiveMeetings
 
 
 def _digest(label: str) -> str:
@@ -370,6 +375,88 @@ def _threaded_result(result: dict[str, object]):
     if "error" in result:
         raise result["error"]
     return result["value"]
+
+
+def test_active_live_session_count_never_projects_full_snapshots(monkeypatch):
+    """Admission remains a lifecycle read even when transcript projection is unavailable."""
+
+    runtime = _runtime(speech=(), session_ids=("session-1", "session-2"))
+    runtime.create()
+    runtime.create()
+
+    def refuse_snapshot(*args, **kwargs):
+        del args, kwargs
+        raise AssertionError("admission must not project a service snapshot")
+
+    monkeypatch.setattr(runtime, "_snapshot", refuse_snapshot)
+
+    assert active_live_session_count(runtime) == 2
+    live = Phase2LiveMeetings(runtime, audio_archive=None, audio_stages=None)
+    assert live.operator_snapshot()["active_admissions"] == 2
+
+
+@pytest.mark.parametrize("historical_count", [2, 100, 1_000])
+def test_lifecycle_count_matches_legacy_projection_across_history_sizes(historical_count):
+    session_ids = tuple(f"session-{index}" for index in range(historical_count + 2))
+    runtime = _runtime(speech=(), session_ids=session_ids)
+    for _ in session_ids:
+        runtime.create()
+
+    histories = tuple(runtime._sessions.values())[:historical_count]
+    for state in histories:
+        state.session._status = "closed"
+    histories[0].session._committed.append(
+        CanonicalCommit(
+            span_id=0,
+            start_sample=0,
+            end_sample=4_824,
+            transcript="".join(f"[{index}][S00]word-{index}" for index in range(4_824)),
+            prefix_hash="0" * 64,
+            identity_snapshot_version=0,
+        )
+    )
+
+    legacy = sum(
+        runtime._snapshot(state).session.status not in LIVE_TERMINAL_SESSION_STATUSES
+        for state in runtime._sessions.values()
+    )
+
+    assert legacy == 2
+    assert active_live_session_count(runtime) == legacy
+
+
+def test_lifecycle_count_tracks_admission_transitions_and_runtime_failure():
+    runtime = _runtime(
+        speech=(),
+        session_ids=("session-a", "session-b", "session-c"),
+    )
+
+    first = runtime.create()
+    assert active_live_session_count(runtime) == 1
+    second = runtime.create()
+    assert active_live_session_count(runtime) == 2
+    assert active_live_session_count(runtime) >= 2  # the unchanged third-admission refusal
+
+    asyncio.run(runtime.stop(first.session_id, 1.0))
+    assert active_live_session_count(runtime) == 1
+    replacement = runtime.create()
+    assert active_live_session_count(runtime) == 2
+
+    asyncio.run(runtime.abort(second.session_id, "operator"))
+    assert active_live_session_count(runtime) == 1
+
+    state = runtime._sessions[replacement.session_id]
+    assert state.session.lifecycle_status == "active"
+    with runtime._lock:
+        runtime._fail(
+            state,
+            LiveServiceIntegrityFailure(
+                "injected terminal failure",
+                code="injected_terminal_failure",
+            ).failure,
+        )
+    assert state.session.lifecycle_status == "active"
+    assert active_live_session_count(runtime) == 0
 
 
 def test_runtime_frame_admission_queues_without_canonical_decode():

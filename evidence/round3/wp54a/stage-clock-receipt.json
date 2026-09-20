@@ -1,0 +1,9 @@
+{
+  "decode_elapsed_sec": 0.0399137909989804,
+  "injected_decode_delay_sec": 0.03,
+  "injected_preparation_delay_sec": 0.02,
+  "other_finalize_elapsed_sec": 0.00027837499510496855,
+  "partition_error_sec": 0.0,
+  "preparation_elapsed_sec": 0.029774374997941777,
+  "total_elapsed_sec": 0.06996654099202715
+}

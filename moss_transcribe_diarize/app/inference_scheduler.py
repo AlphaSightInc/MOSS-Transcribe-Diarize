@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from collections import deque
 from dataclasses import dataclass
 from typing import Any, Callable, Literal, TypeVar
@@ -24,9 +25,33 @@ class InferenceDispatchSnapshot:
     waiting_background_calls: int
 
 
+@dataclass(frozen=True, slots=True)
+class InferenceDispatchTiming:
+    """Content-free lifecycle of one decoder-window submission."""
+
+    owner_kind: InferenceKind
+    owner_key: str
+    window_index: int
+    accepted_monotonic_ns: int
+    wait_started_monotonic_ns: int
+    started_monotonic_ns: int | None
+    ended_monotonic_ns: int | None
+
+
 @dataclass(slots=True)
 class _Waiter:
     key: str
+
+
+@dataclass(slots=True)
+class _DispatchTimingState:
+    owner_kind: InferenceKind
+    owner_key: str
+    window_index: int
+    accepted_monotonic_ns: int
+    wait_started_monotonic_ns: int
+    started_monotonic_ns: int | None = None
+    ended_monotonic_ns: int | None = None
 
 
 class InferenceDispatchScheduler:
@@ -37,7 +62,13 @@ class InferenceDispatchScheduler:
     may consume only one, leaving one slot available when Live arrives later.
     """
 
-    def __init__(self, *, max_calls: int = 2, max_background_calls: int = 1) -> None:
+    def __init__(
+        self,
+        *,
+        max_calls: int = 2,
+        max_background_calls: int = 1,
+        monotonic_ns: Callable[[], int] = time.monotonic_ns,
+    ) -> None:
         if not isinstance(max_calls, int) or isinstance(max_calls, bool) or max_calls <= 0:
             raise ValueError("max_calls must be a positive integer.")
         if (
@@ -55,6 +86,9 @@ class InferenceDispatchScheduler:
         self._cancelled_background_keys: set[str] = set()
         self._running_calls = 0
         self._running_background_calls = 0
+        self._monotonic_ns = monotonic_ns
+        self._owner_window_counts: dict[tuple[InferenceKind, str], int] = {}
+        self._dispatch_timings: list[_DispatchTimingState] = []
 
     def run_live(
         self,
@@ -94,6 +128,21 @@ class InferenceDispatchScheduler:
                 waiting_background_calls=len(self._background_waiters),
             )
 
+    def dispatch_timings(self) -> tuple[InferenceDispatchTiming, ...]:
+        with self._condition:
+            return tuple(
+                InferenceDispatchTiming(
+                    owner_kind=timing.owner_kind,
+                    owner_key=timing.owner_key,
+                    window_index=timing.window_index,
+                    accepted_monotonic_ns=timing.accepted_monotonic_ns,
+                    wait_started_monotonic_ns=timing.wait_started_monotonic_ns,
+                    started_monotonic_ns=timing.started_monotonic_ns,
+                    ended_monotonic_ns=timing.ended_monotonic_ns,
+                )
+                for timing in self._dispatch_timings
+            )
+
     def _run(
         self,
         kind: InferenceKind,
@@ -105,6 +154,19 @@ class InferenceDispatchScheduler:
     ) -> _T:
         if not key:
             raise ValueError("inference dispatch key must be non-empty.")
+        accepted_ns = self._monotonic_ns()
+        with self._condition:
+            owner = (kind, key)
+            window_index = self._owner_window_counts.get(owner, 0)
+            self._owner_window_counts[owner] = window_index + 1
+            timing = _DispatchTimingState(
+                owner_kind=kind,
+                owner_key=key,
+                window_index=window_index,
+                accepted_monotonic_ns=accepted_ns,
+                wait_started_monotonic_ns=self._monotonic_ns(),
+            )
+            self._dispatch_timings.append(timing)
         if on_wait is not None:
             on_wait()
         waiter = _Waiter(key)
@@ -135,11 +197,14 @@ class InferenceDispatchScheduler:
                     break
                 self._condition.wait()
         try:
+            with self._condition:
+                timing.started_monotonic_ns = self._monotonic_ns()
             if on_start is not None:
                 on_start()
             return call()
         finally:
             with self._condition:
+                timing.ended_monotonic_ns = self._monotonic_ns()
                 self._running_calls -= 1
                 if kind == "background":
                     self._running_background_calls -= 1
@@ -196,5 +261,6 @@ __all__ = [
     "InferenceDispatchCancelled",
     "InferenceDispatchScheduler",
     "InferenceDispatchSnapshot",
+    "InferenceDispatchTiming",
     "ScheduledInferenceRunner",
 ]

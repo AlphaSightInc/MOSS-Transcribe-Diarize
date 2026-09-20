@@ -676,6 +676,9 @@ class TerminalFinalizationAccounting:
     generated_tokens: int
     prompt_tokens: int
     decode_elapsed_sec: float | None
+    preparation_elapsed_sec: float | None
+    other_finalize_elapsed_sec: float | None
+    total_elapsed_sec: float | None
     possibly_truncated: bool
     segments: int
     local_speakers: int
@@ -707,6 +710,9 @@ class TerminalFinalizationAccounting:
             "generated_tokens": self.generated_tokens,
             "prompt_tokens": self.prompt_tokens,
             "decode_elapsed_sec": self.decode_elapsed_sec,
+            "preparation_elapsed_sec": self.preparation_elapsed_sec,
+            "other_finalize_elapsed_sec": self.other_finalize_elapsed_sec,
+            "total_elapsed_sec": self.total_elapsed_sec,
             "possibly_truncated": self.possibly_truncated,
             "segments": self.segments,
             "local_speakers": self.local_speakers,
@@ -916,8 +922,8 @@ class TerminalTranscriptFinalizer:
                 "digital_silence",
                 gaps=gaps,
                 tape_samples=plan.end_sample,
-                decode_elapsed_sec=0.0,
             )
+        total_started = time.monotonic()
         with tempfile.TemporaryDirectory(prefix="mtd-terminal-", dir=self.scratch_dir) as scratch:
             wav_path = Path(scratch) / f"terminal-{plan.epoch:04d}.wav"
             try:
@@ -925,13 +931,22 @@ class TerminalTranscriptFinalizer:
                     tape.write_wav(wav_path, start_sample=0, end_sample=plan.end_sample)
                 )
             except CompleteMixedTapeUnavailable as exc:
+                preparation_finished = time.monotonic()
                 return self._refused(
-                    plan, TerminalOutcome.TAPE_UNAVAILABLE, str(exc), gaps=gaps
+                    plan,
+                    TerminalOutcome.TAPE_UNAVAILABLE,
+                    str(exc),
+                    gaps=gaps,
+                    preparation_elapsed_sec=preparation_finished - total_started,
+                    total_elapsed_sec=preparation_finished - total_started,
                 )
-            started = time.monotonic()
+            preparation_finished = time.monotonic()
+            preparation_elapsed_sec = preparation_finished - total_started
+            decode_started = preparation_finished
             try:
                 result = self.runner.transcribe(wav_path, **self.transcribe_kwargs)
             except Exception as exc:
+                decode_finished = time.monotonic()
                 # Raw runner messages may quote the rejected answer. Keep the reason's
                 # type; WindowTranscriptionError separately provides content-free wrapped
                 # exception details, never a word of the meeting.
@@ -943,7 +958,9 @@ class TerminalTranscriptFinalizer:
                     exc.__class__.__name__,
                     gaps=gaps,
                     tape_samples=tape_samples,
-                    decode_elapsed_sec=time.monotonic() - started,
+                    decode_elapsed_sec=decode_finished - decode_started,
+                    preparation_elapsed_sec=preparation_elapsed_sec,
+                    total_elapsed_sec=decode_finished - total_started,
                 )
                 if isinstance(exc, WindowTranscriptionError):
                     from dataclasses import replace
@@ -952,12 +969,16 @@ class TerminalTranscriptFinalizer:
                         refusal.accounting, window_failure=exc.to_dict(),
                     ))
                 return refusal
-            elapsed_sec = time.monotonic() - started
+            decode_finished = time.monotonic()
+            elapsed_sec = decode_finished - decode_started
 
         segments, local_speakers, mapping, resolution = self._segments_of(
             result, end_sample=plan.end_sample, base_surface=base_surface,
             canonical_speakers=canonical_speakers,
         )
+        finalize_finished = time.monotonic()
+        other_finalize_elapsed_sec = finalize_finished - decode_finished
+        total_elapsed_sec = finalize_finished - total_started
         accounting = self._accounting(
             plan,
             TerminalOutcome.FINALIZED if segments else TerminalOutcome.NO_TRANSCRIPT,
@@ -966,6 +987,9 @@ class TerminalTranscriptFinalizer:
             tape_samples=tape_samples,
             result=result,
             decode_elapsed_sec=elapsed_sec,
+            preparation_elapsed_sec=preparation_elapsed_sec,
+            other_finalize_elapsed_sec=other_finalize_elapsed_sec,
+            total_elapsed_sec=total_elapsed_sec,
             segments=segments,
             local_speakers=local_speakers,
             mapping=mapping,
@@ -1055,6 +1079,9 @@ class TerminalTranscriptFinalizer:
         gaps: tuple[Any, ...],
         tape_samples: int = 0,
         decode_elapsed_sec: float | None = None,
+        preparation_elapsed_sec: float | None = None,
+        other_finalize_elapsed_sec: float | None = None,
+        total_elapsed_sec: float | None = None,
     ) -> TerminalFinalization:
         return TerminalFinalization(
             proposal=None,
@@ -1066,6 +1093,9 @@ class TerminalTranscriptFinalizer:
                 tape_samples=tape_samples,
                 result=None,
                 decode_elapsed_sec=decode_elapsed_sec,
+                preparation_elapsed_sec=preparation_elapsed_sec,
+                other_finalize_elapsed_sec=other_finalize_elapsed_sec,
+                total_elapsed_sec=total_elapsed_sec,
                 segments=(),
                 local_speakers=(),
                 mapping={},
@@ -1082,6 +1112,9 @@ class TerminalTranscriptFinalizer:
         tape_samples: int,
         result: Any,
         decode_elapsed_sec: float | None,
+        preparation_elapsed_sec: float | None,
+        other_finalize_elapsed_sec: float | None,
+        total_elapsed_sec: float | None,
         segments: tuple[EffectiveTranscriptSegment, ...],
         local_speakers: tuple[str, ...],
         mapping: Mapping[str, str],
@@ -1102,6 +1135,9 @@ class TerminalTranscriptFinalizer:
             generated_tokens=int(getattr(result, "generated_tokens", 0) or 0),
             prompt_tokens=int(getattr(result, "prompt_len", 0) or 0),
             decode_elapsed_sec=decode_elapsed_sec,
+            preparation_elapsed_sec=preparation_elapsed_sec,
+            other_finalize_elapsed_sec=other_finalize_elapsed_sec,
+            total_elapsed_sec=total_elapsed_sec,
             possibly_truncated=bool(getattr(result, "possibly_truncated", False)),
             segments=len(segments),
             local_speakers=len(local_speakers),

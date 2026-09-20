@@ -10,7 +10,10 @@ the selected column (trio WER `.131861`, content recall `.9439`) to every printe
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, replace
+from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -26,8 +29,12 @@ from moss_transcribe_diarize.app.live_transcript_convergence import (
     RollingGeometry,
     RollingStatus,
     RollingTranscriptConverger,
+    TerminalDecodePlan,
+    TerminalOutcome,
+    TerminalTranscriptFinalizer,
     UnmeasuredRollingGeometry,
 )
+from moss_transcribe_diarize.app.live_tape import CompleteMixedTapeUnavailable
 
 SAMPLE_RATE = 16000
 WINDOW = DEFAULT_ROLLING_GEOMETRY.window_samples
@@ -64,6 +71,112 @@ def feed(converger: RollingTranscriptConverger, samples: int) -> None:
         size = min(frame, remaining)
         converger.accept_pcm(converger.accounting().accepted_samples, silence(size))
         remaining -= size
+
+
+class _TimingTape:
+    has_signal = True
+
+    def __init__(self, *, delay: float = 0.0, failure: Exception | None = None):
+        self.delay = delay
+        self.failure = failure
+
+    def gaps(self, through_sample: int) -> tuple[object, ...]:
+        del through_sample
+        return ()
+
+    def write_wav(self, destination: str | Path, *, start_sample: int, end_sample: int) -> int:
+        del start_sample
+        time.sleep(self.delay)
+        if self.failure is not None:
+            raise self.failure
+        Path(destination).write_bytes(b"timing fixture")
+        return end_sample
+
+
+class _TimingRunner:
+    def __init__(self, text: str, *, delay: float = 0.0, failure: Exception | None = None):
+        self.text = text
+        self.delay = delay
+        self.failure = failure
+
+    def transcribe(self, audio_path: Path):
+        del audio_path
+        time.sleep(self.delay)
+        if self.failure is not None:
+            raise self.failure
+        return SimpleNamespace(text=self.text)
+
+
+def _terminal_plan() -> TerminalDecodePlan:
+    return TerminalDecodePlan(
+        epoch=0,
+        end_sample=SAMPLE_RATE,
+        rolling_through_sample=0,
+        rolling_status=RollingStatus.STOPPED,
+        windows_completed=0,
+        windows_failed=0,
+    )
+
+
+def test_terminal_stage_clocks_leave_unreached_stages_null(tmp_path):
+    preparation_failure = TerminalTranscriptFinalizer(
+        runner=_TimingRunner("never"), scratch_dir=tmp_path
+    ).finalize(
+        plan=_terminal_plan(),
+        tape=_TimingTape(failure=CompleteMixedTapeUnavailable("injected preparation failure")),
+        base_text_revision_version=0,
+    ).accounting
+    assert preparation_failure.preparation_elapsed_sec is not None
+    assert preparation_failure.decode_elapsed_sec is None
+    assert preparation_failure.other_finalize_elapsed_sec is None
+    assert preparation_failure.total_elapsed_sec is not None
+    assert preparation_failure.to_dict()["decode_elapsed_sec"] is None
+    assert preparation_failure.to_dict()["other_finalize_elapsed_sec"] is None
+
+    decode_failure = TerminalTranscriptFinalizer(
+        runner=_TimingRunner("never", failure=RuntimeError("injected decode failure")),
+        scratch_dir=tmp_path,
+    ).finalize(
+        plan=_terminal_plan(), tape=_TimingTape(), base_text_revision_version=0
+    ).accounting
+    assert decode_failure.preparation_elapsed_sec is not None
+    assert decode_failure.decode_elapsed_sec is not None
+    assert decode_failure.other_finalize_elapsed_sec is None
+    assert decode_failure.total_elapsed_sec is not None
+    assert decode_failure.to_dict()["other_finalize_elapsed_sec"] is None
+
+    empty = TerminalTranscriptFinalizer(
+        runner=_TimingRunner(""), scratch_dir=tmp_path
+    ).finalize(
+        plan=_terminal_plan(), tape=_TimingTape(), base_text_revision_version=0
+    ).accounting
+    assert empty.outcome is TerminalOutcome.NO_TRANSCRIPT
+    assert empty.preparation_elapsed_sec is not None
+    assert empty.decode_elapsed_sec is not None
+    assert empty.other_finalize_elapsed_sec is not None
+    assert empty.total_elapsed_sec is not None
+
+
+def test_terminal_stage_clocks_partition_total_without_relabeling_decode(tmp_path):
+    accounting = TerminalTranscriptFinalizer(
+        runner=_TimingRunner("[0][S01]words[1]", delay=0.03),
+        scratch_dir=tmp_path,
+    ).finalize(
+        plan=_terminal_plan(),
+        tape=_TimingTape(delay=0.02),
+        base_text_revision_version=0,
+    ).accounting
+
+    assert accounting.preparation_elapsed_sec >= 0.015
+    assert accounting.decode_elapsed_sec >= 0.025
+    assert accounting.other_finalize_elapsed_sec is not None
+    assert accounting.total_elapsed_sec is not None
+    assert accounting.total_elapsed_sec == pytest.approx(
+        accounting.preparation_elapsed_sec
+        + accounting.decode_elapsed_sec
+        + accounting.other_finalize_elapsed_sec,
+        abs=1e-6,
+    )
 
 
 TURNS = (

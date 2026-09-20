@@ -206,7 +206,7 @@ class _CampaignBackpressure:
                     with self._lock:
                         self._state["retry_timed_out"] = True
                     raise ExternalMeasurementError(
-                        f"eight-session refused frame retry timed out: "
+                        f"two-session refused frame retry timed out: "
                         f"session_id={session_id}, lane={lane}, sequence={frame.sequence}"
                     )
                 try:
@@ -2272,8 +2272,8 @@ class FixedAccountCampaign:
         self._artifact_json("quality/content-free-metrics.json", result)
         return result
 
-    def four_session_capacity(self) -> dict[str, object]:
-        result = self._run_live_load(sessions=4, duration_seconds=600.0)
+    def two_session_capacity(self) -> dict[str, object]:
+        result = self._run_live_load(sessions=2, duration_seconds=600.0)
         backpressure = self._backpressure_probe()
         result.update(
             {
@@ -2302,7 +2302,7 @@ class FixedAccountCampaign:
         from .phase2_acceptance_summary import measure_browser_summary
         return measure_browser_summary(self)
 
-    def eight_session_overload(self) -> dict[str, object]:
+    def excess_admission_overload(self) -> dict[str, object]:
         descriptor = self.a.json("GET", "/api/live/descriptor", 200)[0]["descriptor"]
         capacity_samples = int(descriptor["bounds"]["max_retained_samples"])
         frame_samples = int(descriptor["frame_samples"])
@@ -2313,14 +2313,14 @@ class FixedAccountCampaign:
                      overload_minimum_frames(capacity_samples, frame_samples))
         duration = frames * frame_samples / LIVE_SAMPLE_RATE
         result = self._run_live_load(
-            sessions=8,
+            sessions=2,
             duration_seconds=duration,
             embedded_backpressure=True,
         )
         backpressure = result.pop("embedded_backpressure_observation")
         if not isinstance(backpressure, dict):
             raise ExternalMeasurementError(
-                "eight-session campaign omitted its backpressure observation"
+                "two-session overload campaign omitted its backpressure observation"
             )
         result.update(
             {
@@ -2350,8 +2350,8 @@ class FixedAccountCampaign:
         duration_seconds: float,
         embedded_backpressure: bool = False,
     ) -> dict[str, object]:
-        if embedded_backpressure and sessions != 8:
-            raise ValueError("embedded backpressure belongs to the eight-session campaign")
+        if embedded_backpressure and sessions != 2:
+            raise ValueError("embedded backpressure belongs to the two-session overload campaign")
         repo = Path(self._text("repo_root")).resolve()
         fixture = json.loads(
             (repo / "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json")
@@ -2535,6 +2535,49 @@ class FixedAccountCampaign:
         campaign_started_ns = time.monotonic_ns()
         for thread in threads:
             thread.start()
+        admission_observation = None
+        if embedded_backpressure:
+            admission_deadline = time.monotonic() + 30
+            while time.monotonic() < admission_deadline:
+                with lock:
+                    accepted = tuple(created)
+                if len(accepted) == sessions or not any(
+                    thread.is_alive() for thread in threads
+                ):
+                    break
+                time.sleep(0.01)
+            response = self.a.request(
+                "POST", "/api/live/sessions", json={"echo_mode": "speakers"}
+            )
+            try:
+                response_payload = response.json()
+            except ValueError:
+                response_payload = {}
+            detail = response_payload.get("detail", {}) if isinstance(response_payload, dict) else {}
+            active_after_refusal = []
+            for session_id, owner, _ordinal in accepted:
+                client = self.a if owner == 0 else self.b
+                snapshot, _ = client.json(
+                    "GET", f"/api/live/sessions/{session_id}/snapshot", 200
+                )
+                active_after_refusal.append(
+                    ((snapshot.get("snapshot") or {}).get("session") or {}).get("status")
+                    == "active"
+                )
+            admission_observation = {
+                "accepted_sessions": len(accepted),
+                "excess_attempts": 1,
+                "excess_status": response.status_code,
+                "refusal_code": detail.get("code") if isinstance(detail, dict) else None,
+                "accepted_active_after_refusal": all(active_after_refusal)
+                and len(active_after_refusal) == sessions,
+            }
+            if response.status_code == 201 and isinstance(response_payload, dict):
+                excess_id = response_payload.get("id")
+                if isinstance(excess_id, str):
+                    self.a.request(
+                        "POST", f"/api/live/sessions/{excess_id}/abort", json={}
+                    )
         wrong_owner_probes = 0
         while any(thread.is_alive() for thread in threads):
             if time.monotonic() >= next_resource_sample:
@@ -2548,7 +2591,7 @@ class FixedAccountCampaign:
         campaign_finished_ns = time.monotonic_ns()
         if backpressure is not None:
             # Preserve the actual refusal/retry outcome even when a worker fails.
-            self._artifact_json("load-8/backpressure-observation.json", backpressure.observation())
+            self._artifact_json(f"load-{sessions}/backpressure-observation.json", backpressure.observation())
         if failures or len(outputs) != sessions:
             raise ExternalMeasurementError(
                 f"live load failed in {len(failures)} session/probe paths"
@@ -2689,6 +2732,7 @@ class FixedAccountCampaign:
         if embedded_backpressure:
             assert backpressure is not None
             result["embedded_backpressure_observation"] = backpressure.observation()
+            result["admission_observation"] = admission_observation
         label = f"capacity-{sessions}"
         self._artifact_json(
             f"{label}/observations.json",

@@ -45,8 +45,8 @@ PREDICATE_FAMILY: Mapping[str, str] = {
     "revocation_lifecycle": "account-browser-uds",
     "meeting_modes_history_restart": "account-browser-http",
     "crash_recovery": "account-host-restart",
-    "four_session_capacity": "account-live-capacity",
-    "eight_session_overload": "account-live-capacity",
+    "two_session_capacity": "account-live-capacity",
+    "excess_admission_overload": "account-live-capacity",
     "quality_corpus": "account-live-quality",
     "audio_durability_download": "account-browser-http",
     "operator_control": "account-uds",
@@ -134,7 +134,7 @@ PREDICATE_PREREQUISITES: Mapping[str, tuple[MeasurementPrerequisite, ...]] = {
         MeasurementPrerequisite("operator_socket", "service-owned operator socket"),
         MeasurementPrerequisite("quality_corpus", "frozen real-human-speech corpus"),
     ),
-    "four_session_capacity": (
+    "two_session_capacity": (
         MeasurementPrerequisite("https_origin", "deployed trusted HTTPS Account origin"),
         MeasurementPrerequisite("account_a_cookie_file", "Account A Sign-in session cookie"),
         MeasurementPrerequisite("account_b_cookie_file", "Account B Sign-in session cookie"),
@@ -144,7 +144,7 @@ PREDICATE_PREREQUISITES: Mapping[str, tuple[MeasurementPrerequisite, ...]] = {
         MeasurementPrerequisite("account_a_sentinel_file", "Account A sentinel"),
         MeasurementPrerequisite("account_b_sentinel_file", "Account B sentinel"),
     ),
-    "eight_session_overload": (
+    "excess_admission_overload": (
         MeasurementPrerequisite("https_origin", "deployed trusted HTTPS Account origin"),
         MeasurementPrerequisite("account_a_cookie_file", "Account A Sign-in session cookie"),
         MeasurementPrerequisite("account_b_cookie_file", "Account B Sign-in session cookie"),

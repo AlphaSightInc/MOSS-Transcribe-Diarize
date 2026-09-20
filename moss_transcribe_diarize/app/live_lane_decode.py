@@ -340,6 +340,15 @@ def finalize_lanes(c, finalizer, **kwargs):
             tape_samples=tape_samples,
         )
     template = next((r for r in results if r.proposal is not None), results[0])
+
+    def aggregate_elapsed(name: str) -> float | None:
+        reached = tuple(
+            value
+            for result in results
+            if (value := getattr(result.accounting, name)) is not None
+        )
+        return sum(reached) if reached else None
+
     # These are meeting totals, including lanes that refused publication. Plan and
     # runner geometry are shared; outcome still describes the assembled proposal.
     accounting = replace(
@@ -353,6 +362,9 @@ def finalize_lanes(c, finalizer, **kwargs):
             "seam_merged_segments", "seam_dropped_segments", "seam_displaced_samples",
         )},
         decode_elapsed_sec=sum(r.accounting.decode_elapsed_sec or 0 for r in results),
+        preparation_elapsed_sec=aggregate_elapsed("preparation_elapsed_sec"),
+        other_finalize_elapsed_sec=aggregate_elapsed("other_finalize_elapsed_sec"),
+        total_elapsed_sec=aggregate_elapsed("total_elapsed_sec"),
         window_diagnostics=[
             {**diagnostic, "source_lane": lane}
             for lane, result in lane_results_by_name.items()
