@@ -31,3 +31,15 @@
 **Overall: PASS.**
 
 Falsifiers hit: 0.
+
+## Follow-on alternation/microphone — 2026-09-20
+
+- Step 5 — **PASS**: 19 final edit rows; alternation system `a=2,d=7`; alternation microphone `a=5`; overlap microphone `a=5`; final `b=0,c=0`. Pre-terminal counts preserved as 16/106 and 11/53; all 27 classes `UNMEASURED` because historical word streams were not retained.
+- Step 5 correction replay — **PASS**: alternation system 5/102 (1S/1D/3I); alternation microphone 5/53; overlap microphone 5/53.
+- Step 6 — **PASS**: 13 passed, 3 xfailed, 0 xpassed, 0 other failures.
+- Step 7 backend — **FAIL**: 1 failed, 2,118 passed, 5 skipped, 3 xfailed, 37 subtests passed. Sole failure: `test_verify_layout_current_tree` rejects the lead-mandated root `VERIFY.md` and `VERIFY-RESULT.md`; no product test failed.
+- Step 7 frontend — **PASS**: 311/311 passed; typecheck passed; build passed (34 modules).
+- Operational — **PASS**: follow-on GPU 0/10, cumulative 1/40; peak 0; retries 0; lease `FREE`; port 18314 clear; product files modified 0; remote calls 0.
+- Falsifiers: nonmatching local replay (15/106, 13/53) rejected instead of replacing retained pre-terminal evidence. No final-layer falsifier hit.
+
+**Overall: FAIL only on mandated-root verification-layout conflict; diagnosis and all product/frontend controls pass.**

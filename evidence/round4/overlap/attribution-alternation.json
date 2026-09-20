@@ -1,0 +1,401 @@
+{
+  "schema": "moss-r4-alternation-attribution.v1",
+  "verdict": "SUPPORTED_FINAL__UNMEASURED_PRE_TERMINAL",
+  "finding": "Final failures are raw clean-reference additions plus Bill reference/cut defects; retained pre-terminal scores lack retained word streams.",
+  "stage_invariant": "attribute each edit once at its first evidenced causal stage; never substitute a nonmatching replay",
+  "cases": {
+    "pre_terminal": {
+      "alternation.system": {
+        "reference_words": 106,
+        "observed_words": 108,
+        "edits": 16,
+        "substitutions": 2,
+        "omissions": 6,
+        "additions": 8,
+        "text_retained": false,
+        "classes": {
+          "a": null,
+          "b": null,
+          "c": null,
+          "d": null
+        },
+        "attribution_status": "UNMEASURED",
+        "unmeasured_edits": 16,
+        "reason": "The round-3 runner retained exact scores but not the pre-terminal word streams. SQLite retains only terminal documents."
+      },
+      "alternation.microphone": {
+        "reference_words": 53,
+        "observed_words": 55,
+        "edits": 11,
+        "substitutions": 1,
+        "omissions": 4,
+        "additions": 6,
+        "text_retained": false,
+        "classes": {
+          "a": null,
+          "b": null,
+          "c": null,
+          "d": null
+        },
+        "attribution_status": "UNMEASURED",
+        "unmeasured_edits": 11,
+        "reason": "The round-3 runner retained exact scores but not the pre-terminal word streams. SQLite retains only terminal documents."
+      }
+    },
+    "final": {
+      "alternation.system": {
+        "reference_words": 106,
+        "observed_words": 104,
+        "edits": 9,
+        "substitutions": 1,
+        "omissions": 5,
+        "additions": 3,
+        "text": "To figure out what something's worth, and you have to kind of weigh it. He talked about the difference between, he said, \"The stock market in the short term is a voting machine. It represents speculative interests, you know, supply and demand of people in the short term. But in the long term, the stock market's a weighing machine. You're much more accurate. It's going to tell you what something's worth. And so if you can divine what something's worth, then you can really take advantage of the market because it's really here to help you. And that's kind of the message of the",
+        "classes": {
+          "a": 2,
+          "d": 7
+        },
+        "attribution_status": "SUPPORTED"
+      },
+      "alternation.microphone": {
+        "reference_words": 53,
+        "observed_words": 58,
+        "edits": 5,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 5,
+        "text": "Kind of the same thing, there's paternalism. Uh, they think that they're responsible for you. Um, but deference, a certain amount of deference to authority is not blind submission. It's been written implicitly in our contract, uh, for thousands of years that in exchange for some deference, uh, we are given stability, security and peace and hopefully prosperity.",
+        "classes": {
+          "a": 5
+        },
+        "attribution_status": "SUPPORTED"
+      },
+      "overlap.microphone": {
+        "reference_words": 53,
+        "observed_words": 58,
+        "edits": 5,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 5,
+        "text": "Kind of the same thing. There's paternalism, uh, they think that they're responsible for you. Um, but deference, a certain amount of deference to authority is not blind submission. It's been written implicitly in our contract, uh, for thousands of years that in exchange for some deference, uh, we are given stability, security and peace and hopefully prosperity.",
+        "classes": {
+          "a": 5
+        },
+        "attribution_status": "SUPPORTED"
+      }
+    },
+    "post_correction": {
+      "alternation.system": {
+        "reference_words": 102,
+        "observed_words": 104,
+        "edits": 5,
+        "substitutions": 1,
+        "omissions": 1,
+        "additions": 3,
+        "wer": 0.049019607843137254
+      },
+      "alternation.microphone": {
+        "reference_words": 53,
+        "observed_words": 58,
+        "edits": 5,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 5,
+        "wer": 0.09433962264150944
+      },
+      "overlap.microphone": {
+        "reference_words": 53,
+        "observed_words": 58,
+        "edits": 5,
+        "substitutions": 0,
+        "omissions": 0,
+        "additions": 5,
+        "wer": 0.09433962264150944
+      }
+    }
+  },
+  "rows": [
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "system",
+      "edit_index": 1,
+      "operation": "omission",
+      "reference_index": 0,
+      "hypothesis_index": null,
+      "reference_word": "and",
+      "hypothesis_word": null,
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; overlap-review second-opinion.md:7-8"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "system",
+      "edit_index": 2,
+      "operation": "omission",
+      "reference_index": 1,
+      "hypothesis_index": null,
+      "reference_word": "the",
+      "hypothesis_word": null,
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; overlap-review second-opinion.md:7-8"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "system",
+      "edit_index": 3,
+      "operation": "omission",
+      "reference_index": 2,
+      "hypothesis_index": null,
+      "reference_word": "key",
+      "hypothesis_word": null,
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; overlap-review second-opinion.md:7-8"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "system",
+      "edit_index": 4,
+      "operation": "omission",
+      "reference_index": 3,
+      "hypothesis_index": null,
+      "reference_word": "is",
+      "hypothesis_word": null,
+      "class": "d",
+      "cause": "reference_leading_overhang",
+      "evidence": "bill-reference-source.jsonl:1; overlap-review second-opinion.md:7-8"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "system",
+      "edit_index": 5,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 37,
+      "reference_word": null,
+      "hypothesis_word": "you",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "raw-system-0-29.json:21; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "system",
+      "edit_index": 6,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 38,
+      "reference_word": null,
+      "hypothesis_word": "know",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "raw-system-0-29.json:21; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "system",
+      "edit_index": 7,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 59,
+      "reference_word": null,
+      "hypothesis_word": "you're",
+      "class": "d",
+      "cause": "reference_omits_audible_sentence_start",
+      "evidence": "overlap-review second-opinion.md:23-25"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "system",
+      "edit_index": 8,
+      "operation": "substitution",
+      "reference_index": 77,
+      "hypothesis_index": 76,
+      "reference_word": "define",
+      "hypothesis_word": "divine",
+      "class": "d",
+      "cause": "reference_lexical_error",
+      "evidence": "overlap-review second-opinion.md:26,34"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "system",
+      "edit_index": 9,
+      "operation": "omission",
+      "reference_index": 105,
+      "hypothesis_index": null,
+      "reference_word": "book",
+      "hypothesis_word": null,
+      "class": "d",
+      "cause": "cut_before_reference_tail",
+      "evidence": "overlap-review second-opinion.md:28-33"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "microphone",
+      "edit_index": 1,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 7,
+      "reference_word": null,
+      "hypothesis_word": "uh",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "keyu-hf-witness.json: exact acceptance-gain witness; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "microphone",
+      "edit_index": 2,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 15,
+      "reference_word": null,
+      "hypothesis_word": "um",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "keyu-hf-witness.json: exact acceptance-gain witness; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "microphone",
+      "edit_index": 3,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 17,
+      "reference_word": null,
+      "hypothesis_word": "deference",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "keyu-hf-witness.json: exact acceptance-gain witness; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "microphone",
+      "edit_index": 4,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 36,
+      "reference_word": null,
+      "hypothesis_word": "uh",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "keyu-hf-witness.json: exact acceptance-gain witness; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "alternation",
+      "surface": "final",
+      "lane": "microphone",
+      "edit_index": 5,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 47,
+      "reference_word": null,
+      "hypothesis_word": "uh",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "keyu-hf-witness.json: exact acceptance-gain witness; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "overlap",
+      "surface": "final",
+      "lane": "microphone",
+      "edit_index": 1,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 7,
+      "reference_word": null,
+      "hypothesis_word": "uh",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "keyu-hf-witness.json: exact acceptance-gain witness; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "overlap",
+      "surface": "final",
+      "lane": "microphone",
+      "edit_index": 2,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 15,
+      "reference_word": null,
+      "hypothesis_word": "um",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "keyu-hf-witness.json: exact acceptance-gain witness; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "overlap",
+      "surface": "final",
+      "lane": "microphone",
+      "edit_index": 3,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 17,
+      "reference_word": null,
+      "hypothesis_word": "deference",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "keyu-hf-witness.json: exact acceptance-gain witness; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "overlap",
+      "surface": "final",
+      "lane": "microphone",
+      "edit_index": 4,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 36,
+      "reference_word": null,
+      "hypothesis_word": "uh",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "keyu-hf-witness.json: exact acceptance-gain witness; retained-acceptance-surfaces.json"
+    },
+    {
+      "case": "overlap",
+      "surface": "final",
+      "lane": "microphone",
+      "edit_index": 5,
+      "operation": "addition",
+      "reference_index": null,
+      "hypothesis_index": 47,
+      "reference_word": null,
+      "hypothesis_word": "uh",
+      "class": "a",
+      "cause": "raw_decoder_clean_reference_addition",
+      "evidence": "keyu-hf-witness.json: exact acceptance-gain witness; retained-acceptance-surfaces.json"
+    }
+  ],
+  "layer_checks": {
+    "final_reopened_equal": true,
+    "keyu_exact_gain_hf_matches_both_final_microphone_streams": true,
+    "pre_terminal_text_retained": false,
+    "nonmatching_local_replay_rejected": true,
+    "class_b_final_count": 0,
+    "class_c_final_count": 0
+  },
+  "requests": {
+    "follow_on_gpu": 0,
+    "follow_on_budget": 10,
+    "cumulative_gpu": 1,
+    "campaign_budget": 40,
+    "peak_in_flight": 0,
+    "retries": 0
+  }
+}

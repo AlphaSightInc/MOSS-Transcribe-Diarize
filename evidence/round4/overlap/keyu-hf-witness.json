@@ -1,0 +1,24 @@
+{
+  "schema": "moss-r4-local-hf-witness.v1",
+  "model_snapshot": "/Users/gao/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8",
+  "device": "mps",
+  "dtype": "float32",
+  "greedy": true,
+  "network": "disabled with HF_HUB_OFFLINE=1 and TRANSFORMERS_OFFLINE=1",
+  "remote_requests": 0,
+  "audio": "/private/tmp/moss-alternation-keyu-0-25.wav",
+  "witnesses": [
+    {
+      "gain": 1.0,
+      "purpose": "reference-boundary and fluent-form witness",
+      "transcript_excerpt": "[0.00] Kind of same thing ... But deference, a certain amount ...",
+      "findings": ["the 25 s cut begins with the preceding five-word sentence tail", "the fluent form contains one deference before a certain amount"]
+    },
+    {
+      "gain": 0.03,
+      "purpose": "exact acceptance-gain witness",
+      "text": "Kind of the same thing, there's paternalism. Uh, they think that they're responsible for you. Um, but deference, a certain amount of deference to authority is not blind submission. It's been written implicitly in our contract, uh, for thousands of years that in exchange for some deference, uh, we are given stability, security and peace and hopefully prosperity.",
+      "findings": ["matches the retained alternation final microphone word stream", "matches the retained overlap final microphone word stream", "the five scored additions are four fillers plus one repeated deference"]
+    }
+  ]
+}
