@@ -108,7 +108,37 @@ grep -q 'num_requests_waiting.* 0' "$RUN_ROOT/decoder-idle.txt"
 
 Close the tunnel, prove port 18400 has no listener, then return the lease to `FREE`.
 
-## 5. Tag, private push, and integration fast-forward
+## 5. Measurement rows after re-freeze
+
+F3r is gated on pane 3.3's F1 fix being merged into `$FROZEN_SHA`. It runs after
+F3s and keeps `capacity_2x1800: REQUIRED-NOT-RUN`.
+
+| Order | Row | Exact planned decoder | Provider | Required receipts | Running decoder total |
+|---|---|---:|---:|---|---:|
+| F3s | Summaries only | 3 | 6 | summary receipt; proxy delta `3/3/0` | 2,470 |
+| **F3r** | Retained File SIGKILL/resume | **6** (`n=3`, `k=1`: reference 3 + pre-crash 1 + post-restart 2) | 0 | `receipt.json`; `decoder-requests.jsonl`; private initial/restart logs | **2,476 / 5,000** |
+
+The brief's `2n-k=5` omits the real request that creates the one-window
+checkpoint. F3r accounts for all six requests and remains below its cap of 12.
+Missing evidence or an upstream error is `INCOMPLETE`.
+
+```sh
+cd "$RUN_ROOT/f3r-resume"
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. "$PY" prototypes/resume-row/run.py \
+  --run --frozen-sha "$FROZEN_SHA" \
+  --decoder-upstream-port "$DECODER_UPSTREAM_PORT" \
+  --budget 6 --port 17835 --proxy-port 19135 \
+  --model "$MODEL" --manifest "$MANIFEST" \
+  --out "$RUN_ROOT/f3r-resume-result"
+```
+
+Required PASS predicates: restart descriptor served while the retained Meeting is
+reserved; background checkpoint validation accepted; post-restart proxy delta
+exactly `2/2/0`; total proxy accepted/completed exactly `6/6`, peak at most two;
+Meeting `completed`; transcript exactly equals the uninterrupted reference in
+memory; retained owner directory reclaimed.
+
+## 6. Tag, private push, and integration fast-forward
 
 Run only after row 0 and adversarial review accept exactly `$FROZEN_SHA`.
 

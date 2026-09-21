@@ -1,0 +1,48 @@
+{
+  "actual_calls": {
+    "decoder": 0,
+    "provider": 0
+  },
+  "brief_arithmetic": {
+    "correct_formula": "n+k+(n-k)=2n",
+    "stated_formula": "2n-k",
+    "stated_value": 5,
+    "status": "UNDERCOUNTS_PRE_SIGKILL_K"
+  },
+  "capacity_2x1800": "REQUIRED-NOT-RUN",
+  "frozen_sha": "85aec9787b817fbd413c623fc550a6395a91591b",
+  "gated_on": "pane 3.3 F1 fix merged and product re-frozen",
+  "mode": "PLAN_ONLY",
+  "population": {
+    "duration_seconds": 360,
+    "k": 1,
+    "n": 3,
+    "source": "existing round-4 public corpus; alternating two retained 60-second clips",
+    "windows": [
+      {
+        "end": 150.0,
+        "index": 0,
+        "start": 0.0
+      },
+      {
+        "end": 270.0,
+        "index": 1,
+        "start": 120.0
+      },
+      {
+        "end": 360,
+        "index": 2,
+        "start": 240.0
+      }
+    ]
+  },
+  "provider_calls": 0,
+  "requests": {
+    "after_restart": 2,
+    "before_sigkill": 1,
+    "cap": 12,
+    "planned_decoder": 6,
+    "uninterrupted_reference": 3
+  },
+  "schema": "moss-r4-f3r-resume-plan.v1"
+}
