@@ -361,10 +361,19 @@ class FileMeetingTasks:
             return ()
         owners: list[tuple[str, str]] = []
         for account_dir in self._retained_root.iterdir():
-            if account_dir.is_symlink() or not account_dir.is_dir():
+            try:
+                if account_dir.is_symlink() or not account_dir.is_dir():
+                    continue
+                owner_dirs = tuple(account_dir.iterdir())
+            except OSError:
+                LOGGER.warning("Retained File account directory unreadable; skipping.")
                 continue
-            for owner_dir in account_dir.iterdir():
-                if owner_dir.is_symlink() or not owner_dir.is_dir():
+            for owner_dir in owner_dirs:
+                try:
+                    if owner_dir.is_symlink() or not owner_dir.is_dir():
+                        continue
+                except OSError:
+                    LOGGER.warning("Retained File owner entry unreadable; skipping.")
                     continue
                 owners.append((account_dir.name, owner_dir.name))
         return tuple(sorted(owners))
@@ -391,10 +400,22 @@ class FileMeetingTasks:
             raise
 
         handle = None
+        task = None
         try:
             handle = await workspace.create_meeting("file")
             input_path = self._retain_new_work(handle, staging_dir, input_path, ingress="file")
+            started = asyncio.Event()
+            run = self._run(handle, input_path, started)
+            try:
+                task = asyncio.create_task(run)
+            except BaseException:
+                run.close()
+                raise
+            self._register(handle, task)
         except BaseException:
+            if task is not None:
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
             if handle is not None:
                 await self._mark_failed(handle)
             self._remove_terminal_work_dir(staging_dir)
@@ -402,9 +423,6 @@ class FileMeetingTasks:
                 self._remove_terminal_work_dir(self._owner_dir(handle))
             raise
 
-        started = asyncio.Event()
-        task = asyncio.create_task(self._run(handle, input_path, started))
-        self._register(handle, task)
         await started.wait()
         return handle
 
@@ -418,10 +436,22 @@ class FileMeetingTasks:
         staging_dir = self._work_root / secrets.token_urlsafe(18)
         staging_dir.mkdir(parents=True, exist_ok=False)
         handle = None
+        task = None
         try:
             handle = await workspace.create_meeting("file")
             staging_dir = self._retain_new_directory(handle, staging_dir)
+            started = asyncio.Event()
+            run = self._acquire_and_run(handle, source_url, staging_dir, started)
+            try:
+                task = asyncio.create_task(run)
+            except BaseException:
+                run.close()
+                raise
+            self._register(handle, task)
         except BaseException:
+            if task is not None:
+                task.cancel()
+                await asyncio.gather(task, return_exceptions=True)
             if handle is not None:
                 await self._mark_failed(handle)
             self._remove_terminal_work_dir(staging_dir)
@@ -429,11 +459,6 @@ class FileMeetingTasks:
                 self._remove_terminal_work_dir(self._owner_dir(handle))
             raise
 
-        started = asyncio.Event()
-        task = asyncio.create_task(
-            self._acquire_and_run(handle, source_url, staging_dir, started)
-        )
-        self._register(handle, task)
         await started.wait()
         return handle
 
