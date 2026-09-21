@@ -1,6 +1,8 @@
 # R4-10 master runbook — frozen, serial, budgeted
 
-**State today: PLAN ONLY. Do not run a qualification row from this document until F0 passes.**
+**State today:** F1 is complete at 45 requests. F2/F3/F3s remain blocked until the
+integrated ownership/capture change is accepted and a new product SHA passes F0. Do not
+rerun F1 or launch another all-feature campaign.
 
 ## Decision and structural contract
 
@@ -12,46 +14,42 @@
 
 **Falsifier.** The runbook is invalid if a row lacks a frozen product check, bounded request count, expected receipt, or reconciliation to the shared ledger. Stop rather than infer a PASS.
 
-## F0 — frozen-SHA gate (0 decoder requests)
+## F0 — post-implementation freeze (0 decoder requests)
 
-The current tree is **not frozen**: candidate `round4/integration` is `71f23c0c`, run B is `16fd908e`, and `terminal_label_capture.py` is absent from integration. The existing labels checkout is also dirty (`docs/verify/r4-10-labels/VERIFY-RESULT.md`). No R4-10 row is authorised from those current trees.
-
-There is a second, narrower freeze blocker: feature harness `d8c5ab59` hard-codes `FROZEN_SHA = 71f23c0c`. It will correctly reject a later final product SHA. The feature owner must publish a **harness-only** execution revision that pins the accepted `FROZEN_SHA`; record that replacement SHA in the ledger. Do not hand-edit the copy during R4-10. Until that revision exists, do not open the shared F3 allocation: F3a/F3b are **INCOMPLETE, 0 spent**.
-
-The lead first merges/accepts run B and the terminal-label observer, then records one `FROZEN_SHA`. The following must all succeed before any provider, proxy, stack, or browser starts:
+Record two identities after the integrated change lands: `PRODUCT_SHA` owns product code;
+`HARNESS_SHA` may change only prototype/evidence/runbook paths. Never derive the product
+freeze from the moving integration branch.
 
 ```sh
 CANDIDATE=/Users/gao/Documents/Codex/2026-09-20/moss-round4/candidate
-FROZEN_SHA=$(git -C "$CANDIDATE" rev-parse round4/integration)
+: "${PRODUCT_SHA:?set PRODUCT_SHA to the accepted post-implementation SHA}"
+HARNESS_SHA=$(git -C "$CANDIDATE" rev-parse round4/integration)
 test -z "$(git -C "$CANDIDATE" status --porcelain=v1)"
-git -C "$CANDIDATE" merge-base --is-ancestor 16fd908e3fd4de6834c9cb0c27ac4630f9a4d146 "$FROZEN_SHA"
-git -C "$CANDIDATE" merge-base --is-ancestor 62b29715dc205fcaf2f2c91739c23fd90bb42b17 "$FROZEN_SHA"
-git -C "$CANDIDATE" cat-file -e "$FROZEN_SHA:moss_transcribe_diarize/app/terminal_label_capture.py"
+git -C "$CANDIDATE" merge-base --is-ancestor 16fd908e3fd4de6834c9cb0c27ac4630f9a4d146 "$PRODUCT_SHA"
+git -C "$CANDIDATE" cat-file -e "$PRODUCT_SHA:moss_transcribe_diarize/app/terminal_label_capture.py"
+git -C "$CANDIDATE" diff --quiet "$PRODUCT_SHA..$HARNESS_SHA" -- moss_transcribe_diarize frontend
 RUN_ROOT=/private/tmp/moss-r4-10-$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$RUN_ROOT"
 git clone --no-local --single-branch --branch round4/integration "$CANDIDATE" "$RUN_ROOT/frozen-preflight"
-git -C "$RUN_ROOT/frozen-preflight" checkout --detach "$FROZEN_SHA"
+git -C "$RUN_ROOT/frozen-preflight" checkout --detach "$PRODUCT_SHA"
 ```
 
-Run the product suites in `$RUN_ROOT/frozen-preflight` with the common runtime below. Retain SHA, branch, clean status, suite outputs, 17/17 asset parity, model path, manifest preflight, and `sqlite3.sqlite_version` in `$RUN_ROOT/frozen-preflight.json`. A stale branch, dirty product path, missing D27 reference/cut, absent capture module, or failed suite is **INCOMPLETE**; it spends zero requests.
+Run the product suites in `$RUN_ROOT/frozen-preflight` with the common runtime below.
+Retain both SHAs, clean status, suite outputs, 17/17 asset parity, model path, manifest
+preflight, and `sqlite3.sqlite_version` in `$RUN_ROOT/frozen-preflight.json`. Any failed
+predicate is **INCOMPLETE** and spends zero requests.
 
 Each row gets a fresh execution clone, not one of the plan clones. Construct it like this, setting `PLAN_SHA` to the recorded execution-harness SHA (the feature value is the new revision above):
 
 ```sh
 git clone --no-local --single-branch --branch round4/integration "$CANDIDATE" "$RUN_ROOT/$NAME"
-git -C "$RUN_ROOT/$NAME" checkout --detach "$FROZEN_SHA"
+git -C "$RUN_ROOT/$NAME" checkout --detach "$PRODUCT_SHA"
 git -C "$RUN_ROOT/$NAME" checkout "$PLAN_SHA" -- "$HARNESS_PATH"
-git -C "$RUN_ROOT/$NAME" diff --quiet "$FROZEN_SHA" -- moss_transcribe_diarize frontend
+git -C "$RUN_ROOT/$NAME" diff --quiet "$PRODUCT_SHA" -- moss_transcribe_diarize frontend
 ```
 
-**Pinned for this pass (lead, 2026-09-21):** product `FROZEN_SHA = 0de56e1a139f833f12cb23224f10e1668be2efd9`
-(tag `round4-frozen-20260921`); harness rev `7f533f71` (feature-row runner re-pinned; `git diff 0de56e1a..7f533f71 --
-moss_transcribe_diarize frontend` is empty); terminal-label capture is the **reworked** `62b29715` (the earlier
-`1c6b0c81` branch was deliberately not merged — it encoded the pre-partition code). Every execution clone must also
-bootstrap frontend dependencies or the frontend-dependent backend tests fail for want of `frontend/node_modules`
-(Codex 2.2 observed 10 such failures in a bare clone): either `npm ci --prefix frontend` or
-`ln -s /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/frontend/node_modules frontend/node_modules`.
-
-This keeps product code frozen while allowing plan harnesses: features `d8c5ab59:prototypes/feature-rows` (replace `d8c5ab59` with the required re-frozen harness revision), preterm `209052a4:prototypes/preterm-rerun`, labels `1c6b0c81:prototypes/s17-identity-rerun`, headed `9e9fa624:prototypes/headed-session`.
+Use `npm ci --prefix frontend` in every fresh clone. Do not link another checkout's
+`node_modules`; hidden host state is not a reproducible gate. Record the final harness SHA
+for S17, the main bundle, the summary-only row, and headed S9 in the ledger.
 
 ## Common runtime, lease, and ledger setup (0 decoder requests)
 
@@ -66,6 +64,7 @@ MANIFEST=/Users/gao/.local/share/moss-transcribe-diarize/live/live-provider-mani
 "$PY" -c 'import sqlite3; from moss_transcribe_diarize.app.phase2 import REQUIRED_SQLITE_RUNTIME; assert sqlite3.sqlite_version == REQUIRED_SQLITE_RUNTIME == "3.53.4"'
 test -d "$MODEL"; "$PY" -m moss_transcribe_diarize.live_provider_preflight --manifest "$MANIFEST" --json
 cd "$RUN_ROOT/frozen-preflight"
+npm ci --prefix frontend
 MOSS_TEST_REAL_SQLITE=1 bash prototypes/runtime/backend-suite.sh
 npm --prefix frontend test
 npm --prefix frontend run typecheck
@@ -79,11 +78,11 @@ Create `$RUN_ROOT/results-ledger.md` from the template below before F1. Acquire 
 | Order | Row and exact command | Expected receipt / pass boundary | Planned remote decoder requests | Running total |
 |---|---|---|---:|---:|
 | F0 | Frozen gate and common setup above. | `frozen-preflight.json`; all SHA/runtime/model/manifest checks. | 0 | 0 |
-| F1 | `"$PY" prototypes/preterm-rerun/run.py --run --decoder-base-url "$DECODER_BASE" --budget 56 --port 18344 --model "$MODEL" --manifest "$MANIFEST" --out "$RUN_ROOT/preterm"` | `raw-events.jsonl`; for alternation and overlap, system/microphone each retain raw, canonical, published, corrected reference, cut geometry, and scored edits. This is the only L1 pre-terminal closure attempt. | 56 | 56 |
-| F2 | `"$PY" prototypes/s17-identity-rerun/run.py --run --decoder-base-url "$DECODER_BASE" --budget 184 --port 18345 --model "$MODEL" --manifest "$MANIFEST" --out "$RUN_ROOT/s17"` | Root `terminal-labels.jsonl`, `decoder-requests.jsonl`, `run.json`; each of `single`, `gap`, `alternating` has `terminal-labels.jsonl` and `partition-receipt.json`. Capture is set only on this stack process. | 184 | 240 |
-| F3a | `"$PY" tools/qualify/run.py --budget 2238 --decoder-upstream-port "$DECODER_UPSTREAM_PORT" --out "$RUN_ROOT/bundle"` | Bundle result/requests and all default gates, including `capacity_2x300`; every summary explicitly says `capacity_2x1800: REQUIRED-NOT-RUN`. Never append `--long`. | 2,238 | 2,478 |
-| F3b | Against the isolated frozen `$FEATURE_BASE` and the **same F3 allocation/authority**: `"$PY" prototypes/feature-rows/run.py --base "$FEATURE_BASE" --allow-decoder --allow-provider` | `evidence/round4/features/run-*/receipts.json`, per-row `receipt.json`, browser results, URL artifacts, and summary receipt. The external-summary row is exactly 2 transcripts × 3 trials = 6 provider calls (cap 10); `workspace_row_9` remains SKIP. | 0 incremental — reconciled to F3a’s 2,238, never debited a second time | 2,478 |
-| F4 | Only after the attended reference is complete: start the local-HF frozen stack below, then run its final headed-instrument command. | Runtime/provider/bootstrap/descriptor receipts plus `visible-word-headed.json`; keep source/reference custody paths. The microphone WAV is retained digital silence, not a physical microphone. | 0 (local HF) | 2,478 |
+| F1 | **Complete; do not rerun.** | Retained pre-terminal receipts; 45 actual requests. Two arms fail `immediate_wer` because their tail appears at Stop flush. | 45 actual | 45 actual |
+| F2 | `"$PY" prototypes/s17-identity-rerun/run.py --run --decoder-base-url "$DECODER_BASE" --budget 184 --port 18345 --model "$MODEL" --manifest "$MANIFEST" --out "$RUN_ROOT/s17"` | Raw pre-normalization spans, raw→normalized mapping, partition decisions, request receipt, and per-case receipt. | 184 | 229 |
+| F3 | `"$PY" tools/qualify/run.py --budget 2238 --decoder-upstream-port "$DECODER_UPSTREAM_PORT" --out "$RUN_ROOT/bundle"` | Main bundle: workspace, browser 1–16, voice bank, rename, exports, File/URL, identity, `capacity_2x300`; workspace row 9 SKIP with no provider key; `capacity_2x1800: REQUIRED-NOT-RUN`. | 2,238 | 2,467 |
+| F3s | Summary-only harness against its isolated stack: 50 s + 180 s File Meetings once, then 2 transcripts × 3 provider trials. | Proxy delta exactly 3/3/0, peak ≤2; six provider attempts, cap 10; per-trial current/failed receipt. | 3 | 2,470 |
+| F4 | Only after the attended reference is complete: run the local-HF headed instrument below. | Runtime/provider/bootstrap/descriptor receipts plus `visible-word-headed.json`; microphone WAV remains digital silence. | 0 remote | 2,470 |
 
 ### F4 exact local-HF stack launch (0 remote decoder requests)
 
@@ -114,11 +113,17 @@ cleanup_s9; trap - EXIT INT TERM
 
 If bootstrap/descriptor is not 200, any confirmed word end is null/`UNCONFIRMED`, or local-HF would fall back to a remote decoder, stop before the instrument and mark F4 **INCOMPLETE**. Retain only the listed receipts and source/reference custody paths under `$S9_OUT`, not audio or raw transcript copies.
 
-F3a and F3b are **one shared 2,238-request population**, per the feature plan; they are not 2,238 + another feature allocation. Before F3b, reconcile its planned decoder dispatches to F3a’s retained request IDs and ledger. If a feature action would dispatch outside that population, do not improvise a new budget: mark that action **INCOMPLETE** and stop its decoder use. The remaining D29 headroom is 2,522 requests; it is not authorisation for a new row.
+Do not run the former all-feature F3b command. F3 already covers those surfaces. F3s is
+the only distinct feature measurement and owns exactly three decoder requests. A proxy
+delta other than 3/3/0, more than six provider attempts, or any duplicated browser/URL/
+voice/export campaign is **INCOMPLETE**; stop instead of borrowing headroom.
 
 ## Zero-decoder work
 
-F0, runtime/model/manifest checks, all suite and static controls, and the disabled-summary browser case 13 run with zero decoder requests; case 13 also requires zero provider posts. The external-summary row uses zero decoder requests but six capped provider calls. F4/S9 uses zero **remote** decoder requests because it loads the local HF snapshot. Do not confuse any of these with an acoustic quality PASS when their required receipt or human reference is absent.
+F0, runtime/model/manifest checks, and static controls use zero decoder requests. Browser
+case 13 is already in F3 and requires zero provider posts. F3s uses three decoder requests
+to create its two Meetings, then six provider calls. Keep provider credentials out of F3;
+F3s alone owns the official provider population. F4 uses zero **remote** requests.
 
 ## Attended or Aqua-only work — excluded from unattended rows
 
@@ -142,7 +147,10 @@ Speakers remain muted throughout. Missing person, Aqua session, or completed ref
 | Order / row | Frozen SHA | Harness SHA | Planned decoder | Accepted / completed / rejected | Cumulative actual | Peak in-flight | Provider plan / actual | Required receipt paths | `capacity_2x1800` | Status (`PASS` / `FAIL` / `INCOMPLETE` / `UNMEASURED`) | Reason / next action |
 |---|---|---|---:|---|---:|---:|---|---|---|---|---|
 | F0 |  |  | 0 | 0 / 0 / 0 | 0 | 0 | 0 / 0 |  | n/a |  |  |
-| F1 |  | `209052a4` | 56 |  |  |  | 0 / 0 |  | n/a |  |  |
-| F2 |  | `62b29715` | 184 |  |  |  | 0 / 0 |  | n/a |  |  |
-| F3a/F3b |  | feature re-freeze SHA | 2,238 shared |  |  |  | 6 /  |  | `REQUIRED-NOT-RUN` |  |  |
+| F1 | `0de56e1a` | `209052a4` | 56 planned / 45 actual | 45 / 45 / 0 | 45 | ≤2 | 0 / 0 | retained preterm root | n/a | COMPLETE / FAIL | Stop-flush latency; do not rerun |
+| F2 |  | final raw-capture harness SHA | 184 |  |  |  | 0 / 0 |  | n/a |  |  |
+| F3 |  | final bundle harness SHA | 2,238 |  |  |  | bundle-owned |  | `REQUIRED-NOT-RUN` |  |  |
+| F3s |  | final summary-only harness SHA | 3 |  |  |  | 6 /  |  | n/a |  |  |
 | F4 |  | `9e9fa624` | 0 | 0 / 0 / 0 |  | 0 | 0 / 0 |  | n/a |  |  |
+
+> **Pins (lead):** product `0de56e1a` (tag `round4-frozen-20260921`); harness rev `7f533f71` (product diff empty); terminal-label capture = reworked `62b29715` (the unmerged `1c6b0c81` encoded the pre-partition code).
