@@ -34,6 +34,10 @@ CASES = ("single", "gap", "alternating")
 ELIGIBILITY_FLOOR_SAMPLES = 8_000
 RAW_SPAN_FIELDS = (
     "record_type",
+    "schema_version",
+    "meeting_owner",
+    "run_owner",
+    "source_lane",
     "raw_index",
     "terminal_local_label",
     "start",
@@ -42,10 +46,20 @@ RAW_SPAN_FIELDS = (
 )
 RAW_MAPPING_FIELDS = (
     "record_type",
+    "schema_version",
+    "meeting_owner",
+    "run_owner",
+    "source_lane",
     "raw_index",
     "normalized_partition_id",
     "disposition",
 )
+
+
+class IncompleteCaptureReceipt(RuntimeError):
+    """The captured evidence cannot support an S17 qualification verdict."""
+
+
 NORMALIZED_PARTITION_FIELDS = (
     "record_type",
     "schema_version",
@@ -185,7 +199,9 @@ def partition_receipt(case: str, rows: list[dict[str, Any]]) -> dict[str, Any]:
             raise RuntimeError(f"capture receipt has unknown record type for {case}: {record_type}")
         missing = [field for field in fields_by_type[record_type] if field not in row]
         if missing:
-            raise RuntimeError(f"capture receipt missing fields for {case}: {', '.join(missing)}")
+            raise IncompleteCaptureReceipt(
+                f"INCOMPLETE: capture receipt missing fields for {case}: {', '.join(missing)}"
+            )
     raw = [row for row in rows if row["record_type"] == "raw_terminal_span"]
     mapping = [row for row in rows if row["record_type"] == "raw_to_normalized"]
     partitions = [row for row in rows if row["record_type"] == "normalized_partition"]
@@ -365,7 +381,11 @@ def main(argv: list[str] | None = None) -> int:
         _write(args.out, plan_data)
         print(json.dumps(plan_data, indent=2))
         return 0
-    return execute(args, plan_data)
+    try:
+        return execute(args, plan_data)
+    except IncompleteCaptureReceipt as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

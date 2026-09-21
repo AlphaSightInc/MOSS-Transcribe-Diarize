@@ -202,12 +202,22 @@ def test_budget_rejection_censors_quality_verdict_and_retains_request_counts(tmp
     b = object.__new__(Bundle)
     b.processes, b.handles, b.monitor = [], [], None
     b.monitor_stop = SimpleNamespace(set=lambda: None)
+    proxy_log = tmp_path / 'decoder.jsonl'
+    proxy_log.write_text(''.join(json.dumps(event) + '\n' for event in (
+        {'kind': 'start', 'row': 'quality', 'request_id': 'request-1', 'active': 1},
+        {'kind': 'end', 'row': 'quality', 'request_id': 'request-1', 'active': 0},
+        {'kind': 'start', 'row': 'quality', 'request_id': 'request-2', 'active': 1},
+        {'kind': 'end', 'row': 'quality', 'request_id': 'request-2', 'active': 0},
+        {'kind': 'reject', 'row': 'quality', 'request_id': 'request-3', 'active': 0},
+    )))
     b.proxy = SimpleNamespace(
         sent=2,
         completed=2,
+        upstream_failed=0,
         rejected=1,
         peak=1,
         active=0,
+        log=proxy_log,
         close=lambda: None,
     )
     b.args = SimpleNamespace(budget=2, compare=None)

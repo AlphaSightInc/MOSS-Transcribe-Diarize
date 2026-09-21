@@ -1,6 +1,7 @@
 """One-command local qualification ledger. Invoke existing benches; never fork their logic."""
 import argparse
 from collections import Counter
+from dataclasses import asdict
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -21,7 +22,12 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-from tools.qualify.decoder import Decoder
+from tools.qualify.decoder import (
+    Decoder,
+    accounting_incomplete,
+    read_events,
+    summarize_events,
+)
 from tests.e2e.verify_workspace import retained_metadata, required_rows_verdict, verdict_exit_code
 from tests.e2e.verify_demo_lanes import Client
 
@@ -197,6 +203,7 @@ class Bundle:
         self.proxy = None
         self.monitor_stop = threading.Event()
         self.monitor = None
+        self._pending_decoder_summaries = []
         self.data = dict(schema='moss-local-qualification.v2', scope='local measurement; not deployment or attended acceptance',
                          identity=dict(git_sha=self.sha, tree_clean=not dirty, dirty_files=dirty,
                                        python=sys.version.split()[0], node=subprocess.check_output(['node','--version'], text=True).strip(),
@@ -233,8 +240,19 @@ class Bundle:
         (self.out/'summary.md').write_text('\n'.join(lines)+'\n')
 
     def gate(self, name, status, denominators=None, duration=0, code=None, reason=None, measurements=None, required=True):
+        decoder_summaries = getattr(self, '_pending_decoder_summaries', [])
+        if decoder_summaries:
+            if any(accounting_incomplete(summary) for _, summary in decoder_summaries):
+                status = 'INCOMPLETE'
+                reason = reason or 'Decoder infrastructure accounting is incomplete'
+            self._pending_decoder_summaries = []
         row = dict(name=name, status=status, required=required, exit_code=code, denominators=denominators or counts([status]),
                    duration_seconds=round(duration, 3), artifacts=[name+'.log'])
+        if decoder_summaries:
+            row['decoder_accounting'] = [
+                dict(owner=owner, **asdict(summary))
+                for owner, summary in decoder_summaries
+            ]
         if self.proxy:
             row['decoder_requests_at_record'] = self.proxy.sent
             row['decoder_budget_exhausted_at_record'] = self.proxy.sent >= self.args.budget
@@ -251,19 +269,32 @@ class Bundle:
     def command(self, name, argv, timeout=1800, env=None):
         start = time.monotonic()
         target = self.work/(name+'.raw')
-        with target.open('wb') as log:
-            proc = subprocess.Popen(argv, cwd=ROOT, env=env or self.env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-            self.processes.append(proc)
-            self.current = proc
-            try:
-                code = proc.wait(timeout=timeout)
-            except subprocess.TimeoutExpired:
-                self.stop(proc)
-                code = 124
-            finally:
-                self.stop(proc)
-                self.processes.remove(proc)
-                self.current = None
+        proxy = self.proxy
+        event_offset = len(read_events(proxy.log)) if proxy else 0
+        if proxy:
+            proxy.set_row_owner(name)
+        try:
+            with target.open('wb') as log:
+                proc = subprocess.Popen(argv, cwd=ROOT, env=env or self.env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+                self.processes.append(proc)
+                self.current = proc
+                try:
+                    code = proc.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    self.stop(proc)
+                    code = 124
+                finally:
+                    self.stop(proc)
+                    self.processes.remove(proc)
+                    self.current = None
+        finally:
+            if proxy:
+                proxy.clear_row_owner(name)
+                events = read_events(proxy.log)[event_offset:]
+                if events:
+                    self._pending_decoder_summaries.append((
+                        name, summarize_events(events, expected_row=name)
+                    ))
         return code, time.monotonic()-start, target
 
     def start(self, name, argv):
@@ -627,13 +658,35 @@ class Bundle:
             self.proxy.close()
         for handle in self.handles:
             handle.close()
-        self.data['decoder'] = dict(accepted_requests=self.proxy.sent if self.proxy else 0,
-                                    completed_requests=self.proxy.completed if self.proxy else 0,
-                                    peak_in_flight=self.proxy.peak if self.proxy else 0,
-                                    rejected_by_budget=self.proxy.rejected if self.proxy else 0,
-                                    active_at_teardown=self.proxy.active if self.proxy else 0,
-                                    budget_exhausted=(self.proxy.sent >= self.args.budget) if self.proxy else False,
-                                    shared_metrics='sampled every 2 seconds; not own request attribution')
+        decoder_summary = summarize_events(read_events(self.proxy.log)) if self.proxy else summarize_events([])
+        counter_reconciled = bool(
+            not self.proxy
+            or (
+                decoder_summary.attempted == self.proxy.sent
+                and decoder_summary.completed == self.proxy.completed
+                and decoder_summary.upstream_failed == self.proxy.upstream_failed
+                and decoder_summary.rejected == self.proxy.rejected
+                and decoder_summary.active == self.proxy.active
+            )
+        )
+        self.data['decoder'] = dict(
+            accepted_requests=decoder_summary.attempted,
+            completed_requests=decoder_summary.completed,
+            upstream_failed_requests=decoder_summary.upstream_failed,
+            distinct_attempt_ids=decoder_summary.distinct_attempt_ids,
+            distinct_completed_attempt_ids=decoder_summary.distinct_completed_attempt_ids,
+            distinct_client_request_ids=decoder_summary.distinct_client_request_ids,
+            duplicate_attempts=decoder_summary.duplicate_attempts,
+            unowned_events=decoder_summary.unowned_events,
+            missing_client_request_ids=decoder_summary.missing_client_request_ids,
+            row_owners=list(decoder_summary.row_owners),
+            peak_in_flight=decoder_summary.peak_in_flight,
+            rejected_by_budget=decoder_summary.rejected,
+            active_at_teardown=decoder_summary.active,
+            counters_reconciled=counter_reconciled and decoder_summary.reconciled,
+            budget_exhausted=(self.proxy.sent >= self.args.budget) if self.proxy else False,
+            shared_metrics='sampled every 2 seconds; not own request attribution',
+        )
         alive = []
         for proc in self.processes:
             try:
@@ -644,10 +697,16 @@ class Bundle:
         self.gate('teardown','FAIL' if alive else 'PASS',measurements={'owned_process_groups_remaining':alive})
         self.data['gate_counts'] = dict(Counter(g['status'] for g in self.data['gates']))
         self.data['budget_censored'] = self.data['decoder']['rejected_by_budget'] > 0
-        self.data['verdict'] = ('INCOMPLETE' if self.data['budget_censored']
+        self.data['decoder_incomplete'] = bool(
+            accounting_incomplete(decoder_summary)
+            or not self.data['decoder']['counters_reconciled']
+        )
+        self.data['verdict'] = ('INCOMPLETE' if self.data['budget_censored'] or self.data['decoder_incomplete']
                                 else bundle_verdict(self.data['gates']))
         if self.data['budget_censored']:
             self.data['verdict_reason'] = 'budget_censored'
+        elif self.data['decoder_incomplete']:
+            self.data['verdict_reason'] = 'decoder_infrastructure_incomplete'
         self.data['qualified'] = self.data['verdict'] == 'PASS'
         if self.args.compare:
             baseline = json.loads(self.args.compare.read_text())

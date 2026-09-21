@@ -30,24 +30,38 @@ class TerminalLabelCapture:
         raw_spans: tuple[object, ...],
         raw_to_normalized: tuple[object, ...],
         partitions: tuple[object, ...],
+        *,
+        meeting_owner: str,
+        run_owner: str,
+        schema_version: str,
     ) -> None:
+        custody = {
+            "schema_version": schema_version,
+            "meeting_owner": meeting_owner,
+            "run_owner": run_owner,
+        }
+        raw_lanes = {span.raw_index: span.source_lane for span in raw_spans}
         rows = [
             {
+                **custody,
                 "record_type": "raw_terminal_span",
                 "raw_index": span.raw_index,
                 "terminal_local_label": span.terminal_local_label,
                 "start": span.start,
                 "end": span.end,
                 "samples": span.samples,
+                "source_lane": span.source_lane,
             }
             for span in raw_spans
         ]
         rows.extend(
             {
+                **custody,
                 "record_type": "raw_to_normalized",
                 "raw_index": mapping.raw_index,
                 "normalized_partition_id": mapping.normalized_partition_id,
                 "disposition": mapping.disposition,
+                "source_lane": raw_lanes.get(mapping.raw_index),
             }
             for mapping in raw_to_normalized
         )
