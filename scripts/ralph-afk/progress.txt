@@ -202,3 +202,5 @@ account keeps its retained owner directory (owner.json, input.wav, checkpoint) f
 joins a.enabled = 1 so the row is never claimed, refused or reclaimed - and run C removed run B's
 "assert not owner_dir.exists()" with no successor, the only unreplaced deletion in the run. Run D closes that and four
 small disclosures. Offline: zero decoder requests.
+
+[loop 20260921-084333-12001] start budget=8 agent=codex branch=round4/ralph-b
