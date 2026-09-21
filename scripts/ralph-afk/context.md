@@ -71,6 +71,15 @@
     `tests/test_round4_alternation_diagnosis.py::test_r4_keyu_source_reference_matches_audited_audio_population`
   - **Jamie 2** — `tests/test_round4_jamie_violating_controls.py::test_r4_4_compatible_provisional_support_accumulates[durations0]` and `[durations1]`
   - **surfaces 0** — hidden-tab work is blocked-on-session evidence, not a strict-xfail test.
+- 2026-09-21 iteration 1 completed the durable-ingress half of A3 in
+  `phase2_file.py`: after Meeting creation, File and URL work move from transient `file-work` to
+  `file-retained/<account>/<meeting>/`; `owner.json` carries account, Meeting, ingress, source,
+  checkpoint locator, and contract version. Product File inference now receives that real checkpoint
+  directory. Completed/failed/explicitly interrupted Meeting work is removed only after its terminal
+  state; shutdown-retained active work stays available for the future claimant. Focused File/URL suites
+  passed 29/29 and registry controls 2/2. **Still open:** no startup claimant yet consumes this retained
+  work, so the current generic startup fallback still interrupts an active row; C1--C10 are not yet
+  product passes.
   This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
   **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
@@ -91,9 +100,10 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Candidates
 
-1. **A3 — claim/resume seam in `FileMeetingTasks`** (`phase2_file.py`): Meeting-keyed durable dir for normalised source
-   + checkpoint; validation of owner/source/contract; real `checkpoint_dir` at `:417`; cleanup only after durable
-   terminal. Validate: C1/C5/C6 as product tests against real `lifespan`.
+1. **A3 — retained-work claim in `FileMeetingTasks`** (`phase2_file.py`): consume the new Meeting-keyed retained
+   source/checkpoint only after validating owner, source, and contract; use the existing checkpoint validation for
+   the committed prefix. Leave invalid/unclaimed work active for the existing interruption fallback. Validate:
+   C1/C5/C6 as product tests against the real `lifespan` after candidate 2 wires the claim before recovery.
 2. **A3 — startup ordering** (`phase2.py:1927-1941`, `phase2_lifecycle.py:215-236`): claim before `recover_active_meetings`;
    fallback `:716-749` untouched in semantics; `:751-763` byte-identical. Validate: C2/C3/C4/C7/C8/C9/C10; the two
    `round4/batch` xfails flip; `git diff --stat 89f833ac -- moss_transcribe_diarize/app/phase2.py` shows no change in `:751-763`.

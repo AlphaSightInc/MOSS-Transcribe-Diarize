@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import secrets
 import shutil
@@ -27,6 +28,8 @@ LOGGER = logging.getLogger(__name__)
 UPLOAD_RECEIVE_IDLE_TIMEOUT_SECONDS = 30.0
 UPLOAD_CAPACITY_RESERVE_BYTES = 512 * 1024 * 1024
 UPLOAD_CHUNK_BYTES = 1024 * 1024
+RETAINED_FILE_WORK_ROOT_NAME = "file-retained"
+RETAINED_FILE_WORK_CONTRACT_VERSION = 1
 
 
 class FileProcessingError(RuntimeError):
@@ -120,6 +123,7 @@ class FileMeetingTasks:
         self._work_root = Path(work_root).expanduser()
         if self._work_root.name != "file-work":
             raise ValueError("File work root must be a dedicated directory named file-work.")
+        self._retained_root = self._work_root.parent / RETAINED_FILE_WORK_ROOT_NAME
         self._prompt = prompt
         self._max_length = max_length
         self._max_new_tokens = max_new_tokens
@@ -135,6 +139,12 @@ class FileMeetingTasks:
     @property
     def work_root(self) -> Path:
         return self._work_root
+
+    @property
+    def retained_root(self) -> Path:
+        """Meeting-owned File work that survives process-owned transient cleanup."""
+
+        return self._retained_root
 
     def clear_transient_work(self) -> None:
         """Remove only children of the dedicated, non-durable File work root."""
@@ -172,13 +182,20 @@ class FileMeetingTasks:
             with input_path.open("wb") as output:
                 while chunk := await _read_upload_chunk(upload):
                     output.write(chunk)
-            handle = await workspace.create_meeting("file")
         except BaseException:
             try:
                 self._remove_work_dir(staging_dir)
             except Exception:
                 LOGGER.error("File Meeting upload cleanup failed.")
                 raise
+            raise
+
+        handle = await workspace.create_meeting("file")
+        try:
+            input_path = self._retain_new_work(handle, staging_dir, input_path, ingress="file")
+        except BaseException:
+            await self._mark_failed(handle)
+            self._remove_terminal_work_dir(self._owner_dir(handle))
             raise
 
         started = asyncio.Event()
@@ -198,6 +215,7 @@ class FileMeetingTasks:
         staging_dir.mkdir(parents=True, exist_ok=False)
         try:
             handle = await workspace.create_meeting("file")
+            staging_dir = self._retain_new_directory(handle, staging_dir)
         except BaseException:
             self._remove_work_dir(staging_dir)
             raise
@@ -301,6 +319,7 @@ class FileMeetingTasks:
                 raise RuntimeError("File Meeting audio archive is unavailable.")
             await entry.handle.recover_interrupted_file_audio(self._audio_archive)
             await entry.handle.finish("interrupted")
+            self._remove_terminal_work_dir(self._owner_dir(entry.handle))
             interrupted.append(entry.handle.meeting_id)
         return tuple(interrupted)
 
@@ -335,6 +354,71 @@ class FileMeetingTasks:
         if work_dir.exists():
             shutil.rmtree(work_dir)
 
+    def _owner_dir(self, handle: Any) -> Path:
+        account_id, _ = handle.owner_key
+        return self._retained_root / account_id / handle.meeting_id
+
+    def _retain_new_directory(self, handle: Any, staging_dir: Path) -> Path:
+        """Move newly accepted work beneath its Meeting before background inference."""
+
+        owner_dir = self._owner_dir(handle)
+        if owner_dir.exists():
+            raise RuntimeError("Retained File Meeting work already exists.")
+        owner_dir.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(staging_dir), str(owner_dir))
+        return owner_dir
+
+    def _retain_new_work(
+        self,
+        handle: Any,
+        staging_dir: Path,
+        input_path: Path,
+        *,
+        ingress: str,
+    ) -> Path:
+        owner_dir = self._retain_new_directory(handle, staging_dir)
+        retained_input = owner_dir / input_path.name
+        self._record_retained_source(handle, retained_input, ingress=ingress)
+        return retained_input
+
+    def _record_retained_source(self, handle: Any, input_path: Path, *, ingress: str) -> None:
+        owner_dir = self._owner_dir(handle)
+        if ingress not in {"file", "url"} or input_path.parent != owner_dir:
+            raise RuntimeError("Retained File Meeting source is invalid.")
+        if not input_path.is_file():
+            raise RuntimeError("Retained File Meeting source is unavailable.")
+        (owner_dir / "checkpoint").mkdir(exist_ok=True)
+        (owner_dir / "owner.json").write_text(
+            json.dumps(
+                {
+                    "account_id": handle.owner_key[0],
+                    "meeting_id": handle.meeting_id,
+                    "ingress": ingress,
+                    "source": input_path.name,
+                    "checkpoint": "checkpoint",
+                    "contract_version": RETAINED_FILE_WORK_CONTRACT_VERSION,
+                },
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+    def _remove_retained_work_dir(self, owner_dir: Path) -> None:
+        if owner_dir.parent.parent != self._retained_root:
+            raise RuntimeError("Refusing cleanup outside retained File Meeting work.")
+        if owner_dir.exists():
+            shutil.rmtree(owner_dir)
+
+    def _is_retained_work_dir(self, work_dir: Path) -> bool:
+        return work_dir.parent.parent == self._retained_root
+
+    def _remove_terminal_work_dir(self, work_dir: Path) -> None:
+        if self._is_retained_work_dir(work_dir):
+            self._remove_retained_work_dir(work_dir)
+        else:
+            self._remove_work_dir(work_dir)
+
     async def _mark_failed(self, handle: Any, code: str = "storage_failed",
                            reason: str = "The meeting could not be saved.") -> None:
         LOGGER.warning("File Meeting failed: %s", code)
@@ -354,14 +438,14 @@ class FileMeetingTasks:
         try:
             input_path = await self._url_acquirer.acquire(source_url, staging_dir)
         except asyncio.CancelledError:
-            self._remove_work_dir(staging_dir)
             raise
         except Exception as exc:
             code = exc.failure_code if isinstance(exc, UrlAcquisitionRejected) else "acquisition_failed"
             reason = str(exc) if isinstance(exc, UrlAcquisitionRejected) else "The media could not be downloaded."
             await self._mark_failed(handle, code, reason)
-            self._remove_work_dir(staging_dir)
+            self._remove_terminal_work_dir(staging_dir)
             return
+        self._record_retained_source(handle, input_path, ingress="url")
         await self._run(handle, input_path, asyncio.Event())
 
     async def _run(self, handle: Any, input_path: Path, started: asyncio.Event) -> None:
@@ -400,7 +484,6 @@ class FileMeetingTasks:
                 await runner_task
             except Exception:
                 LOGGER.error("File Meeting runner failed during shutdown.")
-            self._remove_work_dir(input_path.parent)
             raise
 
     def _transcribe_from_one_mix(
@@ -411,10 +494,11 @@ class FileMeetingTasks:
         notices: list[str] = []
         transcribe_options = {
             **options,
-            # The checkpoint seam remains available to a future durable owner. This
-            # transient job is deleted at every terminal outcome, so writing a prefix here
-            # would be dead I/O until that ownership gate is resolved.
-            "checkpoint_dir": None,
+            "checkpoint_dir": (
+                input_path.parent / "checkpoint"
+                if self._is_retained_work_dir(input_path.parent)
+                else None
+            ),
         }
         mix_path: Path | None = None
         mix_failed = False
@@ -457,11 +541,10 @@ class FileMeetingTasks:
             code = exc.code if isinstance(exc, FileProcessingError) else "decode_failed"
             reason = exc.reason if isinstance(exc, FileProcessingError) else "The speech decoder could not transcribe this media."
             await self._mark_failed(handle, code, reason)
-            self._remove_work_dir(input_path.parent)
+            self._remove_terminal_work_dir(input_path.parent)
             return
 
         if self._is_fenced(handle):
-            self._remove_work_dir(input_path.parent)
             return
 
         try:
@@ -475,7 +558,7 @@ class FileMeetingTasks:
                 raise ValueError("Empty decoder output without speechless evidence")
         except Exception:
             await self._mark_failed(handle, "decode_invalid", "The speech decoder returned no usable transcript.")
-            self._remove_work_dir(input_path.parent)
+            self._remove_terminal_work_dir(input_path.parent)
             return
 
         try:
@@ -483,15 +566,14 @@ class FileMeetingTasks:
         except AccountRevoked:
             # Revocation/interruption is already the durable terminal authority. A late result
             # must disappear rather than reconstructing a handle from its Meeting identifier.
-            self._remove_work_dir(input_path.parent)
+            self._remove_terminal_work_dir(input_path.parent)
             return
         except Exception:
             await self._mark_failed(handle)
-            self._remove_work_dir(input_path.parent)
+            self._remove_terminal_work_dir(input_path.parent)
             raise
 
         if self._is_fenced(handle):
-            self._remove_work_dir(input_path.parent)
             return
 
         if mix_path is None:
@@ -509,26 +591,19 @@ class FileMeetingTasks:
                 pass
             except Exception:
                 LOGGER.error("File Meeting audio publication failed during shutdown.")
-            self._remove_work_dir(input_path.parent)
             raise
 
         except AccountRevoked:
-            self._remove_work_dir(input_path.parent)
+            self._remove_terminal_work_dir(input_path.parent)
             return
         except Exception:
             await self._mark_failed(handle)
-            self._remove_work_dir(input_path.parent)
+            self._remove_terminal_work_dir(input_path.parent)
             raise
 
         if self._is_fenced(handle):
-            self._remove_work_dir(input_path.parent)
             return
 
-        try:
-            self._remove_work_dir(input_path.parent)
-        except Exception:
-            await self._mark_failed(handle)
-            raise
         try:
             if getattr(result, "possibly_truncated", False):
                 notices.append("The speech decoder reached its output limit. This transcript may be incomplete.")
@@ -536,7 +611,13 @@ class FileMeetingTasks:
                 notices.append("No speech detected.")
             await handle.finish("completed", notice=" ".join(notices) or None)
         except AccountRevoked:
-            pass
+            self._remove_terminal_work_dir(input_path.parent)
+            return
+        try:
+            self._remove_terminal_work_dir(input_path.parent)
+        except Exception:
+            LOGGER.error("Retained File Meeting cleanup failed after terminal completion.")
+            raise
 
     def _is_fenced(self, handle: Any) -> bool:
         return (

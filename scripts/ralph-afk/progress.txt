@@ -22,3 +22,11 @@ participant aggregation). This run is offline: zero decoder requests. Six strict
 convert; the two Jamie controls must stay xfailed.
 
 [loop 20260921-041515-90563] start budget=20 agent=codex branch=round4/ralph-b
+
+## Iteration 1 - durable File ingress
+- Target: Candidate 1, durable Meeting-owned File/URL source and checkpoint before restart recovery.
+- Files: `moss_transcribe_diarize/app/phase2_file.py`; `tests/phase2/test_owner_bound_file_meeting.py`; `scripts/ralph-afk/context.md`.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider tests/phase2/test_owner_bound_file_meeting.py tests/phase2/test_multi_file_url_meetings.py` -> 29 passed; `tests/phase2/test_operator_status.py -k file_registry` -> 2 passed; focused direct-helper regression group -> 17 passed.
+- Evidence: new `test_file_work_is_meeting_owned_before_inference_and_removed_after_terminal`; retained owner record and real checkpoint path in `phase2_file.py`.
+- Learned: checkpoint validation already binds source hash and execution contract; only Meeting-retained work may receive a checkpoint path. Startup still has no claimant, so valid retained work remains unqualified for restart.
+- Next: validate and claim retained work in `FileMeetingTasks`, then call it before generic File recovery.
