@@ -120,3 +120,11 @@ cancelled retained work kept forever) plus four smaller gaps. Offline: zero deco
 - Evidence: active `scripts/ralph-afk/prd.md` C1-C7; Run C opening entry above; corrected ranked queue in `context.md`.
 - Learned: the prior context was deliberately useful Run-B evidence but stale operational state; C1 is the next safety-critical product change.
 - Next: trace revoke's retained-resume/fence-release callers, correct its violating publication control, and preserve no live resume.
+
+## Iteration 2 - preserve revoke fence
+- Target: C1 / F1 — revoke must neither resume retained File work nor release its account fence.
+- Files: `moss_transcribe_diarize/app/phase2_lifecycle.py`; `tests/phase2/test_retained_file_claim.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: revised retained-prefix control was RED before the product edit (fence absent); focused revoke controls -> **3 passed**: retained prefix no dispatch/publication, normal in-flight quiescence, late-result fence.
+- Evidence: `test_account_revocation_does_not_resume_retained_file_work`; `test_host_revoke_waits_for_file_quiescence_and_fences_late_result`; `test_revocation_fences_late_file_result_commit`.
+- Learned: the account-scoped recovery caller is revoke alone, not a legitimate startup path. Releasing its fence solely to dispatch unowned retained work let a revoked account publish; generic recovery terminalizes the retained row without dispatch.
+- Next: C2 — schedule retained resume in the background, contain per-Meeting failures durably, and prove startup serves while a resume remains pending.

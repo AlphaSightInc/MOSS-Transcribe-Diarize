@@ -318,10 +318,10 @@ def test_lifespan_refuses_missing_retained_url_copy_without_decoder_dispatch(
     asyncio.run(exercise())
 
 
-def test_account_lifecycle_claims_retained_file_work_before_account_fallback(
+def test_account_revocation_does_not_resume_retained_file_work(
     tmp_path: Path,
 ) -> None:
-    """C8: the account-scoped product caller shares the retained-work claim."""
+    """C1: revocation retains its fence and leaves retained work to fallback recovery."""
 
     async def exercise() -> None:
         decoder = _RestartDecoder()
@@ -360,6 +360,9 @@ def test_account_lifecycle_claims_retained_file_work_before_account_fallback(
             assert crashed.calls == [0, 1, 2]
 
             assert await app.state.phase2_lifecycle.revoke_account(account.account_id)
+            assert (account.account_id, account.authority_generation) in (
+                app.state.phase2_file_tasks._fenced_owner_keys
+            )
             async with store._external_read():
                 cursor = await store._connection.execute(
                     "SELECT status, version FROM meetings m "
@@ -370,9 +373,8 @@ def test_account_lifecycle_claims_retained_file_work_before_account_fallback(
                 )
                 row = await cursor.fetchone()
                 await cursor.close()
-            assert decoder.calls == [2, 3]
-            assert tuple(row) == ("completed", 1)
-            assert not owner_dir.exists()
+            assert decoder.calls == []
+            assert tuple(row) == ("interrupted", None)
 
     asyncio.run(exercise())
 

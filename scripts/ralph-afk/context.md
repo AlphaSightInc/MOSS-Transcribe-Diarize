@@ -53,13 +53,10 @@
   `:137-142`, and isolated-stays-unattributed at `:145-153`); no constant moved; the fixture rows are byte-equal to the
   audited proposal and the falsifier still shows exactly 3 additions, 102/105.
 - **Findings this run closes** (all introduced by run B, none falsifying the three mandated behaviours):
-  - **F1 → C1.** `phase2_lifecycle.py:231-233` calls `release_settled_account_fence(owner_key)` then
-    `resume_retained_work(...)` inside `_revoke_account` — the only caller of `recover_active_account_meetings`,
-    reachable from the control socket (`phase2_control.py:143`). The fence exists to "reject every later result"
-    (`phase2_file.py:302`) and its release guard inspects only `_tasks` (`:349-354`), so an unregistered task can become
-    unfenced and publish. `tests/phase2/test_retained_file_claim.py:362-375` currently asserts a revoked account
-    reaching `("completed", 1)` — a revoked account gaining a **new published transcript**, against the principle at
-    `phase2_file.py:740-742`. That control also hand-plants row and directory (`:333-356`), so C8 is not demonstrated.
+  - **F1 → C1 (closed, iteration 2).** `_revoke_account` no longer releases its File-account fence or resumes
+    retained work. The retained-prefix product control is RED against the prior behaviour (the fence is cleared before
+    it can publish) and now proves `decoder.calls == []`, durable `("interrupted", None)`, and the retained fence after
+    revocation. Existing owner-bound controls still prove ordinary in-flight and late File results cannot publish.
   - **F2 → C2.** `phase2.py:1960` awaits `resume_retained_work`; `phase2_file.py:210-215` awaits `entry.task` catching
     only `CancelledError`, and `_run` re-raises at `:748`, `:776`, `:794`. A commit, publication or cleanup failure on
     one retained Meeting therefore takes the whole app down at boot, and startup blocks for the entire re-decode — this
@@ -114,23 +111,20 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 The preceding Run-B-completion snapshot is stale. Run C's PRD and opening
 progress entry are authoritative for the following ranked work:
 
-1. **C1 / F1 — revoke must preserve the fence and never resume retained work.**
-   Remove the revoke resume/unfence path; correct, rather than delete, the
-   revoked-publication control. Do not invent an account-scoped startup caller.
-2. **C2 / F2 — retained resume is background, failure-contained work.** A failed
+1. **C2 / F2 — retained resume is background, failure-contained work.** A failed
    retained task records durable Meeting failure while lifespan serves; startup
    must not await a long re-decode.
-3. **C3 / F3 — reclaim terminal-owned retained input.** Refusal and URL
+2. **C3 / F3 — reclaim terminal-owned retained input.** Refusal and URL
    cancellation remove only that Meeting's directory, after durable terminal
    truth.
-4. **C4 / F5 — close the post-download active/no-task window.** A retained-source
+3. **C4 / F5 — close the post-download active/no-task window.** A retained-source
    record failure durably fails the URL Meeting with a visible reason.
-5. **C6 / F8 — product-test batch uniqueness.** Collected resume and mid-window
+4. **C6 / F8 — product-test batch uniqueness.** Collected resume and mid-window
    crash controls prove unique saved segments and no replay duplicate.
-6. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
+5. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
    adjust only the neighbouring time boundary, or document an intentional overlap;
    never alter scored text.
-7. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
+6. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
    solo-lane vocabulary, not `SYSTEM_LADDER_REFERENCE`; its falsifier must be
    testable or removed with explanation.
 
@@ -143,6 +137,14 @@ progress entry are authoritative for the following ranked work:
 - **Next:** C1. Locate every `resume_retained_work` and
   `release_settled_account_fence` caller, then make the existing revoked-account
   publication control assert no resume, no unfence, and no new transcript.
+
+## Iteration 2 outcome
+
+- **C1 / F1 (complete):** account revoke no longer resumes retained File work or releases its
+  account fence. The corrected retained-prefix control was RED on the old path and is now green:
+  no decoder dispatch, durable `interrupted` without a transcript, and the owner fence retained.
+  The retained directory is deliberately not asserted here; C3 owns terminal directory reclamation.
+- **Next:** C2 — move retained resume off the lifespan critical path and contain its failures.
 
 ## Non-candidates
 
