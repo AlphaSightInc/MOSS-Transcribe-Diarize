@@ -739,6 +739,7 @@ class RawTerminalSpan:
     start: int
     end: int
     samples: int
+    source_lane: str = "unbound"
 
 
 @dataclass(frozen=True, slots=True)
@@ -952,6 +953,7 @@ class TerminalTranscriptFinalizer:
         base_text_revision_version: int,
         base_surface: Sequence[EffectiveTranscriptSegment] = (),
         canonical_speakers: Sequence[str] = (),
+        source_lane: str = "unbound",
     ) -> TerminalFinalization:
         """Decode the whole meeting once and propose it as the surface, or refuse by name.
 
@@ -1038,7 +1040,7 @@ class TerminalTranscriptFinalizer:
             raw_terminal_spans,
         ) = self._segments_of(
             result, end_sample=plan.end_sample, base_surface=base_surface,
-            canonical_speakers=canonical_speakers,
+            canonical_speakers=canonical_speakers, source_lane=source_lane,
         )
         finalize_finished = time.monotonic()
         other_finalize_elapsed_sec = finalize_finished - decode_finished
@@ -1089,6 +1091,7 @@ class TerminalTranscriptFinalizer:
         end_sample: int,
         base_surface: Sequence[EffectiveTranscriptSegment],
         canonical_speakers: Sequence[str],
+        source_lane: str,
     ) -> tuple[
         tuple[EffectiveTranscriptSegment, ...],
         tuple[str, ...],
@@ -1123,6 +1126,7 @@ class TerminalTranscriptFinalizer:
                     start=start,
                     end=end,
                     samples=end - start,
+                    source_lane=source_lane,
                 )
             )
             placed.append((item.speaker, start, end, item.text))

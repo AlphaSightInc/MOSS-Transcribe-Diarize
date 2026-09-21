@@ -21,17 +21,25 @@ ROOT = Path(__file__).resolve().parents[1]
 HARNESS = ROOT / "prototypes/terminal-label-capture/run.py"
 RAW_KEYS = {
     "record_type",
+    "schema_version",
+    "meeting_owner",
+    "run_owner",
     "raw_index",
     "terminal_local_label",
     "start",
     "end",
     "samples",
+    "source_lane",
 }
 MAPPING_KEYS = {
     "record_type",
+    "schema_version",
+    "meeting_owner",
+    "run_owner",
     "raw_index",
     "normalized_partition_id",
     "disposition",
+    "source_lane",
 }
 PARTITION_KEYS = {
     "record_type",
@@ -115,6 +123,13 @@ def test_terminal_capture_is_off_by_default_and_byte_equivalent_when_enabled(tmp
         row["run_owner"].startswith("terminal-label-capture:terminal:")
         for row in rows[6:]
     )
+    assert {row["source_lane"] for row in rows[:6]} == {"system"}
+    assert all(
+        row["schema_version"] == "moss.terminal-identity-diagnostics.v3"
+        and row["meeting_owner"] == "terminal-label-capture"
+        and row["run_owner"].startswith("terminal-label-capture:terminal:")
+        for row in rows
+    )
 
 
 def test_capture_replays_partition_short_span_adam_and_keyu_controls(tmp_path):
@@ -183,9 +198,13 @@ def test_raw_stream_keeps_contained_cross_label_and_maps_it_to_no_partition(tmp_
     assert [row["terminal_local_label"] for row in raw] == ["S01", "S02"]
     assert mapping[1] == {
         "record_type": "raw_to_normalized",
+        "schema_version": "moss.terminal-identity-diagnostics.v3",
+        "meeting_owner": "terminal-label-capture",
+        "run_owner": "terminal-label-capture:terminal:0:96000",
         "raw_index": 1,
         "normalized_partition_id": None,
         "disposition": "dropped_by_normalization",
+        "source_lane": "system",
     }
 
 

@@ -330,6 +330,7 @@ def finalize_lanes(c, finalizer, **kwargs):
     meeting_owner = str(getattr(c, "session_key", "unbound"))
     plan = kwargs["plan"]
     run_owner = f"{meeting_owner}:terminal:{plan.epoch}:{plan.end_sample}"
+    schema_version = "moss.terminal-identity-diagnostics.v3"
 
     def finish_lane(item):
         lane, tape = item
@@ -371,6 +372,7 @@ def finalize_lanes(c, finalizer, **kwargs):
                     for s in kwargs["canonical_speakers"]
                     if s in own
                 ),
+                "source_lane": lane,
             }
         )
         results.append(result)
@@ -553,6 +555,7 @@ def finalize_lanes(c, finalizer, **kwargs):
                             ),
                             meeting_owner=meeting_owner,
                             run_owner=run_owner,
+                            schema_version=schema_version,
                         )
                     )
         return (
@@ -671,6 +674,9 @@ def finalize_lanes(c, finalizer, **kwargs):
             tuple(raw_terminal_spans),
             tuple(raw_to_normalized),
             tuple(terminal_partitions),
+            meeting_owner=meeting_owner,
+            run_owner=run_owner,
+            schema_version=schema_version,
         )
     return replace(
         template,
