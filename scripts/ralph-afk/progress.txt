@@ -70,3 +70,11 @@ convert; the two Jamie controls must stay xfailed.
 - Evidence: `prototypes/gap/NOTES.md`; `tests/test_r4_gap_terminal_identity.py::test_r4_3_same_terminal_partition_reuses_eligible_voice_evidence`; `::test_r4_3_different_returning_voice_is_not_absorbed`; `::test_r4_3_isolated_terminal_partition_stays_unattributed`.
 - Learned: preserving the decoder-local partition lets its eligible evidence decide the short span without a neighbour guess; an isolated sub-floor span still abstains. Existing mapped-but-uncovered labels still require a lane-local probe, now once per relevant partition.
 - Next: Candidate 1, D27 fixture correction; keep S17 UNMEASURED and defer its decoder-backed confirmation to R4-10.
+
+## Iteration 7 - D27 acceptance references
+- Target: Candidate 1, correct the mutable Bill/Keyu corpus rows and keep 29.25 s acceptance separate from the 24 s ladder population.
+- Files: `evidence/live-policy-sweep-20260825/corpus/interview_{bill_ackman,keyu_jin}_60s/reference.jsonl`; `tests/e2e/verify_demo_lanes.py`; `tests/e2e/fixtures/lane-system-ladder-reference.json`; fixture controls and demo-surface test; `scripts/ralph-afk/context.md`.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider tests/test_round4_overlap_diagnosis.py tests/test_round4_alternation_diagnosis.py tests/phase2/test_demo_lane_measurement.py` -> **17 passed**; `git diff --check` -> clean.
+- Evidence: `reference-correction-proposal.json`; `overlap-review/second-opinion.md`; `raw-system-0-29.json`; direct falsifier asserts 102 reference / 105 observed / 0 substitutions / 0 omissions / 3 additions (`you`, `know`, repeated `to`).
+- Learned: the old two strict fixture controls reused one 29 s historical row while demanding incompatible 29 s and <=24 s bounds; `--runxfail` confirmed both failures. Binding acceptance to the corrected corpus and ladder to its own audited 24 s fixture preserves both checks; the historical evidence remains unchanged. Only Jamie's two strict controls remain.
+- Next: Candidate 1, add the self-contained VERIFY document and run the required full backend/frontend/typecheck gates.

@@ -121,6 +121,16 @@
   Adam 0.909091 match / Keyu 0.017033 abstention at the unchanged 0.35 floor and made zero decoder requests.
   **S17 remains UNMEASURED**: retained material lacks its terminal-local labels, so this does not establish whether
   the historical `seg_0012` qualifies for the partition rule.
+- 2026-09-21 iteration 7 completed **D27's fixture correction** without changing historical round-4 evidence. The
+  candidate corpus now carries the approved full Bill 0--29.25 s row and Keyu 0--25 s row; `verify_demo_lanes`
+  therefore replays the full corrected acceptance population. Its explicit 24 s system-fixture input carries the
+  proposal's bounded ladder population. The three fixture controls are ordinary passes, and the retained 29 s raw
+  publication replay still yields exactly **3/102** (`you`, `know`, repeated `to`) with 0 substitutions and 0
+  omissions. Focused fixture + demo-surface validation: **17 passed**. The former two fixture controls shared one
+  29 s historical evidence copy while requiring it both to equal the 29 s proposal and to be <=24 s; `--runxfail`
+  proved both failures. Their targets now follow the real mutable corpus and separate 24 s fixture, so the strict
+  markers could be removed without weakening either population check. The two Jamie controls remain the only strict
+  xfails.
 - This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
   **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
@@ -141,9 +151,7 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-1. **Fixture correction (D27 = YES only)** (`tests/e2e/verify_demo_lanes.py:60-75`, corpus reference): per prd; falsifier
-   test = exactly the three class-(a) additions remain.
-2. **Full suites + `docs/verify/round4-run-b/VERIFY.md`.**
+1. **Full suites + `docs/verify/round4-run-b/VERIFY.md`.**
 
 ## Non-candidates
 
