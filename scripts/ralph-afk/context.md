@@ -112,17 +112,14 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 The preceding Run-B-completion snapshot is stale. Run C's PRD and opening
 progress entry are authoritative for the following ranked work:
 
-1. **C3 / F3 — reclaim terminal-owned retained input.** Refusal and URL
-   cancellation remove only that Meeting's directory, after durable terminal
-   truth.
-2. **C4 / F5 — close the post-download active/no-task window.** A retained-source
+1. **C4 / F5 — close the post-download active/no-task window.** A retained-source
    record failure durably fails the URL Meeting with a visible reason.
-3. **C6 / F8 — product-test batch uniqueness.** Collected resume and mid-window
+2. **C6 / F8 — product-test batch uniqueness.** Collected resume and mid-window
    crash controls prove unique saved segments and no replay duplicate.
-4. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
+3. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
    adjust only the neighbouring time boundary, or document an intentional overlap;
    never alter scored text.
-5. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
+4. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
    solo-lane vocabulary, not `SYSTEM_LADDER_REFERENCE`; its falsifier must be
    testable or removed with explanation.
 
@@ -171,6 +168,18 @@ progress entry are authoritative for the following ranked work:
   marks review.
 - **Next:** C3 — make refusal and URL-download cancellation remove only their own
   retained owner directories, and correct the existing retain-forever assertion.
+
+## Iteration 5 outcome
+
+- **C3 / F3 (complete):** startup retains only exact owners whose validation refused,
+  then reclaims them only after the existing generic fallback has durably made that
+  Meeting terminal. The corrected missing-URL-source control was RED before the product
+  edit: `interrupted` still retained its owner directory. It now proves removal occurs
+  after durable `interrupted` truth and preserves a sibling owner's marker. A new
+  held URL-acquisition cancellation control proves the already-correct task-settlement
+  path also removes only its terminal owner directory.
+- **Next:** C4 — make retained-source recording failure terminalize its URL Meeting
+  rather than leaving an active row without a task.
 
 ## Non-candidates
 

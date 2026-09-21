@@ -2039,6 +2039,8 @@ def create_phase2_app(
                 live_audio_stages=live_audio_stages,
                 claimed_file_meetings=claimed_file_meetings,
             )
+            if file_tasks is not None:
+                await file_tasks.reclaim_refused_retained_work()
             from .phase2_summary import recover_summaries
             await recover_summaries(store)
             if file_tasks is not None:

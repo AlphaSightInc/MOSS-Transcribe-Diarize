@@ -144,6 +144,7 @@ class FileMeetingTasks:
         self._tasks: dict[str, _OwnedFileTask] = {}
         self._fenced_owner_keys: set[tuple[str, int]] = set()
         self._fenced_meeting_ids: set[str] = set()
+        self._refused_retained_work: dict[str, tuple[Any, Path]] = {}
 
     @property
     def work_root(self) -> Path:
@@ -188,6 +189,7 @@ class FileMeetingTasks:
         try:
             input_path = self._verified_retained_input(handle, owner_dir)
             if input_path is None:
+                self._refused_retained_work[handle.meeting_id] = (handle, owner_dir)
                 return False
             started = asyncio.Event()
             task = asyncio.create_task(self._run(handle, input_path, started, resumed=True))
@@ -209,6 +211,15 @@ class FileMeetingTasks:
             if await self.claim_retained_work(handle):
                 claimed.add((handle.owner_key[0], handle.meeting_id))
         return frozenset(claimed)
+
+    async def reclaim_refused_retained_work(self) -> None:
+        """Remove only retained owners that fallback has already made terminal."""
+
+        for meeting_id, (handle, owner_dir) in tuple(self._refused_retained_work.items()):
+            if (await handle.snapshot()).status == "active":
+                continue
+            self._remove_terminal_work_dir(owner_dir)
+            self._refused_retained_work.pop(meeting_id, None)
 
     async def accept(self, workspace: Any, upload: Any) -> Any:
         """Store a complete request body, then create exactly one File Meeting and start work."""

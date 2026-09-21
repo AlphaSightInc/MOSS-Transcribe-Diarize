@@ -68,6 +68,21 @@ class _NoUrlAcquirer:
         raise AssertionError("retained URL work must not reacquire its source")
 
 
+class _HeldUrlAcquirer:
+    """Deterministically hold a URL Meeting before it has a retained source."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self.started = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def acquire(self, *_args: object, **_kwargs: object) -> Path:
+        self.calls += 1
+        self.started.set()
+        await self.release.wait()
+        raise AssertionError("the held URL acquisition must be cancelled")
+
+
 def _extract(
     _source: str | Path,
     destination: str | Path,
@@ -459,7 +474,7 @@ def test_lifespan_records_retained_cleanup_failure_without_aborting_startup(
 def test_lifespan_refuses_missing_retained_url_copy_without_decoder_dispatch(
     tmp_path: Path,
 ) -> None:
-    """C7 violating arm: no retained local URL source still reaches fallback truth."""
+    """C3: refused retained input is removed only after fallback terminal truth."""
 
     async def exercise() -> None:
         _, handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
@@ -473,13 +488,79 @@ def test_lifespan_refuses_missing_retained_url_copy_without_decoder_dispatch(
 
         acquirer = _NoUrlAcquirer()
         app = _app(tmp_path, decoder, url_acquirer=acquirer)
+        sibling_dir = owner_dir.parent / "unrelated-meeting"
+        sibling_dir.mkdir()
+        sibling_marker = sibling_dir / "preserve"
+        sibling_marker.write_text("unrelated retained work", encoding="utf-8")
+        terminal_statuses: list[str] = []
+        removal_statuses: list[str] = []
+        original_finish = MeetingHandle.finish
+        original_remove = FileMeetingTasks._remove_terminal_work_dir
+
+        async def observe_finish(self, status, **kwargs):
+            await original_finish(self, status, **kwargs)
+            if self.meeting_id == handle.meeting_id:
+                terminal_statuses.append((await self.snapshot()).status)
+
+        def observe_remove(self, work_dir):
+            if work_dir == owner_dir:
+                removal_statuses.extend(terminal_statuses)
+            original_remove(self, work_dir)
+
+        MeetingHandle.finish = observe_finish
+        FileMeetingTasks._remove_terminal_work_dir = observe_remove
+        try:
+            async with app.router.lifespan_context(app):
+                snapshot = await _snapshot(app, handle)
+                assert decoder.calls == [0, 1, 2]
+                assert acquirer.calls == 0
+                assert snapshot.status == "interrupted"
+                assert snapshot.transcript is None
+                assert not owner_dir.exists()
+                assert removal_statuses == ["interrupted"]
+                assert sibling_marker.read_text(encoding="utf-8") == "unrelated retained work"
+        finally:
+            FileMeetingTasks._remove_terminal_work_dir = original_remove
+            MeetingHandle.finish = original_finish
+
+    asyncio.run(exercise())
+
+
+def test_url_cancellation_reclaims_only_its_terminal_retained_directory(
+    tmp_path: Path,
+) -> None:
+    """C3: cancelling an in-flight URL acquisition reclaims only its terminal owner."""
+
+    async def exercise() -> None:
+        acquirer = _HeldUrlAcquirer()
+        app = _app(tmp_path, _RestartDecoder(), url_acquirer=acquirer)
         async with app.router.lifespan_context(app):
+            store = app.state.phase2_store
+            account, _ = await seed_workspace(store, "account-a")
+            handle = await app.state.phase2_file_tasks.accept_url(
+                store.workspace(account),
+                "https://example.test/input.wav",
+            )
+            await asyncio.wait_for(acquirer.started.wait(), timeout=2)
+            owner_dir = (
+                app.state.phase2_file_tasks.retained_root
+                / account.account_id
+                / handle.meeting_id
+            )
+            sibling_dir = owner_dir.parent / "unrelated-meeting"
+            sibling_dir.mkdir()
+            sibling_marker = sibling_dir / "preserve"
+            sibling_marker.write_text("unrelated retained work", encoding="utf-8")
+
+            assert owner_dir.is_dir()
+            assert await app.state.phase2_lifecycle.interrupt_meeting(handle.meeting_id)
+
             snapshot = await _snapshot(app, handle)
-            assert decoder.calls == [0, 1, 2]
-            assert acquirer.calls == 0
+            assert acquirer.calls == 1
             assert snapshot.status == "interrupted"
             assert snapshot.transcript is None
-            assert owner_dir.exists()
+            assert not owner_dir.exists()
+            assert sibling_marker.read_text(encoding="utf-8") == "unrelated retained work"
 
     asyncio.run(exercise())
 
