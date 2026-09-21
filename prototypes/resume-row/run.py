@@ -23,6 +23,7 @@ import sys
 import time
 import urllib.request
 import wave
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +37,7 @@ CHECKPOINT_WINDOWS = 1
 REQUEST_CAP = 12
 DEFAULT_PORT = 17835
 DEFAULT_PROXY_PORT = 19135
+F3R_ROW = "f3r-resume"
 CORPUS = ROOT / "evidence/live-policy-sweep-20260825/corpus"
 SOURCE_CLIPS = (
     CORPUS / "interview_bill_ackman_60s/audio.wav",
@@ -97,10 +99,33 @@ def _write(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
-def row_status(checks: dict[str, bool], *, upstream_error: bool = False) -> str:
+def decoder_accounting(
+    events: list[dict[str, Any]],
+    *,
+    planned_requests: int,
+) -> tuple[Any, bool]:
+    from tools.qualify.decoder import accounting_incomplete, summarize_events
+
+    summary = summarize_events(events, expected_row=F3R_ROW)
+    return summary, accounting_incomplete(summary, planned=planned_requests)
+
+
+def row_status(
+    checks: dict[str, bool],
+    *,
+    accounting_is_incomplete: bool = False,
+    upstream_error: bool = False,
+) -> str:
     """Missing evidence and upstream errors are INCOMPLETE, never product FAIL."""
 
-    return "PASS" if checks and all(checks.values()) and not upstream_error else "INCOMPLETE"
+    return (
+        "PASS"
+        if checks
+        and all(checks.values())
+        and not accounting_is_incomplete
+        and not upstream_error
+        else "INCOMPLETE"
+    )
 
 
 class Client:
@@ -262,6 +287,7 @@ def _wait_prefix(
     proxy: Any,
     *,
     accepted_before: int,
+    completed_before: int,
     k: int,
     timeout: int = 1800,
 ) -> dict[str, int]:
@@ -270,7 +296,7 @@ def _wait_prefix(
         records = tuple((owner_dir / "checkpoint/windows").glob("w*.json"))
         counters = proxy.snapshot()
         accepted = counters.accepted - accepted_before
-        completed = counters.completed - accepted_before
+        completed = counters.completed - completed_before
         if len(records) > k or accepted > k:
             raise RuntimeError("pre-crash work advanced beyond the planned prefix")
         if len(records) == k and accepted == completed == k and counters.active == 0:
@@ -303,7 +329,7 @@ def _product_diff(frozen_sha: str) -> list[str]:
 
 
 def execute(args: argparse.Namespace, plan: dict[str, Any]) -> int:
-    from tools.qualify.decoder import Decoder
+    from tools.qualify.decoder import Decoder, read_events
 
     if args.out.exists():
         raise SystemExit(f"REFUSE: output exists: {args.out}")
@@ -341,6 +367,7 @@ def execute(args: argparse.Namespace, plan: dict[str, Any]) -> int:
             args.budget,
             args.out / "decoder-requests.jsonl",
         )
+        proxy.set_row_owner(F3R_ROW)
         proxy.start()
         proxy_started = True
         stack, log = _start_stack(args, cert, key, "stack-initial")
@@ -363,6 +390,7 @@ def execute(args: argparse.Namespace, plan: dict[str, Any]) -> int:
             crash_owner,
             proxy,
             accepted_before=reference_after.accepted,
+            completed_before=reference_after.completed,
             k=int(plan["population"]["k"]),
         )
         _stop_stack(stack, crash=True)
@@ -377,6 +405,10 @@ def execute(args: argparse.Namespace, plan: dict[str, Any]) -> int:
         resumed = _wait_terminal(client, crash_id)
         restart_after = proxy.snapshot()
         post_restart_requests = restart_after.accepted - restart_before.accepted
+        accounting, accounting_is_incomplete = decoder_accounting(
+            read_events(proxy.log),
+            planned_requests=int(plan["requests"]["planned_decoder"]),
+        )
 
         checks = {
             "initial_stack_ready": bool(ready["descriptor"].get("descriptor")),
@@ -396,10 +428,7 @@ def execute(args: argparse.Namespace, plan: dict[str, Any]) -> int:
             "meeting_done": resumed.get("status") == "completed",
             "transcript_equals_uninterrupted": resumed.get("transcript") == reference.get("transcript"),
             "owner_reclaimed": not crash_owner.exists(),
-            "total_requests_exact": restart_after.accepted == int(plan["requests"]["planned_decoder"]),
-            "proxy_completed_exact": restart_after.completed == restart_after.accepted,
-            "proxy_active_zero": restart_after.active == 0,
-            "proxy_rejected_zero": restart_after.rejected == 0,
+            "proxy_accounting_complete": not accounting_is_incomplete,
             "peak_in_flight_at_most_two": restart_after.peak_in_flight <= 2,
         }
         upstream_error = any(
@@ -407,8 +436,13 @@ def execute(args: argparse.Namespace, plan: dict[str, Any]) -> int:
             for meeting in (reference, resumed)
         )
         receipt.update(
-            status=row_status(checks, upstream_error=upstream_error),
+            status=row_status(
+                checks,
+                accounting_is_incomplete=accounting_is_incomplete,
+                upstream_error=upstream_error,
+            ),
             checks=checks,
+            decoder_accounting=asdict(accounting),
             timings={
                 "initial_ready_seconds": round(initial_ready_seconds, 3),
                 "restart_ready_seconds": round(restart_ready_seconds, 3),
@@ -419,6 +453,7 @@ def execute(args: argparse.Namespace, plan: dict[str, Any]) -> int:
                 "after_restart": post_restart_requests,
                 "total": restart_after.accepted,
                 "completed": restart_after.completed,
+                "upstream_failed": restart_after.upstream_failed,
                 "rejected": restart_after.rejected,
                 "peak_in_flight": restart_after.peak_in_flight,
             },
@@ -442,6 +477,7 @@ def execute(args: argparse.Namespace, plan: dict[str, Any]) -> int:
             receipt["actual_calls"] = {"decoder": counters.accepted, "provider": 0}
         if proxy_started:
             try:
+                proxy.clear_row_owner(F3R_ROW)
                 proxy.close()
             except Exception:
                 receipt["status"] = "INCOMPLETE"
