@@ -97,6 +97,16 @@
   xfails are ordinary real-lifespan File/URL passes; owner/source/contract/prefix rejection stays covered. Focused
   recovery/startup tests passed 83/83; the deterministic bench still reports C1--C10 SUPPORTED. **Limit:** C2--C10
   are not yet standalone product lifespan/account-lifecycle tests, so A3 acceptance is still open.
+- 2026-09-21 iteration 4 promoted **C2/C4/C7/C8/C9/C10** to standalone product controls. A real lifespan replays
+  only the retained uncommitted window (C2), refuses a concurrent lifespan before it can dispatch or fall back (C4),
+  uses the retained URL copy and refuses its absence without dispatch (C7), and keeps non-resumable File and all Live
+  rows on the unchanged interruption fallback (C9/C10). The Account-lifecycle control exposed an actual C8 defect:
+  after the old process-owned File entries were joined, their account fence still suppressed the newly claimed
+  retained task's terminal commit, so it decoded then fell through to `interrupted`. `release_settled_account_fence()`
+  releases only an account whose in-process File tasks are gone, while the closed account gate still prevents a new
+  entrant; C8 now completes before the account fallback. Focused controls + lifecycle group: **26 passed**; three
+  existing late-result/revocation controls: **3 passed**. **Limit:** C3 cancellation during restart is still only a
+  prototype-composed case and remains open; do not call A3 accepted.
   This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
   **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
@@ -117,10 +127,12 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-1. **A3 — product-path controls**: replace the remaining prototype-composed C2/C3/C4/C7/C8/C9/C10 checks with real
-   `lifespan` and Account-lifecycle tests. The product ordering and two `round4/batch` File/URL controls are landed;
-   preserve the unchanged fallback and `phase2.py:751-763`, and do not claim A3 acceptance until every retained case
-   is product-tested.
+1. **A3 — C3 product-path cancellation control**: replace the remaining prototype-composed C3 check with a real
+   restart/lifecycle test: cancellation during resumed work must reach durable `interrupted` with
+  `failure_code=cancelled`, stop later delegate calls, and clean only after terminal truth. C2/C4/C7/C8/C9/C10 now
+  have standalone product controls; the retained/resume/startup/recover regression slice is **89 passed, 913
+  deselected**. Preserve the unchanged fallback and `phase2.py:751-763`, and do not claim A3 acceptance until C3 is
+  product-tested.
 2. **Gap remedy — partition-scoped terminal decision** (`live_transcript_convergence.py:1015-1071`,
    `live_lane_decode.py:278-308`): retain terminal-local label; one aggregated match per unmapped partition; project
    only inside it. Validate **both branches**: shared-partition control resolves to the established identity while the

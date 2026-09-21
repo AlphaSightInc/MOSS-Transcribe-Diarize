@@ -46,3 +46,11 @@ convert; the two Jamie controls must stay xfailed.
 - Evidence: plain `test_r4_5_base_lifespan_resumes_valid_retained_prefix[file,url]`; `prototypes/batch-startup/results.json`; `git diff --unified=0 71f23c0c -- moss_transcribe_diarize/app/phase2.py` shows no `_assert_no_active_meetings` change.
 - Learned: a claimed task must join to durable terminal truth before the legacy fallback scans active rows; otherwise the fallback can immediately interrupt it. Python 3.12 required registering the dynamic prototype module for the formerly-xfailed product control to execute.
 - Next: promote C2/C3/C4/C7/C8/C9/C10 from prototype composition to standalone real-lifespan/Account-lifecycle product tests, then continue with the gap remedy.
+
+## Iteration 4 - retained File product controls
+- Target: Candidate 1, promote A3 C2/C4/C7/C8/C9/C10 from prototype composition to real lifespan and Account-lifecycle paths.
+- Files: `tests/phase2/test_retained_file_claim.py`; `moss_transcribe_diarize/app/phase2_file.py`; `moss_transcribe_diarize/app/phase2_lifecycle.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider tests/phase2/test_retained_file_claim.py tests/phase2/test_workspace_lifecycle.py` -> 26 passed, 1 upstream TestClient deprecation warning; the three existing File revoke/fence controls -> 3 passed; `tests/phase2 -k 'retained or resume or startup or recover'` -> 89 passed, 913 deselected; `git diff --check` -> clean.
+- Evidence: standalone C2/C4/C7/C8/C9/C10 tests in `tests/phase2/test_retained_file_claim.py`; existing late-result controls in `tests/phase2/test_owner_bound_file_meeting.py`.
+- Learned: Account recovery dispatched valid retained work but its inherited account fence suppressed the terminal commit and sent it to fallback. Releasing that fence only after all existing process-owned File tasks join lets retained work finish; the closed account gate still bars new entrants. C3 is still prototype-only.
+- Next: add the real C3 restart-cancellation control; it must prove durable `cancelled`, no later calls, and cleanup after terminal truth.

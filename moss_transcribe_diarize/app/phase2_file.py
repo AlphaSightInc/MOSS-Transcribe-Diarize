@@ -330,6 +330,13 @@ class FileMeetingTasks:
     ) -> tuple[str, ...]:
         return await self._settle_entries(entries)
 
+    def release_settled_account_fence(self, owner_key: tuple[str, int]) -> None:
+        """Let unowned retained work finish only after this Account's tasks are gone."""
+
+        if any(entry.handle.owner_key == owner_key for entry in self._tasks.values()):
+            raise RuntimeError("Cannot release an Account fence before File tasks settle.")
+        self._fenced_owner_keys.discard(owner_key)
+
     async def _settle_entries(
         self,
         entries: tuple[_OwnedFileTask, ...],

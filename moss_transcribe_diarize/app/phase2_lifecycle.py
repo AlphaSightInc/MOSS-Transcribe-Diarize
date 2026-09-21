@@ -229,6 +229,7 @@ class AccountLifecycle:
                     "Account Meeting recovery is unavailable."
                 )
             if self._files is not None:
+                self._files.release_settled_account_fence(owner_key)
                 await self._files.resume_retained_work(self._store, account=account)
             await self._store.recover_active_account_meetings(
                 account,
