@@ -21,12 +21,14 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. MOSS_TEST_REAL_SQLITE=1 \
   /private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python \
   -m pytest -q -p no:cacheprovider \
   tests/phase2/test_fix_i3i4_diagnosis.py \
-  tests/phase2/test_fix_i3i4_review_controls.py
+  tests/phase2/test_fix_i3i4_review_controls.py \
+  tests/phase2/test_fix_i3i4_resume_binding_controls.py
 ```
 
-Expected: `14 passed`. This includes mix-bound end-to-end resume, input-bound
-resume, refusal/error/fence audio reconciliation, same-boot reclaim, per-owner
-isolation, bound-4 stalled validation, meeting interrupt, and account revoke.
+Expected: `22 passed`. This includes unbound single- and multi-window restart,
+digital-silence suppression, mix- and input-bound resume, exponential retry,
+single resolver hashing, truthful registration failure, audio reconciliation,
+same-boot reclaim, per-owner isolation, bound-4 validation, interrupt, and revoke.
 
 ## 3. Full gates
 
