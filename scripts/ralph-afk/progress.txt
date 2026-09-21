@@ -110,3 +110,5 @@ Opened by the lead after the adversarial acceptance review of run B (HEAD 16fd90
 0 failed / 5 skipped / 2 xfailed, frontend 312/312, asset parity clean). Run C closes three consequences run B did not
 surface (revoke resurrecting work and unfencing late results; a retained resume aborting or stalling startup; refused or
 cancelled retained work kept forever) plus four smaller gaps. Offline: zero decoder requests.
+
+[loop 20260921-064730-45615] start budget=10 agent=codex branch=round4/ralph-b
