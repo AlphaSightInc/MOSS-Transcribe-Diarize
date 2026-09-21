@@ -731,6 +731,26 @@ class TerminalFinalizationAccounting:
 
 
 @dataclass(frozen=True, slots=True)
+class RawTerminalSpan:
+    """One decoder-local terminal span retained before overlap normalization."""
+
+    raw_index: int
+    terminal_local_label: str
+    start: int
+    end: int
+    samples: int
+
+
+@dataclass(frozen=True, slots=True)
+class RawToNormalizedSpan:
+    """Where one raw terminal span landed in the normalized partition set."""
+
+    raw_index: int
+    normalized_partition_id: str | None
+    disposition: str
+
+
+@dataclass(frozen=True, slots=True)
 class TerminalPartitionSpan:
     """One published span in the terminal-local partition the lane adapter used."""
 
@@ -750,6 +770,17 @@ class TerminalPartitionDecision:
     decision: str
     minimum_samples: int | None
     spans: tuple[TerminalPartitionSpan, ...]
+    member_raw_indexes: tuple[int, ...] = ()
+    start: int = 0
+    end: int = 0
+    samples: int = 0
+    eligible: bool | None = None
+    score_by_canonical: tuple[tuple[str, float], ...] = ()
+    margin: float | None = None
+    published_identity: str | None = None
+    meeting_owner: str = "unbound"
+    run_owner: str = "unbound"
+    schema_version: str = "moss.terminal-identity-diagnostics.v3"
 
 
 @dataclass(frozen=True, slots=True)
@@ -760,6 +791,8 @@ class TerminalFinalization:
     accounting: TerminalFinalizationAccounting
     # This is finalizer-owned diagnostic structure, never proposal/publication authority.
     terminal_partitions: tuple[TerminalPartitionDecision, ...] = ()
+    raw_terminal_spans: tuple[RawTerminalSpan, ...] = ()
+    raw_to_normalized: tuple[RawToNormalizedSpan, ...] = ()
 
     @property
     def outcome(self) -> TerminalOutcome:
@@ -996,7 +1029,14 @@ class TerminalTranscriptFinalizer:
             decode_finished = time.monotonic()
             elapsed_sec = decode_finished - decode_started
 
-        segments, terminal_local_speakers, local_speakers, mapping, resolution = self._segments_of(
+        (
+            segments,
+            terminal_local_speakers,
+            local_speakers,
+            mapping,
+            resolution,
+            raw_terminal_spans,
+        ) = self._segments_of(
             result, end_sample=plan.end_sample, base_surface=base_surface,
             canonical_speakers=canonical_speakers,
         )
@@ -1020,7 +1060,11 @@ class TerminalTranscriptFinalizer:
             resolution=resolution,
         )
         if not segments:
-            return TerminalFinalization(proposal=None, accounting=accounting)
+            return TerminalFinalization(
+                proposal=None,
+                accounting=accounting,
+                raw_terminal_spans=raw_terminal_spans,
+            )
         return TerminalFinalization(
             proposal=TextRevisionProposal(
                 epoch=plan.epoch,
@@ -1033,6 +1077,7 @@ class TerminalTranscriptFinalizer:
                 terminal_local_speakers=terminal_local_speakers,
             ),
             accounting=accounting,
+            raw_terminal_spans=raw_terminal_spans,
         )
 
     # ---------------------------------------------------------------- internals
@@ -1050,6 +1095,7 @@ class TerminalTranscriptFinalizer:
         tuple[str, ...],
         dict[str, str],
         SegmentOverlapResolution,
+        tuple[RawTerminalSpan, ...],
     ]:
         """The whole meeting's words on the session clock, attributed to the meeting's people.
 
@@ -1064,11 +1110,21 @@ class TerminalTranscriptFinalizer:
             if item.text.strip()
         ]
         placed: list[tuple[str, int, int, str]] = []
+        raw_terminal_spans: list[RawTerminalSpan] = []
         for item in parsed:
             start = int(round(item.start * LIVE_SAMPLE_RATE))
             end = int(round(item.end * LIVE_SAMPLE_RATE))
             if end <= start:
                 continue
+            raw_terminal_spans.append(
+                RawTerminalSpan(
+                    raw_index=len(raw_terminal_spans),
+                    terminal_local_label=item.speaker,
+                    start=start,
+                    end=end,
+                    samples=end - start,
+                )
+            )
             placed.append((item.speaker, start, end, item.text))
         # Before the names are decided, not after: the seam rule joins two decodings of one
         # *local* speaker, and two locals that the mapping happens to send to one person are
@@ -1095,6 +1151,7 @@ class TerminalTranscriptFinalizer:
             local_speakers,
             mapping,
             resolution,
+            tuple(raw_terminal_spans),
         )
 
     def _refused(

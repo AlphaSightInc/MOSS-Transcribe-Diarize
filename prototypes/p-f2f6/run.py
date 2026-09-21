@@ -96,6 +96,7 @@ def frozen_product_capture(destination: Path | None) -> dict:
             identity_snapshot=LiveIdentitySnapshot(canonical_speakers=(ADAM,))
         )
         coordinator = SimpleNamespace(
+            session_key="p-f2f6-contained",
             lane_tapes={"system": tape},
             _lane_speakers={"system": {ADAM}},
             _lane_preparers={"system": preparer},
@@ -188,7 +189,16 @@ def main() -> int:
         row for row in observed if row["record_type"] == "normalized_partition"
     ]
     observer_structure = _observer_is_pure()
-    product_labels = [row["terminal_local_label"] for row in frozen_on["capture_rows"]]
+    product_labels = [
+        row["terminal_local_label"]
+        for row in frozen_on["capture_rows"]
+        if "terminal_local_label" in row
+    ]
+    normalized_product_labels = [
+        row["terminal_local_label"]
+        for row in frozen_on["capture_rows"]
+        if row.get("record_type") == "normalized_partition"
+    ]
     controls = {
         "frozen_capture_off_on_writer_refusal_byte_identical": len(
             {
@@ -198,7 +208,9 @@ def main() -> int:
             }
         )
         == 1,
-        "frozen_capture_is_post_normalization": product_labels == ["S01"],
+        "frozen_normalized_stream_is_post_normalization": (
+            normalized_product_labels == ["S01"]
+        ),
         "prototype_raw_stream_retains_contained_s02": [
             row["terminal_local_label"] for row in raw_rows
         ]

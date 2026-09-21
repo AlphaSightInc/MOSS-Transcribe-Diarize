@@ -5,8 +5,8 @@
 **UNMEASURED.** `--plan-only` prepares this rerun without a decoder client, stack, GPU,
 tunnel, or network call. The plan now requires three separate product-emitted streams:
 pre-normalization raw spans, explicit raw-to-normalized mapping, and native normalized
-partition decisions. The frozen product reports `REQUIRED-BEFORE-RUN`; execution
-refuses before startup until Run E supplies the raw-capture contract.
+partition decisions. The I2 product reports `READY`; the budgeted rerun remains
+unexecuted and therefore cannot yet answer the historical partition question.
 
 ## Structural contract
 
@@ -34,7 +34,8 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. python prototypes/s17-identity-rerun/run.
 
 The budgeted command substitutes `--run --decoder-base-url <owned endpoint> --budget 184`.
 It refuses before stack startup if raw capture, endpoint, or budget is absent, or the
-result directory exists. The frozen `0de56e1a` therefore cannot spend the 184 requests.
+result directory exists. I2's plan-only receipt is `READY`, plans 184 requests, and spent
+zero; this implementation wave must not execute it.
 
 ## Settlement boundary
 

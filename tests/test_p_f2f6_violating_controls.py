@@ -28,19 +28,11 @@ def _prototype_state() -> dict:
     return json.loads(completed.stdout)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="F2 frozen capture is post-normalization and loses contained raw S02",
-)
 def test_f2_frozen_capture_retains_contained_raw_terminal_span():
     state = _prototype_state()
     assert "S02" in state["frozen_product"]["captured_labels"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="F6 frozen observer imports and reconstructs the identity preparer",
-)
 def test_f6_frozen_observer_has_no_preparer_decision_dependency():
     source = (
         ROOT / "moss_transcribe_diarize/app/terminal_label_capture.py"
