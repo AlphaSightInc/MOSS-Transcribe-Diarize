@@ -868,12 +868,16 @@ def test_shutdown_preserves_meeting_owned_source_before_restart_recovery(tmp_pat
     finally:
         connection.close()
 
-    restarted = make_app(database, ControlledRunner(), work_root)
+    restart_runner = ControlledRunner()
+    restarted = make_app(database, restart_runner, work_root)
     with TestClient(restarted, base_url="https://moss.test") as after_restart:
         session(after_restart, sessions["sub-a-second"])
-        meeting = after_restart.get(f"/api/meetings/{meeting_id}").json()
-        assert meeting["status"] == "interrupted"
-        assert meeting["transcript"] is None
+        assert restart_runner.started.wait(timeout=2)
+        restart_runner.release.set()
+        meeting = await_terminal(after_restart, meeting_id, "completed")
+        assert meeting["transcript_version"] == 1
+        assert meeting["transcript"] is not None
+        assert restart_runner.inputs == [("input.wav", b"shutdown-input")]
 
 
 def test_startup_removes_transient_crash_orphan_after_durable_recovery(tmp_path: Path):
