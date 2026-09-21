@@ -220,3 +220,11 @@ small disclosures. Offline: zero decoder requests.
 - Evidence: `test_lifespan_retries_a_failed_last_resort_retained_outcome_write` injects an unexpected retained completion failure and one failed `MeetingHandle.finish`, then proves durable `failed/resume_failed` and exact retained-owner removal. `_mark_failed` returns false for `AccountRevoked`, so the resumed outer handler does not remove its owner without terminal truth.
 - Learned: `Phase2Store._finish_meeting` is one atomic owner-bound mutation; a first failed attempt does not make an outcome, but a bounded retry can. A persistently unavailable SQLite write cannot honestly claim durable truth: its task raises and preserves the retained owner for a future boot rather than deleting input or claiming success.
 - Next: D3 / F2 — remove the dead `release_settled_account_fence` and account-scoped retained-resume entry points.
+
+## Iteration 3 - remove dead retained recovery surfaces
+- Target: D3 / F2 — remove the unreachable account-scoped retained-resume and fence-release entry points.
+- Files: `moss_transcribe_diarize/app/phase2_file.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider tests/phase2/test_retained_file_claim.py` -> **19 passed** in 2.73 s; production Python inventory finds only `phase2.py`'s global lifespan call and the parameterless implementation, no `release_settled_account_fence` and no `resume_retained_work(... account ...)`; `py_compile` and `git diff --check` -> clean. No decoder, network, GPU, tunnel, proxy, or provider request.
+- Evidence: `moss_transcribe_diarize/app/phase2_file.py::FileMeetingTasks.resume_retained_work`; lifespan call at `moss_transcribe_diarize/app/phase2.py:2057`; focused retained lifecycle controls.
+- Learned: startup is the sole retained-resume owner. Keeping a selective interface for an unreachable revoke path adds a way to revive or un-fence revoked work; the unfiltered global call is sufficient.
+- Next: D4 / F3 — decide whether non-resumed commit/publication failures must re-signal task settlement, then document the chosen behavior in both verification documents.

@@ -201,13 +201,11 @@ class FileMeetingTasks:
             if retained_lock is not None:
                 self._release_retained_lock(retained_lock)
 
-    async def resume_retained_work(
-        self, store: Any, *, account: Any | None = None
-    ) -> frozenset[tuple[str, str]]:
+    async def resume_retained_work(self, store: Any) -> frozenset[tuple[str, str]]:
         """Start verified retained owners and return only the owners fallback must leave alone."""
 
         claimed: set[tuple[str, str]] = set()
-        for handle in await store.active_file_meetings(account):
+        for handle in await store.active_file_meetings():
             if await self.claim_retained_work(handle):
                 claimed.add((handle.owner_key[0], handle.meeting_id))
         return frozenset(claimed)
@@ -361,13 +359,6 @@ class FileMeetingTasks:
         entries: tuple[_OwnedFileTask, ...],
     ) -> tuple[str, ...]:
         return await self._settle_entries(entries)
-
-    def release_settled_account_fence(self, owner_key: tuple[str, int]) -> None:
-        """Let unowned retained work finish only after this Account's tasks are gone."""
-
-        if any(entry.handle.owner_key == owner_key for entry in self._tasks.values()):
-            raise RuntimeError("Cannot release an Account fence before File tasks settle.")
-        self._fenced_owner_keys.discard(owner_key)
 
     async def _settle_entries(
         self,

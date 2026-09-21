@@ -60,13 +60,14 @@
   boot could not claim (`active_file_meetings` joins `a.enabled = 1`). The restored C1 control was RED on the old tree
   (both revoke and second boot retained `checkpoint`, `input.wav`, and `owner.json`) and is green: no decoder call,
   durable `interrupted`, unchanged fence, no owner directory, and same-account/sibling-account markers survive.
-- Smaller items the review named: **F2** `release_settled_account_fence` (`phase2_file.py:356-361`) and
-  `resume_retained_work`'s `account=` parameter (`:205`) are now dead outside prototypes; **F3** `_complete`'s commit
-  and publication arms changed `raise` → `return` for *both* modes (`:772-784`, `:807-819`), silently dropping the
-  non-resumed path's quiesce signal; **D5/F5 complete:** `_mark_failed` retries one non-revocation terminal-write
-  failure through the same owner-bound atomic mutation. It reports whether durable terminal truth exists, so `_run`'s
-  resumed last-resort arm cleans up only after that truth; `AccountRevoked` leaves its owner untouched. **F6**
-  progress.txt iteration 4 cites a test file run C never touched.
+- **D3/F2 complete:** `release_settled_account_fence` and `resume_retained_work`'s unused `account=` parameter are
+  removed. The only non-prototype call is lifespan-wide and unfiltered, so no retained-resume surface can target a
+  revoked Account or release its fence. **F3** `_complete`'s commit and publication arms changed `raise` → `return`
+  for *both* modes (`phase2_file.py:772-784`, `:807-819`), silently dropping the non-resumed path's quiesce signal;
+  **D5/F5 complete:** `_mark_failed` retries one non-revocation terminal-write failure through the same owner-bound
+  atomic mutation. It reports whether durable terminal truth exists, so `_run`'s resumed last-resort arm cleans up
+  only after that truth; `AccountRevoked` leaves its owner untouched. **F6** progress.txt iteration 4 cites a test
+  file run C never touched.
 - Reachability caveat recorded by the review, pre-existing since run B, not a run-C regression: because `_mark_failed`
   swallows `AccountRevoked`, a `finish` failure on an authority mismatch could in principle delete a still-`active`
   Meeting's retained dir. No reachable case was constructible (`finalize_account_revoke` requires zero active rows and
@@ -91,9 +92,6 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-- **D3 / F2 — remove dead revocation-adjacent entry points.** Remove `release_settled_account_fence` and the unused
-  `account=` parameter on `resume_retained_work`; prove no production callers remain. Falsifier: a retained caller
-  still releases a revoked account fence or requests account-scoped resume.
 - **D4 / F3 — disclose or restore non-resumed task failure signaling.** Decide whether ordinary commit/publication
   failures should again surface through task settlement; document the chosen behavior in both Run-C and Run-D
   verifiers. Falsifier: verifier claims a signal the non-resumed path no longer produces.
@@ -230,6 +228,15 @@ Historical S17 and `capacity_2x1800` remain explicitly unmeasured outside this P
   owner cleanup. A persistently unavailable SQLite write remains an unavoidable persistence boundary: the task raises
   and preserves the retained owner for a later boot rather than claiming a durable outcome.
 - **Next:** D3 — remove the now-dead account-scoped retained-resume and fence-release surfaces.
+
+## Run D iteration 3 outcome
+
+- **D3 / F2 (complete):** the account-scoped `resume_retained_work` argument and
+  `release_settled_account_fence` are deleted. The static production inventory now contains only the global lifespan
+  call and the parameterless implementation; `tests/phase2/test_retained_file_claim.py` is 19/19 green. No retained
+  caller can request account-scoped resume or un-fence a revoked Account.
+- **Next:** D4 — decide whether non-resumed commit/publication failures must again signal task settlement, then record
+  the behavior and rationale in both verification documents.
 
 ## Non-candidates
 
