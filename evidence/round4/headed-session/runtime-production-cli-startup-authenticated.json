@@ -1,0 +1,25 @@
+{
+  "schema": "moss-headed-session-production-cli-startup.v1",
+  "runtime_python": "/private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python",
+  "sqlite_runtime": "3.53.4",
+  "binding": "https://127.0.0.1:60780",
+  "index_status": 200,
+  "bootstrap_status": 200,
+  "descriptor_status": 200,
+  "frontend_markers": {
+    "title_moss": true,
+    "signed_in_surface": true
+  },
+  "provider": {
+    "source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea",
+    "provider_name": "moss-rtx-webrtc-wespeaker",
+    "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "sample_rate": 16000
+  },
+  "audio_frames_submitted": 0,
+  "remote_decoder_requests": 0,
+  "microphone_opened": false,
+  "audio_playback": false,
+  "gpu_used": false,
+  "failure": null
+}

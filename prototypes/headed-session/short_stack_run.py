@@ -2,7 +2,7 @@
 
 One command:
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. \\
-  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python \\
+  /private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python \\
   prototypes/headed-session/short_stack_run.py \\
   --output evidence/round4/headed-session/short-stack-run.json
 
@@ -52,13 +52,22 @@ from moss_transcribe_diarize.app.live_session import (
     LiveIdentitySnapshot,
 )
 from moss_transcribe_diarize.app.live_transcript_convergence import TerminalTranscriptFinalizer
-from moss_transcribe_diarize.app.phase2 import create_phase2_app
+from moss_transcribe_diarize.app.phase2 import REQUIRED_SQLITE_RUNTIME, create_phase2_app
 from tools.qualify.visible_word_headed import _run
 
 
 SECONDS = 5.0
 FRAME_SAMPLES = 8_000
 SYNTHETIC_TRANSCRIPT = "synthetic headed probe"
+
+
+def _runtime_identity() -> dict[str, str]:
+    """Retain the interpreter's enforced SQLite identity with this control."""
+
+    return {
+        "sqlite_runtime": sqlite3.sqlite_version,
+        "required_sqlite_runtime": REQUIRED_SQLITE_RUNTIME,
+    }
 
 
 class _Speech:
@@ -257,6 +266,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         except RuntimeError as exc:
             receipt = {
                 "schema": "moss-headed-session-short-stack.v1",
+                "runtime": _runtime_identity(),
                 "short_seconds": SECONDS,
                 "decoder_requests_remote": 0,
                 "provider_requests": 0,
@@ -296,6 +306,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 raise RuntimeError("loopback candidate stack did not stop")
     receipt = {
         "schema": "moss-headed-session-short-stack.v1",
+        "runtime": _runtime_identity(),
         "short_seconds": SECONDS,
         "decoder_requests_remote": 0,
         "provider_requests": 0,
