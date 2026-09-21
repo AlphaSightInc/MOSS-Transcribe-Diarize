@@ -413,7 +413,8 @@ class FileMeetingTasks:
             await reservation.handle.snapshot()
         ).status == "active":
             return
-        self._remove_terminal_work_dir(reservation.owner_dir)
+        if reservation.owner_dir.exists():
+            self._remove_terminal_work_dir(reservation.owner_dir)
 
     def _record_reservation_settled(
         self,
