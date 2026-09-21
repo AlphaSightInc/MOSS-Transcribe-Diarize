@@ -257,7 +257,11 @@ def test_t3_one_owner_persistent_outcome_write_failure_orphans_later_reserved_ow
             async def active_file_meetings(self):
                 return (first, second)
 
-        await tasks.resume_retained_work(Store())
+        claimed = await tasks.resume_retained_work(Store())
+        assert claimed == {
+            ("account-a", first.meeting_id),
+            ("account-a", second.meeting_id),
+        }
         crashed = None
         try:
             await tasks._retained_resume_task
@@ -307,6 +311,34 @@ def test_t4_checkpoint_validation_honest_shapes_and_side_effects(tmp_path):
     missing = tmp_path / "missing"
     tasks._checkpoint_is_valid(source, missing)
     assert not missing.exists()
+
+    def silent_wav_extract(
+        _source: Path,
+        destination: Path,
+        *,
+        start_seconds: float,
+        duration_seconds: float,
+    ) -> None:
+        del start_seconds, duration_seconds
+        import wave
+
+        with wave.open(str(destination), "wb") as output:
+            output.setnchannels(1)
+            output.setsampwidth(2)
+            output.setframerate(16_000)
+            output.writeframes(b"\x00" * (16_000 * 2))
+
+    speechless_decoder = _SpeechlessThenFailDecoder()
+    speechless_runner = WindowedRunner(
+        speechless_decoder,
+        duration_probe=lambda _source: 390.0,
+        window_extractor=silent_wav_extract,
+    )
+    speechless_dir = tmp_path / "speechless"
+    with pytest.raises(WindowTranscriptionError):
+        speechless_runner.transcribe(source, checkpoint_dir=speechless_dir)
+    speechless_tasks = FileMeetingTasks(speechless_runner, tmp_path / "file-work")
+    assert speechless_tasks._checkpoint_is_valid(source, speechless_dir) is True
 
 
 class _CopyMixArchive:
