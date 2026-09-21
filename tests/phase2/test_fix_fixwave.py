@@ -234,7 +234,6 @@ def _gated_audio_recovery(monkeypatch, gated_calls: int):
 REFUSED_MANIFEST = {"source_sha256": "0" * 64}  # names neither retained file => refused
 
 
-@pytest.mark.xfail(strict=True, reason="A2: fence must join the claim's refused settlement")
 def test_a2_operator_interrupt_during_refused_reservation_settlement_reports_truth(tmp_path, monkeypatch):
     """Fence lands while the claim's own refused path is settling (reservation still listed)."""
 
@@ -262,7 +261,6 @@ def test_a2_operator_interrupt_during_refused_reservation_settlement_reports_tru
     assert not outcome.startswith("ERROR"), outcome
 
 
-@pytest.mark.xfail(strict=True, reason="A3: revoke must join the claim's refused settlement")
 def test_a3_account_revoke_during_refused_reservation_settlement_completes(tmp_path, monkeypatch):
     async def exercise():
         account, _session, handle, owner = await _seed_owner(tmp_path, manifest=REFUSED_MANIFEST)
@@ -296,7 +294,6 @@ def test_a3_account_revoke_during_refused_reservation_settlement_completes(tmp_p
     assert first == "returned True", first
 
 
-@pytest.mark.xfail(strict=True, reason="A4: fenced validation error must reclaim in the same boot")
 def test_a4_fenced_reservation_whose_validation_then_errors_is_reclaimed_same_boot(tmp_path, monkeypatch):
     """S1 ruling: an interrupted stalled owner's dir is removed once its validation returns."""
 
@@ -330,7 +327,6 @@ def test_a4_fenced_reservation_whose_validation_then_errors_is_reclaimed_same_bo
     assert survived is False, "fenced owner dir must be removed once its validation thread returned"
 
 
-@pytest.mark.xfail(strict=True, reason="A6: reclaim must await validation and settlement")
 def test_a6_validation_returning_while_fence_settlement_is_in_flight_still_reclaims(tmp_path, monkeypatch):
     """The claim's post-validation removal does not wait for an in-flight fence settlement,
     and the settlement itself never removes a reservation's directory."""
@@ -367,7 +363,6 @@ def test_a6_validation_returning_while_fence_settlement_is_in_flight_still_recla
     assert survived is False
 
 
-@pytest.mark.xfail(strict=True, reason="A7: resumed input failure must retain transcode_failed parity")
 def test_a7_input_bound_resume_failure_keeps_the_fresh_run_failure_code(tmp_path):
     """Fresh run: mix failed -> decoder failure is `transcode_failed`. The resumed
     input-bound run skips prepare_mix, so the same failure becomes `decode_failed`."""
@@ -438,7 +433,6 @@ def test_a7_input_bound_resume_failure_keeps_the_fresh_run_failure_code(tmp_path
     assert fresh_code == resumed_code
 
 
-@pytest.mark.xfail(strict=True, reason="A8: unbound restart must validate nothing and run fresh")
 def test_a8_unbound_restart_of_a_streamed_webm_matches_a_fresh_run(tmp_path, monkeypatch):
     """R1 rule: an unbound checkpoint (every single-window File) resumes exactly like a fresh
     run. Production probes the *input* container during validation; a streamed WebM (the
@@ -513,7 +507,6 @@ def test_a8_unbound_restart_of_a_streamed_webm_matches_a_fresh_run(tmp_path, mon
     assert resumed.status == fresh.status
 
 
-@pytest.mark.xfail(strict=True, reason="A5: claim must await started or task completion")
 def test_a5_fence_before_resumed_task_first_step_does_not_wedge_the_claim(tmp_path, monkeypatch):
     """Pre-existing shape: _register -> await started.wait(); a fence scheduled ahead of the
     new task's first step cancels it before `started` is set."""
@@ -743,7 +736,6 @@ def test_b2_eight_historical_shapes_keep_their_verdicts(tmp_path):
         assert head[shape]["product_claim_validation"] == "refused", (shape, head[shape])
 
 
-@pytest.mark.xfail(strict=True, reason="B3: corrupt checkpoint manifest is refused")
 def test_b3_corrupt_manifest_ends_interrupted_not_failed_after_retries(tmp_path, monkeypatch):
     async def exercise():
         _account, _session, handle, owner = await _seed_owner(tmp_path, manifest=[])
