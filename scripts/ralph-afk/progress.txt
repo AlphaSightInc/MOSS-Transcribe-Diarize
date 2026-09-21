@@ -54,3 +54,11 @@ convert; the two Jamie controls must stay xfailed.
 - Evidence: standalone C2/C4/C7/C8/C9/C10 tests in `tests/phase2/test_retained_file_claim.py`; existing late-result controls in `tests/phase2/test_owner_bound_file_meeting.py`.
 - Learned: Account recovery dispatched valid retained work but its inherited account fence suppressed the terminal commit and sent it to fallback. Releasing that fence only after all existing process-owned File tasks join lets retained work finish; the closed account gate still bars new entrants. C3 is still prototype-only.
 - Next: add the real C3 restart-cancellation control; it must prove durable `cancelled`, no later calls, and cleanup after terminal truth.
+
+## Iteration 5 - retained File restart cancellation
+- Target: Candidate 1, C3 real lifespan/lifecycle cancellation of resumed File work.
+- Files: `moss_transcribe_diarize/app/phase2.py`; `moss_transcribe_diarize/app/phase2_file.py`; `tests/phase2/test_retained_file_claim.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: focused C3 was RED before lifecycle startup ownership; final `test_retained_file_claim.py test_owner_bound_file_meeting.py -k 'retained or operator_interrupt'` -> 15 passed, 15 deselected; `tests/phase2 -k 'retained or resume or startup or recover'` -> 90 passed, 913 deselected; `git diff --check` -> clean.
+- Evidence: `test_lifespan_cancellation_of_resumed_file_work_is_durably_cancelled`; shared `entry.settlement` in `phase2_file.py`.
+- Learned: a retained startup owner must share terminal settlement with lifecycle cancellation; the active decoder call is not preempted, but the existing scheduler refuses every later window before delegate dispatch. C3 now has a real product control; no decoder or network request was used.
+- Next: Candidate 1, partition-scoped terminal identity remedy; retain raw terminal labels, prove shared-partition resolution and isolated-partition abstention, keep S17 UNMEASURED.

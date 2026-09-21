@@ -105,9 +105,15 @@
   retained task's terminal commit, so it decoded then fell through to `interrupted`. `release_settled_account_fence()`
   releases only an account whose in-process File tasks are gone, while the closed account gate still prevents a new
   entrant; C8 now completes before the account fallback. Focused controls + lifecycle group: **26 passed**; three
-  existing late-result/revocation controls: **3 passed**. **Limit:** C3 cancellation during restart is still only a
-  prototype-composed case and remains open; do not call A3 accepted.
-  This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
+  existing late-result/revocation controls: **3 passed**.
+- 2026-09-21 iteration 5 promoted **C3** to a real product lifespan/lifecycle control. Lifecycle ownership is present
+  before retained startup work begins; cancelling a resumed File Meeting waits for the in-progress window, lets the
+  existing scheduler refuse the next window before decoder dispatch, then shares one durable settlement between the
+  lifecycle and startup owner. A resumed cancellation finishes `interrupted` with `failure_code=cancelled` and removes
+  retained work only after terminal truth; ordinary non-resumed operator interruption retains its prior outcome. Focused
+  retained/operator controls: **15 passed**; recovery slice: **90 passed, 913 deselected**. A3's C1--C10 product
+  control set is now complete; acceptance still requires the final suite and verification document.
+- This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
   **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
 ## Validation
@@ -127,20 +133,14 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-1. **A3 — C3 product-path cancellation control**: replace the remaining prototype-composed C3 check with a real
-   restart/lifecycle test: cancellation during resumed work must reach durable `interrupted` with
-  `failure_code=cancelled`, stop later delegate calls, and clean only after terminal truth. C2/C4/C7/C8/C9/C10 now
-  have standalone product controls; the retained/resume/startup/recover regression slice is **89 passed, 913
-  deselected**. Preserve the unchanged fallback and `phase2.py:751-763`, and do not claim A3 acceptance until C3 is
-  product-tested.
-2. **Gap remedy — partition-scoped terminal decision** (`live_transcript_convergence.py:1015-1071`,
+1. **Gap remedy — partition-scoped terminal decision** (`live_transcript_convergence.py:1015-1071`,
    `live_lane_decode.py:278-308`): retain terminal-local label; one aggregated match per unmapped partition; project
    only inside it. Validate **both branches**: shared-partition control resolves to the established identity while the
    Keyu control abstains (`round4/gap` xfail flips); isolated-partition control **stays `S00`** and says so. No decoder
    run in this loop — the historical S17 row stays UNMEASURED and belongs to R4-10.
-3. **Fixture correction (D27 = YES only)** (`tests/e2e/verify_demo_lanes.py:60-75`, corpus reference): per prd; falsifier
+2. **Fixture correction (D27 = YES only)** (`tests/e2e/verify_demo_lanes.py:60-75`, corpus reference): per prd; falsifier
    test = exactly the three class-(a) additions remain.
-4. **Full suites + `docs/verify/round4-run-b/VERIFY.md`.**
+3. **Full suites + `docs/verify/round4-run-b/VERIFY.md`.**
 
 ## Non-candidates
 

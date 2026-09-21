@@ -11,6 +11,10 @@ import pytest
 
 from _browser_workspace_fixtures import seed_workspace
 
+from moss_transcribe_diarize.app.inference_scheduler import (
+    InferenceDispatchScheduler,
+    ScheduledInferenceRunner,
+)
 from moss_transcribe_diarize.app.model_runner import TranscriptionResult
 from moss_transcribe_diarize.app.phase2 import MeetingHandle, Phase2Store, create_phase2_app
 from moss_transcribe_diarize.app.phase2_file import (
@@ -73,9 +77,16 @@ def _extract(
     Path(destination).write_text(f"{start_seconds}:{duration_seconds}\n", encoding="utf-8")
 
 
-def _runner(decoder: _RestartDecoder) -> WindowedRunner:
+def _runner(
+    decoder: _RestartDecoder,
+    scheduler: InferenceDispatchScheduler | None = None,
+) -> WindowedRunner:
     return WindowedRunner(
-        decoder,
+        (
+            decoder
+            if scheduler is None
+            else ScheduledInferenceRunner(decoder, scheduler, kind="background")
+        ),
         duration_probe=lambda _source: 390.0,
         window_extractor=_extract,
     )
@@ -128,12 +139,14 @@ def _app(
     decoder: _RestartDecoder,
     *,
     url_acquirer: object | None = None,
+    inference_scheduler: InferenceDispatchScheduler | None = None,
 ):
     return create_phase2_app(
         database_path=root / "state.sqlite3",
-        file_runner=_runner(decoder),
+        file_runner=_runner(decoder, inference_scheduler),
         file_work_root=root / "file-work",
         meeting_audio_root=root / "meeting-audio",
+        inference_scheduler=inference_scheduler,
         **({"url_acquirer": url_acquirer} if url_acquirer is not None else {}),
     )
 
@@ -223,6 +236,56 @@ def test_lifespan_retries_the_uncommitted_window_after_a_prior_crash(tmp_path: P
             assert snapshot.status == "completed"
             assert snapshot.transcript_version == 1
             assert not owner_dir.exists()
+
+    asyncio.run(exercise())
+
+
+def test_lifespan_cancellation_of_resumed_file_work_is_durably_cancelled(
+    tmp_path: Path,
+) -> None:
+    """C3: cancellation during retained startup reaches terminal truth before cleanup."""
+
+    async def exercise() -> None:
+        _, handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
+        await store.close()
+        decoder.block_window = 2
+        scheduler = InferenceDispatchScheduler(max_calls=1, max_background_calls=1)
+        app = _app(tmp_path, decoder, inference_scheduler=scheduler)
+        context = app.router.lifespan_context(app)
+        startup = asyncio.create_task(context.__aenter__())
+        assert await asyncio.to_thread(decoder.blocked.wait, 2)
+        fenced = asyncio.Event()
+        original_fence = app.state.phase2_file_tasks.fence_meeting
+
+        def observe_fence(meeting_id: str):
+            entry = original_fence(meeting_id)
+            if entry is not None:
+                fenced.set()
+            return entry
+
+        app.state.phase2_file_tasks.fence_meeting = observe_fence
+        cancellation = asyncio.create_task(
+            app.state.phase2_lifecycle.interrupt_meeting(handle.meeting_id)
+        )
+        await asyncio.wait_for(fenced.wait(), timeout=2)
+        assert handle.meeting_id in app.state.phase2_file_tasks._fenced_meeting_ids
+        assert owner_dir.exists()
+
+        decoder.release.set()
+        try:
+            assert await cancellation is True
+            await startup
+            snapshot = await _snapshot(app, handle)
+            assert decoder.calls == [0, 1, 2, 2]
+            assert snapshot.status == "interrupted"
+            assert snapshot.failure_code == "cancelled"
+            assert snapshot.transcript is None
+            assert not owner_dir.exists()
+        finally:
+            if not startup.done():
+                decoder.release.set()
+                await startup
+            await context.__aexit__(None, None, None)
 
     asyncio.run(exercise())
 

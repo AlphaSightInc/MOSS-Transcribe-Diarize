@@ -102,6 +102,9 @@ class _OwnedFileTask:
     task: asyncio.Task[None]
     phase: str = "queued"
     retained_lock: Any | None = None
+    resumed: bool = False
+    interrupted_by_meeting: bool = False
+    settlement: asyncio.Task[tuple[str, ...]] | None = None
 
 
 class FileMeetingTasks:
@@ -188,7 +191,7 @@ class FileMeetingTasks:
                 return False
             started = asyncio.Event()
             task = asyncio.create_task(self._run(handle, input_path, started))
-            self._register(handle, task, retained_lock=retained_lock)
+            self._register(handle, task, retained_lock=retained_lock, resumed=True)
             retained_lock = None
             await started.wait()
             return True
@@ -204,7 +207,12 @@ class FileMeetingTasks:
                 continue
             entry = self._tasks.get(handle.meeting_id)
             if entry is not None:
-                await entry.task
+                try:
+                    await entry.task
+                except asyncio.CancelledError:
+                    if not entry.interrupted_by_meeting:
+                        raise
+                    await self.settle_meeting(entry)
 
     async def accept(self, workspace: Any, upload: Any) -> Any:
         """Store a complete request body, then create exactly one File Meeting and start work."""
@@ -310,6 +318,7 @@ class FileMeetingTasks:
         entry = self._tasks.get(meeting_id)
         if entry is None:
             return None
+        entry.interrupted_by_meeting = True
         self._fenced_meeting_ids.add(meeting_id)
         self._cancel_queued_inference(meeting_id)
         entry.task.cancel()
@@ -318,8 +327,15 @@ class FileMeetingTasks:
     async def settle_meeting(self, entry: _OwnedFileTask) -> bool:
         """Join one claimed task, then make only its durable Meeting interrupted."""
 
+        if entry.settlement is None:
+            entry.settlement = asyncio.create_task(
+                self._settle_entries(
+                    (entry,),
+                    failure_code="cancelled" if entry.resumed else None,
+                )
+            )
         try:
-            interrupted = await self._settle_entries((entry,))
+            interrupted = await asyncio.shield(entry.settlement)
             return bool(interrupted)
         finally:
             self._fenced_meeting_ids.discard(entry.handle.meeting_id)
@@ -340,6 +356,8 @@ class FileMeetingTasks:
     async def _settle_entries(
         self,
         entries: tuple[_OwnedFileTask, ...],
+        *,
+        failure_code: str | None = None,
     ) -> tuple[str, ...]:
         if entries:
             results = await asyncio.gather(
@@ -362,7 +380,7 @@ class FileMeetingTasks:
             if self._audio_archive is None:
                 raise RuntimeError("File Meeting audio archive is unavailable.")
             await entry.handle.recover_interrupted_file_audio(self._audio_archive)
-            await entry.handle.finish("interrupted")
+            await entry.handle.finish("interrupted", failure_code=failure_code)
             self._remove_terminal_work_dir(self._owner_dir(entry.handle))
             interrupted.append(entry.handle.meeting_id)
         return tuple(interrupted)
@@ -373,12 +391,14 @@ class FileMeetingTasks:
         task: asyncio.Task[None],
         *,
         retained_lock: Any | None = None,
+        resumed: bool = False,
     ) -> None:
         meeting_id = handle.meeting_id
         self._tasks[meeting_id] = _OwnedFileTask(
             handle=handle,
             task=task,
             retained_lock=retained_lock,
+            resumed=resumed,
         )
         task.add_done_callback(lambda completed: self._task_done(meeting_id, completed))
 
