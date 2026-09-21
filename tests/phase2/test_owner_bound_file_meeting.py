@@ -19,6 +19,7 @@ import pytest
 
 from moss_transcribe_diarize.app import phase2_file
 from moss_transcribe_diarize.app.phase2 import (
+    MeetingHandle,
     Phase2Store,
     SESSION_COOKIE,
     create_phase2_app,
@@ -663,6 +664,62 @@ def test_file_meeting_failure_is_durable_and_recoverable(tmp_path: Path):
     with TestClient(restarted, base_url="https://moss.test") as client:
         session(client, sessions["sub-a-second"])
         assert client.get(f"/api/meetings/{meeting_id}").json() == meeting
+
+
+@pytest.mark.parametrize("failure_arm", ["commit", "publication"])
+def test_unresumed_failure_is_durable_and_resignals_task(
+    tmp_path: Path, failure_arm: str
+):
+    """D4: ordinary File work retains its settlement failure signal."""
+
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    runner = ControlledRunner()
+    app = make_app(database, runner, tmp_path / "file-work")
+    original_commit = MeetingHandle.commit_transcript
+    original_publish = MeetingHandle.record_audio_unavailable
+    failure_seen = threading.Event()
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        accepted = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", b"ordinary-failure", "audio/wav")},
+        )
+        meeting_id = accepted.json()["id"]
+        assert runner.started.wait(timeout=2)
+        entry = app.state.phase2_file_tasks._tasks[meeting_id]
+        owner_dir = app.state.phase2_file_tasks.retained_root / "sub-a" / meeting_id
+
+        async def fail_commit(self, document, *, terminal=False):
+            if self.meeting_id != meeting_id:
+                return await original_commit(self, document, terminal=terminal)
+            failure_seen.set()
+            raise RuntimeError("controlled ordinary commit failure")
+
+        async def fail_publication(self):
+            if self.meeting_id != meeting_id:
+                return await original_publish(self)
+            failure_seen.set()
+            raise RuntimeError("controlled ordinary publication failure")
+
+        if failure_arm == "commit":
+            MeetingHandle.commit_transcript = fail_commit
+        else:
+            MeetingHandle.record_audio_unavailable = fail_publication
+        try:
+            runner.release.set()
+            assert failure_seen.wait(timeout=2)
+            meeting = await_terminal(client, meeting_id, "failed")
+            deadline = time.monotonic() + 2
+            while not entry.task.done() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            assert isinstance(entry.task.exception(), RuntimeError)
+            assert meeting["failure_code"] == "storage_failed"
+            assert not owner_dir.exists()
+        finally:
+            MeetingHandle.commit_transcript = original_commit
+            MeetingHandle.record_audio_unavailable = original_publish
 
 
 def test_revocation_fences_late_file_result_commit(tmp_path: Path):

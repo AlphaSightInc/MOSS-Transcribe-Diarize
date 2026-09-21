@@ -789,6 +789,8 @@ class FileMeetingTasks:
             else:
                 await self._mark_failed(handle)
             self._remove_terminal_work_dir(input_path.parent)
+            if not resumed:
+                raise
             return
 
         if self._is_fenced(handle):
@@ -824,6 +826,8 @@ class FileMeetingTasks:
             else:
                 await self._mark_failed(handle)
             self._remove_terminal_work_dir(input_path.parent)
+            if not resumed:
+                raise
             return
 
         if self._is_fenced(handle):

@@ -109,6 +109,23 @@ as narrow as the background resume requires:
 Falsifier for this disclosure: any path that puts a non-File row, or a File row
 that was not claimed and started, into `claimed_file_meetings`.
 
+### Run D correction — ordinary task failure remains signaled
+
+Run C changed the commit and audio-publication exception arms to return after
+writing the durable failure. That return is required only for **resumed** work:
+it runs behind lifespan, so its terminal outcome must not abort startup. Run D
+restores the ordinary-upload signal. After the same durable `failed` write and
+owner-local cleanup, a non-resumed task re-raises its original exception; its
+done callback logs the failure and an in-progress task settlement can observe
+it. The durable Meeting remains the operator-visible outcome in both modes.
+
+`test_unresumed_failure_is_durable_and_resignals_task` injects each ordinary
+commit and publication failure and requires both `storage_failed` and a failed
+task. The two retained commit/publication controls continue to require a normal
+task return with durable `resume_failed`, so startup remains available. This
+split is false if ordinary work ends successfully after a commit/publication
+failure, or if a resumed failure again aborts lifespan.
+
 ## Falsifiers and boundary
 
 This PASS is false if a revoked account publishes after revocation; startup

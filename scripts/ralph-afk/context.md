@@ -62,8 +62,9 @@
   durable `interrupted`, unchanged fence, no owner directory, and same-account/sibling-account markers survive.
 - **D3/F2 complete:** `release_settled_account_fence` and `resume_retained_work`'s unused `account=` parameter are
   removed. The only non-prototype call is lifespan-wide and unfiltered, so no retained-resume surface can target a
-  revoked Account or release its fence. **F3** `_complete`'s commit and publication arms changed `raise` → `return`
-  for *both* modes (`phase2_file.py:772-784`, `:807-819`), silently dropping the non-resumed path's quiesce signal;
+  revoked Account or release its fence. **D4/F3 complete:** `_complete` now re-raises ordinary commit/publication
+  failures after durable `failed` truth and exact-owner cleanup, while resumed work returns after durable
+  `resume_failed` so startup remains available;
   **D5/F5 complete:** `_mark_failed` retries one non-revocation terminal-write failure through the same owner-bound
   atomic mutation. It reports whether durable terminal truth exists, so `_run`'s resumed last-resort arm cleans up
   only after that truth; `AccountRevoked` leaves its owner untouched. **F6** progress.txt iteration 4 cites a test
@@ -92,9 +93,6 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-- **D4 / F3 — disclose or restore non-resumed task failure signaling.** Decide whether ordinary commit/publication
-  failures should again surface through task settlement; document the chosen behavior in both Run-C and Run-D
-  verifiers. Falsifier: verifier claims a signal the non-resumed path no longer produces.
 - **D6 / F6 — journal correction.** Append, never rewrite, the correction that Run-C iteration 4's post-boot joining
   evidence is `prototypes/batch-startup/prototype.py`, not an untouched test file.
 
@@ -237,6 +235,15 @@ Historical S17 and `capacity_2x1800` remain explicitly unmeasured outside this P
   caller can request account-scoped resume or un-fence a revoked Account.
 - **Next:** D4 — decide whether non-resumed commit/publication failures must again signal task settlement, then record
   the behavior and rationale in both verification documents.
+
+## Run D iteration 4 outcome
+
+- **D4 / F3 (complete):** ordinary File commit/publication failures now re-raise only after durable `failed` truth
+  and exact-owner cleanup; resumed work still returns after `resume_failed`, so its startup owner stays contained.
+  The restored control was RED when the ordinary task ended successfully, then green with the two resumed controls
+  (4/4, covering both ordinary failure arms); the two directly affected modules are 39/39. Both verification
+  documents state the choice and falsifier.
+- **Next:** D6 — append the required correction to the historical Run-C iteration-4 evidence pointer.
 
 ## Non-candidates
 

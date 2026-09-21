@@ -228,3 +228,11 @@ small disclosures. Offline: zero decoder requests.
 - Evidence: `moss_transcribe_diarize/app/phase2_file.py::FileMeetingTasks.resume_retained_work`; lifespan call at `moss_transcribe_diarize/app/phase2.py:2057`; focused retained lifecycle controls.
 - Learned: startup is the sole retained-resume owner. Keeping a selective interface for an unreachable revoke path adds a way to revive or un-fence revoked work; the unfiltered global call is sufficient.
 - Next: D4 / F3 — decide whether non-resumed commit/publication failures must re-signal task settlement, then document the chosen behavior in both verification documents.
+
+## Iteration 4 - restore ordinary failure signal
+- Target: D4 / F3 — preserve ordinary File task-settlement failure signaling without letting a resumed failure abort lifespan.
+- Files: `moss_transcribe_diarize/app/phase2_file.py`; `tests/phase2/test_owner_bound_file_meeting.py`; `docs/verify/round4-run-c/VERIFY.md`; `docs/verify/round4-run-d/VERIFY.md`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: focused RED on the pre-change seam -> **1 failed / 18 deselected**: durable `storage_failed`, but `entry.task.exception()` was `None`. After restoration, both ordinary and retained commit/publication controls -> **4 passed, 35 deselected**; the two directly affected modules -> **39 passed** (one upstream TestClient deprecation warning); `py_compile` and `git diff --check` -> clean.
+- Evidence: `test_unresumed_failure_is_durable_and_resignals_task` (both ordinary arms); `test_lifespan_records_retained_commit_failure_without_aborting_startup`; `test_lifespan_records_retained_publication_failure_without_aborting_startup`; both Run-C and Run-D verification notes.
+- Learned: durable Meeting truth and task failure signaling are distinct. Resumed work must return after its durable outcome because lifespan owns it; ordinary uploads can and should re-raise after the same durable cleanup so task settlement and `_task_done` retain their failure signal.
+- Next: D6 — append the correction for Run-C iteration 4's wrong post-boot task-joining evidence pointer, then run final Run-D gates if no candidates remain.
