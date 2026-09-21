@@ -228,6 +228,8 @@ class AccountLifecycle:
                 raise AccountLifecycleSettlementError(
                     "Account Meeting recovery is unavailable."
                 )
+            if self._files is not None:
+                await self._files.resume_retained_work(self._store, account=account)
             await self._store.recover_active_account_meetings(
                 account,
                 audio_archive=self._audio_archive,

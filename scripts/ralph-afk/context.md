@@ -90,6 +90,13 @@
   the new claim test and the owner-bound File/URL regressions. **Still open:** no `lifespan` or
   account-scoped caller invokes this primitive, so it is not yet a product restart pass and the two
   `round4/batch` xfails remain unchanged.
+- 2026-09-21 iteration 3 completed Candidate 1's startup ordering. `Phase2Store.active_file_meetings()` is the
+  shared durable File-row enumeration; `FileMeetingTasks.resume_retained_work()` claims each valid row and joins it
+  to terminal truth before the unchanged fallback runs. Global `lifespan` calls it before
+  `recover_active_meetings`, and Account revoke calls it before account-scoped recovery. The two `round4/batch`
+  xfails are ordinary real-lifespan File/URL passes; owner/source/contract/prefix rejection stays covered. Focused
+  recovery/startup tests passed 83/83; the deterministic bench still reports C1--C10 SUPPORTED. **Limit:** C2--C10
+  are not yet standalone product lifespan/account-lifecycle tests, so A3 acceptance is still open.
   This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
   **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
@@ -110,10 +117,10 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-1. **A3 — startup ordering** (`phase2.py:1927-1941`, `phase2_lifecycle.py:215-236`): invoke the completed
-   `FileMeetingTasks.claim_retained_work` primitive before generic File recovery; claim before `recover_active_meetings`;
-   fallback `:716-749` untouched in semantics; `:751-763` byte-identical. Validate: C2/C3/C4/C7/C8/C9/C10; the two
-   `round4/batch` xfails flip; `git diff --stat 89f833ac -- moss_transcribe_diarize/app/phase2.py` shows no change in `:751-763`.
+1. **A3 — product-path controls**: replace the remaining prototype-composed C2/C3/C4/C7/C8/C9/C10 checks with real
+   `lifespan` and Account-lifecycle tests. The product ordering and two `round4/batch` File/URL controls are landed;
+   preserve the unchanged fallback and `phase2.py:751-763`, and do not claim A3 acceptance until every retained case
+   is product-tested.
 2. **Gap remedy — partition-scoped terminal decision** (`live_transcript_convergence.py:1015-1071`,
    `live_lane_decode.py:278-308`): retain terminal-local label; one aggregated match per unmapped partition; project
    only inside it. Validate **both branches**: shared-partition control resolves to the established identity while the

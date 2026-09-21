@@ -196,6 +196,16 @@ class FileMeetingTasks:
             if retained_lock is not None:
                 self._release_retained_lock(retained_lock)
 
+    async def resume_retained_work(self, store: Any, *, account: Any | None = None) -> None:
+        """Bring valid retained File Meetings to terminal truth before fallback recovery."""
+
+        for handle in await store.active_file_meetings(account):
+            if not await self.claim_retained_work(handle):
+                continue
+            entry = self._tasks.get(handle.meeting_id)
+            if entry is not None:
+                await entry.task
+
     async def accept(self, workspace: Any, upload: Any) -> Any:
         """Store a complete request body, then create exactly one File Meeting and start work."""
 

@@ -38,3 +38,11 @@ convert; the two Jamie controls must stay xfailed.
 - Evidence: `test_retained_claim_reuses_only_the_verified_prefix`; four mutated owner/source/contract/prefix controls in `test_retained_file_claim.py`.
 - Learned: the deployed checkpoint verifier binds the source and inference contract before dispatch; an invalid retained directory can safely stay active for the existing fallback. This direct seam is not yet a lifespan product pass.
 - Next: call `claim_retained_work` before generic File recovery in both global and account-scoped startup paths; preserve `_assert_no_active_meetings` unchanged.
+
+## Iteration 3 - retained File startup ordering
+- Target: Candidate 1, call retained File claim/resume before global and account-scoped fallback recovery.
+- Files: `moss_transcribe_diarize/app/phase2.py`; `moss_transcribe_diarize/app/phase2_file.py`; `moss_transcribe_diarize/app/phase2_lifecycle.py`; `prototypes/batch-startup/prototype.py`; `tests/phase2/test_batch_startup_prototype_controls.py`; `scripts/ralph-afk/context.md`.
+- Validation: focused File/URL product controls plus claim controls -> 7 passed; `prototype.py --case all` -> C1--C10 SUPPORTED; `test_workspace_lifecycle.py` -> 15 passed; `tests/phase2 -k "retained or resume or startup or recover"` -> 83 passed, 913 deselected; `git diff --check` -> clean.
+- Evidence: plain `test_r4_5_base_lifespan_resumes_valid_retained_prefix[file,url]`; `prototypes/batch-startup/results.json`; `git diff --unified=0 71f23c0c -- moss_transcribe_diarize/app/phase2.py` shows no `_assert_no_active_meetings` change.
+- Learned: a claimed task must join to durable terminal truth before the legacy fallback scans active rows; otherwise the fallback can immediately interrupt it. Python 3.12 required registering the dynamic prototype module for the formerly-xfailed product control to execute.
+- Next: promote C2/C3/C4/C7/C8/C9/C10 from prototype composition to standalone real-lifespan/Account-lifecycle product tests, then continue with the gap remedy.

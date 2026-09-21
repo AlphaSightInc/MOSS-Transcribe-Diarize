@@ -616,6 +616,39 @@ class Phase2Store:
             )
         await self._assert_no_active_meetings(account.account_id)
 
+    async def active_file_meetings(
+        self,
+        account: Account | None = None,
+    ) -> tuple[MeetingHandle, ...]:
+        """Return enabled Accounts' active File Meetings in durable creation order."""
+
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                """
+                SELECT m.account_id, m.meeting_id, a.authority_generation
+                FROM meetings m
+                JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
+                WHERE m.mode = 'file' AND m.status = 'active'
+                  AND (? IS NULL OR m.account_id = ?)
+                ORDER BY m.created_at_ms, m.meeting_id
+                """,
+                (
+                    None if account is None else account.account_id,
+                    None if account is None else account.account_id,
+                ),
+            )
+            rows = await cursor.fetchall()
+            await cursor.close()
+        return tuple(
+            MeetingHandle(
+                self,
+                row["account_id"],
+                int(row["authority_generation"]),
+                row["meeting_id"],
+            )
+            for row in rows
+        )
+
     async def _recover_active_live_meetings(
         self,
         audio_archive: Any,
@@ -721,30 +754,7 @@ class Phase2Store:
     ) -> None:
         """Reconcile canonical File artifact paths before making a crashed row terminal."""
 
-        async with self._external_read():
-            cursor = await self._connection.execute(
-                """
-                SELECT m.account_id, m.meeting_id, a.authority_generation
-                FROM meetings m
-                JOIN accounts a ON a.account_id = m.account_id AND a.enabled = 1
-                WHERE m.mode = 'file' AND m.status = 'active'
-                  AND (? IS NULL OR m.account_id = ?)
-                ORDER BY m.created_at_ms, m.meeting_id
-                """,
-                (
-                    None if account is None else account.account_id,
-                    None if account is None else account.account_id,
-                ),
-            )
-            rows = await cursor.fetchall()
-            await cursor.close()
-        for row in rows:
-            handle = MeetingHandle(
-                self,
-                row["account_id"],
-                int(row["authority_generation"]),
-                row["meeting_id"],
-            )
+        for handle in await self.active_file_meetings(account):
             await handle.recover_interrupted_file_audio(audio_archive)
             await handle.finish("interrupted")
 
@@ -1931,6 +1941,8 @@ def create_phase2_app(
         lifecycle = None
         speaker_identity = None
         try:
+            if file_tasks is not None:
+                await file_tasks.resume_retained_work(store)
             await store.recover_active_meetings(
                 audio_archive=audio_archive,
                 live_audio_stages=live_audio_stages,

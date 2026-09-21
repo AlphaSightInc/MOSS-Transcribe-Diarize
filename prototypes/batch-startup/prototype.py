@@ -417,7 +417,7 @@ async def _new_account(root: Path) -> Seed:
     return Seed(
         root=root,
         database=database,
-        durable_root=root / "durable-batch",
+        durable_root=root / "file-retained",
         work_root=root / "file-work",
         session=session,
         account_id=account.account_id,
@@ -467,6 +467,7 @@ async def _seed_retained(
                 "meeting_id": handle.meeting_id,
                 "ingress": ingress,
                 "source": "source.wav",
+                "checkpoint": "checkpoint",
                 "contract_version": CONTRACT_VERSION,
             },
             sort_keys=True,
@@ -493,6 +494,7 @@ def _app(seed: Seed, runner: WindowedRunner):
         database_path=seed.database,
         file_runner=runner,
         file_work_root=seed.work_root,
+        file_inference_options=INFERENCE,
         meeting_audio_root=seed.root / "meetings",
     )
 
