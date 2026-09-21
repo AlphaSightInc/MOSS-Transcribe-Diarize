@@ -62,14 +62,14 @@
   `_assert_no_active_meetings` are unchanged. Held work permits startup and a 200 root response; injected retained
     commit or audio-publication failure becomes durable `failed/resume_failed`, and injected post-terminal cleanup
     failure stays `completed` with the same visible failure plus `needs_review`.
-  - **F3 → C3.** When `_verified_retained_input` refuses work (`phase2_file.py:510-545`) nothing ever deletes
-    `retained_root/<account>/<meeting>`: the Meeting is terminal so `active_file_meetings` never lists it again and
-    `clear_transient_work` only touches `file-work` (`:155-177`). `tests/phase2/test_retained_file_claim.py:316`
-    enshrines it with `assert owner_dir.exists()`. Same for a URL Meeting cancelled mid-download — the old
-    `_remove_work_dir(staging_dir)` was deleted at `:611-612`, leaving an owner dir with no `owner.json`. Unbounded
-    disk growth and raw user media retained past terminal truth.
-  - **F5 → C4.** `_record_retained_source` at `phase2_file.py:619` is uncaught inside `_acquire_and_run`; an I/O
-    failure right after a successful download leaves the URL Meeting `active` with no task until the next restart.
+  - **F3 → C3 (closed, iteration 5).** Refused retained work is recorded by exact owner during claim and reclaimed
+    only after generic fallback durably makes that Meeting terminal; a held URL-acquisition cancellation uses its
+    existing terminal settlement. Both product controls prove terminal-before-removal and preserve a sibling owner
+    directory, with zero decoder/network dispatch.
+  - **F5 → C4 (closed, iteration 6).** A retained-source record failure after a successful URL download now follows
+    the existing durable `storage_failed` path and terminal-owner cleanup. The product control forces that precise
+    write failure and proves a visible `failed/storage_failed` Meeting, no decoder call, normal task return, and a
+    preserved sibling owner directory.
   - **F7 → C5.** `SYSTEM_LADDER_REFERENCE` (`tests/e2e/verify_demo_lanes.py:27`) has one consumer
     (`tests/test_round4_overlap_diagnosis.py:28`); the deployed ladder (`tools/qualify/run.py:583-596` → the external
     `ir_lane_ladder.py`) scores solo-lane vocabulary retention and reads no reference row, so VERIFY.md's claim and its
@@ -112,14 +112,12 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 The preceding Run-B-completion snapshot is stale. Run C's PRD and opening
 progress entry are authoritative for the following ranked work:
 
-1. **C4 / F5 — close the post-download active/no-task window.** A retained-source
-   record failure durably fails the URL Meeting with a visible reason.
-2. **C6 / F8 — product-test batch uniqueness.** Collected resume and mid-window
+1. **C6 / F8 — product-test batch uniqueness.** Collected resume and mid-window
    crash controls prove unique saved segments and no replay duplicate.
-3. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
+2. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
    adjust only the neighbouring time boundary, or document an intentional overlap;
    never alter scored text.
-4. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
+3. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
    solo-lane vocabulary, not `SYSTEM_LADDER_REFERENCE`; its falsifier must be
    testable or removed with explanation.
 
@@ -180,6 +178,15 @@ progress entry are authoritative for the following ranked work:
   path also removes only its terminal owner directory.
 - **Next:** C4 — make retained-source recording failure terminalize its URL Meeting
   rather than leaving an active row without a task.
+
+## Iteration 6 outcome
+
+- **C4 / F5 (complete):** after a successful URL download, retained-source persistence now has the same durable
+  `storage_failed` outcome as an ordinary source-storage failure. The focused product control was RED when that
+  exception escaped the task; it is now green and proves no decoder dispatch, visible failure reason, terminal-owner
+  cleanup, and sibling-owner preservation.
+- **Next:** C6 — turn the batch bench's unique-segment/no-replay guarantee into product controls for both resume and
+  mid-window crash.
 
 ## Non-candidates
 

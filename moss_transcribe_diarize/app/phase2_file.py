@@ -623,7 +623,12 @@ class FileMeetingTasks:
             await self._mark_failed(handle, code, reason)
             self._remove_terminal_work_dir(staging_dir)
             return
-        self._record_retained_source(handle, input_path, ingress="url")
+        try:
+            self._record_retained_source(handle, input_path, ingress="url")
+        except Exception:
+            await self._mark_failed(handle)
+            self._remove_terminal_work_dir(staging_dir)
+            return
         await self._run(handle, input_path, asyncio.Event())
 
     async def _run(

@@ -83,6 +83,23 @@ class _HeldUrlAcquirer:
         raise AssertionError("the held URL acquisition must be cancelled")
 
 
+class _CompletedUrlAcquirer:
+    """Deterministically complete a URL download when the control releases it."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+        self.started = asyncio.Event()
+        self.release = asyncio.Event()
+
+    async def acquire(self, _source_url: str, directory: Path) -> Path:
+        self.calls += 1
+        self.started.set()
+        await self.release.wait()
+        path = directory / "input.wav"
+        path.write_bytes(b"downloaded URL source")
+        return path
+
+
 def _extract(
     _source: str | Path,
     destination: str | Path,
@@ -558,6 +575,58 @@ def test_url_cancellation_reclaims_only_its_terminal_retained_directory(
             snapshot = await _snapshot(app, handle)
             assert acquirer.calls == 1
             assert snapshot.status == "interrupted"
+            assert snapshot.transcript is None
+            assert not owner_dir.exists()
+            assert sibling_marker.read_text(encoding="utf-8") == "unrelated retained work"
+
+    asyncio.run(exercise())
+
+
+def test_url_retained_source_failure_becomes_visible_terminal_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """C4: persistence failure after download cannot leave an active taskless Meeting."""
+
+    async def exercise() -> None:
+        acquirer = _CompletedUrlAcquirer()
+        decoder = _RestartDecoder()
+        app = _app(tmp_path, decoder, url_acquirer=acquirer)
+
+        def reject_recorded_source(self, handle, input_path, *, ingress):
+            raise OSError("controlled retained source persistence failure")
+
+        monkeypatch.setattr(
+            FileMeetingTasks, "_record_retained_source", reject_recorded_source
+        )
+        async with app.router.lifespan_context(app):
+            store = app.state.phase2_store
+            account, _ = await seed_workspace(store, "account-a")
+            handle = await app.state.phase2_file_tasks.accept_url(
+                store.workspace(account),
+                "https://example.test/input.wav",
+            )
+            await asyncio.wait_for(acquirer.started.wait(), timeout=2)
+            owner_dir = (
+                app.state.phase2_file_tasks.retained_root
+                / account.account_id
+                / handle.meeting_id
+            )
+            sibling_dir = owner_dir.parent / "unrelated-meeting"
+            sibling_dir.mkdir()
+            sibling_marker = sibling_dir / "preserve"
+            sibling_marker.write_text("unrelated retained work", encoding="utf-8")
+            task = app.state.phase2_file_tasks._tasks[handle.meeting_id].task
+
+            acquirer.release.set()
+            await task
+
+            snapshot = await _snapshot(app, handle)
+            assert acquirer.calls == 1
+            assert decoder.calls == []
+            assert snapshot.status == "failed"
+            assert snapshot.failure_code == "storage_failed"
+            assert snapshot.failure_reason == "The meeting could not be saved."
             assert snapshot.transcript is None
             assert not owner_dir.exists()
             assert sibling_marker.read_text(encoding="utf-8") == "unrelated retained work"

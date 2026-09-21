@@ -152,3 +152,11 @@ cancelled retained work kept forever) plus four smaller gaps. Offline: zero deco
 - Evidence: `test_lifespan_refuses_missing_retained_url_copy_without_decoder_dispatch` proves durable `interrupted` before removal and preserves a sibling retained marker; `test_url_cancellation_reclaims_only_its_terminal_retained_directory` proves the same scope for held URL acquisition cancellation.
 - Learned: generic fallback already creates the correct terminal truth, but only `FileMeetingTasks` knows the retained-root custody boundary. Recording exact refused owners during claim and reclaiming them after fallback is sufficient; no scan, status, scheduler, or policy is needed.
 - Next: C4 — handle `_record_retained_source` failure after URL download so it cannot leave an active Meeting without a task.
+
+## Iteration 6 - terminalize URL source-record failure
+- Target: C4 / F5 — a post-download retained-source persistence failure must not leave an active URL Meeting without a task.
+- Files: `moss_transcribe_diarize/app/phase2_file.py`; `tests/phase2/test_retained_file_claim.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: focused control was RED before the product edit: **1 failed, 16 deselected**, with the injected `OSError` escaping `_acquire_and_run`; after the edit it was **1 passed, 16 deselected**. `tests/phase2/test_retained_file_claim.py tests/phase2/test_multi_file_url_meetings.py` -> **28 passed** (one upstream TestClient deprecation warning); `git diff --check` -> clean.
+- Evidence: `tests/phase2/test_retained_file_claim.py::test_url_retained_source_failure_becomes_visible_terminal_failure`; `moss_transcribe_diarize/app/phase2_file.py::_acquire_and_run`.
+- Learned: acquisition failure already had the exact durable `storage_failed` and terminal-owner-cleanup path needed after source-record persistence fails. Reusing it makes the task return normally after durable failure, keeps decoder calls at zero, and removes only the affected owner directory.
+- Next: C6 — promote the batch bench's 101/101 unique-segment and no-replay properties into product controls for resume and mid-window crash.
