@@ -113,6 +113,14 @@
   retained work only after terminal truth; ordinary non-resumed operator interruption retains its prior outcome. Focused
   retained/operator controls: **15 passed**; recovery slice: **90 passed, 913 deselected**. A3's C1--C10 product
   control set is now complete; acceptance still requires the final suite and verification document.
+- 2026-09-21 iteration 6 completed the **R4-3 partition-scoped terminal decision**. The terminal finalizer preserves
+  its decoder-local labels only while lane convergence needs them; each uncovered or unmapped label is probed once
+  from its own eligible intervals, then the internal labels are cleared before session publication. The ordinary R4-3
+  shared-partition control, different-voice Keyu falsifier, and new isolated-partition abstention control all pass;
+  terminal/lane/session seams passed **120 passed, 2 deselected, 19 subtests**. The offline CPU replay reconfirmed
+  Adam 0.909091 match / Keyu 0.017033 abstention at the unchanged 0.35 floor and made zero decoder requests.
+  **S17 remains UNMEASURED**: retained material lacks its terminal-local labels, so this does not establish whether
+  the historical `seg_0012` qualifies for the partition rule.
 - This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
   **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
@@ -125,7 +133,7 @@ PY=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-aut
 $PY -m pytest -q -p no:cacheprovider $(grep -rl "R4-5\|R4-3" tests/ | tr '\n' ' ')
 # prototype cases as product tests (A3) and the gap replay
 $PY -m pytest -q -p no:cacheprovider tests/phase2 -k "retained or resume or startup or recover"
-$PY prototypes/gap/reproduce.py 2>/dev/null || ls prototypes/gap/
+$PY prototypes/gap/run.py
 # widest (required before completion)
 $PY -m pytest -q -p no:cacheprovider tests
 npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
@@ -133,14 +141,9 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-1. **Gap remedy — partition-scoped terminal decision** (`live_transcript_convergence.py:1015-1071`,
-   `live_lane_decode.py:278-308`): retain terminal-local label; one aggregated match per unmapped partition; project
-   only inside it. Validate **both branches**: shared-partition control resolves to the established identity while the
-   Keyu control abstains (`round4/gap` xfail flips); isolated-partition control **stays `S00`** and says so. No decoder
-   run in this loop — the historical S17 row stays UNMEASURED and belongs to R4-10.
-2. **Fixture correction (D27 = YES only)** (`tests/e2e/verify_demo_lanes.py:60-75`, corpus reference): per prd; falsifier
+1. **Fixture correction (D27 = YES only)** (`tests/e2e/verify_demo_lanes.py:60-75`, corpus reference): per prd; falsifier
    test = exactly the three class-(a) additions remain.
-3. **Full suites + `docs/verify/round4-run-b/VERIFY.md`.**
+2. **Full suites + `docs/verify/round4-run-b/VERIFY.md`.**
 
 ## Non-candidates
 

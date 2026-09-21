@@ -62,3 +62,11 @@ convert; the two Jamie controls must stay xfailed.
 - Evidence: `test_lifespan_cancellation_of_resumed_file_work_is_durably_cancelled`; shared `entry.settlement` in `phase2_file.py`.
 - Learned: a retained startup owner must share terminal settlement with lifecycle cancellation; the active decoder call is not preempted, but the existing scheduler refuses every later window before delegate dispatch. C3 now has a real product control; no decoder or network request was used.
 - Next: Candidate 1, partition-scoped terminal identity remedy; retain raw terminal labels, prove shared-partition resolution and isolated-partition abstention, keep S17 UNMEASURED.
+
+## Iteration 6 - partition-scoped terminal identity
+- Target: Candidate 1, R4-3 conditional terminal-local partition decision.
+- Files: `moss_transcribe_diarize/app/live_session.py`; `moss_transcribe_diarize/app/live_transcript_convergence.py`; `moss_transcribe_diarize/app/live_lane_decode.py`; `tests/test_r4_gap_terminal_identity.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: offline `$PY prototypes/gap/run.py` -> Adam 0.909091 match, Keyu 0.017033 abstain, zero decoder requests, S17 raw partition UNMEASURED; `$PY -m pytest -q -p no:cacheprovider tests/test_r4_gap_terminal_identity.py` -> 4 passed; `$PY -m pytest -q -p no:cacheprovider tests/test_r4_gap_terminal_identity.py tests/test_live_lane_decode.py -k 'not test_draft_uses_separate_pcm_skips_zero_and_isolates_failure' tests/test_live_terminal_finalizer.py tests/test_live_text_revision.py tests/test_live_transcript_convergence.py` -> 120 passed, 2 deselected, 19 subtests; `git diff --check` -> clean.
+- Evidence: `prototypes/gap/NOTES.md`; `tests/test_r4_gap_terminal_identity.py::test_r4_3_same_terminal_partition_reuses_eligible_voice_evidence`; `::test_r4_3_different_returning_voice_is_not_absorbed`; `::test_r4_3_isolated_terminal_partition_stays_unattributed`.
+- Learned: preserving the decoder-local partition lets its eligible evidence decide the short span without a neighbour guess; an isolated sub-floor span still abstains. Existing mapped-but-uncovered labels still require a lane-local probe, now once per relevant partition.
+- Next: Candidate 1, D27 fixture correction; keep S17 UNMEASURED and defer its decoder-backed confirmation to R4-10.

@@ -2,6 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 from .live_span_bounds import span_segments, render_segments
 from .live_session import LiveIdentityPreparation, LiveIdentitySnapshot, FrozenSpan
 from .live_adapters import (
@@ -234,7 +235,7 @@ def decode_refinement(c, request):
 
 
 def finalize_lanes(c, finalizer, **kwargs):
-    """Finalize lanes by overlap, acoustically probing uncovered or unmapped segments."""
+    """Finalize lanes, matching each unmapped terminal-local partition once."""
     from .live_transcript_convergence import TerminalOutcome
 
     results = []
@@ -275,36 +276,67 @@ def finalize_lanes(c, finalizer, **kwargs):
             failures.append((lane, result.accounting.outcome.value))
             placed.extend(lane_base)
         else:
-            base_snapshot = c.session.snapshot().identity_snapshot
-            for index, segment in enumerate(result.proposal.segments):
-                covered = any(
-                    s.canonical_speaker in own
-                    and min(segment.end_sample, s.end_sample)
-                    > max(segment.start_sample, s.start_sample)
-                    for s in lane_base
-                )
-                speaker = segment.canonical_speaker
-                if not covered or speaker is None:
-                    # Overlap alone is insufficient: extra terminal local labels can
-                    # lose the one-to-one assignment to an established lane speaker.
-                    # Probe only this segment, including when that mapping is absent.
-                    # Existing evidence floors and matching thresholds still apply.
+            terminal_local_speakers = result.proposal.terminal_local_speakers
+            partition_speakers = {}
+            probe_indexes = set()
+            if len(terminal_local_speakers) == len(result.proposal.segments):
+                base_snapshot = c.session.snapshot().identity_snapshot
+                partitions = {}
+                for index, (segment, local_speaker) in enumerate(zip(
+                    result.proposal.segments, terminal_local_speakers, strict=True
+                )):
+                    covered = any(
+                        base_segment.canonical_speaker in own
+                        and min(segment.end_sample, base_segment.end_sample)
+                        > max(segment.start_sample, base_segment.start_sample)
+                        for base_segment in lane_base
+                    )
+                    if covered and segment.canonical_speaker is not None:
+                        continue
+                    probe_indexes.add(index)
+                    partitions.setdefault(local_speaker, []).append(segment)
+                for index, (local_speaker, segments) in enumerate(partitions.items()):
+                    start_sample = min(segment.start_sample for segment in segments)
+                    end_sample = max(segment.end_sample for segment in segments)
                     span = FrozenSpan(
                         id=int(dict(base_snapshot.diagnostics).get("span_id", "0")) + 1 + index,
                         epoch=kwargs["plan"].epoch,
-                        start_sample=segment.start_sample,
-                        end_sample=segment.end_sample,
-                        reason="terminal_uncovered" if not covered else "terminal_unassigned",
+                        start_sample=start_sample,
+                        end_sample=end_sample,
+                        reason="terminal_partition_probe",
+                    )
+                    transcript = render_segments(
+                        (
+                            TranscriptSegment(
+                                start=(segment.start_sample - start_sample) / 16000,
+                                end=(segment.end_sample - start_sample) / 16000,
+                                speaker="S01",
+                                text=segment.text,
+                            )
+                            for segment in segments
+                        ),
+                        lambda segment: segment.speaker,
                     )
                     try:
                         probe = revision_segments(
-                            c, lane, span, pcm[span.start_sample * 2:span.end_sample * 2],
-                            f"[0][S01]{segment.text}[{span.sample_count / 16000}]", "terminal",
+                            c,
+                            lane,
+                            span,
+                            pcm[span.start_sample * 2:span.end_sample * 2],
+                            transcript,
+                            "terminal",
                         )
-                        speaker = probe[0].canonical_speaker if probe else None
+                        speakers = {segment.canonical_speaker for segment in probe}
+                        partition_speakers[local_speaker] = (
+                            speakers.pop() if len(speakers) == 1 else None
+                        )
                     except Exception as exc:
                         failures.append((lane, type(exc).__name__))
-                        speaker = None
+                        partition_speakers[local_speaker] = None
+            for index, segment in enumerate(result.proposal.segments):
+                speaker = segment.canonical_speaker
+                if index in probe_indexes:
+                    speaker = partition_speakers.get(terminal_local_speakers[index])
                 placed.append(replace(segment, source_lane=lane, canonical_speaker=speaker))
         return results, failures, placed
 
@@ -380,7 +412,11 @@ def finalize_lanes(c, finalizer, **kwargs):
         return replace(template, accounting=accounting)
     return replace(
         template,
-        proposal=replace(template.proposal, segments=tuple(sorted(placed, key=order))),
+        proposal=replace(
+            template.proposal,
+            segments=tuple(sorted(placed, key=order)),
+            terminal_local_speakers=(),
+        ),
         accounting=replace(
             accounting,
             segments=len(placed),

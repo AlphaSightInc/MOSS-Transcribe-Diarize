@@ -259,6 +259,9 @@ class TextRevisionProposal:
     normalization_dropped_segments: int = 0
     normalization_displaced_samples: int = 0
     revision_lanes: tuple[str, ...] = ()
+    # Terminal-only local partitions, aligned with `segments`. Lane convergence
+    # consumes these before the session publishes the proposal.
+    terminal_local_speakers: tuple[str, ...] = ()
 
 
 #: Where terminal finalization stands (plan §7.3). `not_started` until a terminal pass begins,
