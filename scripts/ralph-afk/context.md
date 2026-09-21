@@ -77,9 +77,9 @@
     reads no reference row; it records finalized cases and non-accuracy solo-lane
     vocabulary retention. The Run-B verifier now says so and names the diagnostic's
     reachable fixture-bound falsifier rather than an impossible scoring claim.
-  - **F8 → C6.** The "101/101 unique saved segments / no duplicate after the replayed window" property is asserted only
-    inside `prototypes/batch-startup/prototype.py`, which pytest never runs; the product controls assert only the
-    delegate-call list and `transcript_version == 1` (`tests/phase2/test_retained_file_claim.py:235-237`).
+  - **F8 → C6 (closed, iteration 7).** Product controls now require `[0..40, 40..100]` delegate calls and
+    `101 == len(texts) == len(set(texts))` after both retained URL resume and File mid-window recovery; a lost or
+    duplicate persisted segment fails at the production seam.
   - **F9 → C7 (closed, iteration 8).** The corrected Bill row now ends at the next
     row's `29.25` start, so the Bill corpus has no overlapping adjacent records. The
     retained production transcripts locate Lex's actual utterance later (29.55--29.63 s),
@@ -115,13 +115,9 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-The preceding Run-B-completion snapshot is stale. Run C's PRD and opening
-progress entry are authoritative for the following ranked work:
-
-1. **Final certification and Run-C verifier.** C1--C7 are closed. Write
-   `docs/verify/round4-run-c/VERIFY.md`, then execute the PRD's exact backend,
-   frontend, and typecheck gates and record their counts. This is evidence handoff,
-   not another product change.
+**None.** C1--C7 are closed and the Run-C verifier records the required final
+offline gates. Historical S17 and `capacity_2x1800` remain explicitly unmeasured
+outside this PRD's offline scope.
 
 ## Iteration 1 outcome
 
@@ -222,6 +218,17 @@ progress entry are authoritative for the following ranked work:
   unique-vocabulary retention. Its third falsifier now names the fixture's reachable
   captured-audio bound instead of an impossible ladder-score comparison.
 - **Next:** write the Run-C verifier and run the required final offline gates.
+
+## Iteration 10 outcome
+
+- **Final certification (complete):** `docs/verify/round4-run-c/VERIFY.md` records
+  C1--C7's durable-owner mental model, controls, falsifiers, and boundaries. The
+  required backend gate passed **2,158 / 0 failed / 5 skipped / 2 xfailed / 37
+  subtests** in 168.60 s; frontend passed **312/312** and typecheck is clean. No
+  frontend source changed from `round4/integration`, so conditional build/asset parity
+  is inapplicable. No decoder, network, tunnel, proxy, or GPU request was made.
+- **Next:** acceptance bar met; the lead may integrate this branch. Do not turn the
+  historical S17 or 2x1800 capacity limits into a false offline qualification.
 
 ## Non-candidates
 
