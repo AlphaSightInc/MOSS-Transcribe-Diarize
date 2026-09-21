@@ -12,7 +12,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment, parse_transcript
 
@@ -73,6 +73,16 @@ class WindowPlan:
     @property
     def duration(self) -> float:
         return self.end - self.start
+
+
+@dataclass(frozen=True, slots=True)
+class ResumeVerdict:
+    status: Literal["accepted", "refused"]
+    reason: str
+
+    @property
+    def accepted(self) -> bool:
+        return self.status == "accepted"
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,6 +182,7 @@ class WindowedRunner:
         window_extractor=extract_window_wav,
         scratch_dir: str | Path | None = None,
         identity_resolver: IdentityResolver | None = None,
+        resume_inference: dict[str, object] | None = None,
     ):
         self.delegate = delegate
         self.duration_probe = duration_probe
@@ -179,6 +190,51 @@ class WindowedRunner:
         self.scratch_dir = None if scratch_dir is None else Path(scratch_dir)
         self.identity_resolver = identity_resolver or IdentityResolver()
         self.model_path = delegate.model_path
+        self._resume_inference = (
+            None
+            if resume_inference is None
+            else _checkpoint_inference(dict(resume_inference))
+        )
+
+    def bind_resume_inference(self, inference: dict[str, object]) -> None:
+        """Bind the resolved File inference contract used by two-argument validation."""
+
+        self._resume_inference = _checkpoint_inference(dict(inference))
+
+    def validate_resume(
+        self,
+        source_path: str | Path,
+        checkpoint_dir: str | Path,
+    ) -> ResumeVerdict:
+        """Validate retained progress without dispatching a decoder."""
+
+        if self._resume_inference is None:
+            return ResumeVerdict("refused", "runner resume inference is unbound")
+        try:
+            source = Path(source_path)
+            windows = plan_windows(
+                float(self.duration_probe(source)),
+                window_seconds=float(self.window_seconds),
+                stride_seconds=float(self.stride_seconds),
+            )
+            checkpoint = _CheckpointStore(
+                Path(checkpoint_dir),
+                source=source,
+                windows=windows,
+                model_path=str(self.model_path),
+                inference=dict(self._resume_inference),
+                window_seconds=float(self.window_seconds),
+                stride_seconds=float(self.stride_seconds),
+                identity_contract=self.identity_resolver.contract(),
+            )
+            checkpoint.load_prefix()
+        except WindowTranscriptionError as exc:
+            return ResumeVerdict("refused", str(exc))
+        except Exception as exc:
+            return ResumeVerdict(
+                "refused", f"validation error: {type(exc).__name__}"
+            )
+        return ResumeVerdict("accepted", "checkpoint prefix valid")
 
     @property
     def is_loaded(self) -> bool:
@@ -242,12 +298,13 @@ class WindowedRunner:
         else:
             checkpoint = None
             if checkpoint_dir is not None:
+                self.bind_resume_inference(kwargs)
                 checkpoint = _CheckpointStore(
                     Path(checkpoint_dir),
                     source=source,
                     windows=windows,
                     model_path=str(self.model_path),
-                    inference=_checkpoint_inference(kwargs),
+                    inference=dict(self._resume_inference or {}),
                     window_seconds=float(self.window_seconds),
                     stride_seconds=float(self.stride_seconds),
                     identity_contract=self.identity_resolver.contract(),
@@ -314,9 +371,9 @@ class WindowedRunner:
         last_progress = 0.0
         for result in prefix_results:
             segments = parse_transcript(result.text)
-            if result.generated_tokens <= 0 and not _accepted_speechless(result):
+            if result.generated_tokens <= 0 and not accepted_speechless(result):
                 raise _window_error(windows[len(segments_by_window)], "no_generated_tokens")
-            if (not result.text.strip() or not segments) and not _accepted_speechless(result):
+            if (not result.text.strip() or not segments) and not accepted_speechless(result):
                 raise _window_error(windows[len(segments_by_window)], "unparseable_text")
             segments_by_window.append(segments)
             window_audio_paths.append(None)
@@ -373,11 +430,11 @@ class WindowedRunner:
                 result = self._decode_window(window_audio, window, child_kwargs)
 
                 segments = parse_transcript(result.text)
-                if result.generated_tokens <= 0 and not _accepted_speechless(result):
+                if result.generated_tokens <= 0 and not accepted_speechless(result):
                     raise _window_error(window, "no_generated_tokens")
-                if not result.text.strip() and not _accepted_speechless(result):
+                if not result.text.strip() and not accepted_speechless(result):
                     raise _window_error(window, "empty_text")
-                if not segments and not _accepted_speechless(result):
+                if not segments and not accepted_speechless(result):
                     raise _window_error(window, "unparseable_text")
 
                 if checkpoint is not None:
@@ -458,7 +515,7 @@ def _speechless_window(audio: Path, window: WindowPlan) -> dict[str, Any] | None
             "voiced_fraction": fraction, "speechless_threshold": SPEECHLESS_VOICED_FRACTION}
 
 
-def _accepted_speechless(result: TranscriptionResult) -> bool:
+def accepted_speechless(result: TranscriptionResult) -> bool:
     return not result.text.strip() and any(
         d.get("condition") in ("speechless_window_empty", "unparseable_speechless") for d in (result.window_diagnostics or [])
     )

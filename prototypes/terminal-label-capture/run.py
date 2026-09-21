@@ -31,15 +31,25 @@ RATE = 16_000
 ADAM = "speaker-0001"
 
 
+TRANSCRIPTS = {
+    "partition": (
+        "[0][S01]established[2.5]"
+        "[3][S02]brief return[3.27]"
+        "[3.3][S02]eligible return[5.8]"
+    ),
+    "contained_cross_label": (
+        "[0][S01]outer evidence[2][0.5][S02]contained brief span[0.77]"
+    ),
+    "same_label_merge": "[0][S01]first[1][1][S01]second[2]",
+}
+
+
 class SplitTerminalRunner:
+    def __init__(self, transcript: str):
+        self.transcript = transcript
+
     def transcribe(self, *_args, **_kwargs):
-        return SimpleNamespace(
-            text=(
-                "[0][S01]established[2.5]"
-                "[3][S02]brief return[3.27]"
-                "[3.3][S02]eligible return[5.8]"
-            )
-        )
+        return SimpleNamespace(text=self.transcript)
 
 
 class DeterministicEvidence:
@@ -78,7 +88,7 @@ def proposal_bytes(result) -> bytes:
     ).encode()
 
 
-def run(returning_marker: int):
+def run(returning_marker: int, transcript: str = TRANSCRIPTS["partition"]):
     with tempfile.TemporaryDirectory(prefix="moss-terminal-label-capture-") as directory:
         tape = CompleteMixedTape(
             epoch=0, capacity_bytes=6 * RATE * 2, storage_root=Path(directory)
@@ -100,6 +110,7 @@ def run(returning_marker: int):
             identity_snapshot=LiveIdentitySnapshot(canonical_speakers=(ADAM,))
         )
         coordinator = SimpleNamespace(
+            session_key="terminal-label-capture",
             lane_tapes={"system": tape},
             _lane_speakers={"system": {ADAM}},
             _lane_preparers={"system": preparer},
@@ -108,7 +119,7 @@ def run(returning_marker: int):
         return finalize_lanes(
             coordinator,
             TerminalTranscriptFinalizer(
-                runner=SplitTerminalRunner(), scratch_dir=Path(directory)
+                runner=SplitTerminalRunner(transcript), scratch_dir=Path(directory)
             ),
             plan=TerminalDecodePlan(0, 6 * RATE, 0, RollingStatus.STOPPED, 0, 0),
             tape=tape,
@@ -130,6 +141,17 @@ def product_partitions(result) -> list[dict]:
             "terminal_local_label": partition.terminal_local_label,
             "decision": partition.decision,
             "minimum_samples": partition.minimum_samples,
+            "member_raw_indexes": list(partition.member_raw_indexes),
+            "start": partition.start,
+            "end": partition.end,
+            "samples": partition.samples,
+            "eligible": partition.eligible,
+            "score_by_canonical": dict(partition.score_by_canonical),
+            "margin": partition.margin,
+            "published_identity": partition.published_identity,
+            "meeting_owner": partition.meeting_owner,
+            "run_owner": partition.run_owner,
+            "schema_version": partition.schema_version,
             "spans": [
                 {
                     "span_index": span.span_index,
@@ -147,9 +169,13 @@ def product_partitions(result) -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--returning-marker", choices=("adam", "keyu"), default="adam")
+    parser.add_argument("--shape", choices=tuple(TRANSCRIPTS), default="partition")
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
-    result = run(1 if args.returning_marker == "adam" else 2)
+    result = run(
+        1 if args.returning_marker == "adam" else 2,
+        TRANSCRIPTS[args.shape],
+    )
     destination = os.environ.get("MOSS_TERMINAL_LABEL_CAPTURE")
     rows = []
     if destination and Path(destination).is_file():

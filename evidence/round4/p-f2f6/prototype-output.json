@@ -1,0 +1,154 @@
+{
+  "assumptions_and_unknowns": [
+    "the historical S17 span remains unmeasured until an authorized rerun",
+    "this deterministic score proves seam ownership, not acoustic accuracy"
+  ],
+  "controls": {
+    "captured_partition_matches_native_partition": true,
+    "decoder_requests": 0,
+    "eligibility_floor_unchanged": true,
+    "frozen_capture_is_post_normalization": true,
+    "frozen_capture_off_on_writer_refusal_byte_identical": true,
+    "native_capture_off_on_writer_refusal_byte_identical": true,
+    "network_calls": 0,
+    "observer_has_no_preparer_dependency": true,
+    "prototype_mapping_marks_contained_s02_dropped": true,
+    "prototype_raw_stream_retains_contained_s02": true,
+    "writer_refusal_is_observational": true
+  },
+  "falsifier": "contained S02 absent from raw capture; normalized record differs from the native partition; observer depends on or changes the preparer; publication differs",
+  "frozen_product": {
+    "capture_rows": [
+      {
+        "decision": "terminal_partition_probe",
+        "eligible": true,
+        "margin": 0.909091,
+        "partition_id": "system:S01",
+        "published_identity": "speaker-0001",
+        "samples": 32000,
+        "score_by_canonical": {
+          "speaker-0001": 0.909091
+        },
+        "source_end": 32000,
+        "source_start": 0,
+        "span_index": 0,
+        "terminal_local_label": "S01"
+      }
+    ],
+    "captured_labels": [
+      "S01"
+    ],
+    "published_proposal_bytes": "[{\"canonical_speaker\":\"speaker-0001\",\"end\":32000,\"start\":0,\"text\":\"outer evidence\"}]",
+    "terminal_partitions": [
+      {
+        "member_span_indexes": [
+          0
+        ],
+        "partition_id": "system:S01",
+        "terminal_local_label": "S01"
+      }
+    ]
+  },
+  "invariants": [
+    "publication bytes do not change with observation off, on, or refusing",
+    "the 8000-sample eligibility floor and identity thresholds do not change",
+    "raw and normalized custody remain separate and owner-bound"
+  ],
+  "minimum_primitives": [
+    "raw_terminal_span",
+    "raw_to_normalized_mapping",
+    "normalized_partition_decision",
+    "pure_diagnostics_observer"
+  ],
+  "observer_structure": {
+    "calls": [
+      "ObserverReceipt",
+      "asdict",
+      "dataclass",
+      "dict",
+      "dumps",
+      "extend",
+      "len",
+      "mkdir",
+      "open",
+      "write"
+    ],
+    "imported_names": [
+      "Path",
+      "TerminalDecisionDiagnostics",
+      "annotations",
+      "asdict",
+      "dataclass"
+    ],
+    "imports": [
+      "__future__",
+      "dataclasses",
+      "json",
+      "pathlib",
+      "records"
+    ],
+    "no_preparer_import_construct_wrap_or_call": true
+  },
+  "prototype_native_result": {
+    "observed_records": [
+      {
+        "end": 32000,
+        "raw_index": 0,
+        "record_type": "raw_terminal_span",
+        "samples": 32000,
+        "start": 0,
+        "terminal_local_label": "S01"
+      },
+      {
+        "end": 12320,
+        "raw_index": 1,
+        "record_type": "raw_terminal_span",
+        "samples": 4320,
+        "start": 8000,
+        "terminal_local_label": "S02"
+      },
+      {
+        "disposition": "survived",
+        "normalized_partition_id": "system:S01",
+        "raw_index": 0,
+        "record_type": "raw_to_normalized"
+      },
+      {
+        "disposition": "dropped_by_normalization",
+        "normalized_partition_id": null,
+        "raw_index": 1,
+        "record_type": "raw_to_normalized"
+      },
+      {
+        "decision": "matched_existing",
+        "eligibility_floor_samples": 8000,
+        "eligible": true,
+        "end": 32000,
+        "margin": 0.909091,
+        "meeting_owner": "account-7/meeting-19",
+        "member_raw_indexes": [
+          0
+        ],
+        "partition_id": "system:S01",
+        "published_identity": "speaker-0001",
+        "record_type": "normalized_partition",
+        "run_owner": "s17/identity-gap",
+        "samples": 32000,
+        "schema_version": "moss.terminal-identity-diagnostics.v3",
+        "score_by_canonical": {
+          "speaker-0001": 0.909091
+        },
+        "start": 0,
+        "terminal_local_label": "S01"
+      }
+    ],
+    "published_proposal_bytes": "[{\"canonical_speaker\":\"speaker-0001\",\"end\":32000,\"start\":0,\"text\":\"outer evidence\"}]"
+  },
+  "schema": "moss-p-f2f6-prototype.v1",
+  "structural_question": "Can capture retain raw terminal spans before normalization while the native decision returns immutable diagnostics that a pure observer only copies?",
+  "tool_decision": "real resolver and identity preparer test live semantics without decoder, tunnel, network, threshold, or product changes",
+  "verdicts": {
+    "F2": "SUPPORTED",
+    "F6": "SUPPORTED"
+  }
+}

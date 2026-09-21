@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 import inspect
+import json
 from pathlib import Path
 
 import pytest
@@ -11,9 +12,17 @@ import pytest
 from moss_transcribe_diarize.app.model_runner import TranscriptionResult
 from moss_transcribe_diarize.app.speaker_identity import IdentityResolution
 from moss_transcribe_diarize.app.windowed_transcription import (
+    _CheckpointStore,
+    _checkpoint_inference,
+    plan_windows,
+    ResumeVerdict,
     WindowTranscriptionError,
     WindowedRunner,
 )
+
+
+def test_resume_verdict_is_immutable() -> None:
+    assert ResumeVerdict.__dataclass_params__.frozen is True
 
 
 class FakeRunner:
@@ -496,3 +505,82 @@ def test_checkpoint_resume_rehydrates_completed_window_audio_for_identical_ident
     assert resumed.identity_summary == clean.identity_summary == {"missing_audio_windows": []}
     assert resumed_decoder.calls == [0, 1, 2, 2]
     assert [call[2] for call in extractor.calls] == [0, 120, 240, 0, 120, 240]
+
+
+@pytest.mark.parametrize(
+    ("case", "expected"),
+    [
+        ("valid", "accepted"),
+        ("damaged_prefix", "refused"),
+        ("wrong_source_hash", "refused"),
+        ("wrong_contract", "refused"),
+        ("speechless_accepted", "accepted"),
+    ],
+)
+def test_validate_resume_matches_frozen_checkpoint_decisions(tmp_path, case, expected):
+    inference = {
+        "prompt": "resume contract",
+        "max_length": 16_384,
+        "max_new_tokens": 12_000,
+        "decoding": "greedy",
+    }
+    source = tmp_path / case / "input.wav"
+    checkpoint_dir = tmp_path / case / "checkpoint"
+    source.parent.mkdir(parents=True)
+    source.write_bytes(b"stable source bytes")
+    runner = WindowedRunner(
+        FakeRunner([]),
+        duration_probe=lambda _source: 180.0,
+        resume_inference=inference,
+    )
+    windows = plan_windows(180.0)
+    checkpoint = _CheckpointStore(
+        checkpoint_dir,
+        source=source,
+        windows=windows,
+        model_path=runner.model_path,
+        inference=_checkpoint_inference(inference),
+        window_seconds=float(runner.window_seconds),
+        stride_seconds=float(runner.stride_seconds),
+        identity_contract=runner.identity_resolver.contract(),
+    )
+    for window in windows:
+        speechless = case == "speechless_accepted" and window.index == 0
+        checkpoint.commit_window(
+            window,
+            TranscriptionResult(
+                text="" if speechless else f"[0][S01]window {window.index}[1]",
+                prompt_len=1,
+                generated_tokens=0 if speechless else 1,
+                elapsed_sec=0.0,
+                model=runner.model_path,
+                audio=f"window-{window.index}",
+                decoding="greedy",
+                temperature=None,
+                window_diagnostics=(
+                    [{"condition": "speechless_window_empty"}]
+                    if speechless
+                    else None
+                ),
+            ),
+            possibly_truncated=False,
+        )
+
+    if case == "damaged_prefix":
+        sorted((checkpoint_dir / "windows").glob("w*.json"))[0].unlink()
+    elif case == "wrong_source_hash":
+        source.write_bytes(b"different source bytes")
+    elif case == "wrong_contract":
+        manifest_path = checkpoint_dir / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["schema_version"] += 1
+        manifest_path.write_text(
+            json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+
+    verdict = runner.validate_resume(source, checkpoint_dir)
+
+    assert verdict.status.encode("ascii") == expected.encode("ascii")
+    assert verdict.accepted is (expected == "accepted")
+    assert runner.delegate.paths == []

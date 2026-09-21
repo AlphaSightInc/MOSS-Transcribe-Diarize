@@ -19,7 +19,7 @@ from .live_silence import is_digital_silence
 from .model_runner import TranscriptionResult
 from .phase2 import AccountRevoked
 from .phase2_url import UrlAcquisitionRejected, validate_http_url
-from .windowed_transcription import _accepted_speechless
+from .windowed_transcription import accepted_speechless
 
 
 DEFAULT_PHASE2_FILE_WORK_ROOT = (
@@ -575,36 +575,16 @@ class FileMeetingTasks:
     def _checkpoint_is_valid(self, input_path: Path, checkpoint_dir: Path) -> bool:
         """Reuse the deployed runner's checkpoint contract before dispatching a decoder."""
 
-        from .windowed_transcription import (
-            WindowedRunner,
-            _CheckpointStore,
-            _checkpoint_inference,
-            plan_windows,
-        )
-
-        if not isinstance(self._runner, WindowedRunner):
+        bind_resume_inference = getattr(self._runner, "bind_resume_inference", None)
+        validate_resume = getattr(self._runner, "validate_resume", None)
+        if not callable(bind_resume_inference) or not callable(validate_resume):
             return False
         try:
-            options = self._inference_options()
-            windows = plan_windows(
-                float(self._runner.duration_probe(input_path)),
-                window_seconds=float(self._runner.window_seconds),
-                stride_seconds=float(self._runner.stride_seconds),
-            )
-            checkpoint = _CheckpointStore(
-                checkpoint_dir,
-                source=input_path,
-                windows=windows,
-                model_path=str(self._runner.model_path),
-                inference=_checkpoint_inference(options),
-                window_seconds=float(self._runner.window_seconds),
-                stride_seconds=float(self._runner.stride_seconds),
-                identity_contract=self._runner.identity_resolver.contract(),
-            )
-            checkpoint.load_prefix()
+            bind_resume_inference(self._inference_options())
+            verdict = validate_resume(input_path, checkpoint_dir)
         except Exception:
             return False
-        return True
+        return bool(verdict.accepted)
 
     def _remove_retained_work_dir(self, owner_dir: Path) -> None:
         if owner_dir.parent.parent != self._retained_root:
@@ -789,7 +769,7 @@ class FileMeetingTasks:
                     for segment in subtitle_segments_from_transcript(result.text, postprocess=False)
                 ]
             }
-            if not document["segments"] and not _accepted_speechless(result):
+            if not document["segments"] and not accepted_speechless(result):
                 raise ValueError("Empty decoder output without speechless evidence")
         except Exception:
             await self._mark_failed(handle, "decode_invalid", "The speech decoder returned no usable transcript.")
