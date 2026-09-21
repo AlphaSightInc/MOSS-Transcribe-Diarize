@@ -20,3 +20,5 @@ SUPPORTED verdicts to implement (durable File/URL work across restart; a conditi
 identity rule; the audited acceptance reference/cut correction) and one FALSIFIED verdict to leave alone (lone brief
 participant aggregation). This run is offline: zero decoder requests. Six strict violating controls are this run's to
 convert; the two Jamie controls must stay xfailed.
+
+[loop 20260921-041515-90563] start budget=20 agent=codex branch=round4/ralph-b
