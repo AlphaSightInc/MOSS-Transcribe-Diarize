@@ -1,92 +1,86 @@
-# PRD - MOSS round 4, ralph run B: implement the verdict-approved seams
+# PRD - MOSS round 4, ralph run C: close the acceptance review's findings on run B
+
+Run B implemented all three mandated behaviours correctly — an adversarial acceptance review verified byte-identical
+`_assert_no_active_meetings`, no live-resume path (D13), partition-scoped-once identity with both branches asserted,
+untouched constants/bars/gain, and an exactly-audited fixture correction. It then found **three consequences run B did
+not surface**, plus smaller gaps. This run closes them. Nothing run B achieved may regress.
 
 ## Goal
 
-> Turn the two SUPPORTED, fresh-verified round-4 prototypes into product behaviour without changing any recognition
-> constant: (1) File/URL batch work survives an application restart under the ownership of its existing Meeting, and
-> (2) a speaker's own short terminal span after a silence hole is no longer published as `S00` when the terminal
-> decoder's partition already ties it to an established person. If decision D27 is recorded as YES in
-> `context.md`, also (3) correct the acceptance-corpus reference/cut defects the overlap diagnosis proved, changing only
-> the edits that diagnosis classified (d).
+> Make the durable File/URL ownership introduced in run B safe in the three ways the review showed it is not: account
+> revocation must not resurrect work or unfence late results; a retained resume must never take down or stall
+> application startup; and retained work that is refused or cancelled must not be kept forever.
 
 ## Acceptance bar
 
-The loop is complete only when every point below holds, with evidence (commands run, artifacts inspected, before/after
-deltas) recorded in progress.txt:
+Every point below, with evidence (commands, exact counts, before/after) in progress.txt:
 
-- **A3 batch ownership.** The ten prototype cases in `prototypes/batch-startup/` (C1 resume after 40 windows with
-  exactly 61 remaining delegate calls and 101/101 unique saved segments, one publication, exact reopen; C2 mid-window
-  crash redone once, no duplicate segment; C3 cancel during restart → durable `cancelled`, no further calls; C4
-  duplicate startup → exactly one owner proceeds; C5 wrong owner / source hash / contract → refused, honest
-  `interrupted`; C6 damaged prefix → refused, received data preserved; C7 URL resume from the retained local copy,
-  honest failure without it; C8 account-scoped recovery applies the same claim; C9 legacy non-resumable File row still
-  finishes `interrupted`; C10 an active **live** row is still finished `interrupted` and `_assert_no_active_meetings`
-  is unchanged) pass as **product** tests against the real `lifespan` — not against the prototype composition. The two
-  `xfail(strict=True)` violating controls from branch `round4/batch` flip to plain passes (remove the xfail marker; the
-  test body is unchanged). `phase2.py:751-763` is byte-identical to base. Production File passes a real checkpoint
-  directory under the Meeting-keyed durable root (not `checkpoint_dir=None`).
-- **Gap remedy — a conditional partition rule, with BOTH branches asserted.** The remedy operates on the terminal
-  decoder's local-speaker partition: retain each terminal-local label through convergence, aggregate the eligible
-  acoustic evidence **once per unmapped local partition**, match once, and project the result **only inside that
-  partition**. No temporal neighbour, no floor change, no cross-partition projection; `ALBUM_MIN_MATCH_SCORE`,
-  `ALBUM_MIN_MATCH_MARGIN`, `ALBUM_ADMISSION_SECONDS`, `ALBUM_BIRTH_MIN_SECONDS` and `min_segment_samples` byte-identical
-  to base. Two controls are **both required** (the historical S17 row is `UNMEASURED` either way — see below):
-  1. **Shared partition** — a short span sharing a terminal partition with eligible Adam evidence (reproduced score
-     0.909091) resolves to the established canonical identity, while the different-voice Keyu control (0.017033) stays
-     unknown and is never absorbed.
-  2. **Isolated partition** — a historical-style isolated short span (no eligible evidence in its own partition) **stays
-     `S00`** and is reported as such. That is the correct, safe abstention; a test that forces it to resolve is a defect.
-  The `round4/gap` strict control flips to a plain pass only because branch 1 now holds.
-  **Never claim this repairs the historical S17 failure.** The retained S17 material carries no raw terminal-local
-  labels, so whether `seg_0012` was isolated is **unknown**; the S17 identity row stays **UNMEASURED** until R4-10 reruns
-  it while retaining the raw terminal label stream. Do not write "gap closed" anywhere in this run's evidence.
-- **Fixture correction (D27 = YES).** Covers **all** affected arms, not only overlap: pane 3.4's follow-on
-  (`evidence/round4/overlap/attribution-alternation.md`, `33d3916b`) attributes all 19 retained final edits
-  (a=12, d=7) and shows corrected scores alternation system 5/102 = 4.90 %, alternation mic 5/53 = 9.43 %, overlap mic
-  5/53 = 9.43 % — all under their bars. The **pre-terminal** arms (system 16/106, mic 11/53) are UNMEASURED because the
-  edited word rows were not retained; they must be re-run against the corrected reference in the measurement pass, not
-  asserted here. The falsifier below applies per arm. `tests/e2e/verify_demo_lanes.py` scores the overlap
-  acceptance arm against a reference that matches the audio actually cut (29.0 s, or the cut moved to 29.25 s so "the
-  book" is included — pick one, record why), and the ladder rows against a 24 s reference; the corpus reference row for
-  `interview_bill_ackman_60s` is corrected exactly as `evidence/round4/overlap/reference-correction-proposal.json` and
-  the second opinion `evidence/round4/overlap-review/second-opinion.md` agree (`market is`, `You're`, `divine`, leading
-  overhang removed). Falsifier test: replaying the retained overlap publication against the corrected reference yields
-  exactly the three class-(a) additions (`you`, `know`, repeated `to`) and nothing else — the decoder's real errors stay
-  visible. If `context.md` records D27 = NO or blank, this item is a non-candidate and the ledger row stays a FAIL.
-- **Strict-control accounting.** Exactly the **six** controls this run owns convert from `xfail(strict=True)` to
-  ordinary passes by *removing only the marker* (batch 2, gap 1, fixture 3 — enumerated by name in `context.md`); the
-  **two Jamie controls remain xfailed** (R4-4 is FALSIFIED; nothing here may make them pass). Final expectation:
-  backend ≥ **2,136 passed / 0 failed / 5 skipped / 2 xfailed**.
-- Full backend suite `python -m pytest -q -p no:cacheprovider tests` and frontend `npm --prefix frontend test -- --run`
-  ≥ 312/312 on the final tree; `npm --prefix frontend run typecheck` clean; if any frontend source changed,
-  `npm --prefix frontend run build` followed by an empty `git status` (asset parity).
-- `docs/verify/round4-run-b/VERIFY.md`: what to run, expected counts, what would falsify — self-contained.
+- **C1 — revocation does not resume, and does not unfence.** `_revoke_account` (`phase2_lifecycle.py:231-233`) must not
+  call `resume_retained_work`, and must not call `release_settled_account_fence` merely to allow one. Revoking an
+  account must leave its retained File work unresumed and its late results still rejected by the fence
+  (`phase2_file.py:302`, guard `:349-354`). A revoked account must never gain a newly published transcript. Controls:
+  (a) healthy — revoke with a retained prefix present ⇒ the Meeting is terminal, `decoder.calls == []`, no new
+  transcript version, retained dir handled per C3; (b) violating — a test that fails on the current tree by showing a
+  revoked account publishing a transcript (`tests/phase2/test_retained_file_claim.py:362-375` asserts exactly that
+  today and must be corrected, not deleted). The account-scoped claim, if it is kept at all, must run only where a
+  legitimate account-scoped startup caller exists — and if none exists, say so and remove the call rather than inventing
+  one.
+- **C2 — startup is never blocked or aborted by retained work.** A failure in any retained resume (commit,
+  publication, or post-terminal cleanup) must not propagate out of `lifespan` (`phase2.py:1960`): startup completes,
+  the failure is recorded on the Meeting and visible to the operator, and the app serves. Startup must also not await a
+  full re-decode: the resume runs as a background task under the existing scheduler, not inline at boot. Controls:
+  healthy — an app whose retained resume raises still starts and serves its descriptor, with the Meeting's failure
+  durably visible; violating — a test that fails on the current tree because a raising resume aborts startup. Add a
+  control proving boot does not wait for a long resume (use the existing deterministic runner; assert the app serves
+  while the resume is still pending).
+- **C3 — refused or cancelled retained work is reclaimed.** When `_verified_retained_input` refuses work
+  (`phase2_file.py:510-545`) or a URL Meeting is cancelled mid-download, the owner directory must not survive the
+  Meeting's durable terminal transition. Removal happens **after** terminal truth, never before, and never for work
+  still owned by an active Meeting. `tests/phase2/test_retained_file_claim.py:316` currently asserts
+  `owner_dir.exists()` after `interrupted` — correct that assertion to the intended behaviour. Controls: healthy — a
+  refused prefix leaves no owner directory once the Meeting is `interrupted`; violating — the current
+  retain-forever behaviour. Bound the blast radius: only this Meeting's own directory may be removed.
+- **C4 — the URL acquisition failure window is closed.** `_record_retained_source` (`phase2_file.py:619`) must not be
+  able to leave a URL Meeting `active` with no task after a successful download: a failure there ends the Meeting
+  durably (`failed`, with the reason visible) instead of waiting for the next restart. Control proves it.
+- **C5 — honest documentation of what the ladder reference does.** `SYSTEM_LADDER_REFERENCE`
+  (`tests/e2e/verify_demo_lanes.py:27`) has exactly one consumer (`tests/test_round4_overlap_diagnosis.py:28`); the
+  deployed ladder scores solo-lane vocabulary retention and reads no reference row. Correct
+  `docs/verify/round4-run-b/VERIFY.md` so it no longer claims the ladder is scored against that population, and reword
+  its falsifier 3 to something actually testable (or delete it and say why).
+- **C6 — product-level assertion of the batch invariant.** The "101/101 unique saved segments, no duplicate after the
+  replayed window" property currently lives only inside `prototypes/batch-startup/prototype.py`, which pytest never
+  runs. Assert uniqueness and no-duplication at product level in `tests/phase2/test_retained_file_claim.py` for the
+  resume and the mid-window-crash cases.
+- **C7 — corpus internal consistency.** The corrected Bill row `[0.0, 29.25]` now overlaps the following row
+  `[29.0, 33.0]` in the same file. Either adjust the neighbouring row's start so the file is internally consistent
+  (audited: it must still describe the same audio), or record in the corpus README why the overlap is intentional and
+  which consumers read which rows. Do not change any scored text.
+- Everything run B achieved still holds: `_assert_no_active_meetings` byte-identical to base; no live resume (D13);
+  gap remedy partition-scoped with both branches asserted and no constant moved; fixture correction exactly the audited
+  rows with the three class-(a) additions still visible; the two Jamie controls still `xfail(strict=True)`; S17 and
+  `capacity_2x1800` still explicitly unmeasured/deferred.
+- Full backend suite ≥ **2,152 passed / 0 failed / 5 skipped / 2 xfailed** and frontend ≥ 312/312; typecheck clean; if
+  any frontend source changes, rebuild and leave `git status` empty (asset parity). `docs/verify/round4-run-c/VERIFY.md`.
 
 ## Constraints
 
-Non-negotiable, in addition to the rules in prompt.md:
-
 - Python `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python`,
-  always `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.`, cwd = this repo; frontend via the symlinked `frontend/node_modules`.
-- **This run is offline: 0 decoder requests, no tunnel, no proxy, no GPU, no network** (lead ruling under D28). Every
-  claim comes from retained outputs, the CPU ONNX embedder, the local HF model, and the real app under test. The single
-  decoder-backed confirmation of the gap remedy belongs to R4-10, where it must retain the raw terminal label stream.
-  Never run `tools/qualify/run.py --long`; never let `capacity_2x1800: REQUIRED-NOT-RUN` disappear from a summary.
-- Never change `QUALITY_BOUNDS`, any gate bar, identity constants, the live frame protocol, sentinels, poll delays,
-  `LIVE_MEETING_LIMIT`, or `phase2.py:751-763`. No duration floor. No new hand-tuned constant.
-- Deepen existing modules (`FileMeetingTasks`, the Meeting, the terminal identity path). No second job framework, no
-  checkpoint framework, no feature flag, no compatibility wrapper. `windowed_transcription.py:197-255` checkpoint
-  validation is sufficient as is.
+  always `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.`; frontend via the symlinked `frontend/node_modules`.
+- **Offline: 0 decoder requests, no tunnel, no proxy, no GPU, no external provider, no network.**
+- Never change `QUALITY_BOUNDS`, any gate bar, identity constants (`ALBUM_*`, `min_segment_samples`),
+  `DEFAULT_MIC_GAIN`, the live frame protocol, sentinels, poll delays, `LIVE_MEETING_LIMIT`, or
+  `_assert_no_active_meetings`. No duration floor. No new hand-tuned constant.
+- Do not weaken, narrow or delete any control. Where a control asserts the wrong behaviour (C1's revoke publish, C3's
+  retain-forever), correct the assertion and say so explicitly in progress.txt — never silently.
+- Deepen `FileMeetingTasks` and the lifecycle seam; no new framework, no second job system, no feature flag.
 - Live capture keeps D13: no live resume across a restart, ever.
-- Never read, copy or print `~/.config/moss/openrouter.env` or any `OPENROUTER_API_KEY`. Never write under
-  `tools/qualify/out/`, `playwright-report/`, `test-results/` into git.
-- Never `git push`; never merge or rebase; commit only on branch `round4/ralph-b`. Historical `evidence/` is read-only.
-- Do not modify `tools/qualify/` (owned by run A's merge) except to consume its preflight when adding a bundle row.
+- Never `git push`, merge or rebase; commit only on branch `round4/ralph-b`. Historical `evidence/` is read-only.
+- Never read or print `~/.config/moss/openrouter.env` or any `OPENROUTER_API_KEY`.
 
 ## Budget and stop
 
 - The launcher argument sets the iteration budget; one logical change per iteration.
 - Stop early only via the completion contract: acceptance bar met with evidence, or every remaining item blocked on
   input the loop cannot obtain, recorded in progress.txt.
-- A blocker ends the iteration, not the loop: record it, commit anything useful, and let the next iteration attack it or
-  route around it.
+- A blocker ends the iteration, not the loop: record it, commit anything useful, and let the next iteration attack it.

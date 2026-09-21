@@ -104,3 +104,9 @@ convert; the two Jamie controls must stay xfailed.
 - Next: acceptance bar met; lead may integrate this branch. Do not run decoder-backed S17 or 2x1800 capacity work under this offline mandate.
 
 [loop 20260921-041515-90563] complete at iteration 10
+
+## Run C — started 2026-09-21 ~03:00
+Opened by the lead after the adversarial acceptance review of run B (HEAD 16fd908e, verified: backend 2,152 passed /
+0 failed / 5 skipped / 2 xfailed, frontend 312/312, asset parity clean). Run C closes three consequences run B did not
+surface (revoke resurrecting work and unfencing late results; a retained resume aborting or stalling startup; refused or
+cancelled retained work kept forever) plus four smaller gaps. Offline: zero decoder requests.

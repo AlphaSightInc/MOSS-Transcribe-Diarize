@@ -40,116 +40,59 @@
 
 ## Current state
 
-- 2026-09-20 18:xx: base = `round4/integration` after merging run A (`round4/ralph-a` @ `3a56ce7b`: instrument custody +
-  budget preflight; suites 2,123/0/5, 312/312) and the pane branches `round4/gap@fd1136d4`, `round4/jamie@992dbb17`,
-  `round4/batch@b1e05026`, `round4/overlap@790d8f29+`, `round4/overlap-review@71544133`, `round4/runtime@0b60723c+`,
-  `round4/surfaces@25bb06d4+` (prototypes, evidence, xfail controls only — no product change). Exact counts after the
-  merges are in `progress.txt`'s header.
-- Verdicts you implement: A3 **SUPPORTED** 10/10 through the real `lifespan` (deterministic runner) + real-HF smoke;
-  gap **SUPPORTED** — the `S00` arises at finalization: a 4,320-sample span (< 8,000) gets a temporary `speaker-0002`
-  that cannot project onto `speaker-0001`; silence does not reset identity; first post-gap score 0.8366; remedy
-  controls Adam 0.909 match / Keyu 0.017 abstain; **unmeasured**: raw terminal-local labels — if `seg_0012` was isolated
-  in its partition the remedy does not apply (then keep `S00` and record it).
-- Verdicts you must NOT implement: Jamie aggregation **FALSIFIED** (3.2) — no code; overlap is **not** a product
-  defect (3.4 + 3.1: 0 convergence/publication loss) — only the fixture (D27) may change.
-- Known xfail(strict) controls in the tree that must flip when their item lands: `round4/batch` (2, File + URL valid
-  retained prefix currently interrupted), `round4/gap` (1), `round4/overlap` (2, only if D27 = YES). Find them with
-  `grep -rn "xfail(strict=True" tests/ | grep -i "R4-"`.
-- Local HF snapshot for the real-runner smoke: `~/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8`.
-- Decoder proxy: `http://127.0.0.1:18400/v1` (lead-owned, 100-request cap, counts in `…/moss-round4/status/proxy-18400-requests.jsonl`).
-- **D28 (2026-09-20 18:46):** round-4 GPU total ≈3,300 requests; the 2×1800 capacity confirmation is **deferred** — do
-  not run `--long`, and never let `capacity_2x1800: REQUIRED-NOT-RUN` disappear from a summary. **Lead ruling
-  2026-09-21: run B is offline — 0 decoder requests, no tunnel, no proxy.** The single decoder-backed confirmation of
-  the gap remedy moves to R4-10, where it must retain the raw terminal-local label stream.
-- Base after the round-4 merges is `round4/integration` @ **`71f23c0c`**: backend **2,130 passed / 0 failed / 5 skipped
-  / 8 xfailed / 37 subtests**, frontend **312/312**, typecheck clean, asset parity clean. **The 8 strict xfails,
-  enumerated from the tree (lead-verified 2026-09-21 with `pytest -rx`; an earlier guess in this file was wrong):**
-  - **batch 2** — `tests/phase2/test_batch_startup_prototype_controls.py::test_r4_5_base_lifespan_resumes_valid_retained_prefix[file]` and `[url]`
-  - **gap 1** — `tests/test_r4_gap_terminal_identity.py::test_r4_3_same_terminal_partition_reuses_eligible_voice_evidence`
-  - **fixture 3** — `tests/test_round4_overlap_diagnosis.py::test_r4_6_demo_reference_matches_corrected_audio_population`,
-    `…::test_r4_6_ladder_reference_is_bounded_by_captured_audio`, and
-    `tests/test_round4_alternation_diagnosis.py::test_r4_keyu_source_reference_matches_audited_audio_population`
-  - **Jamie 2** — `tests/test_round4_jamie_violating_controls.py::test_r4_4_compatible_provisional_support_accumulates[durations0]` and `[durations1]`
-  - **surfaces 0** — hidden-tab work is blocked-on-session evidence, not a strict-xfail test.
-- 2026-09-21 iteration 1 completed the durable-ingress half of A3 in
-  `phase2_file.py`: after Meeting creation, File and URL work move from transient `file-work` to
-  `file-retained/<account>/<meeting>/`; `owner.json` carries account, Meeting, ingress, source,
-  checkpoint locator, and contract version. Product File inference now receives that real checkpoint
-  directory. Completed/failed/explicitly interrupted Meeting work is removed only after its terminal
-  state; shutdown-retained active work stays available for the future claimant. Focused File/URL suites
-  passed 29/29 and registry controls 2/2. **Still open:** no startup claimant yet consumes this retained
-  work, so the current generic startup fallback still interrupts an active row; C1--C10 are not yet
-  product passes.
-- 2026-09-21 iteration 2 completed Candidate 1's claim primitive in `phase2_file.py`.
-  `FileMeetingTasks.claim_retained_work(handle)` holds one non-blocking startup lock while the task
-  runs, accepts only an exact v1 Meeting owner record plus its local source and the deployed
-  `WindowedRunner` checkpoint contract, and otherwise returns `False` without decoder dispatch or
-  mutation so the existing interruption fallback remains authoritative. Focused controls: a two-window
-  committed prefix resumes with only the remaining calls; owner, source, contract, and non-contiguous
-  prefix mutations all refuse with zero new calls and retain an active Meeting/source. `34 passed` across
-  the new claim test and the owner-bound File/URL regressions. **Still open:** no `lifespan` or
-  account-scoped caller invokes this primitive, so it is not yet a product restart pass and the two
-  `round4/batch` xfails remain unchanged.
-- 2026-09-21 iteration 3 completed Candidate 1's startup ordering. `Phase2Store.active_file_meetings()` is the
-  shared durable File-row enumeration; `FileMeetingTasks.resume_retained_work()` claims each valid row and joins it
-  to terminal truth before the unchanged fallback runs. Global `lifespan` calls it before
-  `recover_active_meetings`, and Account revoke calls it before account-scoped recovery. The two `round4/batch`
-  xfails are ordinary real-lifespan File/URL passes; owner/source/contract/prefix rejection stays covered. Focused
-  recovery/startup tests passed 83/83; the deterministic bench still reports C1--C10 SUPPORTED. **Limit:** C2--C10
-  are not yet standalone product lifespan/account-lifecycle tests, so A3 acceptance is still open.
-- 2026-09-21 iteration 4 promoted **C2/C4/C7/C8/C9/C10** to standalone product controls. A real lifespan replays
-  only the retained uncommitted window (C2), refuses a concurrent lifespan before it can dispatch or fall back (C4),
-  uses the retained URL copy and refuses its absence without dispatch (C7), and keeps non-resumable File and all Live
-  rows on the unchanged interruption fallback (C9/C10). The Account-lifecycle control exposed an actual C8 defect:
-  after the old process-owned File entries were joined, their account fence still suppressed the newly claimed
-  retained task's terminal commit, so it decoded then fell through to `interrupted`. `release_settled_account_fence()`
-  releases only an account whose in-process File tasks are gone, while the closed account gate still prevents a new
-  entrant; C8 now completes before the account fallback. Focused controls + lifecycle group: **26 passed**; three
-  existing late-result/revocation controls: **3 passed**.
-- 2026-09-21 iteration 5 promoted **C3** to a real product lifespan/lifecycle control. Lifecycle ownership is present
-  before retained startup work begins; cancelling a resumed File Meeting waits for the in-progress window, lets the
-  existing scheduler refuse the next window before decoder dispatch, then shares one durable settlement between the
-  lifecycle and startup owner. A resumed cancellation finishes `interrupted` with `failure_code=cancelled` and removes
-  retained work only after terminal truth; ordinary non-resumed operator interruption retains its prior outcome. Focused
-  retained/operator controls: **15 passed**; recovery slice: **90 passed, 913 deselected**. A3's C1--C10 product
-  control set is now complete; acceptance still requires the final suite and verification document.
-- 2026-09-21 iteration 6 completed the **R4-3 partition-scoped terminal decision**. The terminal finalizer preserves
-  its decoder-local labels only while lane convergence needs them; each uncovered or unmapped label is probed once
-  from its own eligible intervals, then the internal labels are cleared before session publication. The ordinary R4-3
-  shared-partition control, different-voice Keyu falsifier, and new isolated-partition abstention control all pass;
-  terminal/lane/session seams passed **120 passed, 2 deselected, 19 subtests**. The offline CPU replay reconfirmed
-  Adam 0.909091 match / Keyu 0.017033 abstention at the unchanged 0.35 floor and made zero decoder requests.
-  **S17 remains UNMEASURED**: retained material lacks its terminal-local labels, so this does not establish whether
-  the historical `seg_0012` qualifies for the partition rule.
-- 2026-09-21 iteration 7 completed **D27's fixture correction** without changing historical round-4 evidence. The
-  candidate corpus now carries the approved full Bill 0--29.25 s row and Keyu 0--25 s row; `verify_demo_lanes`
-  therefore replays the full corrected acceptance population. Its explicit 24 s system-fixture input carries the
-  proposal's bounded ladder population. The three fixture controls are ordinary passes, and the retained 29 s raw
-  publication replay still yields exactly **3/102** (`you`, `know`, repeated `to`) with 0 substitutions and 0
-  omissions. Focused fixture + demo-surface validation: **17 passed**. The former two fixture controls shared one
-  29 s historical evidence copy while requiring it both to equal the 29 s proposal and to be <=24 s; `--runxfail`
-  proved both failures. Their targets now follow the real mutable corpus and separate 24 s fixture, so the strict
-  markers could be removed without weakening either population check. The two Jamie controls remain the only strict
-  xfails.
-- 2026-09-21 iteration 8's first full backend gate exposed two stale test expectations, not a new product seam:
-  **F1** `test_file_mp3_artifact` still looked under transient `file-work` although the approved A3 ingress keeps an
-  active source under `file-retained/<account>/<meeting>/`; it now proves the retained source survives until blocked
-  audio metadata is durable and is removed only after terminal completion (**15 passed** focused). **F2**
-  `test_lane_word_oracle` still expects the pre-D27 corpus denominator 154; the approved corrected Bill/Keyu rows
-  presently score 157. The gate at `966d250b` therefore ended **2 failed, 2,150 passed, 5 skipped, 2 xfailed**:
-  F1 and F2 respectively. No decoder, network, or GPU request occurred.
-- 2026-09-21 iteration 9 completed **F2**: `test_lane_word_oracle` keeps its independent literal denominator and now
-  expects **157**, the production tokenizer's 104 Bill + 53 Keyu words from D27's corrected rows. Its focused suite
-  passed **10/10**; full final gates and the self-contained verifier remain open.
-- 2026-09-21 iteration 10 completed the final verification candidate. The full offline backend gate reports
-  **2,152 passed / 0 failed / 5 skipped / 2 xfailed / 37 subtests** in 169.56 s; frontend is **312/312** and
-  typecheck is clean. `docs/verify/round4-run-b/VERIFY.md` records the six ordinary controls, the two intentional
-  Jamie xfails, reproduction commands, falsifiers, S17 **UNMEASURED**, and
-  `capacity_2x1800: REQUIRED-NOT-RUN`. `phase2.py`'s active-meeting assertion is byte-identical to `71f23c0c`;
-  only the Jamie decorators still use `strict=True`; no `frontend/` source changed, so the conditional frontend
-  build/asset-parity gate is inapplicable.
-- This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
-  **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
+- **2026-09-21 ~03:00 — run C opened by the lead after an adversarial acceptance review of run B (HEAD `16fd908e`).**
+  The review independently confirmed, and this run must not regress: `_assert_no_active_meetings` byte-identical to
+  base and still reached from both entrypoints (`phase2.py:599`, `:617`); **no live-resume path** — the claim loop
+  iterates only `active_file_meetings` (`WHERE m.mode = 'file' AND m.status = 'active'`, `phase2.py:626`) and live rows
+  still go to `_recover_active_live_meetings` (D13 holds); ordering right — `resume_retained_work` at `phase2.py:1960`
+  precedes `recover_active_meetings` (`:1961`) and `clear_transient_work()` (`:1968`), and the retained root is a
+  *sibling* of `file-work` (`phase2_file.py:135`) so transient cleanup cannot reach it; every
+  `_remove_terminal_work_dir` call site is preceded by a durable `finish(...)`/`_mark_failed(...)`; the gap remedy
+  partitions by terminal-local label and writes back only to indices carrying that label
+  (`live_lane_decode.py:279-341`), with both branches asserted (`tests/test_r4_gap_terminal_identity.py:113-121`,
+  `:137-142`, and isolated-stays-unattributed at `:145-153`); no constant moved; the fixture rows are byte-equal to the
+  audited proposal and the falsifier still shows exactly 3 additions, 102/105.
+- **Findings this run closes** (all introduced by run B, none falsifying the three mandated behaviours):
+  - **F1 → C1.** `phase2_lifecycle.py:231-233` calls `release_settled_account_fence(owner_key)` then
+    `resume_retained_work(...)` inside `_revoke_account` — the only caller of `recover_active_account_meetings`,
+    reachable from the control socket (`phase2_control.py:143`). The fence exists to "reject every later result"
+    (`phase2_file.py:302`) and its release guard inspects only `_tasks` (`:349-354`), so an unregistered task can become
+    unfenced and publish. `tests/phase2/test_retained_file_claim.py:362-375` currently asserts a revoked account
+    reaching `("completed", 1)` — a revoked account gaining a **new published transcript**, against the principle at
+    `phase2_file.py:740-742`. That control also hand-plants row and directory (`:333-356`), so C8 is not demonstrated.
+  - **F2 → C2.** `phase2.py:1960` awaits `resume_retained_work`; `phase2_file.py:210-215` awaits `entry.task` catching
+    only `CancelledError`, and `_run` re-raises at `:748`, `:776`, `:794`. A commit, publication or cleanup failure on
+    one retained Meeting therefore takes the whole app down at boot, and startup blocks for the entire re-decode — this
+    repo has a 201-minute file case.
+  - **F3 → C3.** When `_verified_retained_input` refuses work (`phase2_file.py:510-545`) nothing ever deletes
+    `retained_root/<account>/<meeting>`: the Meeting is terminal so `active_file_meetings` never lists it again and
+    `clear_transient_work` only touches `file-work` (`:155-177`). `tests/phase2/test_retained_file_claim.py:316`
+    enshrines it with `assert owner_dir.exists()`. Same for a URL Meeting cancelled mid-download — the old
+    `_remove_work_dir(staging_dir)` was deleted at `:611-612`, leaving an owner dir with no `owner.json`. Unbounded
+    disk growth and raw user media retained past terminal truth.
+  - **F5 → C4.** `_record_retained_source` at `phase2_file.py:619` is uncaught inside `_acquire_and_run`; an I/O
+    failure right after a successful download leaves the URL Meeting `active` with no task until the next restart.
+  - **F7 → C5.** `SYSTEM_LADDER_REFERENCE` (`tests/e2e/verify_demo_lanes.py:27`) has one consumer
+    (`tests/test_round4_overlap_diagnosis.py:28`); the deployed ladder (`tools/qualify/run.py:583-596` → the external
+    `ir_lane_ladder.py`) scores solo-lane vocabulary retention and reads no reference row, so VERIFY.md's claim and its
+    falsifier 3 are not testable as written.
+  - **F8 → C6.** The "101/101 unique saved segments / no duplicate after the replayed window" property is asserted only
+    inside `prototypes/batch-startup/prototype.py`, which pytest never runs; the product controls assert only the
+    delegate-call list and `transcript_version == 1` (`tests/phase2/test_retained_file_claim.py:235-237`).
+  - **F9 → C7.** The corrected Bill row `[0.0, 29.25]` overlaps the next row `[29.0, 33.0]` in the same corpus file.
+- **Ratified by the lead, do not re-open (F6):** the three fixture controls were retargeted rather than
+  marker-removed, because `evidence/` is read-only and a control reading a frozen snapshot could never flip. The
+  proposal JSON was not edited to fit; run B disclosed this in `progress.txt:79`. Accepted.
+- **Accepted limitation, do not fix here (F4):** `_owner_dir` keys on `account_id` only
+  (`phase2_file.py:432-434`) with no `authority_generation` in the manifest (`:461-475`), so "wrong owner" is enforced
+  at account+meeting granularity, not across generations. Record it in known limitations; no generation concept exists
+  elsewhere in the product.
+- **Also flagged, already justified:** `tests/phase2/test_owner_bound_file_meeting.py:949` changed a terminal status
+  from `failed` to `completed` because cleanup now runs after the durable terminal transition and a cleanup failure
+  only logs (`phase2_file.py:791-794`). If C3's work changes that path, keep the operator's ability to learn that a
+  source could not be removed.
+- Lead's own verification of run B: backend **2,152 passed / 0 failed / 5 skipped / 2 xfailed / 37 subtests**; the
+  xfail inventory contains only the two Jamie controls; frontend 312/312; typecheck clean; rebuild left the tree clean.
 
 ## Validation
 
