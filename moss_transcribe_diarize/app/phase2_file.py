@@ -221,6 +221,15 @@ class FileMeetingTasks:
             self._remove_terminal_work_dir(owner_dir)
             self._refused_retained_work.pop(meeting_id, None)
 
+    def reclaim_terminal_retained_work(
+        self,
+        owners: tuple[tuple[str, str], ...],
+    ) -> None:
+        """Remove only Meeting directories named by durable terminal File owners."""
+
+        for account_id, meeting_id in owners:
+            self._remove_retained_work_dir(self._retained_root / account_id / meeting_id)
+
     async def accept(self, workspace: Any, upload: Any) -> Any:
         """Store a complete request body, then create exactly one File Meeting and start work."""
 

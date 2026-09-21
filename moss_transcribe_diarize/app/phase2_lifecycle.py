@@ -213,6 +213,10 @@ class AccountLifecycle:
         target = await self._store.account_revoke_target(account_id)
         account = target.account
         if account is None:
+            if self._files is not None:
+                self._files.reclaim_terminal_retained_work(
+                    await self._store.terminal_file_meeting_owners(account_id)
+                )
             return await self._store.finalize_account_revoke(target)
         owner_key = (account.account_id, account.authority_generation)
         account_gate = await self._gate(self._account_gates, owner_key)
@@ -233,6 +237,10 @@ class AccountLifecycle:
                 audio_archive=self._audio_archive,
                 live_audio_stages=self._live_audio_stages,
             )
+            if self._files is not None:
+                self._files.reclaim_terminal_retained_work(
+                    await self._store.terminal_file_meeting_owners(account.account_id)
+                )
             return await self._store.finalize_account_revoke(target)
         except asyncio.CancelledError:
             # Cancellation is service shutdown.  Keep the old generation closed: work was

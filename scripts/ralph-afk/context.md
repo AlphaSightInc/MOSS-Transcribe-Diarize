@@ -1,4 +1,4 @@
-# Context - MOSS round 4, ralph run C
+# Context - MOSS round 4, ralph run D
 
 ## Ground
 
@@ -53,14 +53,13 @@
   (`test_lifespan_refuses_nonresumable_file_and_live_rows_without_dispatch`, `tests/phase2/test_retained_file_claim.py:726-753`);
   no orphaned background task — `file_tasks.stop()` runs in lifespan's `finally` before `store.close()`
   (`phase2.py:2086-2107`) and `_task_done` releases the flock; audio publication is still `asyncio.shield`-ed.
-- **The defect this run closes (review F1, reproduced).** `_revoke_account` fences and terminalizes but never removes
-  the owner directory: with no registered task `settle_fenced(())` removes nothing (`phase2_file.py:379-393`), and
-  `_recover_active_file_meetings` only calls `recover_interrupted_file_audio` + `finish("interrupted")`
-  (`phase2.py:765-769`). On later boots `active_file_meetings` joins `a.enabled = 1` (`phase2.py:637`), so a disabled
-  account's row is never claimed, refused or reclaimed, and `clear_transient_work` touches only `_work_root`
-  (`phase2_file.py:159-179`). Probe result: `owner_dir` still holds `['checkpoint', 'input.wav', 'owner.json']` after
-  revoke, source bytes intact, still present after a second boot. **Run B's `assert not owner_dir.exists()` was removed
-  with no successor** — the only unreplaced assertion deletion in run C's whole test diff.
+- **D1/D2 complete (review F1).** `Phase2Store.terminal_file_meeting_owners()` names only durable terminal File
+  owners; `FileMeetingTasks.reclaim_terminal_retained_work()` removes exactly those Meeting directories through the
+  existing `parent.parent == retained_root` guard. Account revoke invokes it only after account-scoped fallback made
+  its rows terminal; lifespan invokes it after global recovery, which handles disabled-account leftovers an earlier
+  boot could not claim (`active_file_meetings` joins `a.enabled = 1`). The restored C1 control was RED on the old tree
+  (both revoke and second boot retained `checkpoint`, `input.wav`, and `owner.json`) and is green: no decoder call,
+  durable `interrupted`, unchanged fence, no owner directory, and same-account/sibling-account markers survive.
 - Smaller items the review named: **F2** `release_settled_account_fence` (`phase2_file.py:356-361`) and
   `resume_retained_work`'s `account=` parameter (`:205`) are now dead outside prototypes; **F3** `_complete`'s commit
   and publication arms changed `raise` → `return` for *both* modes (`:772-784`, `:807-819`), silently dropping the
@@ -91,9 +90,19 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-**None.** C1--C7 are closed and the Run-C verifier records the required final
-offline gates. Historical S17 and `capacity_2x1800` remain explicitly unmeasured
-outside this PRD's offline scope.
+- **D5 / F5 — durable last-resort failure.** Make a resumed outcome-write failure leave a durable, operator-visible
+  outcome, or narrow the verifier to the outcomes actually proved. Falsifier: a `handle.finish` failure leaves its
+  Meeting `active` with only a log line.
+- **D3 / F2 — remove dead revocation-adjacent entry points.** Remove `release_settled_account_fence` and the unused
+  `account=` parameter on `resume_retained_work`; prove no production callers remain. Falsifier: a retained caller
+  still releases a revoked account fence or requests account-scoped resume.
+- **D4 / F3 — disclose or restore non-resumed task failure signaling.** Decide whether ordinary commit/publication
+  failures should again surface through task settlement; document the chosen behavior in both Run-C and Run-D
+  verifiers. Falsifier: verifier claims a signal the non-resumed path no longer produces.
+- **D6 / F6 — journal correction.** Append, never rewrite, the correction that Run-C iteration 4's post-boot joining
+  evidence is `prototypes/batch-startup/prototype.py`, not an untouched test file.
+
+Historical S17 and `capacity_2x1800` remain explicitly unmeasured outside this PRD's offline scope.
 
 ## Iteration 1 outcome
 
@@ -205,6 +214,14 @@ outside this PRD's offline scope.
   is inapplicable. No decoder, network, tunnel, proxy, or GPU request was made.
 - **Next:** acceptance bar met; the lead may integrate this branch. Do not turn the
   historical S17 or 2x1800 capacity limits into a false offline qualification.
+
+## Run D iteration 1 outcome
+
+- **D1/D2 / F1 (complete):** revocation and later startup now reclaim only exact File owner directories whose Meeting
+  status is already terminal. The focused control was RED twice before the product change and green after it; the
+  retained-work module is 18/18. The normal revoke control restores `assert not owner_dir.exists()` alongside the
+  no-dispatch, durable-interrupted, and retained-fence assertions, and proves both sibling scopes survive.
+- **Next:** D5 — make the resumed last-resort outcome-write failure durable or document its exact acceptable boundary.
 
 ## Non-candidates
 

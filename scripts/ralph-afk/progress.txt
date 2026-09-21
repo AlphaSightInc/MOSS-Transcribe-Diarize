@@ -204,3 +204,11 @@ joins a.enabled = 1 so the row is never claimed, refused or reclaimed - and run 
 small disclosures. Offline: zero decoder requests.
 
 [loop 20260921-084333-12001] start budget=8 agent=codex branch=round4/ralph-b
+
+## Iteration 1 - revoke retained owner cleanup
+- Target: D1/D2 / F1 — release only a revoked Meeting's retained directory after durable terminal truth, including disabled-account leftovers at a later boot.
+- Files: `moss_transcribe_diarize/app/phase2.py`; `moss_transcribe_diarize/app/phase2_file.py`; `moss_transcribe_diarize/app/phase2_lifecycle.py`; `tests/phase2/test_retained_file_claim.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: focused restored controls were RED on the prior product seam: **2 failed / 16 deselected**, each left the owner directory present. After the change the same command -> **2 passed / 16 deselected**; full retained module -> **18 passed**; `py_compile` and `git diff --check` -> clean. No decoder, network, GPU, tunnel, proxy, or provider request.
+- Evidence: `test_account_revocation_does_not_resume_retained_file_work` restores `assert not owner_dir.exists()` alongside no decoder dispatch, durable `interrupted`, and retained fence; it proves same-account and real sibling-account owner markers survive. `test_lifespan_reclaims_disabled_account_terminal_retained_work` proves a terminal disabled-account owner is removed on boot while both sibling markers survive.
+- Learned: the minimum composition is a persistence-owned terminal File owner list and a File-owned exact-directory cleanup. Calling it after account/global recovery preserves deletion order; it does not scan or delete parents.
+- Next: D5 / F5 — test and contain a resumed `_mark_failed` outcome-write failure.

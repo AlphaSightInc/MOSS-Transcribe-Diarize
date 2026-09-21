@@ -665,7 +665,7 @@ def test_url_retained_source_failure_becomes_visible_terminal_failure(
 def test_account_revocation_does_not_resume_retained_file_work(
     tmp_path: Path,
 ) -> None:
-    """C1: revocation retains its fence and leaves retained work to fallback recovery."""
+    """D1: revocation releases only its terminal retained File owner."""
 
     async def exercise() -> None:
         decoder = _RestartDecoder()
@@ -683,6 +683,7 @@ def test_account_revocation_does_not_resume_retained_file_work(
             owner_dir.mkdir(parents=True)
             source = owner_dir / "input.wav"
             source.write_bytes(b"retained source")
+            (owner_dir / "checkpoint").mkdir()
             (owner_dir / "owner.json").write_text(
                 json.dumps(
                     {
@@ -698,10 +699,27 @@ def test_account_revocation_does_not_resume_retained_file_work(
                 + "\n",
                 encoding="utf-8",
             )
+            sibling_meeting_marker = owner_dir.parent / "unrelated-meeting" / "marker"
+            sibling_meeting_marker.parent.mkdir()
+            sibling_meeting_marker.write_text("unrelated retained work", encoding="utf-8")
+            sibling_account, _ = await seed_workspace(store, "account-b")
+            sibling_handle = await store.workspace(sibling_account).create_meeting("file")
+            sibling_account_marker = (
+                app.state.phase2_file_tasks.retained_root
+                / sibling_account.account_id
+                / sibling_handle.meeting_id
+                / "marker"
+            )
+            sibling_account_marker.parent.mkdir(parents=True)
+            sibling_account_marker.write_text("unrelated retained work", encoding="utf-8")
+            await sibling_handle.finish("interrupted")
             crashed = _RestartDecoder()
             with pytest.raises(WindowTranscriptionError):
                 _runner(crashed).transcribe(source, checkpoint_dir=owner_dir / "checkpoint")
             assert crashed.calls == [0, 1, 2]
+            assert sorted(path.name for path in owner_dir.iterdir()) == [
+                "checkpoint", "input.wav", "owner.json",
+            ]
 
             assert await app.state.phase2_lifecycle.revoke_account(account.account_id)
             assert (account.account_id, account.authority_generation) in (
@@ -719,6 +737,46 @@ def test_account_revocation_does_not_resume_retained_file_work(
                 await cursor.close()
             assert decoder.calls == []
             assert tuple(row) == ("interrupted", None)
+            assert not owner_dir.exists()
+            assert sibling_meeting_marker.read_text(encoding="utf-8") == "unrelated retained work"
+            assert sibling_account_marker.read_text(encoding="utf-8") == "unrelated retained work"
+
+    asyncio.run(exercise())
+
+
+def test_lifespan_reclaims_disabled_account_terminal_retained_work(
+    tmp_path: Path,
+) -> None:
+    """D1: startup reclaims terminal retained work an earlier revoke left behind."""
+
+    async def exercise() -> None:
+        store = await Phase2Store.open(tmp_path / "state.sqlite3")
+        try:
+            account, _ = await seed_workspace(store, "account-a")
+            handle = await store.workspace(account).create_meeting("file")
+            owner_dir = tmp_path / "file-retained" / account.account_id / handle.meeting_id
+            owner_dir.mkdir(parents=True)
+            (owner_dir / "input.wav").write_bytes(b"retained source")
+            (owner_dir / "checkpoint").mkdir()
+            (owner_dir / "owner.json").write_text("retained owner", encoding="utf-8")
+            sibling_meeting_marker = owner_dir.parent / "unrelated-meeting" / "marker"
+            sibling_meeting_marker.parent.mkdir()
+            sibling_meeting_marker.write_text("unrelated retained work", encoding="utf-8")
+            sibling_account_marker = (
+                tmp_path / "file-retained" / "unrelated-account" / "unrelated-meeting" / "marker"
+            )
+            sibling_account_marker.parent.mkdir(parents=True)
+            sibling_account_marker.write_text("unrelated retained work", encoding="utf-8")
+            await handle.finish("interrupted")
+            assert await store.revoke_account(account.account_id)
+        finally:
+            await store.close()
+
+        app = _app(tmp_path, _RestartDecoder())
+        async with app.router.lifespan_context(app):
+            assert not owner_dir.exists()
+            assert sibling_meeting_marker.read_text(encoding="utf-8") == "unrelated retained work"
+            assert sibling_account_marker.read_text(encoding="utf-8") == "unrelated retained work"
 
     asyncio.run(exercise())
 

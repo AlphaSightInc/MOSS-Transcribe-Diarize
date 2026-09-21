@@ -656,6 +656,27 @@ class Phase2Store:
             for row in rows
         )
 
+    async def terminal_file_meeting_owners(
+        self,
+        account_id: str | None = None,
+    ) -> tuple[tuple[str, str], ...]:
+        """Return only File owners whose Meeting has durable terminal truth."""
+
+        async with self._external_read():
+            cursor = await self._connection.execute(
+                """
+                SELECT account_id, meeting_id
+                FROM meetings
+                WHERE mode = 'file' AND status IN ('completed', 'failed', 'interrupted')
+                  AND (? IS NULL OR account_id = ?)
+                ORDER BY created_at_ms, meeting_id
+                """,
+                (account_id, account_id),
+            )
+            rows = await cursor.fetchall()
+            await cursor.close()
+        return tuple((str(row["account_id"]), str(row["meeting_id"])) for row in rows)
+
     async def _recover_active_live_meetings(
         self,
         audio_archive: Any,
@@ -2041,6 +2062,9 @@ def create_phase2_app(
             )
             if file_tasks is not None:
                 await file_tasks.reclaim_refused_retained_work()
+                file_tasks.reclaim_terminal_retained_work(
+                    await store.terminal_file_meeting_owners()
+                )
             from .phase2_summary import recover_summaries
             await recover_summaries(store)
             if file_tasks is not None:
