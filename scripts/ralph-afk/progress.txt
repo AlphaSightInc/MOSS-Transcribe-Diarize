@@ -30,3 +30,11 @@ convert; the two Jamie controls must stay xfailed.
 - Evidence: new `test_file_work_is_meeting_owned_before_inference_and_removed_after_terminal`; retained owner record and real checkpoint path in `phase2_file.py`.
 - Learned: checkpoint validation already binds source hash and execution contract; only Meeting-retained work may receive a checkpoint path. Startup still has no claimant, so valid retained work remains unqualified for restart.
 - Next: validate and claim retained work in `FileMeetingTasks`, then call it before generic File recovery.
+
+## Iteration 2 - retained File claim
+- Target: Candidate 1, validate and claim Meeting-owned retained File work without touching startup ordering.
+- Files: `moss_transcribe_diarize/app/phase2_file.py`; `tests/phase2/test_retained_file_claim.py`; `scripts/ralph-afk/context.md`.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider tests/phase2/test_retained_file_claim.py tests/phase2/test_owner_bound_file_meeting.py tests/phase2/test_multi_file_url_meetings.py` -> 34 passed; `git diff --check` -> clean.
+- Evidence: `test_retained_claim_reuses_only_the_verified_prefix`; four mutated owner/source/contract/prefix controls in `test_retained_file_claim.py`.
+- Learned: the deployed checkpoint verifier binds the source and inference contract before dispatch; an invalid retained directory can safely stay active for the existing fallback. This direct seam is not yet a lifespan product pass.
+- Next: call `claim_retained_work` before generic File recovery in both global and account-scoped startup paths; preserve `_assert_no_active_meetings` unchanged.

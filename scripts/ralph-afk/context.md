@@ -80,6 +80,16 @@
   passed 29/29 and registry controls 2/2. **Still open:** no startup claimant yet consumes this retained
   work, so the current generic startup fallback still interrupts an active row; C1--C10 are not yet
   product passes.
+- 2026-09-21 iteration 2 completed Candidate 1's claim primitive in `phase2_file.py`.
+  `FileMeetingTasks.claim_retained_work(handle)` holds one non-blocking startup lock while the task
+  runs, accepts only an exact v1 Meeting owner record plus its local source and the deployed
+  `WindowedRunner` checkpoint contract, and otherwise returns `False` without decoder dispatch or
+  mutation so the existing interruption fallback remains authoritative. Focused controls: a two-window
+  committed prefix resumes with only the remaining calls; owner, source, contract, and non-contiguous
+  prefix mutations all refuse with zero new calls and retain an active Meeting/source. `34 passed` across
+  the new claim test and the owner-bound File/URL regressions. **Still open:** no `lifespan` or
+  account-scoped caller invokes this primitive, so it is not yet a product restart pass and the two
+  `round4/batch` xfails remain unchanged.
   This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
   **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
@@ -98,23 +108,20 @@ $PY -m pytest -q -p no:cacheprovider tests
 npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 ```
 
-## Candidates
+## Remaining candidates
 
-1. **A3 — retained-work claim in `FileMeetingTasks`** (`phase2_file.py`): consume the new Meeting-keyed retained
-   source/checkpoint only after validating owner, source, and contract; use the existing checkpoint validation for
-   the committed prefix. Leave invalid/unclaimed work active for the existing interruption fallback. Validate:
-   C1/C5/C6 as product tests against the real `lifespan` after candidate 2 wires the claim before recovery.
-2. **A3 — startup ordering** (`phase2.py:1927-1941`, `phase2_lifecycle.py:215-236`): claim before `recover_active_meetings`;
+1. **A3 — startup ordering** (`phase2.py:1927-1941`, `phase2_lifecycle.py:215-236`): invoke the completed
+   `FileMeetingTasks.claim_retained_work` primitive before generic File recovery; claim before `recover_active_meetings`;
    fallback `:716-749` untouched in semantics; `:751-763` byte-identical. Validate: C2/C3/C4/C7/C8/C9/C10; the two
    `round4/batch` xfails flip; `git diff --stat 89f833ac -- moss_transcribe_diarize/app/phase2.py` shows no change in `:751-763`.
-3. **Gap remedy — partition-scoped terminal decision** (`live_transcript_convergence.py:1015-1071`,
+2. **Gap remedy — partition-scoped terminal decision** (`live_transcript_convergence.py:1015-1071`,
    `live_lane_decode.py:278-308`): retain terminal-local label; one aggregated match per unmapped partition; project
    only inside it. Validate **both branches**: shared-partition control resolves to the established identity while the
    Keyu control abstains (`round4/gap` xfail flips); isolated-partition control **stays `S00`** and says so. No decoder
    run in this loop — the historical S17 row stays UNMEASURED and belongs to R4-10.
-4. **Fixture correction (D27 = YES only)** (`tests/e2e/verify_demo_lanes.py:60-75`, corpus reference): per prd; falsifier
+3. **Fixture correction (D27 = YES only)** (`tests/e2e/verify_demo_lanes.py:60-75`, corpus reference): per prd; falsifier
    test = exactly the three class-(a) additions remain.
-5. **Full suites + `docs/verify/round4-run-b/VERIFY.md`.**
+4. **Full suites + `docs/verify/round4-run-b/VERIFY.md`.**
 
 ## Non-candidates
 
