@@ -1,4 +1,4 @@
-# Context - MOSS round 4, ralph run B
+# Context - MOSS round 4, ralph run C
 
 ## Ground
 
@@ -111,9 +111,38 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-- **None.** The acceptance bar is met by the recorded final gates and
-  `docs/verify/round4-run-b/VERIFY.md`; the decoder-backed S17 confirmation and 2x1800 capacity confirmation remain
-  explicitly outside this offline run's accepted scope.
+The preceding Run-B-completion snapshot is stale. Run C's PRD and opening
+progress entry are authoritative for the following ranked work:
+
+1. **C1 / F1 — revoke must preserve the fence and never resume retained work.**
+   Remove the revoke resume/unfence path; correct, rather than delete, the
+   revoked-publication control. Do not invent an account-scoped startup caller.
+2. **C2 / F2 — retained resume is background, failure-contained work.** A failed
+   retained task records durable Meeting failure while lifespan serves; startup
+   must not await a long re-decode.
+3. **C3 / F3 — reclaim terminal-owned retained input.** Refusal and URL
+   cancellation remove only that Meeting's directory, after durable terminal
+   truth.
+4. **C4 / F5 — close the post-download active/no-task window.** A retained-source
+   record failure durably fails the URL Meeting with a visible reason.
+5. **C6 / F8 — product-test batch uniqueness.** Collected resume and mid-window
+   crash controls prove unique saved segments and no replay duplicate.
+6. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
+   adjust only the neighbouring time boundary, or document an intentional overlap;
+   never alter scored text.
+7. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
+   solo-lane vocabulary, not `SYSTEM_LADDER_REFERENCE`; its falsifier must be
+   testable or removed with explanation.
+
+## Iteration 1 outcome
+
+- **C0 — context repair (complete):** this file said Run B had no remaining
+  candidates although the active Run C PRD names C1-C7. The ranked queue above
+  comes from that PRD and the Run C opening progress entry. No product code or
+  acceptance claim changed.
+- **Next:** C1. Locate every `resume_retained_work` and
+  `release_settled_account_fence` caller, then make the existing revoked-account
+  publication control assert no resume, no unfence, and no new transcript.
 
 ## Non-candidates
 

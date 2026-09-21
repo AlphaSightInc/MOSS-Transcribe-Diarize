@@ -112,3 +112,11 @@ surface (revoke resurrecting work and unfencing late results; a retained resume 
 cancelled retained work kept forever) plus four smaller gaps. Offline: zero decoder requests.
 
 [loop 20260921-064730-45615] start budget=10 agent=codex branch=round4/ralph-b
+
+## Iteration 1 - Run C context repair
+- Target: Off-list C0 — `context.md` contradicted the active Run C PRD by declaring Run B complete with no candidates; repairing the queue is required before safe work selection.
+- Files: `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: `git status --short && git branch --show-current && git rev-parse --short HEAD` -> clean tree, `round4/ralph-b`, `6a162aeb`; `git diff --check` -> clean.
+- Evidence: active `scripts/ralph-afk/prd.md` C1-C7; Run C opening entry above; corrected ranked queue in `context.md`.
+- Learned: the prior context was deliberately useful Run-B evidence but stale operational state; C1 is the next safety-critical product change.
+- Next: trace revoke's retained-resume/fence-release callers, correct its violating publication control, and preserve no live resume.
