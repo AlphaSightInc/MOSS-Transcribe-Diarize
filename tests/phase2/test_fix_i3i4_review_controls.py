@@ -181,14 +181,14 @@ def test_t2_operator_interrupt_is_refused_while_a_reserved_owner_is_being_valida
         await store.close()
         entered = threading.Event()
         release = threading.Event()
-        original = FileMeetingTasks._verified_retained_input
+        original = FileMeetingTasks._verified_retained_resume_source
 
         def held(self, h, d):
             entered.set()
             release.wait(5)
             return original(self, h, d)
 
-        FileMeetingTasks._verified_retained_input = held
+        FileMeetingTasks._verified_retained_resume_source = held
         try:
             decoder.block_window = 2
             app = _app(tmp_path, decoder)
@@ -208,7 +208,7 @@ def test_t2_operator_interrupt_is_refused_while_a_reserved_owner_is_being_valida
             return outcome_during
         finally:
             release.set()
-            FileMeetingTasks._verified_retained_input = original
+            FileMeetingTasks._verified_retained_resume_source = original
 
     outcome = asyncio.run(exercise())
     assert outcome == "honoured", outcome
@@ -251,7 +251,7 @@ def test_t3_one_owner_persistent_outcome_write_failure_orphans_later_reserved_ow
             validated.append(handle.meeting_id)
             return None
 
-        tasks._verified_retained_input = validation.__get__(tasks)
+        tasks._verified_retained_resume_source = validation.__get__(tasks)
 
         class Store:
             async def active_file_meetings(self):
@@ -569,14 +569,14 @@ def test_account_revoke_does_not_reclaim_a_live_reserved_validation(
         decoder.calls.clear()
         entered = threading.Event()
         release = threading.Event()
-        original = FileMeetingTasks._verified_retained_input
+        original = FileMeetingTasks._verified_retained_resume_source
 
         def held(self, target, directory):
             entered.set()
             release.wait()
             return original(self, target, directory)
 
-        FileMeetingTasks._verified_retained_input = held
+        FileMeetingTasks._verified_retained_resume_source = held
         try:
             app = _app(tmp_path, decoder)
             async with app.router.lifespan_context(app):
@@ -591,6 +591,6 @@ def test_account_revoke_does_not_reclaim_a_live_reserved_validation(
                 assert not owner_dir.exists()
         finally:
             release.set()
-            FileMeetingTasks._verified_retained_input = original
+            FileMeetingTasks._verified_retained_resume_source = original
 
     asyncio.run(exercise())

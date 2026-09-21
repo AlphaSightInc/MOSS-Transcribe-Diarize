@@ -943,7 +943,7 @@ def test_retained_reservation_readiness_excludes_validation_cost(
             time.sleep(validation_seconds)
             finished.set()
 
-        tasks._verified_retained_input = slow_validation  # type: ignore[method-assign]
+        tasks._verified_retained_resume_source = slow_validation  # type: ignore[method-assign]
 
         class Store:
             async def active_file_meetings(self):
@@ -978,7 +978,7 @@ def test_retained_reservation_set_is_exact_before_background_validation(
         def hanging_validation(*_args: object) -> None:
             release.wait(1)
 
-        tasks._verified_retained_input = hanging_validation  # type: ignore[method-assign]
+        tasks._verified_retained_resume_source = hanging_validation  # type: ignore[method-assign]
 
         class Store:
             async def active_file_meetings(self):

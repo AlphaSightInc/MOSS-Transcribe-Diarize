@@ -28,12 +28,6 @@ from moss_transcribe_diarize.app.windowed_transcription import (
 )
 
 
-REVIEW_XFAIL = pytest.mark.xfail(
-    strict=True,
-    reason="lead review 9de2d9fc: retained resume binding not implemented",
-)
-
-
 def _wav(*, silent: bool) -> bytes:
     output = io.BytesIO()
     with wave.open(output, "wb") as audio:
@@ -194,7 +188,6 @@ async def _await_claim(tasks: FileMeetingTasks, handle: object) -> None:
     await tasks._tasks[handle.meeting_id].task
 
 
-@REVIEW_XFAIL
 def test_single_window_unbound_restart_prepares_mix_and_matches_fresh(tmp_path: Path) -> None:
     async def exercise() -> None:
         store = await Phase2Store.open(tmp_path / "state.sqlite3")
@@ -232,7 +225,6 @@ def test_single_window_unbound_restart_prepares_mix_and_matches_fresh(tmp_path: 
     asyncio.run(exercise())
 
 
-@REVIEW_XFAIL
 def test_single_window_silent_unbound_restart_never_calls_decoder(tmp_path: Path) -> None:
     async def exercise() -> None:
         store = await Phase2Store.open(tmp_path / "state.sqlite3")
@@ -258,7 +250,6 @@ def test_single_window_silent_unbound_restart_never_calls_decoder(tmp_path: Path
     asyncio.run(exercise())
 
 
-@REVIEW_XFAIL
 def test_multi_window_empty_checkpoint_restart_matches_fresh(tmp_path: Path) -> None:
     async def exercise() -> None:
         store = await Phase2Store.open(tmp_path / "state.sqlite3")
@@ -341,7 +332,6 @@ def test_input_bound_restart_reuses_input_and_keeps_audio_unavailable(tmp_path: 
     asyncio.run(exercise())
 
 
-@REVIEW_XFAIL
 def test_retained_validation_uses_short_exponential_backoff(tmp_path: Path, monkeypatch) -> None:
     async def exercise() -> None:
         tasks = FileMeetingTasks(object(), tmp_path / "file-work")
@@ -366,7 +356,6 @@ def test_retained_validation_uses_short_exponential_backoff(tmp_path: Path, monk
     asyncio.run(exercise())
 
 
-@REVIEW_XFAIL
 def test_bound_source_is_hashed_once_by_resolver_plus_once_by_validator(
     tmp_path: Path,
     monkeypatch,
@@ -393,7 +382,6 @@ def test_bound_source_is_hashed_once_by_resolver_plus_once_by_validator(
     assert binary_reads == 2
 
 
-@REVIEW_XFAIL
 def test_registration_failure_reports_general_restart_failure(tmp_path: Path) -> None:
     async def exercise() -> None:
         decoder = _RecordingDecoder()

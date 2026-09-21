@@ -34,7 +34,7 @@ RETAINED_FILE_WORK_ROOT_NAME = "file-retained"
 RETAINED_FILE_WORK_CONTRACT_VERSION = 1
 RETAINED_VALIDATION_CONCURRENCY = 4
 RETAINED_VALIDATION_ATTEMPTS = 3
-RETAINED_VALIDATION_BACKOFF_SECONDS = 0.05
+RETAINED_VALIDATION_BACKOFF_SECONDS = 0.5
 
 
 class FileProcessingError(RuntimeError):
@@ -145,6 +145,16 @@ class _RetainedClaim:
             raise RuntimeError("Retained File claim was already consumed.")
         self.consumed = True
         return self.owner._complete_retained_claim(self).__await__()
+
+
+@dataclass(frozen=True, slots=True)
+class _RetainedResumeSource:
+    """Validated source identity carried intact into retained execution."""
+
+    input_path: Path
+    source: Path
+    checkpoint_bound: bool
+    mix_path: Path | None
 
 
 class FileMeetingTasks:
@@ -264,7 +274,9 @@ class FileMeetingTasks:
                         "Retained File validation error; retrying: %s",
                         handle.meeting_id,
                     )
-                    await asyncio.sleep(RETAINED_VALIDATION_BACKOFF_SECONDS)
+                    await asyncio.sleep(
+                        RETAINED_VALIDATION_BACKOFF_SECONDS * (2**attempt)
+                    )
                     continue
                 break
             if reservation.interrupted:
@@ -278,7 +290,13 @@ class FileMeetingTasks:
                 return False
             started = asyncio.Event()
             task = asyncio.create_task(
-                self._run(handle, validated_source, started, resumed=True)
+                self._run(
+                    handle,
+                    validated_source.source,
+                    started,
+                    resumed=True,
+                    resume_source=validated_source,
+                )
             )
             self._register(
                 handle,
@@ -405,7 +423,7 @@ class FileMeetingTasks:
         recorded = await self._mark_failed(
             handle,
             "resume_failed",
-            "Retained File restart validation could not complete.",
+            "Retained File restart could not finish.",
         )
         if recorded:
             self._remove_terminal_work_dir(reservation.owner_dir)
@@ -805,6 +823,14 @@ class FileMeetingTasks:
             retained_lock.close()
 
     def _verified_retained_input(self, handle: Any, owner_dir: Path) -> Path | None:
+        verified = self._verified_retained_resume_source(handle, owner_dir)
+        return None if verified is None else verified.input_path
+
+    def _verified_retained_resume_source(
+        self,
+        handle: Any,
+        owner_dir: Path,
+    ) -> _RetainedResumeSource | None:
         try:
             manifest = json.loads((owner_dir / "owner.json").read_text(encoding="utf-8"))
         except json.JSONDecodeError:
@@ -839,41 +865,30 @@ class FileMeetingTasks:
         resume_source = self._retained_resume_source(input_path, checkpoint_dir)
         if resume_source is None:
             return None
-        verdict = self._checkpoint_verdict(resume_source, checkpoint_dir)
+        verdict = self._checkpoint_verdict(resume_source.source, checkpoint_dir)
         if getattr(verdict, "status", None) == "error":
             raise _RetainedValidationError(str(verdict.reason))
         if not bool(getattr(verdict, "accepted", False)):
             return None
-        return input_path
-
-    def _verified_retained_resume_source(
-        self,
-        handle: Any,
-        owner_dir: Path,
-    ) -> Path | None:
-        input_path = self._verified_retained_input(handle, owner_dir)
-        if input_path is None:
-            return None
-        resume_source = self._retained_resume_source(
-            input_path,
-            owner_dir / "checkpoint",
-        )
-        if resume_source is None:
-            raise _RetainedValidationError("validated checkpoint source disappeared")
         return resume_source
 
     def _retained_resume_source(
         self,
         input_path: Path,
         checkpoint_dir: Path,
-    ) -> Path | None:
+    ) -> _RetainedResumeSource | None:
         """Resolve the retained file named by an existing checkpoint manifest."""
 
         manifest_path = checkpoint_dir / "manifest.json"
         if not manifest_path.exists():
             if any((checkpoint_dir / "windows").glob("w*.json")):
                 return None
-            return input_path
+            return _RetainedResumeSource(
+                input_path=input_path,
+                source=input_path,
+                checkpoint_bound=False,
+                mix_path=None,
+            )
         try:
             checkpoint_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
@@ -895,7 +910,12 @@ class FileMeetingTasks:
             except OSError as exc:
                 raise _RetainedValidationError("checkpoint source unavailable") from exc
             if digest.hexdigest() == source_sha256:
-                return candidate
+                return _RetainedResumeSource(
+                    input_path=input_path,
+                    source=candidate,
+                    checkpoint_bound=True,
+                    mix_path=candidate if candidate == mix_path else None,
+                )
         return None
 
     def _checkpoint_is_valid(self, input_path: Path, checkpoint_dir: Path) -> bool:
@@ -990,6 +1010,7 @@ class FileMeetingTasks:
         started: asyncio.Event,
         *,
         resumed: bool = False,
+        resume_source: _RetainedResumeSource | None = None,
     ) -> None:
         loop = asyncio.get_running_loop()
         options = self._inference_options()
@@ -1008,7 +1029,7 @@ class FileMeetingTasks:
                 self._transcribe_from_one_mix,
                 input_path,
                 options,
-                reuse_input=resumed,
+                resume_source=resume_source,
             )
         )
         if self._inference_scheduler is None:
@@ -1050,7 +1071,7 @@ class FileMeetingTasks:
         input_path: Path,
         options: dict[str, object],
         *,
-        reuse_input: bool = False,
+        resume_source: _RetainedResumeSource | None = None,
     ) -> tuple[Any, Path | None, list[str]]:
         notices: list[str] = []
         transcribe_options = {
@@ -1061,11 +1082,12 @@ class FileMeetingTasks:
                 else None
             ),
         }
-        mix_path: Path | None = (
-            input_path if reuse_input and input_path.name == "transcription-mix.wav" else None
+        checkpoint_bound = bool(
+            resume_source is not None and resume_source.checkpoint_bound
         )
+        mix_path = resume_source.mix_path if checkpoint_bound else None
         mix_failed = False
-        if self._audio_archive is not None and not reuse_input:
+        if self._audio_archive is not None and not checkpoint_bound:
             candidate = input_path.parent / "transcription-mix.wav"
             try:
                 mix_path = self._audio_archive.prepare_mix(input_path, candidate, notices=notices)

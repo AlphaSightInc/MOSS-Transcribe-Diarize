@@ -34,13 +34,19 @@ def test_s1_stalled_validation_does_not_starve_later_retained_owners(
         second_validated = threading.Event()
         second_resumed = asyncio.Event()
 
-        def validate(handle: object, owner_dir: Path) -> Path:
+        def validate(handle: object, owner_dir: Path) -> object:
             if handle.meeting_id == "owner-1":  # type: ignore[attr-defined]
                 first_entered.set()
                 release_first.wait()
             else:
                 second_validated.set()
-            return owner_dir / "input.wav"
+            source = owner_dir / "input.wav"
+            return SimpleNamespace(
+                input_path=source,
+                source=source,
+                checkpoint_bound=False,
+                mix_path=None,
+            )
 
         async def run(
             handle: object,
@@ -48,13 +54,15 @@ def test_s1_stalled_validation_does_not_starve_later_retained_owners(
             started: asyncio.Event,
             *,
             resumed: bool,
+            resume_source: object,
         ) -> None:
             assert resumed is True
+            assert resume_source is not None
             started.set()
             if handle.meeting_id == "owner-2":  # type: ignore[attr-defined]
                 second_resumed.set()
 
-        tasks._verified_retained_input = validate  # type: ignore[method-assign]
+        tasks._verified_retained_resume_source = validate  # type: ignore[method-assign]
         tasks._run = run  # type: ignore[method-assign]
 
         class Store:
