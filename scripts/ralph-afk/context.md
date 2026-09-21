@@ -141,6 +141,13 @@
 - 2026-09-21 iteration 9 completed **F2**: `test_lane_word_oracle` keeps its independent literal denominator and now
   expects **157**, the production tokenizer's 104 Bill + 53 Keyu words from D27's corrected rows. Its focused suite
   passed **10/10**; full final gates and the self-contained verifier remain open.
+- 2026-09-21 iteration 10 completed the final verification candidate. The full offline backend gate reports
+  **2,152 passed / 0 failed / 5 skipped / 2 xfailed / 37 subtests** in 169.56 s; frontend is **312/312** and
+  typecheck is clean. `docs/verify/round4-run-b/VERIFY.md` records the six ordinary controls, the two intentional
+  Jamie xfails, reproduction commands, falsifiers, S17 **UNMEASURED**, and
+  `capacity_2x1800: REQUIRED-NOT-RUN`. `phase2.py`'s active-meeting assertion is byte-identical to `71f23c0c`;
+  only the Jamie decorators still use `strict=True`; no `frontend/` source changed, so the conditional frontend
+  build/asset-parity gate is inapplicable.
 - This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
   **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
@@ -161,9 +168,9 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-1. **Re-run full backend/frontend/typecheck/build gates and add `docs/verify/round4-run-b/VERIFY.md`.** It must state
-   final counts, the six converted controls, the two remaining Jamie xfails, falsifiers, S17 `UNMEASURED`, and
-   `capacity_2x1800: REQUIRED-NOT-RUN`.
+- **None.** The acceptance bar is met by the recorded final gates and
+  `docs/verify/round4-run-b/VERIFY.md`; the decoder-backed S17 confirmation and 2x1800 capacity confirmation remain
+  explicitly outside this offline run's accepted scope.
 
 ## Non-candidates
 
