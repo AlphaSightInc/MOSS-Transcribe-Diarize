@@ -70,10 +70,13 @@
     the existing durable `storage_failed` path and terminal-owner cleanup. The product control forces that precise
     write failure and proves a visible `failed/storage_failed` Meeting, no decoder call, normal task return, and a
     preserved sibling owner directory.
-  - **F7 → C5.** `SYSTEM_LADDER_REFERENCE` (`tests/e2e/verify_demo_lanes.py:27`) has one consumer
-    (`tests/test_round4_overlap_diagnosis.py:28`); the deployed ladder (`tools/qualify/run.py:583-596` → the external
-    `ir_lane_ladder.py`) scores solo-lane vocabulary retention and reads no reference row, so VERIFY.md's claim and its
-    falsifier 3 are not testable as written.
+  - **F7 → C5 (closed, iteration 9).** `SYSTEM_LADDER_REFERENCE`
+    (`tests/e2e/verify_demo_lanes.py:27`) has one consumer
+    (`tests/test_round4_overlap_diagnosis.py:28`): the offline bounded-audio diagnostic.
+    The deployed ladder (`tools/qualify/run.py:583-597` → external `ir_lane_ladder.py`)
+    reads no reference row; it records finalized cases and non-accuracy solo-lane
+    vocabulary retention. The Run-B verifier now says so and names the diagnostic's
+    reachable fixture-bound falsifier rather than an impossible scoring claim.
   - **F8 → C6.** The "101/101 unique saved segments / no duplicate after the replayed window" property is asserted only
     inside `prototypes/batch-startup/prototype.py`, which pytest never runs; the product controls assert only the
     delegate-call list and `transcript_version == 1` (`tests/phase2/test_retained_file_claim.py:235-237`).
@@ -115,9 +118,10 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 The preceding Run-B-completion snapshot is stale. Run C's PRD and opening
 progress entry are authoritative for the following ranked work:
 
-1. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
-   solo-lane vocabulary, not `SYSTEM_LADDER_REFERENCE`; its falsifier must be
-   testable or removed with explanation.
+1. **Final certification and Run-C verifier.** C1--C7 are closed. Write
+   `docs/verify/round4-run-c/VERIFY.md`, then execute the PRD's exact backend,
+   frontend, and typecheck gates and record their counts. This is evidence handoff,
+   not another product change.
 
 ## Iteration 1 outcome
 
@@ -208,6 +212,16 @@ progress entry are authoritative for the following ranked work:
   control was RED on the old corpus and is green alongside all D27 controls.
 - **Next:** C5 — make the Run-B verifier state what the deployed ladder actually
   scores, then make its remaining falsifier executable or remove it with cause.
+
+## Iteration 9 outcome
+
+- **C5 / F7 (complete):** the Run-B verifier now distinguishes the 29.25-second
+  acceptance population from the standalone 24-second fixture. The latter belongs
+  only to `test_r4_6_ladder_reference_is_bounded_by_captured_audio`; the deployed
+  ladder reads no reference row and reports finalization plus non-accuracy
+  unique-vocabulary retention. Its third falsifier now names the fixture's reachable
+  captured-audio bound instead of an impossible ladder-score comparison.
+- **Next:** write the Run-C verifier and run the required final offline gates.
 
 ## Non-candidates
 

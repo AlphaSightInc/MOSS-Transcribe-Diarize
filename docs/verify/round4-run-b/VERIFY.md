@@ -20,11 +20,14 @@ qualify 30-minute capacity, repair historical S17, or make a decoder request.
   same partition. The shared-partition control matches Adam at **0.909091**; the
   different-voice control abstains at **0.017033**; an isolated short partition stays
   `S00`. No identity threshold, duration floor, or neighbor assignment changed.
-- **F3 — Correct acceptance population.** D27's corrected Bill/Keyu references make
-  the acceptance row 29.25 seconds and the ladder row 24 seconds. Replaying the
-  retained 29-second publication still gives exactly three additions (`you`, `know`,
-  repeated `to`) and no substitutions or omissions. The pre-terminal arms remain
-  **UNMEASURED**.
+- **F3 — Correct acceptance and ladder inputs.** D27's corrected Bill/Keyu references
+  make the acceptance row 29.25 seconds. The separate 24-second
+  `SYSTEM_LADDER_REFERENCE` is an input only to the offline bounded-audio diagnostic;
+  it is not read by the deployed ladder. That ladder records six finalized cases and
+  separate solo-lane unique-vocabulary retention, which is explicitly not transcript
+  accuracy. Replaying the retained 29-second publication still gives exactly three
+  additions (`you`, `know`, repeated `to`) and no substitutions or omissions. The
+  pre-terminal arms remain **UNMEASURED**.
 - **F4 — Explicit limits.** Historical S17 remains **UNMEASURED** because its raw
   terminal-local decoder labels were not retained. The deferred capacity row remains
   `capacity_2x1800: REQUIRED-NOT-RUN`. This run used no decoder, tunnel, proxy, GPU,
@@ -88,8 +91,8 @@ This PASS is false if any reachable result shows:
    sub-floor partition resolves instead of remaining `S00`, or a partition receives
    more than one album match.
 3. The corrected replay hides one of the three decoder additions, changes an
-   uncorrected decoder error, scores the 24-second ladder against the 29.25-second
-   population, or claims a pre-terminal arm is measured.
+   uncorrected decoder error, the standalone 24-second fixture no longer fits every
+   captured ladder recording, or a pre-terminal arm is claimed measured.
 4. More or fewer than the six named controls converted, either Jamie control passes,
    the unchanged active-meeting assertion differs from base, a final gate fails, or
    the capacity row disappears from a later summary.

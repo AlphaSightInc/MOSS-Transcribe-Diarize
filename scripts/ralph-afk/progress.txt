@@ -176,3 +176,11 @@ cancelled retained work kept forever) plus four smaller gaps. Offline: zero deco
 - Evidence: retained production transcripts in `evidence/live-policy-sweep-20260825/moss-recovered/pass-A/interview_bill_ackman_60s/` locate Lex at 29.63 s (the alternate normalized transcript at 29.55 s); `evidence/round4/overlap/prior-full-audio-post-stop.jsonl:9` ends Bill's `the book` at 29.25 s.
 - Learned: 29.25 is a conservative non-overlapping coarse boundary: it retains all original scored text and precedes both independent observed starts. The new adjacent-record invariant prevents this source shape from returning.
 - Next: C5 — correct `docs/verify/round4-run-b/VERIFY.md` so its ladder claim and falsifier describe a reachable deployed measurement.
+
+## Iteration 9 - honest ladder verifier
+- Target: C5 / F7 — state that the standalone 24-second fixture is an offline bounded-audio diagnostic input, not a deployed ladder scoring population.
+- Files: `docs/verify/round4-run-b/VERIFY.md`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider tests/test_round4_overlap_diagnosis.py` -> **4 passed**; source inventory confirms `SYSTEM_LADDER_REFERENCE` has one consumer, the bounded-audio diagnostic, while `tools/qualify/run.py` documents finalization-only PASS and non-accuracy vocabulary retention.
+- Evidence: `tests/test_round4_overlap_diagnosis.py::test_r4_6_ladder_reference_is_bounded_by_captured_audio`; `tools/qualify/run.py:583-597`.
+- Learned: the 24-second fixture establishes that the diagnostic slice fits each captured ladder audio. It does not score the deployed ladder, which consumes no reference row; the previous falsifier described an unreachable operation.
+- Next: write `docs/verify/round4-run-c/VERIFY.md`, then run and record the exact final backend, frontend, and typecheck gates.
