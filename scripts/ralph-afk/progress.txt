@@ -192,3 +192,5 @@ cancelled retained work kept forever) plus four smaller gaps. Offline: zero deco
 - Evidence: `docs/verify/round4-run-c/VERIFY.md`; C1--C7 controls in `tests/phase2/test_retained_file_claim.py` and `tests/test_round4_overlap_diagnosis.py`; `tools/qualify/run.py:583-597` for ladder PASS semantics.
 - Learned: the full offline suite includes the six new lifecycle/product controls; its current pass count is 2,158, above the PRD floor. The standalone 24-second fixture is diagnostic-only; the deployed ladder still does not score it. S17 and `capacity_2x1800` remain unmeasured/deferred.
 - Next: acceptance bar met; lead may integrate. Do not run decoder-backed S17 or 2x1800 capacity work under this offline mandate.
+
+[loop 20260921-064730-45615] complete at iteration 10
