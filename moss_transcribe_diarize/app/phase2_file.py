@@ -1174,7 +1174,8 @@ class FileMeetingTasks:
             return
 
         try:
-            await handle.commit_transcript(document)
+            if not resumed or (await handle.snapshot()).transcript != document:
+                await handle.commit_transcript(document)
         except AccountRevoked:
             # Revocation/interruption is already the durable terminal authority. A late result
             # must disappear rather than reconstructing a handle from its Meeting identifier.
