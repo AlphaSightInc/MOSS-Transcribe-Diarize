@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import fcntl
+import hashlib
 import json
 import logging
 import secrets
@@ -31,6 +32,9 @@ UPLOAD_CAPACITY_RESERVE_BYTES = 512 * 1024 * 1024
 UPLOAD_CHUNK_BYTES = 1024 * 1024
 RETAINED_FILE_WORK_ROOT_NAME = "file-retained"
 RETAINED_FILE_WORK_CONTRACT_VERSION = 1
+RETAINED_VALIDATION_CONCURRENCY = 4
+RETAINED_VALIDATION_ATTEMPTS = 3
+RETAINED_VALIDATION_BACKOFF_SECONDS = 0.05
 
 
 class FileProcessingError(RuntimeError):
@@ -54,6 +58,10 @@ class FileUploadTimeout(TimeoutError):
 
 class RetainedFileWorkBusy(RuntimeError):
     """Another startup already owns this retained File Meeting."""
+
+
+class _RetainedValidationError(RuntimeError):
+    """Checkpoint validation could not complete; it did not refuse the contract."""
 
 
 def admit_file_upload(request: Any, work_root: Path) -> int:
@@ -112,6 +120,9 @@ class _RetainedReservation:
     handle: Any
     owner_dir: Path
     retained_lock: Any
+    interrupted: bool = False
+    settlement: asyncio.Task[tuple[str, ...]] | None = None
+    resumed: bool = True
 
 
 @dataclass(slots=True)
@@ -170,6 +181,7 @@ class FileMeetingTasks:
         self._audio_archive = audio_archive
         self._inference_scheduler = inference_scheduler
         self._tasks: dict[str, _OwnedFileTask] = {}
+        self._reservations: dict[str, _RetainedReservation] = {}
         self._fenced_owner_keys: set[tuple[str, int]] = set()
         self._fenced_meeting_ids: set[str] = set()
         self._refused_retained_work: dict[str, tuple[Any, Path]] = {}
@@ -218,10 +230,10 @@ class FileMeetingTasks:
         if not (owner_dir / "owner.json").is_file():
             self._release_retained_lock(retained_lock)
             return _RetainedClaim(self, None)
-        return _RetainedClaim(
-            self,
-            _RetainedReservation(handle, owner_dir, retained_lock),
-        )
+        reservation = _RetainedReservation(handle, owner_dir, retained_lock)
+        self._reservations[handle.meeting_id] = reservation
+        LOGGER.info("Retained File owner reserved: %s", handle.meeting_id)
+        return _RetainedClaim(self, reservation)
 
     async def _complete_retained_claim(self, claim: _RetainedClaim) -> bool:
         reservation = claim.reservation
@@ -229,12 +241,34 @@ class FileMeetingTasks:
             return False
         handle = reservation.handle
         try:
-            input_path = await asyncio.to_thread(
-                self._verified_retained_input,
-                handle,
-                reservation.owner_dir,
-            )
-            if input_path is None:
+            validated_source = None
+            for attempt in range(RETAINED_VALIDATION_ATTEMPTS):
+                LOGGER.info("Retained File validation started: %s", handle.meeting_id)
+                validation = asyncio.create_task(
+                    asyncio.to_thread(
+                        self._verified_retained_resume_source,
+                        handle,
+                        reservation.owner_dir,
+                    )
+                )
+                try:
+                    validated_source = await asyncio.shield(validation)
+                except asyncio.CancelledError:
+                    await asyncio.shield(validation)
+                    raise
+                except Exception as exc:
+                    if attempt + 1 == RETAINED_VALIDATION_ATTEMPTS:
+                        raise _RetainedValidationError(str(exc)) from exc
+                    LOGGER.warning(
+                        "Retained File validation error; retrying: %s",
+                        handle.meeting_id,
+                    )
+                    await asyncio.sleep(RETAINED_VALIDATION_BACKOFF_SECONDS)
+                    continue
+                break
+            if reservation.interrupted:
+                return False
+            if validated_source is None:
                 if not claim.background:
                     self._refused_retained_work[handle.meeting_id] = (
                         handle,
@@ -242,18 +276,22 @@ class FileMeetingTasks:
                     )
                 return False
             started = asyncio.Event()
-            task = asyncio.create_task(self._run(handle, input_path, started, resumed=True))
+            task = asyncio.create_task(
+                self._run(handle, validated_source, started, resumed=True)
+            )
             self._register(
                 handle,
                 task,
                 retained_lock=reservation.retained_lock,
                 resumed=True,
             )
+            self._reservations.pop(handle.meeting_id, None)
             reservation.retained_lock = None
             await started.wait()
             return True
         finally:
             if not claim.background:
+                self._reservations.pop(handle.meeting_id, None)
                 self._release_retained_lock(reservation.retained_lock)
                 reservation.retained_lock = None
 
@@ -282,28 +320,63 @@ class FileMeetingTasks:
         return claimed
 
     async def _resume_retained_claims(self, claims: tuple[Any, ...]) -> None:
+        bound = asyncio.Semaphore(RETAINED_VALIDATION_CONCURRENCY)
+        tasks = tuple(
+            asyncio.create_task(self._resume_one_retained_claim(claim, bound))
+            for claim in claims
+        )
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if isinstance(result, BaseException) and not isinstance(
+                result, asyncio.CancelledError
+            ):
+                LOGGER.error("Retained File startup owner remained unsettled.")
+
+    async def _resume_one_retained_claim(
+        self,
+        claim: Any,
+        bound: asyncio.Semaphore,
+    ) -> None:
+        reservation = claim.reservation if isinstance(claim, _RetainedClaim) else None
         try:
-            for claim in claims:
-                try:
-                    accepted = await claim
-                    if (
-                        isinstance(claim, _RetainedClaim)
-                        and claim.reservation is not None
-                        and not accepted
-                    ):
-                        await self._interrupt_refused_reservation(claim.reservation)
-                except asyncio.CancelledError:
-                    raise
-                except Exception:
-                    if isinstance(claim, _RetainedClaim) and claim.reservation is not None:
-                        await self._fail_retained_reservation(claim.reservation)
-                    else:
-                        LOGGER.error("Retained File startup claim failed.")
+            async with bound:
+                accepted = await claim
+            if reservation is None:
+                return
+            if reservation.interrupted:
+                await self._remove_settled_reservation(reservation)
+            elif not accepted:
+                await self._interrupt_refused_reservation(reservation)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            if reservation is None:
+                LOGGER.error("Retained File startup claim failed.")
+                return
+            try:
+                await self._fail_retained_reservation(reservation)
+            except Exception:
+                LOGGER.error(
+                    "Retained File startup owner remained unsettled: %s",
+                    reservation.handle.meeting_id,
+                )
         finally:
-            for claim in claims:
-                if isinstance(claim, _RetainedClaim) and claim.reservation is not None:
-                    self._release_retained_lock(claim.reservation.retained_lock)
-                    claim.reservation.retained_lock = None
+            if reservation is not None and reservation.retained_lock is not None:
+                self._reservations.pop(reservation.handle.meeting_id, None)
+                self._release_retained_lock(reservation.retained_lock)
+                reservation.retained_lock = None
+                LOGGER.info(
+                    "Retained File reservation settled: %s",
+                    reservation.handle.meeting_id,
+                )
+
+    async def _remove_settled_reservation(
+        self,
+        reservation: _RetainedReservation,
+    ) -> None:
+        if (await reservation.handle.snapshot()).status == "active":
+            return
+        self._remove_terminal_work_dir(reservation.owner_dir)
 
     async def _interrupt_refused_reservation(
         self,
@@ -322,10 +395,13 @@ class FileMeetingTasks:
         reservation: _RetainedReservation,
     ) -> None:
         handle = reservation.handle
+        if self._audio_archive is None:
+            raise RuntimeError("File Meeting audio archive is unavailable.")
+        await handle.recover_interrupted_file_audio(self._audio_archive)
         recorded = await self._mark_failed(
             handle,
             "resume_failed",
-            "Retained File restart could not finish.",
+            "Retained File restart validation could not complete.",
         )
         if recorded:
             self._remove_terminal_work_dir(reservation.owner_dir)
@@ -352,6 +428,8 @@ class FileMeetingTasks:
         """Remove only Meeting directories named by durable terminal File owners."""
 
         for account_id, meeting_id in owners:
+            if meeting_id in self._reservations:
+                continue
             self._remove_retained_work_dir(self._retained_root / account_id / meeting_id)
 
     def retained_work_owners(self) -> tuple[tuple[str, str], ...]:
@@ -454,11 +532,15 @@ class FileMeetingTasks:
     def operator_snapshot(self) -> dict[str, str]:
         """Return only process-owned File phases; Meeting ownership stays in SQLite."""
 
-        return {
+        snapshot = {
             meeting_id: entry.phase
             for meeting_id, entry in self._tasks.items()
             if entry.phase in {"queued", "running"}
         }
+        snapshot.update(
+            (meeting_id, "validating") for meeting_id in self._reservations
+        )
+        return snapshot
 
     async def interrupt_account(self, owner_key: tuple[str, int]) -> tuple[str, ...]:
         """Quiesce this Account generation, then durably interrupt its active File rows."""
@@ -466,33 +548,55 @@ class FileMeetingTasks:
         entries = self.fence_account(owner_key)
         return await self.settle_fenced(entries)
 
-    def fence_account(self, owner_key: tuple[str, int]) -> tuple[_OwnedFileTask, ...]:
+    def fence_account(
+        self,
+        owner_key: tuple[str, int],
+    ) -> tuple[_OwnedFileTask | _RetainedReservation, ...]:
         """Reject every later result before waiting for any one task."""
 
         self._fenced_owner_keys.add(owner_key)
-        entries = tuple(
+        entries: tuple[_OwnedFileTask | _RetainedReservation, ...] = tuple(
             entry
             for entry in self._tasks.values()
             if entry.handle.owner_key == owner_key
+        ) + tuple(
+            reservation
+            for reservation in self._reservations.values()
+            if reservation.handle.owner_key == owner_key
         )
         for entry in entries:
-            self._cancel_queued_inference(entry.handle.meeting_id)
-            entry.task.cancel()
+            if isinstance(entry, _RetainedReservation):
+                entry.interrupted = True
+            else:
+                self._cancel_queued_inference(entry.handle.meeting_id)
+                entry.task.cancel()
         return entries
 
-    def fence_meeting(self, meeting_id: str) -> _OwnedFileTask | None:
+    def fence_meeting(
+        self,
+        meeting_id: str,
+    ) -> _OwnedFileTask | _RetainedReservation | None:
         """Synchronously claim one active File task without fencing its Account peers."""
 
         entry = self._tasks.get(meeting_id)
         if entry is None:
-            return None
-        entry.interrupted_by_meeting = True
+            reservation = self._reservations.get(meeting_id)
+            if reservation is None:
+                return None
+            reservation.interrupted = True
+            entry = reservation
+        elif isinstance(entry, _OwnedFileTask):
+            entry.interrupted_by_meeting = True
         self._fenced_meeting_ids.add(meeting_id)
-        self._cancel_queued_inference(meeting_id)
-        entry.task.cancel()
+        if isinstance(entry, _OwnedFileTask):
+            self._cancel_queued_inference(meeting_id)
+            entry.task.cancel()
         return entry
 
-    async def settle_meeting(self, entry: _OwnedFileTask) -> bool:
+    async def settle_meeting(
+        self,
+        entry: _OwnedFileTask | _RetainedReservation,
+    ) -> bool:
         """Join one claimed task, then make only its durable Meeting interrupted."""
 
         if entry.settlement is None:
@@ -510,19 +614,22 @@ class FileMeetingTasks:
 
     async def settle_fenced(
         self,
-        entries: tuple[_OwnedFileTask, ...],
+        entries: tuple[_OwnedFileTask | _RetainedReservation, ...],
     ) -> tuple[str, ...]:
         return await self._settle_entries(entries)
 
     async def _settle_entries(
         self,
-        entries: tuple[_OwnedFileTask, ...],
+        entries: tuple[_OwnedFileTask | _RetainedReservation, ...],
         *,
         failure_code: str | None = None,
     ) -> tuple[str, ...]:
-        if entries:
+        running = tuple(
+            entry for entry in entries if isinstance(entry, _OwnedFileTask)
+        )
+        if running:
             results = await asyncio.gather(
-                *(entry.task for entry in entries),
+                *(entry.task for entry in running),
                 return_exceptions=True,
             )
             for result in results:
@@ -542,7 +649,13 @@ class FileMeetingTasks:
                 raise RuntimeError("File Meeting audio archive is unavailable.")
             await entry.handle.recover_interrupted_file_audio(self._audio_archive)
             await entry.handle.finish("interrupted", failure_code=failure_code)
-            self._remove_terminal_work_dir(self._owner_dir(entry.handle))
+            if isinstance(entry, _OwnedFileTask):
+                self._remove_terminal_work_dir(self._owner_dir(entry.handle))
+            else:
+                LOGGER.info(
+                    "Retained File reservation durably interrupted: %s",
+                    entry.handle.meeting_id,
+                )
             interrupted.append(entry.handle.meeting_id)
         return tuple(interrupted)
 
@@ -555,6 +668,9 @@ class FileMeetingTasks:
         resumed: bool = False,
     ) -> None:
         meeting_id = handle.meeting_id
+        if self._is_fenced(handle):
+            task.cancel()
+            raise RuntimeError("Fenced File Meeting cannot be registered.")
         self._tasks[meeting_id] = _OwnedFileTask(
             handle=handle,
             task=task,
@@ -671,8 +787,10 @@ class FileMeetingTasks:
     def _verified_retained_input(self, handle: Any, owner_dir: Path) -> Path | None:
         try:
             manifest = json.loads((owner_dir / "owner.json").read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
+        except json.JSONDecodeError:
             return None
+        except OSError as exc:
+            raise _RetainedValidationError("owner manifest unavailable") from exc
         if not isinstance(manifest, dict) or set(manifest) != {
             "account_id",
             "meeting_id",
@@ -698,23 +816,86 @@ class FileMeetingTasks:
         checkpoint_dir = owner_dir / "checkpoint"
         if not input_path.is_file() or not checkpoint_dir.is_dir():
             return None
-        if not self._checkpoint_is_valid(input_path, checkpoint_dir):
+        resume_source = self._retained_resume_source(input_path, checkpoint_dir)
+        if resume_source is None:
+            return None
+        verdict = self._checkpoint_verdict(resume_source, checkpoint_dir)
+        if getattr(verdict, "status", None) == "error":
+            raise _RetainedValidationError(str(verdict.reason))
+        if not bool(getattr(verdict, "accepted", False)):
             return None
         return input_path
+
+    def _verified_retained_resume_source(
+        self,
+        handle: Any,
+        owner_dir: Path,
+    ) -> Path | None:
+        input_path = self._verified_retained_input(handle, owner_dir)
+        if input_path is None:
+            return None
+        resume_source = self._retained_resume_source(
+            input_path,
+            owner_dir / "checkpoint",
+        )
+        if resume_source is None:
+            raise _RetainedValidationError("validated checkpoint source disappeared")
+        return resume_source
+
+    def _retained_resume_source(
+        self,
+        input_path: Path,
+        checkpoint_dir: Path,
+    ) -> Path | None:
+        """Resolve the retained file named by an existing checkpoint manifest."""
+
+        manifest_path = checkpoint_dir / "manifest.json"
+        if not manifest_path.exists():
+            if any((checkpoint_dir / "windows").glob("w*.json")):
+                return None
+            return input_path
+        try:
+            checkpoint_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
+        except OSError as exc:
+            raise _RetainedValidationError("checkpoint manifest unavailable") from exc
+        source_sha256 = checkpoint_manifest.get("source_sha256")
+        if not isinstance(source_sha256, str):
+            return None
+        mix_path = input_path.parent / "transcription-mix.wav"
+        for candidate in (mix_path, input_path):
+            if not candidate.is_file():
+                continue
+            try:
+                digest = hashlib.sha256()
+                with candidate.open("rb") as source:
+                    while chunk := source.read(1024 * 1024):
+                        digest.update(chunk)
+            except OSError as exc:
+                raise _RetainedValidationError("checkpoint source unavailable") from exc
+            if digest.hexdigest() == source_sha256:
+                return candidate
+        return None
 
     def _checkpoint_is_valid(self, input_path: Path, checkpoint_dir: Path) -> bool:
         """Reuse the deployed runner's checkpoint contract before dispatching a decoder."""
 
-        bind_resume_inference = getattr(self._runner, "bind_resume_inference", None)
+        verdict = self._checkpoint_verdict(input_path, checkpoint_dir)
+        return bool(getattr(verdict, "accepted", False))
+
+    def _checkpoint_verdict(self, input_path: Path, checkpoint_dir: Path) -> Any:
         validate_resume = getattr(self._runner, "validate_resume", None)
-        if not callable(bind_resume_inference) or not callable(validate_resume):
-            return False
+        if not callable(validate_resume):
+            return None
         try:
-            bind_resume_inference(self._inference_options())
-            verdict = validate_resume(input_path, checkpoint_dir)
-        except Exception:
-            return False
-        return bool(verdict.accepted)
+            return validate_resume(
+                input_path,
+                checkpoint_dir,
+                inference=self._inference_options(),
+            )
+        except Exception as exc:
+            raise _RetainedValidationError("checkpoint validator unavailable") from exc
 
     def _remove_retained_work_dir(self, owner_dir: Path) -> None:
         if owner_dir.parent.parent != self._retained_root:
@@ -793,7 +974,12 @@ class FileMeetingTasks:
                 ),
             )
         runner_task = asyncio.create_task(
-            asyncio.to_thread(self._transcribe_from_one_mix, input_path, options)
+            asyncio.to_thread(
+                self._transcribe_from_one_mix,
+                input_path,
+                options,
+                reuse_input=resumed,
+            )
         )
         if self._inference_scheduler is None:
             self._set_phase(handle.meeting_id, "running")
@@ -833,6 +1019,8 @@ class FileMeetingTasks:
         self,
         input_path: Path,
         options: dict[str, object],
+        *,
+        reuse_input: bool = False,
     ) -> tuple[Any, Path | None, list[str]]:
         notices: list[str] = []
         transcribe_options = {
@@ -843,9 +1031,11 @@ class FileMeetingTasks:
                 else None
             ),
         }
-        mix_path: Path | None = None
+        mix_path: Path | None = (
+            input_path if reuse_input and input_path.name == "transcription-mix.wav" else None
+        )
         mix_failed = False
-        if self._audio_archive is not None:
+        if self._audio_archive is not None and not reuse_input:
             candidate = input_path.parent / "transcription-mix.wav"
             try:
                 mix_path = self._audio_archive.prepare_mix(input_path, candidate, notices=notices)

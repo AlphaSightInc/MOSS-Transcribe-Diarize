@@ -2087,6 +2087,16 @@ def create_phase2_app(
                 claimed_file_meetings=claimed_file_meetings,
             )
             if file_tasks is not None:
+                terminal_after_fallback = await store.terminal_file_meeting_owners(
+                    retained_owners=file_tasks.retained_work_owners()
+                )
+                file_tasks.reclaim_terminal_retained_work(
+                    tuple(
+                        owner
+                        for owner in terminal_after_fallback
+                        if owner not in claimed_file_meetings
+                    )
+                )
                 await file_tasks.reclaim_refused_retained_work()
             from .phase2_summary import recover_summaries
             await recover_summaries(store)
