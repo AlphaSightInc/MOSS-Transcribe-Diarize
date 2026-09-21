@@ -5,7 +5,9 @@ from __future__ import annotations
 import asyncio
 import json
 import threading
+import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -174,7 +176,11 @@ async def _snapshot(app: object, handle: object) -> object:
 
 
 async def _await_file_task(app: object, meeting_id: str) -> None:
-    entry = app.state.phase2_file_tasks._tasks.get(meeting_id)  # type: ignore[attr-defined]
+    tasks = app.state.phase2_file_tasks  # type: ignore[attr-defined]
+    coordinator = tasks._retained_resume_task
+    if coordinator is not None:
+        await coordinator
+    entry = tasks._tasks.get(meeting_id)
     if entry is not None:
         await entry.task
 
@@ -890,5 +896,84 @@ def test_lifespan_refuses_a_competing_retained_work_owner(tmp_path: Path) -> Non
             assert not owner_dir.exists()
         finally:
             await first_context.__aexit__(None, None, None)
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("owners", [1, 10, 120])
+@pytest.mark.parametrize("validation_seconds", [0.003, 0.300])
+def test_retained_reservation_readiness_excludes_validation_cost(
+    tmp_path: Path,
+    owners: int,
+    validation_seconds: float,
+) -> None:
+    """I3: readiness performs only lock+manifest reservation for each File owner."""
+
+    async def exercise() -> None:
+        tasks = FileMeetingTasks(object(), tmp_path / "file-work")
+        handles = tuple(
+            SimpleNamespace(owner_key=("account-a", 1), meeting_id=f"meeting-{index}")
+            for index in range(owners)
+        )
+        for handle in handles:
+            owner_dir = tasks.retained_root / handle.owner_key[0] / handle.meeting_id
+            owner_dir.mkdir(parents=True)
+            (owner_dir / "owner.json").write_text("{}\n", encoding="utf-8")
+        entered = threading.Event()
+        finished = threading.Event()
+
+        def slow_validation(*_args: object) -> None:
+            entered.set()
+            time.sleep(validation_seconds)
+            finished.set()
+
+        tasks._verified_retained_input = slow_validation  # type: ignore[method-assign]
+
+        class Store:
+            async def active_file_meetings(self):
+                return handles
+
+        claimed = await tasks.resume_retained_work(Store())
+        assert claimed == frozenset(("account-a", handle.meeting_id) for handle in handles)
+        assert await asyncio.to_thread(entered.wait, 1)
+        if validation_seconds == 0.300:
+            assert not finished.is_set()
+        await tasks.stop()
+
+    asyncio.run(exercise())
+
+
+def test_retained_reservation_set_is_exact_before_background_validation(
+    tmp_path: Path,
+) -> None:
+    """I3: only locked File owners with a manifest are hidden from fallback."""
+
+    async def exercise() -> None:
+        tasks = FileMeetingTasks(object(), tmp_path / "file-work")
+        reserved = SimpleNamespace(owner_key=("account-a", 1), meeting_id="reserved")
+        unowned = SimpleNamespace(owner_key=("account-a", 1), meeting_id="unowned")
+        for handle in (reserved, unowned):
+            (tasks.retained_root / "account-a" / handle.meeting_id).mkdir(parents=True)
+        (tasks.retained_root / "account-a" / "reserved" / "owner.json").write_text(
+            "{}\n", encoding="utf-8"
+        )
+        release = threading.Event()
+
+        def hanging_validation(*_args: object) -> None:
+            release.wait(1)
+
+        tasks._verified_retained_input = hanging_validation  # type: ignore[method-assign]
+
+        class Store:
+            async def active_file_meetings(self):
+                return (reserved, unowned)
+
+        try:
+            assert await tasks.resume_retained_work(Store()) == frozenset(
+                {("account-a", "reserved")}
+            )
+        finally:
+            release.set()
+            await tasks.stop()
 
     asyncio.run(exercise())

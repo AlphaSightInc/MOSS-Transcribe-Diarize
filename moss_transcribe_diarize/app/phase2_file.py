@@ -107,6 +107,34 @@ class _OwnedFileTask:
     settlement: asyncio.Task[tuple[str, ...]] | None = None
 
 
+@dataclass(slots=True)
+class _RetainedReservation:
+    handle: Any
+    owner_dir: Path
+    retained_lock: Any
+
+
+@dataclass(slots=True)
+class _RetainedClaim:
+    owner: "FileMeetingTasks"
+    reservation: _RetainedReservation | None
+    background: bool = False
+    consumed: bool = False
+
+    @property
+    def owner_key(self) -> tuple[str, str] | None:
+        if self.reservation is None:
+            return None
+        handle = self.reservation.handle
+        return (handle.owner_key[0], handle.meeting_id)
+
+    def __await__(self):
+        if self.consumed:
+            raise RuntimeError("Retained File claim was already consumed.")
+        self.consumed = True
+        return self.owner._complete_retained_claim(self).__await__()
+
+
 class FileMeetingTasks:
     """The minimal process-owned lifetime for owner-carrying File work.
 
@@ -145,6 +173,7 @@ class FileMeetingTasks:
         self._fenced_owner_keys: set[tuple[str, int]] = set()
         self._fenced_meeting_ids: set[str] = set()
         self._refused_retained_work: dict[str, tuple[Any, Path]] = {}
+        self._retained_resume_task: asyncio.Task[None] | None = None
 
     @property
     def work_root(self) -> Path:
@@ -179,36 +208,133 @@ class FileMeetingTasks:
                 LOGGER.error("Transient File work cleanup failed.")
                 raise RuntimeError("Transient File work cleanup failed.") from None
 
-    async def claim_retained_work(self, handle: Any) -> bool:
-        """Start only retained work whose owner record and checkpoint still bind this Meeting."""
+    def claim_retained_work(self, handle: Any) -> _RetainedClaim:
+        """Reserve retained work now; validate it only when the returned claim is awaited."""
 
         owner_dir = self._owner_dir(handle)
         retained_lock = self._claim_retained_lock(owner_dir)
         if retained_lock is None:
+            return _RetainedClaim(self, None)
+        if not (owner_dir / "owner.json").is_file():
+            self._release_retained_lock(retained_lock)
+            return _RetainedClaim(self, None)
+        return _RetainedClaim(
+            self,
+            _RetainedReservation(handle, owner_dir, retained_lock),
+        )
+
+    async def _complete_retained_claim(self, claim: _RetainedClaim) -> bool:
+        reservation = claim.reservation
+        if reservation is None:
             return False
+        handle = reservation.handle
         try:
-            input_path = self._verified_retained_input(handle, owner_dir)
+            input_path = await asyncio.to_thread(
+                self._verified_retained_input,
+                handle,
+                reservation.owner_dir,
+            )
             if input_path is None:
-                self._refused_retained_work[handle.meeting_id] = (handle, owner_dir)
+                if not claim.background:
+                    self._refused_retained_work[handle.meeting_id] = (
+                        handle,
+                        reservation.owner_dir,
+                    )
                 return False
             started = asyncio.Event()
             task = asyncio.create_task(self._run(handle, input_path, started, resumed=True))
-            self._register(handle, task, retained_lock=retained_lock, resumed=True)
-            retained_lock = None
+            self._register(
+                handle,
+                task,
+                retained_lock=reservation.retained_lock,
+                resumed=True,
+            )
+            reservation.retained_lock = None
             await started.wait()
             return True
         finally:
-            if retained_lock is not None:
-                self._release_retained_lock(retained_lock)
+            if not claim.background:
+                self._release_retained_lock(reservation.retained_lock)
+                reservation.retained_lock = None
 
     async def resume_retained_work(self, store: Any) -> frozenset[tuple[str, str]]:
-        """Start verified retained owners and return only the owners fallback must leave alone."""
+        """Reserve owners for fallback exclusion, then validate them after readiness."""
 
-        claimed: set[tuple[str, str]] = set()
-        for handle in await store.active_file_meetings():
-            if await self.claim_retained_work(handle):
-                claimed.add((handle.owner_key[0], handle.meeting_id))
-        return frozenset(claimed)
+        current = getattr(self, "_retained_resume_task", None)
+        if current is not None and not current.done():
+            raise RetainedFileWorkBusy("Retained File startup is already in progress.")
+        claims = tuple(
+            self.claim_retained_work(handle)
+            for handle in await store.active_file_meetings()
+        )
+        claimed = frozenset(
+            claim.owner_key
+            for claim in claims
+            if isinstance(claim, _RetainedClaim) and claim.owner_key is not None
+        )
+        if claims:
+            for claim in claims:
+                if isinstance(claim, _RetainedClaim):
+                    claim.background = True
+            coordinator = asyncio.create_task(self._resume_retained_claims(claims))
+            self._retained_resume_task = coordinator
+            coordinator.add_done_callback(self._retained_resume_done)
+        return claimed
+
+    async def _resume_retained_claims(self, claims: tuple[Any, ...]) -> None:
+        try:
+            for claim in claims:
+                try:
+                    accepted = await claim
+                    if (
+                        isinstance(claim, _RetainedClaim)
+                        and claim.reservation is not None
+                        and not accepted
+                    ):
+                        await self._interrupt_refused_reservation(claim.reservation)
+                except asyncio.CancelledError:
+                    raise
+                except Exception:
+                    if isinstance(claim, _RetainedClaim) and claim.reservation is not None:
+                        await self._fail_retained_reservation(claim.reservation)
+                    else:
+                        LOGGER.error("Retained File startup claim failed.")
+        finally:
+            for claim in claims:
+                if isinstance(claim, _RetainedClaim) and claim.reservation is not None:
+                    self._release_retained_lock(claim.reservation.retained_lock)
+                    claim.reservation.retained_lock = None
+
+    async def _interrupt_refused_reservation(
+        self,
+        reservation: _RetainedReservation,
+    ) -> None:
+        handle = reservation.handle
+        if self._audio_archive is None:
+            raise RuntimeError("File Meeting audio archive is unavailable.")
+        await handle.recover_interrupted_file_audio(self._audio_archive)
+        await handle.finish("interrupted")
+        self._remove_terminal_work_dir(reservation.owner_dir)
+        self._refused_retained_work.pop(handle.meeting_id, None)
+
+    async def _fail_retained_reservation(
+        self,
+        reservation: _RetainedReservation,
+    ) -> None:
+        handle = reservation.handle
+        recorded = await self._mark_failed(
+            handle,
+            "resume_failed",
+            "Retained File restart could not finish.",
+        )
+        if recorded:
+            self._remove_terminal_work_dir(reservation.owner_dir)
+        self._refused_retained_work.pop(handle.meeting_id, None)
+
+    @staticmethod
+    def _retained_resume_done(task: asyncio.Task[None]) -> None:
+        if not task.cancelled() and task.exception() is not None:
+            LOGGER.error("Retained File startup coordinator failed.")
 
     async def reclaim_refused_retained_work(self) -> None:
         """Remove only retained owners that fallback has already made terminal."""
@@ -290,6 +416,10 @@ class FileMeetingTasks:
     async def stop(self) -> None:
         """Fence coroutine commits before the owning SQLite connection closes."""
 
+        retained_resume_task = self._retained_resume_task
+        if retained_resume_task is not None and not retained_resume_task.done():
+            retained_resume_task.cancel()
+            await asyncio.gather(retained_resume_task, return_exceptions=True)
         tasks = tuple(entry.task for entry in self._tasks.values())
         for meeting_id, entry in tuple(self._tasks.items()):
             self._cancel_queued_inference(meeting_id)

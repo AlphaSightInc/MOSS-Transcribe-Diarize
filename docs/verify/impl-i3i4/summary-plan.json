@@ -1,0 +1,52 @@
+{
+  "actual_calls": {
+    "decoder": 0,
+    "provider": 0
+  },
+  "capacity_2x1800": "REQUIRED-NOT-RUN",
+  "clips": [
+    {
+      "meetings": 1,
+      "planned_decoder": 1,
+      "seconds": 50,
+      "windows": [
+        {
+          "end": 50,
+          "index": 0,
+          "start": 0.0
+        }
+      ]
+    },
+    {
+      "meetings": 1,
+      "planned_decoder": 2,
+      "seconds": 180,
+      "windows": [
+        {
+          "end": 150.0,
+          "index": 0,
+          "start": 0.0
+        },
+        {
+          "end": 180,
+          "index": 1,
+          "start": 120.0
+        }
+      ]
+    }
+  ],
+  "meeting_reuse": "each File Meeting is transcribed once and reused for all trials",
+  "mismatch_status": "INCOMPLETE",
+  "mode": "PLAN_ONLY",
+  "planned_decoder": 3,
+  "planned_provider": 6,
+  "provider_cap": {
+    "already_spent": 2,
+    "cap": 10,
+    "cumulative": 8,
+    "this_row": 6
+  },
+  "schema": "moss-r4-summary-row.v1",
+  "stride_seconds": 120.0,
+  "window_seconds": 150.0
+}
