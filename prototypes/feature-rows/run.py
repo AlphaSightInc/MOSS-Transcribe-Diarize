@@ -17,6 +17,8 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from tools.qualify.decoder import read_events, summarize_events
+
 PYTHON = sys.executable
 CLIP_SECONDS = (50, 180)
 TRANSCRIPTS = 2
@@ -29,24 +31,49 @@ PROVIDER_CALL_CAP = 10
 class ProxyCounters:
     accepted: int = 0
     completed: int = 0
+    upstream_failed: int = 0
     rejected: int = 0
     active: int = 0
     peak_in_flight: int = 0
     event_count: int = 0
+    row_attempted: int = 0
+    row_completed: int = 0
+    row_upstream_failed: int = 0
+    row_rejected: int = 0
+    distinct_request_ids: int = 0
+    distinct_completed_request_ids: int = 0
+    duplicate_attempts: int = 0
+    unowned_events: int = 0
+    missing_request_ids: int = 0
+    wrong_row_events: int = 0
+    row_owners: tuple[str, ...] = ()
+    row_reconciled: bool = True
 
 
 def proxy_counters(path: Path, *, peak_since: int = 0) -> ProxyCounters:
-    if not path.is_file():
-        return ProxyCounters()
-    events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
-    row_events = events[peak_since:]
+    events = read_events(path)
+    cumulative = summarize_events(events)
+    row = summarize_events(events[peak_since:], expected_row="summaries")
     return ProxyCounters(
-        accepted=sum(event.get("kind") == "start" for event in events),
-        completed=sum(event.get("kind") == "end" for event in events),
-        rejected=sum(event.get("kind") == "reject" for event in events),
-        active=int(events[-1].get("active", 0)) if events else 0,
-        peak_in_flight=max((int(event.get("active", 0)) for event in row_events), default=0),
-        event_count=len(events),
+        accepted=cumulative.attempted,
+        completed=cumulative.completed,
+        upstream_failed=cumulative.upstream_failed,
+        rejected=cumulative.rejected,
+        active=cumulative.active,
+        peak_in_flight=row.peak_in_flight,
+        event_count=cumulative.event_count,
+        row_attempted=row.attempted,
+        row_completed=row.completed,
+        row_upstream_failed=row.upstream_failed,
+        row_rejected=row.rejected,
+        distinct_request_ids=row.distinct_request_ids,
+        distinct_completed_request_ids=row.distinct_completed_request_ids,
+        duplicate_attempts=row.duplicate_attempts,
+        unowned_events=row.unowned_events,
+        missing_request_ids=row.missing_request_ids,
+        wrong_row_events=row.wrong_row_events,
+        row_owners=row.row_owners,
+        row_reconciled=row.reconciled,
     )
 
 
@@ -112,15 +139,37 @@ def decoder_accounting(
         "decoder_proxy_counter_deltas": {
             "accepted": after.accepted - before.accepted,
             "completed": after.completed - before.completed,
+            "upstream_failed": after.upstream_failed - before.upstream_failed,
             "rejected": after.rejected - before.rejected,
             "peak_in_flight": after.peak_in_flight,
+            "distinct_request_ids": after.distinct_request_ids,
+            "distinct_completed_request_ids": after.distinct_completed_request_ids,
+            "duplicate_attempts": after.duplicate_attempts,
+            "unowned_events": after.unowned_events,
+            "missing_request_ids": after.missing_request_ids,
+            "wrong_row_events": after.wrong_row_events,
+            "row_owners": list(after.row_owners),
+            "reconciled": after.row_reconciled,
         }
     }
     delta = receipt["decoder_proxy_counter_deltas"]
     matches = (
         delta["accepted"] == planned_decoder
         and delta["completed"] == planned_decoder
+        and delta["upstream_failed"] == 0
         and delta["rejected"] == 0
+        and after.row_attempted == delta["accepted"]
+        and after.row_completed == delta["completed"]
+        and after.row_upstream_failed == 0
+        and after.row_rejected == 0
+        and delta["distinct_request_ids"] == planned_decoder
+        and delta["distinct_completed_request_ids"] == planned_decoder
+        and delta["duplicate_attempts"] == 0
+        and delta["unowned_events"] == 0
+        and delta["missing_request_ids"] == 0
+        and delta["wrong_row_events"] == 0
+        and delta["row_owners"] == ["summaries"]
+        and delta["reconciled"] is True
         and int(delta["peak_in_flight"]) <= 2
     )
     return receipt, matches
@@ -188,7 +237,9 @@ def execute(args: argparse.Namespace, plan: dict[str, object]) -> tuple[dict[str
         "proxy_after": asdict(after),
         "provider_attempts": provider_attempts,
         "actual_calls": {
-            "decoder": accounting["decoder_proxy_counter_deltas"]["accepted"],
+            "decoder": accounting["decoder_proxy_counter_deltas"][
+                "distinct_completed_request_ids"
+            ],
             "provider": provider_attempts,
         },
         "command_exit": completed.returncode,
