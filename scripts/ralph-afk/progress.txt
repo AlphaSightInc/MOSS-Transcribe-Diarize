@@ -252,3 +252,5 @@ small disclosures. Offline: zero decoder requests.
 - Evidence: `docs/verify/round4-run-d/VERIFY.md`; D1/D2 and D5 controls in `tests/phase2/test_retained_file_claim.py`; D4 control in `tests/phase2/test_owner_bound_file_meeting.py`; append-only D6 correction in iteration 5 above.
 - Learned: terminal-owner reclamation, non-blocking resumed failure containment, and ordinary task failure signaling coexist through the full offline suite. The backend result exceeds the 2,158-pass floor. No decoder, network, tunnel, proxy, GPU, or provider request was made; S17 remains UNMEASURED and `capacity_2x1800` REQUIRED-NOT-RUN.
 - Next: acceptance bar met; lead may integrate this branch.
+
+[loop 20260921-084333-12001] complete at iteration 6
