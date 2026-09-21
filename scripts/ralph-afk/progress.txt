@@ -168,3 +168,11 @@ cancelled retained work kept forever) plus four smaller gaps. Offline: zero deco
 - Evidence: `test_lifespan_replays_retained_url_only_from_its_local_copy`; `test_lifespan_retries_the_uncommitted_window_after_a_prior_crash`; each requires `[0..40, 40..100]` calls and `101 == len(texts) == len(set(texts))` after durable publication.
 - Learned: production stitching correctly rejects overlap-owned segments; the old deterministic fixture made the persistence property unobservable. Its 59--60 s local segment lies in each window's owned region, matching the batch bench, so either a loss or duplicate now fails at the product seam.
 - Next: C7 — resolve the corrected Bill corpus's 29.25--29.0 boundary without changing scored text.
+
+## Iteration 8 - Bill corpus boundary
+- Target: C7 / F9 — repair the corrected Bill corpus's overlapping neighbouring source boundary without altering scored text.
+- Files: `evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/reference.jsonl`; `tests/test_round4_overlap_diagnosis.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: new non-overlap control was RED on the old `[29.25, 29.0]` boundary -> **1 failed**; after moving only Lex's start to 29.25, `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider tests/test_round4_overlap_diagnosis.py` -> **4 passed**; `git diff --check` -> clean.
+- Evidence: retained production transcripts in `evidence/live-policy-sweep-20260825/moss-recovered/pass-A/interview_bill_ackman_60s/` locate Lex at 29.63 s (the alternate normalized transcript at 29.55 s); `evidence/round4/overlap/prior-full-audio-post-stop.jsonl:9` ends Bill's `the book` at 29.25 s.
+- Learned: 29.25 is a conservative non-overlapping coarse boundary: it retains all original scored text and precedes both independent observed starts. The new adjacent-record invariant prevents this source shape from returning.
+- Next: C5 — correct `docs/verify/round4-run-b/VERIFY.md` so its ladder claim and falsifier describe a reachable deployed measurement.

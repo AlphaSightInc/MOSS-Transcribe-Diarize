@@ -24,6 +24,18 @@ def test_r4_6_demo_reference_matches_corrected_audio_population() -> None:
     )
 
 
+def test_r4_6_corrected_full_reference_rows_do_not_overlap() -> None:
+    rows = [
+        json.loads(line)
+        for line in (
+            ROOT / "evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/reference.jsonl"
+        )
+        .read_text()
+        .splitlines()
+    ]
+    assert all(previous["end"] <= current["start"] for previous, current in zip(rows, rows[1:]))
+
+
 def test_r4_6_ladder_reference_is_bounded_by_captured_audio() -> None:
     current = reference_inputs(1, system_reference=SYSTEM_LADDER_REFERENCE)["system"]
     proposal = json.loads((EVIDENCE / "reference-correction-proposal.json").read_text())

@@ -77,7 +77,10 @@
   - **F8 → C6.** The "101/101 unique saved segments / no duplicate after the replayed window" property is asserted only
     inside `prototypes/batch-startup/prototype.py`, which pytest never runs; the product controls assert only the
     delegate-call list and `transcript_version == 1` (`tests/phase2/test_retained_file_claim.py:235-237`).
-  - **F9 → C7.** The corrected Bill row `[0.0, 29.25]` overlaps the next row `[29.0, 33.0]` in the same corpus file.
+  - **F9 → C7 (closed, iteration 8).** The corrected Bill row now ends at the next
+    row's `29.25` start, so the Bill corpus has no overlapping adjacent records. The
+    retained production transcripts locate Lex's actual utterance later (29.55--29.63 s),
+    so the conservative boundary repair preserves its audio and every scored text.
 - **Ratified by the lead, do not re-open (F6):** the three fixture controls were retargeted rather than
   marker-removed, because `evidence/` is read-only and a control reading a frozen snapshot could never flip. The
   proposal JSON was not edited to fit; run B disclosed this in `progress.txt:79`. Accepted.
@@ -112,10 +115,7 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 The preceding Run-B-completion snapshot is stale. Run C's PRD and opening
 progress entry are authoritative for the following ranked work:
 
-1. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
-   adjust only the neighbouring time boundary, or document an intentional overlap;
-   never alter scored text.
-2. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
+1. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
    solo-lane vocabulary, not `SYSTEM_LADDER_REFERENCE`; its falsifier must be
    testable or removed with explanation.
 
@@ -198,6 +198,16 @@ progress entry are authoritative for the following ranked work:
   changing product code or production windowing.
 - **Next:** C7 — audit the Bill neighbouring boundary or document the overlap;
   preserve every scored text.
+
+## Iteration 8 outcome
+
+- **C7 / F9 (complete):** the only bad boundary was the second row's stale 29.0 s
+  start. Existing retained transcripts place Lex's next utterance at 29.55--29.63 s;
+  moving the coarse source boundary to the corrected preceding endpoint (29.25 s)
+  removes the 0.25 s overlap without changing a word. The new full-row non-overlap
+  control was RED on the old corpus and is green alongside all D27 controls.
+- **Next:** C5 — make the Run-B verifier state what the deployed ladder actually
+  scores, then make its remaining falsifier executable or remove it with cause.
 
 ## Non-candidates
 
