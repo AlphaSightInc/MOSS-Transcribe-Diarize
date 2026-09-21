@@ -1,0 +1,50 @@
+{
+  "schema": "moss-r4-measure-prep-plan-proof.v1",
+  "closure_sha": "85aec9787b817fbd413c623fc550a6395a91591b",
+  "prior_frozen_sha": "0de56e1a139f833f12cb23224f10e1668be2efd9",
+  "runtime": {
+    "python": "/private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python",
+    "import_root": "/private/tmp/moss-round4-20260920/measure-prep",
+    "sqlite_runtime": "3.53.4",
+    "required_sqlite_runtime": "3.53.4"
+  },
+  "zero_call_proof": {
+    "method": "Python audit hook aborted on socket.__new__ or subprocess.Popen",
+    "socket_opened": 0,
+    "subprocess_launched_by_plan": 0,
+    "decoder_calls": 0,
+    "provider_calls": 0,
+    "network_calls": 0,
+    "tunnels": 0
+  },
+  "plans": {
+    "F2_s17": {
+      "prior_frozen_plan": 184,
+      "closure_plan": 184,
+      "population_delta": [],
+      "budget_delta": 0,
+      "explained_non_budget_deltas": [
+        "schema v2 to v3",
+        "capture AVAILABLE to READY",
+        "one legacy combined field list replaced by raw, mapping, and normalized stream contracts"
+      ]
+    },
+    "F3_main_bundle": {
+      "prior_frozen_plan": 2238,
+      "closure_plan": 2238,
+      "full_plan_delta": [],
+      "live_lane_seconds": 3457,
+      "capacity_2x1800": "REQUIRED-NOT-RUN"
+    },
+    "F3s_summaries": {
+      "baseline_receipt": "docs/verify/impl-i3i4/summary-plan.json",
+      "closure_plan_delta": [],
+      "planned_decoder": 3,
+      "planned_provider": 6,
+      "provider_cumulative": 8,
+      "provider_cap": 10,
+      "capacity_2x1800": "REQUIRED-NOT-RUN"
+    }
+  },
+  "verdict": "READY_FOR_REFREEZE_PLAN_ONLY"
+}

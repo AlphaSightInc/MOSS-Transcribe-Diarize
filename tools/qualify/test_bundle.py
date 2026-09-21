@@ -12,6 +12,7 @@ from tools.qualify.run import compare, counts, score_ladder
 
 
 FEATURE_ROW = qualify_run.ROOT / "prototypes/feature-rows/run.py"
+S17_ROW = qualify_run.ROOT / "prototypes/s17-identity-rerun/run.py"
 
 
 def test_summary_only_row_plans_three_decoder_and_six_provider_calls():
@@ -27,6 +28,25 @@ def test_summary_only_row_plans_three_decoder_and_six_provider_calls():
         "cap": 10,
     }
     assert plan["capacity_2x1800"] == "REQUIRED-NOT-RUN"
+
+
+def test_s17_missing_raw_capture_is_incomplete_not_pass():
+    s17_row = runpy.run_path(str(S17_ROW))
+    receipt = s17_row["incomplete_capture_receipt"](
+        "gap", "capture emitted no terminal rows for gap; receipt falsified"
+    )
+    assert receipt == {
+        "schema": "moss-r4-s17-identity-partition-receipt.v3",
+        "case": "gap",
+        "status": "INCOMPLETE",
+        "reason": "capture emitted no terminal rows for gap; receipt falsified",
+    }
+
+
+def test_s17_partition_receipt_rejects_missing_raw_stream():
+    s17_row = runpy.run_path(str(S17_ROW))
+    with pytest.raises(RuntimeError, match="lacks one or more required streams"):
+        s17_row["partition_receipt"]("gap", [])
 
 
 def test_summary_row_counter_mismatch_is_incomplete():

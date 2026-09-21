@@ -232,6 +232,17 @@ def partition_receipt(case: str, rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def incomplete_capture_receipt(case: str, reason: str) -> dict[str, Any]:
+    """Make missing raw custody explicit; it is never an identity FAIL or PASS."""
+
+    return {
+        "schema": "moss-r4-s17-identity-partition-receipt.v3",
+        "case": case,
+        "status": "INCOMPLETE",
+        "reason": reason,
+    }
+
+
 def _certificate(out: Path) -> tuple[Path, Path]:
     cert, key = out / "cert.pem", out / "key.pem"
     subprocess.run(
@@ -325,12 +336,36 @@ def execute(args: argparse.Namespace, plan_data: dict[str, Any]) -> int:
             case_lines = all_lines[capture_offset:]
             capture_offset = len(all_lines)
             case_rows = [json.loads(line) for line in case_lines]
-            if not case_rows:
-                raise RuntimeError(f"capture emitted no terminal rows for {case}; receipt falsified")
             case_capture = case_dir / "terminal-labels.jsonl"
             case_capture.parent.mkdir(parents=True, exist_ok=True)
-            case_capture.write_text("\n".join(case_lines) + "\n", encoding="utf-8")
-            _write(case_dir / "partition-receipt.json", partition_receipt(case, case_rows))
+            if case_lines:
+                case_capture.write_text("\n".join(case_lines) + "\n", encoding="utf-8")
+            try:
+                if not case_rows:
+                    raise RuntimeError(
+                        f"capture emitted no terminal rows for {case}; receipt falsified"
+                    )
+                receipt = partition_receipt(case, case_rows)
+            except RuntimeError as exc:
+                _write(
+                    case_dir / "partition-receipt.json",
+                    incomplete_capture_receipt(case, str(exc)),
+                )
+                _write(
+                    args.out / "run.json",
+                    {
+                        "schema": "moss-r4-s17-identity-rerun.v3",
+                        "status": "INCOMPLETE",
+                        "reason": str(exc),
+                        "plan": plan_data,
+                        "budget": args.budget,
+                        "capture": str(raw_capture),
+                        "completed_cases": list(CASES[: CASES.index(case)]),
+                        "incomplete_case": case,
+                    },
+                )
+                raise SystemExit(2) from exc
+            _write(case_dir / "partition-receipt.json", receipt)
         requests = args.out / "state/requests.jsonl"
         if requests.exists():
             shutil.copyfile(requests, args.out / "decoder-requests.jsonl")
