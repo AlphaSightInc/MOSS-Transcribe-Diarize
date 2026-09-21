@@ -1,0 +1,235 @@
+{
+  "measured_rate": 0.51,
+  "measured_rate_unit": "requests_per_lane_second",
+  "measured_rate_evidence": [
+    {
+      "source_receipt": "evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl",
+      "unique_request_ids": 2440,
+      "sessions": 4,
+      "lanes_per_session": 2,
+      "seconds_per_session": 600,
+      "lane_seconds": 4800,
+      "observed_rate": 0.508333,
+      "rounded_rate": 0.51,
+      "calculation": "2440 unique requests / (4 sessions * 2 lanes/session * 600 seconds/session) = 0.508333 requests_per_lane_second; rounded to 2 decimals = 0.51"
+    },
+    {
+      "source_receipt": "evidence/mvpfix/wp30/20260918-064644-1r-8x300/requests.jsonl",
+      "unique_request_ids": 2448,
+      "sessions": 8,
+      "lanes_per_session": 2,
+      "seconds_per_session": 300,
+      "lane_seconds": 4800,
+      "observed_rate": 0.51,
+      "rounded_rate": 0.51,
+      "calculation": "2448 unique requests / (8 sessions * 2 lanes/session * 300 seconds/session) = 0.510000 requests_per_lane_second; rounded to 2 decimals = 0.51"
+    }
+  ],
+  "source_receipt": "evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl",
+  "headroom": 1.25,
+  "headroom_provenance": {
+    "status": "UNMEASURED",
+    "source": "planner_policy",
+    "source_receipt": null,
+    "calculation": "1.25 policy multiplier; no receipt-derived arithmetic",
+    "reason": "no retained receipt isolates planner error after the lane-second rate correction"
+  },
+  "planned_requests": 2238,
+  "request_derivation": {
+    "live_lane_requests": 1763.07,
+    "file_window_requests": 11,
+    "browser_case_requests": 16,
+    "unadjusted_requests": 1790.07,
+    "calculation": "ceil((3457 lane_seconds * 0.51 requests_per_lane_second + 11 file_window_requests + 16 browser_case_requests) * 1.25 headroom)"
+  },
+  "population": {
+    "live_benches": {
+      "workspace": {
+        "session_seconds": [
+          18,
+          54,
+          29,
+          30,
+          70,
+          87,
+          8,
+          8,
+          8
+        ],
+        "lanes_per_session": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "sessions": 9,
+        "seconds": 312,
+        "lane_seconds": 624
+      },
+      "demo_lanes": {
+        "session_seconds": [
+          54,
+          29
+        ],
+        "lanes_per_session": [
+          2,
+          2
+        ],
+        "sessions": 2,
+        "seconds": 83,
+        "lane_seconds": 166
+      },
+      "lifecycle": {
+        "session_seconds": [
+          2,
+          2,
+          2,
+          0,
+          0.5,
+          0.5
+        ],
+        "lanes_per_session": [
+          2,
+          2,
+          2,
+          0,
+          1,
+          1
+        ],
+        "sessions": 6,
+        "seconds": 7.0,
+        "lane_seconds": 13.0
+      },
+      "reshare": {
+        "session_seconds": [
+          20
+        ],
+        "lanes_per_session": [
+          2
+        ],
+        "sessions": 1,
+        "seconds": 20,
+        "lane_seconds": 40
+      },
+      "identity_stress": {
+        "session_seconds": [
+          60,
+          60,
+          60
+        ],
+        "lanes_per_session": [
+          2,
+          2,
+          2
+        ],
+        "sessions": 3,
+        "seconds": 180,
+        "lane_seconds": 360
+      },
+      "level_ladder": {
+        "session_seconds": [
+          24,
+          24,
+          24,
+          24,
+          24,
+          24
+        ],
+        "lanes_per_session": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "sessions": 6,
+        "seconds": 144,
+        "lane_seconds": 288
+      },
+      "browser_stress_all": {
+        "session_seconds": [
+          8,
+          1,
+          1,
+          68,
+          19,
+          36,
+          16,
+          8,
+          50,
+          73,
+          45,
+          58
+        ],
+        "lanes_per_session": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        "sessions": 12,
+        "seconds": 383,
+        "lane_seconds": 766
+      },
+      "capacity_2x300": {
+        "session_seconds": [
+          300,
+          300
+        ],
+        "lanes_per_session": [
+          2,
+          2
+        ],
+        "sessions": 2,
+        "seconds": 600,
+        "lane_seconds": 1200
+      }
+    },
+    "live_sessions": 41,
+    "live_session_seconds": 1729.0,
+    "live_lane_seconds": 3457.0,
+    "file_seconds": [
+      50,
+      50,
+      360,
+      180,
+      180,
+      180
+    ],
+    "file_windows": 11,
+    "window_seconds": 150,
+    "stride_seconds": 120,
+    "browser_cases": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ]
+  }
+}
