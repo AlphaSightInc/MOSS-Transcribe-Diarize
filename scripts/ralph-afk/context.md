@@ -138,6 +138,9 @@
   `test_lane_word_oracle` still expects the pre-D27 corpus denominator 154; the approved corrected Bill/Keyu rows
   presently score 157. The gate at `966d250b` therefore ended **2 failed, 2,150 passed, 5 skipped, 2 xfailed**:
   F1 and F2 respectively. No decoder, network, or GPU request occurred.
+- 2026-09-21 iteration 9 completed **F2**: `test_lane_word_oracle` keeps its independent literal denominator and now
+  expects **157**, the production tokenizer's 104 Bill + 53 Keyu words from D27's corrected rows. Its focused suite
+  passed **10/10**; full final gates and the self-contained verifier remain open.
 - This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
   **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
@@ -158,10 +161,7 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-1. **F2: update the lane-word oracle's fixed corpus denominator to D27's audited population, then re-run that
-   focused control.** Keep the denominator an independent exact expected value; do not derive it from the same rows
-   under test.
-2. **Re-run full backend/frontend/typecheck/build gates and add `docs/verify/round4-run-b/VERIFY.md`.** It must state
+1. **Re-run full backend/frontend/typecheck/build gates and add `docs/verify/round4-run-b/VERIFY.md`.** It must state
    final counts, the six converted controls, the two remaining Jamie xfails, falsifiers, S17 `UNMEASURED`, and
    `capacity_2x1800: REQUIRED-NOT-RUN`.
 

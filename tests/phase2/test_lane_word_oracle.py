@@ -34,7 +34,7 @@ def test_documented_overlap_does_not_count_shared_vocabulary_as_duplication():
           [('system','interview_bill_ackman_60s'), ('microphone','interview_keyu_jin_60s')]}
     result=score_lanes([dict(r, source_lane=k, speaker=k) for k,r in refs.items()], {k:r['text'] for k,r in refs.items()})
     assert result['passed'] and result['duplication_count']==0
-    assert sum(r['reference_words'] for r in result['lanes'].values())==154
+    assert sum(r['reference_words'] for r in result['lanes'].values())==157
 
 def test_ordered_errors_are_not_unique_vocabulary():
     rows=deepcopy(GOOD);rows[0]['text']='stars distant orbit planets Copper'

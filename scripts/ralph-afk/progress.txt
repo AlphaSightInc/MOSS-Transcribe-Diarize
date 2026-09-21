@@ -86,3 +86,11 @@ convert; the two Jamie controls must stay xfailed.
 - Evidence: `test_meeting_stays_active_until_audio_metadata_is_durable` now requires the Meeting-owned retained source while archive completion is blocked, then its removal only after `completed`.
 - Learned: the A3 source move preserved the intended artifact-durability barrier; the full suite also exposed separate F2, whose fixed 154-word expectation predates D27's corrected 157-word corpus.
 - Next: Update only F2's independent expected denominator, then repeat final backend/frontend/typecheck/build gates and write the Run-B verifier.
+
+## Iteration 9 - D27 lane-word denominator
+- Target: Candidate F2, update the independent lane-word oracle denominator to D27's audited corpus population.
+- Files: `tests/phase2/test_lane_word_oracle.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: production tokenizer over the two corpus rows -> Bill 104 + Keyu 53 = 157; `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider tests/phase2/test_lane_word_oracle.py` -> 10 passed.
+- Evidence: `tests/phase2/test_lane_word_oracle.py::test_documented_overlap_does_not_count_shared_vocabulary_as_duplication`; D27 approval and `evidence/round4/overlap/reference-correction-proposal.json`.
+- Learned: `154` was a stale pre-D27 fixed expected value; `157` remains an independent literal, so the test still detects a corpus/tokenizer change.
+- Next: run full backend/frontend/typecheck/build gates and add the self-contained Run-B verifier.
