@@ -19,3 +19,9 @@ def test_file_checkpoint_validation_is_a_plain_runner_caller() -> None:
     assert "validate_resume" in source
     assert "from .windowed_transcription import" not in source
     assert "_CheckpointStore" not in source
+    live_source = inspect.getsource(FileMeetingTasks._verified_retained_resume_source)
+    assert "_checkpoint_verdict" in live_source
+    verdict_source = inspect.getsource(FileMeetingTasks._checkpoint_verdict)
+    assert "validate_resume" in verdict_source
+    assert "from .windowed_transcription import" not in verdict_source
+    assert "_CheckpointStore" not in verdict_source

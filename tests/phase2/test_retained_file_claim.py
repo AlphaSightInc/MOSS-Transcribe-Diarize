@@ -224,13 +224,15 @@ def test_retained_claim_reuses_only_the_verified_prefix(tmp_path: Path) -> None:
 
 def test_checkpoint_validation_binds_the_file_inference_contract(tmp_path: Path) -> None:
     async def exercise() -> None:
-        tasks, _handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
+        tasks, handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
         try:
             source = owner_dir / "input.wav"
             checkpoint = owner_dir / "checkpoint"
             assert tasks._checkpoint_is_valid(source, checkpoint) is True
+            assert tasks._verified_retained_resume_source(handle, owner_dir) is not None
             tasks._prompt = "different retained inference contract"
             assert tasks._checkpoint_is_valid(source, checkpoint) is False
+            assert tasks._verified_retained_resume_source(handle, owner_dir) is None
             assert decoder.calls == [0, 1, 2]
         finally:
             await store.close()
