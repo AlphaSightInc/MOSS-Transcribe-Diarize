@@ -1,0 +1,82 @@
+{
+  "schema": "moss-r4-preterm-plan.v1",
+  "population": {
+    "cases": [
+      "alternation",
+      "overlap"
+    ],
+    "arms": [
+      {
+        "case": "alternation",
+        "lane": "system",
+        "lane_seconds": 29.0,
+        "lanes_per_session": 2,
+        "measured_request_rate": 0.51,
+        "measured_request_rate_unit": "requests_per_lane_second",
+        "planned_requests": 15,
+        "calculation": "ceil(29 lane_seconds * 0.51 requests_per_lane_second)"
+      },
+      {
+        "case": "alternation",
+        "lane": "microphone",
+        "lane_seconds": 25.0,
+        "lanes_per_session": 2,
+        "measured_request_rate": 0.51,
+        "measured_request_rate_unit": "requests_per_lane_second",
+        "planned_requests": 13,
+        "calculation": "ceil(25 lane_seconds * 0.51 requests_per_lane_second)"
+      },
+      {
+        "case": "overlap",
+        "lane": "system",
+        "lane_seconds": 29.0,
+        "lanes_per_session": 2,
+        "measured_request_rate": 0.51,
+        "measured_request_rate_unit": "requests_per_lane_second",
+        "planned_requests": 15,
+        "calculation": "ceil(29 lane_seconds * 0.51 requests_per_lane_second)"
+      },
+      {
+        "case": "overlap",
+        "lane": "microphone",
+        "lane_seconds": 25.0,
+        "lanes_per_session": 2,
+        "measured_request_rate": 0.51,
+        "measured_request_rate_unit": "requests_per_lane_second",
+        "planned_requests": 13,
+        "calculation": "ceil(25 lane_seconds * 0.51 requests_per_lane_second)"
+      }
+    ],
+    "lane_seconds": 108.0
+  },
+  "planned_requests": 56,
+  "corrected_reference": {
+    "status": "MISSING",
+    "missing_lanes": [
+      "system"
+    ]
+  },
+  "cut_geometry": {
+    "schema": "moss-r4-preterm-cut-geometry.v1",
+    "lanes": {
+      "system": {
+        "source": "/private/tmp/moss-round4-20260920/preterm/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/audio.wav",
+        "sample_rate": 16000,
+        "start_sample": 0,
+        "end_sample": 464000,
+        "sample_count": 464000,
+        "seconds": 29.0,
+        "microphone_gain": 1.0
+      },
+      "microphone": {
+        "source": "/private/tmp/moss-round4-20260920/preterm/evidence/live-policy-sweep-20260825/corpus/interview_keyu_jin_60s/audio.wav",
+        "sample_rate": 16000,
+        "start_sample": 0,
+        "end_sample": 400000,
+        "sample_count": 400000,
+        "seconds": 25.0,
+        "microphone_gain": 0.03
+      }
+    }
+  }
+}
