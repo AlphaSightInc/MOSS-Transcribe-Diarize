@@ -136,3 +136,11 @@ cancelled retained work kept forever) plus four smaller gaps. Offline: zero deco
 - Evidence: printed C12 state; `prototypes/batch-startup/NOTES.md` §C12. The runner exercised the production checkpoint/window path under the bench's SQLite 3.50.4 semantic-store allowance, not production runtime.
 - Learned: a claim-before-fallback owner set is sufficient in the bench; generic recovery must exclude only claimed File owners, while a background failure must leave a durable Meeting outcome. Owner cleanup stayed after terminal truth.
 - Next: implement C2 at the `FileMeetingTasks`/lifespan seam, then add the real lifespan controls for non-blocking boot and durable failure visibility.
+
+## Iteration 4 - background retained resume
+- Target: C2 / F2 — prevent valid retained File resume from blocking or aborting lifespan.
+- Files: `moss_transcribe_diarize/app/phase2.py`; `moss_transcribe_diarize/app/phase2_file.py`; `tests/phase2/test_retained_file_claim.py`; `prototypes/batch-startup/prototype.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: focused RED (`test_retained_file_claim.py -k 'cancellation_of_resumed or records_retained_commit'`) -> 2 failed: each timed out waiting for inline resume; focused GREEN -> 2 passed; retained module -> 15 passed; `tests/phase2 -k 'retained or resume or startup or recover'` -> 93 passed, 913 deselected; `py_compile` and `git diff --check` -> clean.
+- Evidence: `tests/phase2/test_retained_file_claim.py` proves boot completes and `/` returns 200 while a resume is held, then proves durable `failed/resume_failed` commit and audio-publication failures plus a review-visible post-terminal cleanup failure; `tests/phase2/test_batch_startup_prototype_controls.py` retains File/URL full-publication controls after explicit post-boot task joining.
+- Learned: an exact claimed `(account, meeting)` set is sufficient to distinguish active retained work from crashed File work; using it in fallback and a new unclaimed-active assertion preserves the byte-identical global zero-active guard and D13 Live recovery.
+- Next: C3 — reclaim only terminal-owned retained directories on refusal and URL cancellation, after durable terminal truth.

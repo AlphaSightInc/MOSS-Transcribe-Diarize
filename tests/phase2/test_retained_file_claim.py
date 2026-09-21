@@ -7,6 +7,7 @@ import json
 import threading
 from pathlib import Path
 
+import httpx
 import pytest
 
 from _browser_workspace_fixtures import seed_workspace
@@ -134,6 +135,12 @@ async def _snapshot(app: object, handle: object) -> object:
     return await reopened.snapshot()
 
 
+async def _await_file_task(app: object, meeting_id: str) -> None:
+    entry = app.state.phase2_file_tasks._tasks.get(meeting_id)  # type: ignore[attr-defined]
+    if entry is not None:
+        await entry.task
+
+
 def _app(
     root: Path,
     decoder: _RestartDecoder,
@@ -212,6 +219,7 @@ def test_lifespan_replays_retained_url_only_from_its_local_copy(tmp_path: Path) 
         acquirer = _NoUrlAcquirer()
         app = _app(tmp_path, decoder, url_acquirer=acquirer)
         async with app.router.lifespan_context(app):
+            await _await_file_task(app, handle.meeting_id)
             snapshot = await _snapshot(app, handle)
             assert decoder.calls == [0, 1, 2, 2, 3]
             assert acquirer.calls == 0
@@ -231,6 +239,7 @@ def test_lifespan_retries_the_uncommitted_window_after_a_prior_crash(tmp_path: P
 
         app = _app(tmp_path, decoder)
         async with app.router.lifespan_context(app):
+            await _await_file_task(app, handle.meeting_id)
             snapshot = await _snapshot(app, handle)
             assert decoder.calls == [0, 1, 2, 2, 3]
             assert snapshot.status == "completed"
@@ -254,6 +263,11 @@ def test_lifespan_cancellation_of_resumed_file_work_is_durably_cancelled(
         context = app.router.lifespan_context(app)
         startup = asyncio.create_task(context.__aenter__())
         assert await asyncio.to_thread(decoder.blocked.wait, 2)
+        await asyncio.wait_for(asyncio.shield(startup), timeout=1)
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app), base_url="http://moss.test"
+        ) as client:
+            assert (await client.get("/")).status_code == 200
         fenced = asyncio.Event()
         original_fence = app.state.phase2_file_tasks.fence_meeting
 
@@ -286,6 +300,158 @@ def test_lifespan_cancellation_of_resumed_file_work_is_durably_cancelled(
                 decoder.release.set()
                 await startup
             await context.__aexit__(None, None, None)
+
+    asyncio.run(exercise())
+
+
+def test_lifespan_records_retained_commit_failure_without_aborting_startup(
+    tmp_path: Path,
+) -> None:
+    """C2: a retained commit failure becomes a visible terminal outcome after boot."""
+
+    async def exercise() -> None:
+        _, handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
+        await store.close()
+        commit_started = asyncio.Event()
+        release_failure = asyncio.Event()
+        original_commit = MeetingHandle.commit_transcript
+
+        async def reject_commit(self, document, *, terminal=False):
+            if self.meeting_id != handle.meeting_id:
+                return await original_commit(self, document, terminal=terminal)
+            commit_started.set()
+            await release_failure.wait()
+            raise RuntimeError("controlled retained commit failure")
+
+        MeetingHandle.commit_transcript = reject_commit
+        app = _app(tmp_path, decoder)
+        context = app.router.lifespan_context(app)
+        startup = asyncio.create_task(context.__aenter__())
+        entered = False
+        try:
+            await asyncio.wait_for(commit_started.wait(), timeout=2)
+            await asyncio.wait_for(asyncio.shield(startup), timeout=1)
+            entered = True
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app), base_url="http://moss.test"
+            ) as client:
+                assert (await client.get("/")).status_code == 200
+            entry = app.state.phase2_file_tasks._tasks[handle.meeting_id]
+            release_failure.set()
+            await entry.task
+            snapshot = await _snapshot(app, handle)
+            assert snapshot.status == "failed"
+            assert snapshot.failure_code == "resume_failed"
+            assert snapshot.failure_reason == "Retained File restart could not finish."
+            assert snapshot.transcript is None
+            assert not owner_dir.exists()
+        finally:
+            release_failure.set()
+            if not startup.done():
+                try:
+                    await startup
+                except Exception:
+                    pass
+            if entered:
+                await context.__aexit__(None, None, None)
+            MeetingHandle.commit_transcript = original_commit
+
+    asyncio.run(exercise())
+
+
+def test_lifespan_records_retained_publication_failure_without_aborting_startup(
+    tmp_path: Path,
+) -> None:
+    """C2: a retained audio publication failure becomes a visible terminal outcome."""
+
+    async def exercise() -> None:
+        _, handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
+        await store.close()
+        publication_started = asyncio.Event()
+        release_failure = asyncio.Event()
+        original_publish = MeetingHandle.record_audio_unavailable
+
+        async def reject_publication(self):
+            if self.meeting_id != handle.meeting_id:
+                return await original_publish(self)
+            publication_started.set()
+            await release_failure.wait()
+            raise RuntimeError("controlled retained publication failure")
+
+        MeetingHandle.record_audio_unavailable = reject_publication
+        app = _app(tmp_path, decoder)
+        context = app.router.lifespan_context(app)
+        startup = asyncio.create_task(context.__aenter__())
+        entered = False
+        try:
+            await asyncio.wait_for(publication_started.wait(), timeout=2)
+            await asyncio.wait_for(asyncio.shield(startup), timeout=1)
+            entered = True
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app), base_url="http://moss.test"
+            ) as client:
+                assert (await client.get("/")).status_code == 200
+            entry = app.state.phase2_file_tasks._tasks[handle.meeting_id]
+            release_failure.set()
+            await entry.task
+            snapshot = await _snapshot(app, handle)
+            assert snapshot.status == "failed"
+            assert snapshot.failure_code == "resume_failed"
+            assert snapshot.failure_reason == "Retained File restart could not finish."
+            assert snapshot.transcript_version == 1
+            assert not owner_dir.exists()
+        finally:
+            release_failure.set()
+            if not startup.done():
+                try:
+                    await startup
+                except Exception:
+                    pass
+            if entered:
+                await context.__aexit__(None, None, None)
+            MeetingHandle.record_audio_unavailable = original_publish
+
+    asyncio.run(exercise())
+
+
+def test_lifespan_records_retained_cleanup_failure_without_aborting_startup(
+    tmp_path: Path,
+) -> None:
+    """C2: terminal cleanup failure remains visible without reopening the Meeting."""
+
+    async def exercise() -> None:
+        _, handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
+        await store.close()
+        original_remove = FileMeetingTasks._remove_terminal_work_dir
+
+        def fail_remove(self, work_dir):
+            if work_dir == owner_dir:
+                raise RuntimeError("controlled retained cleanup failure")
+            original_remove(self, work_dir)
+
+        FileMeetingTasks._remove_terminal_work_dir = fail_remove
+        app = _app(tmp_path, decoder)
+        context = app.router.lifespan_context(app)
+        entered = False
+        try:
+            await context.__aenter__()
+            entered = True
+            async with httpx.AsyncClient(
+                transport=httpx.ASGITransport(app=app), base_url="http://moss.test"
+            ) as client:
+                assert (await client.get("/")).status_code == 200
+            await _await_file_task(app, handle.meeting_id)
+            snapshot = await _snapshot(app, handle)
+            assert snapshot.status == "completed"
+            assert snapshot.transcript_version == 1
+            assert snapshot.failure_code == "resume_failed"
+            assert snapshot.failure_reason == "Retained File restart could not finish."
+            assert snapshot.needs_review is True
+            assert owner_dir.exists()
+        finally:
+            if entered:
+                await context.__aexit__(None, None, None)
+            FileMeetingTasks._remove_terminal_work_dir = original_remove
 
     asyncio.run(exercise())
 
@@ -430,6 +596,7 @@ def test_lifespan_refuses_a_competing_retained_work_owner(tmp_path: Path) -> Non
         decoder.release.set()
         await first_startup
         try:
+            await _await_file_task(first, handle.meeting_id)
             snapshot = await _snapshot(first, handle)
             assert decoder.calls == [0, 1, 2, 2, 3]
             assert competing.calls == []

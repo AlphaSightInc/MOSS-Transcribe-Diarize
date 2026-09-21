@@ -190,7 +190,7 @@ class FileMeetingTasks:
             if input_path is None:
                 return False
             started = asyncio.Event()
-            task = asyncio.create_task(self._run(handle, input_path, started))
+            task = asyncio.create_task(self._run(handle, input_path, started, resumed=True))
             self._register(handle, task, retained_lock=retained_lock, resumed=True)
             retained_lock = None
             await started.wait()
@@ -199,20 +199,16 @@ class FileMeetingTasks:
             if retained_lock is not None:
                 self._release_retained_lock(retained_lock)
 
-    async def resume_retained_work(self, store: Any, *, account: Any | None = None) -> None:
-        """Bring valid retained File Meetings to terminal truth before fallback recovery."""
+    async def resume_retained_work(
+        self, store: Any, *, account: Any | None = None
+    ) -> frozenset[tuple[str, str]]:
+        """Start verified retained owners and return only the owners fallback must leave alone."""
 
+        claimed: set[tuple[str, str]] = set()
         for handle in await store.active_file_meetings(account):
-            if not await self.claim_retained_work(handle):
-                continue
-            entry = self._tasks.get(handle.meeting_id)
-            if entry is not None:
-                try:
-                    await entry.task
-                except asyncio.CancelledError:
-                    if not entry.interrupted_by_meeting:
-                        raise
-                    await self.settle_meeting(entry)
+            if await self.claim_retained_work(handle):
+                claimed.add((handle.owner_key[0], handle.meeting_id))
+        return frozenset(claimed)
 
     async def accept(self, workspace: Any, upload: Any) -> Any:
         """Store a complete request body, then create exactly one File Meeting and start work."""
@@ -619,7 +615,14 @@ class FileMeetingTasks:
         self._record_retained_source(handle, input_path, ingress="url")
         await self._run(handle, input_path, asyncio.Event())
 
-    async def _run(self, handle: Any, input_path: Path, started: asyncio.Event) -> None:
+    async def _run(
+        self,
+        handle: Any,
+        input_path: Path,
+        started: asyncio.Event,
+        *,
+        resumed: bool = False,
+    ) -> None:
         loop = asyncio.get_running_loop()
         options = self._inference_options()
         if self._inference_scheduler is not None:
@@ -639,13 +642,21 @@ class FileMeetingTasks:
             self._set_phase(handle.meeting_id, "running")
         started.set()
         try:
-            await self._complete(handle, input_path, runner_task)
+            await self._complete(handle, input_path, runner_task, resumed=resumed)
         except asyncio.CancelledError:
             try:
                 await runner_task
             except Exception:
                 LOGGER.error("File Meeting runner failed during shutdown.")
             raise
+        except Exception:
+            if not resumed:
+                raise
+            await self._mark_failed(
+                handle,
+                "resume_failed",
+                "Retained File restart could not finish.",
+            )
 
     def _inference_options(self) -> dict[str, object]:
         return {
@@ -708,6 +719,8 @@ class FileMeetingTasks:
         handle: Any,
         input_path: Path,
         runner_task: asyncio.Task[Any],
+        *,
+        resumed: bool = False,
     ) -> None:
         try:
             result, mix_path, notices = await asyncio.shield(runner_task)
@@ -743,9 +756,16 @@ class FileMeetingTasks:
             self._remove_terminal_work_dir(input_path.parent)
             return
         except Exception:
-            await self._mark_failed(handle)
+            if resumed:
+                await self._mark_failed(
+                    handle,
+                    "resume_failed",
+                    "Retained File restart could not finish.",
+                )
+            else:
+                await self._mark_failed(handle)
             self._remove_terminal_work_dir(input_path.parent)
-            raise
+            return
 
         if self._is_fenced(handle):
             return
@@ -771,9 +791,16 @@ class FileMeetingTasks:
             self._remove_terminal_work_dir(input_path.parent)
             return
         except Exception:
-            await self._mark_failed(handle)
+            if resumed:
+                await self._mark_failed(
+                    handle,
+                    "resume_failed",
+                    "Retained File restart could not finish.",
+                )
+            else:
+                await self._mark_failed(handle)
             self._remove_terminal_work_dir(input_path.parent)
-            raise
+            return
 
         if self._is_fenced(handle):
             return
@@ -791,6 +818,12 @@ class FileMeetingTasks:
             self._remove_terminal_work_dir(input_path.parent)
         except Exception:
             LOGGER.error("Retained File Meeting cleanup failed after terminal completion.")
+            if resumed:
+                await handle.record_terminal_failure(
+                    "resume_failed",
+                    "Retained File restart could not finish.",
+                )
+                return
             raise
 
     def _is_fenced(self, handle: Any) -> bool:

@@ -57,10 +57,11 @@
     retained work. The retained-prefix product control is RED against the prior behaviour (the fence is cleared before
     it can publish) and now proves `decoder.calls == []`, durable `("interrupted", None)`, and the retained fence after
     revocation. Existing owner-bound controls still prove ordinary in-flight and late File results cannot publish.
-  - **F2 → C2.** `phase2.py:1960` awaits `resume_retained_work`; `phase2_file.py:210-215` awaits `entry.task` catching
-    only `CancelledError`, and `_run` re-raises at `:748`, `:776`, `:794`. A commit, publication or cleanup failure on
-    one retained Meeting therefore takes the whole app down at boot, and startup blocks for the entire re-decode — this
-    repo has a 201-minute file case.
+  - **F2 → C2 (closed, iteration 4).** Retained startup now claims valid `(account, meeting)` owners without joining
+    their re-decode; generic File recovery and its active-row check exclude exactly those claims, while Live and
+  `_assert_no_active_meetings` are unchanged. Held work permits startup and a 200 root response; injected retained
+    commit or audio-publication failure becomes durable `failed/resume_failed`, and injected post-terminal cleanup
+    failure stays `completed` with the same visible failure plus `needs_review`.
   - **F3 → C3.** When `_verified_retained_input` refuses work (`phase2_file.py:510-545`) nothing ever deletes
     `retained_root/<account>/<meeting>`: the Meeting is terminal so `active_file_meetings` never lists it again and
     `clear_transient_work` only touches `file-work` (`:155-177`). `tests/phase2/test_retained_file_claim.py:316`
@@ -111,20 +112,17 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 The preceding Run-B-completion snapshot is stale. Run C's PRD and opening
 progress entry are authoritative for the following ranked work:
 
-1. **C2 / F2 — retained resume is background, failure-contained work.** A failed
-   retained task records durable Meeting failure while lifespan serves; startup
-   must not await a long re-decode.
-2. **C3 / F3 — reclaim terminal-owned retained input.** Refusal and URL
+1. **C3 / F3 — reclaim terminal-owned retained input.** Refusal and URL
    cancellation remove only that Meeting's directory, after durable terminal
    truth.
-3. **C4 / F5 — close the post-download active/no-task window.** A retained-source
+2. **C4 / F5 — close the post-download active/no-task window.** A retained-source
    record failure durably fails the URL Meeting with a visible reason.
-4. **C6 / F8 — product-test batch uniqueness.** Collected resume and mid-window
+3. **C6 / F8 — product-test batch uniqueness.** Collected resume and mid-window
    crash controls prove unique saved segments and no replay duplicate.
-5. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
+4. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
    adjust only the neighbouring time boundary, or document an intentional overlap;
    never alter scored text.
-6. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
+5. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
    solo-lane vocabulary, not `SYSTEM_LADDER_REFERENCE`; its falsifier must be
    testable or removed with explanation.
 
@@ -160,6 +158,19 @@ progress entry are authoritative for the following ranked work:
   retained ownership without joining it, exclude only those owners from generic File
   fallback and its zero-active check, and turn commit/publication/post-terminal-cleanup
   exceptions into durable Meeting outcomes without blocking lifespan.
+
+## Iteration 4 outcome
+
+- **C2 / F2 (complete):** valid retained File work is claimed in the background and
+  represented only by its `(account, meeting)` owner pair. Generic recovery terminalizes
+  all other File rows and every Live row; its new narrow assertion permits only that
+  exact claimed set, leaving `_assert_no_active_meetings` byte-identical. The real
+  lifespan serves while a resumed window is held. Commit, audio-publication, and
+  post-terminal-cleanup mutants each stay inside the retained task and create visible
+  `resume_failed` durable outcomes; the latter preserves completed transcript truth and
+  marks review.
+- **Next:** C3 — make refusal and URL-download cancellation remove only their own
+  retained owner directories, and correct the existing retain-forever assertion.
 
 ## Non-candidates
 

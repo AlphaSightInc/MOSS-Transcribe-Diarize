@@ -1143,6 +1143,9 @@ async def base_lifespan_control(ingress: str) -> dict[str, object]:
             decoder = DeterministicDecoder()
             app = _app(seed, _runner(decoder))
             async with app.router.lifespan_context(app):
+                entry = app.state.phase2_file_tasks._tasks.get(seed.meeting_id)
+                if entry is not None:
+                    await entry.task
                 snapshot = await _snapshot(app, seed)
                 return {
                     "status": snapshot["status"],
