@@ -1,0 +1,20 @@
+{
+  "schema": "moss-headed-session-s9-request-plan.v1",
+  "scope": "one standalone 300-second headed S9 session with two submitted lanes",
+  "remote_decoder_requests_for_local_hf_recipe": 0,
+  "remote_decoder_contingency": {
+    "lane_seconds": 600,
+    "measured_rate": 0.51,
+    "measured_rate_unit": "requests_per_lane_second",
+    "rate_derived_requests": 306.0,
+    "headroom_multiplier": 1.25,
+    "headroom_status": "UNMEASURED planner policy",
+    "planned_requests": 383,
+    "calculation": "ceil((300 seconds * 2 lanes * 0.51 requests_per_lane_second) * 1.25) = ceil(382.5) = 383",
+    "rate_evidence": [
+      "2440 / (4 sessions * 2 lanes * 600 seconds) = 0.508333, rounded to 0.51",
+      "2448 / (8 sessions * 2 lanes * 300 seconds) = 0.510000, rounded to 0.51"
+    ],
+    "source": "tools/qualify/run.py:33-48,81-150"
+  }
+}

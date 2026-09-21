@@ -1,0 +1,282 @@
+{
+  "schema": "moss-headed-session-short-stack.v1",
+  "runtime": {
+    "sqlite_runtime": "3.53.4",
+    "required_sqlite_runtime": "3.53.4"
+  },
+  "short_seconds": 5.0,
+  "decoder_requests_remote": 0,
+  "provider_requests": 0,
+  "microphone_opened": false,
+  "audio_playback": false,
+  "synthetic_local_decoder": true,
+  "instrument": {
+    "schema": "moss-visible-word-headed.v1",
+    "browser": "headed Chromium",
+    "capture_path": "production live-frame API",
+    "session_seconds": 5.0,
+    "reference_intervals": 1,
+    "reference_words": 3,
+    "api_state_changes": 6,
+    "dom_state_changes": 6,
+    "visibility_observations": 11,
+    "document_hidden_true": 0,
+    "hidden_tab_behavior": "UNMEASURED",
+    "meeting_status": "closed",
+    "finalization_status": "final",
+    "measurement": {
+      "schema": "moss-visible-word-surfaces.v2",
+      "full_denominator": 3,
+      "api": {
+        "schema": "moss-visible-words.v2",
+        "clock": "api_arrival",
+        "full_denominator": 3,
+        "observation_count": 6,
+        "final_correct": 3,
+        "final_wrong": 0,
+        "final_missing": 0,
+        "ordered_word_score": {
+          "reference_words": 3,
+          "observed_words": 3,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 0,
+          "wer": 0.0
+        },
+        "words": [
+          {
+            "reference_word_id": "synthetic-0:0",
+            "source_start_sec": 0.0,
+            "source_end_sec": 5.0,
+            "final_status": "correct",
+            "final_wrong": false,
+            "final_missing": false,
+            "first_correct_sec": 5.334468416986056,
+            "stable_correct_sec": 5.334468416986056
+          },
+          {
+            "reference_word_id": "synthetic-0:1",
+            "source_start_sec": 0.0,
+            "source_end_sec": 5.0,
+            "final_status": "correct",
+            "final_wrong": false,
+            "final_missing": false,
+            "first_correct_sec": 5.334468416986056,
+            "stable_correct_sec": 5.334468416986056
+          },
+          {
+            "reference_word_id": "synthetic-0:2",
+            "source_start_sec": 0.0,
+            "source_end_sec": 5.0,
+            "final_status": "correct",
+            "final_wrong": false,
+            "final_missing": false,
+            "first_correct_sec": 5.334468416986056,
+            "stable_correct_sec": 5.334468416986056
+          }
+        ],
+        "phrase_end_diagnostics": {
+          "basis": "source-interval end; not per-word latency",
+          "full_denominator": 1,
+          "phrases": [
+            {
+              "reference_interval_id": "synthetic-0",
+              "source_start_sec": 0.0,
+              "source_end_sec": 5.0,
+              "word_count": 3,
+              "final_complete": true,
+              "first_complete_sec": 5.334468416986056,
+              "first_complete_delay_sec": 0.33446841698605567,
+              "stable_complete_sec": 5.334468416986056,
+              "stable_complete_delay_sec": 0.33446841698605567
+            }
+          ],
+          "first_complete_distribution": {
+            "full_denominator": 1,
+            "finite_count": 1,
+            "null_count": 0,
+            "population_p50_sec": 0.33446841698605567,
+            "population_p95_sec": 0.33446841698605567,
+            "finite_only": {
+              "minimum_sec": 0.33446841698605567,
+              "p50_sec": 0.33446841698605567,
+              "p95_sec": 0.33446841698605567,
+              "maximum_sec": 0.33446841698605567
+            }
+          },
+          "stable_complete_distribution": {
+            "full_denominator": 1,
+            "finite_count": 1,
+            "null_count": 0,
+            "population_p50_sec": 0.33446841698605567,
+            "population_p95_sec": 0.33446841698605567,
+            "finite_only": {
+              "minimum_sec": 0.33446841698605567,
+              "p50_sec": 0.33446841698605567,
+              "p95_sec": 0.33446841698605567,
+              "maximum_sec": 0.33446841698605567
+            }
+          }
+        }
+      },
+      "rendered_dom": {
+        "schema": "moss-visible-words.v2",
+        "clock": "rendered_dom",
+        "full_denominator": 3,
+        "observation_count": 6,
+        "final_correct": 3,
+        "final_wrong": 0,
+        "final_missing": 0,
+        "ordered_word_score": {
+          "reference_words": 3,
+          "observed_words": 15,
+          "substitutions": 0,
+          "omissions": 0,
+          "additions": 12,
+          "wer": 4.0
+        },
+        "words": [
+          {
+            "reference_word_id": "synthetic-0:0",
+            "source_start_sec": 0.0,
+            "source_end_sec": 5.0,
+            "final_status": "correct",
+            "final_wrong": false,
+            "final_missing": false,
+            "first_correct_sec": 5.335719124996103,
+            "stable_correct_sec": 5.335719124996103
+          },
+          {
+            "reference_word_id": "synthetic-0:1",
+            "source_start_sec": 0.0,
+            "source_end_sec": 5.0,
+            "final_status": "correct",
+            "final_wrong": false,
+            "final_missing": false,
+            "first_correct_sec": 5.335719124996103,
+            "stable_correct_sec": 5.335719124996103
+          },
+          {
+            "reference_word_id": "synthetic-0:2",
+            "source_start_sec": 0.0,
+            "source_end_sec": 5.0,
+            "final_status": "correct",
+            "final_wrong": false,
+            "final_missing": false,
+            "first_correct_sec": 5.335719124996103,
+            "stable_correct_sec": 5.335719124996103
+          }
+        ],
+        "phrase_end_diagnostics": {
+          "basis": "source-interval end; not per-word latency",
+          "full_denominator": 1,
+          "phrases": [
+            {
+              "reference_interval_id": "synthetic-0",
+              "source_start_sec": 0.0,
+              "source_end_sec": 5.0,
+              "word_count": 3,
+              "final_complete": true,
+              "first_complete_sec": 5.335719124996103,
+              "first_complete_delay_sec": 0.33571912499610335,
+              "stable_complete_sec": 5.335719124996103,
+              "stable_complete_delay_sec": 0.33571912499610335
+            }
+          ],
+          "first_complete_distribution": {
+            "full_denominator": 1,
+            "finite_count": 1,
+            "null_count": 0,
+            "population_p50_sec": 0.33571912499610335,
+            "population_p95_sec": 0.33571912499610335,
+            "finite_only": {
+              "minimum_sec": 0.33571912499610335,
+              "p50_sec": 0.33571912499610335,
+              "p95_sec": 0.33571912499610335,
+              "maximum_sec": 0.33571912499610335
+            }
+          },
+          "stable_complete_distribution": {
+            "full_denominator": 1,
+            "finite_count": 1,
+            "null_count": 0,
+            "population_p50_sec": 0.33571912499610335,
+            "population_p95_sec": 0.33571912499610335,
+            "finite_only": {
+              "minimum_sec": 0.33571912499610335,
+              "p50_sec": 0.33571912499610335,
+              "p95_sec": 0.33571912499610335,
+              "maximum_sec": 0.33571912499610335
+            }
+          }
+        }
+      },
+      "decoder_queue_clocks": [
+        {
+          "seq": 7,
+          "kind": "canonical_processed",
+          "batch_index": 0,
+          "queued_to_processed_ms": 3.117417,
+          "canonical_decode_elapsed_sec": 0,
+          "batch_size": 1,
+          "queue_wait_ms": 0.163583,
+          "canonical_processing_elapsed_ms": 2.953834,
+          "runtime_monotonic_ns": 354738196624500
+        },
+        {
+          "seq": 14,
+          "kind": "canonical_processed",
+          "batch_index": 0,
+          "queued_to_processed_ms": 0.649125,
+          "canonical_decode_elapsed_sec": 0,
+          "batch_size": 1,
+          "queue_wait_ms": 0.187041,
+          "canonical_processing_elapsed_ms": 0.462084,
+          "runtime_monotonic_ns": 354739197612250
+        },
+        {
+          "seq": 21,
+          "kind": "canonical_processed",
+          "batch_index": 0,
+          "queued_to_processed_ms": 0.525667,
+          "canonical_decode_elapsed_sec": 0,
+          "batch_size": 1,
+          "queue_wait_ms": 0.140292,
+          "canonical_processing_elapsed_ms": 0.385375,
+          "runtime_monotonic_ns": 354740192115250
+        },
+        {
+          "seq": 28,
+          "kind": "canonical_processed",
+          "batch_index": 0,
+          "queued_to_processed_ms": 0.565458,
+          "canonical_decode_elapsed_sec": 0,
+          "batch_size": 1,
+          "queue_wait_ms": 0.171875,
+          "canonical_processing_elapsed_ms": 0.393583,
+          "runtime_monotonic_ns": 354741192406291
+        },
+        {
+          "seq": 35,
+          "kind": "canonical_processed",
+          "batch_index": 0,
+          "queued_to_processed_ms": 0.624292,
+          "canonical_decode_elapsed_sec": 0,
+          "batch_size": 1,
+          "queue_wait_ms": 0.21525,
+          "canonical_processing_elapsed_ms": 0.409042,
+          "runtime_monotonic_ns": 354742186610125
+        },
+        {
+          "seq": 39,
+          "kind": "terminal_finalization_started",
+          "end_sample": 80000,
+          "runtime_monotonic_ns": 354742187074583,
+          "finalization_status": "running"
+        }
+      ],
+      "clock_relation": "separate; no cross-clock subtraction"
+    },
+    "numeric_latency_target": "USER_DECISION"
+  }
+}

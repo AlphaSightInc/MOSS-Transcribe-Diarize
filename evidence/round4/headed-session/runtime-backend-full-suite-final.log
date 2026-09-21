@@ -1,0 +1,413 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.12, pytest-9.1.1, pluggy-1.6.0
+rootdir: /private/tmp/moss-round4-20260920/headed-session
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 2284 items
+
+prototypes/streaming-diarization/dl2-capture/test_capture_harness.py ... [  0%]
+.............                                                            [  0%]
+prototypes/streaming-diarization/dl2-capture/test_post_session.py ...... [  0%]
+.                                                                        [  1%]
+prototypes/streaming-diarization/l15/test_f1_precondition.py ...         [  1%]
+prototypes/streaming-diarization/l15/test_f1_runner.py ..                [  1%]
+prototypes/streaming-diarization/l15/test_f2_precondition.py .....       [  1%]
+prototypes/streaming-diarization/l15/test_f3_precondition.py ....        [  1%]
+prototypes/streaming-diarization/l15/test_holdout_gate.py ....           [  1%]
+prototypes/streaming-diarization/l15/test_l1_baseline.py F...            [  1%]
+prototypes/streaming-diarization/l15/test_runtime_fixture.py ...         [  2%]
+prototypes/streaming-diarization/l15/test_runtime_l1_adapter.py .        [  2%]
+prototypes/streaming-diarization/l15/test_stage0_ledger_differential.py . [  2%]
+...                                                                      [  2%]
+prototypes/streaming-diarization/l2-stage0/test_a5_holdout_runner.py ... [  2%]
+.                                                                        [  2%]
+prototypes/streaming-diarization/l2-stage0/test_candidates.py .......    [  2%]
+prototypes/streaming-diarization/l2-stage0/test_complete_a4.py ....      [  2%]
+prototypes/streaming-diarization/l2-stage0/test_continuity_candidate.py . [  3%]
+..                                                                       [  3%]
+prototypes/streaming-diarization/l2-stage0/test_joint_span_candidate.py . [  3%]
+.                                                                        [  3%]
+prototypes/streaming-diarization/l2-stage0/test_l1_control.py .....      [  3%]
+prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py FF..... [  3%]
+.                                                                        [  3%]
+prototypes/streaming-diarization/l2-stage0/test_lifecycle_prototype.py . [  3%]
+.............                                                            [  4%]
+prototypes/streaming-diarization/l2-stage0/test_production_cache.py .... [  4%]
+.                                                                        [  4%]
+prototypes/streaming-diarization/l2-stage0/test_span_local_candidate.py . [  4%]
+.                                                                        [  4%]
+prototypes/streaming-diarization/l2-stage0/test_validate_inputs.py ..... [  4%]
+....                                                                     [  5%]
+tests/e2e/test_capture_sequencing.py ....                                [  5%]
+tests/e2e/test_evidence_boundary.py ..                                   [  5%]
+tests/e2e/test_smoke_options.py ..........                               [  5%]
+tests/phase2/test_acceptance_cleanup.py .....                            [  5%]
+tests/phase2/test_acceptance_helper_lifetime.py .....                    [  6%]
+tests/phase2/test_acceptance_journal.py ..............                   [  6%]
+tests/phase2/test_acceptance_locator_sentinels.py ...                    [  6%]
+tests/phase2/test_acceptance_overload_window.py ..                       [  7%]
+tests/phase2/test_acceptance_setup.py .....                              [  7%]
+tests/phase2/test_acceptance_stop_deadline.py ...                        [  7%]
+tests/phase2/test_acceptance_stop_pending.py .......                     [  7%]
+tests/phase2/test_accepted_stop_lease.py ............                    [  8%]
+tests/phase2/test_account_deployment_surface.py .............            [  8%]
+tests/phase2/test_account_file_ingress.py .......                        [  9%]
+tests/phase2/test_admin_status_capture.py ...                            [  9%]
+tests/phase2/test_atomic_cutover.py .................................... [ 10%]
+.......                                                                  [ 11%]
+tests/phase2/test_attended_g7_canary.py ................................ [ 12%]
+......................                                                   [ 13%]
+tests/phase2/test_batch_startup_prototype_controls.py xx                 [ 13%]
+tests/phase2/test_browser_stress_artifacts.py .                          [ 13%]
+tests/phase2/test_browser_support.py ..                                  [ 13%]
+tests/phase2/test_browser_timeout_evidence.py ........................   [ 14%]
+tests/phase2/test_browser_workspace.py ......                            [ 15%]
+tests/phase2/test_candidate_identity_writer.py .                         [ 15%]
+tests/phase2/test_candidate_storage.py ...................               [ 15%]
+tests/phase2/test_candidate_tls.py .......                               [ 16%]
+tests/phase2/test_canonical_preview.py .....                             [ 16%]
+tests/phase2/test_completion_qualification.py .............              [ 16%]
+tests/phase2/test_crash_recovery_wait.py ...                             [ 17%]
+tests/phase2/test_data_durability.py ....s                               [ 17%]
+tests/phase2/test_demo_lane_measurement.py ..........                    [ 17%]
+tests/phase2/test_draft_lane.py ...............                          [ 18%]
+tests/phase2/test_export_oracle.py ..................................... [ 20%]
+...............................................                          [ 22%]
+tests/phase2/test_file_album_acceptance.py .                             [ 22%]
+tests/phase2/test_file_backend_contract.py ......                        [ 22%]
+tests/phase2/test_file_digital_silence.py .....                          [ 22%]
+tests/phase2/test_file_failure_reasons.py .........                      [ 23%]
+tests/phase2/test_file_mp3_artifact.py ...............                   [ 23%]
+tests/phase2/test_file_truncation_notice.py ...                          [ 23%]
+tests/phase2/test_final_summary.py ............                          [ 24%]
+tests/phase2/test_finalization_failure_stop_boundary.py ...              [ 24%]
+tests/phase2/test_lane_consumer_geometry.py ...                          [ 24%]
+tests/phase2/test_lane_consumer_store.py ..                              [ 24%]
+tests/phase2/test_lane_word_oracle.py ..........                         [ 25%]
+tests/phase2/test_legacy_model_exports.py .                              [ 25%]
+tests/phase2/test_legacy_surface_absence.py ....                         [ 25%]
+tests/phase2/test_llm_relay.py ......................................... [ 27%]
+.......                                                                  [ 27%]
+tests/phase2/test_manual_speaker_voiceprints.py .........                [ 27%]
+tests/phase2/test_multi_file_url_browser.py .                            [ 27%]
+tests/phase2/test_multi_file_url_meetings.py ...........                 [ 28%]
+tests/phase2/test_operator_status.py ................                    [ 29%]
+tests/phase2/test_owner_bound_file_meeting.py .................          [ 29%]
+tests/phase2/test_owner_bound_live_meeting.py .......................... [ 30%]
+......................................                                   [ 32%]
+tests/phase2/test_pre_stop_terminal_boundary.py ..                       [ 32%]
+tests/phase2/test_quality_exception_band.py ............................ [ 33%]
+                                                                         [ 33%]
+tests/phase2/test_quality_identity_counts.py ...                         [ 34%]
+tests/phase2/test_quality_surface_capture.py ..............              [ 34%]
+tests/phase2/test_round11_browser_fixes.py ....                          [ 34%]
+tests/phase2/test_runner_composition.py ...............                  [ 35%]
+tests/phase2/test_saved_speaker_naming.py ..........                     [ 35%]
+tests/phase2/test_settled_passage_correction.py ...............          [ 36%]
+tests/phase2/test_shared_meeting_history.py ..                           [ 36%]
+tests/phase2/test_summary_browser_guard.py ...                           [ 36%]
+tests/phase2/test_summary_provider_paths.py ....                         [ 36%]
+tests/phase2/test_tape_exhaustion.py ........                            [ 37%]
+tests/phase2/test_terminal_outcome_projection.py .........               [ 37%]
+tests/phase2/test_tls_preparation.py .................                   [ 38%]
+tests/phase2/test_tls_renewal.py .......                                 [ 38%]
+tests/phase2/test_voiceprint_bank_operations.py ...                      [ 38%]
+tests/phase2/test_voiceprint_latency_measurement.py ..                   [ 39%]
+tests/phase2/test_voiceprint_matching.py ...                             [ 39%]
+tests/phase2/test_wave1_qualification.py ............................... [ 40%]
+........................................................................ [ 43%]
+........................................................................ [ 46%]
+.......................                                                  [ 47%]
+tests/phase2/test_workspace_demo_geometry.py ....                        [ 47%]
+tests/phase2/test_workspace_lifecycle.py ...............                 [ 48%]
+tests/phase2/test_workspace_reachability.py ..                           [ 48%]
+tests/phase2/test_workspace_reachability_browser.py .                    [ 48%]
+tests/phase2/test_wp24_copy_accessibility.py .......                     [ 49%]
+tests/phase2/test_wp9_silence_birth.py .                                 [ 49%]
+tests/test_app_ffmpeg.py ..                                              [ 49%]
+tests/test_capacity_campaign_fix.py ...                                  [ 49%]
+tests/test_demo_precheck.py ...........                                  [ 49%]
+tests/test_evaluation.py .................                               [ 50%]
+tests/test_file_identity_album.py ...........                            [ 51%]
+tests/test_file_resolver_performance.py .........ss                      [ 51%]
+tests/test_inference_scheduler.py .........                              [ 51%]
+tests/test_live_arbiter_refinement.py ............                       [ 52%]
+tests/test_live_capture_guard.py ............                            [ 52%]
+tests/test_live_capture_recorder.py ...                                  [ 53%]
+tests/test_live_capture_status.py ..............                         [ 53%]
+tests/test_live_coordinator.py ................                          [ 54%]
+tests/test_live_endpoint.py ......                                       [ 54%]
+tests/test_live_export_surface.py ........                               [ 55%]
+tests/test_live_finalized_memory.py ...                                  [ 55%]
+tests/test_live_helper_failure.py .............                          [ 55%]
+tests/test_live_helper_presence.py ....                                  [ 55%]
+tests/test_live_identity.py .............                                [ 56%]
+tests/test_live_identity_accuracy.py ...........................         [ 57%]
+tests/test_live_identity_album.py .................                      [ 58%]
+tests/test_live_identity_fragment_mechanism.py ............              [ 58%]
+tests/test_live_identity_real_corpus.py .s.                              [ 59%]
+tests/test_live_identity_sweep.py ...................................... [ 60%]
+..................                                                       [ 61%]
+tests/test_live_ingest.py .......                                        [ 61%]
+tests/test_live_lane_contract.py ....................................... [ 63%]
+...............                                                          [ 64%]
+tests/test_live_lane_decode.py ......................................... [ 65%]
+....                                                                     [ 66%]
+tests/test_live_manifest_finalizer.py .................................. [ 67%]
+........                                                                 [ 67%]
+tests/test_live_mixer.py .....................                           [ 68%]
+tests/test_live_pipeline_seams.py ...................................... [ 70%]
+.............................                                            [ 71%]
+tests/test_live_provider_bundle.py ..................................... [ 73%]
+.........                                                                [ 73%]
+tests/test_live_provider_truth.py .........                              [ 74%]
+tests/test_live_replay.py ....                                           [ 74%]
+tests/test_live_rolling_wiring.py ............................           [ 75%]
+tests/test_live_service_replay.py ........................               [ 76%]
+tests/test_live_service_runtime.py ..................................... [ 78%]
+..........                                                               [ 78%]
+tests/test_live_session.py ................                              [ 79%]
+tests/test_live_session_v2.py .............                              [ 80%]
+tests/test_live_speaker_accuracy.py s.....................               [ 80%]
+tests/test_live_stop_drain.py .......                                    [ 81%]
+tests/test_live_terminal_finalizer.py ...............................    [ 82%]
+tests/test_live_terminal_lifecycle.py .............                      [ 83%]
+tests/test_live_terminal_tape.py ..................                      [ 84%]
+tests/test_live_text_revision.py .................                       [ 84%]
+tests/test_live_transcript_convergence.py .........................      [ 85%]
+tests/test_live_transcript_salvage.py ...........................        [ 87%]
+tests/test_live_vad.py ...............                                   [ 87%]
+tests/test_live_zero_span_dispatch.py .........                          [ 88%]
+tests/test_long_form_fixtures.py ..............................          [ 89%]
+tests/test_qualification_verdict.py ...........................          [ 90%]
+tests/test_r4_gap_terminal_identity.py x.                                [ 90%]
+tests/test_remote_vllm_tunnel_measurement.py ..........                  [ 91%]
+tests/test_round4_alternation_diagnosis.py x...                          [ 91%]
+tests/test_round4_jamie_violating_controls.py xx                         [ 91%]
+tests/test_round4_overlap_diagnosis.py xx                                [ 91%]
+tests/test_speaker_continuity.py .............                           [ 92%]
+tests/test_speaker_identity_provider.py ................................ [ 93%]
+...                                                                      [ 93%]
+tests/test_speaker_reference.py ........                                 [ 93%]
+tests/test_speechless_windows.py ..............................          [ 95%]
+tests/test_subtitle_export.py ......                                     [ 95%]
+tests/test_subtitle_postprocess.py ......                                [ 95%]
+tests/test_transcript_parser.py ......                                   [ 96%]
+tests/test_visible_word_instrument.py .......................            [ 97%]
+tests/test_vllm_runner.py .....                                          [ 97%]
+tests/test_w2_measurement_evidence.py ..                                 [ 97%]
+tests/test_windowed_transcription.py ............................        [ 98%]
+tests/test_windows_contract.py ........                                  [ 98%]
+tools/qualify/test_bundle.py .................                           [ 99%]
+tools/qualify/test_speaker_quality.py ........                           [100%]
+
+=================================== FAILURES ===================================
+_ BaselineContractTests.test_a2_instrument_is_hash_pinned_and_production_bound _
+
+self = <test_l1_baseline.BaselineContractTests testMethod=test_a2_instrument_is_hash_pinned_and_production_bound>
+
+    def test_a2_instrument_is_hash_pinned_and_production_bound(self) -> None:
+>       instrument = load_a2_instrument(self.spec)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+prototypes/streaming-diarization/l15/test_l1_baseline.py:23:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+spec = {'a2_instrument': {'path': 'prototypes/streaming-diarization/l2-stage0/run_l1_control.py', 'sha256': '5f7ca3851f742911...jamie-dimon', '1m-acquired-jamie-dimon', '5m-acquired-jamie-dimon', '5m-acquired-nfl', '5m-lex-bill-ackman', ...], ...}
+
+    def load_a2_instrument(spec: dict[str, Any]) -> ModuleType:
+        binding = spec["a2_instrument"]
+        path = resolve(binding["path"])
+        actual = sha256_file(path)
+        if actual != binding["sha256"]:
+            raise BaselineError("l15_a2_instrument_hash_mismatch", actual)
+        product_diff = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(REPO),
+                "diff",
+                "--quiet",
+                spec["production_source_commit"],
+                "HEAD",
+                "--",
+                "moss_transcribe_diarize",
+            ],
+            check=False,
+        )
+        if product_diff.returncode != 0:
+>           raise BaselineError("l15_product_tree_drift", spec["production_source_commit"])
+E           run_l1_baseline.BaselineError: l15_product_tree_drift: 9089b33210401111865da7abc160ab0bcb4aa266
+
+prototypes/streaming-diarization/l15/run_l1_baseline.py:74: BaselineError
+_ LegacyIngestTest.test_all_92_archived_units_render_into_parseable_preparations _
+
+path = PosixPath('/private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz')
+
+    def load_legacy_archive(path: Path) -> LegacyArchive:
+        try:
+>           with path.open("rb") as handle:
+                 ^^^^^^^^^^^^^^^
+
+prototypes/streaming-diarization/l2-stage0/legacy_ingest.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PosixPath('/private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz'
+
+../runtime-prefix/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+
+The above exception was the direct cause of the following exception:
+
+self = <test_legacy_ingest.LegacyIngestTest testMethod=test_all_92_archived_units_render_into_parseable_preparations>
+
+    def test_all_92_archived_units_render_into_parseable_preparations(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="moss-l2-legacy-all92-") as temp:
+>           result = self._replay_archived_alphabet(Path(temp) / "adapted.npz")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py:165:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py:39: in _replay_archived_alphabet
+    return replay_legacy_case(
+prototypes/streaming-diarization/l2-stage0/run_legacy_anchor_fidelity.py:102: in replay_legacy_case
+    archive = load_legacy_archive(archive_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = PosixPath('/private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz')
+
+    def load_legacy_archive(path: Path) -> LegacyArchive:
+        try:
+            with path.open("rb") as handle:
+                with np.load(handle, allow_pickle=False) as payload:
+                    required = {"rows", "vec_idx", "vecs"}
+                    missing = sorted(required - set(payload.files))
+                    if missing:
+                        raise LegacyIngestError(
+                            "legacy_archive_missing_field", ",".join(missing)
+                        )
+                    extra = sorted(set(payload.files) - required)
+                    if extra:
+                        raise LegacyIngestError(
+                            "legacy_archive_schema_surprise", ",".join(extra)
+                        )
+                    rows = payload["rows"].astype(np.float64)
+                    vector_indexes = payload["vec_idx"].astype(np.int64)
+                    vectors = payload["vecs"].astype(np.float32)
+        except LegacyIngestError:
+            raise
+        except Exception as exc:
+>           raise LegacyIngestError(
+                "legacy_archive_corrupt", f"{path}:{exc.__class__.__name__}:{exc}"
+            ) from exc
+E           legacy_ingest.LegacyIngestError: legacy_archive_corrupt: /private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz:FileNotFoundError:[Errno 2] No such file or directory: '/private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz'
+
+prototypes/streaming-diarization/l2-stage0/legacy_ingest.py:69: LegacyIngestError
+_ LegacyIngestTest.test_archived_unit_23_span_19_parses_and_reaches_assignment _
+
+path = PosixPath('/private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz')
+
+    def load_legacy_archive(path: Path) -> LegacyArchive:
+        try:
+>           with path.open("rb") as handle:
+                 ^^^^^^^^^^^^^^^
+
+prototypes/streaming-diarization/l2-stage0/legacy_ingest.py:50:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PosixPath('/private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz'
+
+../runtime-prefix/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+
+The above exception was the direct cause of the following exception:
+
+self = <test_legacy_ingest.LegacyIngestTest testMethod=test_archived_unit_23_span_19_parses_and_reaches_assignment>
+
+    def test_archived_unit_23_span_19_parses_and_reaches_assignment(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="moss-l2-legacy-unit23-") as temp:
+>           result = self._replay_archived_alphabet(Path(temp) / "adapted.npz")
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py:157:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py:39: in _replay_archived_alphabet
+    return replay_legacy_case(
+prototypes/streaming-diarization/l2-stage0/run_legacy_anchor_fidelity.py:102: in replay_legacy_case
+    archive = load_legacy_archive(archive_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = PosixPath('/private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz')
+
+    def load_legacy_archive(path: Path) -> LegacyArchive:
+        try:
+            with path.open("rb") as handle:
+                with np.load(handle, allow_pickle=False) as payload:
+                    required = {"rows", "vec_idx", "vecs"}
+                    missing = sorted(required - set(payload.files))
+                    if missing:
+                        raise LegacyIngestError(
+                            "legacy_archive_missing_field", ",".join(missing)
+                        )
+                    extra = sorted(set(payload.files) - required)
+                    if extra:
+                        raise LegacyIngestError(
+                            "legacy_archive_schema_surprise", ",".join(extra)
+                        )
+                    rows = payload["rows"].astype(np.float64)
+                    vector_indexes = payload["vec_idx"].astype(np.int64)
+                    vectors = payload["vecs"].astype(np.float32)
+        except LegacyIngestError:
+            raise
+        except Exception as exc:
+>           raise LegacyIngestError(
+                "legacy_archive_corrupt", f"{path}:{exc.__class__.__name__}:{exc}"
+            ) from exc
+E           legacy_ingest.LegacyIngestError: legacy_archive_corrupt: /private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz:FileNotFoundError:[Errno 2] No such file or directory: '/private/tmp/moss-round4-20260920/headed-session/prototypes/streaming-diarization/data/real/benchmark_5m/acquired_alphabet/harness_cache.npz'
+
+prototypes/streaming-diarization/l2-stage0/legacy_ingest.py:69: LegacyIngestError
+=============================== warnings summary ===============================
+../runtime-prefix/venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /private/tmp/moss-round4-20260920/runtime-prefix/venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../runtime-prefix/venv/lib/python3.12/site-packages/starlette/testclient.py:53
+  /private/tmp/moss-round4-20260920/runtime-prefix/venv/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+tests/phase2/test_atomic_cutover.py: 17 warnings
+  /private/tmp/moss-round4-20260920/headed-session/moss_transcribe_diarize/phase2_cutover.py:1410: DeprecationWarning: Python 3.14 will, by default, filter extracted tar archives and reject files or modify their metadata. Use the filter argument to control this behavior.
+    source.extractall(extraction)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED prototypes/streaming-diarization/l15/test_l1_baseline.py::BaselineContractTests::test_a2_instrument_is_hash_pinned_and_production_bound
+FAILED prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py::LegacyIngestTest::test_all_92_archived_units_render_into_parseable_preparations
+FAILED prototypes/streaming-diarization/l2-stage0/test_legacy_ingest.py::LegacyIngestTest::test_archived_unit_23_span_19_parses_and_reaches_assignment
+= 3 failed, 2268 passed, 5 skipped, 8 xfailed, 19 warnings in 215.62s (0:03:35) =

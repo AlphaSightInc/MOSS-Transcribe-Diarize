@@ -1,0 +1,13 @@
+{
+  "schema": "moss-headed-session-short-stack.v1",
+  "short_seconds": 5.0,
+  "decoder_requests_remote": 0,
+  "provider_requests": 0,
+  "microphone_opened": false,
+  "audio_playback": false,
+  "synthetic_local_decoder": true,
+  "outcome": "BLOCKED-ON-RUNTIME",
+  "failure_type": "RuntimeError",
+  "failure": "loopback candidate stack exited during startup",
+  "startup_error": "Refusing SQLite runtime 3.50.4; exactly 3.53.4 is required."
+}

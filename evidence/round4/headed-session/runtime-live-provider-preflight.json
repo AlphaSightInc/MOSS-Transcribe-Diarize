@@ -1,0 +1,31 @@
+{
+  "available": true,
+  "config_hashes": {
+    "bounds_config_hash": "696ea15eb0ae96dba995b7633c214dff455d6781feefd528b4f699644bffa8c7",
+    "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265",
+    "component_config_hash": "a69eca0518705193f15eab25124df6cd42b539e1969bfa22cb18bb589451480d",
+    "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+    "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+    "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89"
+  },
+  "descriptor": {
+    "identity_provider_kind": "wespeaker_resnet152_lm",
+    "provider_license": "WebRTC BSD-3-Clause; WeSpeaker Apache-2.0",
+    "provider_name": "moss-rtx-webrtc-wespeaker",
+    "provider_provenance": "operator-assembled offline RTX lab bundle from installed wheel and staged pinned WeSpeaker ONNX asset",
+    "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "runtime": {
+      "backend": "webrtc-cpu",
+      "device": "cpu",
+      "embedding_dimension": 256,
+      "inter_op_threads": 1,
+      "intra_op_threads": 1
+    },
+    "sample_rate": 16000,
+    "source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea",
+    "speech_provider_kind": "webrtc"
+  },
+  "failures": [],
+  "manifest_hash": "07e325988de150ca12d18aee5b9c941679d1af57fd9a6da8b2eec6cf68c08313",
+  "schema_version": 1
+}
