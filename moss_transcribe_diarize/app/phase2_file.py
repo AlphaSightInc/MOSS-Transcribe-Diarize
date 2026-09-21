@@ -886,7 +886,17 @@ class FileMeetingTasks:
     def _checkpoint_is_valid(self, input_path: Path, checkpoint_dir: Path) -> bool:
         """Reuse the deployed runner's checkpoint contract before dispatching a decoder."""
 
-        verdict = self._checkpoint_verdict(input_path, checkpoint_dir)
+        validate_resume = getattr(self._runner, "validate_resume", None)
+        if not callable(validate_resume):
+            return False
+        try:
+            verdict = validate_resume(
+                input_path,
+                checkpoint_dir,
+                inference=self._inference_options(),
+            )
+        except Exception:
+            return False
         return bool(getattr(verdict, "accepted", False))
 
     def _checkpoint_verdict(self, input_path: Path, checkpoint_dir: Path) -> Any:
