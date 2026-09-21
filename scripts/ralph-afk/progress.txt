@@ -102,3 +102,5 @@ convert; the two Jamie controls must stay xfailed.
 - Evidence: `docs/verify/round4-run-b/VERIFY.md`; six plain controls listed there; `prototypes/gap/NOTES.md`; `prototypes/batch-startup/NOTES.md`; D27/D28 addendum.
 - Learned: Run B's six owned controls are ordinary passes while the two Jamie controls remain intentional xfails. S17 and 2x1800 capacity remain explicitly unmeasured/deferred, rather than implied by the offline gates.
 - Next: acceptance bar met; lead may integrate this branch. Do not run decoder-backed S17 or 2x1800 capacity work under this offline mandate.
+
+[loop 20260921-041515-90563] complete at iteration 10
