@@ -1,0 +1,57 @@
+{
+  "schema": "moss-r4-s17-identity-plan.v2",
+  "population": {
+    "cases": [
+      "single",
+      "gap",
+      "alternating"
+    ],
+    "arms": [
+      {
+        "case": "single",
+        "session_seconds": 60,
+        "lanes_per_session": 2,
+        "lane_seconds": 120
+      },
+      {
+        "case": "gap",
+        "session_seconds": 60,
+        "lanes_per_session": 2,
+        "lane_seconds": 120
+      },
+      {
+        "case": "alternating",
+        "session_seconds": 60,
+        "lanes_per_session": 2,
+        "lane_seconds": 120
+      }
+    ],
+    "sessions": 3,
+    "lane_seconds": 360,
+    "source": "tools.qualify.run.LIVE_BENCH_SESSIONS['identity_stress']"
+  },
+  "capture": {
+    "status": "AVAILABLE",
+    "environment_variable": "MOSS_TERMINAL_LABEL_CAPTURE",
+    "required_fields": [
+      "span_index",
+      "source_start",
+      "source_end",
+      "samples",
+      "terminal_local_label",
+      "partition_id",
+      "eligible",
+      "score_by_canonical",
+      "margin",
+      "decision",
+      "published_identity"
+    ]
+  },
+  "measured_request_rate": 0.51,
+  "measured_request_rate_unit": "requests_per_lane_second",
+  "planned_requests": 184,
+  "request_derivation": {
+    "calculation": "ceil(360 lane_seconds * 0.51 requests_per_lane_second)",
+    "merged_lane_seconds": 360
+  }
+}

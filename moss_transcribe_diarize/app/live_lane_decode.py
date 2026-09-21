@@ -134,7 +134,9 @@ def prepare_lanes(c, work, on_decoded):
     )
 
 
-def revision_segments(c, lane, span, pcm, text, authority):
+def revision_segments(
+    c, lane, span, pcm, text, authority, *, terminal_capture=None, partition_id=None
+):
     from .live_transcript_convergence import resolve_segment_overlaps
     from .live_session import EffectiveTranscriptSegment
 
@@ -144,13 +146,25 @@ def revision_segments(c, lane, span, pcm, text, authority):
         # Identity may abstain; it must never erase a late producer's words.
         relabeled = unattributed_transcript(text, sample_count=span.sample_count)
     else:
-        prep = owner.prepare_revision(
+        preparation_kwargs = dict(
             span=span,
             pcm=pcm,
             transcript=text,
             base_snapshot=base,
             allowed_speakers=tuple(c._lane_speakers.get(lane, ())),
         )
+        if terminal_capture is None:
+            prep = owner.prepare_revision(**preparation_kwargs)
+        else:
+            try:
+                prep = terminal_capture.prepare_revision(
+                    owner=owner,
+                    partition_id=partition_id,
+                    **preparation_kwargs,
+                )
+            except Exception:
+                # Observation may never convert a normal terminal decision into refusal.
+                prep = owner.prepare_revision(**preparation_kwargs)
         relabeled = (
             prep.relabeled_transcript
             if prep.status == "prepared"
@@ -236,26 +250,33 @@ def decode_refinement(c, request):
 
 def finalize_lanes(c, finalizer, **kwargs):
     """Finalize lanes, matching each unmapped terminal-local partition once."""
-    from .live_transcript_convergence import TerminalOutcome
+    from .live_transcript_convergence import (
+        TerminalOutcome,
+        TerminalPartitionDecision,
+        TerminalPartitionSpan,
+    )
+    from .terminal_label_capture import capture_from_environment
 
     results = []
     lane_results_by_name = {}
     failures = []
     placed = []
+    terminal_partitions = []
     base = kwargs["base_surface"]
+    terminal_capture = capture_from_environment()
 
     def finish_lane(item):
         lane, tape = item
-        results, failures, placed = [], [], []
+        results, failures, placed, terminal_partitions = [], [], [], []
         lane_base = tuple(s for s in base if s.source_lane == lane)
         try:
             pcm = tape.read(end_sample=kwargs["plan"].end_sample)
         except Exception as exc:
             failures.append((lane, type(exc).__name__))
             placed.extend(lane_base)
-            return results, failures, placed
+            return results, failures, placed, terminal_partitions
         if not any(pcm):
-            return results, failures, placed
+            return results, failures, placed, terminal_partitions
         own = c._lane_speakers.get(lane, set())
         # Reuse mono's speaker-level overlap assignment, with both evidence and
         # candidates scoped to this lane. The finalizer preserves its partition.
@@ -279,9 +300,9 @@ def finalize_lanes(c, finalizer, **kwargs):
             terminal_local_speakers = result.proposal.terminal_local_speakers
             partition_speakers = {}
             probe_indexes = set()
+            partitions = {}
             if len(terminal_local_speakers) == len(result.proposal.segments):
                 base_snapshot = c.session.snapshot().identity_snapshot
-                partitions = {}
                 for index, (segment, local_speaker) in enumerate(zip(
                     result.proposal.segments, terminal_local_speakers, strict=True
                 )):
@@ -296,6 +317,7 @@ def finalize_lanes(c, finalizer, **kwargs):
                     probe_indexes.add(index)
                     partitions.setdefault(local_speaker, []).append(segment)
                 for index, (local_speaker, segments) in enumerate(partitions.items()):
+                    partition_id = f"{lane}:{local_speaker}"
                     start_sample = min(segment.start_sample for segment in segments)
                     end_sample = max(segment.end_sample for segment in segments)
                     span = FrozenSpan(
@@ -318,13 +340,22 @@ def finalize_lanes(c, finalizer, **kwargs):
                         lambda segment: segment.speaker,
                     )
                     try:
-                        probe = revision_segments(
+                        probe_args = (
                             c,
                             lane,
                             span,
                             pcm[span.start_sample * 2:span.end_sample * 2],
                             transcript,
                             "terminal",
+                        )
+                        probe = (
+                            revision_segments(*probe_args)
+                            if terminal_capture is None
+                            else revision_segments(
+                                *probe_args,
+                                terminal_capture=terminal_capture,
+                                partition_id=partition_id,
+                            )
                         )
                         speakers = {segment.canonical_speaker for segment in probe}
                         partition_speakers[local_speaker] = (
@@ -333,19 +364,56 @@ def finalize_lanes(c, finalizer, **kwargs):
                     except Exception as exc:
                         failures.append((lane, type(exc).__name__))
                         partition_speakers[local_speaker] = None
+            final_speakers = []
             for index, segment in enumerate(result.proposal.segments):
                 speaker = segment.canonical_speaker
                 if index in probe_indexes:
                     speaker = partition_speakers.get(terminal_local_speakers[index])
+                final_speakers.append(speaker)
                 placed.append(replace(segment, source_lane=lane, canonical_speaker=speaker))
-        return results, failures, placed
+            if len(terminal_local_speakers) == len(result.proposal.segments):
+                groups = {}
+                for index, (segment, local_speaker) in enumerate(zip(
+                    result.proposal.segments, terminal_local_speakers, strict=True
+                )):
+                    groups.setdefault(local_speaker, []).append((index, segment))
+                owner = getattr(c, "_lane_preparers", {}).get(lane)
+                minimum_samples = getattr(
+                    getattr(owner, "evidence_provider", None), "min_segment_samples", None
+                )
+                for local_speaker, members in groups.items():
+                    terminal_partitions.append(
+                        TerminalPartitionDecision(
+                            lane=lane,
+                            partition_id=f"{lane}:{local_speaker}",
+                            terminal_local_label=local_speaker,
+                            decision=(
+                                "terminal_partition_probe"
+                                if local_speaker in partitions
+                                else "terminal_overlap_mapping"
+                            ),
+                            minimum_samples=(
+                                None if minimum_samples is None else int(minimum_samples)
+                            ),
+                            spans=tuple(
+                                TerminalPartitionSpan(
+                                    span_index=index,
+                                    source_start=segment.start_sample,
+                                    source_end=segment.end_sample,
+                                    published_identity=final_speakers[index],
+                                )
+                                for index, segment in members
+                            ),
+                        )
+                    )
+        return results, failures, placed, terminal_partitions
 
     # Stop has drained causal work. Each lane reads its own tape and settled voice
     # evidence; results are assembled in lane order before the single publication.
     with ThreadPoolExecutor(
         max_workers=len(LANES), thread_name_prefix="moss-lane-terminal"
     ) as pool:
-        for lane, (lane_results, lane_failures, lane_segments) in zip(
+        for lane, (lane_results, lane_failures, lane_segments, lane_partitions) in zip(
             c.lane_tapes, pool.map(finish_lane, c.lane_tapes.items())
         ):
             if lane_results:
@@ -353,6 +421,7 @@ def finalize_lanes(c, finalizer, **kwargs):
             results.extend(lane_results)
             failures.extend(lane_failures)
             placed.extend(lane_segments)
+            terminal_partitions.extend(lane_partitions)
     gaps = tuple(
         gap
         for tape in c.lane_tapes.values()
@@ -409,7 +478,13 @@ def finalize_lanes(c, finalizer, **kwargs):
         } or None,
     )
     if template.proposal is None:
-        return replace(template, accounting=accounting)
+        return replace(
+            template,
+            accounting=accounting,
+            terminal_partitions=tuple(terminal_partitions),
+        )
+    if terminal_capture is not None:
+        terminal_capture.record_partitions(tuple(terminal_partitions))
     return replace(
         template,
         proposal=replace(
@@ -430,4 +505,5 @@ def finalize_lanes(c, finalizer, **kwargs):
             ),
             unattributed_segments=sum(s.canonical_speaker is None for s in placed),
         ),
+        terminal_partitions=tuple(terminal_partitions),
     )
