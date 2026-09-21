@@ -15,13 +15,11 @@ import pytest
 import soundfile as sf
 
 
-HEAD = True
 ROOT = Path(__file__).resolve().parents[1]
 
 
 # ---------------------------------------------------------------- T5 (H, I4)
-@pytest.mark.skipif(not HEAD, reason="I4 accounting exists only on HEAD")
-def test_t5_proxy_counts_an_upstream_503_as_completed(tmp_path):
+def test_t5_upstream_503_is_not_counted_completed(tmp_path):
     from tools.qualify.decoder import Decoder
 
     class Upstream(BaseHTTPRequestHandler):
