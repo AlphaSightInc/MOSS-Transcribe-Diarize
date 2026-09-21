@@ -77,7 +77,7 @@ class WindowPlan:
 
 @dataclass(frozen=True, slots=True)
 class ResumeVerdict:
-    status: Literal["accepted", "refused"]
+    status: Literal["accepted", "refused", "error"]
     reason: str
 
     @property
@@ -205,10 +205,17 @@ class WindowedRunner:
         self,
         source_path: str | Path,
         checkpoint_dir: str | Path,
+        *,
+        inference: dict[str, object] | None = None,
     ) -> ResumeVerdict:
         """Validate retained progress without dispatching a decoder."""
 
-        if self._resume_inference is None:
+        resolved_inference = (
+            self._resume_inference
+            if inference is None
+            else _checkpoint_inference(dict(inference))
+        )
+        if resolved_inference is None:
             return ResumeVerdict("refused", "runner resume inference is unbound")
         try:
             source = Path(source_path)
@@ -222,17 +229,18 @@ class WindowedRunner:
                 source=source,
                 windows=windows,
                 model_path=str(self.model_path),
-                inference=dict(self._resume_inference),
+                inference=dict(resolved_inference),
                 window_seconds=float(self.window_seconds),
                 stride_seconds=float(self.stride_seconds),
                 identity_contract=self.identity_resolver.contract(),
+                create=False,
             )
             checkpoint.load_prefix()
         except WindowTranscriptionError as exc:
             return ResumeVerdict("refused", str(exc))
         except Exception as exc:
             return ResumeVerdict(
-                "refused", f"validation error: {type(exc).__name__}"
+                "error", f"validation error: {type(exc).__name__}"
             )
         return ResumeVerdict("accepted", "checkpoint prefix valid")
 
@@ -539,6 +547,7 @@ class _CheckpointStore:
         window_seconds: float,
         stride_seconds: float,
         identity_contract: dict[str, Any],
+        create: bool = True,
     ):
         self.root = root
         self.windows_dir = root / "windows"
@@ -557,7 +566,7 @@ class _CheckpointStore:
             "identity": deepcopy(identity_contract),
         }
         self.fingerprint = _sha256_canonical(self.contract)
-        self.manifest = self._load_or_create_manifest()
+        self.manifest = self._load_or_create_manifest(create=create)
 
     def load_prefix(self) -> list[TranscriptionResult]:
         records = self._load_records()
@@ -581,11 +590,13 @@ class _CheckpointStore:
         record["checksum"] = _sha256_canonical(record)
         _atomic_write_json(path, record)
 
-    def _load_or_create_manifest(self) -> dict[str, Any]:
+    def _load_or_create_manifest(self, *, create: bool) -> dict[str, Any]:
         manifest_path = self.root / "manifest.json"
         if not manifest_path.exists():
             if any(self.windows_dir.glob("w*.json")):
                 raise _CheckpointError("checkpoint manifest missing with committed records present")
+            if not create:
+                return {}
             self.root.mkdir(parents=True, exist_ok=True)
             self.windows_dir.mkdir(parents=True, exist_ok=True)
             manifest = {

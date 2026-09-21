@@ -455,6 +455,7 @@ def test_lifespan_retries_a_failed_last_resort_retained_outcome_write(
 
         async def fail_complete(self, target, input_path, runner_task, *, resumed=False):
             if target.meeting_id == handle.meeting_id:
+                await runner_task
                 raise RuntimeError("controlled retained completion failure")
             return await original_complete(
                 self, target, input_path, runner_task, resumed=resumed
@@ -475,7 +476,7 @@ def test_lifespan_retries_a_failed_last_resort_retained_outcome_write(
             await context.__aenter__()
             entered = True
             await asyncio.wait_for(finish_failed.wait(), timeout=2)
-            await asyncio.sleep(0)
+            await _await_file_task(app, handle.meeting_id)
             snapshot = await _snapshot(app, handle)
             assert snapshot.status == "failed"
             assert snapshot.failure_code == "resume_failed"
@@ -943,7 +944,7 @@ def test_retained_reservation_readiness_excludes_validation_cost(
             time.sleep(validation_seconds)
             finished.set()
 
-        tasks._verified_retained_input = slow_validation  # type: ignore[method-assign]
+        tasks._verified_retained_resume_source = slow_validation  # type: ignore[method-assign]
 
         class Store:
             async def active_file_meetings(self):
@@ -978,7 +979,7 @@ def test_retained_reservation_set_is_exact_before_background_validation(
         def hanging_validation(*_args: object) -> None:
             release.wait(1)
 
-        tasks._verified_retained_input = hanging_validation  # type: ignore[method-assign]
+        tasks._verified_retained_resume_source = hanging_validation  # type: ignore[method-assign]
 
         class Store:
             async def active_file_meetings(self):
