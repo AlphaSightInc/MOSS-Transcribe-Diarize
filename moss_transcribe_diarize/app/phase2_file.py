@@ -228,6 +228,21 @@ class FileMeetingTasks:
         for account_id, meeting_id in owners:
             self._remove_retained_work_dir(self._retained_root / account_id / meeting_id)
 
+    def retained_work_owners(self) -> tuple[tuple[str, str], ...]:
+        """Return exact two-level owner directories that currently exist on disk."""
+
+        if not self._retained_root.is_dir():
+            return ()
+        owners: list[tuple[str, str]] = []
+        for account_dir in self._retained_root.iterdir():
+            if account_dir.is_symlink() or not account_dir.is_dir():
+                continue
+            for owner_dir in account_dir.iterdir():
+                if owner_dir.is_symlink() or not owner_dir.is_dir():
+                    continue
+                owners.append((account_dir.name, owner_dir.name))
+        return tuple(sorted(owners))
+
     async def accept(self, workspace: Any, upload: Any) -> Any:
         """Store a complete request body, then create exactly one File Meeting and start work."""
 
@@ -249,12 +264,16 @@ class FileMeetingTasks:
                 raise
             raise
 
-        handle = await workspace.create_meeting("file")
+        handle = None
         try:
+            handle = await workspace.create_meeting("file")
             input_path = self._retain_new_work(handle, staging_dir, input_path, ingress="file")
         except BaseException:
-            await self._mark_failed(handle)
-            self._remove_terminal_work_dir(self._owner_dir(handle))
+            if handle is not None:
+                await self._mark_failed(handle)
+            self._remove_terminal_work_dir(staging_dir)
+            if handle is not None:
+                self._remove_terminal_work_dir(self._owner_dir(handle))
             raise
 
         started = asyncio.Event()
@@ -272,11 +291,16 @@ class FileMeetingTasks:
         self._work_root.mkdir(parents=True, exist_ok=True)
         staging_dir = self._work_root / secrets.token_urlsafe(18)
         staging_dir.mkdir(parents=True, exist_ok=False)
+        handle = None
         try:
             handle = await workspace.create_meeting("file")
             staging_dir = self._retain_new_directory(handle, staging_dir)
         except BaseException:
-            self._remove_work_dir(staging_dir)
+            if handle is not None:
+                await self._mark_failed(handle)
+            self._remove_terminal_work_dir(staging_dir)
+            if handle is not None:
+                self._remove_terminal_work_dir(self._owner_dir(handle))
             raise
 
         started = asyncio.Event()
