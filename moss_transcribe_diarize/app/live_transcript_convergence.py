@@ -731,11 +731,35 @@ class TerminalFinalizationAccounting:
 
 
 @dataclass(frozen=True, slots=True)
+class TerminalPartitionSpan:
+    """One published span in the terminal-local partition the lane adapter used."""
+
+    span_index: int
+    source_start: int
+    source_end: int
+    published_identity: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class TerminalPartitionDecision:
+    """The lane adapter's one terminal identity outcome for a local partition."""
+
+    lane: str
+    partition_id: str
+    terminal_local_label: str
+    decision: str
+    minimum_samples: int | None
+    spans: tuple[TerminalPartitionSpan, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class TerminalFinalization:
     """One terminal pass: the proposal it produced, or the named reason it produced none."""
 
     proposal: TextRevisionProposal | None
     accounting: TerminalFinalizationAccounting
+    # This is finalizer-owned diagnostic structure, never proposal/publication authority.
+    terminal_partitions: tuple[TerminalPartitionDecision, ...] = ()
 
     @property
     def outcome(self) -> TerminalOutcome:

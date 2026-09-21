@@ -1,0 +1,22 @@
+{
+  "schema": "moss-r4-labels2-backend-summary.v1",
+  "command": "MOSS_TEST_REAL_SQLITE=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. /private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python -m pytest -q -p no:cacheprovider --junitxml=evidence/round4/labels2/backend.xml tests",
+  "runtime": {
+    "python": "CPython 3.12.12",
+    "sqlite": "3.53.4"
+  },
+  "results": {
+    "tests": 2211,
+    "errors": 0,
+    "failures": 1,
+    "skipped": 7
+  },
+  "failure": {
+    "test": "tests.phase2.test_tls_preparation.test_verify_layout_current_tree",
+    "command": "bash scripts/check_verify_layout.sh",
+    "result": "baseline layout failure: tracked root VERIFY.md and VERIFY-RESULT.md predate this change; no capture path modified them or the checker"
+  },
+  "decoder_requests": 0,
+  "gpu": false,
+  "network": false
+}

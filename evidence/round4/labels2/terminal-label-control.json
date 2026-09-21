@@ -1,0 +1,94 @@
+{
+  "capture_rows": [
+    {
+      "decision": "terminal_overlap_mapping",
+      "eligible": true,
+      "margin": null,
+      "partition_id": "system:S01",
+      "published_identity": "speaker-0001",
+      "samples": 40000,
+      "score_by_canonical": {},
+      "source_end": 40000,
+      "source_start": 0,
+      "span_index": 0,
+      "terminal_local_label": "S01"
+    },
+    {
+      "decision": "terminal_partition_probe",
+      "eligible": false,
+      "margin": 0.909091,
+      "partition_id": "system:S02",
+      "published_identity": "speaker-0001",
+      "samples": 4320,
+      "score_by_canonical": {
+        "speaker-0001": 0.909091
+      },
+      "source_end": 52320,
+      "source_start": 48000,
+      "span_index": 1,
+      "terminal_local_label": "S02"
+    },
+    {
+      "decision": "terminal_partition_probe",
+      "eligible": true,
+      "margin": 0.909091,
+      "partition_id": "system:S02",
+      "published_identity": "speaker-0001",
+      "samples": 40000,
+      "score_by_canonical": {
+        "speaker-0001": 0.909091
+      },
+      "source_end": 92800,
+      "source_start": 52800,
+      "span_index": 2,
+      "terminal_local_label": "S02"
+    }
+  ],
+  "decoder_requests": 0,
+  "product_terminal_partitions": [
+    {
+      "decision": "terminal_overlap_mapping",
+      "lane": "system",
+      "minimum_samples": 8000,
+      "partition_id": "system:S01",
+      "spans": [
+        {
+          "published_identity": "speaker-0001",
+          "source_end": 40000,
+          "source_start": 0,
+          "span_index": 0
+        }
+      ],
+      "terminal_local_label": "S01"
+    },
+    {
+      "decision": "terminal_partition_probe",
+      "lane": "system",
+      "minimum_samples": 8000,
+      "partition_id": "system:S02",
+      "spans": [
+        {
+          "published_identity": "speaker-0001",
+          "source_end": 52320,
+          "source_start": 48000,
+          "span_index": 1
+        },
+        {
+          "published_identity": "speaker-0001",
+          "source_end": 92800,
+          "source_start": 52800,
+          "span_index": 2
+        }
+      ],
+      "terminal_local_label": "S02"
+    }
+  ],
+  "published_identities": [
+    "speaker-0001",
+    "speaker-0001",
+    "speaker-0001"
+  ],
+  "published_proposal_bytes": "[{\"canonical_speaker\":\"speaker-0001\",\"end_sample\":40000,\"source_lane\":\"system\",\"start_sample\":0,\"text\":\"established\"},{\"canonical_speaker\":\"speaker-0001\",\"end_sample\":52320,\"source_lane\":\"system\",\"start_sample\":48000,\"text\":\"brief return\"},{\"canonical_speaker\":\"speaker-0001\",\"end_sample\":92800,\"source_lane\":\"system\",\"start_sample\":52800,\"text\":\"eligible return\"}]",
+  "question": "does opt-in partition capture preserve the published proposal?",
+  "returning_voice": "adam"
+}
