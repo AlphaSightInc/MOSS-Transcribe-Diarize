@@ -1,0 +1,16 @@
+{
+  "managername": "Background",
+  "executable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "headless": false,
+  "chromium_args": [
+    "--mute-audio"
+  ],
+  "navigation_http_status": 200,
+  "browser_version": "153.0.8010.53",
+  "dom": {
+    "marker": "headed DOM",
+    "outer_html_length": 96,
+    "visibility_state": "visible",
+    "hidden": false
+  }
+}
