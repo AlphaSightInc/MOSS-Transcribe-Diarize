@@ -40,63 +40,39 @@
 
 ## Current state
 
-- **2026-09-21 ~03:00 — run C opened by the lead after an adversarial acceptance review of run B (HEAD `16fd908e`).**
-  The review independently confirmed, and this run must not regress: `_assert_no_active_meetings` byte-identical to
-  base and still reached from both entrypoints (`phase2.py:599`, `:617`); **no live-resume path** — the claim loop
-  iterates only `active_file_meetings` (`WHERE m.mode = 'file' AND m.status = 'active'`, `phase2.py:626`) and live rows
-  still go to `_recover_active_live_meetings` (D13 holds); ordering right — `resume_retained_work` at `phase2.py:1960`
-  precedes `recover_active_meetings` (`:1961`) and `clear_transient_work()` (`:1968`), and the retained root is a
-  *sibling* of `file-work` (`phase2_file.py:135`) so transient cleanup cannot reach it; every
-  `_remove_terminal_work_dir` call site is preceded by a durable `finish(...)`/`_mark_failed(...)`; the gap remedy
-  partitions by terminal-local label and writes back only to indices carrying that label
-  (`live_lane_decode.py:279-341`), with both branches asserted (`tests/test_r4_gap_terminal_identity.py:113-121`,
-  `:137-142`, and isolated-stays-unattributed at `:145-153`); no constant moved; the fixture rows are byte-equal to the
-  audited proposal and the falsifier still shows exactly 3 additions, 102/105.
-- **Findings this run closes** (all introduced by run B, none falsifying the three mandated behaviours):
-  - **F1 → C1 (closed, iteration 2).** `_revoke_account` no longer releases its File-account fence or resumes
-    retained work. The retained-prefix product control is RED against the prior behaviour (the fence is cleared before
-    it can publish) and now proves `decoder.calls == []`, durable `("interrupted", None)`, and the retained fence after
-    revocation. Existing owner-bound controls still prove ordinary in-flight and late File results cannot publish.
-  - **F2 → C2 (closed, iteration 4).** Retained startup now claims valid `(account, meeting)` owners without joining
-    their re-decode; generic File recovery and its active-row check exclude exactly those claims, while Live and
-  `_assert_no_active_meetings` are unchanged. Held work permits startup and a 200 root response; injected retained
-    commit or audio-publication failure becomes durable `failed/resume_failed`, and injected post-terminal cleanup
-    failure stays `completed` with the same visible failure plus `needs_review`.
-  - **F3 → C3 (closed, iteration 5).** Refused retained work is recorded by exact owner during claim and reclaimed
-    only after generic fallback durably makes that Meeting terminal; a held URL-acquisition cancellation uses its
-    existing terminal settlement. Both product controls prove terminal-before-removal and preserve a sibling owner
-    directory, with zero decoder/network dispatch.
-  - **F5 → C4 (closed, iteration 6).** A retained-source record failure after a successful URL download now follows
-    the existing durable `storage_failed` path and terminal-owner cleanup. The product control forces that precise
-    write failure and proves a visible `failed/storage_failed` Meeting, no decoder call, normal task return, and a
-    preserved sibling owner directory.
-  - **F7 → C5 (closed, iteration 9).** `SYSTEM_LADDER_REFERENCE`
-    (`tests/e2e/verify_demo_lanes.py:27`) has one consumer
-    (`tests/test_round4_overlap_diagnosis.py:28`): the offline bounded-audio diagnostic.
-    The deployed ladder (`tools/qualify/run.py:583-597` → external `ir_lane_ladder.py`)
-    reads no reference row; it records finalized cases and non-accuracy solo-lane
-    vocabulary retention. The Run-B verifier now says so and names the diagnostic's
-    reachable fixture-bound falsifier rather than an impossible scoring claim.
-  - **F8 → C6 (closed, iteration 7).** Product controls now require `[0..40, 40..100]` delegate calls and
-    `101 == len(texts) == len(set(texts))` after both retained URL resume and File mid-window recovery; a lost or
-    duplicate persisted segment fails at the production seam.
-  - **F9 → C7 (closed, iteration 8).** The corrected Bill row now ends at the next
-    row's `29.25` start, so the Bill corpus has no overlapping adjacent records. The
-    retained production transcripts locate Lex's actual utterance later (29.55--29.63 s),
-    so the conservative boundary repair preserves its audio and every scored text.
-- **Ratified by the lead, do not re-open (F6):** the three fixture controls were retargeted rather than
-  marker-removed, because `evidence/` is read-only and a control reading a frozen snapshot could never flip. The
-  proposal JSON was not edited to fit; run B disclosed this in `progress.txt:79`. Accepted.
-- **Accepted limitation, do not fix here (F4):** `_owner_dir` keys on `account_id` only
-  (`phase2_file.py:432-434`) with no `authority_generation` in the manifest (`:461-475`), so "wrong owner" is enforced
-  at account+meeting granularity, not across generations. Record it in known limitations; no generation concept exists
-  elsewhere in the product.
-- **Also flagged, already justified:** `tests/phase2/test_owner_bound_file_meeting.py:949` changed a terminal status
-  from `failed` to `completed` because cleanup now runs after the durable terminal transition and a cleanup failure
-  only logs (`phase2_file.py:791-794`). If C3's work changes that path, keep the operator's ability to learn that a
-  source could not be removed.
-- Lead's own verification of run B: backend **2,152 passed / 0 failed / 5 skipped / 2 xfailed / 37 subtests**; the
-  xfail inventory contains only the two Jamie controls; frontend 312/312; typecheck clean; rebuild left the tree clean.
+- **2026-09-21 ~04:00 — run D opened by the lead after an adversarial acceptance review of run C.**
+  The review confirmed and this run must not regress: C2's narrowed startup assertion is safe (a Live row can never
+  enter `claimed_file_meetings` — `claimed` is built only from `active_file_meetings`,
+  `WHERE m.mode = 'file' AND m.status = 'active'` at `phase2.py:638`, and only for handles `claim_retained_work`
+  accepted, `phase2_file.py:209-213`; `_assert_no_active_meetings` byte-identical and still used when nothing is
+  claimed, `phase2.py:605-606`, `:624`; the exclusion is recomputed each boot and needs a fresh flock + manifest +
+  checkpoint validation, so it cannot be defeated on a later boot); C3's deletion order and blast radius hold
+  (`removal_statuses == ["interrupted"]`; `_remove_retained_work_dir` refuses any path whose
+  `parent.parent != retained_root`, `phase2_file.py:585-589`); C4, C5, C6 (both invariants asserted against the real
+  `app.router.lifespan_context`), C7 all hold; D13 holds
+  (`test_lifespan_refuses_nonresumable_file_and_live_rows_without_dispatch`, `tests/phase2/test_retained_file_claim.py:726-753`);
+  no orphaned background task — `file_tasks.stop()` runs in lifespan's `finally` before `store.close()`
+  (`phase2.py:2086-2107`) and `_task_done` releases the flock; audio publication is still `asyncio.shield`-ed.
+- **The defect this run closes (review F1, reproduced).** `_revoke_account` fences and terminalizes but never removes
+  the owner directory: with no registered task `settle_fenced(())` removes nothing (`phase2_file.py:379-393`), and
+  `_recover_active_file_meetings` only calls `recover_interrupted_file_audio` + `finish("interrupted")`
+  (`phase2.py:765-769`). On later boots `active_file_meetings` joins `a.enabled = 1` (`phase2.py:637`), so a disabled
+  account's row is never claimed, refused or reclaimed, and `clear_transient_work` touches only `_work_root`
+  (`phase2_file.py:159-179`). Probe result: `owner_dir` still holds `['checkpoint', 'input.wav', 'owner.json']` after
+  revoke, source bytes intact, still present after a second boot. **Run B's `assert not owner_dir.exists()` was removed
+  with no successor** — the only unreplaced assertion deletion in run C's whole test diff.
+- Smaller items the review named: **F2** `release_settled_account_fence` (`phase2_file.py:356-361`) and
+  `resume_retained_work`'s `account=` parameter (`:205`) are now dead outside prototypes; **F3** `_complete`'s commit
+  and publication arms changed `raise` → `return` for *both* modes (`:772-784`, `:807-819`), silently dropping the
+  non-resumed path's quiesce signal; **F5** `_mark_failed` (`:668-673`) swallows `AccountRevoked` (`:603-606`) and does
+  not guard other `handle.finish` failures, so a failed outcome write leaves the row `active` with only a log line;
+  **F6** progress.txt iteration 4 cites a test file run C never touched.
+- Reachability caveat recorded by the review, pre-existing since run B, not a run-C regression: because `_mark_failed`
+  swallows `AccountRevoked`, a `finish` failure on an authority mismatch could in principle delete a still-`active`
+  Meeting's retained dir. No reachable case was constructible (`finalize_account_revoke` requires zero active rows and
+  `fence_account` cancels tasks first). If run D's work makes it reachable, stop and report.
+- Lead's own verification of run C: backend **2,158 passed / 0 failed / 5 skipped / 2 xfailed**; exactly two XFAILs,
+  both Jamie; frontend 312/312; typecheck clean; tree clean.
 
 ## Validation
 
