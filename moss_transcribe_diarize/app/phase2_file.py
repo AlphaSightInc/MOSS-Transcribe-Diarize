@@ -123,6 +123,7 @@ class _RetainedReservation:
     interrupted: bool = False
     settlement: asyncio.Task[tuple[str, ...]] | None = None
     resumed: bool = True
+    terminal_settled: bool = False
 
 
 @dataclass(slots=True)
@@ -374,7 +375,10 @@ class FileMeetingTasks:
         self,
         reservation: _RetainedReservation,
     ) -> None:
-        if (await reservation.handle.snapshot()).status == "active":
+        if (
+            not reservation.terminal_settled
+            and (await reservation.handle.snapshot()).status == "active"
+        ):
             return
         self._remove_terminal_work_dir(reservation.owner_dir)
 
@@ -652,6 +656,7 @@ class FileMeetingTasks:
             if isinstance(entry, _OwnedFileTask):
                 self._remove_terminal_work_dir(self._owner_dir(entry.handle))
             else:
+                entry.terminal_settled = True
                 LOGGER.info(
                     "Retained File reservation durably interrupted: %s",
                     entry.handle.meeting_id,

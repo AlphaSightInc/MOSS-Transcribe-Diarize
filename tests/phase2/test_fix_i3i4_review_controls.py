@@ -25,6 +25,7 @@ from moss_transcribe_diarize.app.model_runner import TranscriptionResult
 from moss_transcribe_diarize.app.phase2 import Phase2Store
 from moss_transcribe_diarize.app.phase2_file import (
     RETAINED_FILE_WORK_CONTRACT_VERSION,
+    FileProcessingError,
     FileMeetingTasks,
 )
 from moss_transcribe_diarize.app.phase2_lifecycle import MeetingLifecycleSettlementError
@@ -35,6 +36,7 @@ from moss_transcribe_diarize.app.windowed_transcription import (
     WindowTranscriptionError,
     plan_windows,
 )
+from moss_transcribe_diarize.subtitle import subtitle_segments_from_transcript
 
 
 class _Delegate:
@@ -311,3 +313,240 @@ def test_t4_checkpoint_validation_honest_shapes_and_side_effects(tmp_path):
     missing = tmp_path / "missing"
     tasks._checkpoint_is_valid(source, missing)
     assert not missing.exists()
+
+
+class _CopyMixArchive:
+    def prepare_mix(
+        self,
+        _source: Path,
+        destination: Path,
+        *,
+        notices: list[str],
+    ) -> Path:
+        del notices
+        destination.write_bytes(b"normalized production mix")
+        return destination
+
+
+def test_mix_bound_checkpoint_resumes_through_real_lifespan(tmp_path: Path) -> None:
+    """The restart decodes only the mix windows not committed before the crash."""
+
+    async def exercise() -> None:
+        store = await Phase2Store.open(tmp_path / "state.sqlite3")
+        try:
+            account, _ = await seed_workspace(store, "account-a")
+            handle = await store.workspace(account).create_meeting("file")
+        finally:
+            await store.close()
+
+        decoder = _RestartDecoder()
+        runner = _runner(decoder)
+        first_tasks = FileMeetingTasks(
+            runner,
+            tmp_path / "file-work",
+            audio_archive=_CopyMixArchive(),
+        )
+        owner_dir = first_tasks.retained_root / account.account_id / handle.meeting_id
+        owner_dir.mkdir(parents=True)
+        source = owner_dir / "input.wav"
+        source.write_bytes(b"original retained container")
+        (owner_dir / "owner.json").write_text(
+            json.dumps(
+                {
+                    "account_id": account.account_id,
+                    "meeting_id": handle.meeting_id,
+                    "ingress": "file",
+                    "source": source.name,
+                    "checkpoint": "checkpoint",
+                    "contract_version": RETAINED_FILE_WORK_CONTRACT_VERSION,
+                },
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(FileProcessingError):
+            first_tasks._transcribe_from_one_mix(source, {})
+        assert decoder.calls == [0, 1, 2]
+        mix = owner_dir / "transcription-mix.wav"
+        assert mix.is_file()
+
+        reference_decoder = _RestartDecoder()
+        reference_decoder.fail_window = None
+        reference = _runner(reference_decoder).transcribe(mix)
+        expected = {
+            "segments": [
+                segment.to_dict()
+                for segment in subtitle_segments_from_transcript(
+                    reference.text,
+                    postprocess=False,
+                )
+            ]
+        }
+
+        decoder.calls.clear()
+        decoder.fail_window = None
+        app = _app(tmp_path, decoder)
+        async with app.router.lifespan_context(app):
+            await app.state.phase2_file_tasks._retained_resume_task
+            entry = app.state.phase2_file_tasks._tasks.get(handle.meeting_id)
+            if entry is not None:
+                await entry.task
+            snapshot = await _snapshot(app, handle)
+            assert decoder.calls == [2, 3]
+            assert snapshot.status == "completed"
+            assert snapshot.transcript == expected
+            assert not owner_dir.exists()
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize("outcome", ["refused", "error"])
+def test_reserved_terminal_validation_paths_reconcile_audio_before_cleanup(
+    tmp_path: Path,
+    outcome: str,
+) -> None:
+    async def exercise() -> None:
+        events: list[str] = []
+
+        class Handle:
+            owner_key = ("account-a", 1)
+            meeting_id = f"owner-{outcome}"
+            status = "active"
+
+            async def recover_interrupted_file_audio(self, _archive):
+                events.append("audio")
+
+            async def finish(self, status, **_kwargs):
+                events.append(status)
+                self.status = status
+
+            async def snapshot(self):
+                return SimpleNamespace(status=self.status)
+
+        handle = Handle()
+        tasks = FileMeetingTasks(
+            object(),
+            tmp_path / "file-work",
+            audio_archive=object(),
+        )
+        owner_dir = tasks.retained_root / "account-a" / handle.meeting_id
+        owner_dir.mkdir(parents=True)
+        (owner_dir / "owner.json").write_text("{}\n", encoding="utf-8")
+        attempts = 0
+
+        def validate(_handle, _owner_dir):
+            nonlocal attempts
+            attempts += 1
+            if outcome == "error":
+                raise OSError("controlled validation I/O failure")
+            return None
+
+        tasks._verified_retained_resume_source = validate
+
+        class Store:
+            async def active_file_meetings(self):
+                return (handle,)
+
+        await tasks.resume_retained_work(Store())
+        await tasks._retained_resume_task
+        assert events == ["audio", "interrupted" if outcome == "refused" else "failed"]
+        assert attempts == (1 if outcome == "refused" else 3)
+        assert not owner_dir.exists()
+
+    asyncio.run(exercise())
+
+
+def test_reserved_fence_settles_now_but_cleans_only_after_validation_returns(
+    tmp_path: Path,
+) -> None:
+    async def exercise() -> None:
+        events: list[str] = []
+        entered = threading.Event()
+        release = threading.Event()
+
+        class Handle:
+            owner_key = ("account-a", 1)
+            meeting_id = "owner-fenced"
+            status = "active"
+
+            async def recover_interrupted_file_audio(self, _archive):
+                events.append("audio")
+
+            async def finish(self, status, **_kwargs):
+                events.append(status)
+                self.status = status
+
+            async def snapshot(self):
+                return SimpleNamespace(status=self.status)
+
+        handle = Handle()
+        tasks = FileMeetingTasks(
+            object(),
+            tmp_path / "file-work",
+            audio_archive=object(),
+        )
+        owner_dir = tasks.retained_root / "account-a" / handle.meeting_id
+        owner_dir.mkdir(parents=True)
+        (owner_dir / "owner.json").write_text("{}\n", encoding="utf-8")
+
+        def validate(_handle, directory):
+            entered.set()
+            release.wait()
+            return directory / "input.wav"
+
+        tasks._verified_retained_resume_source = validate
+
+        class Store:
+            async def active_file_meetings(self):
+                return (handle,)
+
+        await tasks.resume_retained_work(Store())
+        assert await asyncio.to_thread(entered.wait, 1)
+        assert tasks.operator_snapshot() == {handle.meeting_id: "validating"}
+        reservation = tasks.fence_meeting(handle.meeting_id)
+        assert reservation is not None
+        assert await tasks.settle_meeting(reservation) is True
+        assert events == ["audio", "interrupted"]
+        assert owner_dir.exists()
+        release.set()
+        await tasks._retained_resume_task
+        assert not owner_dir.exists()
+
+    asyncio.run(exercise())
+
+
+def test_account_revoke_does_not_reclaim_a_live_reserved_validation(
+    tmp_path: Path,
+) -> None:
+    async def exercise() -> None:
+        _tasks, handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
+        await store.close()
+        decoder.calls.clear()
+        entered = threading.Event()
+        release = threading.Event()
+        original = FileMeetingTasks._verified_retained_input
+
+        def held(self, target, directory):
+            entered.set()
+            release.wait()
+            return original(self, target, directory)
+
+        FileMeetingTasks._verified_retained_input = held
+        try:
+            app = _app(tmp_path, decoder)
+            async with app.router.lifespan_context(app):
+                assert await asyncio.to_thread(entered.wait, 1)
+                assert await app.state.phase2_lifecycle.revoke_account(
+                    handle.owner_key[0]
+                )
+                assert owner_dir.exists()
+                assert decoder.calls == []
+                release.set()
+                await app.state.phase2_file_tasks._retained_resume_task
+                assert not owner_dir.exists()
+        finally:
+            release.set()
+            FileMeetingTasks._verified_retained_input = original
+
+    asyncio.run(exercise())
