@@ -244,3 +244,11 @@ small disclosures. Offline: zero decoder requests.
 - Evidence: the Run-C iteration-4 entry above remains unchanged; its second evidence pointer was wrong. Commit `9d839bf2` touched the prototype and did not touch the cited test file.
 - Learned: post-boot task joining was prototype evidence, not a product-test claim. An appended correction preserves the journal's historical record while making its provenance auditable.
 - Next: run the PRD's final backend, frontend, and typecheck gates; update the Run-D verifier with their exact results.
+
+## Iteration 6 - final Run-D offline certification
+- Target: Final required gates — certify D1--D6 and detect cross-lifecycle regressions outside the focused controls.
+- Files: `docs/verify/round4-run-d/VERIFY.md`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider tests` -> **2,162 passed / 0 failed / 5 skipped / 2 xfailed / 37 subtests** in 168.03 s; `npm --prefix frontend test -- --run` -> **312/312** across 28 files; `npm --prefix frontend run typecheck` -> clean. `git diff --name-only round4/integration...HEAD -- frontend` -> empty, so the conditional rebuild/asset-parity gate is inapplicable.
+- Evidence: `docs/verify/round4-run-d/VERIFY.md`; D1/D2 and D5 controls in `tests/phase2/test_retained_file_claim.py`; D4 control in `tests/phase2/test_owner_bound_file_meeting.py`; append-only D6 correction in iteration 5 above.
+- Learned: terminal-owner reclamation, non-blocking resumed failure containment, and ordinary task failure signaling coexist through the full offline suite. The backend result exceeds the 2,158-pass floor. No decoder, network, tunnel, proxy, GPU, or provider request was made; S17 remains UNMEASURED and `capacity_2x1800` REQUIRED-NOT-RUN.
+- Next: acceptance bar met; lead may integrate this branch.

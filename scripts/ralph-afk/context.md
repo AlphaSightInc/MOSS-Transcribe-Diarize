@@ -94,9 +94,10 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-- **Final required gates.** Run the PRD's full backend suite, frontend tests, and frontend typecheck; record exact
-  counts in `docs/verify/round4-run-d/VERIFY.md` and this journal. Frontend source changes would additionally require
-  the PRD's rebuild and asset-parity gate.
+- **None.** The final required offline gates passed in Run D iteration 6 and
+  are recorded in `docs/verify/round4-run-d/VERIFY.md` and the journal.
+  Frontend source is unchanged from `round4/integration`, so the conditional
+  rebuild and asset-parity gate is inapplicable.
 
 Historical S17 and `capacity_2x1800` remain explicitly unmeasured outside this PRD's offline scope.
 
@@ -246,6 +247,25 @@ Historical S17 and `capacity_2x1800` remain explicitly unmeasured outside this P
   (4/4, covering both ordinary failure arms); the two directly affected modules are 39/39. Both verification
   documents state the choice and falsifier.
 - **Next:** D6 — append the required correction to the historical Run-C iteration-4 evidence pointer.
+
+## Run D iteration 5 outcome
+
+- **D6 / F6 (complete):** an append-only correction identifies
+  `prototypes/batch-startup/prototype.py:1148` as the post-boot task-joining
+  evidence for Run C iteration 4. Commit `9d839bf2` confirms the formerly
+  cited product-test file was not touched.
+- **Next:** final required offline gates.
+
+## Run D iteration 6 outcome
+
+- **Final certification (complete):** backend **2,162 passed / 0 failed / 5
+  skipped / 2 xfailed / 37 subtests** in 168.03 s; frontend **312/312**; and
+  typecheck clean. `frontend/` is unchanged from `round4/integration`, making
+  the conditional rebuild/asset-parity gate inapplicable. The Run-D verifier
+  records D1--D6, boundaries, controls, and exact commands. No decoder,
+  network, tunnel, proxy, GPU, or provider request was made.
+- **Next:** acceptance bar met; lead may integrate. S17 remains UNMEASURED and
+  `capacity_2x1800` remains REQUIRED-NOT-RUN outside this offline PRD.
 
 ## Non-candidates
 
