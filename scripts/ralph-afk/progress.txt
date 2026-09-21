@@ -128,3 +128,11 @@ cancelled retained work kept forever) plus four smaller gaps. Offline: zero deco
 - Evidence: `test_account_revocation_does_not_resume_retained_file_work`; `test_host_revoke_waits_for_file_quiescence_and_fences_late_result`; `test_revocation_fences_late_file_result_commit`.
 - Learned: the account-scoped recovery caller is revoke alone, not a legitimate startup path. Releasing its fence solely to dispatch unowned retained work let a revoked account publish; generic recovery terminalizes the retained row without dispatch.
 - Next: C2 — schedule retained resume in the background, contain per-Meeting failures durably, and prove startup serves while a resume remains pending.
+
+## Iteration 3 - C2 background-resume prototype
+- Target: Candidate C2 / F2 — measure the smallest safe composition before product work: a claimed retained File owner continues in the background while fallback terminalizes only unclaimed File rows.
+- Files: `prototypes/batch-startup/prototype.py`; `prototypes/batch-startup/NOTES.md`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: `MOSS_R4_NO_WRITE=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY prototypes/batch-startup/prototype.py --case background-resume` -> **SUPPORTED**; `boot_completed_while_resume_held=true`; unclaimed File `interrupted`; released resume `completed`, publication `1`; controlled resume `failed/resume_failed`; **0 decoder requests**.
+- Evidence: printed C12 state; `prototypes/batch-startup/NOTES.md` §C12. The runner exercised the production checkpoint/window path under the bench's SQLite 3.50.4 semantic-store allowance, not production runtime.
+- Learned: a claim-before-fallback owner set is sufficient in the bench; generic recovery must exclude only claimed File owners, while a background failure must leave a durable Meeting outcome. Owner cleanup stayed after terminal truth.
+- Next: implement C2 at the `FileMeetingTasks`/lifespan seam, then add the real lifespan controls for non-blocking boot and durable failure visibility.

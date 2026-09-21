@@ -146,6 +146,21 @@ progress entry are authoritative for the following ranked work:
   The retained directory is deliberately not asserted here; C3 owns terminal directory reclamation.
 - **Next:** C2 — move retained resume off the lifespan critical path and contain its failures.
 
+## Iteration 3 outcome
+
+- **C2 / F2 prototype (supported; product work remains):** C12 extended the existing
+  batch-startup bench with real lifespan composition. A claimed retained File Meeting
+  remained active while boot completed; an unclaimed active File Meeting reached
+  `interrupted`; releasing one resumed window produced one completed publication; and a
+  controlled resume failure became durable `failed/resume_failed`. Both retained
+  directories were removed only after terminal truth. It used zero decoder, network,
+  tunnel, or GPU requests. The bench uses the production checkpoint/window path but a
+  SQLite 3.50.4 semantic-store allowance, so it is design evidence only.
+- **Next:** implement the measured composition: make `FileMeetingTasks` return claimed
+  retained ownership without joining it, exclude only those owners from generic File
+  fallback and its zero-active check, and turn commit/publication/post-terminal-cleanup
+  exceptions into durable Meeting outcomes without blocking lifespan.
+
 ## Non-candidates
 
 - Jamie / lone-participant aggregation — FALSIFIED; user decision D1 vs D15 pending; no code.

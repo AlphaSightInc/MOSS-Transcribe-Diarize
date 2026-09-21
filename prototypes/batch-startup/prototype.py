@@ -293,6 +293,152 @@ class RecoveryCoordinator:
                 lock_file.close()
 
 
+@dataclass
+class BackgroundRecoveryCoordinator:
+    """Prototype the smallest retained-owner exception to generic File recovery."""
+
+    durable_root: Path
+    decoder: DeterministicDecoder
+
+    def __post_init__(self) -> None:
+        self.events: list[dict[str, object]] = []
+        self.runner = _runner(self.decoder)
+        self.resume_started = asyncio.Event()
+        self.release_resume = asyncio.Event()
+        self._tasks: list[asyncio.Task[None]] = []
+
+    async def recover(self, store: Phase2Store, audio_archive: Any) -> None:
+        """Launch valid owners, then terminalize only the rows no owner claimed."""
+
+        claimed: set[str] = set()
+        for row in await _active_file_rows(store, None):
+            account_id = str(row["account_id"])
+            meeting_id = str(row["meeting_id"])
+            owner_dir = self.durable_root / account_id / meeting_id
+            manifest_path = owner_dir / "owner.json"
+            source_path = owner_dir / "source.wav"
+            checkpoint_dir = owner_dir / "checkpoint"
+            if not manifest_path.is_file() or not source_path.is_file() or not checkpoint_dir.is_dir():
+                self.events.append(
+                    {
+                        "meeting_id": meeting_id,
+                        "decision": "retained_refused",
+                        "reason_type": "missing_retained_artifact",
+                        "manifest_present": manifest_path.is_file(),
+                        "source_present": source_path.is_file(),
+                        "checkpoint_present": checkpoint_dir.is_dir(),
+                    }
+                )
+                continue
+            try:
+                manifest = json.loads(manifest_path.read_text())
+                source, checkpoint, committed = _validate_retained(
+                    owner_dir,
+                    manifest,
+                    account_id=account_id,
+                    meeting_id=meeting_id,
+                    expected_committed=None,
+                )
+            except Exception as exc:
+                self.events.append(
+                    {
+                        "meeting_id": meeting_id,
+                        "decision": "retained_refused",
+                        "reason_type": type(exc).__name__,
+                        "reason": str(exc),
+                    }
+                )
+                continue
+            lock_file = (owner_dir / "resume.lock").open("a+")
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BaseException:
+                lock_file.close()
+                raise
+            handle = MeetingHandle(
+                store,
+                account_id,
+                int(row["authority_generation"]),
+                meeting_id,
+            )
+            claimed.add(meeting_id)
+            self.events.append({"meeting_id": meeting_id, "decision": "claimed_background"})
+            self._tasks.append(
+                asyncio.create_task(
+                    self._resume(handle, source, checkpoint, committed, owner_dir, lock_file)
+                )
+            )
+
+        for handle in await store.active_file_meetings():
+            if handle.meeting_id in claimed:
+                continue
+            await handle.recover_interrupted_file_audio(audio_archive)
+            await handle.finish("interrupted")
+            self.events.append(
+                {"meeting_id": handle.meeting_id, "decision": "fallback_interrupted"}
+            )
+
+    async def _resume(
+        self,
+        handle: MeetingHandle,
+        source: Path,
+        checkpoint: Path,
+        committed: int,
+        owner_dir: Path,
+        lock_file: Any,
+    ) -> None:
+        self.resume_started.set()
+        try:
+            await self.release_resume.wait()
+            result = await asyncio.to_thread(
+                self.runner.transcribe,
+                source,
+                checkpoint_dir=checkpoint,
+                **INFERENCE,
+            )
+            segments = [
+                segment.to_dict()
+                for segment in subtitle_segments_from_transcript(result.text)
+            ]
+            version = await handle.finish_with_transcript({"segments": segments}, "completed")
+            self.events.append(
+                {
+                    "meeting_id": handle.meeting_id,
+                    "decision": "background_completed",
+                    "committed_before_restart": committed,
+                    "published_version": version,
+                }
+            )
+        except Exception:
+            await handle.finish(
+                "failed",
+                failure_code="resume_failed",
+                failure_reason="Retained File restart could not finish.",
+            )
+            self.events.append(
+                {"meeting_id": handle.meeting_id, "decision": "background_failed"}
+            )
+        finally:
+            snapshot = await handle.snapshot()
+            if snapshot.status != "active":
+                shutil.rmtree(owner_dir)
+                self.events.append(
+                    {"meeting_id": handle.meeting_id, "decision": "cleanup_after_terminal"}
+                )
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            finally:
+                lock_file.close()
+
+    async def join(self) -> None:
+        await asyncio.gather(*self._tasks)
+
+    async def stop(self) -> None:
+        for task in self._tasks:
+            task.cancel()
+        await asyncio.gather(*self._tasks, return_exceptions=True)
+
+
 def _checkpoint(owner_dir: Path, source: Path) -> tuple[Path, int]:
     checkpoint = owner_dir / "checkpoint"
     verifier = _CheckpointStore(
@@ -314,6 +460,7 @@ def _validate_retained(
     *,
     account_id: str,
     meeting_id: str,
+    expected_committed: int | None = 40,
 ) -> tuple[Path, Path, int]:
     if manifest.get("account_id") != account_id:
         raise RuntimeError("retained owner account mismatch")
@@ -329,8 +476,10 @@ def _validate_retained(
     if not source.is_file():
         raise RuntimeError("retained normalized local source unavailable")
     checkpoint, committed = _checkpoint(owner_dir, source)
-    if committed != 40:
-        raise RuntimeError(f"retained committed prefix is {committed}, expected 40")
+    if expected_committed is not None and committed != expected_committed:
+        raise RuntimeError(
+            f"retained committed prefix is {committed}, expected {expected_committed}"
+        )
     return source, checkpoint, committed
 
 
@@ -400,6 +549,43 @@ def _prototype_recovery(coordinator: RecoveryCoordinator):
 
 
 @contextmanager
+def _prototype_background_recovery(coordinator: BackgroundRecoveryCoordinator):
+    """Use real lifespan with only the proposed retained-owner composition replaced."""
+
+    from moss_transcribe_diarize.app.phase2_file import FileMeetingTasks
+
+    original_global = Phase2Store.recover_active_meetings
+    original_resume = FileMeetingTasks.resume_retained_work
+
+    async def resume_inline(
+        _tasks: FileMeetingTasks,
+        _store: Phase2Store,
+        *,
+        account: Account | None = None,
+    ) -> None:
+        del account
+
+    async def recover_global(
+        store: Phase2Store,
+        *,
+        audio_archive: Any | None = None,
+        live_audio_stages: Any | None = None,
+    ) -> None:
+        del live_audio_stages
+        if audio_archive is None:
+            raise RuntimeError("prototype retained recovery requires the File audio archive")
+        await coordinator.recover(store, audio_archive)
+
+    FileMeetingTasks.resume_retained_work = resume_inline
+    Phase2Store.recover_active_meetings = recover_global
+    try:
+        yield
+    finally:
+        Phase2Store.recover_active_meetings = original_global
+        FileMeetingTasks.resume_retained_work = original_resume
+
+
+@contextmanager
 def _sqlite_semantic_store_allowance():
     actual = phase2.sqlite3.sqlite_version
     phase2.sqlite3.sqlite_version = phase2.REQUIRED_SQLITE_RUNTIME
@@ -432,6 +618,7 @@ async def _seed(
     *,
     mode: str = "file",
     retained: bool = True,
+    interrupted_window: int = 40,
 ) -> Seed:
     seed = await _new_account(root)
     store = await Phase2Store.open(seed.database)
@@ -439,7 +626,13 @@ async def _seed(
     assert account is not None
     handle = await store.workspace(account).create_meeting(mode)
     if retained:
-        await _seed_retained(seed.durable_root, account, handle, ingress)
+        await _seed_retained(
+            seed.durable_root,
+            account,
+            handle,
+            ingress,
+            interrupted_window=interrupted_window,
+        )
     await store.close()
     return Seed(
         **{
@@ -455,6 +648,8 @@ async def _seed_retained(
     account: Account,
     handle: MeetingHandle,
     ingress: str,
+    *,
+    interrupted_window: int = 40,
 ) -> Path:
     owner_dir = durable_root / account.account_id / handle.meeting_id
     owner_dir.mkdir(parents=True)
@@ -474,7 +669,7 @@ async def _seed_retained(
         )
         + "\n"
     )
-    decoder = DeterministicDecoder(fail_windows={40})
+    decoder = DeterministicDecoder(fail_windows={interrupted_window})
     try:
         _runner(decoder).transcribe(
             source,
@@ -483,9 +678,11 @@ async def _seed_retained(
         )
         raise AssertionError("seed interruption did not fire")
     except WindowTranscriptionError as exc:
-        assert exc.window_index == 40 and exc.condition == "decoder_exception"
+        assert exc.window_index == interrupted_window and exc.condition == "decoder_exception"
     _, committed = _checkpoint(owner_dir, source)
-    assert committed == 40 and decoder.calls == list(range(41))
+    assert committed == interrupted_window and decoder.calls == list(
+        range(interrupted_window + 1)
+    )
     return owner_dir
 
 
@@ -849,6 +1046,78 @@ async def _case_live(root: Path) -> dict[str, object]:
     }
 
 
+async def _case_background_resume(root: Path) -> dict[str, object]:
+    """C12: background ownership lets startup serve while durable work is pending or fails."""
+
+    held_seed = await _seed(root / "held", "file", interrupted_window=100)
+    held_store = await Phase2Store.open(held_seed.database)
+    account = await held_store.account_for_session(held_seed.session)
+    assert account is not None
+    unclaimed = await held_store.workspace(account).create_meeting("file")
+    await held_store.close()
+    held = BackgroundRecoveryCoordinator(held_seed.durable_root, DeterministicDecoder())
+    held_app = _app(held_seed, held.runner)
+    with _prototype_background_recovery(held):
+        async with held_app.router.lifespan_context(held_app):
+            try:
+                await asyncio.wait_for(held.resume_started.wait(), timeout=1)
+            except TimeoutError:
+                await held.stop()
+                return {
+                    "verdict": "FALSIFIED",
+                    "falsifier": "claimed background task did not begin during lifespan",
+                    "held_events": held.events,
+                }
+            claimed_at_boot = await _snapshot(held_app, held_seed)
+            unclaimed_at_boot = await MeetingHandle(
+                held_app.state.phase2_store,
+                account.account_id,
+                account.authority_generation,
+                unclaimed.meeting_id,
+            ).snapshot()
+            held.release_resume.set()
+            await held.join()
+            completed = await _snapshot(held_app, held_seed)
+
+    failed_seed = await _seed(root / "failure", "file", interrupted_window=100)
+    failed = BackgroundRecoveryCoordinator(
+        failed_seed.durable_root, DeterministicDecoder(fail_windows={100})
+    )
+    failed_app = _app(failed_seed, failed.runner)
+    with _prototype_background_recovery(failed):
+        async with failed_app.router.lifespan_context(failed_app):
+            await failed.resume_started.wait()
+            failed.release_resume.set()
+            await failed.join()
+            failed_snapshot = await _snapshot(failed_app, failed_seed)
+
+    passed = (
+        claimed_at_boot["status"] == "active"
+        and unclaimed_at_boot.status == "interrupted"
+        and completed["status"] == "completed"
+        and completed["transcript_version"] == 1
+        and failed_snapshot["status"] == "failed"
+        and failed_snapshot["failure_code"] == "resume_failed"
+        and failed_snapshot["failure_reason"] == "Retained File restart could not finish."
+    )
+    return {
+        "verdict": "SUPPORTED" if passed else "FALSIFIED",
+        "boot_completed_while_resume_held": claimed_at_boot["status"] == "active",
+        "unclaimed_file_status_at_boot": unclaimed_at_boot.status,
+        "held_resume_final": {
+            "status": completed["status"],
+            "publication_count": completed["transcript_version"],
+        },
+        "failed_resume": {
+            "status": failed_snapshot["status"],
+            "failure_code": failed_snapshot["failure_code"],
+            "failure_reason": failed_snapshot["failure_reason"],
+        },
+        "held_events": held.events,
+        "failed_events": failed.events,
+    }
+
+
 CASES = {
     "resume-after-40": _case_resume,
     "mid-window-crash": _case_mid_window,
@@ -860,6 +1129,7 @@ CASES = {
     "per-account-recovery": _case_account_scope,
     "nonresumable-file": _case_nonresumable,
     "live-d13-falsifier": _case_live,
+    "background-resume": _case_background_resume,
 }
 
 
@@ -897,7 +1167,8 @@ async def run(selected: str) -> dict[str, object]:
         return {
             "verdict": verdict,
             "question": (
-                "Can the existing File Meeting remain sole owner across real app startup?"
+                "Can the existing File Meeting remain sole owner across real app startup, "
+                "including a background retained resume?"
             ),
             "selected": selected,
             "real_app_lifespan": True,

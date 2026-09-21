@@ -121,3 +121,33 @@ Cancellation uses the existing durable vocabulary: Meeting `interrupted` plus ou
   quality, 200-minute runtime, or resource bounds.
 - SQLite 3.50.4 substitution is prototype-only and cannot qualify production runtime.
 - The P2 SQLite semantic-store allowance remains explicit; no product bypass was made.
+
+## C12 — background retained resume (Run C C2)
+
+**Question.** Can a valid retained File Meeting continue as the existing owner after
+lifespan starts, while generic recovery terminalizes only an unclaimed File row and a
+resume failure remains visible on its Meeting?
+
+**Hypothesis.** Claiming a valid owner before fallback recovery, preserving that active
+row, and running its existing windowed work in the background is sufficient. No new job
+identity, status, threshold, or scheduler is required.
+
+**Falsifier.** Lifespan waits for the held resume; the unclaimed row remains active;
+the claimed row is interrupted by fallback; or a controlled mid-window failure lacks a
+durable `failed/resume_failed` outcome.
+
+**Command.**
+
+```sh
+MOSS_R4_NO_WRITE=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. \
+  /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python \
+  prototypes/batch-startup/prototype.py --case background-resume
+```
+
+**Verdict. SUPPORTED.** The 2026-09-21 C12 run entered real lifespan while the claimed
+resume remained active; its one released window completed with one publication. The
+simultaneous unclaimed File row became `interrupted`. A separate controlled failure
+became durable `failed/resume_failed`. Both owner directories were removed only after
+terminal truth. The deterministic runner used zero decoder, network, tunnel, or GPU
+requests; it measures lifecycle composition, not acoustic quality. The one-second wait
+is a prototype liveness falsifier, not a product timeout or policy.
