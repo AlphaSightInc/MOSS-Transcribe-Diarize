@@ -81,6 +81,33 @@ the two Jamie controls remain `xfail(strict=True)`. No decoder, network,
 tunnel, proxy, or GPU request was made for this run. Historical S17 remains
 **UNMEASURED** and `capacity_2x1800` remains **REQUIRED-NOT-RUN**.
 
+### Lead disclosure — the startup assertion's call site is now conditional
+
+Stated plainly, because "byte-identical" above describes the *function* and not
+the call: C2's background resume makes a claimed File Meeting legitimately
+**active** when recovery ends, so an unconditional `_assert_no_active_meetings()`
+could no longer hold. `recover_active_meetings` therefore calls
+`_assert_no_unclaimed_active_meetings(claimed_file_meetings)` **when, and only
+when, something was claimed**, and the original assertion still runs otherwise
+(`phase2.py:603-605`).
+
+The lead ratified this narrowing on 2026-09-21 after verifying that it is exactly
+as narrow as the background resume requires:
+
+- the original function's definition is unchanged;
+- the exclusion set can only ever contain File rows, because
+  `resume_retained_work` iterates `active_file_meetings`
+  (`WHERE m.mode = 'file' AND m.status = 'active'`) and returns only the owners it
+  actually claimed and started (`phase2_file.py:202-208`, wired at
+  `phase2.py:2034-2040`);
+- a Live row is still caught, since `active_meetings - claimed_file_meetings`
+  retains it (`phase2.py:771-785`), so **D13 is preserved**;
+- `tests/phase2/test_retained_file_claim.py:567-571` asserts a Live row ends
+  `interrupted` with `decoder.calls == []`.
+
+Falsifier for this disclosure: any path that puts a non-File row, or a File row
+that was not claimed and started, into `claimed_file_meetings`.
+
 ## Falsifiers and boundary
 
 This PASS is false if a revoked account publishes after revocation; startup
