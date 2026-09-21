@@ -1,0 +1,29 @@
+{
+  "artifacts": [
+    "evidence/round4/features/provider-smoke-20260921T063857Z/provider-posts.jsonl",
+    "evidence/round4/features/provider-smoke-20260921T063857Z/receipt.json"
+  ],
+  "command": "provider_smoke.py --out <evidence-dir> --cap 3 [--prior-posts <redacted-record>]",
+  "decoder_requests_used": 0,
+  "exit_code": 0,
+  "model_actually_used": "google/gemini-2.5-flash-lite",
+  "official_s15_still_needs": "frozen product stack; real decoder; 50s and 180s x TRIALS=3; provider cap 10",
+  "population": {
+    "transcripts": [
+      "50s"
+    ],
+    "trials": 1
+  },
+  "provider_post_cap_total": 3,
+  "provider_posts_observed": 2,
+  "provider_posts_prior_failed_invocation": 1,
+  "provider_posts_this_attempt": 1,
+  "reason": "timestamp-absent",
+  "schema": "moss-r4-provider-smoke.v1",
+  "started_at": "2026-09-21T06:38:57.627816+00:00",
+  "status": "BLOCKED",
+  "summary_current": true,
+  "summary_error_code": null,
+  "timestamp_count": 0,
+  "timestamps_valid_hh_mm_ss": false
+}

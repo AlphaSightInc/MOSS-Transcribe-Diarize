@@ -43,3 +43,17 @@ The current no-dispatch control is `--rows disabled-summary`. A real all-row run
 `--base <private-frozen-stack> --allow-decoder --allow-provider`; it must be supplied
 with a separately authorised, capped decoder authority. The runner opens no tunnel and
 never starts a shared service.
+
+## D24 minimal provider smoke
+
+**S15: `BLOCKED — timestamp-absent`.** The verifier's actual 50 s browser/settings/
+summary path reached `current` twice through OpenRouter using
+`google/gemini-2.5-flash-lite`, with 2 provider POSTs total and 0 decoder requests.
+The first invocation's product verifier returned 0 but its local receipt assembly exited
+1; its redacted record is retained. The single permitted retry returned 0, was current,
+and had 0 detail timestamps, so `HH:MM:SS` validity is false rather than inferred.
+
+Evidence: `evidence/round4/features/provider-smoke-20260921T063618Z/` and
+`evidence/round4/features/provider-smoke-20260921T063857Z/`. The official S15 row still
+needs the frozen product stack with its real decoder, 50 s and 180 s x `TRIALS=3`, and
+the 10-call provider cap. This smoke is only a key/model/product-path check.
