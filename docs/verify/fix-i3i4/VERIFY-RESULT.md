@@ -14,4 +14,3 @@ tunnel calls were made. A separate fresh-context agent was not launched.
   `windowed_transcription.py`; secret scan empty.
 - Mix-bound end-to-end result: crash after windows 0–1; restart dispatched
   exactly windows 2–3; final transcript equaled uninterrupted windows 0–3.
-

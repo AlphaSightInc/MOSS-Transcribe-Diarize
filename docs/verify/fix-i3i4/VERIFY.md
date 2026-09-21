@@ -66,4 +66,3 @@ test -z "$(git grep -nE 'sk-or-v1-[A-Za-z0-9]{16,}|OPENROUTER_API_KEY=[A-Za-z0-9
 
 Expected product diff: only `phase2.py`, `phase2_file.py`, and
 `windowed_transcription.py`; protected assertion AST identical; secret scan empty.
-
