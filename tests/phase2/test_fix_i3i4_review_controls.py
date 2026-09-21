@@ -43,7 +43,6 @@ class _Delegate:
     model_path = "closure-review-model"
 
 
-@pytest.mark.xfail(strict=True, reason="F1: restart validates the original input, not the checkpoint source")
 def test_retained_normalized_mix_checkpoint_is_accepted_on_restart(
     tmp_path: Path,
 ) -> None:
@@ -107,7 +106,6 @@ def test_retained_normalized_mix_checkpoint_is_accepted_on_restart(
     assert tasks._verified_retained_input(handle, owner_dir) == retained_input
 
 
-@pytest.mark.xfail(strict=True, reason="F2: validation I/O errors are misclassified as refusal")
 def test_resume_validation_io_error_is_not_checkpoint_refusal(tmp_path: Path) -> None:
     """An unavailable validator is not evidence that an honest prefix is invalid."""
 
@@ -145,7 +143,6 @@ def test_resume_validation_io_error_is_not_checkpoint_refusal(tmp_path: Path) ->
     assert verdict.status != "refused", verdict.reason
 
 
-@pytest.mark.xfail(strict=True, reason="T1/A-1: fallback owner survives the boot that interrupts it")
 def test_t1_nonresumable_owner_dir_is_reclaimed_in_the_boot_that_interrupts_it(tmp_path):
     async def exercise():
         store = await Phase2Store.open(tmp_path / "state.sqlite3")
@@ -178,7 +175,6 @@ def test_t1_nonresumable_owner_dir_is_reclaimed_in_the_boot_that_interrupts_it(t
     assert first is False, "terminal owner dir must be reclaimed in the boot that made it terminal"
 
 
-@pytest.mark.xfail(strict=True, reason="T2/A-2: reserved owner is invisible to operator interrupt")
 def test_t2_operator_interrupt_is_refused_while_a_reserved_owner_is_being_validated(tmp_path):
     async def exercise():
         _tasks, handle, decoder, _owner_dir, store = await _seed_retained_claim(tmp_path)
@@ -218,7 +214,6 @@ def test_t2_operator_interrupt_is_refused_while_a_reserved_owner_is_being_valida
     assert outcome == "honoured", outcome
 
 
-@pytest.mark.xfail(strict=True, reason="T3/B-1: one settlement failure stops later owners")
 def test_t3_one_owner_persistent_outcome_write_failure_orphans_later_reserved_owners(tmp_path):
     async def exercise():
         archive = SimpleNamespace()
@@ -293,7 +288,6 @@ class _SpeechlessThenFailDecoder:
         )
 
 
-@pytest.mark.xfail(strict=True, reason="T4/B-2: validation creates checkpoint state")
 def test_t4_checkpoint_validation_honest_shapes_and_side_effects(tmp_path):
     source = tmp_path / "input.wav"
     source.write_bytes(b"retained source")

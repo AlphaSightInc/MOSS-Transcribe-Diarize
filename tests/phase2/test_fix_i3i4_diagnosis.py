@@ -15,11 +15,6 @@ from moss_transcribe_diarize.app.phase2 import MeetingHandle, Phase2Store, creat
 from moss_transcribe_diarize.app.phase2_file import FileMeetingTasks
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="S1: one stalled retained validation starves every later owner",
-)
 def test_s1_stalled_validation_does_not_starve_later_retained_owners(
     tmp_path: Path,
 ) -> None:
@@ -89,11 +84,6 @@ def test_s1_stalled_validation_does_not_starve_later_retained_owners(
     asyncio.run(exercise())
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="S3: fallback-terminalized retained owner is reclaimed only next boot",
-)
 def test_s3_lifespan_reclaims_fallback_interrupted_owner_in_same_boot(
     tmp_path: Path,
 ) -> None:
