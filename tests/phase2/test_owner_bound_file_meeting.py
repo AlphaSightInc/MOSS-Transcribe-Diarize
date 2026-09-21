@@ -19,6 +19,7 @@ import pytest
 
 from moss_transcribe_diarize.app import phase2_file
 from moss_transcribe_diarize.app.phase2 import (
+    MeetingHandle,
     Phase2Store,
     SESSION_COOKIE,
     create_phase2_app,
@@ -176,6 +177,43 @@ def test_upload_runs_after_browser_leaves_and_remains_owner_bound(tmp_path: Path
         connection.close()
     assert runner.inputs == [("input.wav", b"owner-audio")]
     assert list((tmp_path / "file-work").glob("**/*")) == []
+
+
+def test_file_work_is_meeting_owned_before_inference_and_removed_after_terminal(tmp_path: Path):
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    runner = ControlledRunner()
+    work_root = tmp_path / "file-work"
+    app = make_app(database, runner, work_root)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        accepted = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", b"durable-source", "audio/wav")},
+        )
+        assert accepted.status_code == 201
+        meeting_id = accepted.json()["id"]
+        assert runner.started.wait(timeout=2)
+
+        tasks = app.state.phase2_file_tasks
+        owner_dir = tasks.retained_root / "sub-a" / meeting_id
+        assert list(work_root.iterdir()) == []
+        assert json.loads((owner_dir / "owner.json").read_text()) == {
+            "account_id": "sub-a",
+            "checkpoint": "checkpoint",
+            "contract_version": 1,
+            "ingress": "file",
+            "meeting_id": meeting_id,
+            "source": "input.wav",
+        }
+        assert (owner_dir / "input.wav").read_bytes() == b"durable-source"
+        assert (owner_dir / "checkpoint").is_dir()
+        assert runner.options == [{"checkpoint_dir": owner_dir / "checkpoint"}]
+
+        runner.release.set()
+        assert await_terminal(client, meeting_id, "completed")["status"] == "completed"
+        assert not owner_dir.exists()
 
 
 def test_201_minute_file_tail_is_saved_and_survives_app_reopen(tmp_path: Path):
@@ -410,7 +448,7 @@ def test_control_shutdown_joins_service_owned_file_interrupt(tmp_path: Path):
         files={"file": ("meeting.wav", b"held-interrupt", "audio/wav")},
     ).json()["id"]
     assert runner.started.wait(timeout=2)
-    source = next(work_root.glob("*/input.wav"))
+    source = app.state.phase2_file_tasks.retained_root / "sub-a" / meeting_id / "input.wav"
     outcome: dict[str, object] = {}
 
     def interrupt() -> None:
@@ -538,7 +576,7 @@ def test_control_shutdown_joins_service_owned_file_revoke_and_runner(tmp_path: P
         files={"file": ("meeting.wav", b"held-shutdown", "audio/wav")},
     ).json()["id"]
     assert runner.started.wait(timeout=2)
-    source = next(work_root.glob("*/input.wav"))
+    source = app.state.phase2_file_tasks.retained_root / "sub-a" / meeting_id / "input.wav"
     outcome: dict[str, object] = {}
 
     def revoke() -> None:
@@ -626,6 +664,62 @@ def test_file_meeting_failure_is_durable_and_recoverable(tmp_path: Path):
     with TestClient(restarted, base_url="https://moss.test") as client:
         session(client, sessions["sub-a-second"])
         assert client.get(f"/api/meetings/{meeting_id}").json() == meeting
+
+
+@pytest.mark.parametrize("failure_arm", ["commit", "publication"])
+def test_unresumed_failure_is_durable_and_resignals_task(
+    tmp_path: Path, failure_arm: str
+):
+    """D4: ordinary File work retains its settlement failure signal."""
+
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    runner = ControlledRunner()
+    app = make_app(database, runner, tmp_path / "file-work")
+    original_commit = MeetingHandle.commit_transcript
+    original_publish = MeetingHandle.record_audio_unavailable
+    failure_seen = threading.Event()
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        accepted = client.post(
+            "/api/meetings/file",
+            files={"file": ("meeting.wav", b"ordinary-failure", "audio/wav")},
+        )
+        meeting_id = accepted.json()["id"]
+        assert runner.started.wait(timeout=2)
+        entry = app.state.phase2_file_tasks._tasks[meeting_id]
+        owner_dir = app.state.phase2_file_tasks.retained_root / "sub-a" / meeting_id
+
+        async def fail_commit(self, document, *, terminal=False):
+            if self.meeting_id != meeting_id:
+                return await original_commit(self, document, terminal=terminal)
+            failure_seen.set()
+            raise RuntimeError("controlled ordinary commit failure")
+
+        async def fail_publication(self):
+            if self.meeting_id != meeting_id:
+                return await original_publish(self)
+            failure_seen.set()
+            raise RuntimeError("controlled ordinary publication failure")
+
+        if failure_arm == "commit":
+            MeetingHandle.commit_transcript = fail_commit
+        else:
+            MeetingHandle.record_audio_unavailable = fail_publication
+        try:
+            runner.release.set()
+            assert failure_seen.wait(timeout=2)
+            meeting = await_terminal(client, meeting_id, "failed")
+            deadline = time.monotonic() + 2
+            while not entry.task.done() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            assert isinstance(entry.task.exception(), RuntimeError)
+            assert meeting["failure_code"] == "storage_failed"
+            assert not owner_dir.exists()
+        finally:
+            MeetingHandle.commit_transcript = original_commit
+            MeetingHandle.record_audio_unavailable = original_publish
 
 
 def test_revocation_fences_late_file_result_commit(tmp_path: Path):
@@ -724,7 +818,7 @@ def test_each_owner_bound_commit_versions_and_restart_retains_last_document(tmp_
         connection.close()
 
 
-def test_shutdown_waits_for_sync_runner_before_source_cleanup_and_fences_commit(tmp_path: Path):
+def test_shutdown_preserves_meeting_owned_source_before_restart_recovery(tmp_path: Path):
     database = tmp_path / "moss.sqlite3"
     sessions = asyncio.run(provision(database))
     work_root = tmp_path / "file-work"
@@ -739,7 +833,7 @@ def test_shutdown_waits_for_sync_runner_before_source_cleanup_and_fences_commit(
     )
     meeting_id = accepted.json()["id"]
     assert runner.started.wait(timeout=2)
-    source = next(work_root.glob("*/input.wav"))
+    source = app.state.phase2_file_tasks.retained_root / "sub-a" / meeting_id / "input.wav"
 
     shutdown_error: list[BaseException] = []
 
@@ -760,7 +854,7 @@ def test_shutdown_waits_for_sync_runner_before_source_cleanup_and_fences_commit(
     shutdown_thread.join(timeout=5)
     assert not shutdown_thread.is_alive()
     assert shutdown_error == []
-    assert not source.exists()
+    assert source.exists()
     assert app.state.phase2_file_tasks._tasks == {}
 
     connection = sqlite3.connect(database)
@@ -878,7 +972,7 @@ def test_startup_cleanup_failure_blocks_admission_logs_no_content_and_closes_sto
     assert "sentinel private source" not in caplog.text
 
 
-def test_failed_source_removal_is_logged_retrieved_and_marks_meeting_failed(
+def test_failed_retained_cleanup_preserves_completed_meeting(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
@@ -900,7 +994,7 @@ def test_failed_source_removal_is_logged_retrieved_and_marks_meeting_failed(
         )
         meeting_id = accepted.json()["id"]
         assert runner.started.wait(timeout=2)
-        source = next(work_root.glob("*/input.wav"))
+        source = app.state.phase2_file_tasks.retained_root / "sub-a" / meeting_id / "input.wav"
 
         def fail_remove(path: str | Path) -> None:
             if Path(path) == source.parent:
@@ -909,7 +1003,7 @@ def test_failed_source_removal_is_logged_retrieved_and_marks_meeting_failed(
 
         monkeypatch.setattr(phase2_file.shutil, "rmtree", fail_remove)
         runner.release.set()
-        meeting = await_terminal(client, meeting_id, "failed")
+        meeting = await_terminal(client, meeting_id, "completed")
         deadline = time.monotonic() + 5
         while app.state.phase2_file_tasks._tasks and time.monotonic() < deadline:
             time.sleep(0.01)
@@ -917,11 +1011,11 @@ def test_failed_source_removal_is_logged_retrieved_and_marks_meeting_failed(
         assert meeting["transcript"]["segments"][0]["text"] == "owner sentinel"
         assert meeting["audio"]["state"] == "unavailable"
         assert source.exists()
-        assert "File Meeting background task failed." in caplog.text
+        assert "Retained File Meeting cleanup failed after terminal completion." in caplog.text
         assert "secret path" not in caplog.text
         monkeypatch.setattr(phase2_file.shutil, "rmtree", original_rmtree)
 
-    original_rmtree(work_root)
+    original_rmtree(app.state.phase2_file_tasks.retained_root)
 
 
 def test_deployed_file_inference_settings_reach_runner(tmp_path: Path):
@@ -951,7 +1045,9 @@ def test_deployed_file_inference_settings_reach_runner(tmp_path: Path):
         await_terminal(client, meeting_id, "completed")
 
     assert len(runner.options) == 1
-    assert runner.options[0].pop("checkpoint_dir") is None
+    assert runner.options[0].pop("checkpoint_dir") == (
+        tmp_path / "file-retained" / "sub-a" / meeting_id / "checkpoint"
+    )
     assert runner.options == [{
         "prompt": "deployed prompt",
         "max_length": 16384,

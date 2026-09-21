@@ -972,7 +972,7 @@ class TerminalTranscriptFinalizer:
             decode_finished = time.monotonic()
             elapsed_sec = decode_finished - decode_started
 
-        segments, local_speakers, mapping, resolution = self._segments_of(
+        segments, terminal_local_speakers, local_speakers, mapping, resolution = self._segments_of(
             result, end_sample=plan.end_sample, base_surface=base_surface,
             canonical_speakers=canonical_speakers,
         )
@@ -1006,6 +1006,7 @@ class TerminalTranscriptFinalizer:
                 end_sample=plan.end_sample,
                 segments=segments,
                 decode_elapsed_sec=elapsed_sec,
+                terminal_local_speakers=terminal_local_speakers,
             ),
             accounting=accounting,
         )
@@ -1021,6 +1022,7 @@ class TerminalTranscriptFinalizer:
         canonical_speakers: Sequence[str],
     ) -> tuple[
         tuple[EffectiveTranscriptSegment, ...],
+        tuple[str, ...],
         tuple[str, ...],
         dict[str, str],
         SegmentOverlapResolution,
@@ -1065,6 +1067,7 @@ class TerminalTranscriptFinalizer:
                 )
                 for speaker, start, end, text in resolution.segments
             ),
+            tuple(speaker for speaker, _, _, _ in resolution.segments),
             local_speakers,
             mapping,
             resolution,

@@ -2,25 +2,20 @@ import json
 from collections import Counter
 from pathlib import Path
 
-import pytest
-
 from moss_transcribe_diarize.lane_word_oracle import words
 
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "evidence" / "round4" / "overlap"
+CORPUS = ROOT / "evidence" / "live-policy-sweep-20260825" / "corpus"
 
 
 def _attribution() -> dict:
     return json.loads((EVIDENCE / "attribution-alternation.json").read_text())
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="R4 follow-on: the source Keyu row omits the audible five-word leading sentence tail",
-)
 def test_r4_keyu_source_reference_matches_audited_audio_population() -> None:
-    current = json.loads((EVIDENCE / "keyu-reference-source.jsonl").read_text())
+    current = json.loads((CORPUS / "interview_keyu_jin_60s/reference.jsonl").read_text().splitlines()[0])
     proposal = json.loads((EVIDENCE / "reference-correction-proposal.json").read_text())
     corrected = proposal["proposals"]["keyu_microphone_0_25_source_corpus"]
     assert (current["start"], current["end"], words(current["text"])) == (

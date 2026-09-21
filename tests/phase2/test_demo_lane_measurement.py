@@ -6,7 +6,7 @@ from tests.e2e.verify_demo_lanes import reference_inputs, run_case
 def test_lane_checks_reach_both_surfaces_and_reopen(case,missing):
     inputs=reference_inputs(1)
     rows=[dict(start=0 if lane=='system' or case=='overlap' else 29,
-               end=29 if lane=='system' else 25 if case=='overlap' else 54,
+               end=len(data['pcm']) / (16000 * 2) if lane=='system' else 25 if case=='overlap' else 54,
                speaker=lane,source_lane=lane,text=data['reference']) for lane,data in inputs.items()]
     class Client:
         frames=0;heartbeats=0;stopped=False;snapshots=0;reads=0

@@ -24,6 +24,7 @@ from moss_transcribe_diarize.phase2_acceptance import QUALITY_BOUNDS
 CORPUS = REPO / 'evidence/live-policy-sweep-20260825/corpus'
 SHARED_TAB_VOICE = CORPUS / 'interview_bill_ackman_60s/audio.wav'
 MICROPHONE_VOICE = CORPUS / 'interview_keyu_jin_60s/audio.wav'
+SYSTEM_LADDER_REFERENCE = REPO / 'tests/e2e/fixtures/lane-system-ladder-reference.json'
 DEFAULT_MIC_GAIN = 0.03
 
 class Client:
@@ -57,11 +58,12 @@ def lane_pcm(path: Path, seconds: float, gain: float = 1.0) -> bytes:
     return samples.tobytes()
 
 
-def reference_inputs(mic_gain):
+def reference_inputs(mic_gain, *, system_reference: Path | None = None):
     """Use complete reference intervals, never proportional word guesses for clips."""
     result={}
     for lane,path in [('system',SHARED_TAB_VOICE),('microphone',MICROPHONE_VOICE)]:
-        first=json.loads(path.with_name('reference.jsonl').read_text().splitlines()[0])
+        reference_path = system_reference if lane == 'system' and system_reference else path.with_name('reference.jsonl')
+        first=json.loads(reference_path.read_text().splitlines()[0])
         if lane == 'microphone':
             # The corpus row omits an audible sentence tail inside this exact window.
             first=json.loads((REPO/'tests/e2e/fixtures/lane-microphone-reference.json').read_text())

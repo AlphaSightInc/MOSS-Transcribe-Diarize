@@ -26,7 +26,11 @@ RATE = 16_000
 class MarkerEncoder:
     spec = SimpleNamespace(provider="wespeaker", revision="test", state_sha256="test")
 
+    def __init__(self):
+        self.calls = []
+
     def embed(self, wav_path, intervals):
+        self.calls.append(tuple(intervals))
         with wave.open(str(wav_path), "rb") as audio:
             audio.setpos(round(intervals[0][0] * RATE))
             marker = audio.readframes(1)[0]
@@ -44,7 +48,16 @@ class SplitTerminalRunner:
         )
 
 
-def terminal_result(tmp_path, *, returning_marker: int):
+class IsolatedTerminalRunner:
+    def transcribe(self, *_args, **_kwargs):
+        return SimpleNamespace(
+            text="[0][S01]established[2.5][3][S03]isolated return[3.27]"
+        )
+
+
+def terminal_result(
+    tmp_path, *, returning_marker: int, runner=SplitTerminalRunner, return_encoder=False
+):
     speaker = "speaker-0001"
     album = FingerprintAlbum(admission_seconds=2.0)
     assert album.observe(
@@ -53,8 +66,9 @@ def terminal_result(tmp_path, *, returning_marker: int):
         duration_sec=2.5,
         span_id=0,
     ) == "admitted"
+    encoder = MarkerEncoder()
     provider = WeSpeakerLiveEvidenceProvider(
-        encoder=MarkerEncoder(),
+        encoder=encoder,
         album=album,
         birth_min_seconds=1.0,
         min_segment_samples=8000,
@@ -91,24 +105,18 @@ def terminal_result(tmp_path, *, returning_marker: int):
         _lane_preparers={"system": preparer},
         session=SimpleNamespace(snapshot=lambda: snapshot),
     )
-    return finalize_lanes(
+    result = finalize_lanes(
         coordinator,
-        TerminalTranscriptFinalizer(runner=SplitTerminalRunner(), scratch_dir=tmp_path),
+        TerminalTranscriptFinalizer(runner=runner(), scratch_dir=tmp_path),
         plan=TerminalDecodePlan(0, 6 * RATE, 0, RollingStatus.STOPPED, 0, 0),
         tape=tape,
         base_text_revision_version=0,
         base_surface=base,
         canonical_speakers=(speaker,),
     )
+    return (result, encoder) if return_encoder else result
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "R4-3: per-segment terminal fallback drops a 0.27 s return even when the same "
-        "terminal-local partition has eligible matching evidence"
-    ),
-)
 def test_r4_3_same_terminal_partition_reuses_eligible_voice_evidence(tmp_path):
     result = terminal_result(tmp_path, returning_marker=1)
     assert [segment.canonical_speaker for segment in result.proposal.segments] == [
@@ -123,5 +131,23 @@ def test_r4_3_different_returning_voice_is_not_absorbed(tmp_path):
     assert [segment.canonical_speaker for segment in result.proposal.segments] == [
         "speaker-0001",
         None,
+        None,
+    ]
+
+
+def test_r4_3_partition_probe_aggregates_eligible_intervals_once(tmp_path):
+    result, encoder = terminal_result(
+        tmp_path, returning_marker=1, return_encoder=True
+    )
+    assert result.proposal.segments[1].canonical_speaker == "speaker-0001"
+    assert encoder.calls == [((0.3, 2.8),)]
+
+
+def test_r4_3_isolated_terminal_partition_stays_unattributed(tmp_path):
+    result = terminal_result(
+        tmp_path, returning_marker=1, runner=IsolatedTerminalRunner
+    )
+    assert [segment.canonical_speaker for segment in result.proposal.segments] == [
+        "speaker-0001",
         None,
     ]

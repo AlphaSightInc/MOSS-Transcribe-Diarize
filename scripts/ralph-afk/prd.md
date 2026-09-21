@@ -1,80 +1,74 @@
-# PRD - MOSS round 4, ralph run A2: close the acceptance review's blocking gaps
+# PRD - MOSS round 4, ralph run D: close the revocation retention leak
 
-Run A (iterations 1–9, HEAD `3a56ce7b`) removed the invented-span path and built the budget preflight. An adversarial
-acceptance review then found that the custody repair is **half done** and that the request rate has the wrong unit.
-This run closes exactly those gaps. Everything run A already achieved must stay achieved.
+An adversarial acceptance review of run C confirmed C2–C7 and every run-B regression check, and confirmed that the
+revoke resume/unfence hole (C1's first half) is genuinely shut. It then found that **C1's second half was not done and
+its control was deleted rather than corrected**: a revoked account's retained input is now kept forever. Run D closes
+exactly that, plus four small disclosures the review named. Nothing runs C or B achieved may regress.
 
 ## Goal
 
-> Make DOM word custody as fine-grained as the model state actually is — a rendered row is a *merged turn* that can
-> cover many segments and many minutes, so crediting a reference word anywhere inside the row's outer span still lets
-> an earlier occurrence pay for a later one that was never displayed. Custody must be per constituent segment. And make
-> the decoder request rate reproduce from the receipt it cites, in the unit the planner multiplies.
+> When an account is revoked, the raw media and checkpoint it left behind must stop being held. Revocation is the
+> moment a person expects their data to be released, so the retained owner directory must not survive it — and the
+> control that proves so must exist, not have been deleted.
 
 ## Acceptance bar
 
-The loop is complete only when every point below holds, with evidence (commands, exact counts, before/after) recorded in
-progress.txt:
+Every point below, with evidence (commands, exact counts, before/after) in progress.txt:
 
-- **B1 — segment-granular custody.** A violating control exists, is shown to FAIL on the current HEAD `3a56ce7b`
-  (record the failing run), and passes at the end: **one** rendered `.utt` row whose published outer span is 0–11 s and
-  whose constituent model segments are 0–1 s ("alpha") and 10–11 s (a different, later phrase that was never emitted),
-  with references "alpha"@0–1 and "alpha"@10–11 — the later reference must be `missing` and the earlier one credited at
-  its own observation time. Equivalent controls for: a single-speaker clip whose whole transcript merges into one turn
-  (custody must still be per segment); and a turn whose segments are separated by a long gap.
-- **B2 — the row publishes its constituent segments' model state.** `frontend/src/components/TranscriptPane.tsx`
-  publishes, for each `.utt` article, the per-segment spans and texts that the turn was merged from (the merge site is
-  `frontend/src/lib/mergeTranscript.ts:183-199`, which already pushes `target_segment_keys`; carry the same per-segment
-  `start`/`end`/`text` through the turn and render them in one additional data attribute). A frontend test asserts the
-  published value equals the model state for a two-segment merged turn. `npm --prefix frontend run typecheck` clean,
-  `npm --prefix frontend run build` run and the committed `frontend_assets` byte-identical to a fresh build (17/17).
-- **B3 — the instrument consumes it.** `tools/qualify/visible_word_headed.py::_dom_segments` emits one
-  `TranscriptSegment` per **constituent segment** (span + that segment's text), never one per row; a row that publishes
-  no usable per-segment state produces no DOM credit and the DOM result stays `UNMEASURED` with a reason. No credit path
-  may use the row's outer span alone.
-- **B4 — request rate reproduces.** `tools/qualify/run.py`'s `measured_rate` is stated **in the unit the planner
-  multiplies** and is reproducible from its `source_receipt` by an arithmetic the summary prints. Verified facts:
-  `evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl` has **2,440 lines = 2,440 unique request ids** over
-  **4 sessions × 2 lanes × 600 s** ⇒ **0.508 requests per lane-second** (= 1.017 per session-second);
-  `…/20260918-064644-1r-8x300/` has **2,448** over **8 × 2 × 300 s** ⇒ **0.510 per lane-second**. The current code
-  multiplies session-seconds by 0.51, which under-counts any two-lane family by 2×. Fix by planning in **lane-seconds**:
-  every live family in the population declares its lanes per session, and `planned_requests` uses
-  `sessions × lanes × seconds × rate × headroom`. A test recomputes the rate from the receipt file and asserts the
-  constant matches it. The summary records the unit explicitly (e.g. `"measured_rate_unit": "requests_per_lane_second"`).
-- **B5 — the plan is not silently wrong for the default bundle.** After the unit fix, print and record the new
-  `planned_requests` for default and `--long`, set the default `--budget` to the value the preflight derives (show the
-  derivation), and keep `--long` refusing when unfunded. A control asserts that a family whose probe drives two lanes
-  (e.g. the level ladder, `tools/qualify/run.py:30` `CASES` fed at `:452`) is planned with lanes=2.
-- **B6 — headroom provenance.** `REQUEST_HEADROOM` carries the same treatment as the rate: a named source and the
-  arithmetic that justifies it, recorded in the summary; if no receipt justifies a value, say so in the summary rather
-  than presenting it as measured.
-- **B7 — file scope.** `prototypes/capacity-campaign/NOTES.md` was edited by run A outside the permitted set; either
-  move that content under `docs/verify/round4-run-a/` or state in progress.txt why it belongs there. No other file
-  outside the permitted set is touched by this run.
-- Everything run A achieved still holds: the frontier/neighbour-row invention stays deleted; wrong/missing words keep
-  `null` clocks and stay in the denominator; phrase-end diagnostics stay under their own key and are never presented as
-  per-word latency; the preflight still refuses before any request; `rejected_by_budget > 0` ⇒ `INCOMPLETE`;
-  `capacity_2x1800: REQUIRED-NOT-RUN` still appears in every default summary.
-- Full backend suite ≥ 2,123 passed / 0 failed / 5 skipped and frontend ≥ 312/312; typecheck clean;
-  `docs/verify/round4-run-a/VERIFY.md` updated so its falsifier list states the **segment-granular** claim (the current
-  wording only claims the frontier path is gone, which is why the review's counterexample slipped through).
+- **D1 — revocation releases the retained input.** Reproduce the leak first and record it: after `_revoke_account`,
+  `retained_root/<account>/<meeting>` still contains `owner.json`, `input.wav` and `checkpoint`, and survives a later
+  boot because `active_file_meetings` joins `a.enabled = 1` (`phase2.py:637`), so the row is never claimed, refused or
+  reclaimed, and `clear_transient_work` only touches `_work_root` (`phase2_file.py:159-179`). Then make revocation
+  release it **after** the Meeting's durable terminal truth, never before, and never beyond that Meeting's own
+  directory (`_remove_retained_work_dir`'s `parent.parent != retained_root` guard must still hold). A disabled
+  account's already-terminal leftovers from an earlier boot must also be reclaimed — decide where that belongs and say
+  why.
+- **D2 — the deleted control is restored, corrected, not dropped.** Run B asserted `assert not owner_dir.exists()`
+  after revoke; run C removed it with no successor. Restore an equivalent assertion in the C1 healthy control
+  (`tests/phase2/test_retained_file_claim.py`), alongside the existing `decoder.calls == []`, `("interrupted", None)`
+  and still-fenced assertions. Prove it RED on the current tree first. A sibling account's and a sibling meeting's
+  retained directories must be proven to survive.
+- **D3 — no dead revocation-adjacent entry points.** `release_settled_account_fence` (`phase2_file.py:356-361`) now has
+  zero non-prototype callers, and `resume_retained_work`'s `account=` parameter (`phase2_file.py:205`) is only ever
+  called with the default. Remove them, or keep them with a one-line comment stating who is expected to call them and
+  why an unreachable fence-release on the class that enforces revocation is safe. Removal is preferred.
+- **D4 — disclose the non-resumed failure-signal change.** `_complete`'s commit and publication failure arms changed
+  `raise` → `return` for **both** modes (`phase2_file.py:772-784`, `807-819`); previously a normal upload whose commit
+  failed ended its task with an exception that `_settle_entries` turned into `RuntimeError("File Meeting could not be
+  quiesced.")` and `_task_done` logged. Durable truth is unaffected, but C2 asked only for the *resumed* path. Either
+  restore the signal for the non-resumed path or record the change and its rationale in
+  `docs/verify/round4-run-c/VERIFY.md` and the run-D verifier. State which you chose and why.
+- **D5 — the last-resort outcome write is guarded.** `_run`'s resumed handler calls `_mark_failed`
+  (`phase2_file.py:668-673`), which swallows `AccountRevoked` (`:603-606`) and does not guard other exceptions from
+  `handle.finish`. If that write fails the row stays `active` with only a log line. Make the failure path leave a
+  durable, operator-visible outcome or, if that is genuinely impossible, record precisely what state results and why it
+  is acceptable. The claim "each failure is a durable, operator-visible Meeting outcome" must be true for this arm too,
+  or be narrowed in the verifier to the arms actually proven.
+- **D6 — correct the journal's wrong evidence pointer.** `progress.txt` iteration 4's Evidence line cites
+  `tests/phase2/test_batch_startup_prototype_controls.py` for post-boot task joining that lives in
+  `prototypes/batch-startup/prototype.py`; run C never touched that test file. The journal is append-only, so add a
+  correction entry rather than editing history.
+- Everything runs B and C achieved still holds: `_assert_no_active_meetings` byte-identical and still used when nothing
+  is claimed; no Live row can enter `claimed_file_meetings`; D13 preserved; deletion only after durable terminal truth
+  and only within the owning Meeting's directory; the gap remedy partition-scoped with both branches asserted; no
+  constant, gate bar, `QUALITY_BOUNDS` or `DEFAULT_MIC_GAIN` change; the two Jamie controls still `xfail(strict=True)`
+  and nothing else xfailed; S17 UNMEASURED and `capacity_2x1800` REQUIRED-NOT-RUN.
+- Full backend suite ≥ **2,158 passed / 0 failed / 5 skipped / 2 xfailed**, frontend ≥ 312/312, typecheck clean;
+  rebuild + empty `git status` if any frontend source changes. `docs/verify/round4-run-d/VERIFY.md`.
 
 ## Constraints
 
-Non-negotiable, in addition to the rules in prompt.md:
-
 - Python `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python`,
-  always `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.`, cwd = this repo; frontend via the symlinked `frontend/node_modules`.
-- No GPU, no decoder, no tunnel, no network, no microphone, no audio, no headed browser in this loop. Offline only.
-- Product code you may touch: **only** `frontend/src/components/TranscriptPane.tsx`, `frontend/src/lib/mergeTranscript.ts`
-  (and the types it needs), their tests, and the rebuilt `frontend_assets`. Nothing under `moss_transcribe_diarize/`
-  except the regenerated assets. Never `QUALITY_BOUNDS`, any gate bar, identity constants, or
-  `docs/known-limitations-20260918.md`. Otherwise: `tools/qualify/`, `tests/`, `docs/verify/round4-run-a/`.
-- Do not weaken or delete any control run A added. Do not invent a numeric latency or quality bar.
+  always `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.`; frontend via the symlinked `frontend/node_modules`.
+- **Offline: 0 decoder requests, no tunnel, no proxy, no GPU, no external provider, no network.**
+- **Never delete or weaken a control to make a bar pass.** If a control asserts the wrong thing, correct it and say so
+  explicitly in progress.txt. Run C deleted one silently; that is the specific failure this run exists to repair.
+- Never change `QUALITY_BOUNDS`, gate bars, identity constants, `DEFAULT_MIC_GAIN`, sentinels, poll delays,
+  `LIVE_MEETING_LIMIT`, or the definition of `_assert_no_active_meetings`. No duration floor, no new constant.
+- Deepen `FileMeetingTasks` and the lifecycle seam; no new framework, no feature flag.
+- Live capture keeps D13: no live resume across a restart, ever.
+- Never `git push`, merge or rebase; commit only on branch `round4/ralph-b`. Historical `evidence/` is read-only.
 - Never read or print `~/.config/moss/openrouter.env` or any `OPENROUTER_API_KEY`.
-- Never `git push`; never merge or rebase; commit only on branch `round4/ralph-a`.
-- If publishing per-segment state honestly is impossible without a larger product change, record exactly what is missing
-  in progress.txt and context.md and stop that candidate — do not narrow the falsifier to fit what the markup allows.
 
 ## Budget and stop
 
