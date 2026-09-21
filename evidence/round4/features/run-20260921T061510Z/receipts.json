@@ -1,0 +1,64 @@
+{
+  "decoder_requests_used": 0,
+  "external_provider_calls_used": 0,
+  "product": {
+    "frozen_product_tree": true,
+    "frozen_sha": "71f23c0c7f353d64593020f8ef93157b86951c10",
+    "head": "71f23c0c7f353d64593020f8ef93157b86951c10",
+    "product_changes_since_frozen_sha": []
+  },
+  "rows": {
+    "voice-bank": {
+      "artifacts": [
+        "evidence/round4/features/run-20260921T061510Z/voice-bank/receipt.json"
+      ],
+      "commands": [
+        {
+          "command": [
+            "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "tests/phase2/test_voiceprint_matching.py",
+            "tests/phase2/test_voiceprint_bank_operations.py"
+          ],
+          "exit_code": 0,
+          "seconds": 6.019
+        }
+      ],
+      "denominators": {
+        "passed": 6,
+        "skipped": 0
+      },
+      "reason": null,
+      "static_control": {
+        "artifacts": [
+          "evidence/round4/features/run-20260921T061510Z/voice-bank/receipt.json"
+        ],
+        "command": {
+          "command": [
+            "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python",
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "tests/phase2/test_voiceprint_matching.py",
+            "tests/phase2/test_voiceprint_bank_operations.py"
+          ],
+          "exit_code": 0,
+          "seconds": 6.019
+        },
+        "denominators": {
+          "passed": 6,
+          "skipped": 0
+        },
+        "passed": true
+      },
+      "status": "PASS"
+    }
+  },
+  "schema": "moss-r4-feature-row-receipts.v1"
+}

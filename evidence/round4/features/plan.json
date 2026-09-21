@@ -1,0 +1,291 @@
+{
+  "decoder_plan": {
+    "headroom": 1.25,
+    "headroom_provenance": {
+      "calculation": "1.25 policy multiplier; no receipt-derived arithmetic",
+      "reason": "no retained receipt isolates planner error after the lane-second rate correction",
+      "source": "planner_policy",
+      "source_receipt": null,
+      "status": "UNMEASURED"
+    },
+    "measured_rate": 0.51,
+    "measured_rate_evidence": [
+      {
+        "calculation": "2440 unique requests / (4 sessions * 2 lanes/session * 600 seconds/session) = 0.508333 requests_per_lane_second; rounded to 2 decimals = 0.51",
+        "lane_seconds": 4800,
+        "lanes_per_session": 2,
+        "observed_rate": 0.508333,
+        "rounded_rate": 0.51,
+        "seconds_per_session": 600,
+        "sessions": 4,
+        "source_receipt": "evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl",
+        "unique_request_ids": 2440
+      },
+      {
+        "calculation": "2448 unique requests / (8 sessions * 2 lanes/session * 300 seconds/session) = 0.510000 requests_per_lane_second; rounded to 2 decimals = 0.51",
+        "lane_seconds": 4800,
+        "lanes_per_session": 2,
+        "observed_rate": 0.51,
+        "rounded_rate": 0.51,
+        "seconds_per_session": 300,
+        "sessions": 8,
+        "source_receipt": "evidence/mvpfix/wp30/20260918-064644-1r-8x300/requests.jsonl",
+        "unique_request_ids": 2448
+      }
+    ],
+    "measured_rate_unit": "requests_per_lane_second",
+    "planned_requests": 2238,
+    "population": {
+      "browser_cases": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "file_seconds": [
+        50,
+        50,
+        360,
+        180,
+        180,
+        180
+      ],
+      "file_windows": 11,
+      "live_benches": {
+        "browser_stress_all": {
+          "lane_seconds": 766,
+          "lanes_per_session": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "seconds": 383,
+          "session_seconds": [
+            8,
+            1,
+            1,
+            68,
+            19,
+            36,
+            16,
+            8,
+            50,
+            73,
+            45,
+            58
+          ],
+          "sessions": 12
+        },
+        "capacity_2x300": {
+          "lane_seconds": 1200,
+          "lanes_per_session": [
+            2,
+            2
+          ],
+          "seconds": 600,
+          "session_seconds": [
+            300,
+            300
+          ],
+          "sessions": 2
+        },
+        "demo_lanes": {
+          "lane_seconds": 166,
+          "lanes_per_session": [
+            2,
+            2
+          ],
+          "seconds": 83,
+          "session_seconds": [
+            54,
+            29
+          ],
+          "sessions": 2
+        },
+        "identity_stress": {
+          "lane_seconds": 360,
+          "lanes_per_session": [
+            2,
+            2,
+            2
+          ],
+          "seconds": 180,
+          "session_seconds": [
+            60,
+            60,
+            60
+          ],
+          "sessions": 3
+        },
+        "level_ladder": {
+          "lane_seconds": 288,
+          "lanes_per_session": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "seconds": 144,
+          "session_seconds": [
+            24,
+            24,
+            24,
+            24,
+            24,
+            24
+          ],
+          "sessions": 6
+        },
+        "lifecycle": {
+          "lane_seconds": 13.0,
+          "lanes_per_session": [
+            2,
+            2,
+            2,
+            0,
+            1,
+            1
+          ],
+          "seconds": 7.0,
+          "session_seconds": [
+            2,
+            2,
+            2,
+            0,
+            0.5,
+            0.5
+          ],
+          "sessions": 6
+        },
+        "reshare": {
+          "lane_seconds": 40,
+          "lanes_per_session": [
+            2
+          ],
+          "seconds": 20,
+          "session_seconds": [
+            20
+          ],
+          "sessions": 1
+        },
+        "workspace": {
+          "lane_seconds": 624,
+          "lanes_per_session": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          "seconds": 312,
+          "session_seconds": [
+            18,
+            54,
+            29,
+            30,
+            70,
+            87,
+            8,
+            8,
+            8
+          ],
+          "sessions": 9
+        }
+      },
+      "live_lane_seconds": 3457.0,
+      "live_session_seconds": 1729.0,
+      "live_sessions": 41,
+      "stride_seconds": 120,
+      "window_seconds": 150
+    },
+    "request_derivation": {
+      "browser_case_requests": 16,
+      "calculation": "ceil((3457 lane_seconds * 0.51 requests_per_lane_second + 11 file_window_requests + 16 browser_case_requests) * 1.25 headroom)",
+      "file_window_requests": 11,
+      "live_lane_requests": 1763.07,
+      "unadjusted_requests": 1790.07
+    },
+    "source_receipt": "evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl"
+  },
+  "feature_population": {
+    "disabled_summary": {
+      "browser_cases": [
+        13
+      ],
+      "provider_posts_expected": 0
+    },
+    "exports": {
+      "browser_cases": [
+        10
+      ],
+      "formats": [
+        "md",
+        "txt",
+        "json",
+        "srt",
+        "vtt"
+      ]
+    },
+    "external_summaries": {
+      "provider_call_cap": 10,
+      "provider_calls_planned": 6,
+      "transcripts": [
+        "50s",
+        "180s"
+      ],
+      "trials": 3
+    },
+    "rename_reassign": {
+      "browser_cases": [
+        11
+      ],
+      "reserved_name_matrix": 1
+    },
+    "url_ingestion": {
+      "failure_controls": 3,
+      "success_urls": 1
+    },
+    "voice_bank": {
+      "enrol_and_recognise_controls": 1
+    }
+  },
+  "product": {
+    "frozen_product_tree": true,
+    "frozen_sha": "71f23c0c7f353d64593020f8ef93157b86951c10",
+    "head": "71f23c0c7f353d64593020f8ef93157b86951c10",
+    "product_changes_since_frozen_sha": []
+  },
+  "real_run_needs": [
+    "a private candidate stack launched from this frozen product tree and supplied as --base",
+    "an explicit, leased decoder authority plus --allow-decoder for live/file/URL rows",
+    "the operator key file plus --allow-provider for the six-call external-summary row"
+  ],
+  "schema": "moss-r4-feature-rows.v1"
+}

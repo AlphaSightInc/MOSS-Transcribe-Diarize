@@ -1,0 +1,28 @@
+{
+  "schema": "moss-r4-feature-rows-full-suite.v1",
+  "product_sha": "71f23c0c7f353d64593020f8ef93157b86951c10",
+  "backend": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <pinned-python> -m pytest -q -p no:cacheprovider tests",
+    "exit_code": 0,
+    "passed": 2130,
+    "skipped": 5,
+    "xfailed": 8,
+    "subtests": 37,
+    "seconds": 179.48
+  },
+  "frontend": {
+    "command": "npm --prefix frontend test -- --run",
+    "exit_code": 0,
+    "test_files_passed": 28,
+    "tests_passed": 312
+  },
+  "typecheck": {
+    "command": "npm --prefix frontend run typecheck",
+    "exit_code": 0
+  },
+  "build": {
+    "command": "npm --prefix frontend run build",
+    "exit_code": 0,
+    "generated_asset_changes": 0
+  }
+}

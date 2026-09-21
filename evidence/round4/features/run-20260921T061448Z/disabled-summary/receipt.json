@@ -1,0 +1,53 @@
+{
+  "artifacts": [
+    "evidence/round4/features/run-20260921T061448Z/disabled-summary/case-13-results.json",
+    "evidence/round4/features/run-20260921T061448Z/disabled-summary/provider-requests.jsonl"
+  ],
+  "commands": [
+    {
+      "command": [
+        "openssl",
+        "req",
+        "-x509",
+        "-newkey",
+        "rsa:2048",
+        "-nodes",
+        "-days",
+        "1",
+        "-subj",
+        "/CN=localhost",
+        "-addext",
+        "subjectAltName=IP:127.0.0.1,DNS:localhost",
+        "-keyout",
+        "/private/tmp/moss-r4-feature-disabled-z7o4ms_b/key.pem",
+        "-out",
+        "/private/tmp/moss-r4-feature-disabled-z7o4ms_b/cert.pem"
+      ],
+      "exit_code": 0,
+      "seconds": 0.141
+    },
+    {
+      "command": [
+        "sandbox-exec",
+        "-f",
+        "/private/tmp/moss-round4-20260920/features/prototypes/surfaces/loopback.sb",
+        "/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python",
+        "prototypes/browser-stress/run.py",
+        "13",
+        "--base",
+        "https://127.0.0.1:52229",
+        "--output",
+        "/private/tmp/moss-r4-feature-disabled-z7o4ms_b/case-13"
+      ],
+      "exit_code": 0,
+      "seconds": 2.4
+    }
+  ],
+  "denominators": {
+    "browser_cases": 1,
+    "loopback_provider_posts_observed": 0,
+    "provider_posts_expected": 0,
+    "provider_posts_observed": 0
+  },
+  "status": "PASS"
+}
