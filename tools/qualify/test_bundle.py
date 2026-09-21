@@ -42,8 +42,8 @@ def test_summary_row_counter_mismatch_is_incomplete():
         event_count=23,
         row_attempted=3,
         row_completed=3,
-        distinct_request_ids=3,
-        distinct_completed_request_ids=3,
+        distinct_attempt_ids=3,
+        distinct_completed_attempt_ids=3,
         row_owners=("summaries",),
     )
     violating = counters(
@@ -54,8 +54,8 @@ def test_summary_row_counter_mismatch_is_incomplete():
         event_count=24,
         row_attempted=4,
         row_completed=3,
-        distinct_request_ids=4,
-        distinct_completed_request_ids=3,
+        distinct_attempt_ids=4,
+        distinct_completed_attempt_ids=3,
         row_owners=("summaries",),
     )
     receipt, matches = accounting(before, healthy, planned_decoder=3)
@@ -65,11 +65,12 @@ def test_summary_row_counter_mismatch_is_incomplete():
         "upstream_failed": 0,
         "rejected": 0,
         "peak_in_flight": 2,
-        "distinct_request_ids": 3,
-        "distinct_completed_request_ids": 3,
+        "distinct_attempt_ids": 3,
+        "distinct_completed_attempt_ids": 3,
+        "distinct_client_request_ids": 0,
         "duplicate_attempts": 0,
         "unowned_events": 0,
-        "missing_request_ids": 0,
+        "missing_client_request_ids": 0,
         "wrong_row_events": 0,
         "row_owners": ["summaries"],
         "reconciled": True,

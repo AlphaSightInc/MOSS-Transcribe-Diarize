@@ -123,7 +123,10 @@ def test_s2_proxy_errors_are_row_owned_and_force_incomplete(
             "statuses": statuses,
             "completed": proxy.completed,
             "row_owned": all(event.get("row") == "summaries" for event in events),
-            "request_ids_present": all("request_id" in event for event in events),
+            "attempt_ids_present": all(event.get("attempt_id") for event in events),
+            "client_request_ids_present": all(
+                event.get("client_request_id") for event in events
+            ),
             "summaries_status": "PASS" if summaries_match else "INCOMPLETE",
             "bundle_status": bundle.data["verdict"],
         }
@@ -131,7 +134,8 @@ def test_s2_proxy_errors_are_row_owned_and_force_incomplete(
             "statuses": [503, 502, 200, 200],
             "completed": 2,
             "row_owned": True,
-            "request_ids_present": True,
+            "attempt_ids_present": True,
+            "client_request_ids_present": True,
             "summaries_status": "INCOMPLETE",
             "bundle_status": "INCOMPLETE",
         }

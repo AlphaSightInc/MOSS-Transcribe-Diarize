@@ -40,11 +40,12 @@ class ProxyCounters:
     row_completed: int = 0
     row_upstream_failed: int = 0
     row_rejected: int = 0
-    distinct_request_ids: int = 0
-    distinct_completed_request_ids: int = 0
+    distinct_attempt_ids: int = 0
+    distinct_completed_attempt_ids: int = 0
+    distinct_client_request_ids: int = 0
     duplicate_attempts: int = 0
     unowned_events: int = 0
-    missing_request_ids: int = 0
+    missing_client_request_ids: int = 0
     wrong_row_events: int = 0
     row_owners: tuple[str, ...] = ()
     row_reconciled: bool = True
@@ -66,11 +67,12 @@ def proxy_counters(path: Path, *, peak_since: int = 0) -> ProxyCounters:
         row_completed=row.completed,
         row_upstream_failed=row.upstream_failed,
         row_rejected=row.rejected,
-        distinct_request_ids=row.distinct_request_ids,
-        distinct_completed_request_ids=row.distinct_completed_request_ids,
+        distinct_attempt_ids=row.distinct_attempt_ids,
+        distinct_completed_attempt_ids=row.distinct_completed_attempt_ids,
+        distinct_client_request_ids=row.distinct_client_request_ids,
         duplicate_attempts=row.duplicate_attempts,
         unowned_events=row.unowned_events,
-        missing_request_ids=row.missing_request_ids,
+        missing_client_request_ids=row.missing_client_request_ids,
         wrong_row_events=row.wrong_row_events,
         row_owners=row.row_owners,
         row_reconciled=row.reconciled,
@@ -142,11 +144,12 @@ def decoder_accounting(
             "upstream_failed": after.upstream_failed - before.upstream_failed,
             "rejected": after.rejected - before.rejected,
             "peak_in_flight": after.peak_in_flight,
-            "distinct_request_ids": after.distinct_request_ids,
-            "distinct_completed_request_ids": after.distinct_completed_request_ids,
+            "distinct_attempt_ids": after.distinct_attempt_ids,
+            "distinct_completed_attempt_ids": after.distinct_completed_attempt_ids,
+            "distinct_client_request_ids": after.distinct_client_request_ids,
             "duplicate_attempts": after.duplicate_attempts,
             "unowned_events": after.unowned_events,
-            "missing_request_ids": after.missing_request_ids,
+            "missing_client_request_ids": after.missing_client_request_ids,
             "wrong_row_events": after.wrong_row_events,
             "row_owners": list(after.row_owners),
             "reconciled": after.row_reconciled,
@@ -162,11 +165,10 @@ def decoder_accounting(
         and after.row_completed == delta["completed"]
         and after.row_upstream_failed == 0
         and after.row_rejected == 0
-        and delta["distinct_request_ids"] == planned_decoder
-        and delta["distinct_completed_request_ids"] == planned_decoder
+        and delta["distinct_attempt_ids"] == planned_decoder
+        and delta["distinct_completed_attempt_ids"] == planned_decoder
         and delta["duplicate_attempts"] == 0
         and delta["unowned_events"] == 0
-        and delta["missing_request_ids"] == 0
         and delta["wrong_row_events"] == 0
         and delta["row_owners"] == ["summaries"]
         and delta["reconciled"] is True
@@ -238,7 +240,7 @@ def execute(args: argparse.Namespace, plan: dict[str, object]) -> tuple[dict[str
         "provider_attempts": provider_attempts,
         "actual_calls": {
             "decoder": accounting["decoder_proxy_counter_deltas"][
-                "distinct_completed_request_ids"
+                "distinct_completed_attempt_ids"
             ],
             "provider": provider_attempts,
         },

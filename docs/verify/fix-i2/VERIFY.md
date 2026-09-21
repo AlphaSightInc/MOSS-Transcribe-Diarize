@@ -17,14 +17,15 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.:tests/phase2 MOSS_TEST_REAL_SQLITE=1 \
 npm --prefix frontend test -- --run
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
-plan_out=$(mktemp /tmp/fix-i2-s17-plan.XXXXXX.json)
+plan_dir=$(mktemp -d /tmp/fix-i2-plan.XXXXXX)
+plan_out="$plan_dir/s17.json"
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. \
   /private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python \
   prototypes/s17-identity-rerun/run.py --plan-only --out "$plan_out"
 /private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python -c \
   'import json,sys; p=json.load(open(sys.argv[1])); assert p["planned_requests"] == 184' \
   "$plan_out"
-summary_out=$(mktemp /tmp/fix-h1-summary-plan.XXXXXX.json)
+summary_out="$plan_dir/summary.json"
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. \
   /private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python \
   prototypes/feature-rows/run.py --plan-only --out "$summary_out"
@@ -49,5 +50,6 @@ empty; product diff names only the three I2-owned modules; prohibited-file and
 secret searches print nothing; diff check is clean. Falsified by any capture
 row lacking Meeting owner, run owner, schema version, or raw-derived source lane,
 changed proposal bytes with capture off/on/writer refusal, any upstream failure
-counted completed, any owner/request ambiguity qualifying, or any accounting
-mismatch producing PASS/FAIL instead of INCOMPLETE.
+counted completed, any row-owner ambiguity, duplicate client request ID, or
+attempt/outcome mismatch qualifying, a missing client request ID alone producing
+INCOMPLETE, or any accounting mismatch producing PASS/FAIL instead of INCOMPLETE.
