@@ -25,7 +25,7 @@ CANDIDATE=/Users/gao/Documents/Codex/2026-09-20/moss-round4/candidate
 FROZEN_SHA=$(git -C "$CANDIDATE" rev-parse round4/integration)
 test -z "$(git -C "$CANDIDATE" status --porcelain=v1)"
 git -C "$CANDIDATE" merge-base --is-ancestor 16fd908e3fd4de6834c9cb0c27ac4630f9a4d146 "$FROZEN_SHA"
-git -C "$CANDIDATE" merge-base --is-ancestor 1c6b0c81b0715bd2c5cb375f60a663cf3324ed0e "$FROZEN_SHA"
+git -C "$CANDIDATE" merge-base --is-ancestor 62b29715dc205fcaf2f2c91739c23fd90bb42b17 "$FROZEN_SHA"
 git -C "$CANDIDATE" cat-file -e "$FROZEN_SHA:moss_transcribe_diarize/app/terminal_label_capture.py"
 RUN_ROOT=/private/tmp/moss-r4-10-$(date -u +%Y%m%dT%H%M%SZ); mkdir -p "$RUN_ROOT"
 git clone --no-local --single-branch --branch round4/integration "$CANDIDATE" "$RUN_ROOT/frozen-preflight"
@@ -42,6 +42,14 @@ git -C "$RUN_ROOT/$NAME" checkout --detach "$FROZEN_SHA"
 git -C "$RUN_ROOT/$NAME" checkout "$PLAN_SHA" -- "$HARNESS_PATH"
 git -C "$RUN_ROOT/$NAME" diff --quiet "$FROZEN_SHA" -- moss_transcribe_diarize frontend
 ```
+
+**Pinned for this pass (lead, 2026-09-21):** product `FROZEN_SHA = 0de56e1a139f833f12cb23224f10e1668be2efd9`
+(tag `round4-frozen-20260921`); harness rev `7f533f71` (feature-row runner re-pinned; `git diff 0de56e1a..7f533f71 --
+moss_transcribe_diarize frontend` is empty); terminal-label capture is the **reworked** `62b29715` (the earlier
+`1c6b0c81` branch was deliberately not merged — it encoded the pre-partition code). Every execution clone must also
+bootstrap frontend dependencies or the frontend-dependent backend tests fail for want of `frontend/node_modules`
+(Codex 2.2 observed 10 such failures in a bare clone): either `npm ci --prefix frontend` or
+`ln -s /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/frontend/node_modules frontend/node_modules`.
 
 This keeps product code frozen while allowing plan harnesses: features `d8c5ab59:prototypes/feature-rows` (replace `d8c5ab59` with the required re-frozen harness revision), preterm `209052a4:prototypes/preterm-rerun`, labels `1c6b0c81:prototypes/s17-identity-rerun`, headed `9e9fa624:prototypes/headed-session`.
 
@@ -135,6 +143,6 @@ Speakers remain muted throughout. Missing person, Aqua session, or completed ref
 |---|---|---|---:|---|---:|---:|---|---|---|---|---|
 | F0 |  |  | 0 | 0 / 0 / 0 | 0 | 0 | 0 / 0 |  | n/a |  |  |
 | F1 |  | `209052a4` | 56 |  |  |  | 0 / 0 |  | n/a |  |  |
-| F2 |  | `1c6b0c81` | 184 |  |  |  | 0 / 0 |  | n/a |  |  |
+| F2 |  | `62b29715` | 184 |  |  |  | 0 / 0 |  | n/a |  |  |
 | F3a/F3b |  | feature re-freeze SHA | 2,238 shared |  |  |  | 6 /  |  | `REQUIRED-NOT-RUN` |  |  |
 | F4 |  | `9e9fa624` | 0 | 0 / 0 / 0 |  | 0 | 0 / 0 |  | n/a |  |  |
