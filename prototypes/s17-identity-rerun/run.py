@@ -207,6 +207,24 @@ def partition_receipt(case: str, rows: list[dict[str, Any]]) -> dict[str, Any]:
     partitions = [row for row in rows if row["record_type"] == "normalized_partition"]
     if not raw or not mapping or not partitions:
         raise RuntimeError(f"capture receipt lacks one or more required streams for {case}")
+    for field in ("schema_version", "meeting_owner", "run_owner"):
+        values = [row[field] for row in rows]
+        if any(not isinstance(value, str) or not value.strip() for value in values):
+            raise IncompleteCaptureReceipt(
+                f"INCOMPLETE: capture receipt has empty {field} for {case}"
+            )
+        if len(set(values)) != 1:
+            raise IncompleteCaptureReceipt(
+                f"INCOMPLETE: capture receipt changes {field} within {case}"
+            )
+    for row in rows:
+        if "source_lane" in fields_by_type[row["record_type"]] and row["source_lane"] not in {
+            "system",
+            "microphone",
+        }:
+            raise IncompleteCaptureReceipt(
+                f"INCOMPLETE: capture receipt has invalid source_lane for {case}"
+            )
     raw_indexes = {int(row["raw_index"]) for row in raw}
     if {int(row["raw_index"]) for row in mapping} != raw_indexes:
         raise RuntimeError(f"capture raw/mapping indexes disagree for {case}")

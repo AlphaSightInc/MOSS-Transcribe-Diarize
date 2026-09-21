@@ -46,6 +46,8 @@ REQUEST_RATE_EVIDENCE = (
 )
 REQUEST_RATE_SOURCE = REQUEST_RATE_EVIDENCE[0]['source_receipt']
 REQUEST_HEADROOM = 1.25
+# Exceeds the 0.29 s and 0.72 s historical inter-row gaps in the closure review.
+ROW_OWNER_SETTLE_SECONDS = 1.0
 REQUEST_HEADROOM_PROVENANCE = dict(
     status='UNMEASURED',
     source='planner_policy',
@@ -301,7 +303,7 @@ class Bundle:
                     self.current = None
         finally:
             if proxy:
-                proxy.clear_row_owner(name)
+                proxy.settle_row_owner(name, ROW_OWNER_SETTLE_SECONDS)
                 events = read_events(proxy.log)[event_offset:]
                 if events:
                     self._pending_decoder_summaries.append((
