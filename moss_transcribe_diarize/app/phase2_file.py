@@ -238,7 +238,11 @@ class FileMeetingTasks:
         retained_lock = self._claim_retained_lock(owner_dir)
         if retained_lock is None:
             return _RetainedClaim(self, None)
-        if not (owner_dir / "owner.json").is_file():
+        try:
+            owner_manifest_exists = (owner_dir / "owner.json").is_file()
+        except OSError:
+            owner_manifest_exists = False
+        if not owner_manifest_exists:
             self._release_retained_lock(retained_lock)
             return _RetainedClaim(self, None)
         reservation = _RetainedReservation(handle, owner_dir, retained_lock)
@@ -452,7 +456,12 @@ class FileMeetingTasks:
         for account_id, meeting_id in owners:
             if meeting_id in self._reservations:
                 continue
-            self._remove_retained_work_dir(self._retained_root / account_id / meeting_id)
+            try:
+                self._remove_retained_work_dir(
+                    self._retained_root / account_id / meeting_id
+                )
+            except OSError:
+                LOGGER.warning("Retained File owner cleanup failed; skipping.")
 
     def retained_work_owners(self) -> tuple[tuple[str, str], ...]:
         """Return exact two-level owner directories that currently exist on disk."""
@@ -820,9 +829,9 @@ class FileMeetingTasks:
         )
 
     def _claim_retained_lock(self, owner_dir: Path) -> Any | None:
-        if not owner_dir.is_dir():
-            return None
         try:
+            if not owner_dir.is_dir():
+                return None
             retained_lock = (owner_dir / "resume.lock").open("a+")
         except OSError:
             return None
