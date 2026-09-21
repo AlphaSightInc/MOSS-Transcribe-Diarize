@@ -1,182 +1,115 @@
-# Context - MOSS round 4, ralph run A
+# Context - MOSS round 4, ralph run B
 
 ## Ground
 
-- Repo: `/Users/gao/Documents/Codex/2026-09-20/moss-round4/candidate` — branch `round4/ralph-a` (base `89f833ac`; the
-  lead merges this branch into `round4/integration` after the run)
-- Read before editing: `AGENTS.md` (structural-primitive contract), `docs/adr/0014-documented-quality-exception-band.md`,
-  `evidence/round3/fix-3.1/s9-result.md` (what the instrument reported last round and why it is not citable),
-  `/Users/gao/Documents/Codex/2026-09-20/moss-current-review/assessment-and-plan.md` findings F4, F5, F6 (read-only).
+- Repo: `/Users/gao/Documents/Codex/2026-09-20/moss-round4/candidate` — branch `round4/ralph-b` (base = `round4/integration`
+  after the round-4 merges: run A + six pane branches; the lead merges this branch back afterwards).
+- **D27 (user decision on the fixture correction): YES** — adopt the corrected reference/cut for the acceptance arm and
+  ladder; only class-(d) edits may change; the three class-(a) decoder additions must remain visible. Candidate 4 is in
+  scope. **Canonical text of D27 and D28 (verbatim question + answer):**
+  `/Users/gao/Documents/Codex/2026-09-17/new-realtime-voice-chat-2/moss-mvp-review/grilling-decisions-20260920-addendum.md`
+  — read it before acting on either; it also records that the **pre-terminal** arms stay UNMEASURED and are not closed
+  by D27.
+- Read before editing: `AGENTS.md`; `prototypes/batch-startup/NOTES.md` (§Minimal production seams, §Controls run B must
+  carry); `prototypes/gap/NOTES.md` (§Proposed remedy — design only); `evidence/round4/overlap/attribution.md` and
+  `evidence/round4/overlap-review/second-opinion.md` (if D27 = YES); `docs/adr/0002-*`, `docs/design-streaming-diarization.md`
+  §7 (settled identity architecture — extend, don't re-litigate).
 - Key code paths and why they matter:
-  - `tools/qualify/visible_word_headed.py` `_dom_segments` now accepts only each row's ordered `data-segments` JSON;
-    it emits one `TranscriptSegment` per usable constituent and returns no segments plus a reason when any rendered row
-    lacks usable constituent state. The collector no longer reads outer-row span/text for custody.
-  - `frontend/src/components/TranscriptPane.tsx:649-662` — the `.utt` `<article>` publishes
-    `data-turn-start`, `data-turn-end`, `data-target-keys`, and an ordered JSON `data-segments` array copied from the
-    merged turn. Each constituent retains its own model-state `start`/`end`/`text`; live positional segment ids are not
-    used to reconstruct custody.
-  - `tools/qualify/visible_words.py:103-107` `_overlaps`, `:135` match rule, `:174-200` `evaluate_visible_word_stream`
-    (interval-end gate at `:196-199` — keep). The v2 receipt retains source-interval identity and reports interval-end
-    completion once per phrase under `phrase_end_diagnostics`; word rows contain observation clocks, not inferred
-    per-word latency.
-  - `tests/test_visible_word_instrument.py` — all 23 controls are green, including the merged-turn, whole-transcript,
-    and long-gap constituent-custody cases. Launch args remain exactly `["--mute-audio"]`.
-  - `tools/qualify/run.py` `request_plan()` selects 2×300 by default or 2×1800 under `--long`, derives 2,238 / 6,082
-    request budgets from declared lane-seconds, and refuses short budgets before `Bundle`. `Bundle.capacity()` runs
-    exactly the selected row and retains `capacity_2x1800: REQUIRED-NOT-RUN` in every default summary.
-  - `tools/qualify/test_bundle.py` — focused controls cover population arithmetic, derived default admission, long-mode
-    refusal, exact runner arguments, unavailable-stack reporting, and counted proxy enforcement.
-  - `moss_transcribe_diarize/app/windowed_transcription.py:164-165` — `window_seconds = 150`, `stride_seconds = 120`
-    (file-window request arithmetic).
+  - **A3 seams** (from 3.3's prototype, all verified at base): `moss_transcribe_diarize/app/phase2_file.py:105-141,162-211,332-417`
+    — `FileMeetingTasks`; the normalised local source + checkpoint must move to a Meeting-keyed durable directory after
+    Meeting creation; URL acquisition retained locally; owner/source/checkpoint validated; the real checkpoint passed at
+    `:417` (today `"checkpoint_dir": None`); removal only after durable terminal truth; `file-work` transient root stays
+    separate (`clear_transient_work` `:139-141`). `phase2.py:1927-1941` `lifespan` — invoke the File retained-work
+    claim/resume **before** `recover_active_meetings` (`:1934`), keep `clear_transient_work()` (`:1941`) after recovery.
+    `phase2.py:716-749` `_recover_active_file_meetings` — stays the fallback for unclaimed/invalid/non-resumable rows
+    (they finish `interrupted`); if claimed rows become terminal-owned first, no skip list is needed. `phase2.py:751-763`
+    `_assert_no_active_meetings` — **unchanged**. `phase2_lifecycle.py:215-236` — apply the same File claim before the
+    account-scoped recovery caller (do not call it "after login": base has no real login caller, only account revoke).
+    `windowed_transcription.py:197-255` — checkpoint validation/wiring already sufficient.
+  - **Gap seams** (from 3.1's diagnosis): `live_transcript_convergence.py:1015-1071` — retain the terminal-local label
+    after overlap resolution instead of discarding it from the proposal; `live_lane_decode.py:236 finalize_lanes`,
+    `:278-308` — replace the isolated per-segment fallback with one partition-scoped evidence decision (aggregate the
+    partition's eligible intervals, one album match at 0.35/0.1, apply the canonical only within that partition), then
+    project segments. Lead ruling: run B **may** edit `live_lane_decode.py` for this item only, with one violating
+    control. Evidence floors: `live_identity_album.py:45-46,56-57`; `min_segment_samples` = 8,000 (0.5 s) from the manifest.
+  - **Fixture seam** (D27): `tests/e2e/verify_demo_lanes.py:60-75` couples the audio cut to the coarse reference row;
+    `:27 DEFAULT_MIC_GAIN = 0.03` unchanged; `tools/qualify/run.py:30 CASES`, `:452` ladder feed (24 s meetings).
+    Corpus reference: `/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/evidence/live-policy-sweep-20260825/corpus/interview_bill_ackman_60s/reference.jsonl`
+    is the **dev tree's** copy — read-only; the candidate carries its own copy under `evidence/live-policy-sweep-20260825/`
+    if the tests read it from the repo — check which path the test actually loads before editing.
 
 ## Current state
 
-- **2026-09-20 A2 iteration 7 — offline verification complete.** `docs/verify/round4-run-a/VERIFY.md` now states the
-  segment-granular custody claim and distinguishes the one causal base-RED control from inherited GREEN behavior
-  controls. It records exact lane-second rate reproduction, `UNMEASURED` headroom provenance, 2,238 / 6,082 budgets,
-  preflight/censorship invariants, and the headed/long-capacity evidence boundary. Final checkpoints are **2,126
-  backend passed / 0 failed / 5 skipped / 37 subtests**, **312/312 frontend passed**, and clean typecheck. Every A2
-  acceptance item is now evidenced; no open candidate remains.
-- **2026-09-20 ~18:20 — run A2 opened by the lead after an adversarial acceptance review of run A (HEAD `3a56ce7b`).**
-  Accepted as correct and not to be undone: the frontier/neighbour-row end invention is gone
-  (`visible_word_headed.py:177-190` reads only `dataset.turnStart/turnEnd`); the only credit path is span-gated
-  (`visible_words.py:146`); spanless rows yield no DOM credit and report `UNMEASURED`; per-word latency fields are
-  removed and phrase-end diagnostics live under their own key; the preflight refuses before `Bundle(...)`
-  (`run.py:679-686`); `rejected_by_budget > 0` ⇒ `INCOMPLETE` (`run.py:604-608`); `capacity_2x300` +
-  `capacity_2x1800: REQUIRED-NOT-RUN` on all three paths.
-- **B3 complete.** A rendered `.utt` row is a merged turn, but DOM custody now comes exclusively from the exact ordered
-  constituent state published in `data-segments`. `_dom_segments` parses the attribute and emits one span/text segment
-  per constituent; it never uses the row's outer span or merged text. Missing, malformed, empty, or unusable
-  constituent state clears DOM observations and leaves `rendered_dom: UNMEASURED` with a reason. The maintained B1
-  repeated-`alpha` control is GREEN: the 0–1 s occurrence is `correct@12.0`, while the absent 10–11 s occurrence is
-  `missing/null`. Focused module: **21/21 passed**.
-- **B4–B5 complete.** Every live family declares `lanes_per_session`; the planner multiplies 0.51
-  `requests_per_lane_second` by lane-seconds. The two retained receipts independently reproduce the rate:
-  2,440 / (4 × 2 × 600) = 0.5083 and 2,448 / (8 × 2 × 300) = 0.5100. Default population is 3,457 lane-seconds,
-  yielding `ceil((3457 × 0.51 + 11 + 16) × 1.25) = 2,238`; long is 9,457 lane-seconds and 6,082 requests. The
-  default budget is therefore 2,238; bare `--long` refuses before `Bundle` with shortfall 3,844. Both JSON and Markdown
-  summaries retain the explicit unit, source receipts, unique-request counts, denominators, and arithmetic. Focused
-  controls first RED **4 failed / 12 passed**, then GREEN **24/24** with speaker-quality helpers.
-- **B6–B7 complete.** `REQUEST_HEADROOM = 1.25` remains a planner policy, but its provenance is now explicitly
-  `UNMEASURED`: no retained receipt isolates planner error after the lane-second correction, so the summary names
-  `planner_policy`, records no source receipt, and states there is no receipt-derived arithmetic. The focused control
-  was RED on the absent field, then the qualification helpers were GREEN **25/25**. The run-A population verdict stays
-  in `prototypes/capacity-campaign/NOTES.md` because `AGENTS.md` requires prototype verdicts beside the prototype; B7
-  permits that recorded justification. Remaining: `VERIFY.md` must state **segment-granular** custody and describe the
-  inherited controls honestly, then the final full suites must be rerun.
-- **2026-09-20 A2 iteration 1 — B1 control complete, RED.** The maintained control supplies one rendered row with
-  outer span 0-11 s and constituent state 0-1 s `alpha` plus 10-11 s with no emitted reference word. References are
-  `alpha` at both spans. Current `_dom_segments` ignores the constituents and assigns the row's sole `alpha` across the outer
-  span: actual statuses/clocks are `[early missing/null, late correct/12.0]`; required are
-  `[early correct/12.0, late missing/null]`. Focused module: expected **1 failed / 20 passed**. Production remains
-  untouched; B2 is next.
-- **2026-09-20 A2 iteration 2 — B2 publication complete.** `groupSegmentsIntoTurns` retains an ordered `segments`
-  array containing each constituent's exact resolved text and model-state span; `TranscriptPane` serializes it as one
-  `data-segments` JSON attribute. The two-segment frontend control was RED **1 failed / 17 passed**, then GREEN
-  **18/18**; typecheck is clean and two builds produced **17/17 byte-identical** assets. The Python consumer is
-  intentionally unchanged, so B1 remains RED and B3 is next.
-- **2026-09-20 A2 iteration 3 — B3 consumption complete.** The headed collector reads only `data-segments`; Python
-  parses its JSON and validates every constituent's finite positive span and text before producing one
-  `TranscriptSegment` per constituent. It does not fall back to the row's outer span. The B1 control and all inherited
-  instrument controls are GREEN (**21/21**); a row without usable constituent state still earns no credit and makes DOM
-  evidence `UNMEASURED`.
-- **2026-09-20 A2 iteration 4 — B1 extra controls complete.** Two additional maintained controls cover a same-speaker
-  clip whose full transcript is one rendered turn and a merged turn whose constituents are separated by a 120-second
-  gap. Both preserve each constituent's span: earlier displayed words are credited at the observation clock and absent
-  later repetitions remain `missing/null`. The focused module is GREEN (**23/23**); no production change was needed.
-- 2026-09-20 iteration 9: candidate 8 is complete. Final offline validation is **2,123 backend passed / 0 failed / 5
-  skipped / 37 subtests**, **312/312 frontend passed**, and clean frontend typecheck. The self-contained verification
-  record at `docs/verify/round4-run-a/VERIFY.md` ties the base RED, final custody controls, asset parity, budget
-  admission/censorship semantics, full-suite counts, falsifiers, and evidence boundaries together. This completes the
-  run's offline acceptance bar without claiming a headed latency measurement or 2×1,800 capacity qualification.
-- 2026-09-20 iteration 8: candidate 7 is complete. The default population now includes the established 2×300 s
-  development capacity row: **41 sessions / 1,729 live seconds / 11 file windows / 16 browser cases = 1,136 planned
-  requests**. The default `--budget` is that derived value. `--long` replaces (not adds to) the capacity row with
-  2×1,800 s and remains **3,068 planned requests**; bare `--long` refuses before `Bundle` with shortfall 1,932. Default
-  summaries emit `capacity_2x1800: REQUIRED-NOT-RUN`, including when the stack is unavailable or execution is
-  interrupted. Focused controls were RED **4/4**, then the qualification helper set was GREEN **50/50 passed**.
-- 2026-09-20 iteration 7: candidate 6 is complete. The owned decoder proxy now counts accepted, completed and
-  budget-rejected requests independently. Bundle cleanup records those three populations and, when any request was
-  rejected by the budget, sets `budget_censored: true`, `verdict_reason: budget_censored`, and the overall verdict to
-  `INCOMPLETE` even when downstream gates reported `FAIL`; censored evidence therefore cannot become a quality failure.
-  The focused control was RED **2 failed / 36 passed**, then the qualification helper set was GREEN **46/46 passed**.
-- 2026-09-20 iteration 6: candidate 5 established the non-capacity population. `request_plan(long)` enumerated every selected decoder-producing
-  live bench as session durations: workspace, demo lanes, lifecycle, reshare, identity stress, level ladder and browser
-  stress. Workspace File/URL inputs are also included in production `WindowedRunner` arithmetic. The plan now covers
-  **39 sessions / 1,129 live seconds / 11 file windows / 16 browser cases = 754 default requests**; long adds
-  2×1,800 s and one 1,800 s file for **41 sessions / 4,729 live seconds / 26 file windows = 3,068 requests**. Run A
-  selected 1.25 after comparing 727 actual requests with a 602.79 estimate; that estimate used the now-superseded
-  session-second unit, so A2 iteration 6 classifies 1.25 as unmeasured policy rather than receipt-backed evidence.
-  Iteration 8 supersedes the 754 default total by adding the required 2×300 capacity row.
-- 2026-09-20 iteration 5: established the pure plan and pre-`Bundle` refusal seam, but counted only capacity, extended
-  files and browser case ids (**30 default / 2,214 long**). Iteration 6 superseded those incomplete totals.
-- 2026-09-20 iteration 4: all four remaining custody controls are GREEN and documented by falsifier: repeated token
-  with an omitted later phrase, two phrases merged into one row, earlier-text revision, and unchanged text crossing a
-  phrase end. Source interval identity now survives word expansion, so the v2 receipt emits one
-  `phrase_end_diagnostics` row per phrase instead of duplicating phrase-end delay as per-word latency. The headed
-  collector records unchanged API/DOM content at the first poll crossing each phrase end. Focused module: **20/20
-  passed**. The external historical `dom-time-repro.py` still calls the retired two-argument `_dom_segments` and now
-  raises `TypeError`; the ported in-repo falsifier is the maintained control and remains GREEN.
-- 2026-09-20 iteration 3: DOM custody now comes only from `data-turn-start` / `data-turn-end`; `data-target-keys` is
-  read with the row but no id join is invented. A sample containing a row without a valid published span clears DOM
-  observations and reports `rendered_dom` as `UNMEASURED` with the reason and denominator, with no word credit. The
-  original earlier/later `alpha` falsifier is GREEN and the focused module is **16/16 passed**. Ordered one-to-one
-  occurrence matching was already enforced by `_ordered_statuses`, so it was preserved rather than replaced.
-- 2026-09-20 iteration 2: `.utt` rows publish the turn's model-state start/end/target keys. The dedicated frontend
-  control went RED on missing attributes, then GREEN **18/18** after the three-attribute change; frontend typecheck is
-  clean. Vite rebuilt the 17-file committed asset tree (only `app.js` and `app.js.map` changed), and a second fresh
-  build was byte-identical to the staged assets. The Python instrument does not consume these attributes yet.
-- 2026-09-20 iteration 1: ported the F4 earlier/later `alpha` counterexample to
-  `tests/test_visible_word_instrument.py`. Before the test edit, `89f833ac..51d35ef1` changed only loop/orchestration
-  files, so the instrument was still the unpatched base. The module now reports the expected RED: **1 failed, 14
-  passed**. `_dom_segments` expands the displayed 0-1 s row to 0-12 s, leaving the earlier word `missing` and falsely
-  crediting the later word at 1 s latency. Keep this test failing until row-span custody is implemented.
-- 2026-09-20: Codex's offline falsifier reproduced by the lead on `89f833ac`: `dom-time-repro.py` → earlier "alpha"
-  0–1 s `missing`, later "alpha" 10–11 s `correct` at 1.0 s. Retained S9 (`evidence/round3/fix-3.1/s9-headed.json`)
-  cannot be recomputed unbiased (raw observations not retained) — leave it as history.
-- 2026-09-20: S17 bundle on `89f833ac` exhausted `--budget 2000` at t≈1,165 s of the 2×1800 gate after earlier gates
-  used 733 requests (13 rejected, 0 active at teardown, peak_in_flight 1) — third budget/population mismatch of the
-  campaign. The S17 receipt is budget-censored with no per-gate attribution, so it cannot supply a rate. **Retained clean
-  receipts in this repo:** `evidence/mvpfix/wp30/20260918-055122-1r-4x600/requests.jsonl` = 1,220 requests over
-  4×600 s = **0.508 req/s**; `evidence/mvpfix/wp30/20260918-064644-1r-8x300/` = 1,224 over 8×300 s = **0.510** (both
-  with a 0.15 s stub decoder, `evidence/mvpfix/wp30/NOTES.md:36`). Use 0.51 as `measured_rate` with that provenance and
-  an explicit `headroom` (0.6/0.51 ≈ 1.18 is what past estimates implicitly used); record all three in the summary.
-- 2026-09-20: `capacity_2x1800` already runs only under `--long` (`run.py:315`, `:338-342`) — the default bundle has
-  **no** capacity row today. Adding a 2×300 s development row (D12 ladder) adds coverage; the 2×1800 requirement must
-  stay visible as `REQUIRED-NOT-RUN`.
-- 2026-09-20: `launchctl managername` in this shell is `Background`; no headed browser is run in this loop anyway.
-- Baseline suites on `89f833ac`: backend 2,116 passed / 0 failed / 5 skipped / 37 subtests (~209 s); frontend 311/311.
-- Established (lead + reviewer, 2026-09-20): the rendered `.utt` markup carries **no** span or id; the design is to
-  publish `data-turn-start` / `data-turn-end` / `data-target-keys` on the article from the turn's own model state and
-  read those in the instrument. Frontend tests live under `frontend/src/**/__tests__` or `*.test.tsx` (vitest); look at
-  how `TranscriptPane` is already tested before adding one.
+- 2026-09-20 18:xx: base = `round4/integration` after merging run A (`round4/ralph-a` @ `3a56ce7b`: instrument custody +
+  budget preflight; suites 2,123/0/5, 312/312) and the pane branches `round4/gap@fd1136d4`, `round4/jamie@992dbb17`,
+  `round4/batch@b1e05026`, `round4/overlap@790d8f29+`, `round4/overlap-review@71544133`, `round4/runtime@0b60723c+`,
+  `round4/surfaces@25bb06d4+` (prototypes, evidence, xfail controls only — no product change). Exact counts after the
+  merges are in `progress.txt`'s header.
+- Verdicts you implement: A3 **SUPPORTED** 10/10 through the real `lifespan` (deterministic runner) + real-HF smoke;
+  gap **SUPPORTED** — the `S00` arises at finalization: a 4,320-sample span (< 8,000) gets a temporary `speaker-0002`
+  that cannot project onto `speaker-0001`; silence does not reset identity; first post-gap score 0.8366; remedy
+  controls Adam 0.909 match / Keyu 0.017 abstain; **unmeasured**: raw terminal-local labels — if `seg_0012` was isolated
+  in its partition the remedy does not apply (then keep `S00` and record it).
+- Verdicts you must NOT implement: Jamie aggregation **FALSIFIED** (3.2) — no code; overlap is **not** a product
+  defect (3.4 + 3.1: 0 convergence/publication loss) — only the fixture (D27) may change.
+- Known xfail(strict) controls in the tree that must flip when their item lands: `round4/batch` (2, File + URL valid
+  retained prefix currently interrupted), `round4/gap` (1), `round4/overlap` (2, only if D27 = YES). Find them with
+  `grep -rn "xfail(strict=True" tests/ | grep -i "R4-"`.
+- Local HF snapshot for the real-runner smoke: `~/.cache/huggingface/hub/models--OpenMOSS-Team--MOSS-Transcribe-Diarize/snapshots/e8681d68e7042738ffca8ac8212bc8fcb1131ab8`.
+- Decoder proxy: `http://127.0.0.1:18400/v1` (lead-owned, 100-request cap, counts in `…/moss-round4/status/proxy-18400-requests.jsonl`).
+- **D28 (2026-09-20 18:46):** round-4 GPU total ≈3,300 requests; the 2×1800 capacity confirmation is **deferred** — do
+  not run `--long`, and never let `capacity_2x1800: REQUIRED-NOT-RUN` disappear from a summary. **Lead ruling
+  2026-09-21: run B is offline — 0 decoder requests, no tunnel, no proxy.** The single decoder-backed confirmation of
+  the gap remedy moves to R4-10, where it must retain the raw terminal-local label stream.
+- Base after the round-4 merges is `round4/integration` @ **`71f23c0c`**: backend **2,130 passed / 0 failed / 5 skipped
+  / 8 xfailed / 37 subtests**, frontend **312/312**, typecheck clean, asset parity clean. **The 8 strict xfails,
+  enumerated from the tree (lead-verified 2026-09-21 with `pytest -rx`; an earlier guess in this file was wrong):**
+  - **batch 2** — `tests/phase2/test_batch_startup_prototype_controls.py::test_r4_5_base_lifespan_resumes_valid_retained_prefix[file]` and `[url]`
+  - **gap 1** — `tests/test_r4_gap_terminal_identity.py::test_r4_3_same_terminal_partition_reuses_eligible_voice_evidence`
+  - **fixture 3** — `tests/test_round4_overlap_diagnosis.py::test_r4_6_demo_reference_matches_corrected_audio_population`,
+    `…::test_r4_6_ladder_reference_is_bounded_by_captured_audio`, and
+    `tests/test_round4_alternation_diagnosis.py::test_r4_keyu_source_reference_matches_audited_audio_population`
+  - **Jamie 2** — `tests/test_round4_jamie_violating_controls.py::test_r4_4_compatible_provisional_support_accumulates[durations0]` and `[durations1]`
+  - **surfaces 0** — hidden-tab work is blocked-on-session evidence, not a strict-xfail test.
+  This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
+  **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
 ## Validation
 
 ```bash
 export PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=.
 PY=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-auto-mvp-0911/.venv/bin/python
-# narrowest: the falsifier (must fail on unpatched base, pass after)
-$PY -m pytest -q -p no:cacheprovider tests/test_visible_word_instrument.py
-$PY -m pytest -q -p no:cacheprovider tools/qualify/test_bundle.py tools/qualify/test_speaker_quality.py
-# widest checkpoint (required before claiming completion)
+# narrowest: the flipped controls
+$PY -m pytest -q -p no:cacheprovider $(grep -rl "R4-5\|R4-3" tests/ | tr '\n' ' ')
+# prototype cases as product tests (A3) and the gap replay
+$PY -m pytest -q -p no:cacheprovider tests/phase2 -k "retained or resume or startup or recover"
+$PY prototypes/gap/reproduce.py 2>/dev/null || ls prototypes/gap/
+# widest (required before completion)
 $PY -m pytest -q -p no:cacheprovider tests
 npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 ```
 
 ## Candidates
 
-None. The run A2 offline acceptance bar is complete; hand the committed branch to the integration lead without push,
-merge, or live rerun.
+1. **A3 — claim/resume seam in `FileMeetingTasks`** (`phase2_file.py`): Meeting-keyed durable dir for normalised source
+   + checkpoint; validation of owner/source/contract; real `checkpoint_dir` at `:417`; cleanup only after durable
+   terminal. Validate: C1/C5/C6 as product tests against real `lifespan`.
+2. **A3 — startup ordering** (`phase2.py:1927-1941`, `phase2_lifecycle.py:215-236`): claim before `recover_active_meetings`;
+   fallback `:716-749` untouched in semantics; `:751-763` byte-identical. Validate: C2/C3/C4/C7/C8/C9/C10; the two
+   `round4/batch` xfails flip; `git diff --stat 89f833ac -- moss_transcribe_diarize/app/phase2.py` shows no change in `:751-763`.
+3. **Gap remedy — partition-scoped terminal decision** (`live_transcript_convergence.py:1015-1071`,
+   `live_lane_decode.py:278-308`): retain terminal-local label; one aggregated match per unmapped partition; project
+   only inside it. Validate **both branches**: shared-partition control resolves to the established identity while the
+   Keyu control abstains (`round4/gap` xfail flips); isolated-partition control **stays `S00`** and says so. No decoder
+   run in this loop — the historical S17 row stays UNMEASURED and belongs to R4-10.
+4. **Fixture correction (D27 = YES only)** (`tests/e2e/verify_demo_lanes.py:60-75`, corpus reference): per prd; falsifier
+   test = exactly the three class-(a) additions remain.
+5. **Full suites + `docs/verify/round4-run-b/VERIFY.md`.**
 
 ## Non-candidates
 
-- Any change under `moss_transcribe_diarize/` or `frontend/` beyond the three `.utt` data attributes, their test and
-  the rebuilt assets — product code is owned by the parallel Codex panes and a later run; touching it here would
-  collide with their merges.
-- Any numeric visible-word latency bar or any change to `QUALITY_BOUNDS`, gate bars, identity constants — user
-  decisions / invariants (D10, COMMON §3).
-- Re-running or re-scoring the retained S9 300 s session — its raw observations were not retained; it is history.
-- The 1–3 minute headed trial with a manually aligned reference — needs a browser + decoder; belongs to the round-4
-  measurement pass, not this loop.
-- Rewriting `docs/known-limitations-20260918.md` — lead-owned.
+- Jamie / lone-participant aggregation — FALSIFIED; user decision D1 vs D15 pending; no code.
+- Any change to `tools/qualify/` (run A's territory) beyond consuming its preflight.
+- Any threshold/floor/constant; Stop cap; separator; hidden-tab (needs an Aqua session — measurement, not product);
+  runtime packaging (4.1's receipt + `MOSS_TEST_REAL_SQLITE` conftest guard are merged as-is; no pin change).
+- `docs/known-limitations-20260918.md` — lead-owned; the lead rewrites L1/L9 rows after the round.
