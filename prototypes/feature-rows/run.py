@@ -240,7 +240,7 @@ def execute(args: argparse.Namespace, plan: dict[str, object]) -> tuple[dict[str
         "provider_attempts": provider_attempts,
         "actual_calls": {
             "decoder": accounting["decoder_proxy_counter_deltas"][
-                "distinct_completed_attempt_ids"
+                "accepted"
             ],
             "provider": provider_attempts,
         },
