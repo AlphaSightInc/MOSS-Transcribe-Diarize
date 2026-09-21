@@ -112,12 +112,10 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 The preceding Run-B-completion snapshot is stale. Run C's PRD and opening
 progress entry are authoritative for the following ranked work:
 
-1. **C6 / F8 — product-test batch uniqueness.** Collected resume and mid-window
-   crash controls prove unique saved segments and no replay duplicate.
-2. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
+1. **C7 / F9 — make the corrected Bill corpus internally consistent.** Audit and
    adjust only the neighbouring time boundary, or document an intentional overlap;
    never alter scored text.
-3. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
+2. **C5 / F7 — correct the Run-B verifier.** The deployed ladder measures
    solo-lane vocabulary, not `SYSTEM_LADDER_REFERENCE`; its falsifier must be
    testable or removed with explanation.
 
@@ -187,6 +185,19 @@ progress entry are authoritative for the following ranked work:
   cleanup, and sibling-owner preservation.
 - **Next:** C6 — turn the batch bench's unique-segment/no-replay guarantee into product controls for both resume and
   mid-window crash.
+
+## Iteration 7 outcome
+
+- **C6 / F8 (complete):** the retained-URL resume and File mid-window-crash
+  product controls now use the batch bench's 101-window geometry. Each asserts
+  the replayed window's exact delegate calls and that the persisted transcript
+  has exactly 101 distinct segment texts. The first RED exposed only a fixed
+  seed assumption; the second showed the fixture placed every post-first segment
+  in an overlap the product correctly discards. Moving its deterministic segment
+  to the owned interior made the real persistence assertion reachable without
+  changing product code or production windowing.
+- **Next:** C7 — audit the Bill neighbouring boundary or document the overlap;
+  preserve every scored text.
 
 ## Non-candidates
 

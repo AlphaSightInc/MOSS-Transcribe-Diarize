@@ -160,3 +160,11 @@ cancelled retained work kept forever) plus four smaller gaps. Offline: zero deco
 - Evidence: `tests/phase2/test_retained_file_claim.py::test_url_retained_source_failure_becomes_visible_terminal_failure`; `moss_transcribe_diarize/app/phase2_file.py::_acquire_and_run`.
 - Learned: acquisition failure already had the exact durable `storage_failed` and terminal-owner-cleanup path needed after source-record persistence fails. Reusing it makes the task return normally after durable failure, keeps decoder calls at zero, and removes only the affected owner directory.
 - Next: C6 — promote the batch bench's 101/101 unique-segment and no-replay properties into product controls for resume and mid-window crash.
+
+## Iteration 7 - product batch uniqueness
+- Target: C6 / F8 — make the retained-resume and mid-window-crash 101/101 saved-segment invariant a product control.
+- Files: `tests/phase2/test_retained_file_claim.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: first focused RED exposed the seed's fixed `[0, 1, 2]` assumption; second focused RED exposed one stored segment because the fixture emitted every later segment in the previous window's ownership overlap. Final `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. $PY -m pytest -q -p no:cacheprovider tests/phase2/test_retained_file_claim.py -k 'replays_retained_url_only_from_its_local_copy or retries_the_uncommitted_window_after_a_prior_crash'` -> **2 passed, 15 deselected**; full retained module -> **17 passed**; `git diff --check` -> clean.
+- Evidence: `test_lifespan_replays_retained_url_only_from_its_local_copy`; `test_lifespan_retries_the_uncommitted_window_after_a_prior_crash`; each requires `[0..40, 40..100]` calls and `101 == len(texts) == len(set(texts))` after durable publication.
+- Learned: production stitching correctly rejects overlap-owned segments; the old deterministic fixture made the persistence property unobservable. Its 59--60 s local segment lies in each window's owned region, matching the batch bench, so either a loss or duplicate now fails at the product seam.
+- Next: C7 — resolve the corrected Bill corpus's 29.25--29.0 boundary without changing scored text.

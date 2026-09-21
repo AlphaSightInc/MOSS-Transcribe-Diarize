@@ -48,7 +48,7 @@ class _RestartDecoder:
             if not self.release.wait(timeout=5):
                 raise RuntimeError("controlled startup did not release")
         return TranscriptionResult(
-            text=f"[0][S01]window {index}[1]",
+            text=f"[59][S01]window {index}[60]",
             prompt_len=1,
             generated_tokens=1,
             elapsed_sec=0.0,
@@ -113,6 +113,8 @@ def _extract(
 def _runner(
     decoder: _RestartDecoder,
     scheduler: InferenceDispatchScheduler | None = None,
+    *,
+    duration_seconds: float = 390.0,
 ) -> WindowedRunner:
     return WindowedRunner(
         (
@@ -120,19 +122,23 @@ def _runner(
             if scheduler is None
             else ScheduledInferenceRunner(decoder, scheduler, kind="background")
         ),
-        duration_probe=lambda _source: 390.0,
+        duration_probe=lambda _source: duration_seconds,
         window_extractor=_extract,
     )
 
 
 async def _seed_retained_claim(
     root: Path,
+    *,
+    duration_seconds: float = 390.0,
+    interrupted_window: int = 2,
 ) -> tuple[FileMeetingTasks, object, _RestartDecoder, Path, Phase2Store]:
     store = await Phase2Store.open(root / "state.sqlite3")
     account, _ = await seed_workspace(store, "account-a")
     handle = await store.workspace(account).create_meeting("file")
     decoder = _RestartDecoder()
-    runner = _runner(decoder)
+    decoder.fail_window = interrupted_window
+    runner = _runner(decoder, duration_seconds=duration_seconds)
     tasks = FileMeetingTasks(runner, root / "file-work")
     owner_dir = tasks.retained_root / account.account_id / handle.meeting_id
     owner_dir.mkdir(parents=True)
@@ -155,7 +161,7 @@ async def _seed_retained_claim(
     )
     with pytest.raises(WindowTranscriptionError):
         runner.transcribe(source, checkpoint_dir=owner_dir / "checkpoint")
-    assert decoder.calls == [0, 1, 2]
+    assert decoder.calls == list(range(interrupted_window + 1))
     decoder.fail_window = None
     return tasks, handle, decoder, owner_dir, store
 
@@ -179,10 +185,15 @@ def _app(
     *,
     url_acquirer: object | None = None,
     inference_scheduler: InferenceDispatchScheduler | None = None,
+    duration_seconds: float = 390.0,
 ):
     return create_phase2_app(
         database_path=root / "state.sqlite3",
-        file_runner=_runner(decoder, inference_scheduler),
+        file_runner=_runner(
+            decoder,
+            inference_scheduler,
+            duration_seconds=duration_seconds,
+        ),
         file_work_root=root / "file-work",
         meeting_audio_root=root / "meeting-audio",
         inference_scheduler=inference_scheduler,
@@ -240,7 +251,11 @@ def test_lifespan_replays_retained_url_only_from_its_local_copy(tmp_path: Path) 
     """C7: product startup uses the retained File source, never reacquisition."""
 
     async def exercise() -> None:
-        _, handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
+        _, handle, decoder, owner_dir, store = await _seed_retained_claim(
+            tmp_path,
+            duration_seconds=12_060.0,
+            interrupted_window=40,
+        )
         try:
             owner = json.loads((owner_dir / "owner.json").read_text(encoding="utf-8"))
             owner["ingress"] = "url"
@@ -249,14 +264,21 @@ def test_lifespan_replays_retained_url_only_from_its_local_copy(tmp_path: Path) 
             await store.close()
 
         acquirer = _NoUrlAcquirer()
-        app = _app(tmp_path, decoder, url_acquirer=acquirer)
+        app = _app(
+            tmp_path,
+            decoder,
+            url_acquirer=acquirer,
+            duration_seconds=12_060.0,
+        )
         async with app.router.lifespan_context(app):
             await _await_file_task(app, handle.meeting_id)
             snapshot = await _snapshot(app, handle)
-            assert decoder.calls == [0, 1, 2, 2, 3]
+            assert decoder.calls == [*range(41), *range(40, 101)]
             assert acquirer.calls == 0
             assert snapshot.status == "completed"
             assert snapshot.transcript_version == 1
+            texts = [segment["text"] for segment in snapshot.transcript["segments"]]
+            assert len(texts) == len(set(texts)) == 101
             assert not owner_dir.exists()
 
     asyncio.run(exercise())
@@ -266,16 +288,22 @@ def test_lifespan_retries_the_uncommitted_window_after_a_prior_crash(tmp_path: P
     """C2: a retained prefix makes the product replay only the interrupted window."""
 
     async def exercise() -> None:
-        _, handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
+        _, handle, decoder, owner_dir, store = await _seed_retained_claim(
+            tmp_path,
+            duration_seconds=12_060.0,
+            interrupted_window=40,
+        )
         await store.close()
 
-        app = _app(tmp_path, decoder)
+        app = _app(tmp_path, decoder, duration_seconds=12_060.0)
         async with app.router.lifespan_context(app):
             await _await_file_task(app, handle.meeting_id)
             snapshot = await _snapshot(app, handle)
-            assert decoder.calls == [0, 1, 2, 2, 3]
+            assert decoder.calls == [*range(41), *range(40, 101)]
             assert snapshot.status == "completed"
             assert snapshot.transcript_version == 1
+            texts = [segment["text"] for segment in snapshot.transcript["segments"]]
+            assert len(texts) == len(set(texts)) == 101
             assert not owner_dir.exists()
 
     asyncio.run(exercise())
