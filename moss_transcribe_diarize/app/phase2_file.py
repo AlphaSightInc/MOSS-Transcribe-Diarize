@@ -603,15 +603,12 @@ class FileMeetingTasks:
     ) -> bool:
         """Join one claimed task, then make only its durable Meeting interrupted."""
 
-        if entry.settlement is None:
-            entry.settlement = asyncio.create_task(
-                self._settle_entries(
-                    (entry,),
-                    failure_code="cancelled" if entry.resumed else None,
-                )
-            )
+        settlement = self._settlement_task(
+            entry,
+            failure_code="cancelled" if entry.resumed else None,
+        )
         try:
-            interrupted = await asyncio.shield(entry.settlement)
+            interrupted = await asyncio.shield(settlement)
             return bool(interrupted)
         finally:
             self._fenced_meeting_ids.discard(entry.handle.meeting_id)
@@ -620,7 +617,25 @@ class FileMeetingTasks:
         self,
         entries: tuple[_OwnedFileTask | _RetainedReservation, ...],
     ) -> tuple[str, ...]:
-        return await self._settle_entries(entries)
+        results = await asyncio.gather(
+            *(
+                asyncio.shield(self._settlement_task(entry))
+                for entry in entries
+            )
+        )
+        return tuple(meeting_id for result in results for meeting_id in result)
+
+    def _settlement_task(
+        self,
+        entry: _OwnedFileTask | _RetainedReservation,
+        *,
+        failure_code: str | None = None,
+    ) -> asyncio.Task[tuple[str, ...]]:
+        if entry.settlement is None:
+            entry.settlement = asyncio.create_task(
+                self._settle_entries((entry,), failure_code=failure_code)
+            )
+        return entry.settlement
 
     async def _settle_entries(
         self,

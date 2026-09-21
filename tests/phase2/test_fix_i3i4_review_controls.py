@@ -510,6 +510,56 @@ def test_reserved_fence_settles_now_but_cleans_only_after_validation_returns(
     asyncio.run(exercise())
 
 
+def test_meeting_interrupt_and_account_fence_share_one_reserved_settlement(
+    tmp_path: Path,
+) -> None:
+    async def exercise() -> None:
+        events: list[str] = []
+
+        class Handle:
+            owner_key = ("account-a", 1)
+            meeting_id = "owner-double-fenced"
+            status = "active"
+
+            async def recover_interrupted_file_audio(self, _archive):
+                events.append("audio")
+
+            async def finish(self, status, **_kwargs):
+                await asyncio.sleep(0)
+                events.append(status)
+                self.status = status
+
+            async def snapshot(self):
+                return SimpleNamespace(status=self.status)
+
+        handle = Handle()
+        tasks = FileMeetingTasks(
+            object(),
+            tmp_path / "file-work",
+            audio_archive=object(),
+        )
+        owner_dir = tasks.retained_root / "account-a" / handle.meeting_id
+        owner_dir.mkdir(parents=True)
+        (owner_dir / "owner.json").write_text("{}\n", encoding="utf-8")
+        claim = tasks.claim_retained_work(handle)
+        assert claim.reservation is not None
+        meeting_entry = tasks.fence_meeting(handle.meeting_id)
+        account_entries = tasks.fence_account(handle.owner_key)
+        assert meeting_entry is claim.reservation
+        assert account_entries == (claim.reservation,)
+
+        meeting_result, account_result = await asyncio.gather(
+            tasks.settle_meeting(meeting_entry),
+            tasks.settle_fenced(account_entries),
+        )
+        assert meeting_result is True
+        assert account_result == (handle.meeting_id,)
+        assert events == ["audio", "interrupted"]
+        tasks._release_retained_lock(claim.reservation.retained_lock)
+
+    asyncio.run(exercise())
+
+
 def test_account_revoke_does_not_reclaim_a_live_reserved_validation(
     tmp_path: Path,
 ) -> None:
