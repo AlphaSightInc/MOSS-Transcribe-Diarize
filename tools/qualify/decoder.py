@@ -7,6 +7,25 @@ from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
+def _carries_error_payload(payload, content_type):
+    def is_error_object(value):
+        try:
+            decoded = json.loads(value)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return False
+        return isinstance(decoded, dict) and 'error' in decoded
+
+    if 'text/event-stream' in content_type.lower():
+        for line in payload.splitlines():
+            line = line.strip()
+            if line.startswith(b'event:') and line[6:].strip() == b'error':
+                return True
+            if line.startswith(b'data:') and is_error_object(line[5:].strip()):
+                return True
+        return False
+    return is_error_object(payload)
+
+
 @dataclass(frozen=True, slots=True)
 class DecoderCounters:
     accepted: int
@@ -132,6 +151,7 @@ class Decoder:
         self.row_owner = None
         self.budget, self.tunnel_port, self.log = budget, tunnel_port, log
         self.lock = threading.Lock()
+        self.activity = threading.Condition(self.lock)
         self.slots = threading.BoundedSemaphore(2)
         owner = self
 
@@ -141,16 +161,18 @@ class Decoder:
 
             def do_POST(self):
                 body = self.rfile.read(int(self.headers.get('Content-Length', 0)))
-                row = self.headers.get('X-MOSS-Qualification-Row') or owner.row_owner
+                requested_row = self.headers.get('X-MOSS-Qualification-Row')
                 client_request_id = self.headers.get('X-Request-ID') or None
                 with owner.slots:
                     with owner.lock:
+                        row = requested_row or owner.row_owner
                         if owner.sent >= owner.budget:
                             owner.rejected += 1
                             owner.event(
                                 'reject', row=row, attempt_id=None,
                                 client_request_id=client_request_id,
                             )
+                            owner.activity.notify_all()
                             self.send_error(429, 'Local qualification budget exhausted')
                             return
                         owner.sent += 1
@@ -169,6 +191,7 @@ class Decoder:
                             'start', row=row, attempt_id=attempt_id,
                             client_request_id=client_request_id,
                         )
+                        owner.activity.notify_all()
                     conn = http.client.HTTPConnection('127.0.0.1', owner.tunnel_port, timeout=1800)
                     upstream_status = None
                     error_type = None
@@ -180,12 +203,16 @@ class Decoder:
                         response = conn.getresponse()
                         upstream_status = response.status
                         payload = response.read()
+                        response_content_type = response.getheader('Content-Type', 'application/json')
                         self.send_response(response.status)
-                        self.send_header('Content-Type', response.getheader('Content-Type', 'application/json'))
+                        self.send_header('Content-Type', response_content_type)
                         self.send_header('Content-Length', str(len(payload)))
                         self.end_headers()
                         self.wfile.write(payload)
-                        relayed = 200 <= response.status < 300
+                        carries_error = _carries_error_payload(payload, response_content_type)
+                        relayed = 200 <= response.status < 300 and not carries_error
+                        if carries_error:
+                            error_type = 'UpstreamErrorPayload'
                     except (OSError, http.client.HTTPException) as exc:
                         error_type = type(exc).__name__
                         try:
@@ -211,6 +238,7 @@ class Decoder:
                                     client_request_id=client_request_id,
                                     upstream_status=upstream_status, error_type=error_type,
                                 )
+                            owner.activity.notify_all()
 
             def do_GET(self):
                 conn = http.client.HTTPConnection('127.0.0.1', owner.tunnel_port, timeout=10)
@@ -246,6 +274,38 @@ class Decoder:
 
     def clear_row_owner(self, row):
         with self.lock:
+            if self.row_owner == row:
+                self.row_owner = None
+
+    def _wait_until_idle_locked(self, settle_seconds):
+        observed_attempts = (self.sent, self.rejected)
+        idle_since = None
+        while True:
+            attempts = (self.sent, self.rejected)
+            if attempts != observed_attempts:
+                observed_attempts = attempts
+                idle_since = None
+            if self.active:
+                idle_since = None
+                self.activity.wait()
+                continue
+            now = time.monotonic()
+            if idle_since is None:
+                idle_since = now
+            remaining = settle_seconds - (now - idle_since)
+            if remaining <= 0:
+                return
+            self.activity.wait(timeout=remaining)
+
+    def wait_until_idle(self, settle_seconds):
+        """Wait for no active request and no accepted/rejected attempt during settle."""
+        with self.activity:
+            self._wait_until_idle_locked(settle_seconds)
+
+    def settle_row_owner(self, row, settle_seconds):
+        """Atomically wait for a quiet proxy and release this row's ownership."""
+        with self.activity:
+            self._wait_until_idle_locked(settle_seconds)
             if self.row_owner == row:
                 self.row_owner = None
 

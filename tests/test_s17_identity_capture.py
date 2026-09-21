@@ -75,3 +75,36 @@ def test_s17_marks_raw_row_without_owner_or_lane_incomplete(missing: str) -> Non
 
     with pytest.raises(S17.IncompleteCaptureReceipt, match="^INCOMPLETE:"):
         S17.partition_receipt("single", rows)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("source_lane", None),
+        ("source_lane", ""),
+        ("source_lane", "unbound"),
+        ("meeting_owner", None),
+        ("meeting_owner", ""),
+        ("run_owner", None),
+        ("run_owner", ""),
+        ("schema_version", None),
+        ("schema_version", ""),
+    ],
+)
+def test_s17_marks_invalid_custody_value_incomplete(field: str, value: object) -> None:
+    rows = _rows()
+    for row in rows:
+        if field in row:
+            row[field] = value
+
+    with pytest.raises(S17.IncompleteCaptureReceipt, match="^INCOMPLETE:"):
+        S17.partition_receipt("single", rows)
+
+
+@pytest.mark.parametrize("field", ["meeting_owner", "run_owner", "schema_version"])
+def test_s17_marks_inconsistent_run_custody_incomplete(field: str) -> None:
+    rows = _rows()
+    rows[-1][field] = "different-value"
+
+    with pytest.raises(S17.IncompleteCaptureReceipt, match="^INCOMPLETE:"):
+        S17.partition_receipt("single", rows)

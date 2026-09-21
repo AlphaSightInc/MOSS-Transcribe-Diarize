@@ -6,6 +6,7 @@ import http.client
 import json
 import runpy
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from types import SimpleNamespace
@@ -16,6 +17,7 @@ import soundfile as sf
 
 
 ROOT = Path(__file__).resolve().parents[1]
+REPO = ROOT
 
 
 # ---------------------------------------------------------------- T5 (H, I4)
@@ -465,3 +467,193 @@ def test_bundle_row_and_final_verdict_force_incomplete_on_accounting_defect(
     bundle.cleanup()
     assert bundle.data["decoder"]["counters_reconciled"] is False
     assert bundle.data["verdict"] == "INCOMPLETE"
+
+
+def _sse_upstream(events: list[str]):
+    class Upstream(BaseHTTPRequestHandler):
+        def log_message(self, *_args):
+            pass
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            body = "".join(f"data: {event}\n\n" for event in events).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return server, thread
+
+
+def _through_proxy_with_vllm_runner(tmp_path: Path, events: list[str]):
+    import numpy as np
+    import soundfile as sf
+    import runpy
+
+    from moss_transcribe_diarize.app.vllm_runner import VllmRunner
+    from tools.qualify.decoder import Decoder, accounting_incomplete, read_events, summarize_events
+
+    upstream, thread = _sse_upstream(events)
+    log = tmp_path / "decoder.jsonl"
+    proxy = Decoder(0, upstream.server_port, 1, log)
+    proxy.set_row_owner("summaries")
+    proxy.start()
+    audio = tmp_path / "a.wav"
+    sf.write(audio, np.zeros(1600, dtype=np.float32), 16000)
+    runner = VllmRunner(base_url=f"http://127.0.0.1:{proxy.server.server_port}/v1", model="moss", timeout=5)
+    try:
+        try:
+            outcome = f"text={runner.transcribe(audio).text!r}"
+        except Exception as exc:  # noqa: BLE001
+            outcome = f"raised {type(exc).__name__}: {exc}"
+        summary = summarize_events(read_events(log), expected_row="summaries")
+        feature_row = runpy.run_path(str(REPO / "prototypes/feature-rows/run.py"))
+        _, summaries_match = feature_row["decoder_accounting"](
+            feature_row["ProxyCounters"](), feature_row["proxy_counters"](log), planned_decoder=1)
+        return outcome, summary, accounting_incomplete(summary, planned=1), summaries_match
+    finally:
+        proxy.close()
+        upstream.shutdown()
+        upstream.server_close()
+        thread.join()
+
+
+def test_e1_production_sse_success_through_proxy_reconciles(tmp_path):
+    ok = [json.dumps({"choices": [{"delta": {"content": "[0][S01]hello[1.5]"}}]}),
+          json.dumps({"choices": [], "usage": {"prompt_tokens": 11, "completion_tokens": 7}}), "[DONE]"]
+    outcome, summary, incomplete, summaries_match = _through_proxy_with_vllm_runner(tmp_path, ok)
+    print(f"\nE1 SSE-200 success: product {outcome}; attempted/completed/failed="
+          f"{summary.attempted}/{summary.completed}/{summary.upstream_failed} incomplete={incomplete} summaries_match={summaries_match}")
+    assert outcome.startswith("text=") and incomplete is False and summaries_match is True
+
+
+def test_e2_upstream_error_inside_2xx_sse_stream_is_incomplete(tmp_path):
+    failing = [json.dumps({"choices": [{"delta": {"content": "[0][S01]hel"}}]}),
+               json.dumps({"error": {"message": "engine failure", "type": "InternalServerError", "code": 500}}),
+               "[DONE]"]
+    outcome, summary, incomplete, summaries_match = _through_proxy_with_vllm_runner(tmp_path, failing)
+    print(f"\nE2 SSE-200 carrying error event: product {outcome}; attempted/completed/failed="
+          f"{summary.attempted}/{summary.completed}/{summary.upstream_failed} incomplete={incomplete} summaries_match={summaries_match}")
+    assert outcome.startswith("raised")
+    assert incomplete is True and summaries_match is False
+
+
+def test_2xx_json_error_object_is_upstream_failed(tmp_path: Path) -> None:
+    from tools.qualify.decoder import Decoder, accounting_incomplete, read_events, summarize_events
+
+    class Upstream(BaseHTTPRequestHandler):
+        def log_message(self, *_args):
+            pass
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            payload = json.dumps({"error": {"message": "engine failure"}}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+    upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
+    thread = threading.Thread(target=upstream.serve_forever, daemon=True)
+    thread.start()
+    log = tmp_path / "decoder-json-error.jsonl"
+    proxy = Decoder(0, upstream.server_port, 1, log)
+    proxy.start()
+    proxy.set_row_owner("json-error")
+    try:
+        assert _post(proxy, "/v1/audio/transcriptions", None, row=None) == 200
+        proxy.wait_until_idle(0)
+        summary = summarize_events(read_events(log), expected_row="json-error")
+        assert (summary.attempted, summary.completed, summary.upstream_failed) == (1, 0, 1)
+        assert accounting_incomplete(summary, planned=1) is True
+    finally:
+        proxy.close()
+        upstream.shutdown()
+        upstream.server_close()
+        thread.join()
+
+
+def test_bundle_command_keeps_row_owner_through_trailing_attempts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from tools.qualify import run as qualify_run
+    from tools.qualify.decoder import Decoder, read_events, summarize_events
+
+    first_started = threading.Event()
+
+    class Upstream(BaseHTTPRequestHandler):
+        def log_message(self, *_args):
+            pass
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            first_started.set()
+            time.sleep(0.05)
+            self.send_response(200)
+            self.end_headers()
+
+    upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
+    upstream_thread = threading.Thread(target=upstream.serve_forever, daemon=True)
+    upstream_thread.start()
+    proxy = Decoder(0, upstream.server_port, 4, tmp_path / "decoder-trailing.jsonl")
+    proxy.start()
+    commands = []
+
+    class FakeCommand:
+        pid = 999_999
+
+        def __init__(self):
+            self.worker = threading.Thread(target=self._requests)
+            self.worker.start()
+
+        def _requests(self):
+            for pause in (0, 0.05):
+                time.sleep(pause)
+                connection = http.client.HTTPConnection(
+                    "127.0.0.1", proxy.server.server_port, timeout=2
+                )
+                connection.request("POST", "/v1/audio/transcriptions", b"x")
+                response = connection.getresponse()
+                response.read()
+                connection.close()
+
+        def wait(self, timeout=None):
+            assert first_started.wait(timeout=timeout)
+            return 0
+
+    def fake_popen(*_args, **_kwargs):
+        command = FakeCommand()
+        commands.append(command)
+        return command
+
+    monkeypatch.setattr(qualify_run.subprocess, "Popen", fake_popen)
+    bundle = object.__new__(qualify_run.Bundle)
+    bundle.work = tmp_path
+    bundle.env = {}
+    bundle.processes = []
+    bundle.current = None
+    bundle.proxy = proxy
+    bundle._pending_decoder_summaries = []
+    bundle.stop = lambda _proc: None
+
+    try:
+        code, _elapsed, _target = bundle.command("row-a", ["fake-command"])
+        commands[0].worker.join(timeout=2)
+        assert not commands[0].worker.is_alive()
+        events = read_events(proxy.log)
+        summary = summarize_events(events, expected_row="row-a")
+        assert code == 0
+        assert all(event["row"] == "row-a" for event in events)
+        assert (summary.attempted, summary.completed, summary.active) == (2, 2, 0)
+        assert summary.reconciled is True
+        assert bundle._pending_decoder_summaries == [("row-a", summary)]
+    finally:
+        proxy.close()
+        upstream.shutdown()
+        upstream.server_close()
+        upstream_thread.join()
