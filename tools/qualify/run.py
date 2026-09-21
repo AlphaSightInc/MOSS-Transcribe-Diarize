@@ -163,6 +163,18 @@ def ready_descriptor(base):
     return client.call('GET', '/api/live/descriptor')['descriptor']
 
 
+def local_stack_command(*, state, cert, key, port, manifest, vllm_base_url,
+                        max_requests, model=None):
+    """Build the isolated stack command used by qualification harnesses."""
+    command = [PY, 'prototypes/streaming-diarization/draft-lane/run_local_stack.py',
+        '--state', str(state), '--cert', str(cert), '--key', str(key),
+        '--port', str(port), '--manifest', str(manifest),
+        '--vllm-base-url', str(vllm_base_url), '--max-requests', str(max_requests)]
+    if model is not None:
+        command.extend(['--model', str(model)])
+    return command
+
+
 def compare(first, second):
     a = {g['name']: g['status'] for g in first['gates']}
     b = {g['name']: g['status'] for g in second['gates']}
@@ -445,9 +457,9 @@ class Bundle:
         self.monitor = threading.Thread(target=self.sample, daemon=True)
         self.monitor.start()
         state = (self.work/'state').relative_to(ROOT)
-        app = self.start('stack', [PY,'prototypes/streaming-diarization/draft-lane/run_local_stack.py',
-            '--state',str(state),'--cert',str(cert),'--key',str(key),'--port','17825',
-            '--manifest',str(manifest),'--vllm-base-url','http://127.0.0.1:19125/v1', '--max-requests',str(self.args.budget)])
+        app = self.start('stack', local_stack_command(
+            state=state, cert=cert, key=key, port=17825, manifest=manifest,
+            vllm_base_url='http://127.0.0.1:19125/v1', max_requests=self.args.budget))
         ready = False
         for _ in range(120):
             if app.poll() is not None:

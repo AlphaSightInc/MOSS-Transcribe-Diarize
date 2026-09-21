@@ -123,6 +123,18 @@ checkpoint. F3r accounts for all six requests and remains below its cap of 12.
 Missing evidence or an upstream error is `INCOMPLETE`.
 
 ```sh
+cd "$RUN_ROOT/f3s-summaries"
+test "$(git rev-parse HEAD)" = "$FROZEN_SHA"
+test -z "$(git diff --name-only "$FROZEN_SHA" -- moss_transcribe_diarize frontend)"
+test -n "${OPENROUTER_API_KEY:-}"
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. "$PY" prototypes/feature-rows/launch.py \
+  --run --frozen-sha "$FROZEN_SHA" \
+  --decoder-upstream-port "$DECODER_UPSTREAM_PORT" \
+  --budget 3 --port 17836 --proxy-port 19136 \
+  --model "$MODEL" --manifest "$MANIFEST" \
+  --allow-decoder --allow-provider \
+  --out "$RUN_ROOT/f3s-summaries-result"
+
 cd "$RUN_ROOT/f3r-resume"
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. "$PY" prototypes/resume-row/run.py \
   --run --frozen-sha "$FROZEN_SHA" \
