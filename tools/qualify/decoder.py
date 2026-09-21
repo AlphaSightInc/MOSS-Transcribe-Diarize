@@ -3,7 +3,17 @@ import http.client
 import json
 import threading
 import time
+from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+
+@dataclass(frozen=True, slots=True)
+class DecoderCounters:
+    accepted: int
+    completed: int
+    rejected: int
+    active: int
+    peak_in_flight: int
 
 
 class Decoder:
@@ -24,6 +34,7 @@ class Decoder:
                     with owner.lock:
                         if owner.sent >= owner.budget:
                             owner.rejected += 1
+                            owner.event('reject')
                             self.send_error(429, 'Local qualification budget exhausted')
                             return
                         owner.sent += 1
@@ -73,10 +84,21 @@ class Decoder:
     def event(self, kind):
         with self.log.open('a') as stream:
             stream.write(json.dumps(dict(kind=kind, time=time.monotonic(), sent=self.sent,
+                                         completed=self.completed, rejected=self.rejected,
                                          active=self.active, peak=self.peak))+'\n')
 
     def start(self):
         self.thread.start()
+
+    def snapshot(self) -> DecoderCounters:
+        with self.lock:
+            return DecoderCounters(
+                accepted=self.sent,
+                completed=self.completed,
+                rejected=self.rejected,
+                active=self.active,
+                peak_in_flight=self.peak,
+            )
 
     def close(self):
         self.server.shutdown()

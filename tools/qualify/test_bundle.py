@@ -2,12 +2,80 @@
 import http.client
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import runpy
 from types import SimpleNamespace
 import threading
 import pytest
 from tools.qualify import run as qualify_run
 from tools.qualify.decoder import Decoder
 from tools.qualify.run import compare, counts, score_ladder
+
+
+FEATURE_ROW = qualify_run.ROOT / "prototypes/feature-rows/run.py"
+
+
+def test_summary_only_row_plans_three_decoder_and_six_provider_calls():
+    feature_row = runpy.run_path(str(FEATURE_ROW))
+    plan = feature_row["summary_plan"]()
+    assert [clip["planned_decoder"] for clip in plan["clips"]] == [1, 2]
+    assert plan["planned_decoder"] == 3
+    assert plan["planned_provider"] == 6
+    assert plan["provider_cap"] == {
+        "already_spent": 2,
+        "this_row": 6,
+        "cumulative": 8,
+        "cap": 10,
+    }
+    assert plan["capacity_2x1800"] == "REQUIRED-NOT-RUN"
+
+
+def test_summary_row_counter_mismatch_is_incomplete():
+    feature_row = runpy.run_path(str(FEATURE_ROW))
+    counters = feature_row["ProxyCounters"]
+    accounting = feature_row["decoder_accounting"]
+    before = counters(accepted=8, completed=8, rejected=1, event_count=17)
+    healthy = counters(
+        accepted=11,
+        completed=11,
+        rejected=1,
+        peak_in_flight=2,
+        event_count=23,
+    )
+    violating = counters(
+        accepted=12,
+        completed=11,
+        rejected=1,
+        peak_in_flight=2,
+        event_count=24,
+    )
+    receipt, matches = accounting(before, healthy, planned_decoder=3)
+    assert receipt["decoder_proxy_counter_deltas"] == {
+        "accepted": 3,
+        "completed": 3,
+        "rejected": 0,
+        "peak_in_flight": 2,
+    }
+    assert matches is True
+    _, matches = accounting(before, violating, planned_decoder=3)
+    assert matches is False
+
+
+def test_summary_row_reads_rejections_and_row_local_peak(tmp_path):
+    feature_row = runpy.run_path(str(FEATURE_ROW))
+    log = tmp_path / "decoder.jsonl"
+    events = [
+        {"kind": "start", "active": 1},
+        {"kind": "end", "active": 0},
+        {"kind": "start", "active": 1},
+        {"kind": "start", "active": 2},
+        {"kind": "end", "active": 1},
+        {"kind": "end", "active": 0},
+        {"kind": "reject", "active": 0},
+    ]
+    log.write_text("".join(json.dumps(event) + "\n" for event in events))
+    counters = feature_row["proxy_counters"](log, peak_since=2)
+    assert (counters.accepted, counters.completed, counters.rejected) == (3, 3, 1)
+    assert counters.peak_in_flight == 2
 
 
 def test_missing_is_not_pass():
@@ -232,7 +300,9 @@ def test_proxy_caps_real_dispatch_and_records_no_body(tmp_path):
         assert proxy.active==0
         log=(tmp_path/'requests.jsonl').read_text()
         assert 'PRIVATE' not in log
-        assert [json.loads(line)['kind'] for line in log.splitlines()]==['start','end','start','end']
+        assert [json.loads(line)['kind'] for line in log.splitlines()]==[
+            'start', 'end', 'start', 'end', 'reject'
+        ]
     finally:
         proxy.close(); upstream.shutdown(); upstream.server_close(); thread.join()
 

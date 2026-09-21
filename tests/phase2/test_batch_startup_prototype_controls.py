@@ -20,9 +20,28 @@ def _prototype():
     return module
 
 
+async def _settled_base_lifespan_control(module, ingress: str):
+    """Observe eventual completion after the new background startup coordinator."""
+
+    snapshot = module._snapshot
+
+    async def settled_snapshot(app, seed):
+        coordinator = app.state.phase2_file_tasks._retained_resume_task
+        if coordinator is not None:
+            await coordinator
+        entry = app.state.phase2_file_tasks._tasks.get(seed.meeting_id)
+        if entry is not None:
+            await entry.task
+        return await snapshot(app, seed)
+
+    module._snapshot = settled_snapshot
+    return await module.base_lifespan_control(ingress)
+
+
 @pytest.mark.parametrize("ingress", ["file", "url"])
 def test_r4_5_base_lifespan_resumes_valid_retained_prefix(ingress: str) -> None:
-    state = asyncio.run(_prototype().base_lifespan_control(ingress))
+    module = _prototype()
+    state = asyncio.run(_settled_base_lifespan_control(module, ingress))
     assert state == {
         "status": "completed",
         "transcript_version": 1,

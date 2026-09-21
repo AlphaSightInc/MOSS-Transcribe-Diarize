@@ -2075,6 +2075,11 @@ def create_phase2_app(
             app.state.phase2_lifecycle = lifecycle
             claimed_file_meetings = frozenset()
             if file_tasks is not None:
+                file_tasks.reclaim_terminal_retained_work(
+                    await store.terminal_file_meeting_owners(
+                        retained_owners=file_tasks.retained_work_owners()
+                    )
+                )
                 claimed_file_meetings = await file_tasks.resume_retained_work(store)
             await store.recover_active_meetings(
                 audio_archive=audio_archive,
@@ -2083,11 +2088,6 @@ def create_phase2_app(
             )
             if file_tasks is not None:
                 await file_tasks.reclaim_refused_retained_work()
-                file_tasks.reclaim_terminal_retained_work(
-                    await store.terminal_file_meeting_owners(
-                        retained_owners=file_tasks.retained_work_owners()
-                    )
-                )
             from .phase2_summary import recover_summaries
             await recover_summaries(store)
             if file_tasks is not None:
