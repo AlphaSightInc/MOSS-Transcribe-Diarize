@@ -607,12 +607,19 @@ class FileMeetingTasks:
             self._remove_work_dir(work_dir)
 
     async def _mark_failed(self, handle: Any, code: str = "storage_failed",
-                           reason: str = "The meeting could not be saved.") -> None:
+                           reason: str = "The meeting could not be saved.") -> bool:
         LOGGER.warning("File Meeting failed: %s", code)
         try:
             await handle.finish("failed", failure_code=code, failure_reason=reason)
         except AccountRevoked:
-            pass
+            return False
+        except Exception:
+            LOGGER.error("File Meeting outcome write failed; retrying.")
+            try:
+                await handle.finish("failed", failure_code=code, failure_reason=reason)
+            except AccountRevoked:
+                return False
+        return True
 
     async def _acquire_and_run(
         self,
@@ -677,11 +684,12 @@ class FileMeetingTasks:
         except Exception:
             if not resumed:
                 raise
-            await self._mark_failed(
+            if await self._mark_failed(
                 handle,
                 "resume_failed",
                 "Retained File restart could not finish.",
-            )
+            ):
+                self._remove_terminal_work_dir(input_path.parent)
 
     def _inference_options(self) -> dict[str, object]:
         return {

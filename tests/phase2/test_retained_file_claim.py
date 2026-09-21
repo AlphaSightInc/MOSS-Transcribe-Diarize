@@ -419,6 +419,55 @@ def test_lifespan_records_retained_commit_failure_without_aborting_startup(
     asyncio.run(exercise())
 
 
+def test_lifespan_retries_a_failed_last_resort_retained_outcome_write(
+    tmp_path: Path,
+) -> None:
+    """D5: one transient last-resort failure still reaches durable terminal truth."""
+
+    async def exercise() -> None:
+        _, handle, decoder, owner_dir, store = await _seed_retained_claim(tmp_path)
+        await store.close()
+        finish_failed = asyncio.Event()
+        original_complete = FileMeetingTasks._complete
+        original_finish = MeetingHandle.finish
+
+        async def fail_complete(self, target, input_path, runner_task, *, resumed=False):
+            if target.meeting_id == handle.meeting_id:
+                raise RuntimeError("controlled retained completion failure")
+            return await original_complete(
+                self, target, input_path, runner_task, resumed=resumed
+            )
+
+        async def fail_first_outcome(self, status, **kwargs):
+            if self.meeting_id == handle.meeting_id and not finish_failed.is_set():
+                finish_failed.set()
+                raise RuntimeError("controlled retained outcome write failure")
+            return await original_finish(self, status, **kwargs)
+
+        FileMeetingTasks._complete = fail_complete
+        MeetingHandle.finish = fail_first_outcome
+        app = _app(tmp_path, decoder)
+        context = app.router.lifespan_context(app)
+        entered = False
+        try:
+            await context.__aenter__()
+            entered = True
+            await asyncio.wait_for(finish_failed.wait(), timeout=2)
+            await asyncio.sleep(0)
+            snapshot = await _snapshot(app, handle)
+            assert snapshot.status == "failed"
+            assert snapshot.failure_code == "resume_failed"
+            assert snapshot.failure_reason == "Retained File restart could not finish."
+            assert not owner_dir.exists()
+        finally:
+            if entered:
+                await context.__aexit__(None, None, None)
+            MeetingHandle.finish = original_finish
+            FileMeetingTasks._complete = original_complete
+
+    asyncio.run(exercise())
+
+
 def test_lifespan_records_retained_publication_failure_without_aborting_startup(
     tmp_path: Path,
 ) -> None:
