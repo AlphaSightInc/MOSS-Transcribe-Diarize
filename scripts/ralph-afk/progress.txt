@@ -194,3 +194,11 @@ cancelled retained work kept forever) plus four smaller gaps. Offline: zero deco
 - Next: acceptance bar met; lead may integrate. Do not run decoder-backed S17 or 2x1800 capacity work under this offline mandate.
 
 [loop 20260921-064730-45615] complete at iteration 10
+
+## Run D — started 2026-09-21 ~04:00
+Opened by the lead after the adversarial acceptance review of run C. The review confirmed C2-C7 and every run-B
+regression check, and confirmed the revoke resume/unfence hole is shut. It also reproduced a retention leak: a revoked
+account keeps its retained owner directory (owner.json, input.wav, checkpoint) forever, because active_file_meetings
+joins a.enabled = 1 so the row is never claimed, refused or reclaimed - and run C removed run B's
+"assert not owner_dir.exists()" with no successor, the only unreplaced deletion in the run. Run D closes that and four
+small disclosures. Offline: zero decoder requests.

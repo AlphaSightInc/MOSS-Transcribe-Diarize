@@ -97,13 +97,14 @@ as narrow as the background resume requires:
 - the original function's definition is unchanged;
 - the exclusion set can only ever contain File rows, because
   `resume_retained_work` iterates `active_file_meetings`
-  (`WHERE m.mode = 'file' AND m.status = 'active'`) and returns only the owners it
-  actually claimed and started (`phase2_file.py:202-208`, wired at
-  `phase2.py:2034-2040`);
+  (`WHERE m.mode = 'file' AND m.status = 'active'`, `phase2.py:638`) and returns
+  only the owners `claim_retained_work` accepted and started
+  (`phase2_file.py:209-213`), wired at `phase2.py:2036`;
 - a Live row is still caught, since `active_meetings - claimed_file_meetings`
-  retains it (`phase2.py:771-785`), so **D13 is preserved**;
-- `tests/phase2/test_retained_file_claim.py:567-571` asserts a Live row ends
-  `interrupted` with `decoder.calls == []`.
+  retains it (`phase2.py:776-785`), so **D13 is preserved**;
+- `test_lifespan_refuses_nonresumable_file_and_live_rows_without_dispatch`
+  (`tests/phase2/test_retained_file_claim.py:726-753`) asserts a Live row ends
+  `interrupted` with no dispatch.
 
 Falsifier for this disclosure: any path that puts a non-File row, or a File row
 that was not claimed and started, into `claimed_file_meetings`.
