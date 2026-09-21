@@ -32,13 +32,32 @@ from tools.qualify.run import (
 
 CASES = ("single", "gap", "alternating")
 ELIGIBILITY_FLOOR_SAMPLES = 8_000
-CAPTURE_FIELDS = (
-    "span_index",
-    "source_start",
-    "source_end",
+RAW_SPAN_FIELDS = (
+    "record_type",
+    "raw_index",
+    "terminal_local_label",
+    "start",
+    "end",
     "samples",
+)
+RAW_MAPPING_FIELDS = (
+    "record_type",
+    "raw_index",
+    "normalized_partition_id",
+    "disposition",
+)
+NORMALIZED_PARTITION_FIELDS = (
+    "record_type",
+    "schema_version",
+    "meeting_owner",
+    "run_owner",
     "terminal_local_label",
     "partition_id",
+    "member_raw_indexes",
+    "start",
+    "end",
+    "samples",
+    "eligibility_floor_samples",
     "eligible",
     "score_by_canonical",
     "margin",
@@ -47,7 +66,7 @@ CAPTURE_FIELDS = (
 )
 
 
-def _capture_module() -> Any:
+def _capture_module(*, require_raw: bool) -> tuple[Any, bool]:
     """Refuse before stack startup if this product lacks the capture facility."""
 
     try:
@@ -66,7 +85,14 @@ def _capture_module() -> Any:
         raise SystemExit(
             "REFUSE: terminal-label capture contract is unavailable; no decoder request dispatched"
         )
-    return capture
+    raw_ready = callable(
+        getattr(capture.TerminalLabelCapture, "record_diagnostics", None)
+    )
+    if require_raw and not raw_ready:
+        raise SystemExit(
+            "REFUSE: raw terminal-span capture is unavailable; no decoder request dispatched"
+        )
+    return capture, raw_ready
 
 
 def population() -> list[dict[str, Any]]:
@@ -89,11 +115,11 @@ def population() -> list[dict[str, Any]]:
 def plan() -> dict[str, Any]:
     """Read the measured lane-second rate without importing a decoder client."""
 
-    capture = _capture_module()
+    capture, raw_ready = _capture_module(require_raw=False)
     arms = population()
     lane_seconds = sum(arm["lane_seconds"] for arm in arms)
     return {
-        "schema": "moss-r4-s17-identity-plan.v2",
+        "schema": "moss-r4-s17-identity-plan.v3",
         "population": {
             "cases": list(CASES),
             "arms": arms,
@@ -102,9 +128,26 @@ def plan() -> dict[str, Any]:
             "source": "tools.qualify.run.LIVE_BENCH_SESSIONS['identity_stress']",
         },
         "capture": {
-            "status": "AVAILABLE",
+            "status": "READY" if raw_ready else "REQUIRED-BEFORE-RUN",
             "environment_variable": capture.ENVIRONMENT_VARIABLE,
-            "required_fields": list(CAPTURE_FIELDS),
+            "schema_version": "moss.terminal-identity-diagnostics.v3",
+            "required_observer_method": "TerminalLabelCapture.record_diagnostics",
+            "streams": {
+                "raw_terminal_spans": {
+                    "record_type": "raw_terminal_span",
+                    "required_fields": list(RAW_SPAN_FIELDS),
+                    "timing": "before resolve_segment_overlaps",
+                },
+                "raw_to_normalized": {
+                    "record_type": "raw_to_normalized",
+                    "required_fields": list(RAW_MAPPING_FIELDS),
+                },
+                "normalized_partitions": {
+                    "record_type": "normalized_partition",
+                    "required_fields": list(NORMALIZED_PARTITION_FIELDS),
+                    "timing": "native partition decision result",
+                },
+            },
         },
         "measured_request_rate": MEASURED_REQUEST_RATE,
         "measured_request_rate_unit": MEASURED_REQUEST_RATE_UNIT,
@@ -129,55 +172,47 @@ def _lines(path: Path) -> list[str]:
 
 
 def partition_receipt(case: str, rows: list[dict[str, Any]]) -> dict[str, Any]:
-    """Group the product-emitted IDs; neither membership nor decisions are re-derived."""
+    """Validate and retain the product's separate raw and normalized streams."""
 
-    partitions: dict[str, dict[str, Any]] = {}
+    fields_by_type = {
+        "raw_terminal_span": RAW_SPAN_FIELDS,
+        "raw_to_normalized": RAW_MAPPING_FIELDS,
+        "normalized_partition": NORMALIZED_PARTITION_FIELDS,
+    }
     for row in rows:
-        missing = [field for field in CAPTURE_FIELDS if field not in row]
+        record_type = row.get("record_type")
+        if record_type not in fields_by_type:
+            raise RuntimeError(f"capture receipt has unknown record type for {case}: {record_type}")
+        missing = [field for field in fields_by_type[record_type] if field not in row]
         if missing:
             raise RuntimeError(f"capture receipt missing fields for {case}: {', '.join(missing)}")
-        partition = partitions.setdefault(
-            row["partition_id"],
-            {
-                "partition_id": row["partition_id"],
-                "terminal_local_label": row["terminal_local_label"],
-                "score_by_canonical": row["score_by_canonical"],
-                "margin": row["margin"],
-                "decision": row["decision"],
-                "spans": [],
-            },
-        )
-        if any(
-            partition[key] != row[key]
-            for key in ("terminal_local_label", "score_by_canonical", "margin", "decision")
-        ):
-            raise RuntimeError(f"capture receipt disagrees within product partition {row['partition_id']}")
-        samples = int(row["samples"])
-        capture_eligible = row["eligible"]
-        partition["spans"].append(
-            {
-                "span_index": row["span_index"],
-                "source_start": row["source_start"],
-                "source_end": row["source_end"],
-                "eligibility": {
-                    "samples": samples,
-                    "floor_samples": ELIGIBILITY_FLOOR_SAMPLES,
-                    "eligible": samples >= ELIGIBILITY_FLOOR_SAMPLES,
-                    "captured_eligible": capture_eligible,
-                    "matches_captured": (
-                        None if capture_eligible is None
-                        else capture_eligible == (samples >= ELIGIBILITY_FLOOR_SAMPLES)
-                    ),
-                },
-                "published_identity": row["published_identity"],
-            }
-        )
+    raw = [row for row in rows if row["record_type"] == "raw_terminal_span"]
+    mapping = [row for row in rows if row["record_type"] == "raw_to_normalized"]
+    partitions = [row for row in rows if row["record_type"] == "normalized_partition"]
+    if not raw or not mapping or not partitions:
+        raise RuntimeError(f"capture receipt lacks one or more required streams for {case}")
+    raw_indexes = {int(row["raw_index"]) for row in raw}
+    if {int(row["raw_index"]) for row in mapping} != raw_indexes:
+        raise RuntimeError(f"capture raw/mapping indexes disagree for {case}")
+    partition_ids = {row["partition_id"] for row in partitions}
+    if any(
+        row["normalized_partition_id"] is not None
+        and row["normalized_partition_id"] not in partition_ids
+        for row in mapping
+    ):
+        raise RuntimeError(f"capture mapping names an absent partition for {case}")
+    if any(
+        int(row["eligibility_floor_samples"]) != ELIGIBILITY_FLOOR_SAMPLES
+        for row in partitions
+    ):
+        raise RuntimeError(f"capture changed the eligibility floor for {case}")
     return {
-        "schema": "moss-r4-s17-identity-partition-receipt.v2",
+        "schema": "moss-r4-s17-identity-partition-receipt.v3",
         "case": case,
         "eligibility_floor_samples": ELIGIBILITY_FLOOR_SAMPLES,
-        "terminal_local_label_stream": rows,
-        "product_partitions": list(partitions.values()),
+        "raw_terminal_spans": raw,
+        "raw_to_normalized": mapping,
+        "product_partitions": partitions,
     }
 
 
@@ -215,7 +250,7 @@ def _wait_for_stack(base: str, process: subprocess.Popen[bytes]) -> None:
 
 
 def execute(args: argparse.Namespace, plan_data: dict[str, Any]) -> int:
-    capture = _capture_module()
+    capture, _ = _capture_module(require_raw=True)
     if args.budget < plan_data["planned_requests"]:
         raise SystemExit(
             f"REFUSE: budget={args.budget} < planned_requests={plan_data['planned_requests']}; "
@@ -286,7 +321,7 @@ def execute(args: argparse.Namespace, plan_data: dict[str, Any]) -> int:
         _write(
             args.out / "run.json",
             {
-                "schema": "moss-r4-s17-identity-rerun.v2",
+                "schema": "moss-r4-s17-identity-rerun.v3",
                 "plan": plan_data,
                 "budget": args.budget,
                 "capture": str(raw_capture),
