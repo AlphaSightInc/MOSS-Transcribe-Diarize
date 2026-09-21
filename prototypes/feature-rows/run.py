@@ -25,7 +25,7 @@ from urllib.parse import urlsplit
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-FROZEN_SHA = "71f23c0c7f353d64593020f8ef93157b86951c10"
+FROZEN_SHA = "0de56e1a139f833f12cb23224f10e1668be2efd9"
 EVIDENCE = ROOT / "evidence/round4/features"
 PYTHON = sys.executable
 CORPUS = ROOT / "evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s"
