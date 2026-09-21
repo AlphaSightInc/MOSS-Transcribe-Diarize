@@ -659,20 +659,41 @@ class Phase2Store:
     async def terminal_file_meeting_owners(
         self,
         account_id: str | None = None,
+        *,
+        retained_owners: tuple[tuple[str, str], ...] | None = None,
     ) -> tuple[tuple[str, str], ...]:
         """Return only File owners whose Meeting has durable terminal truth."""
 
         async with self._external_read():
-            cursor = await self._connection.execute(
-                """
-                SELECT account_id, meeting_id
-                FROM meetings
-                WHERE mode = 'file' AND status IN ('completed', 'failed', 'interrupted')
-                  AND (? IS NULL OR account_id = ?)
-                ORDER BY created_at_ms, meeting_id
-                """,
-                (account_id, account_id),
-            )
+            if retained_owners is None:
+                cursor = await self._connection.execute(
+                    """
+                    SELECT account_id, meeting_id
+                    FROM meetings
+                    WHERE mode = 'file' AND status IN ('completed', 'failed', 'interrupted')
+                      AND (? IS NULL OR account_id = ?)
+                    ORDER BY created_at_ms, meeting_id
+                    """,
+                    (account_id, account_id),
+                )
+            elif not retained_owners:
+                return ()
+            else:
+                cursor = await self._connection.execute(
+                    """
+                    WITH retained(account_id, meeting_id) AS (
+                        SELECT json_extract(value, '$[0]'), json_extract(value, '$[1]')
+                        FROM json_each(?)
+                    )
+                    SELECT meetings.account_id, meetings.meeting_id
+                    FROM meetings
+                    JOIN retained USING (account_id, meeting_id)
+                    WHERE meetings.mode = 'file'
+                      AND meetings.status IN ('completed', 'failed', 'interrupted')
+                    ORDER BY meetings.created_at_ms, meetings.meeting_id
+                    """,
+                    (json.dumps(retained_owners),),
+                )
             rows = await cursor.fetchall()
             await cursor.close()
         return tuple((str(row["account_id"]), str(row["meeting_id"])) for row in rows)
@@ -2063,7 +2084,9 @@ def create_phase2_app(
             if file_tasks is not None:
                 await file_tasks.reclaim_refused_retained_work()
                 file_tasks.reclaim_terminal_retained_work(
-                    await store.terminal_file_meeting_owners()
+                    await store.terminal_file_meeting_owners(
+                        retained_owners=file_tasks.retained_work_owners()
+                    )
                 )
             from .phase2_summary import recover_summaries
             await recover_summaries(store)
