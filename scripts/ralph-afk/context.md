@@ -67,8 +67,9 @@
   `resume_failed` so startup remains available;
   **D5/F5 complete:** `_mark_failed` retries one non-revocation terminal-write failure through the same owner-bound
   atomic mutation. It reports whether durable terminal truth exists, so `_run`'s resumed last-resort arm cleans up
-  only after that truth; `AccountRevoked` leaves its owner untouched. **F6** progress.txt iteration 4 cites a test
-  file run C never touched.
+  only after that truth; `AccountRevoked` leaves its owner untouched. **D6/F6 complete:** the append-only correction
+  identifies `prototypes/batch-startup/prototype.py` as the post-boot task-joining evidence; the formerly cited test
+  file was not touched by run C iteration 4.
 - Reachability caveat recorded by the review, pre-existing since run B, not a run-C regression: because `_mark_failed`
   swallows `AccountRevoked`, a `finish` failure on an authority mismatch could in principle delete a still-`active`
   Meeting's retained dir. No reachable case was constructible (`finalize_account_revoke` requires zero active rows and
@@ -93,8 +94,9 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-- **D6 / F6 — journal correction.** Append, never rewrite, the correction that Run-C iteration 4's post-boot joining
-  evidence is `prototypes/batch-startup/prototype.py`, not an untouched test file.
+- **Final required gates.** Run the PRD's full backend suite, frontend tests, and frontend typecheck; record exact
+  counts in `docs/verify/round4-run-d/VERIFY.md` and this journal. Frontend source changes would additionally require
+  the PRD's rebuild and asset-parity gate.
 
 Historical S17 and `capacity_2x1800` remain explicitly unmeasured outside this PRD's offline scope.
 

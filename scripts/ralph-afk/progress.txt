@@ -236,3 +236,11 @@ small disclosures. Offline: zero decoder requests.
 - Evidence: `test_unresumed_failure_is_durable_and_resignals_task` (both ordinary arms); `test_lifespan_records_retained_commit_failure_without_aborting_startup`; `test_lifespan_records_retained_publication_failure_without_aborting_startup`; both Run-C and Run-D verification notes.
 - Learned: durable Meeting truth and task failure signaling are distinct. Resumed work must return after its durable outcome because lifespan owns it; ordinary uploads can and should re-raise after the same durable cleanup so task settlement and `_task_done` retain their failure signal.
 - Next: D6 — append the correction for Run-C iteration 4's wrong post-boot task-joining evidence pointer, then run final Run-D gates if no candidates remain.
+
+## Iteration 5 - correct Run-C journal pointer
+- Target: D6 / F6 — correct, without rewriting history, Run-C iteration 4's post-boot task-joining evidence pointer.
+- Files: `scripts/ralph-afk/progress.txt`; `scripts/ralph-afk/context.md`.
+- Validation: `git diff-tree --no-commit-id --name-only -r 9d839bf23097cf79fb95c4e6439aa753f78abe72` lists `prototypes/batch-startup/prototype.py` but not `tests/phase2/test_batch_startup_prototype_controls.py`; `nl -ba prototypes/batch-startup/prototype.py | sed -n '1140,1153p'` locates the explicit post-boot `await entry.task` at line 1148.
+- Evidence: the Run-C iteration-4 entry above remains unchanged; its second evidence pointer was wrong. Commit `9d839bf2` touched the prototype and did not touch the cited test file.
+- Learned: post-boot task joining was prototype evidence, not a product-test claim. An appended correction preserves the journal's historical record while making its provenance auditable.
+- Next: run the PRD's final backend, frontend, and typecheck gates; update the Run-D verifier with their exact results.
