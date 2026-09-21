@@ -1,0 +1,49 @@
+{
+  "schema": "moss-r4-summary-timestamp-diagnosis.v1",
+  "verdict": "EXPECTED",
+  "question": "Is the zero-detail-timestamp 50 s smoke an expected selected-detail outcome or a summary-path defect?",
+  "provider_calls_used_this_diagnosis": 0,
+  "decoder_requests_used": 0,
+  "observed_50s_smoke": {
+    "transcript": "mono_javier_intro_50s",
+    "summary_current": true,
+    "detail_timestamp_count": 0,
+    "interpretation": "empty selected-detail list; not an invalid timestamp"
+  },
+  "contract": {
+    "prompt": {
+      "path": "frontend/src/lib/final-summary-prompt.txt",
+      "evidence": [
+        "lines 44-46: setup-only content may use [] for details",
+        "lines 102-104: details are selected chronological support and may be [] when no substantive support is selected"
+      ]
+    },
+    "browser": {
+      "path": "frontend/src/lib/finalSummary.ts",
+      "evidence": "lines 94-111 require details to be an array and validate each supplied timestamp; no minimum length is imposed"
+    },
+    "server": {
+      "path": "moss_transcribe_diarize/app/phase2_summary.py",
+      "evidence": "lines 21-45 apply the same all-supplied-detail HH:MM:SS and duration checks before current storage; no minimum length is imposed"
+    },
+    "local_control": {
+      "command": "pytest -q -p no:cacheprovider tests/phase2/test_final_summary.py; direct validate_summary empty/invalid control",
+      "result": "12 passed; empty accepted; 00:00:60 rejected"
+    }
+  },
+  "official_180s_control": {
+    "verifier_input": "interview_adam_frank_180s",
+    "selection_evidence": "tests/e2e/verify_summaries.py lines 43-49 and 125-156",
+    "why_180s": "docs/handoffs/e2e-smoke-for-operator.md lines 30-38 says the former 50 s-only row missed the timestamp defect at realistic meeting length",
+    "matching_retained_v15_case": "3m-lex-adam-frank",
+    "duration_seconds": 180,
+    "source_rows": 8,
+    "valid_detail_timestamps": [
+      "00:00:49",
+      "00:01:59"
+    ],
+    "invalid_detail_timestamps": [],
+    "source_identity": "corpus manifest identifies interview_adam_frank_180s as the byte-identical 180 s lex_adam_frank source"
+  },
+  "official_s15_remaining": "Run the frozen product stack with its real decoder for 50 s and 180 s x TRIALS=3, require every attempt current and timestamps valid on 180 s, cap provider calls at 10."
+}

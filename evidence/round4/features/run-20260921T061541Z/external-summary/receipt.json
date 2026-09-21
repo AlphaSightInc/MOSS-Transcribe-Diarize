@@ -1,0 +1,11 @@
+{
+  "artifacts": [],
+  "denominators": {
+    "provider_call_cap": 10,
+    "provider_calls_planned": 6,
+    "transcripts": 2,
+    "trials": 3
+  },
+  "reason": "Decoder use is not authorised; rerun with a cap-authorised --base and --allow-decoder.",
+  "status": "INCOMPLETE"
+}

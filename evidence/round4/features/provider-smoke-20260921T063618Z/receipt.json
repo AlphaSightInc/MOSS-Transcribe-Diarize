@@ -1,0 +1,15 @@
+{
+  "schema": "moss-r4-provider-smoke-attempt.v1",
+  "status": "LOCAL-HARNESS-ERROR",
+  "reason": "receipt path was relative after the product verifier completed",
+  "smoke_process_exit_code": 1,
+  "verifier_exit_code": 0,
+  "summary_current": true,
+  "timestamps_valid_hh_mm_ss": "unmeasured: process stopped before receipt assembly",
+  "model_actually_used": "google/gemini-2.5-flash-lite",
+  "provider_posts_observed": 1,
+  "decoder_requests_used": 0,
+  "artifacts": [
+    "evidence/round4/features/provider-smoke-20260921T063618Z/provider-posts.jsonl"
+  ]
+}
