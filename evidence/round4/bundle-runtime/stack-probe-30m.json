@@ -1,0 +1,141 @@
+{
+  "schema": "moss-r4-bundle-runtime-stack-probe.v1",
+  "question": "can the disposable runtime start the candidate before any decoder work?",
+  "python": "/private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python",
+  "decoder_base_url": "http://127.0.0.1:9/v1",
+  "decoder_requests": 0,
+  "frames_sent": 0,
+  "file_or_url_jobs_started": 0,
+  "root_status": 200,
+  "descriptor_status": 200,
+  "descriptor": {
+    "source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea",
+    "provider_name": "moss-rtx-webrtc-wespeaker",
+    "provider_revision": "webrtcvad-wheels-2.0.14+wespeaker-4adba1525a6c9d5fff74b6df43a6ec97a86c4112",
+    "provider_manifest_hash": "e4c94260f1dc03caac88e3a9568bdc597f1e376ab03651d97196c265b24352dd",
+    "config_hashes": {
+      "endpoint_config_hash": "9dc3bc6b957431698627b06b56da46029b20d98e8df8a7b64574153adcfcb222",
+      "identity_config_hash": "4b7c94eddf0d566bd7870ce7fbe6464d3a5f75d80371c0eb4dd36fb64fec9b89",
+      "decoder_config_hash": "20d2492f30df9f24bbe1403f4d163cc465428347c6d14dbd1116bd571d4f973c",
+      "combined_config_hash": "431efb3f5c0c3d0b685a8121b4e72eee08fc8072001f6d9b178e924321d7a265"
+    },
+    "bounds": {
+      "max_frame_samples": 16000,
+      "max_queue_depth": 16,
+      "max_retained_samples": 960000,
+      "max_identity_speakers": 16,
+      "max_events": 1000,
+      "hard_cap_samples": 40000,
+      "stop_drain_deadline_seconds": 5.0,
+      "max_tape_bytes": 57600000
+    },
+    "schema_version": 1,
+    "live_protocol_version": "moss-live-service.v1",
+    "live_protocol": {
+      "protocol": "moss-live-service.v2",
+      "min_protocol_version": 2,
+      "max_protocol_version": 2,
+      "capabilities": {
+        "lanes": true,
+        "binary": false,
+        "idempotent_frames": true,
+        "resumable": true
+      }
+    },
+    "sample_rate": 16000,
+    "frame_samples": 8000,
+    "feature_enabled": true
+  },
+  "control_socket": {
+    "exists": true,
+    "mode": "0o600",
+    "status": {
+      "accounts": [
+        {
+          "account_id": "-Qz9CcVFviCuIsuBvO_T0OwYqqX3oDjA",
+          "active_meetings": {
+            "file": 0,
+            "live": 0
+          },
+          "audio": {
+            "available": {
+              "bytes": 0,
+              "count": 0
+            },
+            "partial": {
+              "bytes": 0,
+              "count": 0
+            },
+            "unavailable": {
+              "bytes": 0,
+              "count": 0
+            }
+          },
+          "display_name": "This browser",
+          "enabled": true,
+          "logical": {
+            "final_summaries": 0,
+            "meetings": 0,
+            "transcripts": 0,
+            "voiceprints": 0
+          },
+          "sign_in_sessions": 1
+        }
+      ],
+      "active_meetings": [],
+      "capacity": {
+        "backpressured_meetings": 0,
+        "dispatch_stage_clocks": {
+          "clock": "server_monotonic",
+          "completed_windows": 0,
+          "full_denominator": 0,
+          "owners": [],
+          "terminal_vs_terminal_contention_ms": 0
+        },
+        "file": {
+          "active": 0
+        },
+        "inference_worker": "idle",
+        "live": {
+          "active": 0,
+          "limit": 2
+        },
+        "queues": {
+          "batch": 0,
+          "live_canonical": 0,
+          "live_provisional": 0,
+          "live_refinement": 0
+        }
+      },
+      "latest_error": null,
+      "observed_at_utc": "2026-09-21T06:30:07.606Z",
+      "readiness": "ready",
+      "schema": "moss-operator-status.v1",
+      "storage": {
+        "audio": {
+          "available": {
+            "bytes": 0,
+            "count": 0
+          },
+          "partial": {
+            "bytes": 0,
+            "count": 0
+          },
+          "unavailable": {
+            "bytes": 0,
+            "count": 0
+          }
+        },
+        "filesystems": {
+          "audio_free_bytes": 251971907584,
+          "sqlite_free_bytes": 251971907584
+        },
+        "sqlite": {
+          "database_bytes": 4096,
+          "wal_bytes": 206032
+        }
+      }
+    }
+  },
+  "verdict": "RUNNABLE"
+}
