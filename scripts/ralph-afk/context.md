@@ -131,6 +131,13 @@
   proved both failures. Their targets now follow the real mutable corpus and separate 24 s fixture, so the strict
   markers could be removed without weakening either population check. The two Jamie controls remain the only strict
   xfails.
+- 2026-09-21 iteration 8's first full backend gate exposed two stale test expectations, not a new product seam:
+  **F1** `test_file_mp3_artifact` still looked under transient `file-work` although the approved A3 ingress keeps an
+  active source under `file-retained/<account>/<meeting>/`; it now proves the retained source survives until blocked
+  audio metadata is durable and is removed only after terminal completion (**15 passed** focused). **F2**
+  `test_lane_word_oracle` still expects the pre-D27 corpus denominator 154; the approved corrected Bill/Keyu rows
+  presently score 157. The gate at `966d250b` therefore ended **2 failed, 2,150 passed, 5 skipped, 2 xfailed**:
+  F1 and F2 respectively. No decoder, network, or GPU request occurred.
 - This run owns **six** of them (batch 2 + gap 1 + fixture 3) and must convert exactly those to ordinary passes. The
   **two Jamie controls stay xfailed** — R4-4 is FALSIFIED and nothing in this run may make them pass.
 
@@ -151,7 +158,12 @@ npm --prefix frontend test -- --run && npm --prefix frontend run typecheck
 
 ## Remaining candidates
 
-1. **Full suites + `docs/verify/round4-run-b/VERIFY.md`.**
+1. **F2: update the lane-word oracle's fixed corpus denominator to D27's audited population, then re-run that
+   focused control.** Keep the denominator an independent exact expected value; do not derive it from the same rows
+   under test.
+2. **Re-run full backend/frontend/typecheck/build gates and add `docs/verify/round4-run-b/VERIFY.md`.** It must state
+   final counts, the six converted controls, the two remaining Jamie xfails, falsifiers, S17 `UNMEASURED`, and
+   `capacity_2x1800: REQUIRED-NOT-RUN`.
 
 ## Non-candidates
 

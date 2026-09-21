@@ -538,11 +538,19 @@ def test_meeting_stays_active_until_audio_metadata_is_durable(tmp_path: Path):
         assert active["status"] == "active"
         assert active["transcript"]["segments"][0]["text"] == "durable transcript"
         assert active["audio"] is None
-        assert next(work_root.glob("*/input.wav")).exists()
+        retained_input = (
+            app.state.phase2_file_tasks.retained_root
+            / "sub-a"
+            / meeting_id
+            / "input.wav"
+        )
+        assert retained_input.exists()
+        assert list(work_root.glob("**/*")) == []
 
         archive.release.set()
         completed = await_terminal(client, meeting_id, "completed")
         assert completed["audio"]["state"] == "available"
+        assert not retained_input.exists()
         assert list(work_root.glob("**/*")) == []
 
 

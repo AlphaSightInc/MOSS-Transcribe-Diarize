@@ -78,3 +78,11 @@ convert; the two Jamie controls must stay xfailed.
 - Evidence: `reference-correction-proposal.json`; `overlap-review/second-opinion.md`; `raw-system-0-29.json`; direct falsifier asserts 102 reference / 105 observed / 0 substitutions / 0 omissions / 3 additions (`you`, `know`, repeated `to`).
 - Learned: the old two strict fixture controls reused one 29 s historical row while demanding incompatible 29 s and <=24 s bounds; `--runxfail` confirmed both failures. Binding acceptance to the corrected corpus and ladder to its own audited 24 s fixture preserves both checks; the historical evidence remains unchanged. Only Jamie's two strict controls remain.
 - Next: Candidate 1, add the self-contained VERIFY document and run the required full backend/frontend/typecheck gates.
+
+## Iteration 8 - retained File artifact path contract
+- Target: Off-list focused F1 from the required full-suite gate: preserve the active-until-audio-metadata invariant after A3 moved File work out of transient `file-work`.
+- Files: `tests/phase2/test_file_mp3_artifact.py`; `scripts/ralph-afk/context.md`; `scripts/ralph-afk/progress.txt`.
+- Validation: full backend -> 2 failed, 2,150 passed, 5 skipped, 2 xfailed (F1 transient-path assertion; F2 stale D27 corpus denominator); focused `tests/phase2/test_file_mp3_artifact.py` -> 15 passed; `git diff --check` -> clean.
+- Evidence: `test_meeting_stays_active_until_audio_metadata_is_durable` now requires the Meeting-owned retained source while archive completion is blocked, then its removal only after `completed`.
+- Learned: the A3 source move preserved the intended artifact-durability barrier; the full suite also exposed separate F2, whose fixed 154-word expectation predates D27's corrected 157-word corpus.
+- Next: Update only F2's independent expected denominator, then repeat final backend/frontend/typecheck/build gates and write the Run-B verifier.
