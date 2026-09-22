@@ -287,6 +287,7 @@ def _wait_for_stack(base: str, process: subprocess.Popen[bytes]) -> None:
         if process.poll() is not None:
             raise RuntimeError("S17 receipt stack exited before readiness")
         try:
+            client.call("POST", "/api/workspace/bootstrap")
             client.call("GET", "/api/live/descriptor")
             return
         except Exception:
