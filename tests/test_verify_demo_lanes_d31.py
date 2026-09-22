@@ -14,7 +14,8 @@ class _Clock:
 class _D31Client:
     def __init__(self, *, pre_tail: bool, endpoint_reason: str = 'end_silence',
                  post_endpoint_reason: str | None = None, snapshot_times=(), clock=None,
-                 settle_after: int = 1, segments=None, empty_post_events: bool = False):
+                 settle_after: int = 1, segments=None, empty_post_events: bool = False,
+                 tail_span_end: int = 10_000_000, extra_pending_until: int | None = None):
         self.pre_tail = pre_tail
         self.endpoint_reason = endpoint_reason
         self.post_endpoint_reason = post_endpoint_reason or endpoint_reason
@@ -22,7 +23,10 @@ class _D31Client:
         self.clock = clock
         self.settle_after = settle_after
         self.empty_post_events = empty_post_events
-        self.segments = segments or [{'start_sample': 0, 'end_sample': 10_000_000, 'source_lane': 'microphone'}]
+        self.extra_pending_until = extra_pending_until
+        self.tail_span_end = tail_span_end
+        self.segments = (segments if segments is not None else [
+            {'start_sample': 0, 'end_sample': tail_span_end, 'source_lane': 'microphone'}])
         self.stopped = False
         self.post_events_available = True
         self.live_snapshot_reads = 0
@@ -33,7 +37,7 @@ class _D31Client:
         return {'snapshot': {'pending_work_items': 0, 'session': {
             'status': 'completed' if self.stopped else 'active',
             'finalization_status': 'final' if self.stopped else 'not_started',
-            'pending_span_ids': [], 'committed_samples': 10_000_000,
+            'pending_span_ids': [], 'committed_samples': self.tail_span_end,
             'effective_transcript': segments,
         }}}
 
@@ -45,16 +49,21 @@ class _D31Client:
                 return [{'seq': 4, 'kind': 'canonical_queued', 'payload': {
                     'item_id': 8, 'reason': 'stop'}}]
             return [{'seq': 1, 'kind': 'span_frozen', 'payload': {
-                'start_sample': 0, 'end_sample': 10_000_000, 'reason': self.post_endpoint_reason}},
+                'span_id': 7, 'start_sample': 0, 'end_sample': self.tail_span_end,
+                'reason': self.post_endpoint_reason}},
                     {'seq': 2, 'kind': 'canonical_queued', 'payload': {'item_id': 7}},
-                    {'seq': 3, 'kind': 'canonical_processed', 'payload': {'item_id': 7}}]
+                    {'seq': 3, 'kind': 'canonical_processed', 'payload': {'item_id': 7, 'span_id': 7}}]
         if not self.pre_tail: return []
         self.active_event_reads += 1
         events=[{'seq': 1, 'kind': 'span_frozen', 'payload': {
-            'start_sample': 0, 'end_sample': 10_000_000, 'reason': self.endpoint_reason}},
+            'span_id': 7, 'start_sample': 0, 'end_sample': self.tail_span_end, 'reason': self.endpoint_reason}},
                 {'seq': 2, 'kind': 'canonical_queued', 'payload': {'item_id': 7}}]
         if self.active_event_reads >= self.settle_after:
-            events.append({'seq': 3, 'kind': 'canonical_processed', 'payload': {'item_id': 7}})
+            events.append({'seq': 3, 'kind': 'canonical_processed', 'payload': {'item_id': 7, 'span_id': 7}})
+        if self.extra_pending_until is not None:
+            events.append({'seq': 4, 'kind': 'canonical_queued', 'payload': {'item_id': 8}})
+            if self.active_event_reads >= self.extra_pending_until:
+                events.append({'seq': 5, 'kind': 'canonical_processed', 'payload': {'item_id': 8, 'span_id': 8}})
         return events
 
     def call(self, method, path, body=None):
@@ -164,11 +173,50 @@ def test_first_cover_latency_precedes_settled_tail_latency(monkeypatch):
     monkeypatch.setattr(demo, 'score_lanes', _passing_score)
     clock=_Clock()
     result=demo.run_case('https://unused',None,'overlap',client=_D31Client(
-        pre_tail=True,snapshot_times=(1.0,2.0),clock=clock,settle_after=2),realtime=False,_clock=clock)
+        pre_tail=True,snapshot_times=(1.0,2.0),clock=clock,extra_pending_until=2),realtime=False,_clock=clock)
 
     assert result['settle'] == 'SETTLED'
     assert result['first_cover_latency_seconds'] == 1.0
     assert result['tail_latency_seconds'] == 2.0
+
+
+def _one_frame_inputs(_gain):
+    return {
+        'system': {'pcm': b'\1\0'*8000, 'reference': 'alpha'},
+        'microphone': {'pcm': b'\1\0'*8000, 'reference': 'beta'},
+    }
+
+
+def test_partition_coverage_settles_when_word_timing_ends_before_last_pcm_sample(monkeypatch):
+    monkeypatch.setattr(demo, 'score_lanes', _passing_score)
+    monkeypatch.setattr(demo, 'reference_inputs', _one_frame_inputs)
+    # The decoder words end 700 samples before the final captured non-zero sample.
+    client=_D31Client(pre_tail=True,tail_span_end=8000,segments=[
+        {'start_sample': 0, 'end_sample': 7300, 'source_lane': 'microphone'}])
+    result=demo.run_case('https://unused',None,'overlap',client=client,realtime=False)
+
+    assert result['settle'] == 'SETTLED'
+    assert result['first_cover_latency_seconds'] is not None
+    assert result['tail_words_present'] is True
+    assert result['passed'] is True
+
+    # RED under the replaced predicate: no effective segment reaches sample 8000.
+    legacy_exact_cover=any(
+        int(segment.get('start_sample',8000)) < 8000 <= int(segment.get('end_sample',0))
+        for segment in client.segments)
+    assert legacy_exact_cover is False
+    assert ('SETTLED' if legacy_exact_cover else 'TIMEOUT') == 'TIMEOUT'
+
+
+def test_committed_wordless_tail_partition_is_covered(monkeypatch):
+    monkeypatch.setattr(demo, 'score_lanes', _passing_score)
+    monkeypatch.setattr(demo, 'reference_inputs', _one_frame_inputs)
+    result=demo.run_case('https://unused',None,'overlap',client=_D31Client(
+        pre_tail=True,tail_span_end=8000,segments=[]),realtime=False)
+
+    assert result['settle'] == 'SETTLED'
+    assert result['first_cover_latency_seconds'] is not None
+    assert result['tail_words_present'] is False
 
 
 def test_missing_identity_telemetry_fails_closed(monkeypatch):
@@ -234,6 +282,7 @@ def test_d31_row_fields_and_surface_identity_telemetry_survive_retained_metadata
         'pre_snapshot_status': 'active',
         'stop_requested_before_pre': False,
         'identity_telemetry_missing': False,
+        'tail_words_present': True,
         'surfaces': {'pre_terminal': {'identity_unqualified': False,
                                       'unattributed_segment_count': 0,
                                       'unattributed_word_count': 0}},
