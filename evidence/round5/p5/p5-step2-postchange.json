@@ -1,0 +1,21 @@
+{
+  "source": "retained R4-10 F1 alternation published layer",
+  "postchange_score": {
+    "passed": false,
+    "speaker_lane_conflicts": 0,
+    "unattributed_segment_count": 3,
+    "unattributed_word_count": 8,
+    "identity_unqualified": false,
+    "max_wer": 0.166655,
+    "wer": {"system": 0.10576923076923077, "microphone": 0.24528301886792453}
+  },
+  "r5_l1_pre_rescores": {
+    "realistic-tail": "UNMEASURED: receipt has summary only, no segment identity/text or reference text",
+    "no-silence-control": "UNMEASURED: receipt has summary only, no segment identity/text or reference text"
+  },
+  "controls": {
+    "unpatched_strict_xfail_free": "2 failed, 11 passed",
+    "focused_scorer": "15 passed",
+    "backend": "2321 passed, 5 skipped, 2 xfailed"
+  }
+}
