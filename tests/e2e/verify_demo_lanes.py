@@ -28,6 +28,9 @@ SYSTEM_LADDER_REFERENCE = REPO / 'tests/e2e/fixtures/lane-system-ladder-referenc
 DEFAULT_MIC_GAIN = 0.03
 TAIL_SETTLE_TIMEOUT_SECONDS = 5.0
 _TAIL_ENDPOINT_REASONS = frozenset({'end_silence', 'hard_cap', 'stop_flush', 'none'})
+_IDENTITY_TELEMETRY_KEYS = frozenset({
+    'identity_unqualified', 'unattributed_segment_count', 'unattributed_word_count',
+})
 
 class Client:
     """Cookie-carrying JSON client. One bootstrap per run: each call creates a workspace."""
@@ -138,8 +141,17 @@ def _settle_facts(envelope,events,last_speech_sample):
                 pending_canonical_item_count=len(queued-processed))
 
 
+def _has_identity_telemetry(score):
+    """Require scorer-owned attribution telemetry; older scorers cannot qualify a case."""
+    if not isinstance(score,dict) or not _IDENTITY_TELEMETRY_KEYS <= score.keys(): return False
+    return (isinstance(score['identity_unqualified'],bool)
+            and all(isinstance(score[key],int) and not isinstance(score[key],bool)
+                    and score[key]>=0
+                    for key in ('unattributed_segment_count','unattributed_word_count')))
+
+
 def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, realtime=True,
-             _stream_tail_silence=True):
+             _stream_tail_silence=True, _clock=time.monotonic):
     client=client or Client(base,context)
     client.call('POST','/api/workspace/bootstrap')
     descriptor=client.call('GET','/api/live/descriptor')['descriptor']
@@ -153,9 +165,10 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
     total=max(offsets[lane]+frames[lane] for lane in inputs)
     created=client.call('POST','/api/live/sessions',{'source_revision':descriptor['source_revision']})
     ident=created.get('id') or created['session_id']
-    epoch=time.time_ns(); started=time.monotonic(); pre=None
+    epoch=time.time_ns(); started=_clock(); pre=None
     last_speech_sample=None; last_speech_captured_at=None
-    silence_frames_streamed=0; pre_events=[]; settle='TIMEOUT'
+    silence_frames_streamed=0; pre_events=[]; pre_facts=None; pre_observed_at=None; pre_settled_observed_at=None
+    first_cover_observed_at=None; settle='TIMEOUT'
     try:
         for sequence in range(total):
             health=dict(state='capturing',device_epoch=epoch,dropped_frames=0,discontinuities=0,failure_code=None)
@@ -174,9 +187,23 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
                 sample_end=_last_non_silent_sample_end(chunk,sequence,size)
                 if sample_end is not None and (last_speech_sample is None or sample_end>=last_speech_sample):
                     last_speech_sample=sample_end
-                    last_speech_captured_at=time.monotonic()
+                    last_speech_captured_at=_clock()
             if realtime: time.sleep(max(0,(sequence+1)*size/rate-(time.monotonic()-started)))
         if last_speech_sample is None or last_speech_captured_at is None: raise AssertionError('no non-silent captured sample')
+        settle_deadline=last_speech_captured_at+TAIL_SETTLE_TIMEOUT_SECONDS
+
+        def poll_snapshot():
+            nonlocal first_cover_observed_at
+            candidate=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
+            # Deadline is defined by receipt of the snapshot, before a slow events read.
+            observed_at=_clock()
+            events=client.call('GET',f'/api/live/sessions/{ident}/events?since_seq=-1').get('events',[])
+            facts=_settle_facts(candidate,events,last_speech_sample)
+            settled_observed_at=_clock()
+            if facts['effective_covers_last_speech'] and first_cover_observed_at is None:
+                first_cover_observed_at=observed_at
+            return candidate,events,facts,observed_at,settled_observed_at
+
         sequence=total
         while _stream_tail_silence and pre is None:
             health=dict(state='capturing',device_epoch=epoch,dropped_frames=0,discontinuities=0,failure_code=None)
@@ -192,29 +219,37 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
                     sample_rate=rate,silent=True,discontinuity=False))
             silence_frames_streamed+=1
             if realtime: time.sleep(max(0,(sequence+1)*size/rate-(time.monotonic()-started)))
-            candidate=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
-            events=client.call('GET',f'/api/live/sessions/{ident}/events?since_seq=-1').get('events',[])
-            facts=_settle_facts(candidate,events,last_speech_sample)
-            if facts['settled'] or time.monotonic()>=last_speech_captured_at+TAIL_SETTLE_TIMEOUT_SECONDS:
-                pre,pre_events=candidate,events
-                settle='SETTLED' if facts['settled'] else 'TIMEOUT'
+            candidate,events,facts,observed_at,settled_observed_at=poll_snapshot()
+            # A snapshot arriving at the deadline is already too late, even if settled.
+            if observed_at >= settle_deadline:
+                pre,pre_events,pre_facts,pre_observed_at,pre_settled_observed_at=(
+                    candidate,events,facts,observed_at,settled_observed_at)
+                settle='TIMEOUT'
+            elif facts['settled']:
+                pre,pre_events,pre_facts,pre_observed_at,pre_settled_observed_at=(
+                    candidate,events,facts,observed_at,settled_observed_at)
+                settle='SETTLED'
             sequence+=1
         if pre is None:
-            pre=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
-            pre_events=client.call('GET',f'/api/live/sessions/{ident}/events?since_seq=-1').get('events',[])
-        pre_facts=_settle_facts(pre,pre_events,last_speech_sample)
-        if not _stream_tail_silence: settle='SETTLED' if pre_facts['settled'] else 'TIMEOUT'
-        tail_latency_seconds=(round(time.monotonic()-last_speech_captured_at,6)
-                              if pre_facts['effective_covers_last_speech'] else None)
-        tail_endpoint_reason=_tail_endpoint_reason(pre_events,last_speech_sample)
+            pre,pre_events,pre_facts,pre_observed_at,pre_settled_observed_at=poll_snapshot()
+        if not _stream_tail_silence:
+            settle='SETTLED' if (pre_observed_at < settle_deadline and pre_facts['settled']) else 'TIMEOUT'
+        first_cover_latency_seconds=(round(first_cover_observed_at-last_speech_captured_at,6)
+                                     if first_cover_observed_at is not None else None)
+        tail_latency_seconds=(round(pre_settled_observed_at-last_speech_captured_at,6)
+                              if settle=='SETTLED' and pre_facts['effective_covers_last_speech'] else None)
+        tail_endpoint_reason_pre=_tail_endpoint_reason(pre_events,last_speech_sample)
     finally:
-        stopped=time.monotonic()
+        stopped=_clock()
         client.call('POST',f'/api/live/sessions/{ident}/stop',{'deadline':30})
-    deadline=time.monotonic()+240
+    deadline=_clock()+240
     while True:
         saved=client.call('GET',f'/api/meetings/{ident}')
-        if saved['status']!='active' or time.monotonic()>deadline: break
+        if saved['status']!='active' or _clock()>deadline: break
         time.sleep(.5)
+    # This is deliberately post-Stop; the scored pre surface above remains untouched.
+    post_stop_events=client.call('GET',f'/api/live/sessions/{ident}/events?since_seq=-1').get('events',[])
+    tail_endpoint_reason=_tail_endpoint_reason(post_stop_events,last_speech_sample)
     final=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
     # A fresh GET is the reopened saved surface, independently of the live snapshot.
     reopened=client.call('GET',f'/api/meetings/{ident}')
@@ -224,33 +259,35 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
         'final':score_lanes(snapshot_segments(final),refs,max_wer=QUALITY_BOUNDS['final_wer'][1],lane_switches=switches),
         'reopened':score_lanes((reopened.get('transcript') or {}).get('segments',[]),refs,max_wer=QUALITY_BOUNDS['final_wer'][1],lane_switches=switches),
     }
-    for score in surfaces.values():
-        score['identity_unqualified']=bool(score.get('identity_unqualified',False))
-        score['unattributed_segment_count']=int(score.get('unattributed_segment_count',0))
-        score['unattributed_word_count']=int(score.get('unattributed_word_count',0))
     # The file/URL bar is reported separately; it does not override live QUALITY_BOUNDS.
     file_url_bar = {name: all(v['wer'] is not None and v['wer'] <= .15 for v in result['lanes'].values())
                     for name, result in surfaces.items()}
     finalization=(final.get('snapshot') or {}).get('session',{}).get('finalization_status')
-    d31_passed=(settle=='SETTLED' and tail_endpoint_reason=='end_silence'
-                and not pre_facts['stop_requested'])
-    identity_qualified=all(not score.get('identity_unqualified',False) for score in surfaces.values())
+    d31_passed=(settle=='SETTLED' and tail_endpoint_reason_pre=='end_silence'
+                and tail_endpoint_reason!='stop_flush' and not pre_facts['stop_requested'])
+    identity_telemetry_missing=any(not _has_identity_telemetry(score) for score in surfaces.values())
+    identity_qualified=(not identity_telemetry_missing
+                        and all(not score['identity_unqualified'] for score in surfaces.values()))
     passed=(saved['status']=='completed' and finalization=='final' and d31_passed
             and all(s['passed'] for s in surfaces.values()) and identity_qualified)
     return dict(case=case,meeting=ident,passed=passed,expected_failure=False,
                 status=saved['status'],finalization_status=finalization,seconds=round(time.monotonic()-started,3),
                 stop_seconds=round(time.monotonic()-stopped,3),frames_per_lane=total,
                 microphone_gain=mic_gain,surfaces=surfaces,file_url_wer_bar=.15,file_url_wer_pass=file_url_bar,
-                tail_latency_seconds=tail_latency_seconds,tail_endpoint_reason=tail_endpoint_reason,
+                tail_latency_seconds=tail_latency_seconds,first_cover_latency_seconds=first_cover_latency_seconds,
+                tail_endpoint_reason_pre=tail_endpoint_reason_pre,tail_endpoint_reason=tail_endpoint_reason,
                 settle=settle,silence_frames_streamed=silence_frames_streamed,
-                pre_snapshot_status=pre_facts['status'],stop_requested_before_pre=pre_facts['stop_requested'])
+                pre_snapshot_status=pre_facts['status'],stop_requested_before_pre=pre_facts['stop_requested'],
+                identity_telemetry_missing=identity_telemetry_missing)
 
 
 def accepted_case(result):
     # Completion alone cannot hide a semantic failure on either supported lane case.
+    surfaces=tuple(result.get('surfaces',{}).values())
     return (result['status']=='completed' and result['finalization_status']=='final' and result['passed']
-            and all(not score.get('identity_unqualified',False)
-                    for score in result.get('surfaces',{}).values()))
+            and result.get('identity_telemetry_missing') is False and bool(surfaces)
+            and all(_has_identity_telemetry(score) and not score['identity_unqualified']
+                    for score in surfaces))
 
 
 def run_cases(base,context,case='both',mic_gain=DEFAULT_MIC_GAIN):

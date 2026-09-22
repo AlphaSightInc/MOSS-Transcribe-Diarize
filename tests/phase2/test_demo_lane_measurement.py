@@ -1,9 +1,16 @@
 import pytest
+from tests.e2e import verify_demo_lanes as demo
 from tests.e2e.verify_demo_lanes import reference_inputs, run_case
 
 @pytest.mark.parametrize('case', ['alternation','overlap'])
 @pytest.mark.parametrize('missing', [None, 'pre_terminal', 'final', 'reopened'])
-def test_lane_checks_reach_both_surfaces_and_reopen(case,missing):
+def test_lane_checks_reach_both_surfaces_and_reopen(case,missing,monkeypatch):
+    old_score=demo.score_lanes
+    def healthy_score(*args,**kwargs):
+        score=old_score(*args,**kwargs)
+        return {**score,'identity_unqualified':False,
+                'unattributed_segment_count':0,'unattributed_word_count':0}
+    monkeypatch.setattr(demo,'score_lanes',healthy_score)
     inputs=reference_inputs(1)
     rows=[dict(start=0 if lane=='system' or case=='overlap' else 29,
                end=len(data['pcm']) / (16000 * 2) if lane=='system' else 25 if case=='overlap' else 54,
@@ -49,7 +56,12 @@ def test_neither_interruption_nor_quality_failure_is_accepted():
     from tests.e2e.verify_demo_lanes import accepted_case
     assert not accepted_case(dict(status='interrupted',finalization_status='failed',passed=False,expected_failure=True))
     assert not accepted_case(dict(status='completed',finalization_status='final',passed=False,expected_failure=True))
-    assert accepted_case(dict(status='completed',finalization_status='final',passed=True,expected_failure=False))
+    healthy_surface={'identity_unqualified':False,
+                     'unattributed_segment_count':0,'unattributed_word_count':0}
+    assert accepted_case(dict(status='completed',finalization_status='final',passed=True,expected_failure=False,
+                              identity_telemetry_missing=False,
+                              surfaces={name:dict(healthy_surface)
+                                        for name in ('pre_terminal','final','reopened')}))
 
 
 def test_microphone_window_includes_source_sentence_tail_and_still_scores_additions():

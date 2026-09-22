@@ -70,7 +70,7 @@ def retained_metadata(value, key=''):
             return value
         if key in {'status', 'status_received', 'history_status', 'snapshot_status',
                    'finalization_status', 'verdict', 'phase', 'method', 'mode', 'lane', 'codec_name', 'reason_code',
-                   'tail_endpoint_reason', 'settle', 'pre_snapshot_status'} and value in _STATUS_VALUES:
+                   'tail_endpoint_reason', 'tail_endpoint_reason_pre', 'settle', 'pre_snapshot_status'} and value in _STATUS_VALUES:
             return value
         if key == 'exception' and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', value):
             return value
