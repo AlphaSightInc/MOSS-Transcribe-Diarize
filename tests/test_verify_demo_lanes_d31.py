@@ -64,6 +64,7 @@ def test_paused_live_tail_is_settled_and_gated_by_end_silence(monkeypatch):
                for score in result['surfaces'].values())
     assert result['status'] == 'completed'
     assert result['finalization_status'] == 'final'
+    assert demo.accepted_case(result) is True
 
 
 def test_no_silence_control_preserves_the_missing_pre_tail(monkeypatch):
@@ -100,20 +101,12 @@ def test_d31_row_fields_survive_retained_metadata():
     assert retained_metadata(row) == row
 
 
-def test_all_anonymous_surface_is_not_accepted_even_when_word_and_lane_checks_pass():
-    result={'status': 'completed', 'finalization_status': 'final', 'passed': True, 'surfaces': {
-        'pre_terminal': {'passed': True, 'identity_unqualified': True},
-        'final': {'passed': True, 'identity_unqualified': False},
-        'reopened': {'passed': True, 'identity_unqualified': False},
-    }}
+def test_all_anonymous_surface_is_not_accepted_even_when_word_and_lane_checks_pass(monkeypatch):
+    def anonymous_score(*args, **kwargs):
+        return {'passed': True, 'identity_unqualified': True,
+                'lanes': {'system': {'wer': 0.0}, 'microphone': {'wer': 0.0}}}
+    monkeypatch.setattr(demo, 'score_lanes', anonymous_score)
+    result=demo.run_case('https://unused',None,'overlap',client=_D31Client(pre_tail=True),realtime=False)
 
+    assert all(score['passed'] is True for score in result['surfaces'].values())
     assert demo.accepted_case(result) is False
-
-
-def test_named_surface_remains_accepted():
-    result={'status': 'completed', 'finalization_status': 'final', 'passed': True, 'surfaces': {
-        name: {'passed': True, 'identity_unqualified': False}
-        for name in ('pre_terminal', 'final', 'reopened')
-    }}
-
-    assert demo.accepted_case(result) is True
