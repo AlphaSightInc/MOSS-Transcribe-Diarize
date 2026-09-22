@@ -17,6 +17,42 @@ S17 = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(S17)
 
 
+def test_wait_for_stack_bootstraps_workspace_before_descriptor(monkeypatch) -> None:
+    calls: list[tuple[str, str]] = []
+
+    class Process:
+        @staticmethod
+        def poll() -> None:
+            return None
+
+    class Client:
+        def __init__(self, _base: str, _context: object) -> None:
+            self.bootstrapped = False
+
+        def call(self, method: str, path: str) -> dict[str, object]:
+            calls.append((method, path))
+            if (method, path) == ("POST", "/api/workspace/bootstrap"):
+                self.bootstrapped = True
+                return {"workspace_id": "workspace-a"}
+            if (method, path) == ("GET", "/api/live/descriptor"):
+                if not self.bootstrapped:
+                    raise PermissionError("descriptor requires a workspace cookie")
+                return {"descriptor": {}}
+            raise AssertionError((method, path))
+
+    from tests.e2e import verify_demo_lanes
+
+    monkeypatch.setattr(verify_demo_lanes, "Client", Client)
+    monkeypatch.setattr(S17.time, "sleep", lambda _seconds: None)
+
+    S17._wait_for_stack("https://127.0.0.1:1", Process())
+
+    assert calls == [
+        ("POST", "/api/workspace/bootstrap"),
+        ("GET", "/api/live/descriptor"),
+    ]
+
+
 def _rows() -> list[dict[str, object]]:
     custody = {
         "schema_version": "moss.terminal-identity-diagnostics.v3",
