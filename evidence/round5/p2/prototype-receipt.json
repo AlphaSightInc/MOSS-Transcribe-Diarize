@@ -26,5 +26,18 @@
   "harness_self_test": {
     "passed": 3,
     "failed": 0
+  },
+  "backend_suite": {
+    "passed": 2317,
+    "skipped": 5,
+    "xfailed": 2,
+    "failed": 0,
+    "subtests_passed": 37
+  },
+  "frontend_suite": {
+    "passed": 312,
+    "failed": 0,
+    "typecheck_clean": 1,
+    "build_clean": 1
   }
 }
