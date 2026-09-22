@@ -14,13 +14,14 @@ class _Clock:
 class _D31Client:
     def __init__(self, *, pre_tail: bool, endpoint_reason: str = 'end_silence',
                  post_endpoint_reason: str | None = None, snapshot_times=(), clock=None,
-                 settle_after: int = 1, segments=None):
+                 settle_after: int = 1, segments=None, empty_post_events: bool = False):
         self.pre_tail = pre_tail
         self.endpoint_reason = endpoint_reason
         self.post_endpoint_reason = post_endpoint_reason or endpoint_reason
         self.snapshot_times = tuple(snapshot_times)
         self.clock = clock
         self.settle_after = settle_after
+        self.empty_post_events = empty_post_events
         self.segments = segments or [{'start_sample': 0, 'end_sample': 10_000_000, 'source_lane': 'microphone'}]
         self.stopped = False
         self.post_events_available = True
@@ -38,6 +39,7 @@ class _D31Client:
 
     def _events(self):
         if self.stopped:
+            if self.empty_post_events: return []
             if not self.post_events_available: return []
             if not self.pre_tail:
                 return [{'seq': 4, 'kind': 'canonical_queued', 'payload': {
@@ -123,6 +125,18 @@ def test_post_stop_flush_rejects_an_otherwise_settled_tail(monkeypatch):
     assert result['tail_endpoint_reason_pre'] == 'end_silence'
     assert result['tail_endpoint_reason'] == 'stop_flush'
     assert result['passed'] is False
+
+
+def test_empty_post_stop_evidence_rejects_an_otherwise_settled_tail(monkeypatch):
+    monkeypatch.setattr(demo, 'score_lanes', _passing_score)
+    result=demo.run_case('https://unused',None,'overlap',client=_D31Client(
+        pre_tail=True,empty_post_events=True),realtime=False)
+
+    assert result['settle'] == 'SETTLED'
+    assert result['tail_endpoint_reason_pre'] == 'end_silence'
+    assert result['tail_endpoint_reason'] == 'none'
+    assert result['passed'] is False
+    assert demo.accepted_case(result) is False
 
 
 def test_hard_cap_does_not_satisfy_the_d31_end_silence_boundary(monkeypatch):

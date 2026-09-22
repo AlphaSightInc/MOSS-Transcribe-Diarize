@@ -272,7 +272,7 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
                     for name, result in surfaces.items()}
     finalization=(final.get('snapshot') or {}).get('session',{}).get('finalization_status')
     d31_passed=(settle=='SETTLED' and tail_endpoint_reason_pre=='end_silence'
-                and tail_endpoint_reason!='stop_flush' and not pre_facts['stop_requested'])
+                and tail_endpoint_reason=='end_silence' and not pre_facts['stop_requested'])
     identity_telemetry_missing=any(not _has_identity_telemetry(score) for score in surfaces.values())
     identity_qualified=(not identity_telemetry_missing
                         and all(not score['identity_unqualified'] for score in surfaces.values()))
