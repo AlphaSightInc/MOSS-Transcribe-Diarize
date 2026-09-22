@@ -29,7 +29,7 @@ Expected:
   no-silence is `TIMEOUT`/`none`; `hard_cap` is rejected. Retention preserves
   all six D31 fields. An all-anonymous correct-word surface is rejected while a
   named surface is accepted.
-- Full backend: 2,324 passed / 5 skipped / 2 xfailed / 0 failed; bundle: 22 passed.
+- Full backend: 2,323 passed / 5 skipped / 2 xfailed / 0 failed; bundle: 22 passed.
 - Decoder requests: 0. Frontend was intentionally untouched.
 
 Falsify if a product path changes, any D31 or identity control fails, the
