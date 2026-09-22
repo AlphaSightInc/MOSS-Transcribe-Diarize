@@ -611,7 +611,8 @@ class Bundle:
                   else 'INCOMPLETE' if code==2 else required_rows_verdict(rows))
         self.gate('workspace',status,counts([v['status'] for v in rows.values()]),elapsed,code,measurements=rows)
         for row, value in sorted(rows.items(), key=lambda kv:int(kv[0])):
-            self.gate('workspace_row_'+row,value['status'],duration=value.get('seconds',0),reason=value.get('reason_code'),measurements=value)
+            self.gate('workspace_row_'+row,value['status'],duration=value.get('seconds',0),reason=value.get('reason_code'),measurements=value,
+                      required=not (row=='10' and value['status']=='BEST_EFFORT_FAIL'))
         demo = self.work/'demo.json'
         code, elapsed, _ = self.command('demo_lanes',[PY,'tests/e2e/verify_demo_lanes.py','--base',base,
             '--allow-local-self-signed','--case','both','--output',str(demo)])

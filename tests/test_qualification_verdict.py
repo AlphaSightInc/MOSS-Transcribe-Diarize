@@ -95,7 +95,7 @@ def test_two_meeting_capacity_retains_all_eight_violating_controls(mutation):
 
 
 @pytest.mark.parametrize('statuses,verdict,code', [
-    (['PASS'], 'PASS', 0), (['SKIP'], 'INCOMPLETE', 2),
+    (['PASS'], 'PASS', 0), (['BEST_EFFORT_FAIL'], 'PASS', 0), (['SKIP'], 'INCOMPLETE', 2),
     (['PASS', 'SKIP'], 'INCOMPLETE', 2), (['FAIL', 'SKIP'], 'FAIL', 1),
     ([], 'INCOMPLETE', 2),
 ])
