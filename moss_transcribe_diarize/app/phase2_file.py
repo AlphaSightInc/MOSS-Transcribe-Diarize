@@ -122,8 +122,10 @@ class _RetainedReservation:
     retained_lock: Any
     interrupted: bool = False
     settlement: asyncio.Task[tuple[str, ...]] | None = None
+    claim_settlement: asyncio.Task[tuple[str, ...]] | None = None
     resumed: bool = True
     terminal_settled: bool = False
+    validation_finished: bool = False
 
 
 @dataclass(slots=True)
@@ -272,6 +274,8 @@ class FileMeetingTasks:
                     await asyncio.shield(validation)
                     raise
                 except Exception as exc:
+                    if reservation.interrupted:
+                        return False
                     if attempt + 1 == RETAINED_VALIDATION_ATTEMPTS:
                         raise _RetainedValidationError(str(exc)) from exc
                     LOGGER.warning(
@@ -310,9 +314,19 @@ class FileMeetingTasks:
             )
             self._reservations.pop(handle.meeting_id, None)
             reservation.retained_lock = None
-            await started.wait()
+            started_wait = asyncio.create_task(started.wait())
+            try:
+                await asyncio.wait(
+                    (started_wait, task),
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+            finally:
+                if not started_wait.done():
+                    started_wait.cancel()
+                    await asyncio.gather(started_wait, return_exceptions=True)
             return True
         finally:
+            reservation.validation_finished = True
             if not claim.background:
                 self._reservations.pop(handle.meeting_id, None)
                 self._release_retained_lock(reservation.retained_lock)
@@ -397,29 +411,51 @@ class FileMeetingTasks:
         self,
         reservation: _RetainedReservation,
     ) -> None:
-        if (
-            not reservation.terminal_settled
-            and (await reservation.handle.snapshot()).status == "active"
-        ):
+        if not reservation.validation_finished:
             return
-        self._remove_terminal_work_dir(reservation.owner_dir)
+        if not reservation.terminal_settled and (
+            await reservation.handle.snapshot()
+        ).status == "active":
+            return
+        if reservation.owner_dir.exists():
+            self._remove_terminal_work_dir(reservation.owner_dir)
+
+    def _record_reservation_settled(
+        self,
+        reservation: _RetainedReservation,
+    ) -> None:
+        reservation.terminal_settled = True
+        if reservation.validation_finished:
+            self._remove_terminal_work_dir(reservation.owner_dir)
 
     async def _interrupt_refused_reservation(
         self,
         reservation: _RetainedReservation,
     ) -> None:
-        handle = reservation.handle
-        if self._audio_archive is None:
-            raise RuntimeError("File Meeting audio archive is unavailable.")
-        await handle.recover_interrupted_file_audio(self._audio_archive)
-        await handle.finish("interrupted")
-        self._remove_terminal_work_dir(reservation.owner_dir)
-        self._refused_retained_work.pop(handle.meeting_id, None)
+        if reservation.claim_settlement is None:
+            reservation.claim_settlement = asyncio.create_task(
+                self._settle_entries((reservation,))
+            )
+        await asyncio.shield(reservation.claim_settlement)
+        await self._remove_settled_reservation(reservation)
+        self._refused_retained_work.pop(reservation.handle.meeting_id, None)
 
     async def _fail_retained_reservation(
         self,
         reservation: _RetainedReservation,
     ) -> None:
+        if reservation.claim_settlement is None:
+            reservation.claim_settlement = asyncio.create_task(
+                self._settle_failed_reservation(reservation)
+            )
+        await asyncio.shield(reservation.claim_settlement)
+        await self._remove_settled_reservation(reservation)
+        self._refused_retained_work.pop(reservation.handle.meeting_id, None)
+
+    async def _settle_failed_reservation(
+        self,
+        reservation: _RetainedReservation,
+    ) -> tuple[str, ...]:
         handle = reservation.handle
         if self._audio_archive is None:
             raise RuntimeError("File Meeting audio archive is unavailable.")
@@ -429,9 +465,10 @@ class FileMeetingTasks:
             "resume_failed",
             "Retained File restart could not finish.",
         )
-        if recorded:
-            self._remove_terminal_work_dir(reservation.owner_dir)
-        self._refused_retained_work.pop(handle.meeting_id, None)
+        if not recorded:
+            return await self._settle_entries((reservation,))
+        self._record_reservation_settled(reservation)
+        return (handle.meeting_id,)
 
     @staticmethod
     def _retained_resume_done(task: asyncio.Task[None]) -> None:
@@ -713,17 +750,28 @@ class FileMeetingTasks:
             try:
                 snapshot = await entry.handle.snapshot()
             except AccountRevoked:
+                if isinstance(entry, _RetainedReservation):
+                    self._record_reservation_settled(entry)
                 continue
             if snapshot.status != "active":
+                if isinstance(entry, _RetainedReservation):
+                    self._record_reservation_settled(entry)
                 continue
             if self._audio_archive is None:
                 raise RuntimeError("File Meeting audio archive is unavailable.")
             await entry.handle.recover_interrupted_file_audio(self._audio_archive)
+            if (
+                isinstance(entry, _RetainedReservation)
+                and entry.claim_settlement is not None
+                and entry.claim_settlement is not asyncio.current_task()
+            ):
+                await asyncio.shield(entry.claim_settlement)
+                continue
             await entry.handle.finish("interrupted", failure_code=failure_code)
             if isinstance(entry, _OwnedFileTask):
                 self._remove_terminal_work_dir(self._owner_dir(entry.handle))
             else:
-                entry.terminal_settled = True
+                self._record_reservation_settled(entry)
                 LOGGER.info(
                     "Retained File reservation durably interrupted: %s",
                     entry.handle.meeting_id,
@@ -899,6 +947,8 @@ class FileMeetingTasks:
         resume_source = self._retained_resume_source(input_path, checkpoint_dir)
         if resume_source is None:
             return None
+        if not resume_source.checkpoint_bound:
+            return resume_source
         verdict = self._checkpoint_verdict(resume_source.source, checkpoint_dir)
         if getattr(verdict, "status", None) == "error":
             raise _RetainedValidationError(str(verdict.reason))
@@ -925,10 +975,12 @@ class FileMeetingTasks:
             )
         try:
             checkpoint_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, UnicodeDecodeError):
             return None
         except OSError as exc:
             raise _RetainedValidationError("checkpoint manifest unavailable") from exc
+        if not isinstance(checkpoint_manifest, dict):
+            return None
         source_sha256 = checkpoint_manifest.get("source_sha256")
         if not isinstance(source_sha256, str):
             return None
@@ -1120,7 +1172,11 @@ class FileMeetingTasks:
             resume_source is not None and resume_source.checkpoint_bound
         )
         mix_path = resume_source.mix_path if checkpoint_bound else None
-        mix_failed = False
+        mix_failed = bool(
+            checkpoint_bound
+            and resume_source is not None
+            and resume_source.mix_path is None
+        )
         if self._audio_archive is not None and not checkpoint_bound:
             candidate = input_path.parent / "transcription-mix.wav"
             try:
@@ -1183,7 +1239,8 @@ class FileMeetingTasks:
             return
 
         try:
-            await handle.commit_transcript(document)
+            if not resumed or (await handle.snapshot()).transcript != document:
+                await handle.commit_transcript(document)
         except AccountRevoked:
             # Revocation/interruption is already the durable terminal authority. A late result
             # must disappear rather than reconstructing a handle from its Meeting identifier.

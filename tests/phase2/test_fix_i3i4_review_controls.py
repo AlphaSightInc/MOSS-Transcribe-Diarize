@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import shutil
 import sqlite3
 import threading
 from pathlib import Path
@@ -299,17 +300,44 @@ def test_t4_checkpoint_validation_honest_shapes_and_side_effects(tmp_path):
     decoder.fail_window = 2
     runner = _runner(decoder)
     tasks = FileMeetingTasks(runner, tmp_path / "file-work")
+
+    def live_result(target_tasks, checkpoint, meeting_id):
+        handle = SimpleNamespace(owner_key=("account-a", 1), meeting_id=meeting_id)
+        owner_dir = target_tasks.retained_root / "account-a" / meeting_id
+        owner_dir.mkdir(parents=True)
+        retained = owner_dir / "input.wav"
+        retained.write_bytes(source.read_bytes())
+        if checkpoint.is_dir():
+            shutil.copytree(checkpoint, owner_dir / "checkpoint")
+        (owner_dir / "owner.json").write_text(
+            json.dumps(
+                {
+                    "account_id": "account-a",
+                    "meeting_id": meeting_id,
+                    "ingress": "file",
+                    "source": retained.name,
+                    "checkpoint": "checkpoint",
+                    "contract_version": RETAINED_FILE_WORK_CONTRACT_VERSION,
+                }
+            ),
+            encoding="utf-8",
+        )
+        return target_tasks._verified_retained_resume_source(handle, owner_dir)
+
     valid = tmp_path / "valid"
     with pytest.raises(WindowTranscriptionError):
         runner.transcribe(source, checkpoint_dir=valid)
     decoder.fail_window = None
     assert tasks._checkpoint_is_valid(source, valid) is True
+    assert live_result(tasks, valid, "valid").checkpoint_bound is True
     empty = tmp_path / "empty"
     empty.mkdir()
     assert tasks._checkpoint_is_valid(source, empty) is True
+    assert live_result(tasks, empty, "empty").checkpoint_bound is False
     assert not (empty / "manifest.json").exists()
     missing = tmp_path / "missing"
     tasks._checkpoint_is_valid(source, missing)
+    assert live_result(tasks, missing, "missing") is None
     assert not missing.exists()
 
     def silent_wav_extract(
@@ -339,6 +367,7 @@ def test_t4_checkpoint_validation_honest_shapes_and_side_effects(tmp_path):
         speechless_runner.transcribe(source, checkpoint_dir=speechless_dir)
     speechless_tasks = FileMeetingTasks(speechless_runner, tmp_path / "file-work")
     assert speechless_tasks._checkpoint_is_valid(source, speechless_dir) is True
+    assert live_result(speechless_tasks, speechless_dir, "speechless").checkpoint_bound is True
 
 
 class _CopyMixArchive:
