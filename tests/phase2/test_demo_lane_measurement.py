@@ -37,9 +37,9 @@ def test_lane_checks_reach_both_surfaces_and_reopen(case,missing,monkeypatch):
                     'effective_transcript':rows[:1] if missing==name else rows}}}
             if path.endswith('events?since_seq=-1'):
                 return {'events':[
-                    {'seq':1,'kind':'span_frozen','payload':{'start_sample':0,'end_sample':2_000_000,'reason':'end_silence'}},
+                    {'seq':1,'kind':'span_frozen','payload':{'span_id':1,'start_sample':0,'end_sample':2_000_000,'reason':'end_silence'}},
                     {'seq':2,'kind':'canonical_queued','payload':{'item_id':1}},
-                    {'seq':3,'kind':'canonical_processed','payload':{'item_id':1}},
+                    {'seq':3,'kind':'canonical_processed','payload':{'item_id':1,'span_id':1}},
                 ]}
             if path.startswith('/api/meetings/'):
                 self.reads+=1

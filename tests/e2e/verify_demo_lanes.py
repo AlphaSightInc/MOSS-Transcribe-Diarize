@@ -104,6 +104,19 @@ def _session_snapshot(envelope):
 
 
 def _tail_endpoint_reason(events,last_speech_sample):
+    partition=_tail_partition(events,last_speech_sample)
+    if partition is None:
+        # Runtime emits the Stop-created endpoint partition as a public queued item
+        # (`reason=stop`), while only frame-created partitions have `span_frozen`.
+        if any(isinstance(event,dict) and event.get('kind')=='canonical_queued'
+               and (event.get('payload') or {}).get('reason')=='stop' for event in events):
+            return 'stop_flush'
+        return 'none'
+    return partition['reason'] if partition['reason'] in _TAIL_ENDPOINT_REASONS else 'none'
+
+
+def _tail_partition(events,last_speech_sample):
+    """The endpoint partition that owns the final captured non-silent sample."""
     candidates=[]
     for event in events:
         if not isinstance(event,dict) or event.get('kind')!='span_frozen': continue
@@ -112,16 +125,11 @@ def _tail_endpoint_reason(events,last_speech_sample):
             start,end=int(payload['start_sample']),int(payload['end_sample'])
         except (KeyError,TypeError,ValueError): continue
         if start < last_speech_sample <= end:
-            candidates.append((end,start,int(event.get('seq',-1)),payload.get('reason')))
-    if not candidates:
-        # Runtime emits the Stop-created endpoint partition as a public queued item
-        # (`reason=stop`), while only frame-created partitions have `span_frozen`.
-        if any(isinstance(event,dict) and event.get('kind')=='canonical_queued'
-               and (event.get('payload') or {}).get('reason')=='stop' for event in events):
-            return 'stop_flush'
-        return 'none'
-    reason=max(candidates)[3]
-    return reason if reason in _TAIL_ENDPOINT_REASONS else 'none'
+            span_id=payload.get('span_id')
+            candidates.append((end,start,int(event.get('seq',-1)),span_id,payload.get('reason')))
+    if not candidates: return None
+    end,start,_seq,span_id,reason=max(candidates)
+    return dict(start_sample=start,end_sample=end,span_id=span_id,reason=reason)
 
 
 def _settle_facts(envelope,events,last_speech_sample):
@@ -132,18 +140,37 @@ def _settle_facts(envelope,events,last_speech_sample):
     processed={str((event.get('payload') or {}).get('item_id')) for event in events
                if isinstance(event,dict) and event.get('kind')=='canonical_processed'
                and (event.get('payload') or {}).get('item_id') is not None}
-    effective_covers_last_speech=any(
-        int(segment.get('start_sample',last_speech_sample)) < last_speech_sample <= int(segment.get('end_sample',0))
-        for segment in snapshot_segments(envelope) if isinstance(segment,dict))
     stop_requested=any(isinstance(event,dict) and event.get('kind')=='stop_requested' for event in events)
     pending_work=snapshot.get('pending_work_items')
     committed_samples=session.get('committed_samples')
+    tail_partition=_tail_partition(events,last_speech_sample)
+    processed_span_ids={str((event.get('payload') or {}).get('span_id')) for event in events
+                        if isinstance(event,dict) and event.get('kind')=='canonical_processed'
+                        and (event.get('payload') or {}).get('span_id') is not None}
+    tail_words_present=False
+    tail_partition_processed=False
+    tail_partition_committed=False
+    if tail_partition is not None:
+        tail_start=tail_partition['start_sample']
+        tail_words_present=any(
+            int(segment.get('start_sample',-1)) >= tail_start
+            for segment in snapshot_segments(envelope) if isinstance(segment,dict))
+        tail_partition_processed=(tail_partition['span_id'] is not None
+                                  and str(tail_partition['span_id']) in processed_span_ids)
+        tail_partition_committed=(isinstance(committed_samples,int)
+                                  and committed_samples>=tail_partition['end_sample'])
+    # Word timestamps can end before the final PCM sample.  The partition owns that
+    # sample; require its own process/commit witness, not a decoder word-end timestamp.
+    # A committed partition that decoded to no words is still fully covered.
+    effective_covers_last_speech=(tail_partition_committed
+                                  and (not tail_words_present or tail_partition_processed))
     settled=(session.get('status')=='active' and not stop_requested
              and not session.get('pending_span_ids') and pending_work==0
              and isinstance(committed_samples,int) and committed_samples>=last_speech_sample
              and not (queued-processed) and effective_covers_last_speech)
     return dict(settled=settled,status=session.get('status'),stop_requested=stop_requested,
                 effective_covers_last_speech=effective_covers_last_speech,
+                tail_words_present=tail_words_present,
                 pending_canonical_item_count=len(queued-processed))
 
 
@@ -286,7 +313,8 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
                 tail_endpoint_reason_pre=tail_endpoint_reason_pre,tail_endpoint_reason=tail_endpoint_reason,
                 settle=settle,silence_frames_streamed=silence_frames_streamed,
                 pre_snapshot_status=pre_facts['status'],stop_requested_before_pre=pre_facts['stop_requested'],
-                identity_telemetry_missing=identity_telemetry_missing)
+                identity_telemetry_missing=identity_telemetry_missing,
+                tail_words_present=pre_facts['tail_words_present'])
 
 
 def accepted_case(result):
