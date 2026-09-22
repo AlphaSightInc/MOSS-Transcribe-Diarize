@@ -168,7 +168,6 @@ async def _account_enabled(app, account_id: str) -> int:
 
 # =========================================================================== S1 / S2
 # Fence settlement reconciles audio BEFORE it checks for the claim's own settlement.
-@pytest.mark.xfail(strict=True, reason="S1: fence must join claim settlement before audio")
 @pytest.mark.parametrize("fence", ["interrupt", "revoke"])
 @pytest.mark.parametrize("claim,audio", [("refused", "none"), ("error", "none"), ("refused", "available")])
 def test_s1_fence_joining_claim_settlement_reconciles_audio_once_and_answers_truthfully(
@@ -201,11 +200,10 @@ def test_s1_fence_joining_claim_settlement_reconciles_audio_once_and_answers_tru
                 else {"command": "accounts.revoke", "account_id": account.account_id}
             )
             answer_task = asyncio.create_task(_control(control, request))
-            assert await asyncio.to_thread(entered[1].wait, 10)      # fence settlement read audio
+            assert not await asyncio.to_thread(entered[1].wait, 0.2)  # fence joins before audio
             gates[0].set()                                          # claim settlement finishes first
             await tasks._retained_resume_task
             status_when_fence_resumes = (await _snapshot(app, handle)).status
-            gates[1].set()
             answer = await answer_task
             retry = None
             if fence == "revoke":
@@ -240,7 +238,6 @@ def test_s1_fence_joining_claim_settlement_reconciles_audio_once_and_answers_tru
 
 # =========================================================================== S3
 # A reservation's settlement task is cached; a later fence re-reads its old result.
-@pytest.mark.xfail(strict=True, reason="S3: later calls must not reuse a cached answer")
 @pytest.mark.parametrize("first", ["interrupt", "revoke"])
 def test_s3_second_fence_after_settlement_reports_what_this_call_did(tmp_path, monkeypatch, first):
     async def exercise():
@@ -285,7 +282,6 @@ def test_s3_second_fence_after_settlement_reports_what_this_call_did(tmp_path, m
 
 # =========================================================================== S4
 # stop() while the claim's own settlement is in flight.
-@pytest.mark.xfail(strict=True, reason="S4: stop must join or cancel claim settlements")
 @pytest.mark.parametrize("how", ["lifespan_exit", "direct_stop"])
 def test_s4_stop_joins_or_cancels_the_claim_settlement(tmp_path, monkeypatch, how):
     async def exercise():
@@ -344,7 +340,6 @@ def test_s4_stop_joins_or_cancels_the_claim_settlement(tmp_path, monkeypatch, ho
 # =========================================================================== S5
 # Coordinator cancelled before its children's first step (direct API; the lifespan always
 # awaits SQLite I/O between resume_retained_work() and any stop()).
-@pytest.mark.xfail(strict=True, reason="S5: coordinator exit must unlist and unlock reservations")
 @pytest.mark.parametrize("yield_first", [False, True])
 def test_s5_coordinator_cannot_end_with_a_listed_reservation(tmp_path, yield_first):
     async def exercise():
@@ -374,7 +369,6 @@ def test_s5_coordinator_cannot_end_with_a_listed_reservation(tmp_path, yield_fir
 
 # =========================================================================== S6
 # Fence landing during the retry backoff: does the loop still start another attempt?
-@pytest.mark.xfail(strict=True, reason="S6: no validation may start after a fence")
 def test_s6_retry_loop_starts_no_attempt_after_a_fence(tmp_path, monkeypatch):
     async def exercise():
         _a, _s, (handle,), (owner,) = await _seed(tmp_path)
@@ -407,7 +401,6 @@ def test_s6_retry_loop_starts_no_attempt_after_a_fence(tmp_path, monkeypatch):
 
 # =========================================================================== S7
 # A reservation fenced while waiting for a bound-4 slot still acquires a slot and validates.
-@pytest.mark.xfail(strict=True, reason="S7: fenced reservation must not take a validation slot")
 def test_s7_fenced_reservation_waiting_for_a_slot_does_not_take_one(tmp_path, monkeypatch):
     async def exercise():
         _a, _s, handles, owners = await _seed(tmp_path, count=5)
@@ -448,7 +441,6 @@ def test_s7_fenced_reservation_waiting_for_a_slot_does_not_take_one(tmp_path, mo
 
 # =========================================================================== S8
 # Claim exception: the refused path's own settlement fails once (transient finish error).
-@pytest.mark.xfail(strict=True, reason="S8: failed refused settlement must fall back to failed")
 def test_s8_failed_refused_settlement_still_falls_back_to_failed(tmp_path, monkeypatch):
     async def exercise():
         _a, _s, (handle,), (owner,) = await _seed(tmp_path)
@@ -478,6 +470,33 @@ def test_s8_failed_refused_settlement_still_falls_back_to_failed(tmp_path, monke
     result = asyncio.run(exercise())
     print(f"\nS8 {result}")
     assert result["status"] != "active", result
+
+
+# =========================================================================== S9 ruling
+def test_s9_cleanup_log_names_ids_and_next_sweep_retries(tmp_path, monkeypatch, caplog):
+    tasks = FileMeetingTasks(object(), tmp_path / "file-work")
+    account_id = "account-a"
+    meeting_id = "meeting-a"
+    owner = tasks.retained_root / account_id / meeting_id
+    owner.mkdir(parents=True)
+    (owner / "input.wav").write_bytes(b"retained source")
+    original = tasks._remove_retained_work_dir
+    removable = False
+
+    def controlled_remove(path):
+        if not removable:
+            raise OSError("controlled cleanup failure")
+        original(path)
+
+    monkeypatch.setattr(tasks, "_remove_retained_work_dir", controlled_remove)
+    with caplog.at_level("WARNING"):
+        tasks.reclaim_terminal_retained_work(((account_id, meeting_id),))
+    assert account_id in caplog.text and meeting_id in caplog.text
+    assert owner.exists()
+
+    removable = True
+    tasks.reclaim_terminal_retained_work(((account_id, meeting_id),))
+    assert not owner.exists()
 
 
 # =========================================================================== S10 (Q2)
@@ -539,7 +558,6 @@ def test_s10_task_completing_just_before_interrupt_answers_no_change(tmp_path, m
 # The settlement now removes a reservation's dir after its durable finish; an rmtree error
 # turns a durable interruption into a reported failure (the A6 shape: validation returned
 # while the fence settlement was reconciling audio).
-@pytest.mark.xfail(strict=True, reason="S11: cleanup failure must not fail durable interruption")
 @pytest.mark.parametrize("fence", ["interrupt", "revoke"])
 def test_s11_unremovable_reservation_dir_after_durable_interrupt_reports_truth(tmp_path, monkeypatch, fence):
     async def exercise():
@@ -575,7 +593,15 @@ def test_s11_unremovable_reservation_dir_after_durable_interrupt_reports_truth(t
                 await app.state.phase2_file_tasks._retained_resume_task
                 gates[0].set()
                 answer = await answer_task
-                durable = (await _snapshot(app, handle)).status
+                if fence == "interrupt":
+                    durable = (await _snapshot(app, handle)).status
+                else:
+                    cursor = await app.state.phase2_store._connection.execute(
+                        "SELECT status FROM meetings WHERE meeting_id = ?",
+                        (handle.meeting_id,),
+                    )
+                    durable = (await cursor.fetchone())["status"]
+                    await cursor.close()
                 enabled = await _account_enabled(app, account.account_id)
         finally:
             sealed.chmod(stat.S_IRWXU)
@@ -590,7 +616,6 @@ def test_s11_unremovable_reservation_dir_after_durable_interrupt_reports_truth(t
 # =========================================================================== S3b (Q2)
 # The cached reservation settlement also re-serves a *failed* settlement: an operator retry
 # during the validation window cannot retry.
-@pytest.mark.xfail(strict=True, reason="S3b: failed settlement must be retried")
 def test_s3b_operator_retry_after_transient_settlement_failure_is_a_real_retry(tmp_path, monkeypatch):
     async def exercise():
         _a, _s, (handle,), (owner,) = await _seed(tmp_path)

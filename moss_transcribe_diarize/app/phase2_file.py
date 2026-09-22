@@ -199,6 +199,8 @@ class FileMeetingTasks:
         self._fenced_meeting_ids: set[str] = set()
         self._refused_retained_work: dict[str, tuple[Any, Path]] = {}
         self._retained_resume_task: asyncio.Task[None] | None = None
+        self._retained_claim_tasks: set[asyncio.Task[None]] = set()
+        self._reservation_settlements: set[asyncio.Task[tuple[str, ...]]] = set()
 
     @property
     def work_root(self) -> Path:
@@ -260,6 +262,8 @@ class FileMeetingTasks:
         try:
             validated_source = None
             for attempt in range(RETAINED_VALIDATION_ATTEMPTS):
+                if reservation.interrupted:
+                    return False
                 LOGGER.info("Retained File validation started: %s", handle.meeting_id)
                 validation = asyncio.create_task(
                     asyncio.to_thread(
@@ -285,6 +289,8 @@ class FileMeetingTasks:
                     await asyncio.sleep(
                         RETAINED_VALIDATION_BACKOFF_SECONDS * (2**attempt)
                     )
+                    if reservation.interrupted:
+                        return False
                     continue
                 break
             if reservation.interrupted:
@@ -362,7 +368,11 @@ class FileMeetingTasks:
             asyncio.create_task(self._resume_one_retained_claim(claim, bound))
             for claim in claims
         )
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        self._retained_claim_tasks.update(tasks)
+        try:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+        finally:
+            self._retained_claim_tasks.difference_update(tasks)
         for result in results:
             if isinstance(result, BaseException) and not isinstance(
                 result, asyncio.CancelledError
@@ -377,7 +387,10 @@ class FileMeetingTasks:
         reservation = claim.reservation if isinstance(claim, _RetainedClaim) else None
         try:
             async with bound:
-                accepted = await claim
+                if reservation is not None and reservation.interrupted:
+                    accepted = False
+                else:
+                    accepted = await claim
             if reservation is None:
                 return
             if reservation.interrupted:
@@ -418,7 +431,19 @@ class FileMeetingTasks:
         ).status == "active":
             return
         if reservation.owner_dir.exists():
+            self._remove_reservation_work(reservation)
+
+    def _remove_reservation_work(
+        self,
+        reservation: _RetainedReservation,
+    ) -> None:
+        try:
             self._remove_terminal_work_dir(reservation.owner_dir)
+        except OSError:
+            LOGGER.warning(
+                "Retained File reservation cleanup failed: %s",
+                reservation.handle.meeting_id,
+            )
 
     def _record_reservation_settled(
         self,
@@ -426,15 +451,23 @@ class FileMeetingTasks:
     ) -> None:
         reservation.terminal_settled = True
         if reservation.validation_finished:
-            self._remove_terminal_work_dir(reservation.owner_dir)
+            self._remove_reservation_work(reservation)
+
+    def _track_reservation_settlement(
+        self,
+        settlement: asyncio.Task[tuple[str, ...]],
+    ) -> asyncio.Task[tuple[str, ...]]:
+        self._reservation_settlements.add(settlement)
+        settlement.add_done_callback(self._reservation_settlements.discard)
+        return settlement
 
     async def _interrupt_refused_reservation(
         self,
         reservation: _RetainedReservation,
     ) -> None:
-        if reservation.claim_settlement is None:
-            reservation.claim_settlement = asyncio.create_task(
-                self._settle_entries((reservation,))
+        if reservation.claim_settlement is None or reservation.claim_settlement.done():
+            reservation.claim_settlement = self._track_reservation_settlement(
+                asyncio.create_task(self._settle_entries((reservation,)))
             )
         await asyncio.shield(reservation.claim_settlement)
         await self._remove_settled_reservation(reservation)
@@ -444,9 +477,9 @@ class FileMeetingTasks:
         self,
         reservation: _RetainedReservation,
     ) -> None:
-        if reservation.claim_settlement is None:
-            reservation.claim_settlement = asyncio.create_task(
-                self._settle_failed_reservation(reservation)
+        if reservation.claim_settlement is None or reservation.claim_settlement.done():
+            reservation.claim_settlement = self._track_reservation_settlement(
+                asyncio.create_task(self._settle_failed_reservation(reservation))
             )
         await asyncio.shield(reservation.claim_settlement)
         await self._remove_settled_reservation(reservation)
@@ -498,7 +531,12 @@ class FileMeetingTasks:
                     self._retained_root / account_id / meeting_id
                 )
             except OSError:
-                LOGGER.warning("Retained File owner cleanup failed; skipping.")
+                LOGGER.warning(
+                    "Retained File owner cleanup failed; account=%s meeting=%s; "
+                    "retrying next boot.",
+                    account_id,
+                    meeting_id,
+                )
 
     def retained_work_owners(self) -> tuple[tuple[str, str], ...]:
         """Return exact two-level owner directories that currently exist on disk."""
@@ -614,7 +652,21 @@ class FileMeetingTasks:
         retained_resume_task = self._retained_resume_task
         if retained_resume_task is not None and not retained_resume_task.done():
             retained_resume_task.cancel()
-            await asyncio.gather(retained_resume_task, return_exceptions=True)
+        claim_tasks = tuple(self._retained_claim_tasks)
+        settlements = tuple(self._reservation_settlements)
+        for task in (*claim_tasks, *settlements):
+            task.cancel()
+        pending = tuple(
+            task
+            for task in (retained_resume_task, *claim_tasks, *settlements)
+            if task is not None
+        )
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
+        for meeting_id, reservation in tuple(self._reservations.items()):
+            self._reservations.pop(meeting_id, None)
+            self._release_retained_lock(reservation.retained_lock)
+            reservation.retained_lock = None
         tasks = tuple(entry.task for entry in self._tasks.values())
         for meeting_id, entry in tuple(self._tasks.items()):
             self._cancel_queued_inference(meeting_id)
@@ -720,9 +772,14 @@ class FileMeetingTasks:
         *,
         failure_code: str | None = None,
     ) -> asyncio.Task[tuple[str, ...]]:
-        if entry.settlement is None:
-            entry.settlement = asyncio.create_task(
+        if entry.settlement is None or entry.settlement.done():
+            settlement = asyncio.create_task(
                 self._settle_entries((entry,), failure_code=failure_code)
+            )
+            entry.settlement = (
+                self._track_reservation_settlement(settlement)
+                if isinstance(entry, _RetainedReservation)
+                else settlement
             )
         return entry.settlement
 
@@ -747,9 +804,24 @@ class FileMeetingTasks:
                     raise RuntimeError("File Meeting could not be quiesced.") from result
         interrupted: list[str] = []
         for entry in entries:
+            if isinstance(entry, _RetainedReservation):
+                claim_settlement = entry.claim_settlement
+                if (
+                    claim_settlement is not None
+                    and claim_settlement is not asyncio.current_task()
+                ):
+                    if claim_settlement.done() and (
+                        claim_settlement.cancelled()
+                        or claim_settlement.exception() is not None
+                    ):
+                        if entry.claim_settlement is claim_settlement:
+                            entry.claim_settlement = None
+                    else:
+                        await asyncio.shield(claim_settlement)
+                        continue
             try:
                 snapshot = await entry.handle.snapshot()
-            except AccountRevoked:
+            except (AccountRevoked, KeyError):
                 if isinstance(entry, _RetainedReservation):
                     self._record_reservation_settled(entry)
                 continue
@@ -759,15 +831,14 @@ class FileMeetingTasks:
                 continue
             if self._audio_archive is None:
                 raise RuntimeError("File Meeting audio archive is unavailable.")
-            await entry.handle.recover_interrupted_file_audio(self._audio_archive)
-            if (
-                isinstance(entry, _RetainedReservation)
-                and entry.claim_settlement is not None
-                and entry.claim_settlement is not asyncio.current_task()
-            ):
-                await asyncio.shield(entry.claim_settlement)
-                continue
-            await entry.handle.finish("interrupted", failure_code=failure_code)
+            try:
+                await entry.handle.recover_interrupted_file_audio(self._audio_archive)
+                await entry.handle.finish("interrupted", failure_code=failure_code)
+            except AccountRevoked:
+                if isinstance(entry, _RetainedReservation):
+                    self._record_reservation_settled(entry)
+                    continue
+                raise
             if isinstance(entry, _OwnedFileTask):
                 self._remove_terminal_work_dir(self._owner_dir(entry.handle))
             else:
