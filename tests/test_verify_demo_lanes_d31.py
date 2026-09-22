@@ -23,6 +23,7 @@ class _D31Client:
         self.settle_after = settle_after
         self.segments = segments or [{'start_sample': 0, 'end_sample': 10_000_000, 'source_lane': 'microphone'}]
         self.stopped = False
+        self.post_events_available = True
         self.live_snapshot_reads = 0
         self.active_event_reads = 0
 
@@ -37,9 +38,10 @@ class _D31Client:
 
     def _events(self):
         if self.stopped:
+            if not self.post_events_available: return []
             if not self.pre_tail:
-                return [{'seq': 4, 'kind': 'span_frozen', 'payload': {
-                    'start_sample': 0, 'end_sample': 10_000_000, 'reason': 'stop_flush'}}]
+                return [{'seq': 4, 'kind': 'canonical_queued', 'payload': {
+                    'item_id': 8, 'reason': 'stop'}}]
             return [{'seq': 1, 'kind': 'span_frozen', 'payload': {
                 'start_sample': 0, 'end_sample': 10_000_000, 'reason': self.post_endpoint_reason}},
                     {'seq': 2, 'kind': 'canonical_queued', 'payload': {'item_id': 7}},
@@ -69,6 +71,7 @@ class _D31Client:
             self.stopped = True
             return self._snapshot()
         if path == '/api/meetings/meeting':
+            if self.stopped: self.post_events_available = False
             return {'status': 'completed', 'transcript': {'segments': self.segments}}
         if path.endswith('/heartbeat') or path.endswith('/frames'): return {}
         raise AssertionError((method, path, body))

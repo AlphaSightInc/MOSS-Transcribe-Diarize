@@ -113,7 +113,13 @@ def _tail_endpoint_reason(events,last_speech_sample):
         except (KeyError,TypeError,ValueError): continue
         if start < last_speech_sample <= end:
             candidates.append((end,start,int(event.get('seq',-1)),payload.get('reason')))
-    if not candidates: return 'none'
+    if not candidates:
+        # Runtime emits the Stop-created endpoint partition as a public queued item
+        # (`reason=stop`), while only frame-created partitions have `span_frozen`.
+        if any(isinstance(event,dict) and event.get('kind')=='canonical_queued'
+               and (event.get('payload') or {}).get('reason')=='stop' for event in events):
+            return 'stop_flush'
+        return 'none'
     reason=max(candidates)[3]
     return reason if reason in _TAIL_ENDPOINT_REASONS else 'none'
 
@@ -169,6 +175,7 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
     last_speech_sample=None; last_speech_captured_at=None
     silence_frames_streamed=0; pre_events=[]; pre_facts=None; pre_observed_at=None; pre_settled_observed_at=None
     first_cover_observed_at=None; settle='TIMEOUT'
+    post_stop_events=[]
     try:
         for sequence in range(total):
             health=dict(state='capturing',device_epoch=epoch,dropped_frames=0,discontinuities=0,failure_code=None)
@@ -242,13 +249,14 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
     finally:
         stopped=_clock()
         client.call('POST',f'/api/live/sessions/{ident}/stop',{'deadline':30})
+        # Stop may finalize and discard the live event buffer on a later meeting read.
+        # This fetch is therefore immediately after Stop, while still post-Stop.
+        post_stop_events=client.call('GET',f'/api/live/sessions/{ident}/events?since_seq=-1').get('events',[])
     deadline=_clock()+240
     while True:
         saved=client.call('GET',f'/api/meetings/{ident}')
         if saved['status']!='active' or _clock()>deadline: break
         time.sleep(.5)
-    # This is deliberately post-Stop; the scored pre surface above remains untouched.
-    post_stop_events=client.call('GET',f'/api/live/sessions/{ident}/events?since_seq=-1').get('events',[])
     tail_endpoint_reason=_tail_endpoint_reason(post_stop_events,last_speech_sample)
     final=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
     # A fresh GET is the reopened saved surface, independently of the live snapshot.

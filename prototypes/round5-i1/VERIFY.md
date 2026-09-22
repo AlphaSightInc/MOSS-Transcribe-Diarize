@@ -7,6 +7,7 @@ or a shared MOSS listener. This is harness-only verification.
 git clone --no-local /private/tmp/moss-round5-i1 /private/tmp/moss-round5-i1-verify
 cd /private/tmp/moss-round5-i1-verify
 git checkout round5/impl-l1
+git fetch /Users/gao/Documents/Codex/2026-09-20/moss-round4/candidate round5/integration
 ln -s /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/frontend/node_modules frontend/node_modules
 
 PY=/private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python
@@ -24,12 +25,13 @@ git status --short
 Expected:
 
 - Import resolves inside the verify clone; no product/frontend source diff exists.
-- D31 controls: 15 passed. The healthy paused boundary has `SETTLED`,
-  `end_silence`, active/no-Stop pre, a tail latency, and completed final;
-  no-silence is `TIMEOUT`/`none`; `hard_cap` is rejected. Retention preserves
-  all six D31 fields. An all-anonymous correct-word surface is rejected while a
-  named surface is accepted.
-- Full backend: 2,323 passed / 5 skipped / 2 xfailed / 0 failed; bundle: 22 passed.
+- D31 controls: 19 passed. A delayed settled snapshot at 5.001 s is `TIMEOUT`;
+  first-cover latency precedes settled tail latency; paused pre/post tail reasons
+  are both `end_silence`; and no-silence is pre `none` / post `stop_flush`.
+  Missing scorer attribution telemetry fails closed. The fetched `fd825ee7`
+  scorer accepts named surfaces and rejects all-anonymous ones. Retention preserves
+  both tail reasons, both latencies, and surface identity numbers/bools.
+- Full backend and bundle have zero failures; record their exact totals below.
 - Decoder requests: 0. Frontend was intentionally untouched.
 
 Falsify if a product path changes, any D31 or identity control fails, the

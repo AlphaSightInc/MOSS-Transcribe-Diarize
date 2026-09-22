@@ -1,28 +1,37 @@
 {
-  "schema": "moss-r5-i1-d31-loopback-summary.v1",
+  "schema": "moss-r5-i1-d31-loopback-summary.v2",
   "decoder_requests": 0,
-  "loopback_stub_requests": 118,
-  "paused_live_stub_requests": 59,
-  "sessions": 4,
+  "loopback_stub_requests": 12,
+  "sessions": 2,
+  "capture_pacing": "realtime",
+  "scorer_scope": "boundary-only injected scorer; no stub text is word-quality evidence",
   "paused_live": {
-    "sessions": 2,
-    "hard_cap_span_count": 43,
-    "end_silence_tail_count": 2,
-    "stop_flush_tail_count": 0,
-    "tail_latency_seconds": {
-      "alternation": 1.481021,
-      "overlap": 1.503164
-    },
-    "silence_frames_streamed": 2,
+    "case": "overlap",
+    "passed": true,
+    "settle": "SETTLED",
+    "tail_endpoint_reason_pre": "end_silence",
+    "tail_endpoint_reason": "end_silence",
+    "first_cover_latency_seconds": 2.504578,
+    "tail_latency_seconds": 2.507407,
+    "silence_frames_streamed": 4,
     "pre_snapshot_status": "active",
     "stop_requested_before_pre": false,
-    "finalization_status": "final"
+    "finalization_status": "final",
+    "identity_telemetry_missing": false
   },
   "no_silence_control": {
-    "sessions": 2,
-    "hard_cap_span_count": 43,
-    "end_silence_tail_count": 0,
-    "stop_flush_tail_count": 2
+    "case": "overlap",
+    "passed": false,
+    "settle": "TIMEOUT",
+    "tail_endpoint_reason_pre": "none",
+    "tail_endpoint_reason": "stop_flush",
+    "first_cover_latency_seconds": null,
+    "tail_latency_seconds": null,
+    "silence_frames_streamed": 0,
+    "pre_snapshot_status": "active",
+    "stop_requested_before_pre": false,
+    "finalization_status": "final",
+    "identity_telemetry_missing": false
   },
   "estimated_extra_decoder_requests_per_arm": 0
 }
