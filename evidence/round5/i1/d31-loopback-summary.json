@@ -1,0 +1,20 @@
+{
+  "schema": "moss-r5-i1-d31-loopback-summary.v1",
+  "decoder_requests": 0,
+  "loopback_stub_requests": 118,
+  "sessions": 4,
+  "paused_live": {
+    "sessions": 2,
+    "hard_cap_span_count": 43,
+    "end_silence_tail_count": 2,
+    "stop_flush_tail_count": 0,
+    "tail_latency_seconds": null
+  },
+  "no_silence_control": {
+    "sessions": 2,
+    "hard_cap_span_count": 43,
+    "end_silence_tail_count": 0,
+    "stop_flush_tail_count": 2
+  },
+  "estimated_extra_decoder_requests_per_arm": 0
+}
