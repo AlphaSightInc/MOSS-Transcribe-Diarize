@@ -8,8 +8,9 @@
 2. **D34 structure — PASS.** The bound is exactly `2.5 + 1.5 + 0.5`, cap is
    exactly five, each attempt uses the fresh-context/durability path, and only
    `workspace_row_10/BEST_EFFORT_FAIL` becomes non-required.
-3. **Controls — PASS: 58.** First pass stops the loop; five valid recognition
-   misses retain all timing-attribution/meeting-number records and become
+3. **Controls — PASS: 58.** First pass stops the loop; both closed timing
+   attribution values survive sanitization; five valid recognition misses retain
+   all timing-attribution/meeting-number records and become
    `BEST_EFFORT_FAIL`; a missing bank and ordinary `FAIL` still block. The bundle
    keeps that status and reason visible without failing its aggregate.
 4. **Loopback receipt — PARKED_CRITICAL, confirmed.** The final proxy-shaped
@@ -17,5 +18,7 @@
    completed stub requests; 0 real decoder/provider/GPU requests; 0 active/rejected/
    upstream/client-write failures; stack, proxy, and stub listeners closed. It is
    therefore invalid to claim five row-10 loopback attempts or `BEST_EFFORT_FAIL`.
+5. **Final backend — PASS.** `2350 passed, 5 skipped, 2 xfailed`, plus 37
+   subtests, in 257.67 s on the prescribed runtime.
 
 The result is a fresh-process verification, not an independent human/agent review.

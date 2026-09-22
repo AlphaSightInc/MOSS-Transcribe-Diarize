@@ -21,6 +21,7 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. MOSS_TEST_REAL_SQLITE=1 \
   /private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python - <<'PY'
 import ast
 from pathlib import Path
+from tests.e2e.verify_workspace import retained_metadata
 
 source = Path('tests/e2e/verify_workspace.py').read_text()
 tree = ast.parse(source)
@@ -32,6 +33,8 @@ methods = {node.name for node in ast.walk(tree) if isinstance(node, ast.AsyncFun
 assert {'bank', 'bank_attempt', '_fresh_row10_context', '_row10_prior_durability'} <= methods
 assert 'BEST_EFFORT_FAIL' in source
 assert 'required=not (row==\'10\' and value[\'status\']==\'BEST_EFFORT_FAIL\')' in Path('tools/qualify/run.py').read_text()
+assert retained_metadata({'timing_attribution': 'COMPLETE'}) == {'timing_attribution': 'COMPLETE'}
+assert retained_metadata({'timing_attribution': 'INCOMPLETE'}) == {'timing_attribution': 'INCOMPLETE'}
 print('D34 structure: PASS')
 PY
 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. MOSS_TEST_REAL_SQLITE=1 \
