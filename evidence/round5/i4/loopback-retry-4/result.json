@@ -1,0 +1,42 @@
+{
+  "decoder_requests_real": 0,
+  "exception": "AssertionError",
+  "listeners_after": {
+    "proxy": false,
+    "stack": false,
+    "stub": false
+  },
+  "mode": "loopback_vllm_stub",
+  "ports": {
+    "proxy": 19444,
+    "stack": 17842,
+    "stub": 19443
+  },
+  "proxy": {
+    "accepted": 76,
+    "active": 0,
+    "client_write_failed": 0,
+    "completed": 76,
+    "distinct_attempt_ids": 76,
+    "distinct_client_request_ids": 0,
+    "distinct_completed_attempt_ids": 76,
+    "duplicate_attempts": 0,
+    "missing_client_request_ids": 76,
+    "peak_in_flight": 1,
+    "rejected": 0,
+    "unowned_events": 152,
+    "upstream_failed": 0
+  },
+  "row10": {
+    "attempt_count": 0,
+    "attempts": [],
+    "reason_code": null,
+    "status": null,
+    "timing_receipts": 0
+  },
+  "schema_version": 1,
+  "stack_ready_seconds": 5.05,
+  "status": "FALSIFIED",
+  "stub_requests": 76,
+  "workspace_exit_code": 1
+}
