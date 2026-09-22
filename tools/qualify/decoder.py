@@ -31,6 +31,7 @@ class DecoderCounters:
     accepted: int
     completed: int
     upstream_failed: int
+    client_write_failed: int
     rejected: int
     active: int
     peak_in_flight: int
@@ -47,6 +48,7 @@ class ProxyEventSummary:
     attempted: int
     completed: int
     upstream_failed: int
+    client_write_failed: int
     rejected: int
     active: int
     peak_in_flight: int
@@ -72,6 +74,9 @@ def summarize_events(events, *, expected_row=None):
     attempted = [event for event in events if event.get('kind') == 'start']
     completed = [event for event in events if event.get('kind') == 'end']
     failed = [event for event in events if event.get('kind') == 'upstream_failed']
+    client_write_failed = [
+        event for event in events if event.get('kind') == 'client_write_failed'
+    ]
     rejected = [event for event in events if event.get('kind') == 'reject']
     attempt_ids = [event.get('attempt_id') for event in attempted]
     outcome_ids = [event.get('attempt_id') for event in completed + failed]
@@ -89,6 +94,7 @@ def summarize_events(events, *, expected_row=None):
         attempted=len(attempted),
         completed=len(completed),
         upstream_failed=len(failed),
+        client_write_failed=len(client_write_failed),
         rejected=len(rejected),
         active=active,
         peak_in_flight=max((int(event.get('active', 0)) for event in events), default=0),
@@ -121,6 +127,7 @@ def summarize_events(events, *, expected_row=None):
 def accounting_incomplete(summary, *, planned=None):
     return bool(
         summary.upstream_failed
+        or summary.client_write_failed
         or summary.rejected
         or not summary.reconciled
         or summary.duplicate_attempts
@@ -140,7 +147,7 @@ def accounting_incomplete(summary, *, planned=None):
 
 class Decoder:
     def __init__(self, port, tunnel_port, budget, log):
-        self.sent = self.completed = self.upstream_failed = 0
+        self.sent = self.completed = self.upstream_failed = self.client_write_failed = 0
         self.active = self.peak = self.rejected = 0
         self.duplicate_attempts = self.unowned_events = 0
         self.missing_client_request_ids = 0
@@ -196,6 +203,8 @@ class Decoder:
                     upstream_status = None
                     error_type = None
                     relayed = False
+                    payload = None
+                    response_content_type = 'application/json'
                     try:
                         headers = {k: v for k, v in self.headers.items()
                                    if k.lower() not in ('host', 'connection', 'transfer-encoding')}
@@ -204,21 +213,12 @@ class Decoder:
                         upstream_status = response.status
                         payload = response.read()
                         response_content_type = response.getheader('Content-Type', 'application/json')
-                        self.send_response(response.status)
-                        self.send_header('Content-Type', response_content_type)
-                        self.send_header('Content-Length', str(len(payload)))
-                        self.end_headers()
-                        self.wfile.write(payload)
                         carries_error = _carries_error_payload(payload, response_content_type)
                         relayed = 200 <= response.status < 300 and not carries_error
                         if carries_error:
                             error_type = 'UpstreamErrorPayload'
                     except (OSError, http.client.HTTPException) as exc:
                         error_type = type(exc).__name__
-                        try:
-                            self.send_error(502, 'Owned decoder forward failed')
-                        except OSError:
-                            pass
                     finally:
                         conn.close()
                         with owner.lock:
@@ -238,6 +238,25 @@ class Decoder:
                                     client_request_id=client_request_id,
                                     upstream_status=upstream_status, error_type=error_type,
                                 )
+                            owner.activity.notify_all()
+                    try:
+                        if payload is None:
+                            self.send_error(502, 'Owned decoder forward failed')
+                        else:
+                            self.send_response(upstream_status)
+                            self.send_header('Content-Type', response_content_type)
+                            self.send_header('Content-Length', str(len(payload)))
+                            self.end_headers()
+                            self.wfile.write(payload)
+                    except OSError as exc:
+                        with owner.lock:
+                            owner.client_write_failed += 1
+                            owner.event(
+                                'client_write_failed', row=row, attempt_id=attempt_id,
+                                client_request_id=client_request_id,
+                                upstream_status=upstream_status,
+                                error_type=type(exc).__name__,
+                            )
                             owner.activity.notify_all()
 
             def do_GET(self):
@@ -318,6 +337,7 @@ class Decoder:
                 accepted=self.sent,
                 completed=self.completed,
                 upstream_failed=self.upstream_failed,
+                client_write_failed=self.client_write_failed,
                 rejected=self.rejected,
                 active=self.active,
                 peak_in_flight=self.peak,

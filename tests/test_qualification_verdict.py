@@ -214,6 +214,7 @@ def test_budget_rejection_censors_quality_verdict_and_retains_request_counts(tmp
         sent=2,
         completed=2,
         upstream_failed=0,
+        client_write_failed=0,
         rejected=1,
         peak=1,
         active=0,

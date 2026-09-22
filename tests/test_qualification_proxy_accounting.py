@@ -5,6 +5,8 @@ from __future__ import annotations
 import http.client
 import json
 import runpy
+import socket
+import struct
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -203,6 +205,171 @@ def test_non_2xx_is_upstream_failed_and_incomplete(tmp_path: Path, upstream_stat
         upstream.shutdown()
         upstream.server_close()
         thread.join()
+
+
+def test_response_waits_for_outcome_recording(tmp_path: Path) -> None:
+    from tools.qualify.decoder import Decoder
+
+    class Upstream(BaseHTTPRequestHandler):
+        def log_message(self, *_args):
+            pass
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            self.send_response(503)
+            self.end_headers()
+
+    upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
+    upstream_thread = threading.Thread(target=upstream.serve_forever, daemon=True)
+    upstream_thread.start()
+    proxy = Decoder(0, upstream.server_port, 1, tmp_path / "decoder-ordering.jsonl")
+    outcome_recording_started = threading.Event()
+    allow_outcome_recording = threading.Event()
+    original_event = proxy.event
+
+    def blocked_event(kind, **fields):
+        if kind == "upstream_failed":
+            outcome_recording_started.set()
+            assert allow_outcome_recording.wait(timeout=2)
+        original_event(kind, **fields)
+
+    proxy.event = blocked_event
+    proxy.start()
+    client_returned = threading.Event()
+    statuses = []
+
+    def request():
+        statuses.append(_post(proxy, "/failure", "request-ordering"))
+        client_returned.set()
+
+    client = threading.Thread(target=request)
+    client.start()
+    try:
+        assert outcome_recording_started.wait(timeout=2)
+        assert not client_returned.wait(timeout=0.1)
+        allow_outcome_recording.set()
+        client.join(timeout=2)
+        assert not client.is_alive()
+        assert statuses == [503]
+        snapshot = proxy.snapshot()
+        assert (snapshot.accepted, snapshot.completed, snapshot.upstream_failed) == (1, 0, 1)
+    finally:
+        allow_outcome_recording.set()
+        client.join(timeout=2)
+        proxy.close()
+        upstream.shutdown()
+        upstream.server_close()
+        upstream_thread.join()
+
+
+def test_immediate_snapshot_sees_all_200_outcomes(tmp_path: Path) -> None:
+    from tools.qualify.decoder import Decoder
+
+    class Upstream(BaseHTTPRequestHandler):
+        def log_message(self, *_args):
+            pass
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            self.send_response(503)
+            self.end_headers()
+
+    upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
+    upstream_thread = threading.Thread(target=upstream.serve_forever, daemon=True)
+    upstream_thread.start()
+    proxy = Decoder(0, upstream.server_port, 200, tmp_path / "decoder-200.jsonl")
+    proxy.start()
+    misses = []
+    try:
+        for index in range(200):
+            assert _post(proxy, "/failure", f"request-{index}") == 503
+            snapshot = proxy.snapshot()
+            if snapshot.upstream_failed != index + 1:
+                misses.append((index, snapshot))
+        assert misses == []
+    finally:
+        proxy.close()
+        upstream.shutdown()
+        upstream.server_close()
+        upstream_thread.join()
+
+
+def test_client_write_failure_is_separate_and_incomplete(tmp_path: Path) -> None:
+    from tools.qualify.decoder import (
+        Decoder,
+        accounting_incomplete,
+        read_events,
+        summarize_events,
+    )
+
+    request_arrived = threading.Event()
+    release_response = threading.Event()
+
+    class Upstream(BaseHTTPRequestHandler):
+        def log_message(self, *_args):
+            pass
+
+        def do_POST(self):
+            self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            request_arrived.set()
+            assert release_response.wait(timeout=2)
+            payload = b"x" * 4096
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+    upstream = ThreadingHTTPServer(("127.0.0.1", 0), Upstream)
+    upstream_thread = threading.Thread(target=upstream.serve_forever, daemon=True)
+    upstream_thread.start()
+    log = tmp_path / "decoder-client-write.jsonl"
+    proxy = Decoder(0, upstream.server_port, 1, log)
+    proxy.start()
+    client = socket.create_connection(("127.0.0.1", proxy.server.server_port), timeout=2)
+    client.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+    try:
+        client.sendall(
+            b"POST /write-failure HTTP/1.1\r\n"
+            b"Host: 127.0.0.1\r\n"
+            b"Content-Length: 1\r\n"
+            b"X-Request-ID: request-write-failure\r\n\r\n"
+            b"x"
+        )
+        assert request_arrived.wait(timeout=2)
+        client.close()
+        release_response.set()
+
+        deadline = time.monotonic() + 2
+        events = []
+        while time.monotonic() < deadline:
+            events = read_events(log)
+            if any(event["kind"] == "client_write_failed" for event in events):
+                break
+            time.sleep(0.01)
+
+        summary = summarize_events(events)
+        outcome_events = [
+            event for event in events if event["kind"] in {"end", "upstream_failed"}
+        ]
+        assert [event["kind"] for event in events] == [
+            "start",
+            "end",
+            "client_write_failed",
+        ]
+        assert len(outcome_events) == 1
+        assert outcome_events[0]["attempt_id"] == events[-1]["attempt_id"]
+        assert summary.reconciled is True
+        assert summary.client_write_failed == 1
+        assert accounting_incomplete(summary, planned=1) is True
+        _, matches = _accounting(log, 1)
+        assert matches is False
+    finally:
+        client.close()
+        release_response.set()
+        proxy.close()
+        upstream.shutdown()
+        upstream.server_close()
+        upstream_thread.join()
 
 
 def test_connection_reset_is_upstream_failed_and_incomplete(tmp_path: Path) -> None:

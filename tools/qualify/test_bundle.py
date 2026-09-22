@@ -83,6 +83,7 @@ def test_summary_row_counter_mismatch_is_incomplete():
         "accepted": 3,
         "completed": 3,
         "upstream_failed": 0,
+        "client_write_failed": 0,
         "rejected": 0,
         "peak_in_flight": 2,
         "distinct_attempt_ids": 3,
