@@ -31,7 +31,7 @@ Expected:
   Missing scorer attribution telemetry fails closed. The fetched `fd825ee7`
   scorer accepts named surfaces and rejects all-anonymous ones. Retention preserves
   both tail reasons, both latencies, and surface identity numbers/bools.
-- Full backend and bundle have zero failures; record their exact totals below.
+- Full backend: 2,327 passed / 5 skipped / 2 xfailed / 0 failed; bundle: 22 passed.
 - Decoder requests: 0. Frontend was intentionally untouched.
 
 Falsify if a product path changes, any D31 or identity control fails, the
