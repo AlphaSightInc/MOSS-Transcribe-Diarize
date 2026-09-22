@@ -45,8 +45,11 @@ from moss_transcribe_diarize.app.phase2 import (
 from moss_transcribe_diarize.app.phase2_file import (
     RETAINED_FILE_WORK_CONTRACT_VERSION,
     FileMeetingTasks,
+    _OwnedFileTask,
 )
+from moss_transcribe_diarize.app.phase2_control import Phase2ControlServer
 from moss_transcribe_diarize.app.phase2_lifecycle import (
+    AccountLifecycle,
     AccountLifecycleUnavailable,
     MeetingLifecycleSettlementError,
 )
@@ -259,6 +262,74 @@ def test_a2_operator_interrupt_during_refused_reservation_settlement_reports_tru
     print(f"\nA2 interrupt outcome={outcome!r} durable_status={status} audio_recoveries={recoveries} owner_exists={owner_exists}")
     assert status == "interrupted"
     assert not outcome.startswith("ERROR"), outcome
+
+
+def test_completed_owned_file_task_reports_no_change_to_operator(tmp_path):
+    async def exercise():
+        store = await Phase2Store.open(tmp_path / "state.sqlite3")
+        try:
+            account, _ = await seed_workspace(store, "account-a")
+            handle = await store.workspace(account).create_meeting("file")
+            await handle.finish("completed")
+
+            async def completed_task():
+                return None
+
+            task = asyncio.create_task(completed_task())
+            await task
+            tasks = FileMeetingTasks(object(), tmp_path / "file-work")
+            entry = _OwnedFileTask(handle, task)
+            tasks._tasks[handle.meeting_id] = entry
+            settled = await tasks.settle_meeting(entry)
+
+            class Observer:
+                def __init__(self):
+                    self.events = []
+
+                async def snapshot(self, **kwargs):
+                    self.events.append(kwargs)
+                    return {}
+
+            observer = Observer()
+            lifecycle = AccountLifecycle(store, live=None, files=tasks)
+            control = Phase2ControlServer(tmp_path / "unused.sock", lifecycle, observer)
+            response = await control._execute(
+                {"command": "meetings.interrupt", "meeting_id": handle.meeting_id}
+            )
+            return settled, response, observer.events
+        finally:
+            await store.close()
+
+    settled, response, events = asyncio.run(exercise())
+    assert settled is False
+    assert response["interrupted"] is False
+    assert events[-1]["mutation_outcome"] == "no_change"
+
+
+def test_claim_settled_reservation_interrupt_returns_no_change(tmp_path, monkeypatch):
+    async def exercise():
+        _account, _session, handle, _owner = await _seed_owner(
+            tmp_path,
+            manifest=REFUSED_MANIFEST,
+        )
+        entered, gates, _counter = _gated_audio_recovery(monkeypatch, 2)
+        app = _app(tmp_path, _RestartDecoder())
+        async with app.router.lifespan_context(app):
+            await asyncio.wait_for(entered[0].wait(), 5)
+            interrupt = asyncio.create_task(
+                app.state.phase2_lifecycle.interrupt_meeting(handle.meeting_id)
+            )
+            await asyncio.wait_for(entered[1].wait(), 5)
+            gates[0].set()
+            await app.state.phase2_file_tasks._retained_resume_task
+            gates[1].set()
+            result = await interrupt
+            status = (await _snapshot(app, handle)).status
+        return result, status
+
+    result, status = asyncio.run(exercise())
+    assert result is False
+    assert status == "interrupted"
 
 
 def test_a3_account_revoke_during_refused_reservation_settlement_completes(tmp_path, monkeypatch):

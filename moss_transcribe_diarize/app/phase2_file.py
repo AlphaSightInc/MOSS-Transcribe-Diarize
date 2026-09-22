@@ -743,12 +743,10 @@ class FileMeetingTasks:
             except AccountRevoked:
                 if isinstance(entry, _RetainedReservation):
                     self._record_reservation_settled(entry)
-                interrupted.append(entry.handle.meeting_id)
                 continue
             if snapshot.status != "active":
                 if isinstance(entry, _RetainedReservation):
                     self._record_reservation_settled(entry)
-                interrupted.append(entry.handle.meeting_id)
                 continue
             if self._audio_archive is None:
                 raise RuntimeError("File Meeting audio archive is unavailable.")
@@ -759,7 +757,6 @@ class FileMeetingTasks:
                 and entry.claim_settlement is not asyncio.current_task()
             ):
                 await asyncio.shield(entry.claim_settlement)
-                interrupted.append(entry.handle.meeting_id)
                 continue
             await entry.handle.finish("interrupted", failure_code=failure_code)
             if isinstance(entry, _OwnedFileTask):
