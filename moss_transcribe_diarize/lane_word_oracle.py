@@ -70,8 +70,11 @@ def score_lanes(segments, references, *, max_wer=0.0, lane_switches=()):
     lanes = {lane: {**distance(refs[lane], ws), 'unique_reference_words': len(set(refs[lane])),
                     'unique_retained': len(set(refs[lane]) & set(ws)),
                     'unique_retention': len(set(refs[lane]) & set(ws))/len(set(refs[lane])) if refs[lane] else None} for lane, ws in observed.items()}
-    speaker_conflicts = sum(len({s.get('source_lane') for s in segments if s['speaker'] == speaker and s.get('source_lane')}) > 1 for speaker in votes)
+    unattributed = [s for s in segments if s['speaker'] in ('', 'S00')]
+    speaker_conflicts = sum(len({s.get('source_lane') for s in segments if s['speaker'] == speaker and s.get('source_lane')}) > 1 for speaker in votes if speaker not in ('', 'S00'))
     return dict(lanes=lanes, attribution_errors=attribution, speaker_lane_conflicts=speaker_conflicts,
+                unattributed_segment_count=len(unattributed), unattributed_word_count=sum(len(words(s['text'])) for s in unattributed),
+                identity_unqualified=bool(segments) and len(unattributed) == len(segments),
                 boundary_attribution_words=boundary_attribution, boundary_duplication_words=boundary_duplicate,
                 attribution_segments=attribution_segments,
                 max_wer=max_wer, ownership='explicit' if all(s.get('source_lane') for s in segments) else 'lexically_inferred', duplication_count=duplicate,

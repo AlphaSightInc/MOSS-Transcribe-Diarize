@@ -1,0 +1,20 @@
+{
+  "source": "retained R4-10 F1 alternation published layer",
+  "published_segment_count": 22,
+  "published_copies_equal": true,
+  "reference_word_counts": {"system": 104, "microphone": 53},
+  "abstention_canonical_speaker": null,
+  "normalize_segment_speaker": "",
+  "abstention_segment_count": 3,
+  "abstention_sample_ranges": [[152480, 159680], [314560, 319680], [471680, 479360]],
+  "identified_speakers_in_both_lanes": 0,
+  "score": {
+    "passed": false,
+    "speaker_lane_conflicts": 1,
+    "attribution_errors": 0,
+    "duplication_count": 0,
+    "unresolved_words": 0,
+    "max_wer": 0.166655,
+    "wer": {"system": 0.10576923076923077, "microphone": 0.24528301886792453}
+  }
+}
