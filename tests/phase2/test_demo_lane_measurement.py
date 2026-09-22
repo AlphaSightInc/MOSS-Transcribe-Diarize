@@ -7,6 +7,7 @@ def test_lane_checks_reach_both_surfaces_and_reopen(case,missing):
     inputs=reference_inputs(1)
     rows=[dict(start=0 if lane=='system' or case=='overlap' else 29,
                end=len(data['pcm']) / (16000 * 2) if lane=='system' else 25 if case=='overlap' else 54,
+               start_sample=0,end_sample=2_000_000,
                speaker=lane,source_lane=lane,text=data['reference']) for lane,data in inputs.items()]
     class Client:
         frames=0;heartbeats=0;stopped=False;snapshots=0;reads=0
@@ -22,7 +23,17 @@ def test_lane_checks_reach_both_surfaces_and_reopen(case,missing):
             if path.endswith('snapshot'):
                 name='final' if self.stopped else 'pre_terminal'
                 self.snapshots+=1
-                return {'snapshot':{'session':{'finalization_status':'final' if self.stopped else 'running','effective_transcript':rows[:1] if missing==name else rows}}}
+                return {'snapshot':{'pending_work_items':0,'session':{
+                    'status':'completed' if self.stopped else 'active',
+                    'finalization_status':'final' if self.stopped else 'not_started',
+                    'pending_span_ids':[],'committed_samples':2_000_000,
+                    'effective_transcript':rows[:1] if missing==name else rows}}}
+            if path.endswith('events?since_seq=-1'):
+                return {'events':[
+                    {'seq':1,'kind':'span_frozen','payload':{'start_sample':0,'end_sample':2_000_000,'reason':'end_silence'}},
+                    {'seq':2,'kind':'canonical_queued','payload':{'item_id':1}},
+                    {'seq':3,'kind':'canonical_processed','payload':{'item_id':1}},
+                ]}
             if path.startswith('/api/meetings/'):
                 self.reads+=1
                 return {'status':'completed','transcript':{'segments':rows[:1] if missing=='reopened' and self.reads==2 else rows}}
