@@ -109,8 +109,8 @@ milliseconds-to-seconds; deterministic 12-decimal projection corrected that.
 The second passed. The prototype is throwaway; retain this result, then delete
 or absorb it after the decision.
 
-Final verification: targeted harness tests 3 passed; prescribed full backend
-suite 2,317 passed / 5 skipped / 2 xfailed / 0 failed (37 subtests); frontend
+Final verification: targeted harness tests 4 passed; prescribed full backend
+suite 2,318 passed / 5 skipped / 2 xfailed / 0 failed (37 subtests); frontend
 312 passed, typecheck clean, build clean. All runs used the prescribed runtime
 where applicable, with zero decoder requests.
 

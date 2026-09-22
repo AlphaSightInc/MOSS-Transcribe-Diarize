@@ -24,11 +24,17 @@
     "attribution_complete": 0
   },
   "harness_self_test": {
-    "passed": 3,
+    "passed": 4,
     "failed": 0
   },
+  "timeout_control": {
+    "row_status_fail": 1,
+    "harness_exception": 0,
+    "browser_matched_null": 1,
+    "attribution_complete": 0
+  },
   "backend_suite": {
-    "passed": 2317,
+    "passed": 2318,
     "skipped": 5,
     "xfailed": 2,
     "failed": 0,
