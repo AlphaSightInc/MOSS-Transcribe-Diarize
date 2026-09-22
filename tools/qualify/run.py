@@ -679,6 +679,7 @@ class Bundle:
                 decoder_summary.attempted == self.proxy.sent
                 and decoder_summary.completed == self.proxy.completed
                 and decoder_summary.upstream_failed == self.proxy.upstream_failed
+                and decoder_summary.client_write_failed == self.proxy.client_write_failed
                 and decoder_summary.rejected == self.proxy.rejected
                 and decoder_summary.active == self.proxy.active
             )
@@ -687,6 +688,7 @@ class Bundle:
             accepted_requests=decoder_summary.attempted,
             completed_requests=decoder_summary.completed,
             upstream_failed_requests=decoder_summary.upstream_failed,
+            client_write_failed_requests=decoder_summary.client_write_failed,
             distinct_attempt_ids=decoder_summary.distinct_attempt_ids,
             distinct_completed_attempt_ids=decoder_summary.distinct_completed_attempt_ids,
             distinct_client_request_ids=decoder_summary.distinct_client_request_ids,

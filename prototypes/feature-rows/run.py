@@ -32,6 +32,7 @@ class ProxyCounters:
     accepted: int = 0
     completed: int = 0
     upstream_failed: int = 0
+    client_write_failed: int = 0
     rejected: int = 0
     active: int = 0
     peak_in_flight: int = 0
@@ -39,6 +40,7 @@ class ProxyCounters:
     row_attempted: int = 0
     row_completed: int = 0
     row_upstream_failed: int = 0
+    row_client_write_failed: int = 0
     row_rejected: int = 0
     distinct_attempt_ids: int = 0
     distinct_completed_attempt_ids: int = 0
@@ -59,6 +61,7 @@ def proxy_counters(path: Path, *, peak_since: int = 0) -> ProxyCounters:
         accepted=cumulative.attempted,
         completed=cumulative.completed,
         upstream_failed=cumulative.upstream_failed,
+        client_write_failed=cumulative.client_write_failed,
         rejected=cumulative.rejected,
         active=cumulative.active,
         peak_in_flight=row.peak_in_flight,
@@ -66,6 +69,7 @@ def proxy_counters(path: Path, *, peak_since: int = 0) -> ProxyCounters:
         row_attempted=row.attempted,
         row_completed=row.completed,
         row_upstream_failed=row.upstream_failed,
+        row_client_write_failed=row.client_write_failed,
         row_rejected=row.rejected,
         distinct_attempt_ids=row.distinct_attempt_ids,
         distinct_completed_attempt_ids=row.distinct_completed_attempt_ids,
@@ -142,6 +146,9 @@ def decoder_accounting(
             "accepted": after.accepted - before.accepted,
             "completed": after.completed - before.completed,
             "upstream_failed": after.upstream_failed - before.upstream_failed,
+            "client_write_failed": (
+                after.client_write_failed - before.client_write_failed
+            ),
             "rejected": after.rejected - before.rejected,
             "peak_in_flight": after.peak_in_flight,
             "distinct_attempt_ids": after.distinct_attempt_ids,
@@ -160,10 +167,12 @@ def decoder_accounting(
         delta["accepted"] == planned_decoder
         and delta["completed"] == planned_decoder
         and delta["upstream_failed"] == 0
+        and delta["client_write_failed"] == 0
         and delta["rejected"] == 0
         and after.row_attempted == delta["accepted"]
         and after.row_completed == delta["completed"]
         and after.row_upstream_failed == 0
+        and after.row_client_write_failed == 0
         and after.row_rejected == 0
         and delta["distinct_attempt_ids"] == planned_decoder
         and delta["distinct_completed_attempt_ids"] == planned_decoder
