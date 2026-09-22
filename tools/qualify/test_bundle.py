@@ -300,6 +300,49 @@ def test_default_summary_retains_required_long_capacity_when_stack_is_unavailabl
     }
 
 
+@pytest.mark.parametrize(('row10_status', 'workspace_status', 'verdict'), [
+    ('BEST_EFFORT_FAIL', 'PASS', 'PASS'),
+    ('FAIL', 'FAIL', 'FAIL'),
+])
+def test_workspace_row10_best_effort_is_visible_but_only_plain_fail_blocks_bundle(
+    tmp_path, row10_status, workspace_status, verdict,
+):
+    bundle = object.__new__(qualify_run.Bundle)
+    bundle.work, bundle.has_summary_key = tmp_path, True
+    gates = []
+    bundle.gate = lambda name, status, *args, **kwargs: gates.append(
+        {'name': name, 'status': status, **kwargs}
+    )
+
+    class StopAfterWorkspace(Exception):
+        pass
+
+    def command(name, *_args, **_kwargs):
+        if name != 'workspace':
+            raise StopAfterWorkspace
+        output = tmp_path / 'workspace'
+        output.mkdir()
+        rows = {str(index): {'status': 'PASS'} for index in range(1, 15)}
+        rows['10'] = {
+            'status': row10_status,
+            'reason_code': 'all_five_recognition_attempts_missed_bound'
+            if row10_status == 'BEST_EFFORT_FAIL' else 'bank_missing_name',
+        }
+        (output / 'results.json').write_text(json.dumps({'rows': rows}))
+        return 0, 0, None
+
+    bundle.command = command
+    with pytest.raises(StopAfterWorkspace):
+        bundle.benches(True)
+
+    workspace = next(gate for gate in gates if gate['name'] == 'workspace')
+    row10 = next(gate for gate in gates if gate['name'] == 'workspace_row_10')
+    assert workspace['status'] == workspace_status
+    assert row10['status'] == row10_status
+    assert row10.get('required', True) is (row10_status != 'BEST_EFFORT_FAIL')
+    assert qualify_run.bundle_verdict(gates) == verdict
+
+
 def test_determinism_detects_added_removed_and_changed_gates():
     before={'gates':[{'name':'a','status':'PASS'},{'name':'b','status':'FAIL'}]}
     after={'gates':[{'name':'a','status':'FAIL'},{'name':'c','status':'PASS'}]}
