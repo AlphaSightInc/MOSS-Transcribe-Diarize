@@ -1,12 +1,12 @@
 # Fresh verification — D31 production L1 harness gate
 
-Verify commit `f765b636` from a new clone; do not use a provider, tunnel, GPU,
+Verify the current `round5/impl-l1` HEAD from a new clone; do not use a provider, tunnel, GPU,
 or a shared MOSS listener. This is harness-only verification.
 
 ```sh
 git clone --no-local /private/tmp/moss-round5-i1 /private/tmp/moss-round5-i1-verify
 cd /private/tmp/moss-round5-i1-verify
-git checkout f765b636
+git checkout round5/impl-l1
 ln -s /Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize/frontend/node_modules frontend/node_modules
 
 PY=/private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python
