@@ -25,13 +25,14 @@ git status --short
 Expected:
 
 - Import resolves inside the verify clone; no product/frontend source diff exists.
-- D31 controls: 19 passed. A delayed settled snapshot at 5.001 s is `TIMEOUT`;
+- D31 controls: 20 passed. A delayed settled snapshot at 5.001 s is `TIMEOUT`;
   first-cover latency precedes settled tail latency; paused pre/post tail reasons
   are both `end_silence`; and no-silence is pre `none` / post `stop_flush`.
+  An otherwise healthy pre surface with absent post-Stop events fails closed.
   Missing scorer attribution telemetry fails closed. The fetched `fd825ee7`
   scorer accepts named surfaces and rejects all-anonymous ones. Retention preserves
   both tail reasons, both latencies, and surface identity numbers/bools.
-- Full backend: 2,327 passed / 5 skipped / 2 xfailed / 0 failed; bundle: 22 passed.
+- Full backend: 2,328 passed / 5 skipped / 2 xfailed / 0 failed; bundle: 22 passed.
 - Decoder requests: 0. Frontend was intentionally untouched.
 
 Falsify if a product path changes, any D31 or identity control fails, the
