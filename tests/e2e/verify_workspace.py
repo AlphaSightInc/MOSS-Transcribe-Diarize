@@ -38,7 +38,7 @@ _ROW10_DURABLE_STATUSES = frozenset({'completed', 'failed', 'interrupted'})
 
 
 _STATUS_VALUES = frozenset({
-    "INCOMPLETE", 'BEST_EFFORT_FAIL',
+    "INCOMPLETE", 'COMPLETE', 'BEST_EFFORT_FAIL',
     'PASS', 'FAIL', 'SKIP', 'active', 'completed', 'failed', 'closed', 'final',
     'not_started', 'running', 'stopping', 'terminal', 'idle', 'capturing',
     'enrolled', 'already_enrolled', 'matched', 'unmatched', 'unavailable',
@@ -72,7 +72,8 @@ def retained_metadata(value, key=''):
         if key in _ID_KEYS and re.fullmatch(r'[A-Za-z0-9_-]{1,128}', value):
             return value
         if key in {'status', 'status_received', 'history_status', 'snapshot_status',
-                   'finalization_status', 'verdict', 'phase', 'method', 'mode', 'lane', 'codec_name', 'reason_code'} and value in _STATUS_VALUES:
+                   'finalization_status', 'verdict', 'phase', 'method', 'mode', 'lane', 'codec_name', 'reason_code',
+                   'timing_attribution'} and value in _STATUS_VALUES:
             return value
         if key == 'exception' and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', value):
             return value

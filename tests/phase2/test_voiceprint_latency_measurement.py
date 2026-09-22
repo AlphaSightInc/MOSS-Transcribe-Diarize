@@ -161,6 +161,9 @@ def test_row10_attempt_loop_stops_at_first_pass_and_retains_only_attempts_run(tm
             assert result['ok'] is True
             assert [attempt['attempt'] for attempt in result['attempts']] == [1, 2]
             assert prepared == [1, 2]
+            write(tmp_path/'retained-first-pass.json', result)
+            retained = json.loads((tmp_path/'retained-first-pass.json').read_text())
+            assert [attempt['timing_attribution'] for attempt in retained['attempts']] == ['INCOMPLETE', 'COMPLETE']
         finally:
             harness.network.close()
             harness._private.cleanup()
