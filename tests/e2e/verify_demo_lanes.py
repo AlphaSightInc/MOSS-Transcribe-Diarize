@@ -26,6 +26,8 @@ SHARED_TAB_VOICE = CORPUS / 'interview_bill_ackman_60s/audio.wav'
 MICROPHONE_VOICE = CORPUS / 'interview_keyu_jin_60s/audio.wav'
 SYSTEM_LADDER_REFERENCE = REPO / 'tests/e2e/fixtures/lane-system-ladder-reference.json'
 DEFAULT_MIC_GAIN = 0.03
+TAIL_SETTLE_TIMEOUT_SECONDS = 5.0
+_TAIL_ENDPOINT_REASONS = frozenset({'end_silence', 'hard_cap', 'stop_flush', 'none'})
 
 class Client:
     """Cookie-carrying JSON client. One bootstrap per run: each call creates a workspace."""
@@ -80,11 +82,64 @@ def reference_inputs(mic_gain, *, system_reference: Path | None = None):
 
 def snapshot_segments(envelope):
     session=(envelope.get('snapshot') or {}).get('session') or {}
-    rows=session.get('effective_transcript') or session.get('committed') or []
+    rows=session.get('effective_transcript') or []
     return rows.get('segments',[]) if isinstance(rows,dict) else rows
 
 
-def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, realtime=True):
+def _last_non_silent_sample_end(pcm, sequence, frame_samples):
+    samples=array.array('h'); samples.frombytes(pcm)
+    for index in range(len(samples)-1,-1,-1):
+        if samples[index]: return sequence*frame_samples+index+1
+    return None
+
+
+def _session_snapshot(envelope):
+    snapshot=envelope.get('snapshot') or {}
+    session=snapshot.get('session') or {}
+    if not isinstance(session,dict): raise ValueError('live snapshot session is not an object')
+    return snapshot,session
+
+
+def _tail_endpoint_reason(events,last_speech_sample):
+    candidates=[]
+    for event in events:
+        if not isinstance(event,dict) or event.get('kind')!='span_frozen': continue
+        payload=event.get('payload') or {}
+        try:
+            start,end=int(payload['start_sample']),int(payload['end_sample'])
+        except (KeyError,TypeError,ValueError): continue
+        if start < last_speech_sample <= end:
+            candidates.append((end,start,int(event.get('seq',-1)),payload.get('reason')))
+    if not candidates: return 'none'
+    reason=max(candidates)[3]
+    return reason if reason in _TAIL_ENDPOINT_REASONS else 'none'
+
+
+def _settle_facts(envelope,events,last_speech_sample):
+    snapshot,session=_session_snapshot(envelope)
+    queued={str((event.get('payload') or {}).get('item_id')) for event in events
+            if isinstance(event,dict) and event.get('kind')=='canonical_queued'
+            and (event.get('payload') or {}).get('item_id') is not None}
+    processed={str((event.get('payload') or {}).get('item_id')) for event in events
+               if isinstance(event,dict) and event.get('kind')=='canonical_processed'
+               and (event.get('payload') or {}).get('item_id') is not None}
+    effective_covers_last_speech=any(
+        int(segment.get('start_sample',last_speech_sample)) < last_speech_sample <= int(segment.get('end_sample',0))
+        for segment in snapshot_segments(envelope) if isinstance(segment,dict))
+    stop_requested=any(isinstance(event,dict) and event.get('kind')=='stop_requested' for event in events)
+    pending_work=snapshot.get('pending_work_items')
+    committed_samples=session.get('committed_samples')
+    settled=(session.get('status')=='active' and not stop_requested
+             and not session.get('pending_span_ids') and pending_work==0
+             and isinstance(committed_samples,int) and committed_samples>=last_speech_sample
+             and not (queued-processed) and effective_covers_last_speech)
+    return dict(settled=settled,status=session.get('status'),stop_requested=stop_requested,
+                effective_covers_last_speech=effective_covers_last_speech,
+                pending_canonical_item_count=len(queued-processed))
+
+
+def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, realtime=True,
+             _stream_tail_silence=True):
     client=client or Client(base,context)
     client.call('POST','/api/workspace/bootstrap')
     descriptor=client.call('GET','/api/live/descriptor')['descriptor']
@@ -99,6 +154,8 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
     created=client.call('POST','/api/live/sessions',{'source_revision':descriptor['source_revision']})
     ident=created.get('id') or created['session_id']
     epoch=time.time_ns(); started=time.monotonic(); pre=None
+    last_speech_sample=None; last_speech_captured_at=None
+    silence_frames_streamed=0; pre_events=[]; settle='TIMEOUT'
     try:
         for sequence in range(total):
             health=dict(state='capturing',device_epoch=epoch,dropped_frames=0,discontinuities=0,failure_code=None)
@@ -114,8 +171,42 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
                     lane=lane,sequence=sequence,capture_timestamp_ns=epoch+round(sequence*size/rate*1e9),
                     device_epoch=epoch,pcm_base64=base64.b64encode(chunk).decode(),sample_count=size,
                     sample_rate=rate,silent=not any(chunk),discontinuity=False))
+                sample_end=_last_non_silent_sample_end(chunk,sequence,size)
+                if sample_end is not None and (last_speech_sample is None or sample_end>=last_speech_sample):
+                    last_speech_sample=sample_end
+                    last_speech_captured_at=time.monotonic()
             if realtime: time.sleep(max(0,(sequence+1)*size/rate-(time.monotonic()-started)))
-        pre=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
+        if last_speech_sample is None or last_speech_captured_at is None: raise AssertionError('no non-silent captured sample')
+        sequence=total
+        while _stream_tail_silence and pre is None:
+            health=dict(state='capturing',device_epoch=epoch,dropped_frames=0,discontinuities=0,failure_code=None)
+            client.call('POST',f'/api/live/sessions/{ident}/heartbeat',dict(
+                schema='moss-live-helper-health.v1',instance_id='wp4-reference-replay',sequence=sequence,
+                sent_monotonic_ns=time.monotonic_ns(),helper_version='reference-oracle',state='capturing',
+                lanes={'system':health,'microphone':dict(health)}))
+            zero=b'\0'*frame_bytes
+            for lane in inputs:
+                client.call('POST',f'/api/live/sessions/{ident}/frames',dict(
+                    lane=lane,sequence=sequence,capture_timestamp_ns=epoch+round(sequence*size/rate*1e9),
+                    device_epoch=epoch,pcm_base64=base64.b64encode(zero).decode(),sample_count=size,
+                    sample_rate=rate,silent=True,discontinuity=False))
+            silence_frames_streamed+=1
+            if realtime: time.sleep(max(0,(sequence+1)*size/rate-(time.monotonic()-started)))
+            candidate=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
+            events=client.call('GET',f'/api/live/sessions/{ident}/events?since_seq=-1').get('events',[])
+            facts=_settle_facts(candidate,events,last_speech_sample)
+            if facts['settled'] or time.monotonic()>=last_speech_captured_at+TAIL_SETTLE_TIMEOUT_SECONDS:
+                pre,pre_events=candidate,events
+                settle='SETTLED' if facts['settled'] else 'TIMEOUT'
+            sequence+=1
+        if pre is None:
+            pre=client.call('GET',f'/api/live/sessions/{ident}/snapshot')
+            pre_events=client.call('GET',f'/api/live/sessions/{ident}/events?since_seq=-1').get('events',[])
+        pre_facts=_settle_facts(pre,pre_events,last_speech_sample)
+        if not _stream_tail_silence: settle='SETTLED' if pre_facts['settled'] else 'TIMEOUT'
+        tail_latency_seconds=(round(time.monotonic()-last_speech_captured_at,6)
+                              if pre_facts['effective_covers_last_speech'] else None)
+        tail_endpoint_reason=_tail_endpoint_reason(pre_events,last_speech_sample)
     finally:
         stopped=time.monotonic()
         client.call('POST',f'/api/live/sessions/{ident}/stop',{'deadline':30})
@@ -133,20 +224,33 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
         'final':score_lanes(snapshot_segments(final),refs,max_wer=QUALITY_BOUNDS['final_wer'][1],lane_switches=switches),
         'reopened':score_lanes((reopened.get('transcript') or {}).get('segments',[]),refs,max_wer=QUALITY_BOUNDS['final_wer'][1],lane_switches=switches),
     }
+    for score in surfaces.values():
+        score['identity_unqualified']=bool(score.get('identity_unqualified',False))
+        score['unattributed_segment_count']=int(score.get('unattributed_segment_count',0))
+        score['unattributed_word_count']=int(score.get('unattributed_word_count',0))
     # The file/URL bar is reported separately; it does not override live QUALITY_BOUNDS.
     file_url_bar = {name: all(v['wer'] is not None and v['wer'] <= .15 for v in result['lanes'].values())
                     for name, result in surfaces.items()}
     finalization=(final.get('snapshot') or {}).get('session',{}).get('finalization_status')
-    passed=saved['status']=='completed' and finalization=='final' and all(s['passed'] for s in surfaces.values())
+    d31_passed=(settle=='SETTLED' and tail_endpoint_reason=='end_silence'
+                and not pre_facts['stop_requested'])
+    identity_qualified=all(not score.get('identity_unqualified',False) for score in surfaces.values())
+    passed=(saved['status']=='completed' and finalization=='final' and d31_passed
+            and all(s['passed'] for s in surfaces.values()) and identity_qualified)
     return dict(case=case,meeting=ident,passed=passed,expected_failure=False,
                 status=saved['status'],finalization_status=finalization,seconds=round(time.monotonic()-started,3),
                 stop_seconds=round(time.monotonic()-stopped,3),frames_per_lane=total,
-                microphone_gain=mic_gain,surfaces=surfaces,file_url_wer_bar=.15,file_url_wer_pass=file_url_bar)
+                microphone_gain=mic_gain,surfaces=surfaces,file_url_wer_bar=.15,file_url_wer_pass=file_url_bar,
+                tail_latency_seconds=tail_latency_seconds,tail_endpoint_reason=tail_endpoint_reason,
+                settle=settle,silence_frames_streamed=silence_frames_streamed,
+                pre_snapshot_status=pre_facts['status'],stop_requested_before_pre=pre_facts['stop_requested'])
 
 
 def accepted_case(result):
     # Completion alone cannot hide a semantic failure on either supported lane case.
-    return result['status']=='completed' and result['finalization_status']=='final' and result['passed']
+    return (result['status']=='completed' and result['finalization_status']=='final' and result['passed']
+            and all(not score.get('identity_unqualified',False)
+                    for score in result.get('surfaces',{}).values()))
 
 
 def run_cases(base,context,case='both',mic_gain=DEFAULT_MIC_GAIN):

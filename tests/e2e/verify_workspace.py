@@ -41,7 +41,8 @@ _STATUS_VALUES = frozenset({
     'enrolled', 'already_enrolled', 'matched', 'unmatched', 'unavailable',
     'live', 'file', 'url', 'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'mp3',
     'microphone', 'system', 'interrupted', 'aborted', 'confirmed', 'provisional',
-    'previous_meeting_not_ready', 'no_configured_relay_models',
+    'previous_meeting_not_ready', 'no_configured_relay_models', 'end_silence',
+    'hard_cap', 'stop_flush', 'none', 'SETTLED', 'TIMEOUT',
 })
 _ID_KEYS = frozenset({'id', 'meeting', 'session_id', 'meeting_id', 'speaker_id', 'speaker_entity_id', 'voiceprint_id'})
 _BODY_KEYS = frozenset({'body', 'messages', 'prompt', 'content', 'text', 'transcript',
@@ -68,7 +69,8 @@ def retained_metadata(value, key=''):
         if key in _ID_KEYS and re.fullmatch(r'[A-Za-z0-9_-]{1,128}', value):
             return value
         if key in {'status', 'status_received', 'history_status', 'snapshot_status',
-                   'finalization_status', 'verdict', 'phase', 'method', 'mode', 'lane', 'codec_name', 'reason_code'} and value in _STATUS_VALUES:
+                   'finalization_status', 'verdict', 'phase', 'method', 'mode', 'lane', 'codec_name', 'reason_code',
+                   'tail_endpoint_reason', 'settle', 'pre_snapshot_status'} and value in _STATUS_VALUES:
             return value
         if key == 'exception' and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', value):
             return value
