@@ -1,0 +1,49 @@
+{
+  "decoder_requests": 0,
+  "sanitizer": {
+    "input_events": 78,
+    "retained_events": 78,
+    "retained_null_kinds": 78,
+    "retained_payload_keys": 0
+  },
+  "positive": {
+    "capture_seal_seq": 11,
+    "capture_end_sample": 40000,
+    "canonical_queue_seq": 12,
+    "processed_seq": 51,
+    "queue_wait_seconds": 0.000173667,
+    "processing_elapsed_seconds": 7.438577042,
+    "runner_elapsed_seconds": 7.068335624877363
+  },
+  "violating_control": {
+    "injected_string_classes": 4,
+    "surviving_strings": 0
+  },
+  "missing_stage_control": {
+    "canonical_queue_seq": null,
+    "attribution_complete": 0
+  },
+  "harness_self_test": {
+    "passed": 4,
+    "failed": 0
+  },
+  "timeout_control": {
+    "row_status_fail": 1,
+    "harness_exception": 0,
+    "browser_matched_null": 1,
+    "attribution_complete": 0
+  },
+  "backend_suite": {
+    "passed": 2318,
+    "skipped": 5,
+    "xfailed": 2,
+    "failed": 0,
+    "subtests_passed": 37
+  },
+  "frontend_suite": {
+    "passed": 312,
+    "failed": 0,
+    "typecheck_clean": 1,
+    "build_clean": 1
+  }
+}

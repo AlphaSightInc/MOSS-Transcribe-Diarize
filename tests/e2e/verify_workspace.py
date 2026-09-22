@@ -79,6 +79,110 @@ def write(path, value):
     Path(path).write_text(json.dumps(retained_metadata(value), indent=2) + '\n')
 
 
+_ROW10_EVENT_KINDS = frozenset({
+    'frame_accepted', 'span_frozen', 'canonical_queued', 'canonical_started',
+    'canonical_preview', 'canonical_processed', 'draft_published',
+})
+_ROW10_FREEZE_REASON_CODES = {'hard_cap': 1, 'end_silence': 2, 'leading_silence': 3}
+_ROW10_IDENTITY_STATUS_CODES = {'prepared': 1, 'abstain': 2, 'empty_span': 3}
+
+
+def _row10_number(value):
+    return value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+
+def _row10_seconds_from_ms(value):
+    value = _row10_number(value)
+    return round(value / 1000, 12) if value is not None else None
+
+
+def project_row10_timing(events, timing):
+    """Project one first-label causal chain without retaining event payloads."""
+    raw = events.get('events') if isinstance(events, dict) else events
+    records = [event for event in raw or () if isinstance(event, dict)
+               and event.get('kind') in _ROW10_EVENT_KINDS and isinstance(event.get('payload'), dict)]
+    processed = next((event for event in records if event['kind'] == 'canonical_processed'
+                      and event['payload'].get('submitted') is True), None)
+    processed_payload = processed['payload'] if processed else {}
+    item_id = _row10_number(processed_payload.get('item_id'))
+    span_id = _row10_number(processed_payload.get('span_id'))
+    queued = next((event for event in records if event['kind'] == 'canonical_queued'
+                   and _row10_number(event['payload'].get('item_id')) == item_id), None)
+    started = next((event for event in records if event['kind'] == 'canonical_started'
+                    and _row10_number(event['payload'].get('item_id')) == item_id), None)
+    frozen = next((event for event in records if event['kind'] == 'span_frozen'
+                   and _row10_number(event['payload'].get('span_id')) == span_id), None)
+
+    def stage(event, fields):
+        payload = event['payload'] if event else {}
+        return {
+            'seq': _row10_number(event.get('seq')) if event else None,
+            **{name: transform(payload.get(source)) for name, source, transform in fields},
+        }
+
+    capture_seal = stage(frozen, (
+        ('start_sample', 'start_sample', _row10_number),
+        ('end_sample', 'end_sample', _row10_number),
+        ('freeze_reason_category', 'reason', lambda value: _ROW10_FREEZE_REASON_CODES.get(value)),
+    ))
+    canonical_queue = stage(queued, (('item_id', 'item_id', _row10_number),))
+    queue_wait_ms = None if started is None else _row10_number(started['payload'].get('queue_wait_ms'))
+    if queue_wait_ms is None:
+        queue_wait_ms = _row10_number(processed_payload.get('queue_wait_ms'))
+    decode = stage(processed, (
+        ('queue_wait_seconds', 'queue_wait_ms', _row10_seconds_from_ms),
+        ('decode_elapsed_seconds', 'canonical_decode_elapsed_sec', _row10_number),
+        ('processing_elapsed_seconds', 'canonical_processing_elapsed_ms', _row10_seconds_from_ms),
+        ('real_time_factor', 'canonical_decode_rtf', _row10_number),
+    ))
+    decode['queue_wait_seconds'] = _row10_seconds_from_ms(queue_wait_ms)
+    identity_publish = stage(processed, (
+        ('item_id', 'item_id', _row10_number),
+        ('span_id', 'span_id', _row10_number),
+        ('identity_status_category', 'identity_status', lambda value: _ROW10_IDENTITY_STATUS_CODES.get(value)),
+    ))
+    identity_publish['submitted'] = processed_payload.get('submitted') if isinstance(processed_payload.get('submitted'), bool) else None
+    identity_publish['snapshot_version'] = _row10_number(processed.get('snapshot_version')) if processed else None
+    started_ms = _row10_number(timing.get('started')) if isinstance(timing, dict) else None
+    matched_ms = _row10_number(timing.get('matched')) if isinstance(timing, dict) else None
+    browser = {
+        'started_ms': started_ms,
+        'snapshot_received_ms': _row10_number(timing.get('snapshot_received')) if isinstance(timing, dict) else None,
+        'snapshot_version': _row10_number(timing.get('snapshot_version')) if isinstance(timing, dict) else None,
+        'matched_ms': matched_ms,
+        'elapsed_seconds': (matched_ms - started_ms) / 1000
+        if started_ms is not None and matched_ms is not None and matched_ms >= started_ms else None,
+    }
+    meeting_id = timing.get('meeting_id') if isinstance(timing, dict) else None
+    meeting_id = meeting_id if isinstance(meeting_id, str) and re.fullmatch(r'[A-Za-z0-9_-]{1,128}', meeting_id) else None
+    missing = {
+        'capture_seal': int(any(value is None for value in capture_seal.values())),
+        'canonical_queue': int(any(value is None for value in canonical_queue.values())),
+        'decode': int(any(value is None for value in decode.values())),
+        'identity_publish': int(any(value is None for value in identity_publish.values())),
+        'snapshot_version': int(identity_publish['snapshot_version'] is None),
+        'browser': int(any(value is None for value in browser.values())),
+    }
+    return {
+        'schema_version': 1,
+        'meeting_id': meeting_id,
+        'capture_seal': capture_seal,
+        'canonical_queue': canonical_queue,
+        'decode': decode,
+        'identity_publish': identity_publish,
+        'browser': browser,
+        'missing': missing,
+        'attribution': 'COMPLETE' if not any(missing.values()) else 'INCOMPLETE',
+    }
+
+
+def write_row10_timing_projection(path, events, timing):
+    """Write only the closed timing schema; raw event bodies stay in the sanitizer path."""
+    projection = project_row10_timing(events, timing)
+    Path(path).write_text(json.dumps(projection, indent=2) + '\n')
+    return projection
+
+
 def probe(path):
     return json.loads(subprocess.check_output(['ffprobe', '-v', 'error', '-show_format', '-show_streams', '-of', 'json', str(path)]))
 
@@ -476,10 +580,28 @@ class Harness:
         await self.setup_live()
         # Timestamp the DOM mutation itself; locator retries add up to a polling interval.
         await self.page.evaluate('''name => {
-          const result = window.__mossVoiceMatchTiming = {started: null, matched: null};
+          const result = window.__mossVoiceMatchTiming = {started: null, snapshot_received: null, snapshot_version: null, matched: null};
+          const originalFetch = window.fetch;
+          window.fetch = async (...args) => {
+            const response = await originalFetch(...args);
+            const path = new URL(typeof args[0] === 'string' ? args[0] : args[0].url, location.href).pathname;
+            if (path.startsWith('/api/live/sessions/') && path.endsWith('/snapshot')) {
+              const originalJson = response.json.bind(response);
+              response.json = async () => {
+                const payload = await originalJson();
+                const version = payload?.snapshot?.session?.version;
+                if (result.started !== null && Number.isInteger(version)) {
+                  result.snapshot_received = performance.now(); result.snapshot_version = version;
+                }
+                return payload;
+              };
+            }
+            return response;
+          };
           const clicked = event => {
             if (event.target.closest('button')?.textContent.trim() === 'Start capture') {
-              result.started = performance.now(); document.removeEventListener('click', clicked, true);
+              result.started = performance.now(); result.snapshot_received = null; result.snapshot_version = null;
+              document.removeEventListener('click', clicked, true);
             }
           };
           document.addEventListener('click', clicked, true);
@@ -490,18 +612,27 @@ class Harness:
             if (found) { result.matched = performance.now(); observer.disconnect(); }
           });
           observer.observe(document.body, {subtree:true, childList:true, characterData:true, attributes:true});
-          window.__mossVoiceMatchCleanup = () => { observer.disconnect(); document.removeEventListener('click', clicked, true); };
+          window.__mossVoiceMatchCleanup = () => { observer.disconnect(); document.removeEventListener('click', clicked, true); window.fetch = originalFetch; };
         }''', name)
         ident=await self.start_live('second_live')
+        latency=None; timing={}
         try:
             await self.page.wait_for_function('window.__mossVoiceMatchTiming.matched !== null', timeout=30000)
-            timing=await self.page.evaluate('window.__mossVoiceMatchTiming')
-            latency=(timing['matched']-timing['started'])/1000
-        except Exception: latency=None
-        finally: await self.page.evaluate('window.__mossVoiceMatchCleanup()')
+        except Exception: pass
+        finally:
+            try:
+                timing=await self.page.evaluate('window.__mossVoiceMatchTiming') or {}
+                if isinstance(timing,dict) and isinstance(timing.get('started'),(int,float)) and isinstance(timing.get('matched'),(int,float)):
+                    latency=(timing['matched']-timing['started'])/1000
+            except Exception: timing={}
+            await self.page.evaluate('window.__mossVoiceMatchCleanup()')
         trace='row-10-decoder-events.json'
-        write(self.out/trace, (await self.api('/api/live/sessions/'+ident+'/events'))['body'])
-        return {'ok':enrolled and latency is not None and latency<=FIRST_ENROLLED_LABEL_BOUND_SECONDS,'bound_seconds':FIRST_ENROLLED_LABEL_BOUND_SECONDS,'decoder_trace':trace,'expected_name':name,'bank_contains_name':enrolled,'recognition_seconds':latency,'measurement':'Start click to visible name DOM mutation','meeting':ident}
+        events=(await self.api('/api/live/sessions/'+ident+'/events'))['body']
+        write(self.out/trace, events)
+        timing_projection=write_row10_timing_projection(
+            self.out/'row-10-timing.json', events, {**timing, 'meeting_id': ident}
+        )
+        return {'ok':enrolled and latency is not None and latency<=FIRST_ENROLLED_LABEL_BOUND_SECONDS,'bound_seconds':FIRST_ENROLLED_LABEL_BOUND_SECONDS,'decoder_trace':trace,'timing_projection':'row-10-timing.json','timing_attribution':timing_projection['attribution'],'expected_name':name,'bank_contains_name':enrolled,'recognition_seconds':latency,'measurement':'Start click to visible name DOM mutation','meeting':ident}
 
     async def interrupted(self):
         ident=self.state['meetings'].get('second_live')
