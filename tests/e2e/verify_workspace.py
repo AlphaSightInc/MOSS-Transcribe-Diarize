@@ -615,12 +615,17 @@ class Harness:
           window.__mossVoiceMatchCleanup = () => { observer.disconnect(); document.removeEventListener('click', clicked, true); window.fetch = originalFetch; };
         }''', name)
         ident=await self.start_live('second_live')
+        latency=None; timing={}
         try:
             await self.page.wait_for_function('window.__mossVoiceMatchTiming.matched !== null', timeout=30000)
-            timing=await self.page.evaluate('window.__mossVoiceMatchTiming')
-            latency=(timing['matched']-timing['started'])/1000
-        except Exception: latency=None
-        finally: await self.page.evaluate('window.__mossVoiceMatchCleanup()')
+        except Exception: pass
+        finally:
+            try:
+                timing=await self.page.evaluate('window.__mossVoiceMatchTiming') or {}
+                if isinstance(timing,dict) and isinstance(timing.get('started'),(int,float)) and isinstance(timing.get('matched'),(int,float)):
+                    latency=(timing['matched']-timing['started'])/1000
+            except Exception: timing={}
+            await self.page.evaluate('window.__mossVoiceMatchCleanup()')
         trace='row-10-decoder-events.json'
         events=(await self.api('/api/live/sessions/'+ident+'/events'))['body']
         write(self.out/trace, events)

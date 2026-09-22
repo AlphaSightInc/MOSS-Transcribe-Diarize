@@ -113,3 +113,8 @@ Final verification: targeted harness tests 3 passed; prescribed full backend
 suite 2,317 passed / 5 skipped / 2 xfailed / 0 failed (37 subtests); frontend
 312 passed, typecheck clean, build clean. All runs used the prescribed runtime
 where applicable, with zero decoder requests.
+
+Timeout correction: `bank()` now reads `window.__mossVoiceMatchTiming` in its
+`finally` block before cleanup, defaults to `{}` if that read fails, and writes
+the projection after either wait outcome. The timeout control leaves `matched`
+null and verifies `FAIL` with no harness exception and an `INCOMPLETE` receipt.
