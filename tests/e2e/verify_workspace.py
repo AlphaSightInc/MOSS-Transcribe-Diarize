@@ -589,6 +589,7 @@ class Harness:
             await self.source.goto(self.media+'/source.html')
             await self.source.locator('audio').evaluate('a=>a.play()')
             await self.page.bring_to_front()
+        await self.open()
 
     async def _row10_prior_durability(self):
         meeting_ids=list(dict.fromkeys(

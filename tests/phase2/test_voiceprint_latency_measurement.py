@@ -1,8 +1,11 @@
 """The E2E clock measures the visible name, not when the test runner wakes up."""
 import asyncio
 import copy
+import functools
+import http.server
 import json
 from pathlib import Path
+import threading
 from types import SimpleNamespace
 
 from playwright.async_api import async_playwright
@@ -15,6 +18,64 @@ from tests.e2e.verify_workspace import (
     write,
 )
 from tests.phase2.browser_support import require_browser
+
+
+def test_fresh_row10_context_reopens_workspace_with_media_source(tmp_path):
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *_args):
+            pass
+
+        def do_GET(self):
+            if self.path.startswith('/api/meetings/'):
+                body = b'{"status":"completed"}'
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            return super().do_GET()
+
+    async def run():
+        source = Path(__file__).parents[2] / 'evidence/live-policy-sweep-20260825/corpus/mono_javier_intro_50s/audio.wav'
+        (tmp_path / 'index.html').write_text(
+            '<div data-auth-state="signed-in" data-boot="ready" data-history-boot="ready">Ready</div>'
+        )
+        (tmp_path / 'source.html').write_text('<audio src="source.wav" controls autoplay loop></audio>')
+        (tmp_path / 'source.wav').symlink_to(source)
+        server = http.server.ThreadingHTTPServer(
+            ('127.0.0.1', 0), functools.partial(Handler, directory=str(tmp_path))
+        )
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        base = f'http://127.0.0.1:{server.server_port}'
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(
+                executable_path=str(require_browser(p)), headless=True,
+                ignore_default_args=['--mute-audio'], args=['--autoplay-policy=no-user-gesture-required'],
+            )
+            probe = Harness(SimpleNamespace(output=str(tmp_path / 'output'), base=base))
+            try:
+                probe.browser = browser
+                probe._browser_context_options = {'accept_downloads': True, 'viewport': {'width': 1440, 'height': 1100}}
+                probe.context = await browser.new_context(**probe._browser_context_options)
+                probe.media = base
+                probe.page = probe.attach(await probe.context.new_page())
+                await probe.open()
+                probe.source = await probe.context.new_page()
+                await probe.source.goto(base + '/source.html')
+                await probe.source.locator('audio').evaluate('a=>a.play()')
+                await probe._fresh_row10_context()
+                assert probe.page.url.startswith(base)
+                assert probe.source.url == base + '/source.html'
+                assert await probe.api('/api/meetings/prior') == {'status': 200, 'body': {'status': 'completed'}}
+            finally:
+                await probe.context.close()
+                probe.network.close()
+                probe._private.cleanup()
+                await browser.close()
+                server.shutdown()
+                server.server_close()
+    asyncio.run(run())
 
 
 def test_name_latency_is_independent_of_observer_polling_delay(tmp_path):
