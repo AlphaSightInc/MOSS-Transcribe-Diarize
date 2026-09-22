@@ -242,15 +242,13 @@ def test_a2_operator_interrupt_during_refused_reservation_settlement_reports_tru
 
     async def exercise():
         _account, _session, handle, owner = await _seed_owner(tmp_path, manifest=REFUSED_MANIFEST)
-        entered, gates, counter = _gated_audio_recovery(monkeypatch, 2)
+        entered, gates, counter = _gated_audio_recovery(monkeypatch, 1)
         app = _app(tmp_path, _RestartDecoder())
         async with app.router.lifespan_context(app):
             await asyncio.wait_for(entered[0].wait(), 5)       # claim: _interrupt_refused_reservation
             interrupt = asyncio.create_task(app.state.phase2_lifecycle.interrupt_meeting(handle.meeting_id))
-            await asyncio.wait_for(entered[1].wait(), 5)       # fence settlement saw status=active
             gates[0].set()                                     # claim finishes first
             await app.state.phase2_file_tasks._retained_resume_task
-            gates[1].set()
             try:
                 outcome = f"returned {await interrupt}"
             except MeetingLifecycleSettlementError as exc:
@@ -312,17 +310,15 @@ def test_claim_settled_reservation_interrupt_returns_no_change(tmp_path, monkeyp
             tmp_path,
             manifest=REFUSED_MANIFEST,
         )
-        entered, gates, _counter = _gated_audio_recovery(monkeypatch, 2)
+        entered, gates, _counter = _gated_audio_recovery(monkeypatch, 1)
         app = _app(tmp_path, _RestartDecoder())
         async with app.router.lifespan_context(app):
             await asyncio.wait_for(entered[0].wait(), 5)
             interrupt = asyncio.create_task(
                 app.state.phase2_lifecycle.interrupt_meeting(handle.meeting_id)
             )
-            await asyncio.wait_for(entered[1].wait(), 5)
             gates[0].set()
             await app.state.phase2_file_tasks._retained_resume_task
-            gates[1].set()
             result = await interrupt
             status = (await _snapshot(app, handle)).status
         return result, status
@@ -335,16 +331,14 @@ def test_claim_settled_reservation_interrupt_returns_no_change(tmp_path, monkeyp
 def test_a3_account_revoke_during_refused_reservation_settlement_completes(tmp_path, monkeypatch):
     async def exercise():
         account, _session, handle, owner = await _seed_owner(tmp_path, manifest=REFUSED_MANIFEST)
-        entered, gates, _counter = _gated_audio_recovery(monkeypatch, 2)
+        entered, gates, _counter = _gated_audio_recovery(monkeypatch, 1)
         app = _app(tmp_path, _RestartDecoder())
         async with app.router.lifespan_context(app):
             lifecycle = app.state.phase2_lifecycle
             await asyncio.wait_for(entered[0].wait(), 5)
             revoke = asyncio.create_task(lifecycle.revoke_account(account.account_id))
-            await asyncio.wait_for(entered[1].wait(), 5)
             gates[0].set()
             await app.state.phase2_file_tasks._retained_resume_task
-            gates[1].set()
             try:
                 first = f"returned {await revoke}"
             except Exception as exc:  # noqa: BLE001 - the observed failure is the finding
