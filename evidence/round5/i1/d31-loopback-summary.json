@@ -2,13 +2,21 @@
   "schema": "moss-r5-i1-d31-loopback-summary.v1",
   "decoder_requests": 0,
   "loopback_stub_requests": 118,
+  "paused_live_stub_requests": 59,
   "sessions": 4,
   "paused_live": {
     "sessions": 2,
     "hard_cap_span_count": 43,
     "end_silence_tail_count": 2,
     "stop_flush_tail_count": 0,
-    "tail_latency_seconds": null
+    "tail_latency_seconds": {
+      "alternation": 1.481021,
+      "overlap": 1.503164
+    },
+    "silence_frames_streamed": 2,
+    "pre_snapshot_status": "active",
+    "stop_requested_before_pre": false,
+    "finalization_status": "final"
   },
   "no_silence_control": {
     "sessions": 2,
