@@ -1,4 +1,4 @@
-"""Claude settlement review (d772f151) -- THROWAWAY controls, not for merge.
+"""Regression controls for retained File settlement and Account revocation.
 
 Each test asserts what the retained-reservation settlement design / rulings require.
 RED on the reviewed SHA = a finding; GREEN = a NO-FINDING receipt. Real lifespan, real
@@ -27,7 +27,7 @@ from _browser_workspace_fixtures import seed_workspace
 from test_retained_file_claim import _RestartDecoder, _app, _snapshot
 
 from moss_transcribe_diarize.app import phase2_file as phase2_file_module
-from moss_transcribe_diarize.app.phase2 import MeetingHandle, Phase2Store
+from moss_transcribe_diarize.app.phase2 import MeetingHandle, Phase2Store, create_phase2_app
 from moss_transcribe_diarize.app.phase2_audio import MeetingAudioArchive
 from moss_transcribe_diarize.app.phase2_control import Phase2ControlServer
 from moss_transcribe_diarize.app.phase2_file import (
@@ -469,34 +469,84 @@ def test_s8_failed_refused_settlement_still_falls_back_to_failed(tmp_path, monke
 
     result = asyncio.run(exercise())
     print(f"\nS8 {result}")
-    assert result["status"] != "active", result
+    assert (result["status"], result["code"]) == ("failed", "resume_failed"), result
 
 
 # =========================================================================== S9 ruling
-def test_s9_cleanup_log_names_ids_and_next_sweep_retries(tmp_path, monkeypatch, caplog):
-    tasks = FileMeetingTasks(object(), tmp_path / "file-work")
-    account_id = "account-a"
-    meeting_id = "meeting-a"
-    owner = tasks.retained_root / account_id / meeting_id
-    owner.mkdir(parents=True)
-    (owner / "input.wav").write_bytes(b"retained source")
-    original = tasks._remove_retained_work_dir
-    removable = False
+def test_s9_revoke_commits_despite_cleanup_failure_and_next_boot_retries(
+    tmp_path, monkeypatch, caplog
+):
+    async def exercise():
+        store = await Phase2Store.open(tmp_path / "state.sqlite3")
+        try:
+            account, _session = await seed_workspace(store, "account-a")
+            handle = await store.workspace(account).create_meeting("file")
+            await handle.finish("interrupted")
+        finally:
+            await store.close()
 
-    def controlled_remove(path):
-        if not removable:
-            raise OSError("controlled cleanup failure")
-        original(path)
+        app = _app(tmp_path, _RestartDecoder())
+        async with app.router.lifespan_context(app):
+            owner = _write_owner(
+                tmp_path,
+                account.account_id,
+                handle.meeting_id,
+                REFUSED_MANIFEST,
+            )
+            original = FileMeetingTasks._remove_retained_work_dir
+            removable = False
 
-    monkeypatch.setattr(tasks, "_remove_retained_work_dir", controlled_remove)
-    with caplog.at_level("WARNING"):
-        tasks.reclaim_terminal_retained_work(((account_id, meeting_id),))
-    assert account_id in caplog.text and meeting_id in caplog.text
-    assert owner.exists()
+            def controlled_remove(self, path):
+                if not removable:
+                    raise OSError("controlled cleanup failure")
+                original(self, path)
 
-    removable = True
-    tasks.reclaim_terminal_retained_work(((account_id, meeting_id),))
-    assert not owner.exists()
+            monkeypatch.setattr(
+                FileMeetingTasks,
+                "_remove_retained_work_dir",
+                controlled_remove,
+            )
+            control = Phase2ControlServer(
+                tmp_path / "unused.sock",
+                app.state.phase2_lifecycle,
+                _Observer(),
+            )
+            with caplog.at_level("WARNING"):
+                revoked = await control._execute(
+                    {"command": "accounts.revoke", "account_id": account.account_id}
+                )
+            enabled_after_revoke = await _account_enabled(app, account.account_id)
+            owner_left_after_revoke = owner.exists()
+
+        removable = True
+        second = create_phase2_app(
+            database_path=tmp_path / "state.sqlite3",
+            file_runner=object(),
+            file_work_root=tmp_path / "file-work",
+            meeting_audio_root=tmp_path / "meeting-audio",
+        )
+        async with second.router.lifespan_context(second):
+            owner_left_after_second_boot = owner.exists()
+
+        return {
+            "revoked": revoked,
+            "enabled_after_revoke": enabled_after_revoke,
+            "owner_left_after_revoke": owner_left_after_revoke,
+            "owner_left_after_second_boot": owner_left_after_second_boot,
+            "account_id": account.account_id,
+            "meeting_id": handle.meeting_id,
+        }
+
+    result = asyncio.run(exercise())
+    print(f"\nS9 {result}")
+    assert result["revoked"] == {
+        "account_id": result["account_id"],
+        "revoked": True,
+    }, result
+    assert result["enabled_after_revoke"] == 0, result
+    assert result["owner_left_after_revoke"] is True, result
+    assert result["account_id"] in caplog.text and result["meeting_id"] in caplog.text
+    assert result["owner_left_after_second_boot"] is False, result
 
 
 # =========================================================================== S10 (Q2)
@@ -611,6 +661,9 @@ def test_s11_unremovable_reservation_dir_after_durable_interrupt_reports_truth(t
     result = asyncio.run(exercise())
     print(f"\nS11[{fence}] {result}")
     assert result["answer"].startswith("returned"), result
+    assert result["durable"] == "interrupted", result
+    assert result["account_enabled"] == (1 if fence == "interrupt" else 0), result
+    assert result["mutation_outcomes"][-1] == ("succeeded", None), result
 
 
 # =========================================================================== S3b (Q2)
