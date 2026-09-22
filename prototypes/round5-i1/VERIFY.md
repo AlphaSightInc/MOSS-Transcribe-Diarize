@@ -24,7 +24,7 @@ git status --short
 Expected:
 
 - Import resolves inside the verify clone; no product/frontend source diff exists.
-- D31 controls: 16 passed. The healthy paused boundary has `SETTLED`,
+- D31 controls: 15 passed. The healthy paused boundary has `SETTLED`,
   `end_silence`, active/no-Stop pre, a tail latency, and completed final;
   no-silence is `TIMEOUT`/`none`; `hard_cap` is rejected. Retention preserves
   all six D31 fields. An all-anonymous correct-word surface is rejected while a
