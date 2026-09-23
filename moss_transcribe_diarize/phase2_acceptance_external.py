@@ -2616,10 +2616,20 @@ class FixedAccountCampaign:
         accepted_audio_seconds = sum(
             int(output["accepted_samples"]) for output in outputs
         ) / LIVE_SAMPLE_RATE
-        inference = prestop_inference_projection(
-            all_events,
-            accepted_audio_seconds=accepted_audio_seconds,
-        )
+        try:
+            inference = prestop_inference_projection(
+                all_events,
+                accepted_audio_seconds=accepted_audio_seconds,
+            )
+        except ValueError as exc:
+            if embedded_backpressure:
+                self._artifact_json(
+                    "overload/prestop-inference-failure.json",
+                    _prestop_inference_failure_record(
+                        outputs, accepted_audio_seconds, str(exc)
+                    ),
+                )
+            raise
         rolling_pending: dict[str, set[int]] = defaultdict(set)
         refinement_depth = 0
         terminal_failures = 0
@@ -2935,6 +2945,64 @@ _DIAGNOSTIC_PAYLOAD_FIELDS = (
     "accepted_samples", "accounted_samples", "rolling_through_sample",
     "rolling_status", "rolling_windows_completed", "rolling_windows_failed",
 )
+
+
+def _prestop_inference_failure_record(
+    outputs: list[dict[str, object]], accepted_audio_seconds: float, failure_check: str,
+) -> dict[str, object]:
+    """Keep reducer inputs needed to explain a rejected overload, without content."""
+
+    def counter(value: object) -> dict[str, object]:
+        return {
+            "type": type(value).__name__,
+            "value": value if value is None or isinstance(value, (bool, int, float)) else None,
+        }
+
+    sessions = []
+    for output in sorted(outputs, key=lambda row: int(row["ordinal"])):
+        events = output["events"]
+        assert isinstance(events, list)
+        kinds = [event.get("kind") for event in events]
+        stop_items = {
+            event.get("payload", {}).get("item_id") for event in events
+            if event.get("kind") == "canonical_queued"
+            and event.get("payload", {}).get("reason") == "stop"
+        }
+        canonical = [event for event in events if event.get("kind") == "canonical_processed"]
+        queued = [event for event in events if event.get("kind") == "rolling_decode_queued"
+                  and event.get("payload", {}).get("admitted") is True]
+        completed = [event for event in events if event.get("kind") == "rolling_decode_completed"]
+        frontier = [event.get("payload", {}).get("end_sample") for event in queued]
+        sessions.append({
+            "session_id": output["session_id"],
+            "accepted_samples": output["accepted_samples"],
+            "accounted_samples": output["accounted_samples"],
+            "prestop_frontier_samples": max(
+                (value for value in frontier if isinstance(value, int) and not isinstance(value, bool)),
+                default=None,
+            ),
+            "canonical_queued": kinds.count("canonical_queued"),
+            "canonical_started": kinds.count("canonical_started"),
+            "canonical_processed": len(canonical) - sum(
+                event.get("payload", {}).get("item_id") in stop_items for event in canonical
+            ),
+            "canonical_stop_items": len(stop_items),
+            "rolling_admitted": len(queued),
+            "rolling_completed": len(completed),
+            "rolling_counter_checks": [
+                {
+                    "item_id": event.get("payload", {}).get("item_id"),
+                    "windows_failed": counter(event.get("payload", {}).get("windows_failed")),
+                    "stale_completions": counter(event.get("payload", {}).get("stale_completions")),
+                }
+                for event in completed
+            ],
+        })
+    return {
+        "failure_check": failure_check,
+        "accepted_audio_seconds": accepted_audio_seconds,
+        "sessions": sessions,
+    }
 
 
 def _diagnostic_event(event: Mapping[str, Any]) -> dict[str, object]:
