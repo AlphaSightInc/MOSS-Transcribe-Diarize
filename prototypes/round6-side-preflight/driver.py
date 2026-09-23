@@ -18,6 +18,8 @@ import httpx
 from moss_transcribe_diarize.phase2_acceptance_external import FixedAccountCampaign
 from moss_transcribe_diarize.phase2_acceptance_setup import _bootstrap, _private_once
 from moss_transcribe_diarize.phase2_acceptance_replay import ACCEPTANCE_STOP_DEADLINE_SECONDS
+from moss_transcribe_diarize.phase2_acceptance import _validate_overload, _validate_quality
+from moss_transcribe_diarize.phase2_acceptance_completion import validate_completion_observation
 
 
 def _metrics(url: str) -> int:
@@ -82,7 +84,9 @@ def main() -> int:
     config = json.loads(args.profile.read_text())["measurements"]["deployed"].copy()
     config.update({"https_origin": args.origin, "repo_root": str(args.repo.resolve()),
                    "campaign_work_dir": str(work / "campaign"),
-                   "operator_socket": str(work / "control.sock")})
+                   "operator_socket": str(work / "control.sock"),
+                   "web_unit": "moss-r6-side.service",
+                   "vllm_unit": "moss-vllm.service"})
     config = _provision(args.origin, work / "private", config)
     campaign = FixedAccountCampaign(candidate_sha=args.sha, config=config)
     metrics_url = str(config["vllm_metrics_url"])
@@ -97,6 +101,24 @@ def main() -> int:
                     _prepare_g9(campaign)
                 raw = getattr(campaign, name)()
                 row["state"] = "executed"
+                row["validator_pass"] = (
+                    validate_completion_observation(name, raw)
+                    if name == "browser_final_summary" else
+                    _validate_overload({"raw": raw})
+                    if name == "excess_admission_overload" else
+                    _validate_quality({"raw": raw})
+                )
+                if name in {"browser_final_summary", "excess_admission_overload"}:
+                    observed = (raw.get("capacity") or {}).get("journal_sources") if name == "browser_final_summary" else raw.get("journal_sources")
+                    row["journal_sources"] = observed
+                    row["telemetry_scoped"] = (
+                        isinstance(observed, list) and len(observed) == 2
+                        and all(isinstance(item, dict) for item in observed)
+                        and {item.get("unit") for item in observed}
+                        == {"moss-r6-side.service", "moss-vllm.service"}
+                        and all(item.get("source") == "systemd-user-journal" and
+                                item.get("read_succeeded") is True for item in observed)
+                    )
                 if name == "quality_corpus":
                     row["macro"] = raw.get("macro")
                     row["case_count"] = len(raw.get("per_case", []))
@@ -115,7 +137,9 @@ def main() -> int:
             (work / "summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
     finally:
         campaign.close()
-    return 0 if all(row["state"] == "executed" for row in summary["predicates"].values()) else 1
+    return 0 if all(row["state"] == "executed" and row["validator_pass"] is True
+                    and row.get("telemetry_scoped", True) is True
+                    for row in summary["predicates"].values()) else 1
 
 
 if __name__ == "__main__":

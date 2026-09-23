@@ -34,23 +34,28 @@ def main() -> int:
             ) if hasattr(external.FixedAccountCampaign, name)
         ],
         "side_unit_supported": False,
-        "g9_fresh_state_supported": False,
+        "g9_prerequisite_needed": False,
+        "driver_prepares_g9": False,
         "quality_single_pass_supported": False,
     }
     source = (repo / "moss_transcribe_diarize/phase2_acceptance_external.py").read_text()
     quality = source.split("    def quality_corpus(", 1)[1].split("    def two_session_capacity(", 1)[0]
     load = source.split("    def _run_live_load(", 1)[1].split("    def _", 1)[0]
     lines["side_unit_supported"] = (
-        'self._journal_window("moss-web.service")' not in load
-        and 'self._journal_window("moss-vllm.service")' not in load
-        and "_unit_pid(str(self.config.get(\"web_unit\")" not in load
+        "web_pid = _unit_pid(web_unit)" in load
+        and '"server_log": self._journal_window(web_unit)' in load
+        and 'vllm_pid = _unit_pid("moss-vllm.service")' in load
     )
-    lines["g9_fresh_state_supported"] = "_summary_voiceprint_meeting" not in (
+    lines["g9_prerequisite_needed"] = "_summary_voiceprint_meeting" in (
         repo / "moss_transcribe_diarize/phase2_acceptance_summary.py"
+    ).read_text()
+    lines["driver_prepares_g9"] = "_prepare_g9(campaign)" in (
+        Path(__file__).with_name("driver.py")
     ).read_text()
     lines["quality_single_pass_supported"] = "for pass_number in (1, 2):" not in quality
     print(json.dumps(lines, indent=2, sort_keys=True))
-    return 0 if all((lines["same_checkout"] or args.staged, lines["side_unit_supported"])) else 2
+    return 0 if all((lines["same_checkout"] or args.staged,
+                     lines["side_unit_supported"], lines["driver_prepares_g9"])) else 2
 
 
 if __name__ == "__main__":

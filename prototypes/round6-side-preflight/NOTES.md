@@ -37,3 +37,17 @@ guard exits before any app starts. Stub HTTP smoke was 200 with 0 requests,
 but the full selected-predicate run is unmeasured.
 
 Command: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. MOSS_TEST_REAL_SQLITE=1 /private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python prototypes/round6-side-preflight/run.py --help`
+
+Step 2 structural question: can the existing `web_unit` config bind PID and
+journal telemetry to one side user service while the default still binds to
+`moss-web.service`? Minimum new primitive: one validated web unit name. The
+decoder remains the one canonical vLLM unit. Invariants: default H1 commands
+and units stay identical, unsafe/unloaded names fail before measurement,
+and no `crash_recovery` runs. Unknown: real host transient unit lifecycle and
+trusted TLS are host-only. Falsifier: a side-configured load opens a Phase-1
+journal or PID, or the journal reports a different unit than requested.
+Tool decision: a focused fake-systemd RED test exercises the production load
+call site and reader; full backend/bundle detects default-path drift; local
+stub checks only HTTP orchestration. Hypotheses: fixed journal literal;
+restricted PID allowlist; restricted journal allowlist; later host asset/TLS
+prerequisites. The first three are independently testable here.
