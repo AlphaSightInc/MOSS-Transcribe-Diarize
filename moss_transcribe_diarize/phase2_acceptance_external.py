@@ -10,6 +10,7 @@ from __future__ import annotations
 from .phase2_acceptance_replay import ACCEPTANCE_STOP_DEADLINE_SECONDS
 
 import asyncio
+import copy
 import hashlib
 import importlib.util
 import json
@@ -34,7 +35,7 @@ from types import SimpleNamespace
 
 import httpx
 
-from .app.phase2 import SESSION_COOKIE
+from .app.phase2 import SESSION_COOKIE, _settled_transcript
 from .app.phase2_audio import MeetingAudioArchive
 from .app.phase2_control import Phase2ControlError, request_control
 from .app.phase2_operator import render_operator_status, serialize_operator_payload
@@ -63,6 +64,19 @@ from .phase2_acceptance_journal import ServiceJournalWindow
 
 class ExternalMeasurementError(RuntimeError):
     """A fixed measurement ran but did not produce trustworthy product state."""
+
+
+def _terminal_transcript_matches(before: Mapping[str, Any], after: Mapping[str, Any]) -> bool:
+    """Compare durable content after the product's terminal speaker presentation."""
+
+    if before.get("transcript_version") != after.get("transcript_version"):
+        return False
+    document = before.get("transcript")
+    if document is None:
+        return after.get("transcript") is None
+    if not isinstance(document, dict):
+        return False
+    return _settled_transcript(copy.deepcopy(document)) == after.get("transcript")
 
 
 class _LoadEventCapture:
@@ -1443,7 +1457,6 @@ class FixedAccountCampaign:
             before, _ = self.a.json(
                 "GET", f"/api/meetings/{created.session_id}", 200
             )
-            before_transcript = before.get("transcript")
             outcome = _control(
                 self.operator_socket,
                 "meetings.interrupt",
@@ -1501,7 +1514,7 @@ class FixedAccountCampaign:
                 "admitted_started": admitted_started,
                 "command_interrupted": interrupted,
                 "durable_interrupted": after.get("status") == "interrupted",
-                "transcript_unchanged": after.get("transcript") == before_transcript,
+                "transcript_unchanged": _terminal_transcript_matches(before, after),
                 "target_active_after": target_still_active,
                 "queue_depth_after": (
                     sum(int(value) for value in queues.values())
@@ -1805,9 +1818,7 @@ class FixedAccountCampaign:
             "GET", f"/api/meetings/{created.session_id}", 200
         )
         self._meetings["crash"].append(created.session_id)
-        before_transcript = before.get("transcript")
-        after_transcript = after.get("transcript")
-        document_mismatches = int(after_transcript != before_transcript)
+        document_mismatches = int(not _terminal_transcript_matches(before, after))
         after_audio = after.get("audio")
         recovered_audio = self.a.request(
             "GET", f"/api/meetings/{created.session_id}/audio/download"

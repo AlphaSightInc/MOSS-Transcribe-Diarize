@@ -2386,10 +2386,10 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
             del args, kwargs
             return {}
 
-    from moss_transcribe_diarize.app.phase2 import Meeting
+    from moss_transcribe_diarize.app.phase2 import Meeting, _settled_transcript
     before = Meeting(
         meeting_id="crash", mode="live", title=None, status="active", created_at_ms=1,
-        transcript={"segments": [{"text": "durable"}]}, transcript_version=1,
+        transcript={"segments": [{"id": "committed", "speaker": "S00", "text": "durable"}]}, transcript_version=1,
     ).to_dict()
     if prefix_fault == "zero_version":
         before["transcript_version"] = 0
@@ -2401,6 +2401,7 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
     after = {
         **before,
         "status": "interrupted",
+        "transcript": _settled_transcript(copy.deepcopy(before["transcript"])),
         "audio": {
             "state": "partial",
             "relative_path": "account/crash/audio.partial.mp3",
@@ -2467,6 +2468,21 @@ def test_real_crash_producer_compares_recovered_bytes_to_production_archive_orac
     assert result["recovery"]["kill_returncode"] == kill_returncode
     assert result["recovery"]["ready"] is True
     assert json.loads((campaign.artifact_root / "crash-recovery-wait.json").read_text()) == result["recovery"]
+
+
+def test_terminal_transcript_comparison_preserves_content_and_version():
+    from moss_transcribe_diarize.app.phase2 import _settled_transcript
+
+    before = {"transcript_version": 1, "transcript": {"segments": [
+        {"id": "committed", "speaker": "S00", "text": "durable"},
+    ]}}
+    after = {"transcript_version": 1, "transcript": _settled_transcript(copy.deepcopy(before["transcript"]))}
+    assert external._terminal_transcript_matches(before, after)
+    after["transcript"]["segments"][0]["text"] = "changed"
+    assert not external._terminal_transcript_matches(before, after)
+    after["transcript"]["segments"][0]["text"] = "durable"
+    after["transcript_version"] = 2
+    assert not external._terminal_transcript_matches(before, after)
 
 
 @pytest.mark.parametrize("stop_failure", [False, True])
@@ -2866,9 +2882,16 @@ def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_re
     meeting = {
         "id": "meeting",
         "status": "interrupted",
-        "transcript": {"version": 0, "segments": []},
+        "transcript": {"version": 1, "segments": [{"id": "committed", "speaker": "S00", "text": "durable"}]},
         "audio": {"state": "partial"},
     }
+    from moss_transcribe_diarize.app.phase2 import _settled_transcript
+
+    def meeting_projection():
+        projected = copy.deepcopy(meeting)
+        if interrupted:
+            projected["transcript"] = _settled_transcript(projected["transcript"])
+        return projected
 
     class Owner:
         def request(self, method: str, path: str, **kwargs: object):
@@ -2883,7 +2906,7 @@ def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_re
 
         def json(self, method: str, path: str, expected: int, **kwargs: object):
             del method, path, expected, kwargs
-            return copy.deepcopy(meeting), _Response(200)
+            return meeting_projection(), _Response(200)
 
         def close(self) -> None:
             pass
@@ -2940,7 +2963,7 @@ def test_real_g6_operator_producer_interrupts_queued_item_and_records_no_late_re
     monkeypatch.setattr(
         campaign,
         "_await_meeting_terminal",
-        lambda meeting_id, timeout=1800: copy.deepcopy(meeting),
+        lambda meeting_id, timeout=1800: meeting_projection(),
     )
     if not queue_observed:
         with pytest.raises(external.ExternalMeasurementError, match="did not observe queued canonical"):
