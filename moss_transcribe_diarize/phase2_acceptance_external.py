@@ -59,6 +59,7 @@ from .phase2_acceptance_replay import (
 )
 from .live_service_replay import run_service_replay
 from .app.live_session import AudioFrame, LIVE_SAMPLE_RATE
+from .app.live_transcript_convergence import ROLLING_STRIDE_SECONDS, ROLLING_WINDOW_SECONDS
 from .installed_candidate import validated_candidate_artifacts
 from .phase2_acceptance_journal import ServiceJournalWindow, supported_moss_unit
 from .evaluation import Segment, calculate_diarization
@@ -2249,6 +2250,10 @@ class FixedAccountCampaign:
                     captured.stop_requested_monotonic_ns,
                     duration,
                 )
+                final_session = captured.captures["post_stop_final"]["snapshot"]["session"]
+                window_coverage = _quality_window_coverage(
+                    events, accepted_samples=final_session["accepted_samples"]
+                )
                 trace_rows = [
                     json.loads(line)
                     for line in trace.read_text(encoding="utf-8").splitlines()
@@ -2270,6 +2275,7 @@ class FixedAccountCampaign:
                         "category": case_by_id[str(case_id)].get("category"),
                         "duration_seconds": duration,
                         "windows": len(measurements["rolling_queue"]["windows"]),
+                        "window_coverage": window_coverage,
                         "metrics": {
                             "immediate": scored["pre_stop_immediate"],
                             "settled": scored["pre_stop_settled"],
@@ -2952,12 +2958,14 @@ _DIAGNOSTIC_EVENT_KINDS = frozenset({
     "session_closed", "terminal_failure", "session_aborted",
     "terminal_finalization_started", "terminal_finalization_completed",
     "terminal_finalization_failed",
+    "text_revision_applied",
 })
 _DIAGNOSTIC_PAYLOAD_FIELDS = (
     "runtime_monotonic_ns", "canonical_decode_elapsed_sec", "frozen_span_duration_sec",
     "rolling_decode_elapsed_sec", "decode_failure", "windows_failed", "stale_completions",
     "submitted", "admitted", "item_id", "outcome", "reason", "refusal",
-    "submission_refusal", "finalization_status", "applied", "end_sample",
+    "submission_refusal", "finalization_status", "applied", "source",
+    "window_index", "start_sample", "end_sample",
     "accepted_samples", "accounted_samples", "rolling_through_sample",
     "rolling_status", "rolling_windows_completed", "rolling_windows_failed",
 )
@@ -3043,6 +3051,66 @@ def _diagnostic_event(event: Mapping[str, Any]) -> dict[str, object]:
     row["failure_code"] = failure.get("code")
     row["failure_kind"] = failure.get("kind")
     return row
+
+
+def _quality_window_coverage(
+    events: list[dict[str, Any]], *, accepted_samples: int
+) -> dict[str, int]:
+    """Count full corpus windows proved by rolling or the applied terminal revision."""
+    window = int(LIVE_SAMPLE_RATE * ROLLING_WINDOW_SECONDS)
+    stride = int(LIVE_SAMPLE_RATE * ROLLING_STRIDE_SECONDS)
+    if isinstance(accepted_samples, bool) or not isinstance(accepted_samples, int) or accepted_samples < 0:
+        raise ExternalMeasurementError("quality final surface lacks accepted sample count")
+    planned = set(range(0, max(0, accepted_samples - window + 1), stride))
+    rolling: set[int] = set()
+    terminal_revisions = []
+    terminal_completions = []
+    for event in events:
+        kind = event.get("kind")
+        payload = event.get("payload") or {}
+        if kind == "rolling_decode_completed" and payload.get("decode_failure") is None and payload.get("outcome") in {
+            "applied", "refused", "no_proposal"
+        }:
+            start, end = payload.get("start_sample"), payload.get("end_sample")
+            if (
+                isinstance(start, bool) or not isinstance(start, int)
+                or isinstance(end, bool) or not isinstance(end, int)
+                or start not in planned or end != start + window or start in rolling
+                or payload.get("window_index") != start // stride
+            ):
+                raise ExternalMeasurementError("quality rolling completion has invalid full window")
+            rolling.add(start)
+        elif kind == "text_revision_applied" and payload.get("source") == "terminal":
+            terminal_revisions.append(payload)
+        elif kind == "terminal_finalization_completed" and payload.get("applied") is True:
+            terminal_completions.append(payload)
+    if len(terminal_revisions) > 1 or len(terminal_completions) > 1:
+        raise ExternalMeasurementError("quality trace has duplicate terminal coverage evidence")
+    terminal_range = None
+    if terminal_revisions and terminal_completions:
+        revision = terminal_revisions[0]
+        completion = terminal_completions[0]
+        start, end = revision.get("start_sample"), revision.get("end_sample")
+        if (
+            isinstance(start, bool) or not isinstance(start, int) or start < 0
+            or isinstance(end, bool) or not isinstance(end, int)
+            or end > accepted_samples or end <= start
+            or completion.get("end_sample") != end
+        ):
+            raise ExternalMeasurementError("quality terminal coverage range is invalid")
+        terminal_range = (start, end)
+    terminal_only = {
+        start for start in planned - rolling
+        if terminal_range is not None
+        and terminal_range[0] <= start
+        and start + window <= terminal_range[1]
+    }
+    return {
+        "planned_full_windows": len(planned),
+        "rolling_decoded": len(rolling),
+        "terminal_only": len(terminal_only),
+        "uncovered": len(planned - rolling - terminal_only),
+    }
 
 
 def _quality_terminal_diagnostics(trace: Path, adapter: Any, captured: Any) -> dict[str, object]:
@@ -3547,6 +3615,7 @@ def _quality_projection(
                 "category": row["category"],
                 "duration_seconds": row["duration_seconds"],
                 "windows": row["windows"],
+                "window_coverage": row["window_coverage"],
                 "metrics": row["metrics"],
                 "settled_hypothesis_speaker_intervals": row["settled_hypothesis_speaker_intervals"],
                 "reference_speaker_intervals": row["reference_speaker_intervals"],

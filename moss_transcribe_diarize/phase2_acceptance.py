@@ -1515,7 +1515,8 @@ def _quality_validation(
         raw.get("cases") == 6
         and raw.get("passes") == 2
         and raw.get("sessions") == 12
-        and int(raw.get("windows", 0)) == 122
+        and isinstance(raw.get("windows"), int)
+        and not isinstance(raw.get("windows"), bool)
         and float(raw.get("duration_seconds", 0)) >= 1239.987
         and isinstance(per_case, list)
         and len(per_case) == 12
@@ -1547,6 +1548,7 @@ def _quality_validation(
     session_ids: set[str] = set()
     total_case_seconds = 0.0
     total_case_windows = 0
+    total_planned_windows = 0
     rows: list[dict[str, object]] = []
     metric_fields = (
         "wer",
@@ -1577,6 +1579,25 @@ def _quality_validation(
             return False, None
         total_case_seconds += duration_seconds
         total_case_windows += windows
+        coverage = item.get("window_coverage")
+        if not isinstance(coverage, dict) or set(coverage) != {
+            "planned_full_windows", "rolling_decoded", "terminal_only", "uncovered"
+        }:
+            return False, None
+        if any(
+            not isinstance(value, int) or isinstance(value, bool) or value < 0
+            for value in coverage.values()
+        ):
+            return False, None
+        planned = coverage["planned_full_windows"]
+        if (
+            planned <= 0
+            or coverage["rolling_decoded"] != windows
+            or coverage["uncovered"] != 0
+            or coverage["rolling_decoded"] + coverage["terminal_only"] != planned
+        ):
+            return False, None
+        total_planned_windows += planned
         category = item.get("category")
         item_metrics = item.get("metrics")
         if not isinstance(category, str) or not category or not isinstance(item_metrics, dict):
@@ -1595,7 +1616,8 @@ def _quality_validation(
         case_passes != expected_case_passes
         or raw.get("corpus_manifest_sha256")
         != "80fc15bd730f7aa44d8a69aa6e7e00aaf43ed54e2af8a03abc2c8934d7438d7c"
-        or total_case_windows != 122
+        or total_case_windows != raw["windows"]
+        or total_planned_windows != 122
         or total_case_seconds < 1239.987
     ):
         return False, None

@@ -831,6 +831,12 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
                     "category": "speech",
                     "duration_seconds": 1239.987 / 12,
                     "windows": 11 if index < 2 else 10,
+                    "window_coverage": {
+                        "planned_full_windows": 11 if index < 2 else 10,
+                        "rolling_decoded": 11 if index < 2 else 10,
+                        "terminal_only": 0,
+                        "uncovered": 0,
+                    },
                     "metrics": {
                         surface: {
                             "wer": {"immediate": 0.16, "settled": 0.14, "final": 0.09}[surface],
@@ -2538,6 +2544,7 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
         def __init__(self, adapter: object, **kwargs: object) -> None:
             del adapter, kwargs
             snapshot = {"session": {
+                "accepted_samples": 160000,
                 "identity_snapshot": {"canonical_speakers": ["speaker-0001"]},
                 "effective_transcript": [
                     {"start_sample": 0, "end_sample": 4_000,
@@ -2580,7 +2587,10 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
         @staticmethod
         def read_service_events(trace: Path):
             del trace
-            return []
+            return [{"kind": "rolling_decode_completed", "payload": {
+                "outcome": "applied", "window_index": 0,
+                "start_sample": 0, "end_sample": 160000,
+            }}]
 
         @staticmethod
         def event_measurements(*args: object):
@@ -3642,6 +3652,94 @@ def test_quality_numeric_failures_are_reported_without_weakening_bounds():
         assert any(f"reported {name}=" in detail and f"{bound:.12g}" in detail for detail in details)
     assert "exceeds maximum" in " ".join(details)
     assert "below minimum" in " ".join(details)
+
+
+def test_d46_h1_rolling_shortfall_is_complete_only_with_terminal_coverage():
+    report = _report("deployed", "a" * 40, "b" * 64)
+    raw = next(item["raw"] for item in report["predicates"] if item["id"] == "quality_corpus")
+    for index, row in enumerate(raw["per_case"]):
+        planned = row["windows"]
+        terminal_only = 1 if index < 6 else 0
+        row["windows"] -= terminal_only
+        row["window_coverage"] = {
+            "planned_full_windows": planned,
+            "rolling_decoded": row["windows"],
+            "terminal_only": terminal_only,
+            "uncovered": 0,
+        }
+    raw["windows"] = 116
+    assert acceptance._quality_validation({"raw": raw})[0]
+
+
+def test_d46_uncovered_full_window_rejects_even_with_122_rolling_count():
+    report = _report("deployed", "a" * 40, "b" * 64)
+    raw = next(item["raw"] for item in report["predicates"] if item["id"] == "quality_corpus")
+    for row in raw["per_case"]:
+        row["window_coverage"] = {
+            "planned_full_windows": row["windows"],
+            "rolling_decoded": row["windows"],
+            "terminal_only": 0,
+            "uncovered": 0,
+        }
+    row = raw["per_case"][0]
+    row["window_coverage"]["rolling_decoded"] -= 1
+    row["window_coverage"]["uncovered"] = 1
+    assert not acceptance._quality_validation({"raw": raw})[0]
+
+
+def test_d46_producer_counts_only_trace_proved_terminal_coverage():
+    rolling = [
+        {"kind": "rolling_decode_completed", "payload": {
+            "outcome": "applied", "window_index": index,
+            "start_sample": index * 160000, "end_sample": (index + 1) * 160000,
+        }}
+        for index in range(4)
+    ]
+    revision = {"kind": "text_revision_applied", "payload": {
+        "source": "terminal", "start_sample": 0, "end_sample": 800000,
+    }}
+    completed = {"kind": "terminal_finalization_completed", "payload": {
+        "applied": True, "end_sample": 800000,
+    }}
+    assert external._quality_window_coverage(
+        rolling + [revision, completed], accepted_samples=800000
+    ) == {
+        "planned_full_windows": 5, "rolling_decoded": 4,
+        "terminal_only": 1, "uncovered": 0,
+    }
+    assert external._quality_window_coverage(
+        rolling + [revision], accepted_samples=800000
+    )["uncovered"] == 1
+    shortened = {"kind": "text_revision_applied", "payload": {
+        "source": "terminal", "start_sample": 0, "end_sample": 640000,
+    }}
+    shorter_completion = {"kind": "terminal_finalization_completed", "payload": {
+        "applied": True, "end_sample": 640000,
+    }}
+    assert external._quality_window_coverage(
+        rolling + [shortened, shorter_completion], accepted_samples=800000
+    )["uncovered"] == 1
+    failed_rolling = [dict(event) for event in rolling]
+    failed_rolling[-1] = {"kind": "rolling_decode_completed", "payload": {
+        **rolling[-1]["payload"], "decode_failure": "decoder_failed",
+    }}
+    assert external._quality_window_coverage(
+        failed_rolling + [shortened, shorter_completion], accepted_samples=800000
+    )["uncovered"] == 1
+
+
+def test_d46_retained_diagnostics_keep_terminal_range_without_content():
+    row = external._diagnostic_event({
+        "kind": "text_revision_applied", "seq": 1, "session_id": "opaque",
+        "snapshot_version": 2, "payload": {
+            "source": "terminal", "start_sample": 0, "end_sample": 800000,
+            "text": "PRIVATE TRANSCRIPT",
+        },
+    })
+    assert (row["source"], row["start_sample"], row["end_sample"]) == (
+        "terminal", 0, 800000
+    )
+    assert "PRIVATE TRANSCRIPT" not in json.dumps(row)
 
 
 def test_quality_misses_inside_the_documented_tolerance_are_admitted_and_named():
