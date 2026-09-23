@@ -831,6 +831,12 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
                     "category": "speech",
                     "duration_seconds": 1239.987 / 12,
                     "windows": 11 if index < 2 else 10,
+                    "window_coverage": {
+                        "planned_full_windows": 11 if index < 2 else 10,
+                        "rolling_decoded": 11 if index < 2 else 10,
+                        "terminal_only": 0,
+                        "uncovered": 0,
+                    },
                     "metrics": {
                         surface: {
                             "wer": {"immediate": 0.16, "settled": 0.14, "final": 0.09}[surface],
@@ -2486,8 +2492,11 @@ def test_terminal_transcript_comparison_preserves_content_and_version():
 
 
 @pytest.mark.parametrize("stop_failure", [False, True])
+@pytest.mark.parametrize("nondecoded_rolling", [False, True])
+@pytest.mark.parametrize("terminal_final", [False, True])
 def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_seam(
     monkeypatch, tmp_path: Path, stop_failure: bool,
+    nondecoded_rolling: bool, terminal_final: bool,
 ):
     corpus = tmp_path / "corpus"
     corpus.mkdir()
@@ -2538,6 +2547,8 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
         def __init__(self, adapter: object, **kwargs: object) -> None:
             del adapter, kwargs
             snapshot = {"session": {
+                "accepted_samples": 320000 if terminal_final else 160000,
+                "finalization_status": "final" if terminal_final else "failed",
                 "identity_snapshot": {"canonical_speakers": ["speaker-0001"]},
                 "effective_transcript": [
                     {"start_sample": 0, "end_sample": 4_000,
@@ -2580,12 +2591,27 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
         @staticmethod
         def read_service_events(trace: Path):
             del trace
-            return []
+            events = [{"kind": "rolling_decode_completed", "payload": {
+                "outcome": "applied", "window_index": 0,
+                "start_sample": 0, "end_sample": 160000,
+            }}]
+            if nondecoded_rolling:
+                events.append({"kind": "rolling_decode_completed", "payload": {
+                    "outcome": "not_awaited", "window_index": 1,
+                    "start_sample": 160000, "end_sample": 320000,
+                    "decode_failure": "session_terminal",
+                }})
+            if terminal_final:
+                events.append({"kind": "text_revision_applied", "payload": {
+                    "source": "terminal", "start_sample": 0, "end_sample": 320000,
+                    "finalization_status": "final",
+                }})
+            return events
 
         @staticmethod
         def event_measurements(*args: object):
             del args
-            return {"rolling_queue": {"windows": [1]}}
+            return {"rolling_queue": {"windows": [1, 2] if nondecoded_rolling else [1]}}
 
     def replay(*, out_dir: Path, **kwargs: object) -> None:
         del kwargs
@@ -2655,6 +2681,14 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
     assert result["passes"] == 2
     assert result["sessions"] == 12
     assert len(result["per_case"]) == 12
+    assert result["windows"] == 12
+    assert all(row["windows"] == 1 for row in result["per_case"])
+    assert all(row["window_coverage"] == {
+        "planned_full_windows": 2 if terminal_final else 1,
+        "rolling_decoded": 1,
+        "terminal_only": 1 if terminal_final else 0,
+        "uncovered": 0,
+    } for row in result["per_case"])
     assert set(result["per_case"][0]["surface_observations"]) == {"pre_stop_immediate", "pre_stop_settled", "post_stop_final"}
     first = result["per_case"][0]
     assert first["settled_hypothesis_speaker_intervals"] == [
@@ -3642,6 +3676,163 @@ def test_quality_numeric_failures_are_reported_without_weakening_bounds():
         assert any(f"reported {name}=" in detail and f"{bound:.12g}" in detail for detail in details)
     assert "exceeds maximum" in " ".join(details)
     assert "below minimum" in " ".join(details)
+
+
+def test_d46_h1_rolling_shortfall_is_complete_only_with_terminal_coverage():
+    report = _report("deployed", "a" * 40, "b" * 64)
+    raw = next(item["raw"] for item in report["predicates"] if item["id"] == "quality_corpus")
+    for index, row in enumerate(raw["per_case"]):
+        planned = row["windows"]
+        terminal_only = 1 if index < 6 else 0
+        row["windows"] -= terminal_only
+        row["window_coverage"] = {
+            "planned_full_windows": planned,
+            "rolling_decoded": row["windows"],
+            "terminal_only": terminal_only,
+            "uncovered": 0,
+        }
+    raw["windows"] = 116
+    assert acceptance._quality_validation({"raw": raw})[0]
+    projected = acceptance.external_denominator_projection(report)["quality_windows"]
+    assert (projected["collected"], projected["passed"]) == (122, 122)
+
+
+def test_d46_uncovered_full_window_rejects_even_with_122_rolling_count():
+    report = _report("deployed", "a" * 40, "b" * 64)
+    raw = next(item["raw"] for item in report["predicates"] if item["id"] == "quality_corpus")
+    for row in raw["per_case"]:
+        row["window_coverage"] = {
+            "planned_full_windows": row["windows"],
+            "rolling_decoded": row["windows"],
+            "terminal_only": 0,
+            "uncovered": 0,
+        }
+    row = raw["per_case"][0]
+    row["windows"] -= 1
+    raw["windows"] -= 1
+    row["window_coverage"]["rolling_decoded"] -= 1
+    row["window_coverage"]["uncovered"] = 1
+    assert not acceptance._quality_validation({"raw": raw})[0]
+
+
+def test_d46_producer_credits_public_final_revision_without_completion_event():
+    rolling = [
+        {"kind": "rolling_decode_completed", "payload": {
+            "outcome": "applied", "window_index": index,
+            "start_sample": index * 160000, "end_sample": (index + 1) * 160000,
+        }}
+        for index in range(4)
+    ]
+    revision = {"kind": "text_revision_applied", "payload": {
+        "source": "terminal", "start_sample": 0, "end_sample": 800000,
+        "finalization_status": "final",
+    }}
+    assert external._quality_window_coverage(
+        rolling + [revision], accepted_samples=800000,
+        finalization_status="final",
+    ) == {
+        "planned_full_windows": 5, "rolling_decoded": 4,
+        "terminal_only": 1, "uncovered": 0,
+    }
+
+
+@pytest.mark.parametrize("revision_status,snapshot_status", [
+    ("failed", "final"), ("refused", "final"),
+    ("final", "failed"), ("final", "refused"),
+])
+def test_d46_nonfinal_terminal_evidence_leaves_window_uncovered(
+    revision_status: str, snapshot_status: str,
+):
+    revision = {"kind": "text_revision_applied", "payload": {
+        "source": "terminal", "start_sample": 0, "end_sample": 160000,
+        "finalization_status": revision_status,
+    }}
+    assert external._quality_window_coverage(
+        [revision], accepted_samples=160000,
+        finalization_status=snapshot_status,
+    )["uncovered"] == 1
+
+
+def test_d46_short_terminal_range_leaves_one_window_uncovered():
+    shortened = {"kind": "text_revision_applied", "payload": {
+        "source": "terminal", "start_sample": 0, "end_sample": 640000,
+        "finalization_status": "final",
+    }}
+    assert external._quality_window_coverage(
+        [shortened], accepted_samples=800000,
+        finalization_status="final",
+    )["uncovered"] == 1
+
+
+def test_d46_late_terminal_range_and_missing_revision_leave_window_uncovered():
+    late = {"kind": "text_revision_applied", "payload": {
+        "source": "terminal", "start_sample": 160000,
+        "end_sample": 800000, "finalization_status": "final",
+    }}
+    assert external._quality_window_coverage(
+        [late], accepted_samples=800000, finalization_status="final",
+    )["uncovered"] == 1
+    assert external._quality_window_coverage(
+        [], accepted_samples=160000, finalization_status="final",
+    )["uncovered"] == 1
+
+
+def test_d46_final_terminal_range_still_rejects_duplicates_and_malformed_end():
+    revision = {"kind": "text_revision_applied", "payload": {
+        "source": "terminal", "start_sample": 0,
+        "end_sample": 160000, "finalization_status": "final",
+    }}
+    with pytest.raises(external.ExternalMeasurementError, match="duplicate"):
+        external._quality_window_coverage(
+            [revision, revision], accepted_samples=160000,
+            finalization_status="final",
+        )
+    invalid = {"kind": "text_revision_applied", "payload": {
+        **revision["payload"], "end_sample": 160001,
+    }}
+    with pytest.raises(external.ExternalMeasurementError, match="range"):
+        external._quality_window_coverage(
+            [invalid], accepted_samples=160000,
+            finalization_status="final",
+        )
+
+
+def test_d46_nondecoded_rolling_window_can_be_terminal_covered():
+    rolling = [
+        {"kind": "rolling_decode_completed", "payload": {
+            "outcome": "applied", "window_index": index,
+            "start_sample": index * 160000, "end_sample": (index + 1) * 160000,
+        }}
+        for index in range(4)
+    ]
+    failed_rolling = [dict(event) for event in rolling]
+    failed_rolling[-1] = {"kind": "rolling_decode_completed", "payload": {
+        **rolling[-1]["payload"], "outcome": "not_awaited",
+        "decode_failure": "session_terminal",
+    }}
+    revision = {"kind": "text_revision_applied", "payload": {
+        "source": "terminal", "start_sample": 0, "end_sample": 800000,
+        "finalization_status": "final",
+    }}
+    assert external._quality_window_coverage(
+        failed_rolling + [revision], accepted_samples=800000,
+        finalization_status="final",
+    ) == {"planned_full_windows": 5, "rolling_decoded": 3,
+          "terminal_only": 2, "uncovered": 0}
+
+
+def test_d46_retained_diagnostics_keep_terminal_range_without_content():
+    row = external._diagnostic_event({
+        "kind": "text_revision_applied", "seq": 1, "session_id": "opaque",
+        "snapshot_version": 2, "payload": {
+            "source": "terminal", "start_sample": 0, "end_sample": 800000,
+            "text": "PRIVATE TRANSCRIPT",
+        },
+    })
+    assert (row["source"], row["start_sample"], row["end_sample"]) == (
+        "terminal", 0, 800000
+    )
+    assert "PRIVATE TRANSCRIPT" not in json.dumps(row)
 
 
 def test_quality_misses_inside_the_documented_tolerance_are_admitted_and_named():
