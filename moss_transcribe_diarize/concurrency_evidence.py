@@ -32,6 +32,21 @@ def prestop_inference_projection(
         if event.get("kind") == "canonical_queued"
         and payload(event).get("reason") == "stop"
     }
+    # Capacity events concatenate sessions; compare sequence numbers only within a session.
+    stop_seq_by_session: dict[str, int] = {}
+    for event in events:
+        session_id = event.get("session_id")
+        seq = event.get("seq")
+        if (
+            event.get("kind") == "stop_requested"
+            and isinstance(session_id, str)
+            and session_id
+            and isinstance(seq, int)
+            and not isinstance(seq, bool)
+        ):
+            prior_seq = stop_seq_by_session.get(session_id)
+            if prior_seq is None or seq < prior_seq:
+                stop_seq_by_session[session_id] = seq
     rolling_admission_events = [
         item_identity(event)
         for event in events
@@ -45,6 +60,7 @@ def prestop_inference_projection(
     rolling_decode_seconds = 0.0
     canonical_processed_items = 0
     rolling_completed_items: set[tuple[str, int]] = set()
+    stale_completions_by_session: dict[str, int] = {}
     for event in events:
         kind = event.get("kind")
         if kind not in {"canonical_processed", "rolling_decode_completed"}:
@@ -66,6 +82,14 @@ def prestop_inference_projection(
         if identity not in rolling_admitted or identity in rolling_completed_items:
             raise ValueError("rolling completion lacks one admitted session-scoped item")
         rolling_completed_items.add(identity)
+        completion_seq = event.get("seq")
+        stop_seq = stop_seq_by_session.get(identity[0])
+        post_stop = (
+            isinstance(completion_seq, int)
+            and not isinstance(completion_seq, bool)
+            and stop_seq is not None
+            and completion_seq > stop_seq
+        )
         if item.get("outcome") == "not_awaited":
             # A window the session was no longer waiting for by the time the pump reached it.
             # The coordinator refuses to decode one (`capture_refinement_item`), so there is
@@ -81,10 +105,27 @@ def prestop_inference_projection(
             raise ValueError("rolling completion has a non-healthy terminal outcome")
         if item.get("decode_failure") is not None:
             raise ValueError("rolling completion reports a decode failure")
-        for counter in ("windows_failed", "stale_completions"):
-            value = item.get(counter)
-            if not isinstance(value, int) or isinstance(value, bool) or value != 0:
-                raise ValueError(f"rolling completion has invalid {counter}")
+        windows_failed = item.get("windows_failed")
+        if (
+            not isinstance(windows_failed, int)
+            or isinstance(windows_failed, bool)
+            or windows_failed != 0
+        ):
+            raise ValueError("rolling completion has invalid windows_failed")
+        stale_count = item.get("stale_completions")
+        if not isinstance(stale_count, int) or isinstance(stale_count, bool) or stale_count < 0:
+            raise ValueError("rolling completion has invalid stale_completions")
+        previous_stale_count = stale_completions_by_session.get(identity[0], 0)
+        stale_increment = stale_count - previous_stale_count
+        wp35_post_stop_stale = (
+            post_stop
+            and item.get("rolling_status") == "stopped"
+            and item.get("outcome") == "no_proposal"
+            and stale_increment == 1
+        )
+        if stale_increment < 0 or (stale_increment > 0 and not wp35_post_stop_stale):
+            raise ValueError("rolling completion has invalid stale_completions")
+        stale_completions_by_session[identity[0]] = stale_count
         if "rolling_decode_elapsed_sec" not in item:
             raise ValueError("rolling completion lacks inference timing")
         elapsed = item["rolling_decode_elapsed_sec"]
@@ -96,6 +137,8 @@ def prestop_inference_projection(
             raise ValueError("rolling completion inference timing is invalid") from exc
         if not math.isfinite(rolling_decode) or rolling_decode < 0:
             raise ValueError("rolling completion inference timing is invalid")
+        # Rolling work is admitted before Stop (WP35 plans no window after it), so its decode
+        # counts by origin, like canonical work outside the Stop-created `stop_items` tail.
         rolling_decode_seconds += rolling_decode
     if canonical_processed_items == 0 or not rolling_admitted:
         raise ValueError("pre-Stop inference evidence is absent")

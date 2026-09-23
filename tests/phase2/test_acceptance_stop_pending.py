@@ -1,5 +1,7 @@
 """Resumable Stop must settle before capacity samples its admitted/completed ledger."""
 import asyncio
+import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -10,6 +12,15 @@ from moss_transcribe_diarize.concurrency_evidence import prestop_inference_proje
 
 def snapshot(status, finalization):
     return SimpleNamespace(session=SimpleNamespace(status=status, finalization_status=finalization))
+
+
+def h1b_session2_poststop_events():
+    fixture = (
+        Path(__file__).resolve().parents[1]
+        / "fixtures"
+        / "h1b_overload_session_2_poststop.json"
+    )
+    return json.loads(fixture.read_text())
 
 
 @pytest.mark.parametrize("terminal_status", ["closed", "failed", "aborted"])
@@ -120,6 +131,61 @@ def test_a_window_the_session_stopped_awaiting_closes_its_admission_without_comp
     assert result["rolling_completed_items"] == 2
     assert result["rolling_decode_seconds"] == pytest.approx(.2)
     assert result["decode_seconds"] == pytest.approx(.3)
+
+
+def test_h1b_post_stop_stale_completion_closes_ledger_and_counts_its_decode_by_origin():
+    """Content-free rows are extracted from the retained H1 #2 session-2 event file."""
+    events = h1b_session2_poststop_events()
+    prior = next(
+        event
+        for event in events
+        if event.get("item_id") == 54 and event["kind"] == "rolling_decode_completed"
+    )
+    stop = next(event for event in events if event["kind"] == "stop_requested")
+    stale = next(
+        event
+        for event in events
+        if event.get("item_id") == 59 and event["kind"] == "rolling_decode_completed"
+    )
+
+    assert (prior["seq"], stop["seq"], stale["seq"]) == (540, 588, 590)
+    assert prior["stale_completions"] == 0 and stale["stale_completions"] - prior["stale_completions"] == 1
+    assert stale["rolling_status"] == "stopped" and stale["outcome"] == "no_proposal"
+
+    result = prestop_inference_projection(events, accepted_audio_seconds=120.5)
+
+    assert result["rolling_completed_items"] == 2
+    # Item 59 was admitted before Stop and really decoded, so it counts by origin.
+    rolling = prior["rolling_decode_elapsed_sec"] + stale["rolling_decode_elapsed_sec"]
+    assert result["rolling_decode_seconds"] == pytest.approx(rolling)
+    assert result["decode_seconds"] == pytest.approx(
+        events[0]["canonical_decode_elapsed_sec"] + rolling
+    )
+
+
+@pytest.mark.parametrize("mutation", ["pre_stop", "other_outcome", "refused_outcome", "other_status", "increment_by_two"])
+def test_h1b_post_stop_stale_exemption_rejects_non_wp35_controls(mutation):
+    events = h1b_session2_poststop_events()
+    stop = next(event for event in events if event["kind"] == "stop_requested")
+    stale = next(
+        event
+        for event in events
+        if event.get("item_id") == 59 and event["kind"] == "rolling_decode_completed"
+    )
+    if mutation == "pre_stop":
+        stop["seq"] = stale["seq"] + 1
+        events.append({"session_id": "other-session", "seq": 1, "kind": "stop_requested"})
+    elif mutation == "other_outcome":
+        stale["outcome"] = "applied"
+    elif mutation == "refused_outcome":
+        stale["outcome"] = "refused"
+    elif mutation == "other_status":
+        stale["rolling_status"] = "rolling"
+    else:
+        stale["stale_completions"] += 1
+
+    with pytest.raises(ValueError, match="invalid stale_completions"):
+        prestop_inference_projection(events, accepted_audio_seconds=120.5)
 
 
 def test_load_event_capture_rejects_ring_overrun_instead_of_scoring_partial_history():
