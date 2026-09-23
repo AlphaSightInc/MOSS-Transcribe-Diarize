@@ -21,13 +21,14 @@ The corpus reading of the same properties, on real speech through the real runti
 from __future__ import annotations
 
 import asyncio
-import fcntl
 import hashlib
 import tempfile
 import tracemalloc
 import unittest
 from dataclasses import replace
 from pathlib import Path
+
+from tests._fd_path import open_fd_path
 
 from moss_transcribe_diarize.app.live_adapters import LiveProviderError
 from moss_transcribe_diarize.app.live_service_runtime import (
@@ -82,8 +83,7 @@ class CompleteMixedTapeTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "configured-live-tapes"
             tape = CompleteMixedTape(epoch=0, capacity_bytes=1024, storage_root=root)
-            raw = fcntl.fcntl(tape._file.fileno(), fcntl.F_GETPATH, b"\0" * 1024)
-            fd_path = Path(raw.split(b"\0", 1)[0].decode())
+            fd_path = open_fd_path(tape._file.fileno())
 
             self.assertEqual(fd_path.parent.resolve(), root.resolve())
             self.assertNotEqual(fd_path.parent.resolve(), Path(tempfile.gettempdir()).resolve())

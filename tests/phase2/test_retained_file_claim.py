@@ -259,7 +259,9 @@ def test_retained_claim_refuses_mutated_owner_source_contract_or_prefix(
                 manifest["contract_version"] = 2
                 manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
             else:
-                next((owner_dir / "checkpoint" / "windows").glob("w*.json")).unlink()
+                # Removing the first committed record creates a gap; removing the
+                # last one leaves a valid shorter prefix, regardless of readdir order.
+                min((owner_dir / "checkpoint" / "windows").glob("w*.json")).unlink()
 
             assert await tasks.claim_retained_work(handle) is False
             assert decoder.calls == [0, 1, 2]

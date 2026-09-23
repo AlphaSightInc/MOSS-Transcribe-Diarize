@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-import fcntl
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
+
+from tests._fd_path import open_fd_path
 
 from moss_transcribe_diarize.app.live_adapters import InferenceTranscript
 from moss_transcribe_diarize.app.live_arbiter import InferenceArbiter, InferenceArbiterBackpressure
@@ -202,8 +203,7 @@ def test_mixed_and_lane_tapes_use_one_configured_root_and_release_all_scratch(la
         assert len(tapes) == 1 + lane_count
         assert [tape.retained_bytes for tape in tapes] == [8] * (1 + lane_count)
         for tape in tapes:
-            raw = fcntl.fcntl(tape._file.fileno(), fcntl.F_GETPATH, b"\0" * 1024)
-            assert Path(raw.split(b"\0", 1)[0].decode()).parent.resolve() == root.resolve()
+            assert open_fd_path(tape._file.fileno()).parent.resolve() == root.resolve()
         released = live.release_tape()
         assert released.retained_bytes == 0
         assert all(tape.retained_bytes == 0 for tape in tapes)

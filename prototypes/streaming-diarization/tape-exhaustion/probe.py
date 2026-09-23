@@ -135,6 +135,7 @@ def exercise(directory, case, emit=print, clips=None):
                 audio=client.get(f'/api/meetings/{sid}/audio/download')
                 path=directory/f'{ids.index(sid)}.mp3';path.write_bytes(audio.content)
                 probe=json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','json',str(path)],text=True)) if audio.status_code==200 else None
+                decoded_pcm=subprocess.check_output(['ffmpeg','-v','error','-i',str(path),'-f','s16le','-ac','1','-ar','16000','-']) if audio.status_code==200 else b''
                 before=prefixes[sid]
                 failed_lanes={'system','microphone'} if case not in ('system_only','microphone_only','mixed_only') else {case.removesuffix('_only')}
                 preserved=all(s in snap.session.effective_transcript for s in before if s.source_lane in failed_lanes)
@@ -142,7 +143,7 @@ def exercise(directory, case, emit=print, clips=None):
                     terminal_failure=None if snap.terminal_failure is None else snap.terminal_failure.code,
                     saved_segments=len(saved['transcript']['segments']),prefix_preserved=preserved,
                     saved_equal=[s['text'] for s in saved['transcript']['segments']]==[s.text for s in snap.session.effective_transcript],
-                    audio=saved['audio'],mp3=probe,notice=saved.get('notice'),events=events,state=state)
+                    audio=saved['audio'],mp3=probe,decoded_samples=len(decoded_pcm)//2,notice=saved.get('notice'),events=events,state=state)
                 documents[result['session']]=saved['transcript']
                 results.append(result);emit(json.dumps(result))
             async def reopen():
