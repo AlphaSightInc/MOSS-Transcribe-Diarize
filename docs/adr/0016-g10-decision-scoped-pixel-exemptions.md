@@ -1,6 +1,6 @@
 # ADR-0016: G10 pixel exemptions for D7/D9 transcript controls
 
-- **Status:** Proposed, pending the three host controls below
+- **Status:** Accepted (2026-09-23, round-6 lead) — host controls passed; independent review PASS (`REVIEW-H2H4-CLAUDE.md`)
 - **Date:** 2026-09-23
 - **Scope:** `transcript_pane_fidelity` only
 
@@ -21,3 +21,16 @@ The viewports, pinned reference identity, channel tolerance, four-connectivity, 
 ## Required acceptance evidence
 
 On the host, under the staged Python/SQLite/Chrome runtime and with zero decoder requests: (1) the exact H1 `RcqY4pA-` meeting passes both viewports under the refreshed harness; (2) the completed ten-segment meeting still passes; (3) a test-only `.tr-title` visual corruption outside all exemptions fails. Record actual post-exemption percentages, masked boxes/areas, and source SHA. If any control fails, this ADR remains proposed and G10 remains failed. No baseline exception is admitted for fonts or OS differences.
+
+
+## Host evidence (accepted 2026-09-23 ~05:45 EDT)
+Real host (`ga0-alienware-rtx4070ti`), staged `f7fe4adc` runtime + this comparator/fixture in a scratch checkout, pinned clean reference
+`6a8d0c1fafe8a1a8d6ea449036dd1ca330309d70`, Chrome 152, zero decoder requests (round-6 `status/h2h4-host-run.sh`):
+- New unit tests: RED 4 failed / 1 passed on `f7fe4adc`; GREEN 5/5.
+- H1's exact meeting (interrupted, one segment, S00): **PASS** 1.2144 % / 0.6826 % (1440×900) and 1.5137 % / 0.8706 % (1280×800).
+- Completed ten-segment meeting: **PASS** 0.9297 % / 0.1181 % (unchanged from the old build).
+- Title-corruption violating control: **FAIL** 7.9231 % / 5.9222 %, as required.
+Mandate source: auto-mvp-0911 grilling ("pixel-fidelity diffs attributable only to user-requested UX changes = pre-approved exception").
+Bounds (2 % / 1 %), tolerance and viewports are unchanged; fonts/OS are not exempt. Residual risk: the 1280×800 largest region is 0.87 %
+of the 1 % bound on this meeting — shifted text and chips remain measured by design. The acceptance receipt now records each exemption's
+masked boxes and the pre-exemption pixel count per viewport.

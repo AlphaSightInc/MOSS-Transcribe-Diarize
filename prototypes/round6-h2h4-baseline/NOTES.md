@@ -11,3 +11,8 @@ Assumptions/unknowns: the brief's host element attribution is correct; component
 Falsifier: the exact H1 meeting still fails either bound on the host, the 10-segment completed meeting regresses, or a title/text-color violating control passes. Any need to mask the whole transcript body or exempt tools when no D7 banner appears falsifies the narrow fixture design.
 
 Why tools: host H1 and lead A/B establish the actual miss and component causes; production comparator tests verify selector semantics; one controlled host run proves the refreshed fixture on the exact affected meeting; the violating control proves that non-exempt regressions remain visible. Full backend and bundle catch unrelated harness regressions.
+
+
+## Verdict (lead, 2026-09-23)
+ATTRIBUTABLE on the host: every large old→new component on H1's G10 meeting is a D7/D9 element or the D7-banner displacement; baseline
+refresh accepted (ADR-0016), host controls PASS/PASS/FAIL as designed; independent review PASS.
