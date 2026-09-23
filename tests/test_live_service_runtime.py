@@ -678,7 +678,6 @@ def test_transient_canonical_scheduler_serializes_and_exits_when_idle():
     def first() -> None:
         calls.append("first-start")
         entered.set()
-        scheduler.signal(second)
         release.wait(timeout=1.0)
         calls.append("first-end")
 
@@ -686,10 +685,12 @@ def test_transient_canonical_scheduler_serializes_and_exits_when_idle():
         calls.append("second")
 
     scheduler.signal(first)
-    scheduler.signal(first)
     assert entered.wait(timeout=1.0)
     worker_count_while_blocked = scheduler.worker_count
     assert scheduler.in_flight
+    # Both signals arrive while the first callback is demonstrably in flight.
+    scheduler.signal(second)
+    scheduler.signal(second)
     release.set()
     deadline = time.monotonic() + 1.0
     while scheduler.worker_count and time.monotonic() < deadline:
@@ -1494,6 +1495,7 @@ def _runtime_driven_to_terminal_failure() -> tuple[LiveServiceRuntime, str, int]
     runtime = _runtime(
         speech=(True, False, True, False),
         descriptor=_descriptor(max_retained_samples=2000),
+        scheduler=_ManualCanonicalPumpScheduler(),
     )
     created = runtime.create()
     runtime.accept_frame(created.session_id, _frame(0))
