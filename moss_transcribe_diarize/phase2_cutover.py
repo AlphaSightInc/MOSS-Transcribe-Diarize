@@ -1329,7 +1329,9 @@ class CutoverRun:
                     result,
                     phase="preadmission",
                     fields={
-                        "qualification_bundle": str(output.relative_to(self.attempt)),
+                        "qualification_bundle": (
+                            str(output.relative_to(self.attempt)) if output is not None else None
+                        ),
                         "g7": "PASS",
                         "admitted": False,
                     },
