@@ -1064,10 +1064,17 @@ def _type7(values: Sequence[float], quantile: float) -> float:
     return ordered[lower] + (ordered[upper] - ordered[lower]) * fraction
 
 
-def _validate_capacity(predicate: Mapping[str, object]) -> bool:
+def _validate_capacity(
+    predicate: Mapping[str, object], *, failure_checks: list[str] | None = None
+) -> bool:
+    def fail(check: str) -> bool:
+        if failure_checks is not None:
+            failure_checks.append(check)
+        return False
+
     raw = predicate.get("raw")
     if not isinstance(raw, dict):
-        return False
+        return fail("capacity.raw_missing")
     sessions = raw.get("session_observations")
     wrong_owner = raw.get("wrong_owner_observations")
     rss_samples = raw.get("rss_samples")
@@ -1088,28 +1095,45 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
         and isinstance(backpressure, dict)
         and isinstance(campaign_interval, dict)
     ):
+        missing = []
+        if not isinstance(sessions, list) or len(sessions) != 2:
+            missing.append("session_observations")
+        if not isinstance(wrong_owner, list) or not wrong_owner:
+            missing.append("wrong_owner_observations")
+        if not isinstance(rss_samples, list) or len(rss_samples) < 2:
+            missing.append("rss_samples")
+        if not isinstance(cache_samples, list) or len(cache_samples) < 2:
+            missing.append("vllm_gpu_cache_samples")
+        if not isinstance(log_matches, dict):
+            missing.append("log_match_counts")
+        if not isinstance(backpressure, dict):
+            missing.append("backpressure_observation")
+        if not isinstance(campaign_interval, dict):
+            missing.append("campaign_interval")
+        for name in missing:
+            fail(f"capacity.input_missing_or_invalid:{name}")
         return False
     try:
         ordered_sessions = sorted(sessions, key=lambda item: int(item["session_ordinal"]))
         if [int(item["session_ordinal"]) for item in ordered_sessions] != [1, 2]:
-            return False
+            return fail("capacity.session_ordinals")
         if {int(item["account_ordinal"]) for item in ordered_sessions} != {1, 2}:
-            return False
+            return fail("capacity.account_ordinals")
         max_p95 = max(_type7(item["lags"], 0.95) for item in ordered_sessions)
         rss = [int(value) for value in rss_samples]
         cache = [float(value) for value in cache_samples]
         if any(value < 0 for value in rss) or not all(
             math.isfinite(value) and value >= 0 for value in cache
         ):
-            return False
+            return fail("capacity.resource_samples_finite_nonnegative")
         expected_samples = int(float(raw["requested_duration_seconds"]) * 16_000)
         campaign_started_ns = int(campaign_interval["started_monotonic_ns"])
         campaign_finished_ns = int(campaign_interval["finished_monotonic_ns"])
         observed_duration = (campaign_finished_ns - campaign_started_ns) / 1_000_000_000
         if campaign_finished_ns <= campaign_started_ns:
-            return False
+            return fail("capacity.campaign_interval_positive")
     except (KeyError, ValueError, TypeError):
-        return False
+        return fail("capacity.required_numeric_input_invalid")
 
     lifecycle: list[tuple[int, int, Mapping[str, object]]] = []
     sequence_gaps = 0
@@ -1121,7 +1145,7 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
     terminal_failures = 0
     for item in ordered_sessions:
         if not isinstance(item, dict) or not isinstance(item.get("events"), list):
-            return False
+            return fail("capacity.session_events_missing")
         ordinal = int(item["session_ordinal"])
         sequence_gaps += int(
             int(item.get("frames", -1)) * 8_000 != expected_samples
@@ -1138,11 +1162,17 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
         refinement_pending[ordinal] = set()
         for event in item["events"]:
             if not isinstance(event, dict):
-                return False
+                return fail("capacity.event_not_object")
             capacity_events.append({"session_id": str(ordinal), **event})
             timestamp = event.get("runtime_monotonic_ns")
             if not isinstance(timestamp, int):
-                return False
+                if event.get("kind") != "text_revision_applied":
+                    return fail(
+                        f"capacity.event_runtime_monotonic_ns_missing:{event.get('kind', 'unknown')}"
+                    )
+                # Text revisions are transcript-publication facts. Neither capacity
+                # reduction orders them nor the producer assigns them a runtime clock.
+                continue
             lifecycle.append((timestamp, ordinal, event))
             kind = event.get("kind")
             if kind == "terminal_finalization_failed":
@@ -1162,20 +1192,23 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
         if kind == "rolling_decode_queued" and event.get("admitted") is True:
             item_id = event.get("item_id")
             if not isinstance(item_id, int):
-                return False
+                return fail("capacity.rolling_decode_queued_item_id")
             refinement_pending[ordinal].add(item_id)
             refinement_depth = max(refinement_depth, len(refinement_pending[ordinal]))
         elif kind == "rolling_decode_completed":
             item_id = event.get("item_id")
             if not isinstance(item_id, int):
-                return False
+                return fail("capacity.rolling_decode_completed_item_id")
             refinement_pending[ordinal].discard(item_id)
 
-    fairness = canonical_lifecycle_fairness(
-        canonical_events,
-        {str(ordinal) for ordinal in range(1, 3)},
-        maximum_skew=1,
-    )
+    try:
+        fairness = canonical_lifecycle_fairness(
+            canonical_events,
+            {str(ordinal) for ordinal in range(1, 3)},
+            maximum_skew=1,
+        )
+    except (KeyError, TypeError, ValueError):
+        return fail("capacity.fairness_reduction")
     dispatch_skew = int(fairness["maximum_contended_pair_dispatch_skew"])
 
     try:
@@ -1203,7 +1236,7 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
             for ordinal in range(1, 3)
         }
     except (KeyError, TypeError, ValueError):
-        return False
+        return fail("capacity.wrong_owner_observation_invalid")
     continuous_probes = all(
         sequences == list(range(int(ordered_sessions[ordinal - 1]["frames"])))
         for ordinal, sequences in probe_sequences.items()
@@ -1217,47 +1250,54 @@ def _validate_capacity(predicate: Mapping[str, object]) -> bool:
             accepted_audio_seconds=accepted_audio_seconds,
         )
     except ValueError:
-        return False
+        return fail("capacity.prestop_inference_reduction")
     rtf = float(inference["rtf"])
     rss_growth = max(rss) - min(rss)
     cache_peak = max(cache)
-    return (
-        raw.get("sessions") == 2
-        and int(raw.get("accounts", 0)) >= 2
-        and observed_duration >= 600
-        and math.isclose(float(raw.get("duration_seconds", 0)), observed_duration)
-        and float(raw.get("requested_duration_seconds", 0)) == 600
-        and raw.get("real_human_speech") is True
-        and float(raw.get("ingress_cadence_seconds", -1)) == 0.5
-        and wrong_ordinals == {1, 2}
-        and continuous_probes
-        and cross_deliveries == 0
-        and max_p95 <= 10.0
-        and fairness.get("applicability") == "measured"
-        and fairness.get("passes") is True
-        and dispatch_skew <= 1
-        and rtf < 1
-        and refinement_depth <= 1
-        and cache_peak <= 0.95
-        and rss_growth <= 4 * 1024**3
-        and oom_errors == 0
-        and accelerator_errors == 0
-        and sequence_gaps == 0
-        and dropped_commits == 0
-        and terminal_failures == 0
-        and marker_failures == 0
-        and all(
-            backpressure.get(key) is True
-            for key in ("observed_429", "peer_progress", "same_sequence_retry")
-        )
-        and int(raw.get("dispatch_skew", -1)) == dispatch_skew
-        and raw.get("fairness_measured") is True
-        and raw.get("fairness_observation") == fairness
-        and math.isclose(float(raw.get("prestop_inference_rtf", math.inf)), rtf)
-        and int(raw.get("refinement_queue_depth", -1)) == refinement_depth
-        and math.isclose(float(raw.get("vllm_gpu_cache_use", math.inf)), cache_peak)
-        and int(raw.get("rss_growth_bytes", -1)) == rss_growth
+    checks = (
+        ("sessions_is_two", lambda: raw.get("sessions") == 2),
+        ("accounts_at_least_two", lambda: int(raw.get("accounts", 0)) >= 2),
+        ("observed_duration_at_least_600", lambda: observed_duration >= 600),
+        ("duration_matches_campaign_interval", lambda: math.isclose(float(raw.get("duration_seconds", 0)), observed_duration)),
+        ("requested_duration_is_600", lambda: float(raw.get("requested_duration_seconds", 0)) == 600),
+        ("real_human_speech", lambda: raw.get("real_human_speech") is True),
+        ("ingress_cadence_is_0_5", lambda: float(raw.get("ingress_cadence_seconds", -1)) == 0.5),
+        ("wrong_owner_ordinals_are_both", lambda: wrong_ordinals == {1, 2}),
+        ("wrong_owner_probes_continuous", lambda: continuous_probes),
+        ("cross_deliveries_zero", lambda: cross_deliveries == 0),
+        ("transcript_lag_p95_at_most_10", lambda: max_p95 <= 10.0),
+        ("fairness_measured_and_passed", lambda: fairness.get("applicability") == "measured" and fairness.get("passes") is True),
+        ("dispatch_skew_at_most_one", lambda: dispatch_skew <= 1),
+        ("prestop_inference_rtf_below_one", lambda: rtf < 1),
+        ("refinement_depth_at_most_one", lambda: refinement_depth <= 1),
+        ("cache_peak_at_most_0_95", lambda: cache_peak <= 0.95),
+        ("rss_growth_at_most_4gb", lambda: rss_growth <= 4 * 1024**3),
+        ("oom_errors_zero", lambda: oom_errors == 0),
+        ("accelerator_errors_zero", lambda: accelerator_errors == 0),
+        ("sequence_gaps_zero", lambda: sequence_gaps == 0),
+        ("dropped_commits_zero", lambda: dropped_commits == 0),
+        ("terminal_failures_zero", lambda: terminal_failures == 0),
+        ("marker_failures_zero", lambda: marker_failures == 0),
+        ("backpressure_controls_pass", lambda: all(backpressure.get(key) is True for key in ("observed_429", "peer_progress", "same_sequence_retry"))),
+        ("dispatch_skew_matches_reduction", lambda: int(raw.get("dispatch_skew", -1)) == dispatch_skew),
+        ("fairness_flag_true", lambda: raw.get("fairness_measured") is True),
+        ("fairness_observation_matches_reduction", lambda: raw.get("fairness_observation") == fairness),
+        ("prestop_rtf_matches_reduction", lambda: math.isclose(float(raw.get("prestop_inference_rtf", math.inf)), rtf)),
+        ("refinement_depth_matches_reduction", lambda: int(raw.get("refinement_queue_depth", -1)) == refinement_depth),
+        ("vllm_gpu_cache_use_matches_samples", lambda: math.isclose(float(raw.get("vllm_gpu_cache_use", math.inf)), cache_peak)),
+        ("rss_growth_matches_samples", lambda: int(raw.get("rss_growth_bytes", -1)) == rss_growth),
     )
+    failed = []
+    for name, predicate_check in checks:
+        try:
+            passed = bool(predicate_check())
+        except (KeyError, TypeError, ValueError, OverflowError):
+            passed = False
+        if not passed:
+            failed.append(f"capacity.check_failed:{name}")
+    if failure_checks is not None:
+        failure_checks.extend(failed)
+    return not failed
 
 
 def overload_minimum_frames(lane_capacity_samples: int, frame_samples: int) -> int:
@@ -1336,10 +1376,14 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
             if not isinstance(events, list):
                 return False
             for event in events:
-                if not isinstance(event, dict) or not isinstance(
-                    event.get("runtime_monotonic_ns"), int
-                ):
+                if not isinstance(event, dict):
                     return False
+                if not isinstance(event.get("runtime_monotonic_ns"), int):
+                    if event.get("kind") != "text_revision_applied":
+                        return False
+                    # Same rule as `_validate_capacity`: text revisions carry no runtime clock
+                    # and no overload reduction orders them.
+                    continue
                 lifecycle.append((int(event["runtime_monotonic_ns"]), ordinal, event))
         canonical_events: list[dict[str, object]] = []
         for _timestamp, ordinal, event in sorted(lifecycle, key=lambda item: item[0]):

@@ -119,12 +119,12 @@ def test_g9_failure_retains_content_free_check_identity(tmp_path: Path):
     with pytest.raises(RuntimeError, match="Browser summary privacy/lifecycle/load qualification failed"):
         _record_summary_result(Campaign(), raw)
     retained = json.loads((tmp_path / "summary-checks.json").read_text())
-    assert retained == {"checks": raw["checks"], "validator_pass": False}
+    assert retained == {"checks": raw["checks"], "validator_pass": False, "diagnostics": {}}
 
     raw["checks"]["lifecycle_events"] = True
     assert _record_summary_result(Campaign(), raw) is raw
     retained = json.loads((tmp_path / "summary-checks.json").read_text())
-    assert retained == {"checks": raw["checks"], "validator_pass": True}
+    assert retained == {"checks": raw["checks"], "validator_pass": True, "diagnostics": {}}
 
 
 def test_completion_boolean_claims_cannot_replace_missing_rows_timings_or_capacity():
