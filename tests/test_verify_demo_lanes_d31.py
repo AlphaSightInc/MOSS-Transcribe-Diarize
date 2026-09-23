@@ -274,6 +274,9 @@ def test_fetched_merged_scorer_accepts_named_but_rejects_all_anonymous(monkeypat
 def test_d31_row_fields_and_surface_identity_telemetry_survive_retained_metadata():
     row={
         'tail_latency_seconds': 2.0,
+        'tail_latency_target_seconds': 3.0,
+        'tail_latency_target_met': True,
+        'tail_latency_target_status': 'MET',
         'first_cover_latency_seconds': 1.0,
         'tail_endpoint_reason_pre': 'end_silence',
         'tail_endpoint_reason': 'end_silence',
@@ -289,3 +292,43 @@ def test_d31_row_fields_and_surface_identity_telemetry_survive_retained_metadata
     }
 
     assert retained_metadata(row) == row
+
+
+# D38 controls: 3.0 s is a target. Real round-5 arms on 0a39c411 (focused receipt
+# moss-round5/evidence/r5-focused-20260922T152855Z: demo 1.989325/2.004655 s,
+# row 4 1.980773/2.008758 s) meet it; a synthetic 3.5 s arm is a recorded miss
+# that keeps the row PASS; a null tail latency still fails through D31.
+def test_retained_round5_tail_latencies_meet_the_d38_target():
+    for seconds in (1.989325, 2.004655, 1.980773, 2.008758, 3.0):
+        assert demo.tail_latency_target(seconds) == (True, 'MET')
+    assert demo.TAIL_LATENCY_TARGET_SECONDS == 3.0
+
+
+def test_tail_latency_over_target_is_best_effort_miss_and_row_still_passes(monkeypatch):
+    monkeypatch.setattr(demo, 'score_lanes', _passing_score)
+    clock=_Clock()
+    result=demo.run_case('https://unused',None,'overlap',client=_D31Client(
+        pre_tail=True,snapshot_times=(3.5,),clock=clock),realtime=False,_clock=clock)
+
+    assert result['settle'] == 'SETTLED'
+    assert result['tail_latency_seconds'] == 3.5
+    assert result['tail_latency_target_seconds'] == 3.0
+    assert result['tail_latency_target_met'] is False
+    assert result['tail_latency_target_status'] == 'BEST_EFFORT_MISS'
+    assert result['passed'] is True
+    assert demo.accepted_case(result) is True
+    assert retained_metadata(result)['tail_latency_target_status'] == 'BEST_EFFORT_MISS'
+
+
+def test_null_tail_latency_has_no_target_verdict_and_still_fails(monkeypatch):
+    monkeypatch.setattr(demo, 'score_lanes', _passing_score)
+    clock=_Clock()
+    result=demo.run_case('https://unused',None,'overlap',client=_D31Client(
+        pre_tail=True,snapshot_times=(5.001,),clock=clock),realtime=False,_clock=clock)
+
+    assert result['settle'] == 'TIMEOUT'
+    assert result['tail_latency_seconds'] is None
+    assert result['tail_latency_target_met'] is None
+    assert result['tail_latency_target_status'] is None
+    assert result['passed'] is False
+    assert demo.accepted_case(result) is False
