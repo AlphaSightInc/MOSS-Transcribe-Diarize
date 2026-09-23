@@ -1300,22 +1300,30 @@ def test_disk_refusal_precedes_phase1_mutation(monkeypatch, tmp_path, filesystem
 
 def test_preadmission_can_attend_without_remeasuring_the_candidate(tmp_path, monkeypatch):
     """The operator may attend a candidate qualified earlier; the record must say so."""
-
-    from moss_transcribe_diarize import phase2_cutover as cutover
-
-    calls: list[str] = []
-
-    class Ops:
-        def __getattr__(self, name):
-            def record(*_args, **_kwargs):
-                calls.append(name)
-                return None
-            return record
-
-    run = cutover.CutoverRun.__new__(cutover.CutoverRun)
-    run.requalify = False
-    assert run.requalify is False
-    assert "run_qualification" not in calls
+    fixture = _cutover_fixture(monkeypatch, tmp_path)
+    ops = FakeCutoverOps(fixture)
+    qualifications: list[str] = []
+    monkeypatch.setattr(ops, "run_qualification", lambda **_kw: qualifications.append("called"))
+    monkeypatch.setattr("moss_transcribe_diarize.phase2_cutover.time.sleep", lambda _: None)
+    attempt = tmp_path / "attempt"
+    result = CutoverRun.prepare(
+        profile_path=fixture["profile"],
+        attempt=attempt,
+        terminal="preadmission",
+        requalify=False,
+        ops=ops,
+    ).run()
+    assert qualifications == [] and ops.attended_calls == 1
+    assert result.terminal == "preadmission"
+    assert result.g7 == "PASS" and result.admitted is False
+    assert ops.phase1_running is False and ops.candidate_running is True
+    rows = CutoverJournal(attempt / "journal.jsonl").read()
+    phases = [row["phase"] for row in rows]
+    assert "qualification_skipped" in phases and "failure_observed" not in phases
+    assert next(row for row in rows if row["phase"] == "qualification_skipped")["qualified_here"] is False
+    assert rows[-1]["phase"] == "preadmission"
+    assert rows[-1]["g7"] == "PASS" and rows[-1]["admitted"] is False
+    assert rows[-1]["qualification_bundle"] is None
 
 
 def test_a_restored_run_without_qualification_is_refused(tmp_path):
