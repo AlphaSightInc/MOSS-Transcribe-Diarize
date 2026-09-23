@@ -18,9 +18,19 @@ from typing import Mapping
 from .phase2_acceptance import EXTERNAL_REQUIREMENTS, _write_all, external_requirements
 from .phase2_acceptance_collect import RAW_SCHEMA, _artifact_name
 from .phase2_acceptance_external import ExternalMeasurementError, FixedAccountCampaign
+from .app.phase2_control import Phase2ControlError
 
 
 MEASUREMENT_SCHEMA = "moss-phase2-fixed-measurement.v1"
+_SAFE_CONTROL_CODES = frozenset({
+    "control_unavailable",
+    "invalid_control_response",
+    "account_lifecycle_busy",
+    "account_settlement_failed",
+    "meeting_settlement_failed",
+    "invalid_request",
+    "control_request_failed",
+})
 
 
 @dataclass(frozen=True, slots=True)
@@ -232,9 +242,21 @@ def _failure_details(exc: Exception, config: Mapping[str, object]) -> dict[str, 
     details = {"failure_message": message, "failure_operation": operation, **facts}
     underlying = exc
     while underlying is not None:
-        if hasattr(underlying, "browser_timeout"):
+        if isinstance(underlying, Phase2ControlError):
+            code = underlying.code
+            if code in _SAFE_CONTROL_CODES and "control_code" not in details:
+                details["control_code"] = code
+            response_bytes = underlying.response_bytes
+            if (
+                type(response_bytes) is int
+                and response_bytes >= 0
+                and "response_bytes" not in details
+            ):
+                details["response_bytes"] = response_bytes
+        if isinstance(underlying, OSError) and underlying.errno is not None:
+            details.setdefault("errno", underlying.errno)
+        if hasattr(underlying, "browser_timeout") and "browser_timeout" not in details:
             details["browser_timeout"] = underlying.browser_timeout
-            break
         underlying = underlying.__cause__ or underlying.__context__
     return details
 
