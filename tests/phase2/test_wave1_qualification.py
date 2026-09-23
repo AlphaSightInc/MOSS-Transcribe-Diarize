@@ -2666,6 +2666,7 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
     ]
     assert first["settled_der_s00_diagnostic"] == {
         "as_is": 0.25, "without_s00_confusion": 0.0, "s00_confusion_difference": 0.25,
+        "s00_mapped_reference": [], "s00_mapped_correct_seconds": 0.0,
     }
     assert result["macro"]["diarization_error_rate"] == 0.25
     assert Path("quality/content-free-metrics.json") in campaign.safe_artifacts
@@ -3846,3 +3847,22 @@ def test_measurement_directories_use_attempt_owned_root(monkeypatch, tmp_path):
         monkeypatch, tmp_path, wave=1, expected=14, refused=True)
     assert len(created) == 2
     assert all(path.parent == root and not path.exists() for path in created)
+
+
+def test_quality_s00_diagnostic_reports_when_s00_is_the_optimal_match(tmp_path):
+    """Review F1: an unattributed label that best matches a reference speaker scores as correct; say so."""
+    from moss_transcribe_diarize import phase2_acceptance_external as external
+
+    reference = tmp_path / "reference.jsonl"
+    reference.write_text(
+        '{"start": 0.0, "end": 1.0, "speaker": "Alpha Person", "text": "REFERENCE PRIVATE"}\n'
+        '{"start": 1.0, "end": 2.0, "speaker": "Beta Person", "text": "REFERENCE PRIVATE"}\n'
+    )
+    snapshot = {"session": {"effective_transcript": [], "identity_snapshot": {"canonical_speakers": ["speaker-0001"]}}}
+    rows = [{"start": 0.0, "end": 1.0, "speaker": "S01"}, {"start": 1.0, "end": 2.0, "speaker": "S00"}]
+    diagnostic = external._quality_speaker_intervals(snapshot, rows, reference)["settled_der_s00_diagnostic"]
+    assert diagnostic["as_is"] == 0.0
+    assert diagnostic["s00_confusion_difference"] == 0.0
+    assert diagnostic["s00_mapped_reference"] == ["ref:02"]
+    assert diagnostic["s00_mapped_correct_seconds"] == 1.0
+    assert "Beta Person" not in str(diagnostic)

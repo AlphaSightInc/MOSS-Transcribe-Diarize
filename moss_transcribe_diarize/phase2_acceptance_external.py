@@ -3395,6 +3395,7 @@ def _quality_speaker_intervals(
     ref_duration = sum(row.duration for row in ref_eval)
     confusion = 0.0
     s00_confusion = 0.0
+    s00_mapped_correct = 0.0
     for ref in ref_eval:
         for hyp in hyp_eval:
             overlap = max(0.0, min(ref.end, hyp.end) - max(ref.start, hyp.start))
@@ -3402,6 +3403,9 @@ def _quality_speaker_intervals(
                 confusion += overlap
                 if hyp.speaker == "S00":
                     s00_confusion += overlap
+            elif hyp.speaker == "S00":
+                # S00 was the optimal match for this reference speaker: its time scores as correct.
+                s00_mapped_correct += overlap
     difference = (min(confusion, ref_duration)
                   - min(confusion - s00_confusion, ref_duration)) / ref_duration
     return {
@@ -3409,8 +3413,13 @@ def _quality_speaker_intervals(
         "reference_speaker_intervals": reference_intervals,
         "settled_der_s00_diagnostic": {
             "as_is": as_is["der"],
-            "without_s00_confusion": round(as_is["der"] - difference, 9),
-            "s00_confusion_difference": round(difference, 9),
+            "without_s00_confusion": max(0.0, round(as_is["der"] - difference, 6)),
+            "s00_confusion_difference": round(difference, 6),
+            "s00_mapped_reference": sorted(
+                reference_ids[speaker] for speaker, label in as_is["speaker_mapping"].items()
+                if label == "S00" and speaker in reference_ids
+            ),
+            "s00_mapped_correct_seconds": round(s00_mapped_correct, 6),
         },
     }
 
