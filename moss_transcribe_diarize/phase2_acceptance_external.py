@@ -2237,10 +2237,22 @@ class FixedAccountCampaign:
                 speaker_intervals = _quality_speaker_intervals(
                     captured.captures["pre_stop_settled"]["snapshot"],
                     settled_rows, reference,
+                    speech_regions=surface.speech_regions_from_wav(audio),
                 )
                 if (speaker_intervals["settled_der_s00_diagnostic"]["as_is"]
                         != scored["pre_stop_settled"]["der"]):
                     raise ExternalMeasurementError("settled DER interval replay disagrees with scorer")
+                diagnostic = speaker_intervals["settled_der_s00_diagnostic"]
+                settled = scored["pre_stop_settled"]
+                if ("reference_speech_as_is" in diagnostic
+                        and diagnostic["reference_speech_as_is"] != settled["reference_speech_der"]):
+                    raise ExternalMeasurementError("reference-speech DER interval replay disagrees with scorer")
+                settled["der_raw"] = settled["der"]
+                settled["reference_speech_der_raw"] = settled["reference_speech_der"]
+                settled["der"] = diagnostic["unattributed_der"]
+                settled["reference_speech_der"] = diagnostic.get(
+                    "reference_speech_unattributed_der", settled["reference_speech_der"]
+                )
                 events = surface.read_service_events(trace)
                 measurements = surface.event_measurements(
                     events,
@@ -3431,6 +3443,7 @@ def _quality_surface_observations(captures: Mapping[str, Any], *, reference_spea
 
 def _quality_speaker_intervals(
     snapshot: Mapping[str, Any], rows: list[dict[str, Any]], reference: Path,
+    *, speech_regions: tuple[tuple[float, float], ...] | None = None,
 ) -> dict[str, object]:
     """Retain the scored settled timing/identity, without transcript or reference names."""
     session = snapshot.get("session")
@@ -3484,19 +3497,71 @@ def _quality_speaker_intervals(
                 s00_mapped_correct += overlap
     difference = (min(confusion, ref_duration)
                   - min(confusion - s00_confusion, ref_duration)) / ref_duration
+    adjusted_confusion = min(confusion - s00_confusion + s00_mapped_correct, ref_duration)
+    unattributed = round(
+        as_is["der"] - (min(confusion, ref_duration) - adjusted_confusion) / ref_duration,
+        6,
+    )
+    diagnostic = {
+        "as_is": as_is["der"],
+        "without_s00_confusion": max(0.0, round(as_is["der"] - difference, 6)),
+        "s00_confusion_difference": round(difference, 6),
+        "s00_mapped_reference": sorted(
+            reference_ids[speaker] for speaker, label in as_is["speaker_mapping"].items()
+            if label == "S00" and speaker in reference_ids
+        ),
+        "s00_mapped_correct_seconds": round(s00_mapped_correct, 6),
+        "unattributed_der": max(0.0, unattributed),
+    }
+    if speech_regions is not None:
+        from evaluator_v2 import (Segment as V2Segment, _der_reference_speech_axis,
+                                  intersect_intervals, segments_to_intervals,
+                                  total_seconds, union_intervals)
+
+        ref_v2 = [V2Segment(row.start, row.end, row.speaker, "") for row in reference_rows]
+        hyp_v2 = [V2Segment(float(row["start"]), float(row["end"]),
+                            str(row["speaker"]), "") for row in rows]
+        axis = _der_reference_speech_axis(ref_v2, hyp_v2, speech_regions)
+        scored_reference = union_intervals(
+            interval for speaker in {row.speaker for row in reference_rows}
+            for interval in intersect_intervals(
+                segments_to_intervals([row for row in ref_v2 if row.speaker == speaker]),
+                speech_regions,
+            )
+        )
+        denominator = total_seconds(scored_reference)
+        s00_wrong = 0.0
+        s00_correct = 0.0
+        s00_intervals = intersect_intervals(
+            segments_to_intervals([row for row in hyp_v2 if row.speaker == "S00"]),
+            speech_regions,
+        )
+        for speaker in {row.speaker for row in reference_rows}:
+            ref_intervals = intersect_intervals(
+                segments_to_intervals([row for row in ref_v2 if row.speaker == speaker]),
+                speech_regions,
+            )
+            seconds = total_seconds(intersect_intervals(ref_intervals, s00_intervals))
+            if axis["speaker_mapping"].get(speaker) == "S00":
+                s00_correct += seconds
+            else:
+                s00_wrong += seconds
+        raw_confusion = axis["speaker_confusion"] * denominator
+        adjusted_confusion = min(max(raw_confusion - s00_wrong + s00_correct, 0.0), denominator)
+        excluded = (raw_confusion - max(raw_confusion - s00_wrong, 0.0)) / denominator if denominator else 0.0
+        reference_adjusted = (axis["der"] - (raw_confusion - adjusted_confusion) / denominator
+                              if denominator else axis["der"])
+        diagnostic.update({
+            "reference_speech_as_is": axis["der"],
+            "reference_speech_without_s00_confusion": max(0.0, round(axis["der"] - excluded, 6)),
+            "reference_speech_s00_confusion_difference": round(excluded, 6),
+            "reference_speech_s00_mapped_correct_seconds": round(s00_correct, 6),
+            "reference_speech_unattributed_der": max(0.0, round(reference_adjusted, 6)),
+        })
     return {
         "settled_hypothesis_speaker_intervals": hypothesis,
         "reference_speaker_intervals": reference_intervals,
-        "settled_der_s00_diagnostic": {
-            "as_is": as_is["der"],
-            "without_s00_confusion": max(0.0, round(as_is["der"] - difference, 6)),
-            "s00_confusion_difference": round(difference, 6),
-            "s00_mapped_reference": sorted(
-                reference_ids[speaker] for speaker, label in as_is["speaker_mapping"].items()
-                if label == "S00" and speaker in reference_ids
-            ),
-            "s00_mapped_correct_seconds": round(s00_mapped_correct, 6),
-        },
+        "settled_der_s00_diagnostic": diagnostic,
     }
 
 
@@ -3515,6 +3580,8 @@ def _quality_projection(
         "content_recall",
         "matched_word_speaker_accuracy",
         "reference_speech_der",
+        "der_raw",
+        "reference_speech_der_raw",
     )
     total_duration = sum(float(row["duration_seconds"]) for row in rows)
     duration_weighted = {
@@ -3563,12 +3630,14 @@ def _quality_projection(
             "recall": _mean(rows, "settled", "content_recall"),
             "time_speaker_attribution": _mean(rows, "settled", "tbsa"),
             "diarization_error_rate": _mean(rows, "settled", "der"),
+            "diarization_error_rate_raw": _mean(rows, "settled", "der_raw"),
             "matched_speaker_accuracy": _mean(
                 rows, "settled", "matched_word_speaker_accuracy"
             ),
             "reference_speech_der": _mean(
                 rows, "settled", "reference_speech_der"
             ),
+            "reference_speech_der_raw": _mean(rows, "settled", "reference_speech_der_raw"),
             "final_wer": _mean(rows, "final", "wer"),
         },
     }

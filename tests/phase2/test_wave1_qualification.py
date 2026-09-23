@@ -839,22 +839,32 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
                             "content_recall": 0.93,
                             "matched_word_speaker_accuracy": 0.92,
                             "reference_speech_der": 0.13,
+                            **({"der_raw": 0.16, "reference_speech_der_raw": 0.13}
+                               if surface == "settled" else {}),
                         }
                         for surface in ("immediate", "settled", "final")
+                    },
+                    "settled_der_s00_diagnostic": {
+                        "as_is": 0.16,
+                        "unattributed_der": 0.16,
+                        "reference_speech_as_is": 0.13,
+                        "reference_speech_unattributed_der": 0.13,
                     },
                 }
                 for index in range(12)
             ],
-            "per_category": {"speech": {"wer": 0.14, "tbsa": 0.88, "der": 0.16, "content_recall": 0.93, "matched_word_speaker_accuracy": 0.92, "reference_speech_der": 0.13}},
-            "duration_weighted": {"wer": 0.14, "tbsa": 0.88, "der": 0.16, "content_recall": 0.93, "matched_word_speaker_accuracy": 0.92, "reference_speech_der": 0.13},
+            "per_category": {"speech": {"wer": 0.14, "tbsa": 0.88, "der": 0.16, "content_recall": 0.93, "matched_word_speaker_accuracy": 0.92, "reference_speech_der": 0.13, "der_raw": 0.16, "reference_speech_der_raw": 0.13}},
+            "duration_weighted": {"wer": 0.14, "tbsa": 0.88, "der": 0.16, "content_recall": 0.93, "matched_word_speaker_accuracy": 0.92, "reference_speech_der": 0.13, "der_raw": 0.16, "reference_speech_der_raw": 0.13},
             "macro": {
                 "immediate_wer": 0.16,
                 "settled_wer": 0.14,
                 "recall": 0.93,
                 "time_speaker_attribution": 0.88,
                 "diarization_error_rate": 0.16,
+                "diarization_error_rate_raw": 0.16,
                 "matched_speaker_accuracy": 0.92,
                 "reference_speech_der": 0.13,
+                "reference_speech_der_raw": 0.13,
                 "final_wer": 0.09,
             },
         },
@@ -2556,6 +2566,7 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
     class Surface:
         SurfaceCaptureService = Capture
         Case = lambda self, case_id, directory, reference: SimpleNamespace(id=case_id)
+        speech_regions_from_wav = staticmethod(lambda audio: ((0.0, 1.0),))
 
         @staticmethod
         def transcript_rows(snapshot: object, duration: float):
@@ -2574,7 +2585,7 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
                 "der": 0.25,
                 "content_recall": 0.95,
                 "matched_word_speaker_accuracy": 0.95,
-                "reference_speech_der": 0.1,
+                "reference_speech_der": 0.25,
             }
 
         @staticmethod
@@ -2608,6 +2619,7 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
         https_origin="https://moss.example",
     )
     monkeypatch.setattr(external, "AccountCookieLiveReplayService", Adapter)
+    external._load_surface_harness(ROOT)
     monkeypatch.setattr(external, "_load_surface_harness", lambda repo: Surface())
     monkeypatch.setattr(external, "run_service_replay", replay)
     monkeypatch.setattr(external, "_wav_duration", lambda path: 1.0)
@@ -2667,8 +2679,15 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
     assert first["settled_der_s00_diagnostic"] == {
         "as_is": 0.25, "without_s00_confusion": 0.0, "s00_confusion_difference": 0.25,
         "s00_mapped_reference": [], "s00_mapped_correct_seconds": 0.0,
+        "unattributed_der": 0.0,
+        "reference_speech_as_is": 0.25,
+        "reference_speech_without_s00_confusion": 0.0,
+        "reference_speech_s00_confusion_difference": 0.25,
+        "reference_speech_s00_mapped_correct_seconds": 0.0,
+        "reference_speech_unattributed_der": 0.0,
     }
-    assert result["macro"]["diarization_error_rate"] == 0.25
+    assert result["macro"]["diarization_error_rate"] == 0.0
+    assert result["macro"]["diarization_error_rate_raw"] == 0.25
     assert Path("quality/content-free-metrics.json") in campaign.safe_artifacts
     retained = (campaign.artifact_root / "quality/content-free-metrics.json").read_text()
     assert "PRIVATE TRANSCRIPT" not in retained
@@ -3579,6 +3598,104 @@ _QUALITY_MACRO_SOURCES = {
 }
 
 
+@pytest.mark.parametrize("speaker,expected", [("S00", True), ("S02", False)])
+def test_d45_quality_gate_excludes_only_uncertain_speaker_confusion(speaker, expected):
+    """The unchanged DER bounds admit S00 abstention, never a wrong named speaker."""
+    report = _report("deployed", "a" * 40, "b" * 64)
+    quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
+    raw = quality["raw"]
+    for row in raw["per_case"]:
+        settled = row["metrics"]["settled"]
+        settled["der_raw"] = 0.18
+        settled["reference_speech_der_raw"] = 0.16
+        settled["der"] = 0.14 if speaker == "S00" else 0.18
+        settled["reference_speech_der"] = 0.12 if speaker == "S00" else 0.16
+        row["settled_der_s00_diagnostic"] = {
+            "as_is": 0.18,
+            "without_s00_confusion": settled["der"],
+            "s00_confusion_difference": 0.04 if speaker == "S00" else 0.0,
+            "s00_mapped_reference": [],
+            "s00_mapped_correct_seconds": 0.0,
+            "unattributed_der": settled["der"],
+            "reference_speech_as_is": 0.16,
+            "reference_speech_without_s00_confusion": settled["reference_speech_der"],
+            "reference_speech_s00_confusion_difference": 0.04 if speaker == "S00" else 0.0,
+            "reference_speech_s00_mapped_correct_seconds": 0.0,
+            "reference_speech_unattributed_der": settled["reference_speech_der"],
+        }
+    raw["macro"].update({
+        "diarization_error_rate": 0.14 if speaker == "S00" else 0.18,
+        "reference_speech_der": 0.12 if speaker == "S00" else 0.16,
+        "diarization_error_rate_raw": 0.18,
+        "reference_speech_der_raw": 0.16,
+    })
+    raw["duration_weighted"].update({
+        "der": raw["macro"]["diarization_error_rate"],
+        "reference_speech_der": raw["macro"]["reference_speech_der"],
+        "der_raw": 0.18,
+        "reference_speech_der_raw": 0.16,
+    })
+    raw["per_category"]["speech"].update({
+        "der": raw["macro"]["diarization_error_rate"],
+        "reference_speech_der": raw["macro"]["reference_speech_der"],
+        "der_raw": 0.18,
+        "reference_speech_der_raw": 0.16,
+    })
+    outcomes, _ = acceptance.evaluate_external_report(
+        report, layer="deployed", candidate_sha="a" * 40, candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64, fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64, dependency_projection_sha256="e" * 64,
+    )
+    assert outcomes["G4"] is expected
+    assert raw["macro"]["diarization_error_rate_raw"] == 0.18
+
+
+@pytest.mark.parametrize("speaker,expected", [("S00", True), ("S02", False)])
+def test_d45_producer_projection_reaches_gate_with_real_diarization(
+    tmp_path, speaker, expected
+):
+    """The production interval scorer and projection drive the acceptance result."""
+    reference = tmp_path / "reference.jsonl"
+    reference.write_text(
+        '{"start":0,"end":1,"speaker":"A","text":"a"}\n'
+        '{"start":1,"end":2,"speaker":"B","text":"b"}\n'
+    )
+    snapshot = {"session": {"effective_transcript": [], "identity_snapshot": {
+        "canonical_speakers": ["speaker-0001", "speaker-0002"]}}}
+    hypothesis = [
+        {"start": 0.0, "end": 0.6, "speaker": "S01"},
+        {"start": 0.6, "end": 1.0, "speaker": speaker},
+        {"start": 1.0, "end": 2.0, "speaker": "S02"},
+    ]
+    scored = external._quality_speaker_intervals(snapshot, hypothesis, reference)
+    diagnostic = scored["settled_der_s00_diagnostic"]
+    report = _report("deployed", "a" * 40, "b" * 64)
+    quality = next(item for item in report["predicates"] if item["id"] == "quality_corpus")
+    raw = quality["raw"]
+    for row in raw["per_case"]:
+        settled = row["metrics"]["settled"]
+        settled["der_raw"] = diagnostic["as_is"]
+        settled["der"] = diagnostic.get("unattributed_der", diagnostic["as_is"])
+        settled["reference_speech_der_raw"] = 0.13
+        row.update(scored)
+        row["settled_der_s00_diagnostic"].update({
+            "reference_speech_as_is": 0.13,
+            "reference_speech_unattributed_der": 0.13,
+        })
+    projected = external._quality_projection(
+        raw["per_case"], corpus_manifest_sha256=FIXTURES["quality_corpus_manifest"]
+    )
+    projected["input_identities"] = raw["input_identities"]
+    quality["raw"] = projected
+    outcomes, _ = acceptance.evaluate_external_report(
+        report, layer="deployed", candidate_sha="a" * 40, candidate_tree="c" * 40,
+        uv_lock_sha256="d" * 64, fixtures=FIXTURES,
+        wheel_record_projection_sha256="f" * 64, dependency_projection_sha256="e" * 64,
+    )
+    assert diagnostic["as_is"] == 0.2
+    assert outcomes["G4"] is expected
+
+
 def _quality_report_offset_from_bounds(relative: float):
     """Build a SELF-CONSISTENT report whose macros sit `relative` off every bound.
 
@@ -3602,8 +3719,15 @@ def _quality_report_offset_from_bounds(relative: float):
     for item in raw["per_case"]:
         for (surface, field), value in per_field.items():
             item["metrics"][surface][field] = value
+        diagnostic = item["settled_der_s00_diagnostic"]
+        diagnostic["unattributed_der"] = item["metrics"]["settled"]["der"]
+        diagnostic["reference_speech_unattributed_der"] = item["metrics"]["settled"]["reference_speech_der"]
 
-    raw["macro"] = dict(targets)
+    raw["macro"] = {
+        **targets,
+        "diarization_error_rate_raw": raw["macro"]["diarization_error_rate_raw"],
+        "reference_speech_der_raw": raw["macro"]["reference_speech_der_raw"],
+    }
     settled = {
         field: value for (surface, field), value in per_field.items() if surface == "settled"
     }
@@ -3700,6 +3824,7 @@ def test_an_admitted_exception_is_recorded_from_the_recomputed_macro_not_the_rep
     _, bound = acceptance.QUALITY_BOUNDS["diarization_error_rate"]
     for item in raw["per_case"]:
         item["metrics"]["settled"]["der"] = bound + 5e-13
+        item["settled_der_s00_diagnostic"]["unattributed_der"] = bound + 5e-13
     raw["macro"]["diarization_error_rate"] = bound  # exactly strict, within 1e-12 of the rows
     raw["duration_weighted"]["der"] = bound
     for category in raw["per_category"]:
@@ -3852,6 +3977,7 @@ def test_measurement_directories_use_attempt_owned_root(monkeypatch, tmp_path):
 def test_quality_s00_diagnostic_reports_when_s00_is_the_optimal_match(tmp_path):
     """Review F1: an unattributed label that best matches a reference speaker scores as correct; say so."""
     from moss_transcribe_diarize import phase2_acceptance_external as external
+    external._load_surface_harness(ROOT)
 
     reference = tmp_path / "reference.jsonl"
     reference.write_text(
@@ -3860,9 +3986,63 @@ def test_quality_s00_diagnostic_reports_when_s00_is_the_optimal_match(tmp_path):
     )
     snapshot = {"session": {"effective_transcript": [], "identity_snapshot": {"canonical_speakers": ["speaker-0001"]}}}
     rows = [{"start": 0.0, "end": 1.0, "speaker": "S01"}, {"start": 1.0, "end": 2.0, "speaker": "S00"}]
-    diagnostic = external._quality_speaker_intervals(snapshot, rows, reference)["settled_der_s00_diagnostic"]
+    diagnostic = external._quality_speaker_intervals(
+        snapshot, rows, reference, speech_regions=((0.0, 2.0),)
+    )["settled_der_s00_diagnostic"]
     assert diagnostic["as_is"] == 0.0
     assert diagnostic["s00_confusion_difference"] == 0.0
     assert diagnostic["s00_mapped_reference"] == ["ref:02"]
     assert diagnostic["s00_mapped_correct_seconds"] == 1.0
+    assert diagnostic["unattributed_der"] == 0.5
+    assert diagnostic["reference_speech_as_is"] == 0.0
+    assert diagnostic["reference_speech_unattributed_der"] == 0.5
     assert "Beta Person" not in str(diagnostic)
+
+
+@pytest.mark.parametrize("uncertain,expected", [(True, 0.0), (False, 0.2)])
+def test_d45_production_der_axes_preserve_named_confusion(tmp_path, uncertain, expected):
+    """Both deployed scorers keep their own mapping; only S00 confusion is unattributed."""
+    external._load_surface_harness(ROOT)
+    reference = tmp_path / "reference.jsonl"
+    reference.write_text(
+        '{"start":0,"end":1,"speaker":"A","text":"a"}\n'
+        '{"start":1,"end":2,"speaker":"B","text":"b"}\n'
+    )
+    label = "S00" if uncertain else "S02"
+    rows = [
+        {"start": 0.0, "end": 0.6, "speaker": "S01"},
+        {"start": 0.6, "end": 1.0, "speaker": label},
+        {"start": 1.0, "end": 2.0, "speaker": "S02"},
+    ]
+    snapshot = {"session": {"effective_transcript": [], "identity_snapshot": {
+        "canonical_speakers": ["speaker-0001", "speaker-0002"]}}}
+    diag = external._quality_speaker_intervals(
+        snapshot, rows, reference, speech_regions=((0.0, 2.0),)
+    )["settled_der_s00_diagnostic"]
+    assert diag["as_is"] == 0.2
+    assert diag["reference_speech_as_is"] == 0.2
+    assert diag["unattributed_der"] == expected
+    assert diag["reference_speech_unattributed_der"] == expected
+
+
+def test_d45_reference_speech_axis_uses_its_vad_denominator(tmp_path):
+    external._load_surface_harness(ROOT)
+    reference = tmp_path / "reference.jsonl"
+    reference.write_text(
+        '{"start":0,"end":1,"speaker":"A","text":"a"}\n'
+        '{"start":1,"end":2,"speaker":"B","text":"b"}\n'
+    )
+    rows = [
+        {"start": 0.0, "end": 0.6, "speaker": "S01"},
+        {"start": 0.6, "end": 1.0, "speaker": "S00"},
+        {"start": 1.0, "end": 1.8, "speaker": "S02"},
+    ]
+    snapshot = {"session": {"effective_transcript": [], "identity_snapshot": {
+        "canonical_speakers": ["speaker-0001", "speaker-0002"]}}}
+    diag = external._quality_speaker_intervals(
+        snapshot, rows, reference, speech_regions=((0.0, 0.8), (1.0, 1.8))
+    )["settled_der_s00_diagnostic"]
+    assert diag["as_is"] == 0.3  # includes a 0.2 s miss beyond the hypothesis
+    assert diag["unattributed_der"] == 0.1
+    assert diag["reference_speech_as_is"] == 0.125
+    assert diag["reference_speech_unattributed_der"] == 0.0
