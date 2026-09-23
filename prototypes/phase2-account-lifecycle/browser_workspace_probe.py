@@ -16,7 +16,6 @@ import socket
 import shutil
 import sqlite3
 import tempfile
-import wave
 from contextlib import asynccontextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -195,11 +194,7 @@ async def collector_probe(root):
 
     phase2.REQUIRED_SQLITE_RUNTIME = sqlite3.sqlite_version
     fixture = root / "collector.wav"
-    with wave.open(str(fixture), "wb") as audio:
-        audio.setnchannels(1)
-        audio.setsampwidth(2)
-        audio.setframerate(16000)
-        audio.writeframes(b"\0\0" * 16000)
+    shutil.copyfile(Path.cwd() / "tests/fixtures/idea_020_provider_smoke.wav", fixture)
 
     class Runner:
         model_path = "semantic-probe-only"
