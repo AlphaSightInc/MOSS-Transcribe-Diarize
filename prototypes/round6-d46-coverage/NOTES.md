@@ -29,3 +29,5 @@ Assumptions/unknowns: the public HTTP stream freezes after the applied revision 
 Falsifier: a final revision without a final snapshot, a final snapshot without a final revision, a short/late terminal range, or a truly uncovered planned window must fail coverage. A cancelled rolling completion covered by the final terminal interval must pass coverage.
 
 Tool decision: focused producer tests distinguish the public HTTP event shape and each negative control; validator tests isolate uncovered-count rejection and planned-population reporting; full backend plus bundle detects integration regressions. No decoder request is needed for these deterministic checks.
+
+Measured local verdict: on merged integration, focused RED 9 failed / 5 passed for the new tests; after the fix, 20 passed / 0 failed. The final text revision plus final snapshot covers the missing interval without a completion event; failed/refused statuses, short/late ranges, and truly uncovered intervals remain uncovered. Non-decoded rolling completions do not inflate the decoded count. Real-host qualification is still unmeasured.

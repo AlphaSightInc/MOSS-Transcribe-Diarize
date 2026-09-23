@@ -1793,7 +1793,7 @@ def external_denominator_projection(
     try:
         quality_windows = (
             sum(
-                int(item["windows"])
+                int(item["window_coverage"]["planned_full_windows"])
                 for item in quality_cases
                 if isinstance(item, dict)
             )

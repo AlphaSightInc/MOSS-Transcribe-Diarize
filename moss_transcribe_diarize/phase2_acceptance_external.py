@@ -2252,7 +2252,8 @@ class FixedAccountCampaign:
                 )
                 final_session = captured.captures["post_stop_final"]["snapshot"]["session"]
                 window_coverage = _quality_window_coverage(
-                    events, accepted_samples=final_session["accepted_samples"]
+                    events, accepted_samples=final_session["accepted_samples"],
+                    finalization_status=final_session.get("finalization_status"),
                 )
                 trace_rows = [
                     json.loads(line)
@@ -2274,7 +2275,7 @@ class FixedAccountCampaign:
                         "session_id": f"session-{len(observations) + 1:02d}",
                         "category": case_by_id[str(case_id)].get("category"),
                         "duration_seconds": duration,
-                        "windows": len(measurements["rolling_queue"]["windows"]),
+                        "windows": window_coverage["rolling_decoded"],
                         "window_coverage": window_coverage,
                         "metrics": {
                             "immediate": scored["pre_stop_immediate"],
@@ -3054,7 +3055,8 @@ def _diagnostic_event(event: Mapping[str, Any]) -> dict[str, object]:
 
 
 def _quality_window_coverage(
-    events: list[dict[str, Any]], *, accepted_samples: int
+    events: list[dict[str, Any]], *, accepted_samples: int,
+    finalization_status: str | None,
 ) -> dict[str, int]:
     """Count full corpus windows proved by rolling or the applied terminal revision."""
     window = int(LIVE_SAMPLE_RATE * ROLLING_WINDOW_SECONDS)
@@ -3064,7 +3066,6 @@ def _quality_window_coverage(
     planned = set(range(0, max(0, accepted_samples - window + 1), stride))
     rolling: set[int] = set()
     terminal_revisions = []
-    terminal_completions = []
     for event in events:
         kind = event.get("kind")
         payload = event.get("payload") or {}
@@ -3082,23 +3083,20 @@ def _quality_window_coverage(
             rolling.add(start)
         elif kind == "text_revision_applied" and payload.get("source") == "terminal":
             terminal_revisions.append(payload)
-        elif kind == "terminal_finalization_completed" and payload.get("applied") is True:
-            terminal_completions.append(payload)
-    if len(terminal_revisions) > 1 or len(terminal_completions) > 1:
+    if len(terminal_revisions) > 1:
         raise ExternalMeasurementError("quality trace has duplicate terminal coverage evidence")
     terminal_range = None
-    if terminal_revisions and terminal_completions:
+    if terminal_revisions and finalization_status == "final":
         revision = terminal_revisions[0]
-        completion = terminal_completions[0]
-        start, end = revision.get("start_sample"), revision.get("end_sample")
-        if (
-            isinstance(start, bool) or not isinstance(start, int) or start < 0
-            or isinstance(end, bool) or not isinstance(end, int)
-            or end > accepted_samples or end <= start
-            or completion.get("end_sample") != end
-        ):
-            raise ExternalMeasurementError("quality terminal coverage range is invalid")
-        terminal_range = (start, end)
+        if revision.get("finalization_status") == "final":
+            start, end = revision.get("start_sample"), revision.get("end_sample")
+            if (
+                isinstance(start, bool) or not isinstance(start, int) or start < 0
+                or isinstance(end, bool) or not isinstance(end, int)
+                or end > accepted_samples or end <= start
+            ):
+                raise ExternalMeasurementError("quality terminal coverage range is invalid")
+            terminal_range = (start, end)
     terminal_only = {
         start for start in planned - rolling
         if terminal_range is not None
