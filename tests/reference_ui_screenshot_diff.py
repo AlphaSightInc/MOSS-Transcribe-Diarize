@@ -11,8 +11,9 @@ complete TranscriptPane DOM rectangle in both products. It exits nonzero when ei
 threshold is exceeded. The intentionally new Account product shell has separate semantic, layout,
 mobile, and accessibility browser contracts; it is neither compared nor masked here.
 
-The exemption set lives in tests/fixtures/reference_ui_screenshot_diff.json; every named selector
-must render inside the captured TranscriptPane in both products.
+The exemption set lives in tests/fixtures/reference_ui_screenshot_diff.json. A null reference
+selector denotes candidate-only UX; an explicitly optional candidate selector masks nothing
+when absent. Existing paired selectors remain required.
 """
 
 from __future__ import annotations
@@ -462,6 +463,27 @@ def selector_box_within(page: Page, selector: str, root_selector: str) -> dict[s
     }
 
 
+def selector_boxes_within(page: Page, selector: str, root_selector: str) -> list[dict[str, float]]:
+    """All matching boxes, relative to the pane; needed for repeated candidate controls."""
+    matches = page.locator(selector)
+    count = matches.count()
+    if not count:
+        return []
+    root = selector_box(page, root_selector)
+    boxes = []
+    for index in range(count):
+        box = matches.nth(index).bounding_box()
+        if box is None:
+            raise AssertionError(f"Declared exemption selector has no box: {selector}")
+        boxes.append({
+            "x": float(box["x"]) - root["x"],
+            "y": float(box["y"]) - root["y"],
+            "width": float(box["width"]),
+            "height": float(box["height"]),
+        })
+    return boxes
+
+
 def union_box(reference: dict[str, float], candidate: dict[str, float]) -> tuple[int, int, int, int]:
     left = int(min(reference["x"], candidate["x"]))
     top = int(min(reference["y"], candidate["y"]))
@@ -496,38 +518,53 @@ def apply_exemptions(
 ) -> list[dict[str, Any]]:
     evidence: list[dict[str, Any]] = []
     for exemption in exemptions:
-        reference = selector_box_within(
-            reference_page, exemption["reference_selector"], "#transcript-panel"
-        )
+        reference_selector = exemption.get("reference_selector")
         candidate_selector = exemption.get("candidate_selector")
-        candidate = (
-            selector_box_within(candidate_page, candidate_selector, "#transcript-panel")
-            if isinstance(candidate_selector, str)
-            else None
+        if not isinstance(reference_selector, str) and not isinstance(candidate_selector, str):
+            raise ValueError("An exemption needs a reference or candidate selector")
+        references = (
+            selector_boxes_within(reference_page, reference_selector, "#transcript-panel")
+            if isinstance(reference_selector, str) else []
         )
-        left, top, right, bottom = (
-            union_box(reference, candidate)
-            if candidate is not None
-            else (
-                int(reference["x"]),
-                int(reference["y"]),
-                int(reference["x"] + reference["width"] + 1),
-                int(reference["y"] + reference["height"] + 1),
-            )
+        candidates = (
+            selector_boxes_within(candidate_page, candidate_selector, "#transcript-panel")
+            if isinstance(candidate_selector, str) else []
         )
-        left, top = max(0, left), max(0, top)
-        right, bottom = min(width, right), min(height, bottom)
-        for row in range(top, bottom):
-            start = row * width + left
-            difference[start : row * width + right] = b"\0" * (right - left)
+        if isinstance(reference_selector, str) and not references:
+            raise AssertionError(f"Required declared exemption selector did not render: {reference_selector}")
+        if isinstance(candidate_selector, str) and not candidates:
+            if reference_selector is None or exemption.get("candidate_optional") is True:
+                # D7/D9 is absent, or the D7-conditional tools selector is inactive.
+                # Do not hide the reference's ordinary pixels in this case.
+                pairs = []
+            else:
+                raise AssertionError(f"Required declared exemption selector did not render: {candidate_selector}")
+        elif references and candidates:
+            if len(references) != len(candidates):
+                raise AssertionError("Paired exemption selectors rendered different counts")
+            pairs = list(zip(references, candidates))
+        elif references:
+            pairs = [(reference, reference) for reference in references]
+        else:
+            pairs = [(candidate, candidate) for candidate in candidates]
+        masked_boxes = []
+        for reference, candidate in pairs:
+            left, top, right, bottom = union_box(reference, candidate)
+            left, top = max(0, left), max(0, top)
+            right, bottom = min(width, right), min(height, bottom)
+            for row in range(top, bottom):
+                start = row * width + left
+                difference[start : row * width + right] = b"\0" * (right - left)
+            masked_boxes.append({"left": left, "top": top, "right": right, "bottom": bottom})
         evidence.append(
             {
                 "id": exemption["id"],
-                "reference_selector": exemption["reference_selector"],
+                "reference_selector": reference_selector,
                 "candidate_selector": candidate_selector,
-                "reference_box": reference,
-                "candidate_box": candidate,
-                "masked_union_box": {"left": left, "top": top, "right": right, "bottom": bottom},
+                "reference_box": references[0] if len(references) == 1 else None,
+                "candidate_box": candidates[0] if len(candidates) == 1 else None,
+                "masked_union_box": masked_boxes[0] if len(masked_boxes) == 1 else None,
+                "masked_union_boxes": masked_boxes,
             }
         )
     return evidence
