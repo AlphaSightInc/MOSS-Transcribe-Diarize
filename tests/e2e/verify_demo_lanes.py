@@ -3,6 +3,7 @@
 Run: python tests/e2e/verify_demo_lanes.py --allow-local-self-signed --case both
 Alternation and overlap must both pass on the integrated per-lane decoder.
 Counts-only evidence can never satisfy either oracle.
+Tail latency is also compared with the D38 3.0 s target; a miss is BEST_EFFORT_MISS, not a failure.
 No transcript text is printed or retained. Thresholds use existing QUALITY_BOUNDS.
 """
 from __future__ import annotations
@@ -27,6 +28,9 @@ MICROPHONE_VOICE = CORPUS / 'interview_keyu_jin_60s/audio.wav'
 SYSTEM_LADDER_REFERENCE = REPO / 'tests/e2e/fixtures/lane-system-ladder-reference.json'
 DEFAULT_MIC_GAIN = 0.03
 TAIL_SETTLE_TIMEOUT_SECONDS = 5.0
+# D38: visible-tail target, not a bound. A miss is recorded, never a row failure;
+# a null tail latency (TIMEOUT, stop_flush, Stop before pre) still fails through D31.
+TAIL_LATENCY_TARGET_SECONDS = 3.0
 _TAIL_ENDPOINT_REASONS = frozenset({'end_silence', 'hard_cap', 'stop_flush', 'none'})
 _IDENTITY_TELEMETRY_KEYS = frozenset({
     'identity_unqualified', 'unattributed_segment_count', 'unattributed_word_count',
@@ -174,6 +178,13 @@ def _settle_facts(envelope,events,last_speech_sample):
                 pending_canonical_item_count=len(queued-processed))
 
 
+def tail_latency_target(tail_latency_seconds):
+    """(met, status) against the D38 target; (None, None) when no tail latency was measured."""
+    if tail_latency_seconds is None: return None,None
+    met=tail_latency_seconds<=TAIL_LATENCY_TARGET_SECONDS
+    return met,('MET' if met else 'BEST_EFFORT_MISS')
+
+
 def _has_identity_telemetry(score):
     """Require scorer-owned attribution telemetry; older scorers cannot qualify a case."""
     if not isinstance(score,dict) or not _IDENTITY_TELEMETRY_KEYS <= score.keys(): return False
@@ -273,6 +284,7 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
         tail_latency_seconds=(round(pre_settled_observed_at-last_speech_captured_at,6)
                               if settle=='SETTLED' and pre_facts['effective_covers_last_speech'] else None)
         tail_endpoint_reason_pre=_tail_endpoint_reason(pre_events,last_speech_sample)
+        tail_latency_target_met,tail_latency_target_status=tail_latency_target(tail_latency_seconds)
     finally:
         stopped=_clock()
         client.call('POST',f'/api/live/sessions/{ident}/stop',{'deadline':30})
@@ -310,6 +322,8 @@ def run_case(base, context, case, mic_gain=DEFAULT_MIC_GAIN, *, client=None, rea
                 stop_seconds=round(time.monotonic()-stopped,3),frames_per_lane=total,
                 microphone_gain=mic_gain,surfaces=surfaces,file_url_wer_bar=.15,file_url_wer_pass=file_url_bar,
                 tail_latency_seconds=tail_latency_seconds,first_cover_latency_seconds=first_cover_latency_seconds,
+                tail_latency_target_seconds=TAIL_LATENCY_TARGET_SECONDS,tail_latency_target_met=tail_latency_target_met,
+                tail_latency_target_status=tail_latency_target_status,
                 tail_endpoint_reason_pre=tail_endpoint_reason_pre,tail_endpoint_reason=tail_endpoint_reason,
                 settle=settle,silence_frames_streamed=silence_frames_streamed,
                 pre_snapshot_status=pre_facts['status'],stop_requested_before_pre=pre_facts['stop_requested'],

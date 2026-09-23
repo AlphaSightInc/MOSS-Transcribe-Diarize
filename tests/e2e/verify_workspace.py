@@ -46,7 +46,7 @@ _STATUS_VALUES = frozenset({
     'microphone', 'system', 'interrupted', 'aborted', 'confirmed', 'provisional',
     'previous_meeting_not_ready', 'no_configured_relay_models',
     'all_five_recognition_attempts_missed_bound', 'bank_missing_name', 'end_silence',
-    'hard_cap', 'stop_flush', 'none', 'SETTLED', 'TIMEOUT',
+    'hard_cap', 'stop_flush', 'none', 'SETTLED', 'TIMEOUT', 'MET', 'BEST_EFFORT_MISS',
 })
 _ID_KEYS = frozenset({'id', 'meeting', 'session_id', 'meeting_id', 'speaker_id', 'speaker_entity_id', 'voiceprint_id'})
 _BODY_KEYS = frozenset({'body', 'messages', 'prompt', 'content', 'text', 'transcript',
@@ -75,7 +75,7 @@ def retained_metadata(value, key=''):
         if key in {'status', 'status_received', 'history_status', 'snapshot_status',
                    'finalization_status', 'verdict', 'phase', 'method', 'mode', 'lane', 'codec_name', 'reason_code',
                    'timing_attribution', 'tail_endpoint_reason', 'tail_endpoint_reason_pre', 'settle',
-                   'pre_snapshot_status'} and value in _STATUS_VALUES:
+                   'pre_snapshot_status', 'tail_latency_target_status'} and value in _STATUS_VALUES:
             return value
         if key == 'exception' and re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', value):
             return value
