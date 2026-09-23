@@ -137,9 +137,9 @@ def prestop_inference_projection(
             raise ValueError("rolling completion inference timing is invalid") from exc
         if not math.isfinite(rolling_decode) or rolling_decode < 0:
             raise ValueError("rolling completion inference timing is invalid")
-        # This projection is pre-Stop, so completed post-Stop work contributes no RTF time.
-        if not post_stop:
-            rolling_decode_seconds += rolling_decode
+        # Rolling work is admitted before Stop (WP35 plans no window after it), so its decode
+        # counts by origin, like canonical work outside the Stop-created `stop_items` tail.
+        rolling_decode_seconds += rolling_decode
     if canonical_processed_items == 0 or not rolling_admitted:
         raise ValueError("pre-Stop inference evidence is absent")
     if rolling_completed_items != rolling_admitted:
