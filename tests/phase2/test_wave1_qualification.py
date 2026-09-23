@@ -846,8 +846,12 @@ def _raw(predicate_id: str, sha: str, wheel: str) -> dict[str, object]:
                     },
                     "settled_der_s00_diagnostic": {
                         "as_is": 0.16,
+                        "without_s00_confusion": 0.16,
+                        "s00_confusion_difference": 0.0,
                         "unattributed_der": 0.16,
                         "reference_speech_as_is": 0.13,
+                        "reference_speech_without_s00_confusion": 0.13,
+                        "reference_speech_s00_confusion_difference": 0.0,
                         "reference_speech_unattributed_der": 0.13,
                     },
                 }
@@ -3680,6 +3684,8 @@ def test_d45_producer_projection_reaches_gate_with_real_diarization(
         row.update(scored)
         row["settled_der_s00_diagnostic"].update({
             "reference_speech_as_is": 0.13,
+            "reference_speech_without_s00_confusion": 0.13,
+            "reference_speech_s00_confusion_difference": 0.0,
             "reference_speech_unattributed_der": 0.13,
         })
     projected = external._quality_projection(
@@ -3720,17 +3726,28 @@ def _quality_report_offset_from_bounds(relative: float):
         for (surface, field), value in per_field.items():
             item["metrics"][surface][field] = value
         diagnostic = item["settled_der_s00_diagnostic"]
-        diagnostic["unattributed_der"] = item["metrics"]["settled"]["der"]
-        diagnostic["reference_speech_unattributed_der"] = item["metrics"]["settled"]["reference_speech_der"]
+        for field, raw_field, raw_diag, adjusted_diag, difference_diag, alias_diag in (
+            ("der", "der_raw", "as_is", "without_s00_confusion",
+             "s00_confusion_difference", "unattributed_der"),
+            ("reference_speech_der", "reference_speech_der_raw", "reference_speech_as_is",
+             "reference_speech_without_s00_confusion",
+             "reference_speech_s00_confusion_difference", "reference_speech_unattributed_der"),
+        ):
+            value = item["metrics"]["settled"][field]
+            item["metrics"]["settled"][raw_field] = value
+            diagnostic.update({raw_diag: value, adjusted_diag: value,
+                               difference_diag: 0.0, alias_diag: value})
 
     raw["macro"] = {
         **targets,
-        "diarization_error_rate_raw": raw["macro"]["diarization_error_rate_raw"],
-        "reference_speech_der_raw": raw["macro"]["reference_speech_der_raw"],
+        "diarization_error_rate_raw": targets["diarization_error_rate"],
+        "reference_speech_der_raw": targets["reference_speech_der"],
     }
     settled = {
         field: value for (surface, field), value in per_field.items() if surface == "settled"
     }
+    settled["der_raw"] = settled["der"]
+    settled["reference_speech_der_raw"] = settled["reference_speech_der"]
     raw["duration_weighted"] = {
         field: settled.get(field, raw["duration_weighted"][field])
         for field in raw["duration_weighted"]
@@ -3824,11 +3841,20 @@ def test_an_admitted_exception_is_recorded_from_the_recomputed_macro_not_the_rep
     _, bound = acceptance.QUALITY_BOUNDS["diarization_error_rate"]
     for item in raw["per_case"]:
         item["metrics"]["settled"]["der"] = bound + 5e-13
-        item["settled_der_s00_diagnostic"]["unattributed_der"] = bound + 5e-13
+        item["metrics"]["settled"]["der_raw"] = bound + 5e-13
+        item["settled_der_s00_diagnostic"].update({
+            "as_is": bound + 5e-13,
+            "without_s00_confusion": bound + 5e-13,
+            "s00_confusion_difference": 0.0,
+            "unattributed_der": bound + 5e-13,
+        })
     raw["macro"]["diarization_error_rate"] = bound  # exactly strict, within 1e-12 of the rows
+    raw["macro"]["diarization_error_rate_raw"] = bound
     raw["duration_weighted"]["der"] = bound
+    raw["duration_weighted"]["der_raw"] = bound
     for category in raw["per_category"]:
         raw["per_category"][category]["der"] = bound
+        raw["per_category"][category]["der_raw"] = bound
 
     outcomes, _ = acceptance.evaluate_external_report(
         report, layer="deployed", candidate_sha="a" * 40, candidate_tree="c" * 40,
@@ -3993,9 +4019,12 @@ def test_quality_s00_diagnostic_reports_when_s00_is_the_optimal_match(tmp_path):
     assert diagnostic["s00_confusion_difference"] == 0.0
     assert diagnostic["s00_mapped_reference"] == ["ref:02"]
     assert diagnostic["s00_mapped_correct_seconds"] == 1.0
-    assert diagnostic["unattributed_der"] == 0.5
+    assert diagnostic["unattributed_der"] == 0.0
+    assert diagnostic["unattributed_der"] == diagnostic["without_s00_confusion"]
     assert diagnostic["reference_speech_as_is"] == 0.0
-    assert diagnostic["reference_speech_unattributed_der"] == 0.5
+    assert diagnostic["reference_speech_unattributed_der"] == 0.0
+    assert (diagnostic["reference_speech_unattributed_der"]
+            == diagnostic["reference_speech_without_s00_confusion"])
     assert "Beta Person" not in str(diagnostic)
 
 

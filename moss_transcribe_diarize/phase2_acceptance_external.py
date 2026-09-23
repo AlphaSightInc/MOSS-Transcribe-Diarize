@@ -2249,10 +2249,8 @@ class FixedAccountCampaign:
                     raise ExternalMeasurementError("reference-speech DER interval replay disagrees with scorer")
                 settled["der_raw"] = settled["der"]
                 settled["reference_speech_der_raw"] = settled["reference_speech_der"]
-                settled["der"] = diagnostic["unattributed_der"]
-                settled["reference_speech_der"] = diagnostic.get(
-                    "reference_speech_unattributed_der", settled["reference_speech_der"]
-                )
+                settled["der"] = diagnostic["without_s00_confusion"]
+                settled["reference_speech_der"] = diagnostic["reference_speech_without_s00_confusion"]
                 events = surface.read_service_events(trace)
                 measurements = surface.event_measurements(
                     events,
@@ -3497,21 +3495,17 @@ def _quality_speaker_intervals(
                 s00_mapped_correct += overlap
     difference = (min(confusion, ref_duration)
                   - min(confusion - s00_confusion, ref_duration)) / ref_duration
-    adjusted_confusion = min(confusion - s00_confusion + s00_mapped_correct, ref_duration)
-    unattributed = round(
-        as_is["der"] - (min(confusion, ref_duration) - adjusted_confusion) / ref_duration,
-        6,
-    )
+    without_s00_confusion = max(0.0, round(as_is["der"] - difference, 6))
     diagnostic = {
         "as_is": as_is["der"],
-        "without_s00_confusion": max(0.0, round(as_is["der"] - difference, 6)),
+        "without_s00_confusion": without_s00_confusion,
         "s00_confusion_difference": round(difference, 6),
         "s00_mapped_reference": sorted(
             reference_ids[speaker] for speaker, label in as_is["speaker_mapping"].items()
             if label == "S00" and speaker in reference_ids
         ),
         "s00_mapped_correct_seconds": round(s00_mapped_correct, 6),
-        "unattributed_der": max(0.0, unattributed),
+        "unattributed_der": without_s00_confusion,
     }
     if speech_regions is not None:
         from evaluator_v2 import (Segment as V2Segment, _der_reference_speech_axis,
@@ -3547,16 +3541,14 @@ def _quality_speaker_intervals(
             else:
                 s00_wrong += seconds
         raw_confusion = axis["speaker_confusion"] * denominator
-        adjusted_confusion = min(max(raw_confusion - s00_wrong + s00_correct, 0.0), denominator)
         excluded = (raw_confusion - max(raw_confusion - s00_wrong, 0.0)) / denominator if denominator else 0.0
-        reference_adjusted = (axis["der"] - (raw_confusion - adjusted_confusion) / denominator
-                              if denominator else axis["der"])
+        reference_adjusted = max(0.0, round(axis["der"] - excluded, 6))
         diagnostic.update({
             "reference_speech_as_is": axis["der"],
-            "reference_speech_without_s00_confusion": max(0.0, round(axis["der"] - excluded, 6)),
+            "reference_speech_without_s00_confusion": reference_adjusted,
             "reference_speech_s00_confusion_difference": round(excluded, 6),
             "reference_speech_s00_mapped_correct_seconds": round(s00_correct, 6),
-            "reference_speech_unattributed_der": max(0.0, round(reference_adjusted, 6)),
+            "reference_speech_unattributed_der": reference_adjusted,
         })
     return {
         "settled_hypothesis_speaker_intervals": hypothesis,

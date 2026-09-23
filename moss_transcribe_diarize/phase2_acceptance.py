@@ -1615,21 +1615,30 @@ def _quality_validation(
         diagnostic = item.get("settled_der_s00_diagnostic")
         if not isinstance(diagnostic, dict):
             return False, None
-        for raw_field, adjusted_field, raw_diag, adjusted_diag in (
-            ("der_raw", "der", "as_is", "unattributed_der"),
+        for raw_field, adjusted_field, raw_diag, adjusted_diag, difference_diag, alias_diag in (
+            ("der_raw", "der", "as_is", "without_s00_confusion",
+             "s00_confusion_difference", "unattributed_der"),
             ("reference_speech_der_raw", "reference_speech_der",
-             "reference_speech_as_is", "reference_speech_unattributed_der"),
+             "reference_speech_as_is", "reference_speech_without_s00_confusion",
+             "reference_speech_s00_confusion_difference", "reference_speech_unattributed_der"),
         ):
             raw_value = settled.get(raw_field)
             reported_raw = diagnostic.get(raw_diag)
             reported_adjusted = diagnostic.get(adjusted_diag)
+            reported_difference = diagnostic.get(difference_diag)
+            reported_alias = diagnostic.get(alias_diag)
             if any(isinstance(value, bool) or not isinstance(value, (int, float))
                    or not math.isfinite(float(value))
-                   for value in (raw_value, reported_raw, reported_adjusted)):
+                   for value in (raw_value, reported_raw, reported_adjusted,
+                                 reported_difference, reported_alias)):
                 return False, None
             if (not math.isclose(float(raw_value), float(reported_raw), rel_tol=0, abs_tol=1e-12)
                     or not math.isclose(float(settled[adjusted_field]),
-                                        float(reported_adjusted), rel_tol=0, abs_tol=1e-12)):
+                                        float(reported_adjusted), rel_tol=0, abs_tol=1e-12)
+                    or not math.isclose(float(reported_alias), float(reported_adjusted),
+                                        rel_tol=0, abs_tol=1e-12)
+                    or not math.isclose(float(reported_raw) - float(reported_adjusted),
+                                        float(reported_difference), rel_tol=0, abs_tol=1e-6)):
                 return False, None
         rows.append(item)
     expected_case_passes = {(case_id, pass_number) for case_id in QUALITY_CASE_IDS for pass_number in (1, 2)}
