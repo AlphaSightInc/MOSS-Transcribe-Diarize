@@ -2352,6 +2352,7 @@ class FixedAccountCampaign:
     ) -> dict[str, object]:
         if embedded_backpressure and sessions != 2:
             raise ValueError("embedded backpressure belongs to the two-session overload campaign")
+        artifact_prefix = "overload/" if embedded_backpressure else ""
         repo = Path(self._text("repo_root")).resolve()
         fixture = json.loads(
             (repo / "prototypes/streaming-diarization/concurrency/cpu_hf_local_fixture.json")
@@ -2515,14 +2516,14 @@ class FixedAccountCampaign:
                     failures.append(type(exc).__name__)
             finally:
                 if session_id is not None:
-                    self._artifact_json(f"load-{sessions}/session-{index + 1}-events.json", {
+                    self._artifact_json(f"{artifact_prefix}load-{sessions}/session-{index + 1}-events.json", {
                         "session_id": session_id, "next_seq": captured_events.next_seq,
                         "events": [_diagnostic_event(event) for event in captured_events.events
                                    if event.get("kind") in _DIAGNOSTIC_EVENT_KINDS],
                     })
                     wait = getattr(adapter, "stop_observations", {}).get(session_id)
                     if wait is not None:
-                        self._artifact_json(f"load-{sessions}/session-{index + 1}-stop-wait.json", wait)
+                        self._artifact_json(f"{artifact_prefix}load-{sessions}/session-{index + 1}-stop-wait.json", wait)
                 probe.close()
                 if session_id is not None and not terminal:
                     try:
@@ -2591,7 +2592,7 @@ class FixedAccountCampaign:
         campaign_finished_ns = time.monotonic_ns()
         if backpressure is not None:
             # Preserve the actual refusal/retry outcome even when a worker fails.
-            self._artifact_json(f"load-{sessions}/backpressure-observation.json", backpressure.observation())
+            self._artifact_json(f"{artifact_prefix}load-{sessions}/backpressure-observation.json", backpressure.observation())
         if failures or len(outputs) != sessions:
             raise ExternalMeasurementError(
                 f"live load failed in {len(failures)} session/probe paths"
@@ -2733,7 +2734,7 @@ class FixedAccountCampaign:
             assert backpressure is not None
             result["embedded_backpressure_observation"] = backpressure.observation()
             result["admission_observation"] = admission_observation
-        label = f"capacity-{sessions}"
+        label = f"{artifact_prefix}capacity-{sessions}"
         self._artifact_json(
             f"{label}/observations.json",
             {
