@@ -1324,6 +1324,12 @@ def test_preadmission_can_attend_without_remeasuring_the_candidate(tmp_path, mon
     assert rows[-1]["phase"] == "preadmission"
     assert rows[-1]["g7"] == "PASS" and rows[-1]["admitted"] is False
     assert rows[-1]["qualification_bundle"] is None
+    tail = [phase for phase in phases if phase in {
+        "qualification_skipped", "attended_g7_started", "attended_g7_complete", "preadmission"}]
+    assert tail == ["qualification_skipped", "attended_g7_started", "attended_g7_complete", "preadmission"]
+    stored = json.loads((attempt / "result.json").read_text())
+    assert stored["schema"] == "moss-phase2-cutover-result.v1"
+    assert stored["terminal"] == "preadmission" and stored["g7"] == "PASS" and stored["admitted"] is False
 
 
 def test_a_restored_run_without_qualification_is_refused(tmp_path):
