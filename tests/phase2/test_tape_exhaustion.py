@@ -23,8 +23,8 @@ def test_exhaustion_finishes_truthfully(tmp_path, case):
         assert r['saved_equal'] and r['prefix_preserved'] and r['reopened_document_equal']
         assert r['reopened_notice'] == r['notice']
         assert r['audio']['state'] == 'partial'
-        assert r['audio']['duration_ms'] == 60000
-        assert float(r['mp3']['format']['duration']) == 60.0
+        assert r['audio']['duration_ms'] == round(float(r['mp3']['format']['duration']) * 1000)
+        assert r['decoded_samples'] == 60 * 16000
         assert not r['state']['lease_armed']
         assert r['state']['queue'] == 0
         assert all(t['released'] and t['retained_bytes'] == 0 for t in r['state']['tapes'].values())
