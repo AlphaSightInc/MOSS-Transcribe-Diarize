@@ -1,6 +1,8 @@
 import importlib.util
 import json
+import os
 import shutil
+import tempfile
 from pathlib import Path
 import pytest
 
@@ -14,6 +16,33 @@ def load_browser_stress():
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
+
+
+def test_import_does_not_change_process_temp_directory(monkeypatch):
+    monkeypatch.delenv('TMPDIR', raising=False)
+    before = tempfile.tempdir
+    try:
+        load_browser_stress()
+        assert 'TMPDIR' not in os.environ
+        assert tempfile.tempdir == before
+    finally:
+        tempfile.tempdir = before
+
+
+def test_cli_selects_private_temp_directory(monkeypatch, tmp_path):
+    run = load_browser_stress()
+    private = tmp_path / 'wp5'
+    monkeypatch.setenv('TMPDIR', str(private))
+    monkeypatch.setattr('sys.argv', ['run.py', '--help'])
+    before = tempfile.tempdir
+    try:
+        with pytest.raises(SystemExit) as exited:
+            run.main()
+        assert exited.value.code == 0
+        assert private.is_dir()
+        assert tempfile.tempdir == str(private)
+    finally:
+        tempfile.tempdir = before
 
 
 def test_case_10_artifacts_survive_private_cleanup_without_auth_state(tmp_path):
