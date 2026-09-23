@@ -10,6 +10,7 @@ from .phase2_browser_evidence import BrowserTimeoutEvidence
 from .phase2_acceptance_replay import ACCEPTANCE_STOP_DEADLINE_SECONDS
 
 import json
+import math
 import re
 import ssl
 import subprocess
@@ -19,6 +20,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from collections.abc import Mapping, Sequence
 from urllib.parse import urlsplit
 
 from playwright.sync_api import sync_playwright
@@ -48,6 +50,127 @@ def configure_external_summary(page, *, endpoint, model, api_key, prompt, timeou
                          ("Request timeout (seconds)", timeout)):
         region.get_by_label(label, exact=True).fill(value)
     region.get_by_role("button", name="Save on this browser", exact=True).click()
+
+
+def _provider_timestamp(seconds: object) -> str:
+    whole = math.floor(float(seconds))
+    hours, remainder = divmod(whole, 3600)
+    minutes, remainder = divmod(remainder, 60)
+    return f"{hours:02d}:{minutes:02d}:{remainder:02d}"
+
+
+def _provider_transcript(source: Mapping[str, object]) -> dict[str, object] | None:
+    transcript = source.get("transcript")
+    segments = transcript.get("segments") if isinstance(transcript, dict) else None
+    if not isinstance(segments, list):
+        return None
+    try:
+        ordered = sorted(
+            segments,
+            key=lambda row: (
+                row.get("state") == "provisional",
+                float(row["start"]),
+                {"system": 0, "microphone": 1}.get(row.get("source_lane"), 2),
+                float(row["end"]),
+            ),
+        )
+        projected = []
+        for row in ordered:
+            if not isinstance(row, dict):
+                return None
+            speaker = row["speaker"]
+            if speaker == "S00":
+                speaker = "Speaker uncertain"
+            segment = {
+                "start": _provider_timestamp(row["start"]),
+                "end": _provider_timestamp(row["end"]),
+                "speaker": speaker,
+                "text": row["text"],
+            }
+            if row.get("source_lane"):
+                segment = {"source_lane": row["source_lane"], **segment}
+            projected.append(segment)
+    except (KeyError, TypeError, ValueError, OverflowError):
+        return None
+    return {"segments": projected}
+
+
+def _payload_difference_paths(actual: object, expected: object, path: str) -> list[str]:
+    if isinstance(actual, dict) and isinstance(expected, dict):
+        differences = []
+        for key in sorted(expected.keys() - actual.keys()):
+            differences.append(f"{path}.missing_key:{key}")
+        for key in sorted(actual.keys() - expected.keys()):
+            differences.append(f"{path}.extra_key:{key}")
+        for key in sorted(actual.keys() & expected.keys()):
+            differences.extend(_payload_difference_paths(actual[key], expected[key], f"{path}.{key}"))
+        return differences
+    if isinstance(actual, list) and isinstance(expected, list):
+        differences = []
+        if len(actual) != len(expected):
+            differences.append(f"{path}.count")
+        for index, (left, right) in enumerate(zip(actual, expected)):
+            differences.extend(_payload_difference_paths(left, right, f"{path}[{index}]"))
+        return differences
+    return [] if actual == expected else [path]
+
+
+def _owner_payload_failure_checks(
+    body: object,
+    *,
+    owner: str,
+    prompt: str,
+    sources: Sequence[Mapping[str, object]],
+) -> list[str]:
+    """Report only content-free field paths for a provider request mismatch."""
+    if not isinstance(body, dict):
+        return ["request.body_not_object"]
+    failures = []
+    expected_keys = {"model", "stream", "response_format", "messages", "max_tokens"}
+    for key in sorted(body.keys() - expected_keys):
+        failures.append(f"request.extra_key:{key}")
+    for key in sorted(expected_keys - body.keys()):
+        failures.append(f"request.missing_key:{key}")
+    if body.get("model") != f"g9-model-{owner}":
+        failures.append("request.model")
+    if body.get("stream") is not False:
+        failures.append("request.stream")
+    if body.get("response_format") != {"type": "json_object"}:
+        failures.append("request.response_format")
+    try:
+        if int(body.get("max_tokens", -1)) < 2048:
+            failures.append("request.max_tokens_floor")
+    except (TypeError, ValueError, OverflowError):
+        failures.append("request.max_tokens_type")
+
+    messages = body.get("messages")
+    if not isinstance(messages, list) or len(messages) != 2:
+        failures.append("request.messages_shape")
+        return sorted(set(failures))
+    if messages[0] != {"role": "system", "content": prompt}:
+        failures.append("request.system_message")
+    if not isinstance(messages[1], dict) or messages[1].get("role") != "user":
+        failures.append("request.user_message_role")
+        return sorted(set(failures))
+    try:
+        actual_document = json.loads(messages[1]["content"])
+    except (KeyError, TypeError, ValueError):
+        failures.append("request.user_content_json")
+        return sorted(set(failures))
+
+    expected_documents = [
+        document
+        for source in sources
+        if (document := _provider_transcript(source)) is not None
+    ]
+    if actual_document not in expected_documents:
+        failures.append("request.owner_transcript")
+        if expected_documents:
+            diffs = [_payload_difference_paths(actual_document, expected, "request.user_content") for expected in expected_documents]
+            failures.extend(min(diffs, key=len))
+        else:
+            failures.append("request.expected_transcript_unavailable")
+    return sorted(set(failures))
 
 
 def _summary_action(page):
@@ -139,6 +262,7 @@ def measure_browser_summary(campaign):
         raise RuntimeError("G9 sources must contain real finalized speech")
     a.json("PUT", f"/api/meetings/{first}/title", 200, json={"title": "Owner qualification title"})
     checks = {"trusted_tls": tls["trusted"] is True}
+    diagnostics: dict[str, list[str]] = {}
     moss_writes = []
     moss_write_routes = []
     observed_events = []
@@ -221,7 +345,11 @@ def measure_browser_summary(campaign):
                     held = provider.requests("hold")
                     interval = capacity["campaign_interval"]
                     checks["load_overlaps_provider"] = len(held) == 2 and all(row["started"] <= interval["started_monotonic_ns"] and row["finished"] is None for row in held)
-                    checks["speech_capacity_unchanged"] = _validate_capacity({"raw": capacity})
+                    capacity_failure_checks = []
+                    checks["speech_capacity_unchanged"] = _validate_capacity(
+                        {"raw": capacity}, failure_checks=capacity_failure_checks
+                    )
+                    diagnostics["speech_capacity_unchanged"] = capacity_failure_checks
                     checks["invalid_output_no_repair"] = len(provider.requests("invalid")) == 1
                     checks["cancel_retry_wait"] = len(provider.requests("retrycancel")) == 1
                     checks["history_does_not_infer"] = checks["history_does_not_infer"] and len(provider.requests("history")) == 0
@@ -231,17 +359,24 @@ def measure_browser_summary(campaign):
                     state(pages[0], "current"); state(pages[1], "current")
                     count("hold", 3, pages[0])
 
-                    expected = {}
-                    for owner, sources in (("a", (primary, third_source)), ("b", (secondary,))):
-                        expected[owner] = [{"segments": [{key: row[key] for key in ("start", "end", "speaker", "text")} for row in source["transcript"]["segments"]]} for source in sources]
-                    payload_ok = True
-                    for row in provider.calls:
-                        body = json.loads(row["body"])
-                        owner = "a" if body.get("model") == "g9-model-a" else "b"
-                        payload_ok = payload_ok and set(body) == {"model", "stream", "messages", "max_tokens"} and body["stream"] is False and body["max_tokens"] >= 2048
-                        payload_ok = payload_ok and body["messages"][0] == {"role": "system", "content": f"g9-private-prompt-{owner}"}
-                        payload_ok = payload_ok and body["messages"][1]["role"] == "user" and json.loads(body["messages"][1]["content"]) in expected[owner]
-                    checks["owner_payloads_only"] = payload_ok
+                    expected_sources = {"a": [primary, third_source], "b": [secondary]}
+                    owner_failures = []
+                    for index, row in enumerate(provider.calls):
+                        try:
+                            body = json.loads(row["body"])
+                        except (TypeError, ValueError):
+                            owner_failures.append(f"call[{index}].request.body_json")
+                            continue
+                        owner = "a" if isinstance(body, dict) and body.get("model") == "g9-model-a" else "b"
+                        failures = _owner_payload_failure_checks(
+                            body,
+                            owner=owner,
+                            prompt=f"g9-private-prompt-{owner}",
+                            sources=expected_sources[owner],
+                        )
+                        owner_failures.extend(f"call[{index}].{failure}" for failure in failures)
+                    checks["owner_payloads_only"] = not owner_failures
+                    diagnostics["owner_payloads_only"] = sorted(set(owner_failures))
                     checks["no_ambient_credentials"] = all(not any(name.lower() in {"cookie", "referer"} for name in row["headers"]) for row in provider.calls)
                     checks["real_cors_preflight"] = bool(provider.preflights) and all(row["origin"] == origin and "authorization" in row["headers"].lower() for row in provider.preflights)
                     checks["no_settings_to_moss"] = not any(value in "\n".join(moss_writes) for value in ("g9-private-key-", "g9-private-prompt-", "g9-model-", provider.endpoint("hold")))
@@ -282,7 +417,7 @@ def measure_browser_summary(campaign):
     campaign._safe_artifacts.add(Path("summary-provider-paths.json"))
     from .phase2_acceptance_completion import validate_relay_summary_observation
     checks["relay_path_qualified"] = validate_relay_summary_observation(paths.get("relay"))
-    raw = {"checks": checks, "capacity": capacity, "retry_deliveries": retry_times,
+    raw = {"checks": checks, "diagnostics": diagnostics, "capacity": capacity, "retry_deliveries": retry_times,
            "events": observed_events, "provider_requests": len(provider.calls), "tls": tls, "relay": paths["relay"]}
     return _record_summary_result(campaign, raw)
 
@@ -290,7 +425,12 @@ def measure_browser_summary(campaign):
 def _record_summary_result(campaign, raw):
     """Keep the content-free check bits even when the aggregate predicate fails."""
     passed = validate_completion_observation("browser_final_summary", raw)
-    campaign._artifact_json("summary-checks.json", {"checks": raw["checks"], "validator_pass": passed})
+    diagnostics = raw.get("diagnostics", {})
+    if not isinstance(diagnostics, dict):
+        diagnostics = {}
+    campaign._artifact_json("summary-checks.json", {
+        "checks": raw["checks"], "validator_pass": passed, "diagnostics": diagnostics,
+    })
     if not passed:
         raise RuntimeError("Browser summary privacy/lifecycle/load qualification failed")
     return raw
