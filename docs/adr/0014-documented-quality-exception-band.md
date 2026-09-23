@@ -95,3 +95,12 @@ their bounds, and successive candidates could each sit just inside the band. The
 every admitted exception is recorded in the verdict, so drift is visible in the record rather than
 inferred. If the bounds themselves should move, that is a separate decision about
 `QUALITY_BOUNDS`, made deliberately — not something this tolerance should be widened to absorb.
+
+## Amendment 2026-09-23 — D46: window completeness counts terminal coverage
+User ruling D46 = O1 (round 6). The structural completeness condition stays **122 planned full 10-second windows** for the frozen six-case,
+two-pass corpus (planned from accepted samples on the production 10 s / 10 s geometry). A planned window is complete when rolling decoded it
+**or** the applied terminal pass covers it: exactly one terminal text revision with status `final`, the `post_stop_final` snapshot finalization
+status `final`, and a revision sample range containing the whole window. Any planned window covered by neither fails the predicate. Reason:
+commit `3f8e592b` (WP35, 2026-09-18) intentionally stops rolling at Stop when the terminal pass will supersede it, so the last window of some
+cases is decoded only by the terminal pass (host H1 2026-09-23: 116 rolling of 122 planned, per layer). The public event stream ends at the
+terminal revision, so `terminal_finalization_completed` is not required. Quality bounds and the 5 % exception band are unchanged.
