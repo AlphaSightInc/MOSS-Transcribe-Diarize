@@ -28,8 +28,9 @@ MICROPHONE_VOICE = CORPUS / 'interview_keyu_jin_60s/audio.wav'
 SYSTEM_LADDER_REFERENCE = REPO / 'tests/e2e/fixtures/lane-system-ladder-reference.json'
 DEFAULT_MIC_GAIN = 0.03
 TAIL_SETTLE_TIMEOUT_SECONDS = 5.0
-# D38: visible-tail target, not a bound. A miss is recorded, never a row failure;
-# a null tail latency (TIMEOUT, stop_flush, Stop before pre) still fails through D31.
+# D38: visible-tail target, not a bound. A miss is recorded, never a row failure.
+# A settle TIMEOUT has no tail latency and fails D31; stop_flush, empty post-Stop
+# evidence and Stop-before-pre fail D31 whatever latency was measured.
 TAIL_LATENCY_TARGET_SECONDS = 3.0
 _TAIL_ENDPOINT_REASONS = frozenset({'end_silence', 'hard_cap', 'stop_flush', 'none'})
 _IDENTITY_TELEMETRY_KEYS = frozenset({
