@@ -60,7 +60,7 @@ from .phase2_acceptance_replay import (
 from .live_service_replay import run_service_replay
 from .app.live_session import AudioFrame, LIVE_SAMPLE_RATE
 from .installed_candidate import validated_candidate_artifacts
-from .phase2_acceptance_journal import ServiceJournalWindow
+from .phase2_acceptance_journal import ServiceJournalWindow, supported_moss_unit
 from .evaluation import Segment, calculate_diarization
 from .live_speaker_accuracy import load_reference_jsonl
 
@@ -2404,11 +2404,12 @@ class FixedAccountCampaign:
             Path(self._text("account_a_cookie_file")).expanduser(),
             Path(self._text("account_b_cookie_file")).expanduser(),
         )
-        web_pid = _unit_pid(str(self.config.get("web_unit") or "moss-web.service"))
-        vllm_pid = _unit_pid(str(self.config.get("vllm_unit") or "moss-vllm.service"))
+        web_unit = str(self.config.get("web_unit") or "moss-web.service")
+        web_pid = _unit_pid(web_unit)
+        vllm_pid = _unit_pid("moss-vllm.service")
         rss_before = _process_tree_rss(web_pid) + _process_tree_rss(vllm_pid)
         log_windows = {
-            "server_log": self._journal_window("moss-web.service"),
+            "server_log": self._journal_window(web_unit),
             "vllm_log": self._journal_window("moss-vllm.service"),
         }
         barrier = threading.Barrier(sessions)
@@ -3160,8 +3161,15 @@ def _wav_pcm_clip(path: Path, start_seconds: float, end_seconds: float) -> bytes
 
 
 def _unit_pid(unit: str, *, timeout: float = 30) -> int:
+    if not supported_moss_unit(unit):
+        raise ExternalMeasurementError("qualification accepts only MOSS user service units")
     if unit not in {"moss-web.service", "moss-vllm.service"}:
-        raise ExternalMeasurementError("qualification accepts only fixed MOSS service units")
+        loaded = subprocess.run(
+            ("systemctl", "--user", "show", unit, "--property", "LoadState", "--value"),
+            check=False, capture_output=True, text=True, timeout=timeout,
+        )
+        if loaded.returncode or loaded.stdout.strip() != "loaded":
+            raise ExternalMeasurementError(f"{unit} is not a loaded user service")
     result = subprocess.run(
         ("systemctl", "--user", "show", unit, "--property", "MainPID", "--value"),
         check=False,

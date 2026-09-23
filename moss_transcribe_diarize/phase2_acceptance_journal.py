@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 
 
@@ -9,11 +10,17 @@ class JournalMeasurementError(RuntimeError):
     pass
 
 
+def supported_moss_unit(unit: str) -> bool:
+    return isinstance(unit, str) and re.fullmatch(
+        r"moss-[A-Za-z0-9][A-Za-z0-9_-]*\.service", unit
+    ) is not None
+
+
 class ServiceJournalWindow:
     """A proven readable unit cursor, followed by that unit's subsequent messages."""
 
     def __init__(self, unit: str):
-        if unit not in {"moss-web.service", "moss-vllm.service"}:
+        if not supported_moss_unit(unit):
             raise JournalMeasurementError("Unsupported qualification journal unit")
         self.unit = unit
         rows = self._query("-n", "1")
