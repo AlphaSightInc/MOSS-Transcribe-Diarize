@@ -17,6 +17,10 @@ DEFAULT_PHASE2_CONTROL_SOCKET_PATH = (
     DEFAULT_PHASE2_DATABASE_PATH.parent / "phase2-control.sock"
 )
 MAX_CONTROL_LINE_BYTES = 16 * 1024
+# This mode-0600 host-local operator channel is trusted. A 1 MiB reply gives
+# roughly 3,700 retained dispatch owners of headroom at the measured ~281 B/owner.
+# Bounding owner history needs a separate, versioned status-contract change.
+MAX_CONTROL_RESPONSE_BYTES = 1024 * 1024
 LOGGER = logging.getLogger(__name__)
 
 
@@ -215,11 +219,14 @@ async def request_control(
     try:
         writer.write(json.dumps(request, sort_keys=True).encode("utf-8") + b"\n")
         await writer.drain()
-        line = await reader.readline()
+        try:
+            line = await reader.readexactly(MAX_CONTROL_RESPONSE_BYTES + 1)
+        except asyncio.IncompleteReadError as exc:
+            line = exc.partial
     finally:
         writer.close()
         await writer.wait_closed()
-    if not line or len(line) > MAX_CONTROL_LINE_BYTES:
+    if not line or len(line) > MAX_CONTROL_RESPONSE_BYTES:
         raise Phase2ControlError(
             "Phase-2 product returned an invalid control response.",
             code="invalid_control_response",

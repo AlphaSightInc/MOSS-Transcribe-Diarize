@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from moss_transcribe_diarize.app.phase2_control import (
-    MAX_CONTROL_LINE_BYTES,
+    MAX_CONTROL_RESPONSE_BYTES,
     Phase2ControlError,
     Phase2ControlServer,
 )
@@ -30,7 +30,7 @@ def test_missing_control_socket_retains_safe_code_and_nested_errno():
 def test_oversized_status_retains_safe_code_and_response_bytes():
     class Operator:
         async def snapshot(self):
-            return {"padding": "x" * MAX_CONTROL_LINE_BYTES}
+            return {"padding": "x" * MAX_CONTROL_RESPONSE_BYTES}
 
     async def exercise(path):
         server = Phase2ControlServer(path, lifecycle=None, operator=Operator())
@@ -45,7 +45,7 @@ def test_oversized_status_retains_safe_code_and_response_bytes():
     with tempfile.TemporaryDirectory(prefix="h2e2-") as root:
         details = asyncio.run(exercise(Path(root) / "s"))
     assert details["control_code"] == "invalid_control_response"
-    assert details["response_bytes"] > MAX_CONTROL_LINE_BYTES
+    assert details["response_bytes"] > MAX_CONTROL_RESPONSE_BYTES
     assert "padding" not in str(details)
 
 
