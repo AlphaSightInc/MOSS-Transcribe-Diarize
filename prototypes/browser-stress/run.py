@@ -4,17 +4,13 @@ Run: PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. <python> prototypes/browser-stress/r
 Start stack.py on 17865 and own decoder forward 18105 first. No microphone evidence.
 """
 from __future__ import annotations
-import argparse, asyncio, functools, http.server, json, os, re, shutil, signal, sqlite3, subprocess, sys, threading, time
+import argparse, asyncio, functools, http.server, json, os, re, shutil, signal, sqlite3, subprocess, sys, tempfile, threading, time
 from difflib import SequenceMatcher
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import urlsplit
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT))
-os.environ.setdefault('TMPDIR',str(ROOT/'runs/wp5'))
-Path(os.environ['TMPDIR']).mkdir(parents=True,exist_ok=True)
-import tempfile
-tempfile.tempdir=os.environ['TMPDIR']
 from tests.e2e.verify_workspace import Harness, QuietHandler
 from tests.e2e.export_oracle import compare_export
 from tests.phase2.browser_support import browser_executable
@@ -403,6 +399,9 @@ class Bench(Harness):
 
 
 def main():
+    os.environ.setdefault('TMPDIR',str(ROOT/'runs/wp5'))
+    Path(os.environ['TMPDIR']).mkdir(parents=True,exist_ok=True)
+    tempfile.tempdir=os.environ['TMPDIR']
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('case')
     parser.add_argument('--output','--out',dest='output',default='evidence/mvpfix/wp5/base')

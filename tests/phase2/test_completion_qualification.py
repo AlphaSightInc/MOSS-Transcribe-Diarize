@@ -15,6 +15,7 @@ from moss_transcribe_diarize.phase2_acceptance_measure import measure_layer
 from moss_transcribe_diarize.phase2_acceptance_completion import (
     SUMMARY_CHECKS, VOICEPRINT_CHECKS, RELAY_SUMMARY_CHECKS, measure_voiceprint_workspace, validate_completion_observation,
 )
+from moss_transcribe_diarize.phase2_acceptance_summary import _record_summary_result
 from tests.phase2.test_wave1_qualification import _capacity_raw, _overload_raw
 from tests.phase2.test_owner_bound_live_meeting import EligibleIdentity, make_app, provision, session, feed_two_lane_span, wait_snapshot
 
@@ -105,6 +106,25 @@ def summary_report():
     return {"relay": {"checks": {key: True for key in RELAY_SUMMARY_CHECKS}, "upstream_requests": 1}, "checks": {key: True for key in SUMMARY_CHECKS}, "capacity": _capacity_raw(), "retry_deliveries": [0, 60, 180, 420],
         "events": [[{"type": "llm_status", "state": value} for value in ("queued", "generating", "retry_wait", "failed", "cancelled", "current")],
                    [{"type": "llm_summary_update", "state": "current"}]]}
+
+
+def test_g9_failure_retains_content_free_check_identity(tmp_path: Path):
+    class Campaign:
+        def _artifact_json(self, relative, payload):
+            target = tmp_path / relative
+            target.write_text(json.dumps(payload))
+
+    raw = summary_report()
+    raw["checks"]["lifecycle_events"] = False
+    with pytest.raises(RuntimeError, match="Browser summary privacy/lifecycle/load qualification failed"):
+        _record_summary_result(Campaign(), raw)
+    retained = json.loads((tmp_path / "summary-checks.json").read_text())
+    assert retained == {"checks": raw["checks"], "validator_pass": False}
+
+    raw["checks"]["lifecycle_events"] = True
+    assert _record_summary_result(Campaign(), raw) is raw
+    retained = json.loads((tmp_path / "summary-checks.json").read_text())
+    assert retained == {"checks": raw["checks"], "validator_pass": True}
 
 
 def test_completion_boolean_claims_cannot_replace_missing_rows_timings_or_capacity():

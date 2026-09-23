@@ -284,7 +284,15 @@ def measure_browser_summary(campaign):
     checks["relay_path_qualified"] = validate_relay_summary_observation(paths.get("relay"))
     raw = {"checks": checks, "capacity": capacity, "retry_deliveries": retry_times,
            "events": observed_events, "provider_requests": len(provider.calls), "tls": tls, "relay": paths["relay"]}
-    if not validate_completion_observation("browser_final_summary", raw): raise RuntimeError("Browser summary privacy/lifecycle/load qualification failed")
+    return _record_summary_result(campaign, raw)
+
+
+def _record_summary_result(campaign, raw):
+    """Keep the content-free check bits even when the aggregate predicate fails."""
+    passed = validate_completion_observation("browser_final_summary", raw)
+    campaign._artifact_json("summary-checks.json", {"checks": raw["checks"], "validator_pass": passed})
+    if not passed:
+        raise RuntimeError("Browser summary privacy/lifecycle/load qualification failed")
     return raw
 
 
