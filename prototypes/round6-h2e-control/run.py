@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import sys
 import tempfile
 from pathlib import Path
 
@@ -24,7 +25,8 @@ class FileStatusAdapter:
         return {}
 
 
-async def main() -> None:
+async def main(*, assert_h2e3: bool = False) -> None:
+    observed: dict[str, dict[str, object]] = {}
     with tempfile.TemporaryDirectory(prefix="moss-h2e2-") as root:
         root_path = Path(root)
         database = root_path / "moss.sqlite3"
@@ -65,7 +67,7 @@ async def main() -> None:
                     if str(exc) == "Phase-2 product returned an invalid control response."
                     else "OTHER_CONTROL_ERROR"
                 )
-            print(json.dumps({
+            row = {
                 "phase": phase,
                 "accounts": len(status["accounts"]),
                 "meetings_created": meetings_created,
@@ -80,7 +82,9 @@ async def main() -> None:
                 "render_ok": isinstance(render_operator_status(status), str),
                 "request": result,
                 "limit_bytes": MAX_CONTROL_LINE_BYTES,
-            }, sort_keys=True))
+            }
+            observed[phase] = row
+            print(json.dumps(row, sort_keys=True))
             return response_bytes
 
         try:
@@ -138,7 +142,17 @@ async def main() -> None:
         finally:
             await server.stop()
             await store.close()
+    if assert_h2e3:
+        for phase, accounts, owners, live in (
+            ("near_host_plus_one_active_live", 11, 39, 1),
+            ("extra_dispatch_owner_19", 11, 41, 0),
+            ("account_13", 13, 41, 0),
+        ):
+            row = observed[phase]
+            assert (row["accounts"], row["clock_owners"], row["active_live"]) == (accounts, owners, live)
+            assert row["response_bytes"] > MAX_CONTROL_LINE_BYTES
+            assert row["render_ok"] and row["request"] == "PASS", row
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main(assert_h2e3="--assert-h2e3" in sys.argv))
