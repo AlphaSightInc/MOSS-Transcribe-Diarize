@@ -17,11 +17,24 @@ DEFAULT_PHASE2_CONTROL_SOCKET_PATH = (
     DEFAULT_PHASE2_DATABASE_PATH.parent / "phase2-control.sock"
 )
 MAX_CONTROL_LINE_BYTES = 16 * 1024
+# This mode-0600 host-local operator channel is trusted. A 1 MiB reply gives
+# roughly 3,700 retained dispatch owners of headroom at the measured ~281 B/owner.
+# Bounding owner history needs a separate, versioned status-contract change.
+MAX_CONTROL_RESPONSE_BYTES = 1024 * 1024
 LOGGER = logging.getLogger(__name__)
 
 
 class Phase2ControlError(RuntimeError):
-    pass
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str | None = None,
+        response_bytes: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.response_bytes = response_bytes
 
 
 class Phase2ControlServer:
@@ -195,7 +208,9 @@ async def request_control(
     try:
         reader, writer = await asyncio.open_unix_connection(str(Path(path).expanduser()))
     except OSError as exc:
-        raise Phase2ControlError("Phase-2 product control is unavailable.") from exc
+        raise Phase2ControlError(
+            "Phase-2 product control is unavailable.", code="control_unavailable"
+        ) from exc
     request = {"command": command}
     if account_id is not None:
         request["account_id"] = account_id
@@ -204,20 +219,32 @@ async def request_control(
     try:
         writer.write(json.dumps(request, sort_keys=True).encode("utf-8") + b"\n")
         await writer.drain()
-        line = await reader.readline()
+        try:
+            line = await reader.readexactly(MAX_CONTROL_RESPONSE_BYTES + 1)
+        except asyncio.IncompleteReadError as exc:
+            line = exc.partial
     finally:
         writer.close()
         await writer.wait_closed()
-    if not line or len(line) > MAX_CONTROL_LINE_BYTES:
-        raise Phase2ControlError("Phase-2 product returned an invalid control response.")
+    if not line or len(line) > MAX_CONTROL_RESPONSE_BYTES:
+        raise Phase2ControlError(
+            "Phase-2 product returned an invalid control response.",
+            code="invalid_control_response",
+            response_bytes=len(line),
+        )
     try:
         response = json.loads(line)
     except Exception as exc:
-        raise Phase2ControlError("Phase-2 product returned an invalid control response.") from exc
+        raise Phase2ControlError(
+            "Phase-2 product returned an invalid control response.",
+            code="invalid_control_response",
+            response_bytes=len(line),
+        ) from exc
     if not isinstance(response, dict) or response.get("ok") is not True:
         code = response.get("error") if isinstance(response, dict) else None
         raise Phase2ControlError(
-            code if isinstance(code, str) else "control_request_failed"
+            code if isinstance(code, str) else "control_request_failed",
+            code=code if isinstance(code, str) else "control_request_failed",
         )
     return response.get("result")
 

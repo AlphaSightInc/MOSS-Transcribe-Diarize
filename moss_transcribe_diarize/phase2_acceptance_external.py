@@ -276,7 +276,7 @@ def _run_admin_status(admin: Path, socket_path: Path, *, json_output: bool):
     The relay forwards the real request and response unchanged, without retaining content.
     """
     from concurrent.futures import ThreadPoolExecutor
-    from .app.phase2_control import MAX_CONTROL_LINE_BYTES
+    from .app.phase2_control import MAX_CONTROL_LINE_BYTES, MAX_CONTROL_RESPONSE_BYTES
 
     with tempfile.TemporaryDirectory(prefix="moss-status-", dir="/tmp") as directory:
         proxy = str(Path(directory) / "s")
@@ -297,8 +297,8 @@ def _run_admin_status(admin: Path, socket_path: Path, *, json_output: bool):
                     upstream.connect(str(socket_path))
                     upstream.sendall(request)
                     with upstream.makefile("rb") as incoming:
-                        response = incoming.readline(MAX_CONTROL_LINE_BYTES + 1)
-                    if len(response) > MAX_CONTROL_LINE_BYTES or not response.endswith(b"\n"):
+                        response = incoming.readline(MAX_CONTROL_RESPONSE_BYTES + 1)
+                    if len(response) > MAX_CONTROL_RESPONSE_BYTES or not response.endswith(b"\n"):
                         raise ExternalMeasurementError("operator status response is invalid")
                     connection.sendall(response)
                     envelope = json.loads(response)
