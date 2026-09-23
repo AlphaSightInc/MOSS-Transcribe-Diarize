@@ -686,6 +686,15 @@ class BrowserCampaign:
                                     / 100.0,
                                     "pane_width": measured["viewport"]["width"],
                                     "pane_height": measured["viewport"]["height"],
+                                    # ADR-0016: record what the decision-scoped exemptions masked (content-free).
+                                    "raw_differing_pixels_before_exemptions": measured.get(
+                                        "raw_differing_pixels_before_exemptions"
+                                    ),
+                                    "exemptions": [
+                                        {"id": item.get("id"), "masked_union_boxes": item.get("masked_union_boxes", [])}
+                                        for item in measured.get("exemptions", [])
+                                        if isinstance(item, dict)
+                                    ],
                                 }
                             )
                         finally:
