@@ -2497,7 +2497,7 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
         directory.mkdir()
         (directory / "audio.wav").write_bytes(b"wav")
         (directory / "reference.jsonl").write_text(
-            json.dumps({"start": 0, "end": 1, "speaker": "S1", "text": "test"}) + "\n",
+            json.dumps({"start": 0, "end": 1, "speaker": "S1", "text": "REFERENCE PRIVATE"}) + "\n",
             encoding="utf-8",
         )
         cases.append({"case_id": case_id, "category": "speech"})
@@ -2537,7 +2537,15 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
     class Capture:
         def __init__(self, adapter: object, **kwargs: object) -> None:
             del adapter, kwargs
-            snapshot = {"segments": []}
+            snapshot = {"session": {
+                "identity_snapshot": {"canonical_speakers": ["speaker-0001"]},
+                "effective_transcript": [
+                    {"start_sample": 0, "end_sample": 4_000,
+                     "canonical_speaker": None, "text": "PRIVATE TRANSCRIPT"},
+                    {"start_sample": 4_000, "end_sample": 16_000,
+                     "canonical_speaker": "speaker-0001", "text": "PRIVATE TRANSCRIPT"},
+                ],
+            }}
             self.captures = {
                 "pre_stop_immediate": {"snapshot": snapshot},
                 "pre_stop_settled": {"snapshot": snapshot},
@@ -2551,8 +2559,11 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
 
         @staticmethod
         def transcript_rows(snapshot: object, duration: float):
-            del snapshot, duration
-            return []
+            from moss_transcribe_diarize.live_speaker_accuracy import hypothesis_from_live_snapshot
+            return [{"start": row.start, "end": row.end, "speaker": row.speaker,
+                     "text": row.text} for row in hypothesis_from_live_snapshot(
+                         {"snapshot": snapshot}, corpus_start_sample=0,
+                         corpus_duration_sec=duration)]
 
         @staticmethod
         def score_surface(case: object, rows: object):
@@ -2560,7 +2571,7 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
             return {
                 "wer": 0.1,
                 "tbsa": 0.9,
-                "der": 0.1,
+                "der": 0.25,
                 "content_recall": 0.95,
                 "matched_word_speaker_accuracy": 0.95,
                 "reference_speech_der": 0.1,
@@ -2645,7 +2656,23 @@ def test_real_quality_producer_runs_exact_six_cases_twice_through_fixed_replay_s
     assert result["sessions"] == 12
     assert len(result["per_case"]) == 12
     assert set(result["per_case"][0]["surface_observations"]) == {"pre_stop_immediate", "pre_stop_settled", "post_stop_final"}
+    first = result["per_case"][0]
+    assert first["settled_hypothesis_speaker_intervals"] == [
+        {"start_sample": 0, "end_sample": 4_000, "speaker": "S00"},
+        {"start_sample": 4_000, "end_sample": 16_000, "speaker": "named:speaker-0001"},
+    ]
+    assert first["reference_speaker_intervals"] == [
+        {"start_sample": 0, "end_sample": 16_000, "speaker": "ref:01"},
+    ]
+    assert first["settled_der_s00_diagnostic"] == {
+        "as_is": 0.25, "without_s00_confusion": 0.0, "s00_confusion_difference": 0.25,
+    }
+    assert result["macro"]["diarization_error_rate"] == 0.25
     assert Path("quality/content-free-metrics.json") in campaign.safe_artifacts
+    retained = (campaign.artifact_root / "quality/content-free-metrics.json").read_text()
+    assert "PRIVATE TRANSCRIPT" not in retained
+    assert "REFERENCE PRIVATE" not in retained
+    assert '"text"' not in retained
 
 
 @pytest.mark.parametrize("has_crash", [False, True])
