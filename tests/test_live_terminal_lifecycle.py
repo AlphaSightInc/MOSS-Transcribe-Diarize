@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import asyncio
 import tempfile
+import time
 import unittest
 from dataclasses import replace
 
@@ -349,14 +350,21 @@ class TerminalFailureLifecycleTest(unittest.TestCase):
             raise ZeroDivisionError("a witness defect")
 
         coordinator.submit_refinement = exploding_submit
-        for sequence in range(ONE_WINDOW_FRAMES):
-            runtime.accept_frame(
-                created.session_id,
-                AudioFrame(
-                    sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES, sample_count=FRAME_SAMPLES
-                ),
-            )
+        # The witness's window is queued by the canonical pump thread and its defect is
+        # logged by the refinement thread, so both can land before Stop: capture from the
+        # first frame, and stop only once the witness really has a window to die on.
         with self.assertLogs("moss_transcribe_diarize.live.rolling", level="WARNING"):
+            for sequence in range(ONE_WINDOW_FRAMES):
+                runtime.accept_frame(
+                    created.session_id,
+                    AudioFrame(
+                        sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES, sample_count=FRAME_SAMPLES
+                    ),
+                )
+            deadline = time.monotonic() + 5.0
+            while "rolling_decode_queued" not in _kinds(runtime, created.session_id):
+                self.assertLess(time.monotonic(), deadline, "the witness never received a window")
+                time.sleep(0.001)
             asyncio.run(runtime.stop(created.session_id, 5.0))
 
         started = _payload(runtime, created.session_id, "terminal_finalization_started")
