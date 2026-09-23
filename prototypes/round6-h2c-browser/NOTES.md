@@ -16,3 +16,7 @@
 - Assumption: the lead's host A/B established the Chrome path-length mechanism (35-character TMPDIR passes; 125 fails). Local macOS Chrome cannot validate Linux socket behavior.
 - Falsifier: the imported module leaves `TMPDIR` and `tempfile.tempdir` unchanged on frozen source, or the CLI loses its scratch setup after moving the configuration into `main`.
 - Tools: the focused pytest catches the import-time leak; a long-path Docker invocation checks Linux launch and the 37 H1 launch cases. No decoder or provider request is needed.
+
+## Verdict (lead, 2026-09-23)
+- 37 host Chrome-launch failures: CONFIRMED root cause = import-time TMPDIR in `prototypes/browser-stress/run.py` under a deep checkout (host A/B 35 vs 125 chars); FIXED by moving the setup into `main()` (reviewed PASS).
+- G9 `browser_final_summary`: failing check unidentifiable from H1 receipts; FIXED diagnostic retention (`summary-checks.json`, 19 booleans + validator result). G1 pre-admission / G10: PARKED to H2-E / H2-H.
