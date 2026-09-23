@@ -33,3 +33,8 @@ The command prints only booleans, counts, key/type differences, and named check 
 ## Disposition
 
 No product code or capacity bound was changed. Keep the owner predicate fix, retain named diagnostics, and require a complete future G9 aggregate before clearing the possible capacity defect. Attempts at this point: payload 2/3; capacity 3/3 (parked).
+
+## Correction (lead, 2026-09-23, review F6)
+The server already projects `S00` to "Speaker uncertain" before either the browser or the harness reads `GET /api/meetings/{id}`
+(`app/phase2.py:2618-2628`), so `S00` was not a cause of the old `owner_payloads_only` mismatch; the real differences were
+`response_format`, segment `source_lane`, `HH:MM:SS` timestamps and product ordering. D45b is the DER ruling, not a display projection.

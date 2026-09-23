@@ -1376,10 +1376,14 @@ def _validate_overload(predicate: Mapping[str, object]) -> bool:
             if not isinstance(events, list):
                 return False
             for event in events:
-                if not isinstance(event, dict) or not isinstance(
-                    event.get("runtime_monotonic_ns"), int
-                ):
+                if not isinstance(event, dict):
                     return False
+                if not isinstance(event.get("runtime_monotonic_ns"), int):
+                    if event.get("kind") != "text_revision_applied":
+                        return False
+                    # Same rule as `_validate_capacity`: text revisions carry no runtime clock
+                    # and no overload reduction orders them.
+                    continue
                 lifecycle.append((int(event["runtime_monotonic_ns"]), ordinal, event))
         canonical_events: list[dict[str, object]] = []
         for _timestamp, ordinal, event in sorted(lifecycle, key=lambda item: item[0]):

@@ -152,3 +152,26 @@ def test_g9_summary_receipt_retains_only_named_diagnostics(tmp_path):
     retained = json.loads((tmp_path / "summary-checks.json").read_text())
     assert retained["diagnostics"] == raw["diagnostics"]
     assert "synthetic owner A speech" not in json.dumps(retained)
+
+
+def test_overload_validator_tolerates_untimed_text_revisions_only():
+    """H1 #2 overload events carry D46's untimed `text_revision_applied` rows (1 and 12)."""
+
+    from tests.phase2.test_wave1_qualification import _overload_raw
+
+    assert acceptance._validate_overload({"raw": _overload_raw()})
+
+    revision = _overload_raw()
+    for session in revision["session_observations"]:
+        session["events"].append(
+            {"kind": "text_revision_applied", "runtime_monotonic_ns": None, "source": "rolling"}
+        )
+    assert acceptance._validate_overload({"raw": revision})
+
+    untimed_other = _overload_raw()
+    event = next(
+        row for row in untimed_other["session_observations"][0]["events"]
+        if row.get("kind") == "canonical_processed"
+    )
+    event["runtime_monotonic_ns"] = None
+    assert not acceptance._validate_overload({"raw": untimed_other})
