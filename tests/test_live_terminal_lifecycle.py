@@ -100,7 +100,9 @@ def _finalizer(text: str = TERMINAL_TEXT, **kwargs) -> TerminalTranscriptFinaliz
     return TerminalTranscriptFinalizer(runner=WholeMeetingStub(text, **kwargs))
 
 
-def _stop_after_a_meeting(runtime, *, frames: int = ONE_WINDOW_FRAMES) -> str:
+def _stop_after_a_meeting(
+    runtime, *, frames: int = ONE_WINDOW_FRAMES, wait_for_rolling_revision: bool = False
+) -> str:
     created = runtime.create()
     for sequence in range(frames):
         runtime.accept_frame(
@@ -109,6 +111,15 @@ def _stop_after_a_meeting(runtime, *, frames: int = ONE_WINDOW_FRAMES) -> str:
                 sequence=sequence, pcm=b"\x11\x22" * FRAME_SAMPLES, sample_count=FRAME_SAMPLES
             ),
         )
+    if wait_for_rolling_revision:
+        deadline = time.monotonic() + 5.0
+        while not any(
+            event.kind == "text_revision_applied" and event.payload.get("source") == "rolling"
+            for event in runtime.events(created.session_id)
+        ):
+            if time.monotonic() >= deadline:
+                raise AssertionError("the rolling witness did not publish its revision")
+            time.sleep(0.001)
     asyncio.run(runtime.stop(created.session_id, 5.0))
     return created.session_id
 
@@ -148,7 +159,7 @@ class TerminalLifecycleTest(unittest.TestCase):
 
         scheduler = _ManualTerminalScheduler()
         runtime, _ = _runtime(finalizer=_finalizer(), scheduler=scheduler)
-        session_id = _stop_after_a_meeting(runtime)
+        session_id = _stop_after_a_meeting(runtime, wait_for_rolling_revision=True)
 
         stopped = runtime.snapshot(session_id).session
         self.assertEqual(stopped.status, "closed")
@@ -321,7 +332,7 @@ class TerminalFailureLifecycleTest(unittest.TestCase):
 
         scheduler = _ManualTerminalScheduler()
         runtime, _ = _runtime(finalizer=_finalizer(), scheduler=scheduler)
-        session_id = _stop_after_a_meeting(runtime)
+        session_id = _stop_after_a_meeting(runtime, wait_for_rolling_revision=True)
         scheduler.run_one()
         state = runtime._sessions[session_id]
         published = runtime.snapshot(session_id).session.effective_transcript
