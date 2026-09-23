@@ -16,6 +16,7 @@ import importlib.util
 import json
 import math
 import os
+import re
 import shutil
 import socket
 import sqlite3
@@ -60,6 +61,8 @@ from .live_service_replay import run_service_replay
 from .app.live_session import AudioFrame, LIVE_SAMPLE_RATE
 from .installed_candidate import validated_candidate_artifacts
 from .phase2_acceptance_journal import ServiceJournalWindow
+from .evaluation import Segment, calculate_diarization
+from .live_speaker_accuracy import load_reference_jsonl
 
 
 class ExternalMeasurementError(RuntimeError):
@@ -2221,12 +2224,23 @@ class FixedAccountCampaign:
                     raise ExternalMeasurementError("quality run missed a transcript surface")
                 duration = _wav_duration(audio)
                 scored: dict[str, dict[str, object]] = {}
+                settled_rows: list[dict[str, Any]] | None = None
                 case = surface.Case(str(case_id), case_dir, reference)
                 for name in required_surfaces:
                     rows = surface.transcript_rows(
                         captured.captures[name]["snapshot"], duration
                     )
                     scored[name] = surface.score_surface(case, rows)
+                    if name == "pre_stop_settled":
+                        settled_rows = rows
+                assert settled_rows is not None
+                speaker_intervals = _quality_speaker_intervals(
+                    captured.captures["pre_stop_settled"]["snapshot"],
+                    settled_rows, reference,
+                )
+                if (speaker_intervals["settled_der_s00_diagnostic"]["as_is"]
+                        != scored["pre_stop_settled"]["der"]):
+                    raise ExternalMeasurementError("settled DER interval replay disagrees with scorer")
                 events = surface.read_service_events(trace)
                 measurements = surface.event_measurements(
                     events,
@@ -2261,6 +2275,7 @@ class FixedAccountCampaign:
                             "settled": scored["pre_stop_settled"],
                             "final": scored["post_stop_final"],
                         },
+                        **speaker_intervals,
                         "surface_observations": _quality_surface_observations(
                             captured.captures,
                             reference_speaker_count=len({json.loads(line)["speaker"]
@@ -3406,6 +3421,77 @@ def _quality_surface_observations(captures: Mapping[str, Any], *, reference_spea
     return observations
 
 
+def _quality_speaker_intervals(
+    snapshot: Mapping[str, Any], rows: list[dict[str, Any]], reference: Path,
+) -> dict[str, object]:
+    """Retain the scored settled timing/identity, without transcript or reference names."""
+    session = snapshot.get("session")
+    if not isinstance(session, dict) or not isinstance(session.get("effective_transcript"), list):
+        raise ExternalMeasurementError("settled quality surface lacks effective transcript")
+    identity = session.get("identity_snapshot")
+    speakers = identity.get("canonical_speakers") if isinstance(identity, dict) else None
+    if not isinstance(speakers, (list, tuple)) or not all(
+        isinstance(value, str) and re.fullmatch(r"speaker-[0-9]{4,}", value)
+        for value in speakers
+    ):
+        raise ExternalMeasurementError("settled quality speaker IDs are not opaque identifiers")
+    label_classes = {f"S{index + 1:02d}": f"named:{value}"
+                     for index, value in enumerate(speakers)}
+    hypothesis = []
+    for row in rows:
+        label = row["speaker"]
+        if label != "S00" and label not in label_classes:
+            raise ExternalMeasurementError("settled quality speaker label is not canonical")
+        hypothesis.append({
+            "start_sample": round(float(row["start"]) * LIVE_SAMPLE_RATE),
+            "end_sample": round(float(row["end"]) * LIVE_SAMPLE_RATE),
+            "speaker": "S00" if label == "S00" else label_classes[label],
+        })
+    reference_rows = load_reference_jsonl(reference)
+    reference_ids = {speaker: f"ref:{index + 1:02d}"
+                     for index, speaker in enumerate(sorted({row.speaker for row in reference_rows}))}
+    reference_intervals = [
+        {"start_sample": round(row.start * LIVE_SAMPLE_RATE),
+         "end_sample": round(row.end * LIVE_SAMPLE_RATE),
+         "speaker": reference_ids[row.speaker]}
+        for row in reference_rows
+    ]
+    ref_eval = [Segment(row.start, row.end, row.speaker, "") for row in reference_rows]
+    hyp_eval = [Segment(float(row["start"]), float(row["end"]), str(row["speaker"]), "")
+                for row in rows]
+    as_is = calculate_diarization(ref_eval, hyp_eval)
+    ref_duration = sum(row.duration for row in ref_eval)
+    confusion = 0.0
+    s00_confusion = 0.0
+    s00_mapped_correct = 0.0
+    for ref in ref_eval:
+        for hyp in hyp_eval:
+            overlap = max(0.0, min(ref.end, hyp.end) - max(ref.start, hyp.start))
+            if as_is["speaker_mapping"].get(ref.speaker) != hyp.speaker:
+                confusion += overlap
+                if hyp.speaker == "S00":
+                    s00_confusion += overlap
+            elif hyp.speaker == "S00":
+                # S00 was the optimal match for this reference speaker: its time scores as correct.
+                s00_mapped_correct += overlap
+    difference = (min(confusion, ref_duration)
+                  - min(confusion - s00_confusion, ref_duration)) / ref_duration
+    return {
+        "settled_hypothesis_speaker_intervals": hypothesis,
+        "reference_speaker_intervals": reference_intervals,
+        "settled_der_s00_diagnostic": {
+            "as_is": as_is["der"],
+            "without_s00_confusion": max(0.0, round(as_is["der"] - difference, 6)),
+            "s00_confusion_difference": round(difference, 6),
+            "s00_mapped_reference": sorted(
+                reference_ids[speaker] for speaker, label in as_is["speaker_mapping"].items()
+                if label == "S00" and speaker in reference_ids
+            ),
+            "s00_mapped_correct_seconds": round(s00_mapped_correct, 6),
+        },
+    }
+
+
 def _quality_projection(
     rows: list[dict[str, object]], *, corpus_manifest_sha256: str
 ) -> dict[str, object]:
@@ -3454,6 +3540,9 @@ def _quality_projection(
                 "duration_seconds": row["duration_seconds"],
                 "windows": row["windows"],
                 "metrics": row["metrics"],
+                "settled_hypothesis_speaker_intervals": row["settled_hypothesis_speaker_intervals"],
+                "reference_speaker_intervals": row["reference_speaker_intervals"],
+                "settled_der_s00_diagnostic": row["settled_der_s00_diagnostic"],
                 "surface_observations": row.get("surface_observations"),
             }
             for row in rows
