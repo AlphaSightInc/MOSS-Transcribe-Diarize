@@ -60,6 +60,7 @@ def prestop_inference_projection(
     rolling_decode_seconds = 0.0
     canonical_processed_items = 0
     rolling_completed_items: set[tuple[str, int]] = set()
+    stale_completions_by_session: dict[str, int] = {}
     for event in events:
         kind = event.get("kind")
         if kind not in {"canonical_processed", "rolling_decode_completed"}:
@@ -104,16 +105,27 @@ def prestop_inference_projection(
             raise ValueError("rolling completion has a non-healthy terminal outcome")
         if item.get("decode_failure") is not None:
             raise ValueError("rolling completion reports a decode failure")
-        for counter in ("windows_failed", "stale_completions"):
-            value = item.get(counter)
-            if not isinstance(value, int) or isinstance(value, bool):
-                invalid = True
-            elif counter == "stale_completions":
-                invalid = value < 0 or (value != 0 and not post_stop)
-            else:
-                invalid = value != 0
-            if invalid:
-                raise ValueError(f"rolling completion has invalid {counter}")
+        windows_failed = item.get("windows_failed")
+        if (
+            not isinstance(windows_failed, int)
+            or isinstance(windows_failed, bool)
+            or windows_failed != 0
+        ):
+            raise ValueError("rolling completion has invalid windows_failed")
+        stale_count = item.get("stale_completions")
+        if not isinstance(stale_count, int) or isinstance(stale_count, bool) or stale_count < 0:
+            raise ValueError("rolling completion has invalid stale_completions")
+        previous_stale_count = stale_completions_by_session.get(identity[0], 0)
+        stale_increment = stale_count - previous_stale_count
+        wp35_post_stop_stale = (
+            post_stop
+            and item.get("rolling_status") == "stopped"
+            and item.get("outcome") == "no_proposal"
+            and stale_increment == 1
+        )
+        if stale_increment < 0 or (stale_increment > 0 and not wp35_post_stop_stale):
+            raise ValueError("rolling completion has invalid stale_completions")
+        stale_completions_by_session[identity[0]] = stale_count
         if "rolling_decode_elapsed_sec" not in item:
             raise ValueError("rolling completion lacks inference timing")
         elapsed = item["rolling_decode_elapsed_sec"]
