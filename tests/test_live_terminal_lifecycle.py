@@ -352,7 +352,7 @@ class TerminalFailureLifecycleTest(unittest.TestCase):
         coordinator.submit_refinement = exploding_submit
         # The witness's window is queued by the canonical pump thread and its defect is
         # logged by the refinement thread, so both can land before Stop: capture from the
-        # first frame, and stop only once the witness really has a window to die on.
+        # first frame, and stop only once the witness has really died on its window.
         with self.assertLogs("moss_transcribe_diarize.live.rolling", level="WARNING"):
             for sequence in range(ONE_WINDOW_FRAMES):
                 runtime.accept_frame(
@@ -362,8 +362,8 @@ class TerminalFailureLifecycleTest(unittest.TestCase):
                     ),
                 )
             deadline = time.monotonic() + 5.0
-            while "rolling_decode_queued" not in _kinds(runtime, created.session_id):
-                self.assertLess(time.monotonic(), deadline, "the witness never received a window")
+            while "rolling_decode_completed" not in _kinds(runtime, created.session_id):
+                self.assertLess(time.monotonic(), deadline, "the witness never finished a window")
                 time.sleep(0.001)
             asyncio.run(runtime.stop(created.session_id, 5.0))
 
