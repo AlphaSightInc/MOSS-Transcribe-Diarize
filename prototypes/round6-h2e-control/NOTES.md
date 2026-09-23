@@ -1,0 +1,17 @@
+# H2-E2 throwaway production status-size probe
+
+- Structural question: with H1-scale Account and Meeting populations, does the real operator `status` reply outgrow the existing 16,384-byte Unix control-line limit, and which status fields cause the growth?
+- Minimum primitives: pinned-SQLite `Phase2Store` using browser bootstrap and Meeting handles; production `InferenceDispatchScheduler` for content-free completed owner clocks; production `Phase2OperatorStatus`, `Phase2ControlServer`, and `request_control`; exact serialized reply byte count. A small file-status adapter connects the scheduler to the operator because no decoder/file runner is needed for a status read.
+- Invariants: no acceptance-bound, identity, protocol, or product change; at most two active Live Meetings; no real decoder request, host, shared listener, audio, private transcript, or secret; temporary DB/socket removed at exit. Account and Meeting creation follows production store APIs.
+- Assumptions/unknowns: H1 retained 11 accounts, zero active Meetings, and 15,936 status JSON bytes at one earlier point, but not the failed-call size, count of completed scheduler owners, or nested error. Local composition may differ. A transport overrun proves a reachable product failure, not the exact host cause.
+- Falsifier: if the real store/operator response stays below 16,384 bytes across the H1-scale population and dispatch history, or if `request_control` succeeds above the limit, this size hypothesis fails for the reproduced state. A shorter account/Meeting population crossing the limit supports the defect but still needs host code/byte evidence for attribution.
+- Tool decision: one command grows production Account and Meeting state, measures the complete status reply and its account, active-Meeting, and clock sections, and asks the production control client for each state. The result determines whether a product fix design is needed; the H1 receipt alone cannot.
+
+## Measured verdict
+
+One command: `PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=. MOSS_TEST_REAL_SQLITE=1 /private/tmp/moss-round4-20260920/runtime-prefix/venv/bin/python prototypes/round6-h2e-control/run.py` from this clone. Number-only receipt: `evidence/h2e2-control/growth-near-host.jsonl` outside the clone.
+
+- 60 states measured on production store/operator/control paths. At 11 Accounts and 39 completed dispatch owners, 0 active Meetings: 16,008 wire bytes and control PASS. Adding one active Live Meeting: 16,467 bytes and `INVALID_RESPONSE`; terminalizing it restored PASS at 16,008. With 40 owners: 16,290 PASS; 41 owners: 16,570 `INVALID_RESPONSE`. All states remained renderable by production `render_operator_status`.
+- Account-only slope: +381 bytes per Account across Accounts 1–11, using the real browser bootstrap and two terminal File Meetings each. One active Live Meeting added 459 bytes; a second added 461. Completed dispatch owner growth was about 280 bytes each via the production scheduler. At the failed 11-Account/41-owner state, the Account section was 4,191 bytes and dispatch clocks 11,660 bytes; active Meeting section was empty.
+- Falsifier did not fire. The reply limit is a reachable product defect in a modest Account population after accumulated work. This local state closely brackets H1's prior 15,936-byte pre-admission status JSON, but H1 did not retain its failed-call size or code; host attribution remains unmeasured.
+- Prototype is throwaway evidence, not a product fix. The lead must choose response capacity or a changed status contract after review.
