@@ -155,15 +155,22 @@ def capacity_replay() -> dict:
         "nested_g9_full_capacity_result_retained": False,
         "nested_g9_required_aggregate_fields_missing_from_event_bundle": missing_fields,
         "nested_g9_event_reductions": rows,
-        "nested_g9_first_failure_before_harness_fix": "capacity.event_runtime_monotonic_ns_missing:text_revision_applied",
+        "nested_g9_untimed_text_revision_events_per_session": [
+            row["missing_runtime_monotonic_ns_by_kind"].get("text_revision_applied", 0)
+            for row in rows
+        ],
+        "nested_g9_possible_guard_failure_if_full_inputs_reach_event_loop":
+            "capacity.event_runtime_monotonic_ns_missing:text_revision_applied",
+        "nested_g9_actual_first_failed_capacity_check":
+            "UNMEASURED: complete capacity aggregate is absent",
         "nested_g9_full_check_name_identifiable": False,
         "g4_recorded_sample_state": g4.get("samples", [{}])[0].get("state"),
         "g4_exported_raw_replay_valid": g4_export_replay,
         "g4_exported_raw_replay_failure_checks_after_harness_fix": g4_replay_failures,
         "g4_export_missing_runtime_monotonic_ns_count": sum(g4_missing_times.values()),
         "g4_export_missing_runtime_monotonic_ns_by_kind": dict(sorted(g4_missing_times.items())),
-        "classification": "HARNESS_GUARD_STALE; H1B exclusive causality limited by missing nested aggregate",
-        "capacity_attempt": "2/3; monotonic guard isolated and same-layer G4 replay restored",
+        "classification": "STALE_GUARD_CONFIRMED_ON_G4; H1B PRODUCT CAPACITY REMAINS POSSIBLE AND UNMEASURED",
+        "capacity_attempt": "3/3; final bounded offline replay",
     }
 
 
@@ -182,6 +189,7 @@ def main() -> None:
             "existing_checks_total": evidence.get("total"),
             "synthetic_transcripts": evidence.get("synthetic_transcripts"),
             "provider_calls_captured": len(external_calls),
+            "payload_attempt": "2/3; final D5 predicate comparison",
             "captured_payload_shapes": shapes,
             "transcript_text_printed_or_saved": False,
         },
