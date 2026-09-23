@@ -1473,6 +1473,28 @@ def quality_exception_records(
     return records
 
 
+def quality_der_report(payload: Mapping[str, object] | None) -> dict[str, float] | None:
+    """Retain both reported DER axes, including raw scores, even on a failed gate."""
+    predicates = payload.get("predicates") if isinstance(payload, Mapping) else None
+    if not isinstance(predicates, list):
+        return None
+    for predicate in predicates:
+        if not isinstance(predicate, Mapping) or predicate.get("id") != "quality_corpus":
+            continue
+        raw = predicate.get("raw")
+        macro = raw.get("macro") if isinstance(raw, Mapping) else None
+        if not isinstance(macro, Mapping):
+            return None
+        keys = ("diarization_error_rate", "diarization_error_rate_raw",
+                "reference_speech_der", "reference_speech_der_raw")
+        if any(isinstance(macro.get(key), bool)
+               or not isinstance(macro.get(key), (int, float))
+               or not math.isfinite(float(macro[key])) for key in keys):
+            return None
+        return {key: float(macro[key]) for key in keys}
+    return None
+
+
 def _quality_failure_details(predicate: Mapping[str, object]) -> list[str]:
     """Explain reported numeric misses without changing validation or any bound."""
     raw = predicate.get("raw")
@@ -1610,6 +1632,35 @@ def _quality_validation(
                 value = values.get(field)
                 if not isinstance(value, (int, float)) or not math.isfinite(float(value)):
                     return False, None
+        settled = item_metrics["settled"]
+        diagnostic = item.get("settled_der_s00_diagnostic")
+        if not isinstance(diagnostic, dict):
+            return False, None
+        for raw_field, adjusted_field, raw_diag, adjusted_diag, difference_diag, alias_diag in (
+            ("der_raw", "der", "as_is", "without_s00_confusion",
+             "s00_confusion_difference", "unattributed_der"),
+            ("reference_speech_der_raw", "reference_speech_der",
+             "reference_speech_as_is", "reference_speech_without_s00_confusion",
+             "reference_speech_s00_confusion_difference", "reference_speech_unattributed_der"),
+        ):
+            raw_value = settled.get(raw_field)
+            reported_raw = diagnostic.get(raw_diag)
+            reported_adjusted = diagnostic.get(adjusted_diag)
+            reported_difference = diagnostic.get(difference_diag)
+            reported_alias = diagnostic.get(alias_diag)
+            if any(isinstance(value, bool) or not isinstance(value, (int, float))
+                   or not math.isfinite(float(value))
+                   for value in (raw_value, reported_raw, reported_adjusted,
+                                 reported_difference, reported_alias)):
+                return False, None
+            if (not math.isclose(float(raw_value), float(reported_raw), rel_tol=0, abs_tol=1e-12)
+                    or not math.isclose(float(settled[adjusted_field]),
+                                        float(reported_adjusted), rel_tol=0, abs_tol=1e-12)
+                    or not math.isclose(float(reported_alias), float(reported_adjusted),
+                                        rel_tol=0, abs_tol=1e-12)
+                    or not math.isclose(float(reported_raw) - float(reported_adjusted),
+                                        float(reported_difference), rel_tol=0, abs_tol=1e-6)):
+                return False, None
         rows.append(item)
     expected_case_passes = {(case_id, pass_number) for case_id in QUALITY_CASE_IDS for pass_number in (1, 2)}
     if (
@@ -1630,10 +1681,12 @@ def _quality_validation(
         "recall": mean("settled", "content_recall"),
         "time_speaker_attribution": mean("settled", "tbsa"),
         "diarization_error_rate": mean("settled", "der"),
+        "diarization_error_rate_raw": mean("settled", "der_raw"),
         "matched_speaker_accuracy": mean(
             "settled", "matched_word_speaker_accuracy"
         ),
         "reference_speech_der": mean("settled", "reference_speech_der"),
+        "reference_speech_der_raw": mean("settled", "reference_speech_der_raw"),
         "final_wer": mean("final", "wer"),
     }
     if set(metrics) != set(recomputed_macro) or any(
@@ -1643,6 +1696,7 @@ def _quality_validation(
     ) or any(not isinstance(metrics.get(name), (int, float)) for name in recomputed_macro):
         return False, None
 
+    settled_fields = (*metric_fields, "der_raw", "reference_speech_der_raw")
     expected_weighted = {
         field: sum(
             float(item["duration_seconds"])
@@ -1650,7 +1704,7 @@ def _quality_validation(
             for item in rows
         )
         / total_case_seconds
-        for field in metric_fields
+        for field in settled_fields
     }
     weighted = raw.get("duration_weighted")
     if not isinstance(weighted, dict) or set(weighted) != set(expected_weighted) or any(
@@ -1667,7 +1721,7 @@ def _quality_validation(
     for category in {str(item["category"]) for item in rows}:
         selected = [item for item in rows if item["category"] == category]
         expected_categories[category] = {
-            field: mean("settled", field, selected) for field in metric_fields
+            field: mean("settled", field, selected) for field in settled_fields
         }
     categories = raw.get("per_category")
     if not isinstance(categories, dict) or set(categories) != set(expected_categories):
@@ -2665,6 +2719,10 @@ def run_acceptance(*, wave: int, output: Path, repo: Path, profile_path: Path = 
                     + quality_exception_records(pre_report, layer="pre_admission")
                 )
             ),
+            "quality_der_reported": {
+                "deployed": quality_der_report(deployed_report),
+                "pre_admission": quality_der_report(pre_report),
+            },
             "commands": [asdict(item) for item in command_results],
             "denominators": {
                 "commands_collected": len(commands),
