@@ -4266,3 +4266,40 @@ def test_d45_reference_speech_axis_uses_its_vad_denominator(tmp_path):
     assert diag["unattributed_der"] == 0.1
     assert diag["reference_speech_as_is"] == 0.125
     assert diag["reference_speech_unattributed_der"] == 0.0
+
+
+def test_d45_reference_speech_axis_keeps_named_confusion_under_overlapping_s00(tmp_path):
+    """Review F1: S00 overlapping a named span must not erase that named speaker's confusion."""
+    external._load_surface_harness(ROOT)
+    reference = tmp_path / "reference.jsonl"
+    reference.write_text(
+        '{"start":0,"end":10,"speaker":"A","text":"a"}\n'
+        '{"start":10,"end":20,"speaker":"B","text":"b"}\n'
+    )
+    rows = [
+        {"start": 0.0, "end": 8.0, "speaker": "S01"},
+        {"start": 8.0, "end": 10.0, "speaker": "S03"},
+        {"start": 10.0, "end": 20.0, "speaker": "S02"},
+        {"start": 4.0, "end": 6.0, "speaker": "S00"},
+    ]
+    snapshot = {"session": {"effective_transcript": [], "identity_snapshot": {
+        "canonical_speakers": ["speaker-0001", "speaker-0002", "speaker-0003"]}}}
+    diag = external._quality_speaker_intervals(
+        snapshot, rows, reference, speech_regions=((0.0, 20.0),)
+    )["settled_der_s00_diagnostic"]
+    # S03's 2 s on A is a named-speaker error and must stay charged on the reference-speech axis.
+    assert diag["reference_speech_as_is"] == 0.1
+    assert diag["reference_speech_unattributed_der"] == 0.1
+    assert diag["reference_speech_s00_confusion_difference"] == 0.0
+
+
+def test_d45_quality_der_report_keeps_raw_and_gated_values_on_a_failed_gate():
+    """Review F2: verdict.json must carry both DER axes, raw and gated, even when G4 fails."""
+    from moss_transcribe_diarize.phase2_acceptance import quality_der_report
+
+    macro = {"diarization_error_rate": 0.17, "diarization_error_rate_raw": 0.19,
+             "reference_speech_der": 0.15, "reference_speech_der_raw": 0.16}
+    payload = {"predicates": [{"id": "quality_corpus", "state": "FAIL", "raw": {"macro": macro}}]}
+    assert quality_der_report(payload) == macro
+    assert quality_der_report({"predicates": [{"id": "quality_corpus", "raw": {"macro": {**macro, "reference_speech_der": True}}}]}) is None
+    assert quality_der_report(None) is None

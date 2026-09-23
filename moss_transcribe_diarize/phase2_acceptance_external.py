@@ -3596,6 +3596,10 @@ def _quality_speaker_intervals(
             segments_to_intervals([row for row in hyp_v2 if row.speaker == "S00"]),
             speech_regions,
         )
+        named_intervals = union_intervals(intersect_intervals(
+            segments_to_intervals([row for row in hyp_v2 if row.speaker != "S00"]),
+            speech_regions,
+        ))
         for speaker in {row.speaker for row in reference_rows}:
             ref_intervals = intersect_intervals(
                 segments_to_intervals([row for row in ref_v2 if row.speaker == speaker]),
@@ -3605,7 +3609,11 @@ def _quality_speaker_intervals(
             if axis["speaker_mapping"].get(speaker) == "S00":
                 s00_correct += seconds
             else:
-                s00_wrong += seconds
+                # Only reference time covered by S00 alone is unattributed; where S00 overlaps a
+                # named label, that named label's confusion stays charged (review F1).
+                covered = total_seconds(intersect_intervals(
+                    ref_intervals, union_intervals([*s00_intervals, *named_intervals])))
+                s00_wrong += covered - total_seconds(intersect_intervals(ref_intervals, named_intervals))
         raw_confusion = axis["speaker_confusion"] * denominator
         excluded = (raw_confusion - max(raw_confusion - s00_wrong, 0.0)) / denominator if denominator else 0.0
         reference_adjusted = max(0.0, round(axis["der"] - excluded, 6))
