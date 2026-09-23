@@ -122,6 +122,51 @@ def test_a_window_the_session_stopped_awaiting_closes_its_admission_without_comp
     assert result["decode_seconds"] == pytest.approx(.3)
 
 
+def test_post_stop_stale_completion_closes_accounting_but_is_excluded_from_prestop_rtf():
+    def event(session_id, seq, kind, **payload):
+        return {"session_id": session_id, "seq": seq, "kind": kind, "payload": payload}
+
+    events = [
+        event("session-2", 5, "canonical_processed", item_id=1, canonical_decode_elapsed_sec=.25),
+        event("session-2", 587, "rolling_decode_queued", item_id=59, admitted=True),
+        event("session-2", 588, "stop_requested"),
+        event(
+            "session-2", 590, "rolling_decode_completed", item_id=59,
+            outcome="no_proposal", rolling_status="stopped",
+            rolling_decode_elapsed_sec=.5079421600094065, decode_failure=None,
+            windows_failed=0, stale_completions=1,
+        ),
+    ]
+
+    result = prestop_inference_projection(events, accepted_audio_seconds=600)
+
+    assert result["rolling_completed_items"] == 1
+    assert result["rolling_decode_seconds"] == 0
+    assert result["decode_seconds"] == pytest.approx(.25)
+    assert result["rtf"] == pytest.approx(.25 / 600)
+
+
+def test_stale_before_stop_completion_still_fails_projection():
+    def event(session_id, seq, kind, **payload):
+        return {"session_id": session_id, "seq": seq, "kind": kind, "payload": payload}
+
+    events = [
+        event("s", 1, "canonical_processed", item_id=1, canonical_decode_elapsed_sec=.1),
+        event("other-session", 1, "stop_requested"),
+        event("s", 2, "rolling_decode_queued", item_id=2, admitted=True),
+        event(
+            "s", 3, "rolling_decode_completed", item_id=2,
+            outcome="no_proposal", rolling_status="rolling",
+            rolling_decode_elapsed_sec=.2, decode_failure=None,
+            windows_failed=0, stale_completions=1,
+        ),
+        event("s", 4, "stop_requested"),
+    ]
+
+    with pytest.raises(ValueError, match="invalid stale_completions"):
+        prestop_inference_projection(events, accepted_audio_seconds=600)
+
+
 def test_load_event_capture_rejects_ring_overrun_instead_of_scoring_partial_history():
     from moss_transcribe_diarize.phase2_acceptance_external import _LoadEventCapture, ExternalMeasurementError
     capture = _LoadEventCapture()

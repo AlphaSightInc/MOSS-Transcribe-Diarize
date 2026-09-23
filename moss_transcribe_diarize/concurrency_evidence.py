@@ -32,6 +32,21 @@ def prestop_inference_projection(
         if event.get("kind") == "canonical_queued"
         and payload(event).get("reason") == "stop"
     }
+    # Capacity events concatenate sessions; compare sequence numbers only within a session.
+    stop_seq_by_session: dict[str, int] = {}
+    for event in events:
+        session_id = event.get("session_id")
+        seq = event.get("seq")
+        if (
+            event.get("kind") == "stop_requested"
+            and isinstance(session_id, str)
+            and session_id
+            and isinstance(seq, int)
+            and not isinstance(seq, bool)
+        ):
+            prior_seq = stop_seq_by_session.get(session_id)
+            if prior_seq is None or seq < prior_seq:
+                stop_seq_by_session[session_id] = seq
     rolling_admission_events = [
         item_identity(event)
         for event in events
@@ -66,6 +81,14 @@ def prestop_inference_projection(
         if identity not in rolling_admitted or identity in rolling_completed_items:
             raise ValueError("rolling completion lacks one admitted session-scoped item")
         rolling_completed_items.add(identity)
+        completion_seq = event.get("seq")
+        stop_seq = stop_seq_by_session.get(identity[0])
+        post_stop = (
+            isinstance(completion_seq, int)
+            and not isinstance(completion_seq, bool)
+            and stop_seq is not None
+            and completion_seq > stop_seq
+        )
         if item.get("outcome") == "not_awaited":
             # A window the session was no longer waiting for by the time the pump reached it.
             # The coordinator refuses to decode one (`capture_refinement_item`), so there is
@@ -83,7 +106,13 @@ def prestop_inference_projection(
             raise ValueError("rolling completion reports a decode failure")
         for counter in ("windows_failed", "stale_completions"):
             value = item.get(counter)
-            if not isinstance(value, int) or isinstance(value, bool) or value != 0:
+            if not isinstance(value, int) or isinstance(value, bool):
+                invalid = True
+            elif counter == "stale_completions":
+                invalid = value < 0 or (value != 0 and not post_stop)
+            else:
+                invalid = value != 0
+            if invalid:
                 raise ValueError(f"rolling completion has invalid {counter}")
         if "rolling_decode_elapsed_sec" not in item:
             raise ValueError("rolling completion lacks inference timing")
@@ -96,7 +125,9 @@ def prestop_inference_projection(
             raise ValueError("rolling completion inference timing is invalid") from exc
         if not math.isfinite(rolling_decode) or rolling_decode < 0:
             raise ValueError("rolling completion inference timing is invalid")
-        rolling_decode_seconds += rolling_decode
+        # This projection is pre-Stop, so completed post-Stop work contributes no RTF time.
+        if not post_stop:
+            rolling_decode_seconds += rolling_decode
     if canonical_processed_items == 0 or not rolling_admitted:
         raise ValueError("pre-Stop inference evidence is absent")
     if rolling_completed_items != rolling_admitted:
