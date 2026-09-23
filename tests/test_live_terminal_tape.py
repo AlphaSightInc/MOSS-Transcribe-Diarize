@@ -23,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import tempfile
+import time
 import tracemalloc
 import unittest
 from dataclasses import replace
@@ -432,6 +433,11 @@ class CompleteTapeRuntimeWiringTest(unittest.TestCase):
         session_id = next(iter(runtime._sessions))
 
         self.assertIsNotNone(runtime.snapshot(session_id).terminal_failure)
+        # Failure becomes visible before an in-flight canonical reader releases its tape.
+        deadline = time.monotonic() + 5.0
+        while not _released_events(runtime, session_id):
+            self.assertLess(time.monotonic(), deadline, "the failed meeting kept its tape")
+            time.sleep(0.001)
         payloads = _released_events(runtime, session_id)
         self.assertEqual(len(payloads), 1)
         self.assertTrue(payloads[0]["released"])
