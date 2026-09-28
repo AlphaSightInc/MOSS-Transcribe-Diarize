@@ -1,6 +1,7 @@
 # Gemini Live Bake-off — decision report (2026-09-28)
 
-Markdown copy of the published report. Branch `gemini/live-hybrid`; final runtime `0b9deed5`; base `8d8fb682`.
+Markdown copy of the published report (https://claude.ai/artifact/7s7ufT7cauULkbDbfdi5Mx). Branch `gemini/live-hybrid`;
+qualified runtime `0b9deed5` + preview fixes L-3 `fe1610f5`, L-4 `3901d2db`; base `8d8fb682`.
 MOSS comparator = recorded H1 #3 receipts (no GPU used in this campaign).
 
 ## Verdict
@@ -46,8 +47,9 @@ Long meeting (43 min, 5 voices, Lex recorded across four sessions): 5 labels, Le
 - **F3** Pure Gemini 0.254 vs 0.099 with the fingerprint linker (ruling L1).
 - **F4** Mono mixing loses the local user when they talk over others; separate lanes recover it.
 - **F5** Final pass needs the fingerprint merge rule (0.125 → 0.105, 4/4 draws) and 15-min call cap.
-- **F6** 14 product defects found by end-to-end measurement and fixed (per-word rows, Stop tail, invisible preview,
-  settle semantics, parity drift, hidden retries, silent-audio calls, label lag, duplicate preview …).
+- **F6** 16 product defects found by end-to-end measurement and fixed (per-word rows, Stop tail, invisible preview,
+  settle semantics, parity drift, hidden retries, silent-audio calls, label lag, echo-duplicated preview, preview
+  repeating committed text: 64% → 6% of screens …).
 - **F7** The newest ~15 s is unlabelled preview: "immediate" DER 0.29 vs MOSS 0.20; settled/final are better.
 
 ## Decisions for the user
