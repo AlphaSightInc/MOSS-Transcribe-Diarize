@@ -82,6 +82,17 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
             phone.goto('http://audit.test')
             phone.locator('[data-history-boot="ready"]').wait_for()
             _meeting_opener(phone, meeting.meeting_id).click()
+            # The inline action lives in the gutter; it cannot narrow Q5 passage text.
+            text_widths = phone.locator('.utt-content:has(.utt-reassign)').first.evaluate("""content => {
+                const text = content.querySelector('.utt-text');
+                const action = content.querySelector('.utt-reassign');
+                const before = text.getBoundingClientRect().width;
+                action.style.display = 'none';
+                const after = text.getBoundingClientRect().width;
+                action.style.display = '';
+                return [before, after];
+            }""")
+            assert text_widths[0] == text_widths[1]
             phone.get_by_role('button', name='Reassign passage', exact=True).click()
             expect(phone.locator('#passage-speaker-title')).to_be_visible()
             assert phone.locator('#tr-body').evaluate('(el) => el.scrollWidth <= el.clientWidth')

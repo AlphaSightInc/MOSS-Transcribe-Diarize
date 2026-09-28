@@ -73,9 +73,12 @@ export function TranscriptCards({ searchTurns, activeMatchId, finalized, canCorr
                   : found ? searchParts(found.textParts, activeMatchId) : row.text}
               </p>
               {canCorrectPassages && row.segment_ids.length > 0 ? (
-                <button type="button" className="history-action-btn"
+                <button type="button" className="utt-reassign" aria-label="Reassign passage"
+                  title="Reassign passage"
                   data-reassign-passage={row.segment_ids.join(",")}
-                  onClick={() => onPassageCorrection(row)}>Reassign passage</button>
+                  onClick={() => onPassageCorrection(row)}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Zm9-13 4 4" /></svg>
+                </button>
               ) : null}
             </div>;
           })}

@@ -1858,9 +1858,8 @@ button.legend-chip:disabled {
 .transcript-card .utt-lane { color: var(--muted); font-size: 12px; }
 .transcript-card .utt-time { margin-left: auto; }
 .transcript-card-fragments { display: grid; gap: 5px; }
-.transcript-card .utt-content { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.transcript-card .utt-content { position: relative; min-width: 0; }
 .transcript-card .utt-text {
-  flex: 1 1 auto;
   min-width: 0;
   padding: 4px 8px;
   overflow-wrap: anywhere;
@@ -1869,7 +1868,7 @@ button.legend-chip:disabled {
 .transcript-card [data-text-status="unsettled"] .utt-text { background: #fff8e8; border-left-style: dashed; }
 .transcript-card [data-text-status="confirmed"] .utt-text { background: #f2f6f8; border-left-color: #6f91a8; }
 .transcript-card [data-text-status="settled"] .utt-text { background: #edf6ef; border-left-color: #5d966a; }
-.transcript-card .utt-content .history-action-btn { flex: none; }
+.transcript-card .utt-reassign { right: -34px; }
 
 .tr-body::-webkit-scrollbar {
   width: 10px;
