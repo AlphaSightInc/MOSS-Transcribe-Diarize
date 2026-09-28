@@ -97,6 +97,9 @@ class WindowResult:
     usage: dict
     cached: bool
     model: str
+    # Words whose Gemini offsets were invalid (end < start, or beyond the window audio):
+    # "clamped" had end repaired to min(start + 1 s, audio end); "dropped" started past the audio.
+    timing_anomalies: dict | None = None
 
     def cost_usd(self) -> float:
         return usage_cost(self.model, self.usage)
@@ -188,16 +191,27 @@ def diarize_window(
 
 def _parse(raw: dict, *, cached: bool) -> WindowResult:
     d = raw["response"]
+    audio_s = float(raw.get("audio_seconds") or 0.0) or float("inf")
     words: list[Word] = []
+    clamped = dropped = 0
     for step in d.get("steps") or []:
         for content in step.get("content") or []:
             for a in content.get("annotations") or []:
                 if a.get("type") != "word_info":
                     continue
+                start, end = _secs(a.get("start_offset")), _secs(a.get("end_offset"))
+                if start > audio_s + 0.5:
+                    dropped += 1
+                    continue
+                if end < start or end > audio_s + 0.5:
+                    # Observed 2026-09-28: one word of a 606 s call ended at 55,935.6 s.
+                    end = min(start + 1.0, audio_s)
+                    clamped += 1
                 words.append(Word(text=a.get("text", ""), speaker=str(a.get("speaker", "spk:?")),
-                                  start=_secs(a.get("start_offset")), end=_secs(a.get("end_offset"))))
+                                  start=start, end=end))
     return WindowResult(words=words, text=d.get("output_text") or "", latency_s=raw.get("latency_s", 0.0),
-                        usage=d.get("usage") or {}, cached=cached, model=raw.get("model", ""))
+                        usage=d.get("usage") or {}, cached=cached, model=raw.get("model", ""),
+                        timing_anomalies={"clamped": clamped, "dropped": dropped})
 
 
 def words_to_segments(words: list[Word], *, offset: float = 0.0, max_gap: float = 1.5,
