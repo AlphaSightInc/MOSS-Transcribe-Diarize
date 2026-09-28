@@ -1,0 +1,261 @@
+{
+  "schema": "p63-d3-real-http-trio-v1",
+  "engine": "gemini",
+  "runs": [
+    {
+      "clip": "interview_bill_ackman_60s",
+      "session_id": "AGymQ-6XSM17jnpGT-LbVFqu",
+      "audio_seconds": 60.0,
+      "frame_count": 120,
+      "pace": 1.0,
+      "max_pacing_lag_seconds": 0.01,
+      "settled_pending_work_items": 0,
+      "settled_accepted_samples": 960000,
+      "settled_canonical_through_sample": 960000,
+      "lex_reference_overlap_seconds": 4.0,
+      "other_reference_overlap_seconds": 49.3,
+      "lex_identity_found": true,
+      "other_identity_found": true,
+      "lex_auto_named": true,
+      "other_auto_named_lex": false,
+      "any_lex_name": true,
+      "voiceprint_bank_lex_count": 1,
+      "naming_enrollment": "enrolled",
+      "stop_status": "closed",
+      "finalization_status": "final",
+      "final_accepted_samples": 960000,
+      "speaker_label_count": 1,
+      "settled_engine_diagnostics": {
+        "calls_by_kind": {
+          "live_preview": 1,
+          "rolling": 6
+        },
+        "errors_by_code": {},
+        "retries_by_code": {},
+        "timing_anomalies": {
+          "clamped": 0,
+          "dropped": 0
+        },
+        "audio_seconds_sent": 210.0,
+        "cost_usd": 0.012512000000000016,
+        "cost_usd_basis": "provider_usage_plus_live_list_price_estimate",
+        "live_list_price_estimate_usd": 0.005000000000000001,
+        "skipped_window_ticks": 0,
+        "degraded_path_activations": 0,
+        "window_lag_seconds": {
+          "count": 6,
+          "p50": 2.5,
+          "max": 7.5
+        },
+        "preview_lag_seconds": {
+          "count": 97,
+          "p50": 0.0,
+          "max": 0.5
+        },
+        "voiceprint_errors": 0
+      },
+      "engine_diagnostics": {
+        "calls_by_kind": {
+          "live_preview": 1,
+          "rolling": 6,
+          "terminal": 1
+        },
+        "errors_by_code": {},
+        "retries_by_code": {},
+        "timing_anomalies": {
+          "clamped": 0,
+          "dropped": 0
+        },
+        "audio_seconds_sent": 272.0,
+        "cost_usd": 0.015680666666666683,
+        "cost_usd_basis": "provider_usage_plus_live_list_price_estimate",
+        "live_list_price_estimate_usd": 0.0051666666666666675,
+        "skipped_window_ticks": 0,
+        "degraded_path_activations": 0,
+        "window_lag_seconds": {
+          "count": 6,
+          "p50": 2.5,
+          "max": 7.5
+        },
+        "preview_lag_seconds": {
+          "count": 97,
+          "p50": 0.0,
+          "max": 0.5
+        },
+        "voiceprint_errors": 0
+      },
+      "visible_speaker_count": 2
+    },
+    {
+      "clip": "interview_keyu_jin_60s",
+      "session_id": "88eq1EFj_iq983KxPVWVQab3",
+      "audio_seconds": 60.0,
+      "frame_count": 120,
+      "pace": 1.0,
+      "max_pacing_lag_seconds": 0.01,
+      "settled_pending_work_items": 0,
+      "settled_accepted_samples": 960000,
+      "settled_canonical_through_sample": 960000,
+      "lex_reference_overlap_seconds": 14.6,
+      "other_reference_overlap_seconds": 40.1,
+      "lex_identity_found": true,
+      "other_identity_found": true,
+      "lex_auto_named": true,
+      "other_auto_named_lex": false,
+      "any_lex_name": true,
+      "voiceprint_bank_lex_count": 1,
+      "naming_enrollment": null,
+      "stop_status": "closed",
+      "finalization_status": "final",
+      "final_accepted_samples": 960000,
+      "speaker_label_count": 1,
+      "settled_engine_diagnostics": {
+        "calls_by_kind": {
+          "live_preview": 1,
+          "rolling": 6
+        },
+        "errors_by_code": {},
+        "retries_by_code": {},
+        "timing_anomalies": {
+          "clamped": 0,
+          "dropped": 0
+        },
+        "audio_seconds_sent": 210.0,
+        "cost_usd": 0.012512000000000016,
+        "cost_usd_basis": "provider_usage_plus_live_list_price_estimate",
+        "live_list_price_estimate_usd": 0.005000000000000001,
+        "skipped_window_ticks": 0,
+        "degraded_path_activations": 0,
+        "window_lag_seconds": {
+          "count": 6,
+          "p50": 2.0,
+          "max": 3.5
+        },
+        "preview_lag_seconds": {
+          "count": 104,
+          "p50": 0.0,
+          "max": 0.5
+        },
+        "voiceprint_errors": 0
+      },
+      "engine_diagnostics": {
+        "calls_by_kind": {
+          "live_preview": 1,
+          "rolling": 6,
+          "terminal": 1
+        },
+        "errors_by_code": {},
+        "retries_by_code": {},
+        "timing_anomalies": {
+          "clamped": 0,
+          "dropped": 0
+        },
+        "audio_seconds_sent": 272.0,
+        "cost_usd": 0.015680666666666683,
+        "cost_usd_basis": "provider_usage_plus_live_list_price_estimate",
+        "live_list_price_estimate_usd": 0.0051666666666666675,
+        "skipped_window_ticks": 0,
+        "degraded_path_activations": 0,
+        "window_lag_seconds": {
+          "count": 6,
+          "p50": 2.0,
+          "max": 3.5
+        },
+        "preview_lag_seconds": {
+          "count": 104,
+          "p50": 0.0,
+          "max": 0.5
+        },
+        "voiceprint_errors": 0
+      },
+      "visible_speaker_count": 2
+    },
+    {
+      "clip": "discussion_jamie_dimon_180s",
+      "session_id": "nQ5IqXUl73b75Vsbn6AqhyJQ",
+      "audio_seconds": 180.0,
+      "frame_count": 360,
+      "pace": 1.0,
+      "max_pacing_lag_seconds": 0.01,
+      "settled_pending_work_items": 0,
+      "settled_accepted_samples": 2880000,
+      "settled_canonical_through_sample": 2880000,
+      "lex_reference_overlap_seconds": 0.0,
+      "other_reference_overlap_seconds": 0.0,
+      "lex_identity_found": false,
+      "other_identity_found": null,
+      "lex_auto_named": false,
+      "other_auto_named_lex": false,
+      "any_lex_name": false,
+      "voiceprint_bank_lex_count": 1,
+      "naming_enrollment": null,
+      "stop_status": "closed",
+      "finalization_status": "final",
+      "final_accepted_samples": 2880000,
+      "speaker_label_count": 0,
+      "settled_engine_diagnostics": {
+        "calls_by_kind": {
+          "live_preview": 1,
+          "rolling": 18
+        },
+        "errors_by_code": {},
+        "retries_by_code": {},
+        "timing_anomalies": {
+          "clamped": 0,
+          "dropped": 0
+        },
+        "audio_seconds_sent": 690.0,
+        "cost_usd": 0.04053600000000009,
+        "cost_usd_basis": "provider_usage_plus_live_list_price_estimate",
+        "live_list_price_estimate_usd": 0.01500000000000009,
+        "skipped_window_ticks": 0,
+        "degraded_path_activations": 0,
+        "window_lag_seconds": {
+          "count": 18,
+          "p50": 3.5,
+          "max": 4.5
+        },
+        "preview_lag_seconds": {
+          "count": 330,
+          "p50": 0.0,
+          "max": 0.5
+        },
+        "voiceprint_errors": 0
+      },
+      "engine_diagnostics": {
+        "calls_by_kind": {
+          "live_preview": 1,
+          "rolling": 18,
+          "terminal": 1
+        },
+        "errors_by_code": {},
+        "retries_by_code": {},
+        "timing_anomalies": {
+          "clamped": 0,
+          "dropped": 0
+        },
+        "audio_seconds_sent": 872.0,
+        "cost_usd": 0.04970466666666676,
+        "cost_usd_basis": "provider_usage_plus_live_list_price_estimate",
+        "live_list_price_estimate_usd": 0.015166666666666757,
+        "skipped_window_ticks": 0,
+        "degraded_path_activations": 0,
+        "window_lag_seconds": {
+          "count": 18,
+          "p50": 3.5,
+          "max": 4.5
+        },
+        "preview_lag_seconds": {
+          "count": 330,
+          "p50": 0.0,
+          "max": 0.5
+        },
+        "voiceprint_errors": 0
+      },
+      "visible_speaker_count": 3
+    }
+  ],
+  "verdict": true,
+  "label_source": "https_snapshot_outer_envelope",
+  "probe_correction": "initial pass read speaker_labels inside snapshot; audited the public outer envelope after Stop"
+}
