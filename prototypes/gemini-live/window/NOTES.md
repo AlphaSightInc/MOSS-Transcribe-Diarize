@@ -211,3 +211,82 @@ On the complete Lex case, stitched miss=.0164 and speaker confusion=.1715; the l
 **D2 — Final-pass verdict:** one whole Gemini call is feasible through 30 min and beats simple 10-minute overlap stitching on the complete long Lex case. Pure whole-clip Gemini **fails** D6 final DER ≤.110 on accept6 (H1-exact macro .125138). The predeclared L1 .46 merge **passes accept6 DER** (.098265), chiefly repairing Adam's Lex intro split, but the same rule falsely merges distinct synthetic voices and worsens K4/K6. Keep MOSS H1 #3 final as the recorded comparator; treat Gemini whole-call plus acoustic merge as a prototype candidate requiring a new falsifiable identity policy before production qualification. The final WER remains .104123 for both Gemini arms versus MOSS .095074.
 
 **D3 — Failure boundaries:** raw Gemini word offsets require the shared parser clamp/drop (12/519 quality and 3/34 final calls anomalous); generated silence/noise can produce words; Flash LOW has a 13/15 usable-output rate in this paired sample; simple overlap cannot identify a speaker absent from the seam. No operator/private audio, mic, host, or long-running service was used. The largest accepted audio was 1,800 s PCM16 mono at 16 kHz (57.6 MB raw WAV payload plus header). More than eight true speakers, real music/room recordings, independent word-timestamp truth, and real-time-paced settled/final quality are **unmeasured**. P53 ledger records 577 calls, 3 local SDK client-closed errors retried during quality, and $5.2792 cost; early malformed Flash responses lacked usage receipts, so recorded cost is a lower bound below the $25 lane cap.
+
+## Follow-up structural contract (final identity policy and word gate)
+
+**Structural questions.** A high speaker-embedding cosine can mean one voice split across recording conditions or two different voices that sound similar. Can turn-taking evidence separate those cases without losing the Adam intro repair? Can a local speech detector reject words that Gemini invents in non-speech while retaining words in real speech?
+
+**Minimum primitives.** A Gemini label owns timed words; a production WeSpeaker vector exists only from continuous attributed spans ≥2 s; cosine proposes an identity edge. An alternating A–B–A turn pattern supplies evidence that two labels are distinct. A merge partition maps labels to final IDs. For the word gate, 10 ms WebRTC voiced frames and a word's ±0.2 s interval suffice to decide whether there is speech evidence near it. Reference speaker intervals and text score outcomes but never enter the policy. Removing any primitive loses either candidate similarity, contradiction evidence, the final identity state, or the independent speech signal.
+
+**Invariants.** Every retained word keeps Gemini timing/text. Only eligible acoustic vectors can create merges. Conversational exclusion is symmetric and transitive merge groups must not contain an excluded pair. No truth label or reference text chooses a merge. Tune thresholds/gap only on the stated tune split; freeze before scoring test. Cache-only reads may not trigger a paid provider call. The word gate uses production WebRTC mode 1, 10 ms, 16 kHz and keeps a word when any voiced frame intersects its ±0.2 s neighborhood.
+
+**Assumptions/unknowns.** Turn alternation may also arise when Gemini splits one true person. Repeated speakers may never alternate in a short clip. Centroid recomputation may or may not improve single-link. Gold8 and accept6 include overlapping audio, so the nominated test split is not independent. Reference words lack independent word times; a dropped Gemini word inside a timed reference turn is only a proxy for a real-word false drop. E1 has no timed word truth.
+
+**Falsifiers and tool decisions.** H-A fails if any tune-selected threshold that repairs real splits also falsely merges real speakers. H-B fails if a true-same pair shows its exclusion pattern or a high-cosine true-different pair lacks it. H-C earns a place only if recomputed-centroid agglomeration changes measured outcomes. The VAD gate fails if it drops meaningful real-corpus words or keeps generated silence/noise hallucinations. Use cached whole-clip Gemini words, P61's L1 interval selector, the production ONNX embedder, H1-exact final scorer on accept6, and production WebRTC settings. These tools are necessary to test the actual policy path; no product code changes follow without a tune/test verdict.
+
+### F12 — Non-speech word gate (measured)
+
+The production live VAD uses WebRTC mode 1 at 16 kHz with 10 ms frames. Keep a Gemini word iff at least one voiced frame intersects `[word.start−0.2 s, word.end+0.2 s]`. This check changes neither Gemini's timestamps nor text for retained words.
+
+| Cached population | Gemini word observations | Dropped | DER / WER change |
+|---|---:|---:|---|
+| accept6, H1 #3 truth | 1,784 | 0 | none on all six clips |
+| covered gold8 | 2,495 | 0 | none on all eight clips |
+| complete Lex five-minute clips | 2,404 | 0 | none on all three clips |
+| generated digital silence | 1 hallucinated word | 1 (`2`) | no reference |
+| generated low white noise | 2 hallucinated words | 2 (`好`, `的。`) | no reference |
+| generated music-like chord/rhythm | 0 | 0 | no reference |
+
+Thus 0/6,683 returned real-corpus words were removed and 3/3 observed non-speech hallucinated words were removed. Independent word-level truth is unavailable; the no-drop claim is about Gemini output, not verified human words. WebRTC marked all 3,000 music-like frames voiced despite no Gemini words, so this gate alone does not prove music suppression. On the public E1 system fixture, 31 cached S10/L30 windows contained 2,532 repeated word observations and the gate removed zero. E1 has only two WebRTC-unvoiced stretches ≥0.5 s totaling 1.57 s, with no Gemini word midpoint inside them; it supplies no hallucination-removal test or word-level truth. Receipt: `evidence/P53/final-policy-vad.json`.
+
+### F11 — Final-pass identity policy, frozen tune then test
+
+The policy combines **cosine ≥ .65** with a **conversation veto**: labels observed in A–B–A turns with both intervening gaps ≤2 s cannot be merged, even indirectly. Every vector uses the production ONNX WeSpeaker encoder on Gemini-attributed continuous spans ≥2 s. This is a cache-only prototype; no provider calls or product code changes. The test choice was frozen in `evidence/P53/final-policy-selection.json` before test scoring. The threshold sweep used .40/.46/.50/.55/.60/.65/.70/.75/.80 and gap sweep 2/5/10/20/30 s.
+
+| Split / policy | Real clips | Real macro DER | Real false merges / residual splits | Synthetic clips | Synthetic macro DER | Synthetic false merges / residual splits |
+|---|---:|---:|---:|---:|---:|---:|
+| TUNE pure Gemini | 11 | .137553 | 0 / 4 | 4 s0 | .299211 | 0 / 76 |
+| TUNE cosine .65 only | 11 | .100578 | 0 / 0 | 4 s0 | .276970 | 1 / 48 |
+| TUNE selected .65 + A–B–A veto | 11 | **.100578** | **0 / 0** | 4 s0 | .283440 | **0 / 51** |
+| TEST pure Gemini | 7 distinct real | .119219 | 0 / 2 | 4 s1 | .205365 | 0 / 12 |
+| TEST selected | 7 distinct real | **.098561** | **0 / 1** | 4 s1 | **.181057** | **0 / 7** |
+
+Real TUNE = covered gold8 + complete Lex five-minute ×3. Real TEST = accept6 + complete Lex Bill 30-minute; rtfl90 is reported below but excluded from the macro because it duplicates accept6 RTFL audio. False merge diagnostics require each Gemini label to have ≥0.5 s timed truth overlap and ≥70% of that overlap from one truth speaker. Mixed or weak labels are unclassified. Gold NFL/Rolex have small untimed gaps and Shapiro/RTFL have partial timed truth; their raw DER can overstate misses. **The nominated TUNE/TEST split leaks exact PCM:** gold Bill/Keyu 60 s and calibration Jamie/Adam 180 s repeat accept6 clips, while Lex Bill 5-minute is a prefix of the 30-minute test. Only synthetic s1 and the long-clip continuation offer fresh audio evidence; the test macro is not an independent generalization estimate.
+
+Parser anomalies in these cached whole-clip calls: TUNE **1/15 calls (6.7%)**, one clamped word and zero dropped (`synth:meet_k4_s0`); TEST **1/12 calls (8.3%)**, two clamped words and zero dropped (Lex Bill 30-minute). The current Lex Bill 30-minute cache entry is **a later Gemini response** than F3/F9's original: cached latency 133.23 versus 97.32 s and 5,900 versus 5,899 parsed words. Its pure DER .083704 here therefore differs from F9's .061542; both use the complete reference and common scorer. The later response has one in-bounds but implausible `basics` interval (485.4–1486.1 s); removing that one word does not change the reported DER. Do not attribute the long-clip difference to the identity policy or reference revision.
+
+| TEST case / reference | Pure → policy DER | Truth / Gemini → policy IDs | Policy false merges / residual splits | Clamped / dropped words |
+|---|---:|---:|---:|---:|
+| accept6 Jamie 180 s, H1 #3 | .063795 → .063795 | 3 / 3 → 3 | 0 / 0 | 0 / 0 |
+| accept6 RTFL 90 s, H1 #3 partial | .414255 → .414255 | 4 / 4 → 4 | 0 / 1 | 0 / 0 |
+| accept6 Adam 180 s, H1 #3 | .147778 → **.026111** | 2 / 3 → 2 | 0 / 0 | 0 / 0 |
+| accept6 Bill 60 s, H1 #3 | .068333 → .068333 | 2 / 2 → 2 | 0 / 0 | 0 / 0 |
+| accept6 Keyu 60 s, H1 #3 | .036667 → .036667 | 2 / 2 → 2 | 0 / 0 | 0 / 0 |
+| accept6 Javier 50 s, H1 #3 | .020000 → .020000 | 1 / 1 → 1 | 0 / 0 | 0 / 0 |
+| complete Lex Bill 30 min, common scorer | .083704 → .060764 | 2 / 3 → 2 | 0 / 0* | 2 / 0 |
+| rtfl90 duplicate, common scorer | .414255 → .414255 | 4 / 4 → 4 | 0 / 1 | 0 / 0 |
+| synth K2 s1, common scorer | .157602 → .157602 | 2 / 3 → 3 | 0 / 1 | 0 / 0 |
+| synth K3 s1, common scorer | .213417 → .131871 | 3 / 7 → 4 | 0 / 1 | 0 / 0 |
+| synth K4 s1, common scorer | .158978 → .158978 | 4 / 4 → 4 | 0 / 0 | 0 / 0 |
+| synth K6 s1, common scorer | .291464 → .275779 | 6 / 14 → 12 | 0 / 5 | 0 / 0 |
+
+**Accept6 decision:** H1-exact final DER macro is pure .125138 versus policy **.104860** (≤.110); H1 #3 recorded MOSS final is .110022. The policy leaves Gemini text intact, so its accept6 final WER stays .104123. The improvement is Adam's Lex voice-over split; RTFL remains a large timing/attribution error (F5). `*`The long Lex Gemini label `spk:2` overlaps 681 s of Bill and 646 s of Lex truth, so its merge with a Lex label is **not classifiable as a clean-label false merge**; zero means zero detected, not proof of pure identities.
+
+The H-A-only synthetic false merge is K4 s0 `spk:2`/`spk:4`, cosine **.741**, distinct dominant truth voices (spk3/spk1). Their labels are themselves contaminated by the other voice (truth-overlap purities 75%/84%), so the high cosine is at least partly a Gemini segmentation artefact; separate real-voice similarity cannot be isolated. One A–B–A motif blocks that merge. **H-B's premise is also falsified:** three tune and two test high-cosine *true-same* synthetic pairs have A–B–A motifs (e.g. K2 s0 cosine .862, K3 s0 .854, K2 s1 .870). The veto leaves those splits; no such high-cosine true-same motif appeared on the real clips. No attributable high-cosine true-different pair lacked a motif in this sample. With the veto, single-link and recomputed-centroid agglomeration had identical real and synthetic scores at .65, so H-C adds no measured value. All tested 2–30 s gaps gave the same selected aggregate; 2 s is the smallest tested.
+
+## POLICY — final-pass prototype handoff
+
+```text
+words = Gemini whole-clip words; turns = contiguous same-label words with gap <= 1.5 s
+for label: embed each continuous attributed span >= 2 s with production WeSpeaker
+for eligible label: centroid = unit(mean(span vectors))
+excluded = label pairs in any A-B-A / B-A-B turns with both turn gaps <= 2 s
+groups = singleton Gemini labels
+for eligible label pair in descending cosine (stable label tie-break):
+    if cosine < 0.65: stop
+    if groups differ and no cross-group pair is excluded: union groups
+remap each word's speaker through its group; keep original text/times
+drop a word only if WebRTC mode-1/10-ms at 16 kHz has no voiced frame in [start-.2, end+.2]
+```
+
+The word gate can run before or after identity remapping because it uses only audio/times. **Verdict:** the identity policy passes the nominated accept6 DER bound and observed real false-merge check; it is a **candidate** because tune/test overlap, mixed labels, and true-same synthetic converse motifs limit generalization. F12's gate removes the measured silence/noise hallucinations with zero returned-word drops on covered real clips; real music and independent word truth remain unmeasured. Receipts: `evidence/P53/final-policy-{vectors,tune,test,pair-audit,vad}.json`; reproducible offline command: `python prototypes/gemini-live/window/final_policy.py {vectors,tune,test,audit,vad}` (run each stage separately, with `selection.json` frozen before `test`).
