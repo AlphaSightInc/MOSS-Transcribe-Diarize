@@ -152,6 +152,23 @@ def test_engine_diagnostics_exposes_content_free_per_lane_totals(tmp_path):
     assert lanes["microphone"]["cost_usd"] == .01
 
 
+def test_engine_diagnostics_records_repaired_words_and_chunked_terminal(tmp_path):
+    rt = runtime(tmp_path, {"one": ([], ()), "two": ([], ())})
+    rt.create(session_id="one")
+    rt.create(session_id="two")
+    rt.record_engine_call("one", kind="system_rolling", repaired_words=2,
+                          audio_seconds_sent=60)
+    rt.record_engine_call("one", kind="system_terminal", count_call=False,
+                          chunked=True)
+    one = rt.engine_diagnostics("one")
+    assert one["repaired_words"] == 2 and one["chunked"] is True
+    assert one["calls_by_kind"] == {"system_rolling": 1}
+    assert one["lanes"]["system"]["repaired_words"] == 2
+    assert one["lanes"]["system"]["chunked"] is True
+    assert rt.engine_diagnostics("two")["chunked"] is False
+    assert rt.engine_diagnostics("two")["repaired_words"] == 0
+
+
 def test_terminal_maps_overlapping_labels_within_each_capture_lane(tmp_path):
     async def run():
         system = GeminiSegment(0, 14000, "remote", "speaker-0001", "system")

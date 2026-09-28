@@ -129,6 +129,20 @@ def test_overlap_registry_keeps_id_when_local_label_changes():
     assert one["spk:0"] == two["spk:9"] == "speaker-0001"
 
 
+def test_rolling_turns_keep_annotation_order_after_timestamp_repair():
+    updates = []
+    engine = make_engine(updates)
+    engine._publish_window(0, 2*16000, bytes(2*32000), (
+        GeminiWord("one", "A", 0, 16000),
+        GeminiWord("two", "B", 19200, 20800),
+        GeminiWord("three", "A", 14400, 16000)))
+    rows = [row for update in updates if isinstance(update, GeminiRolling)
+            for row in update.segments]
+    assert [row.text for row in rows] == ["one", "two", "three"]
+    assert rows[0].speaker == rows[2].speaker != rows[1].speaker
+    engine.close()
+
+
 def test_continuity_registry_uses_only_committed_overlap_in_engine():
     updates = []
     class TailWords:

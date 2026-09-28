@@ -411,7 +411,7 @@ class GeminiHybridEngine:
                     tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
                                         w.text, mapping[w.speaker], self.source_lane) for w in absolute
                           if old <= w.start_sample < frontier),
-                    start_sample=old, end_sample=frontier,
+                    start_sample=old, end_sample=frontier, preserve_order=True,
                 ))
                 visible = {row.speaker for row in rows}
                 self.publish(GeminiRolling(old, frontier, rows,

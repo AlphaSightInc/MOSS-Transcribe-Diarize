@@ -214,6 +214,8 @@ class _GeminiState:
     retries_by_code: dict[str, int] = field(default_factory=dict)
     clamped_words: int = 0
     dropped_words: int = 0
+    repaired_words: int = 0
+    chunked: bool = False
     audio_seconds_sent: float = 0.0
     cost_usd: float = 0.0
     live_list_price_estimate_usd: float = 0.0
@@ -436,6 +438,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         retry_code: str | None = None,
         clamped_words: int = 0,
         dropped_words: int = 0,
+        repaired_words: int = 0,
+        chunked: bool = False,
         audio_seconds_sent: float = 0.0,
         cost_usd: float = 0.0,
         count_call: bool = True,
@@ -448,11 +452,12 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             if value is not None and not re.fullmatch(r"[A-Za-z0-9_:-]{1,64}", value):
                 raise ValueError("engine usage kind and codes must be stable metadata tokens.")
         if any(not isinstance(value, int) or value < 0
-               for value in (clamped_words, dropped_words, skipped_window_ticks)):
+               for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks)):
             raise ValueError("word-timing anomaly counts must be nonnegative integers.")
         if any(not math.isfinite(value) or value < 0 for value in (audio_seconds_sent, cost_usd)):
             raise ValueError("engine audio seconds and cost must be finite and nonnegative.")
-        if not isinstance(count_call, bool) or cost_basis not in {"provider_usage", "list_price_estimate"}:
+        if (not isinstance(count_call, bool) or not isinstance(chunked, bool)
+                or cost_basis not in {"provider_usage", "list_price_estimate"}):
             raise ValueError("engine call count and cost basis must be operational metadata.")
         with self._lock:
             state = self._get(session_id)
@@ -464,6 +469,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     counters[code] = counters.get(code, 0) + 1
             state.clamped_words += clamped_words
             state.dropped_words += dropped_words
+            state.repaired_words += repaired_words
+            state.chunked = state.chunked or chunked
             state.skipped_window_ticks += skipped_window_ticks
             state.audio_seconds_sent += audio_seconds_sent
             state.cost_usd += cost_usd
@@ -474,6 +481,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals = state.lane_counters.setdefault(lane, {
                     "calls_by_kind": {}, "errors_by_code": {}, "retries_by_code": {},
                     "timing_anomalies": {"clamped": 0, "dropped": 0},
+                    "repaired_words": 0, "chunked": False,
                     "audio_seconds_sent": 0.0, "cost_usd": 0.0,
                     "skipped_window_ticks": 0})
                 if count_call:
@@ -486,6 +494,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         codes[code] = codes.get(code, 0) + 1
                 totals["timing_anomalies"]["clamped"] += clamped_words
                 totals["timing_anomalies"]["dropped"] += dropped_words
+                totals["repaired_words"] += repaired_words
+                totals["chunked"] = totals["chunked"] or chunked
                 totals["audio_seconds_sent"] += audio_seconds_sent
                 totals["cost_usd"] += cost_usd
                 totals["skipped_window_ticks"] += skipped_window_ticks
@@ -500,6 +510,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "errors_by_code": dict(state.errors_by_code),
                 "retries_by_code": dict(state.retries_by_code),
                 "timing_anomalies": {"clamped": state.clamped_words, "dropped": state.dropped_words},
+                "repaired_words": state.repaired_words,
+                "chunked": state.chunked,
                 "audio_seconds_sent": state.audio_seconds_sent,
                 "cost_usd": state.cost_usd,
                 "cost_usd_basis": ("provider_usage_plus_live_list_price_estimate"

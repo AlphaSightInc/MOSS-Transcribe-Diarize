@@ -237,8 +237,8 @@ These are two fixtures, not a population estimate; receipts are
 `evidence/P63/l3-{e1,m2}-http.json`. For >30-minute recordings, the existing
 terminal chunk stitch remains an unqualified candidate: long60 complete truth
 falsified POLICY-LONG (DER .328, Bill/Adam false merge, Lex split across three IDs).
-The cancelled policy is not incorporated here. Pane 5.3 is investigating long-call
-timestamps before a turn-building change.
+Pane 5.3 subsequently revised that policy with a 900 s call cap and timestamp
+repair; the new candidate is described below.
 
 ## C1+C3 continuity registry candidate
 
@@ -271,3 +271,35 @@ S01 mostly Bill (52.0 s truth overlap), S02 mostly Lex (3.9 s), and no mic ID
 or mic provider call on digital silence. E1 had 1 clamped offset in 64 batch
 calls; Bill had 0 anomalies in 7. These are product-path spot checks, not the
 six-clip settled-error verdict. Receipts: `evidence/P63/c1c3-{e1,bill}-http.json`.
+
+## POLICY-TIMESTAMPS terminal candidate
+
+Each rolling or terminal batch response first uses the existing parser offset
+clamp/drop. The R2 repair keeps Gemini annotation order and every surviving word.
+It fixes an interior word longer than 5 s or isolated by >10 s from both valid
+neighbours, then shifts a short run after a >10 s jump when an opposite jump
+returns near the prior anchor within 30 words. A shift is skipped if it would
+leave the call audio or make a word's end precede its start. The adapter counts
+repaired words separately from parser clamped/dropped offsets. Rolling and
+terminal turn construction preserves annotation order; one-sample projection
+keeps the public session's nonoverlapping sample invariant.
+
+The terminal call cap is 900 s. Longer recordings use 30 s adjacent overlaps;
+word midpoints assign each final word to one chunk core. Each chunk-local label
+gets a production WeSpeaker centroid from eligible attributed spans. Adjacent
+labels pair one-to-one by positive word-time co-occurrence, subject to cosine
+≥0.65 when both vectors exist and the A-B-A conversational veto. Remaining
+eligible label pairs unite by descending cosine with the same veto. The frozen
+WebRTC word gate runs after identity; same-speaker words within 1.5 s form turns.
+Per-session diagnostics expose `repaired_words` and sticky `chunked=true`, also
+broken out by capture lane. The single-call path retains the frozen final
+identity policy.
+
+Pane 5.3's **prototype** results on H1 #3 accept6: final DER .104860 unchanged;
+complete Lex30m one-call .060764→.038491 after repair, while its T900/O30
+stitched candidate measured .032382; complete long60 T900/O30 measured .034568
+with five output IDs for five true speakers and no detected false merge. Lex
+still occupies two material IDs, so long-form identity remains unqualified.
+These are cached-call prototype scores, not fresh product-path quality evidence.
+The port passed 81 focused Gemini tests and the full backend gate (2,499 passed,
+3 skipped, 2 expected failures, 37 subtests).

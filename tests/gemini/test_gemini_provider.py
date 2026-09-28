@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from moss_transcribe_diarize.app.gemini_provider import WindowDiarizer, parse_words, TerminalTranscriber
+from moss_transcribe_diarize.app.gemini_provider import WindowDiarizer, parse_words, TerminalTranscriber, GeminiWord, GeminiWords
 from moss_transcribe_diarize.app.live_tape import CompleteMixedTape
 
 
@@ -49,6 +49,21 @@ def test_window_request_repairs_invalid_offsets_and_reports_every_attempt():
     assert usage[1]["cost_usd"] == pytest.approx(0.00032)
 
 
+@pytest.mark.parametrize("kind", ["rolling", "terminal"])
+def test_batch_adapter_repairs_annotation_order_offsets_and_counts_them(kind):
+    fake = FakeInteractions([response(word("before", "spk:0", 1, 1.2),
+                                      word("wrong", "spk:0", 100, 101),
+                                      word("after", "spk:0", 2, 2.2))])
+    usage = []
+    provider = WindowDiarizer(SimpleNamespace(interactions=fake), lambda **row: usage.append(row))
+    result = provider.diarize(bytes(120*32000), deadline=time.monotonic()+5, kind=kind)
+    assert [w.text for w in result.words] == ["before", "wrong", "after"]
+    assert 1*16000 <= result.words[1].start_sample <= 2*16000
+    assert result.words[1].end_sample <= 2*16000
+    assert usage[0]["repaired_words"] == 1
+    assert usage[0]["clamped_words"] == usage[0]["dropped_words"] == 0
+
+
 def test_terminal_overlap_maps_local_labels_and_keeps_one_owner(tmp_path):
     fake = FakeInteractions([response(word("a", "spk:0", 0, 1), word("b", "spk:0", 3, 4)),
                              response(word("b", "spk:9", 0, 1), word("c", "spk:9", 2, 3))])
@@ -80,6 +95,20 @@ def test_terminal_publishes_speaker_turns_with_1_5_second_gap_limit(tmp_path):
     tape.release()
 
 
+def test_terminal_keeps_gemini_annotation_order_for_small_backward_start(tmp_path):
+    fake = FakeInteractions([response(word("one", "A", 0, 1),
+                                      word("two", "B", 1.2, 1.3),
+                                      word("three", "A", .9, 1.0))])
+    provider = WindowDiarizer(SimpleNamespace(interactions=fake), lambda **_row: None)
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=2*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(2*32000))
+    rows = TerminalTranscriber(provider).transcribe(tape)
+    assert [row.text for row in rows] == ["one", "two", "three"]
+    assert rows[0].speaker == rows[2].speaker != rows[1].speaker
+    assert all(a.end_sample <= b.start_sample for a, b in zip(rows, rows[1:]))
+    tape.release()
+
+
 def test_microphone_terminal_transcribes_without_diarization_and_filters_words(tmp_path):
     fake = FakeInteractions([response(word("echo", "spk:?", 0, 1),
                                       word("local", "spk:?", 1, 2))])
@@ -94,6 +123,75 @@ def test_microphone_terminal_transcribes_without_diarization_and_filters_words(t
         "type": "verbatim", "timestamp_granularities": ["word"]}
     assert [(r.text, r.speaker, r.source_lane) for r in rows] == [
         ("local", "speaker-microphone", "microphone")]
+    tape.release()
+
+
+def test_terminal_caps_calls_at_900_seconds_and_marks_chunked():
+    class Tape:
+        sample_count = 901*16000
+        reads = []
+        def read(self, *, start_sample, end_sample):
+            self.reads.append((start_sample//16000, end_sample//16000))
+            return bytes(2*(end_sample-start_sample))
+    class Diarizer:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            assert kind == "terminal"
+            return GeminiWords(())
+    usage = []
+    tape = Tape()
+    rows = TerminalTranscriber(Diarizer(), report_usage=lambda **row: usage.append(row)).transcribe(tape)
+    assert rows == ()
+    assert tape.reads[:2] == [(0, 900), (870, 901)]
+    assert usage == [{"kind": "terminal", "count_call": False, "chunked": True}]
+
+
+def test_terminal_rejects_explicit_call_cap_above_900_seconds():
+    with pytest.raises(ValueError, match="900"):
+        TerminalTranscriber(object(), chunk_seconds=901)
+
+
+def test_terminal_midpoint_core_retains_later_chunk_word_at_seam(tmp_path):
+    class Diarizer:
+        calls = 0
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            self.calls += 1
+            if self.calls == 1:
+                return GeminiWords((GeminiWord("early", "A", 0, 16000),
+                                    GeminiWord("old", "A", round(3.2*16000), round(3.4*16000))))
+            return GeminiWords((GeminiWord("new", "B", round(.2*16000), round(.4*16000)),
+                                GeminiWord("late", "B", round(1.2*16000), round(1.5*16000))))
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=5*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(5*32000))
+    rows = TerminalTranscriber(Diarizer(), chunk_seconds=4, overlap_seconds=1).transcribe(tape)
+    assert [row.text for row in rows] == ["early", "new late"]
+    tape.release()
+
+
+def test_chunked_terminal_uses_seam_stitch_before_word_gate(tmp_path):
+    from moss_transcribe_diarize.app.gemini_long_final import LongFinalStitcher
+    class Diarizer:
+        calls = 0
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            self.calls += 1
+            return GeminiWords((GeminiWord("before" if self.calls == 1 else "after",
+                                           "A" if self.calls == 1 else "X", 0,
+                                           4*16000 if self.calls == 1 else 2*16000),))
+    class Encoder:
+        def embed_intervals(self, path, intervals):
+            return [(1.0, 0.0) if intervals[0][0] == 0 else (.8, .6)]
+    class Identity:
+        def remap(self, words, pcm):
+            raise AssertionError("chunk identity is owned by the seam stitch")
+    class Gate:
+        def filter(self, pcm, words, **kwargs):
+            assert len({w.speaker for w in words}) == 1
+            return words
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=5*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(5*32000))
+    rows = TerminalTranscriber(Diarizer(), chunk_seconds=4, overlap_seconds=1,
+        identity_policy=Identity(), stitcher=LongFinalStitcher(Encoder()),
+        word_gate=Gate()).transcribe(tape)
+    assert [(row.text, row.speaker) for row in rows] == [("before after", "terminal-0001")]
     tape.release()
 
 

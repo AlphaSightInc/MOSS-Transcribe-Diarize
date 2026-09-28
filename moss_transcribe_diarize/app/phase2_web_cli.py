@@ -162,6 +162,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                                      TextEchoGuard, WebRtcSpeechDetector)
     from .gemini_live_words import GeminiLiveWordSource
     from .gemini_final_policy import FinalWordPolicy, WebRtcWordGate
+    from .gemini_long_final import LongFinalStitcher
     from .gemini_live_runtime import GeminiLiveRuntime
     from .gemini_provider import WindowDiarizer, TerminalTranscriber
     from .live_provider_bundle import LiveProviderBundleConfig, _bounds, _identity_encoder
@@ -186,7 +187,9 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     policy = {"model": "gemini-3.5-transcribe",
               "window_max_seconds": GEMINI_WINDOW_LMAX_SECONDS,
               "stride_seconds": GEMINI_WINDOW_STRIDE_SECONDS,
-              "holdback_seconds": 0, "terminal_chunk_seconds": 1800,
+              "holdback_seconds": 0, "terminal_chunk_seconds": 900,
+              "terminal_overlap_seconds": 30,
+              "timestamp_repair": "P53-R2-annotation-order",
               "continuity_embedding_cosine": GEMINI_CONTINUITY_E,
               "within_window_cosine": GEMINI_CONTINUITY_W,
               "birth_min_seconds": GEMINI_BIRTH_MIN_SECONDS,
@@ -203,7 +206,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     descriptor = LiveServiceDescriptor(
         source_revision=config.source_revision,
         provider_name="gemini-3.5-transcribe",
-        provider_revision="hybrid-w3-continuity-v5",
+        provider_revision="hybrid-w3-timestamps-v6",
         provider_manifest_hash=hash_config({"gemini_policy": policy, "identity": identity_policy}),
         config_hashes=LiveServiceConfigHashes.from_parts(
             endpoint_config={"preview_model": "gemini-3.5-transcribe-live",
@@ -233,11 +236,13 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
             echo_guard = TextEchoGuard()
             system_terminal = TerminalTranscriber(
                 system_diarizer, identity_policy=FinalWordPolicy(encoder),
+                stitcher=LongFinalStitcher(encoder), report_usage=system_report,
                 word_gate=system_gate, source_lane="system")
             mic_terminal = TerminalTranscriber(
                 mic_diarizer, diarize=False, word_gate=mic_gate,
                 word_filter=lambda words: echo_guard.filter(words, system_terminal.last_words),
-                source_lane="microphone", fixed_speaker="speaker-microphone")
+                source_lane="microphone", fixed_speaker="speaker-microphone",
+                report_usage=mic_report)
             mic_source = LazyMicrophoneWords(
                 lambda: GeminiLiveWordSource(client, mic_report),
                 voiced_audio=speech_detector)

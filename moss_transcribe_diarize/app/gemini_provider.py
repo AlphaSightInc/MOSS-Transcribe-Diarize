@@ -37,12 +37,86 @@ class GeminiWords:
     dropped: int = 0
 
 
+@dataclass(frozen=True, slots=True)
+class TerminalChunk:
+    index: int
+    start_sample: int
+    end_sample: int
+    core_end_sample: int
+    words: tuple[GeminiWord, ...]  # Absolute samples, Gemini annotation order.
+
+
+def repair_word_timestamps(words: Sequence[GeminiWord],
+                           audio_samples: int) -> tuple[tuple[GeminiWord, ...], int]:
+    """Repair measured long-call offset excursions in Gemini annotation order."""
+    fixed = list(words)
+    changed: set[int] = set()
+    jump = 10 * LIVE_SAMPLE_RATE
+    long_duration = 5 * LIVE_SAMPLE_RATE
+    tenth = LIVE_SAMPLE_RATE // 10
+    for i in range(1, len(words) - 1):
+        previous, word, following = words[i-1], words[i], words[i+1]
+        isolated = (abs(word.start_sample-previous.start_sample) > jump
+                    and abs(word.start_sample-following.start_sample) > jump
+                    and abs(previous.start_sample-following.start_sample) <= jump
+                    and previous.end_sample-previous.start_sample <= long_duration
+                    and following.end_sample-following.start_sample <= long_duration)
+        duration_outlier = word.end_sample-word.start_sample > long_duration
+        if not (isolated or duration_outlier):
+            continue
+        if isolated:
+            start = max(previous.start_sample,
+                        min(following.start_sample,
+                            round((previous.end_sample+following.start_sample)/2)))
+            length = min(max(word.end_sample-word.start_sample, tenth), LIVE_SAMPLE_RATE)
+            end = (min(start+length, following.start_sample)
+                   if following.start_sample > start else start+length)
+        else:
+            start = word.start_sample
+            end = (min(start+LIVE_SAMPLE_RATE, following.start_sample)
+                   if following.start_sample > start else start+LIVE_SAMPLE_RATE)
+        if end <= start:
+            end = start+tenth
+        start, end = max(0, min(start, audio_samples)), max(0, min(end, audio_samples))
+        if end > start:
+            fixed[i] = GeminiWord(word.text, word.speaker, start, end)
+            changed.add(i)
+    i = 1
+    while i < len(fixed) - 1:
+        first_jump = fixed[i].start_sample-fixed[i-1].start_sample
+        if abs(first_jump) <= jump:
+            i += 1
+            continue
+        end = next((j for j in range(i+1, min(i+31, len(fixed)))
+                    if first_jump*(fixed[j].start_sample-fixed[j-1].start_sample) < 0
+                    and abs(fixed[j].start_sample-fixed[i-1].start_sample) <= jump), None)
+        if end is None or any(fixed[k].end_sample-fixed[k].start_sample > long_duration
+                              for k in range(i, end)):
+            i += 1
+            continue
+        shift = round(((fixed[i-1].end_sample+fixed[end].start_sample)
+                       -(fixed[i].start_sample+fixed[end-1].end_sample))/2)
+        if all(0 <= fixed[k].start_sample+shift < fixed[k].end_sample+shift <= audio_samples
+               for k in range(i, end)):
+            for k in range(i, end):
+                word = fixed[k]
+                fixed[k] = GeminiWord(word.text, word.speaker,
+                                      word.start_sample+shift, word.end_sample+shift)
+                changed.add(k)
+            i = end
+        else:
+            i += 1
+    return tuple(fixed), len(changed)
+
+
 def ordered_segments(rows: Sequence[GeminiSegment], *, start_sample: int,
-                     end_sample: int) -> tuple[GeminiSegment, ...]:
+                     end_sample: int,
+                     preserve_order: bool = False) -> tuple[GeminiSegment, ...]:
     """Project timestamped provider words onto LiveSession's one-owner sample line."""
-    ordered = sorted((row for row in rows if row.text and row.start_sample < end_sample
-                      and row.end_sample > start_sample),
-                     key=lambda row: (row.start_sample, row.end_sample))
+    kept = (row for row in rows if row.text and row.start_sample < end_sample
+            and row.end_sample > start_sample)
+    ordered = list(kept) if preserve_order else sorted(
+        kept, key=lambda row: (row.start_sample, row.end_sample))
     result: list[GeminiSegment] = []
     cursor = start_sample
     for row in ordered:
@@ -176,7 +250,12 @@ class WindowDiarizer:
                 )
                 data = response.model_dump(exclude_none=True, mode="json")
                 parsed = parse_words(data, audio_samples=len(pcm16) // 2)
+                repaired = 0
+                if kind in {"rolling", "terminal"}:
+                    fixed, repaired = repair_word_timestamps(parsed.words, len(pcm16) // 2)
+                    parsed = GeminiWords(fixed, parsed.clamped, parsed.dropped)
                 self.report_usage(kind=kind, clamped_words=parsed.clamped, dropped_words=parsed.dropped,
+                                  repaired_words=repaired,
                                   audio_seconds_sent=audio_seconds,
                                   cost_usd=_usage_cost(data.get("usage") or {}))
                 return parsed
@@ -198,12 +277,14 @@ class WindowDiarizer:
 class TerminalTranscriber:
     """Whole-meeting chunk pass; overlap resolves local labels by word-time agreement."""
 
-    def __init__(self, diarizer: WindowDiarizer, *, chunk_seconds: int = 1800,
-                 overlap_seconds: int = 20, identity_policy=None, word_gate=None,
+    def __init__(self, diarizer: WindowDiarizer, *, chunk_seconds: int = 900,
+                 overlap_seconds: int = 30, identity_policy=None, word_gate=None,
                  diarize: bool = True, word_filter=None,
-                 source_lane: str | None = None, fixed_speaker: str | None = None):
-        if not 0 < overlap_seconds < chunk_seconds <= 1800:
-            raise ValueError("terminal chunks must be at most 30 minutes with a smaller overlap")
+                 source_lane: str | None = None, fixed_speaker: str | None = None,
+                 report_usage: Callable[..., None] | None = None,
+                 stitcher=None):
+        if not 0 < overlap_seconds < chunk_seconds <= 900:
+            raise ValueError("terminal chunks must be at most 900 seconds with a smaller overlap")
         self.diarizer = diarizer
         self.identity_policy = identity_policy
         self.word_gate = word_gate
@@ -211,6 +292,8 @@ class TerminalTranscriber:
         self.word_filter = word_filter
         self.source_lane = source_lane
         self.fixed_speaker = fixed_speaker
+        self.report_usage = report_usage
+        self.stitcher = stitcher
         self.last_words: tuple[GeminiWord, ...] = ()
         self.chunk_samples = chunk_seconds * LIVE_SAMPLE_RATE
         self.overlap_samples = overlap_seconds * LIVE_SAMPLE_RATE
@@ -219,7 +302,12 @@ class TerminalTranscriber:
         end = tape.sample_count
         if end == 0:
             return ()
+        chunked = end > self.chunk_samples
+        if chunked and self.report_usage is not None:
+            self.report_usage(kind="terminal", count_call=False, chunked=True)
         all_words: list[GeminiWord] = []
+        chunks: list[TerminalChunk] = []
+        previous_chunk_words: list[GeminiWord] = []
         start = 0
         next_id = 1
         while start < end:
@@ -229,12 +317,15 @@ class TerminalTranscriber:
                                            diarize=self.diarize)
             local_words = [GeminiWord(w.text, w.speaker, w.start_sample + start,
                                       w.end_sample + start) for w in parsed.words]
+            core_end = end if stop == end else stop - self.overlap_samples
+            chunks.append(TerminalChunk(len(chunks), start, stop, core_end,
+                                        tuple(local_words)))
             local_labels = tuple(dict.fromkeys(w.speaker for w in local_words))
             overlaps: dict[tuple[str, str], int] = {}
             for word in local_words:
                 if word.start_sample >= start + self.overlap_samples:
                     continue
-                for old in all_words:
+                for old in previous_chunk_words:
                     shared = min(word.end_sample, old.end_sample) - max(word.start_sample, old.start_sample)
                     if shared > 0:
                         key = (word.speaker, old.speaker)
@@ -250,16 +341,19 @@ class TerminalTranscriber:
                 if local not in mapping:
                     mapping[local] = f"terminal-{next_id:04d}"
                     next_id += 1
-            # The earlier chunk owns the overlap; no duplicated final words.
-            cut = start + self.overlap_samples if start else 0
-            all_words.extend(GeminiWord(w.text, mapping[w.speaker], w.start_sample, w.end_sample)
-                             for w in local_words if w.start_sample >= cut)
+            mapped_words = [GeminiWord(w.text, mapping[w.speaker], w.start_sample, w.end_sample)
+                            for w in local_words]
+            all_words.extend(w for w in mapped_words
+                             if start <= (w.start_sample+w.end_sample)/2 < core_end)
+            previous_chunk_words = mapped_words
             if stop == end:
                 break
             start = stop - self.overlap_samples
-        if self.identity_policy is not None or self.word_gate is not None:
+        if self.identity_policy is not None or self.word_gate is not None or (chunked and self.stitcher):
             pcm = tape.read(start_sample=0, end_sample=end)
-            if self.identity_policy is not None:
+            if chunked and self.stitcher is not None:
+                all_words = list(self.stitcher.stitch(chunks, pcm))
+            elif self.identity_policy is not None:
                 all_words = list(self.identity_policy.remap(all_words, pcm))
             if self.word_gate is not None:
                 all_words = list(self.word_gate.filter(pcm, all_words))
@@ -272,5 +366,5 @@ class TerminalTranscriber:
         return speaker_turns(ordered_segments(
             tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
                                 w.text, w.speaker, self.source_lane) for w in all_words),
-            start_sample=0, end_sample=end,
+            start_sample=0, end_sample=end, preserve_order=True,
         ))
