@@ -598,6 +598,37 @@ def test_public_preview_trims_committed_speech_in_same_lane(tmp_path):
         rt.snapshot("one").to_dict()["session"]["provisional"]["transcript"])
 
 
+def test_public_preview_keeps_new_speech_that_shares_common_words(tmp_path):
+    """E1 regression (lead, 2026-09-28): scattered common words must not trim new speech."""
+    rt = GeminiLiveRuntime(
+        descriptor=descriptor(tape_bytes=15 * 32000), tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage: ScriptedGeminiEngine(
+            publish, batches=(), terminal=()),
+    )
+    rt.create(session_id="one")
+    for second in range(15):
+        rt.accept_frame("one", frame(second))
+    committed = (
+        "and you guys have about 6 months of cash left. And so you decide to do the entire "
+        "testing in simulation rather than ever receiving a physical prototype. You commission "
+        "the production run sight unseen with the rest of the company's money. So you're "
+        "betting it all right here on the"
+    )
+    fresh = (
+        "Yeah. It comes back and of the 32 DirectX blend modes, it supports eight of them. "
+        "And you have to convince the market to buy it, and you got to convince developers "
+        "not to use anything but those eight blend modes."
+    )
+    rt.publish_update("one", GeminiBase(10 * 16000, ()))
+    rt.publish_update("one", GeminiRolling(0, 10 * 16000, (
+        GeminiSegment(0, 10 * 16000, committed, "speaker-0001", "system"),),
+        revision_lanes=("system",)))
+    rt.publish_update("one", GeminiPreview(15 * 16000, (
+        GeminiSegment(10 * 16000, 15 * 16000, fresh, source_lane="system"),)))
+    assert rt.snapshot("one").to_dict()["session"]["provisional"]["transcript"] == (
+        f"[0][S00]{fresh}[5]")
+
+
 def test_stop_drains_rolling_tail_before_session_closes(tmp_path):
     async def run():
         first = GeminiSegment(0, 16000, "first", "speaker-0001")
