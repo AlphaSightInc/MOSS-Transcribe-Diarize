@@ -1026,3 +1026,32 @@ it("an empty published surface clears previous mono words", async () => {
   expect(onError).not.toHaveBeenCalled();
   expect(transcript.value).toEqual([]);
 });
+
+it("accepts Gemini runtime snapshots through the unchanged published-row parser", async () => {
+  resetSessionState();
+  let version = 0;
+  const onError = vi.fn();
+  const poller = createMossSessionPoller({sessionId: "gemini-fake", onError, dispatch: dispatchWsEvent,
+    fetch: vi.fn(async input => {
+      if (String(input).includes("/events")) return jsonResponse({events: []});
+      version += 1;
+      return jsonResponse({snapshot: {session_id: "gemini-fake", descriptor: {sample_rate: 16000}, session: {
+        status: "active", version, committed_samples: 16000, failure_reason: null,
+        finalization_status: "not_started", label_revision_version: version - 1,
+        identity_snapshot: {canonical_speakers: ["speaker-0001", "speaker-0002"]},
+        committed: [{span_id: 0, start_sample: 0, transcript: "[0][S00]hello[0.5]", revised_transcript: null}],
+        effective_transcript: [{start_sample: 0, end_sample: 8000, text: "hello",
+          canonical_speaker: version === 1 ? "speaker-0001" : "speaker-0002", authority: "rolling"}],
+        provisional: null
+      }}});
+    }) as typeof fetch});
+  await poller.poll();
+  expect(transcript.value.map(item => [item.text, item.speaker_entity_id, item.speaker])).toEqual([
+    ["hello", "speaker-0001", "S01"]
+  ]);
+  await poller.poll();
+  expect(transcript.value.map(item => [item.text, item.speaker_entity_id, item.speaker])).toEqual([
+    ["hello", "speaker-0002", "S02"]
+  ]);
+  expect(onError).not.toHaveBeenCalled();
+});

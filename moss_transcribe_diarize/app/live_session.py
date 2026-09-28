@@ -691,6 +691,92 @@ class LiveSession:
             refusals=tuple(sorted(refusals.items())),
         )
 
+    def register_canonical_speakers(self, speakers: Sequence[str]) -> LiveIdentitySnapshot:
+        """Append provider-established meeting IDs in their first-seen order.
+
+        Gemini's diarized windows already carry meeting IDs after the engine's continuity
+        step. They do not have a MOSS local decode or identity preparation, but the reader
+        still needs the same stable list to turn an ID into S01, S02, and so on.
+        """
+
+        if self._status not in {"active", "closing", "closed"}:
+            raise LiveSessionClosed(f"live session is {self._status}.")
+        current = self._identity_snapshot.canonical_speakers
+        additions = tuple(speaker for speaker in speakers if speaker not in current)
+        if any(not speaker for speaker in additions) or len(set(additions)) != len(additions):
+            raise ValueError("canonical speaker IDs must be nonempty and unique.")
+        if additions:
+            self._identity_snapshot = replace(
+                self._identity_snapshot,
+                version=self._identity_snapshot.version + 1,
+                canonical_speakers=current + additions,
+            )
+            self._surface_version += 1
+            self._bump()
+            self._notify_waiters()
+        return self._identity_snapshot
+
+    def revise_rolling_interval(
+        self,
+        *,
+        start_sample: int,
+        end_sample: int,
+        base_text_revision_version: int,
+        segments: Sequence[EffectiveTranscriptSegment],
+    ) -> TextRevisionOutcome:
+        """Repair rolling speaker attribution, preserving every published word exactly.
+
+        A later diarized window may split or merge speaker turns inside an already visible
+        rolling interval. The original rolling frontier remains monotonic. This operation
+        owns only the exact old rows it replaces and cannot reword them.
+        """
+
+        def refuse(reason: str) -> TextRevisionOutcome:
+            _count_refusal(self._text_revision_refusals, reason, 1)
+            return self._text_revision_outcome(applied=False, refusal=reason)
+
+        if self._finalization_status == "final":
+            return refuse("already_finalized")
+        if base_text_revision_version != self._text_revision_version:
+            return refuse("stale_text_revision_version")
+        if not 0 <= start_sample < end_sample <= self._canonical_through_sample:
+            return refuse("outside_rolling_frontier")
+        old = self._revision_segments
+        indices = [
+            index for index, row in enumerate(old)
+            if row.start_sample < end_sample and row.end_sample > start_sample
+        ]
+        if not indices or indices != list(range(indices[0], indices[-1] + 1)):
+            return refuse("rolling_interval_not_owned")
+        selected = old[indices[0]:indices[-1] + 1]
+        if (selected[0].start_sample, selected[-1].end_sample) != (start_sample, end_sample):
+            return refuse("rolling_interval_not_owned")
+        replacement = tuple(segments)
+        if not replacement or "".join(row.text for row in selected) != "".join(row.text for row in replacement):
+            return refuse("rolling_words_changed")
+        if (replacement[0].start_sample, replacement[-1].end_sample) != (start_sample, end_sample):
+            return refuse("rolling_interval_not_owned")
+        lane = selected[0].source_lane
+        previous_end = start_sample
+        speakers = set(self._identity_snapshot.canonical_speakers)
+        for row in replacement:
+            if (
+                row.authority != "rolling" or row.source_lane != lane
+                or row.start_sample < previous_end or row.end_sample <= row.start_sample
+                or row.end_sample > end_sample
+            ):
+                return refuse("rolling_segments_invalid")
+            if row.canonical_speaker is not None and row.canonical_speaker not in speakers:
+                return refuse("unknown_canonical_speaker")
+            previous_end = row.end_sample
+        self._revision_segments = old[:indices[0]] + replacement + old[indices[-1] + 1:]
+        self._text_revision_version += 1
+        self._label_revision_version += 1
+        self._surface_version += 1
+        self._bump()
+        self._notify_waiters()
+        return self._text_revision_outcome(applied=True, revised_segments=len(replacement))
+
     def _revised_span(
         self,
         commit: CanonicalCommit,

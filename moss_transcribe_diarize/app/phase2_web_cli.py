@@ -36,6 +36,8 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--tls-certfile", required=True)
     parser.add_argument("--tls-keyfile", required=True)
     parser.add_argument("--backend", choices=["hf", "vllm"], default="hf")
+    parser.add_argument("--live-engine", choices=["moss", "gemini"], default="moss",
+                        help="Live transcription engine; Gemini requires the measured provider adapter.")
     parser.add_argument("--model", default=str(DEFAULT_MODEL))
     parser.add_argument("--vllm-base-url")
     parser.add_argument("--vllm-model")
@@ -103,6 +105,10 @@ def _build_file_runner(args: argparse.Namespace):
 def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
     if args.live_helper_lease_seconds <= 0:
         raise SystemExit("--live-helper-lease-seconds must be positive.")
+    if args.live_engine == "gemini":
+        # Phase 1 ships the runtime contract and deterministic fake only. Do not start
+        # a meeting under a fake provider while the measured engine is still undecided.
+        raise SystemExit("Gemini Live engine is not installed; await the bake-off adapter.")
     from .live_provider_bundle import LiveProviderBundleConfig, build_live_runtime_factory
     from .runner_composition import LazyLiveRunner, build_terminal_finalizer
 
@@ -142,6 +148,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit("Install uvicorn to run mtd-phase2-web.") from exc
 
     args = parse_args(argv)
+    if args.live_engine == "gemini":
+        # A phase-1 binary must refuse before constructing the MOSS file runner, which
+        # may load the local model/GPU. Real Gemini selection is wired after the bake-off.
+        raise SystemExit("Gemini Live engine is not installed; await the bake-off adapter.")
     from .inference_scheduler import InferenceDispatchScheduler
 
     args._inference_scheduler = InferenceDispatchScheduler(
