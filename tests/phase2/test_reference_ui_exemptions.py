@@ -55,6 +55,21 @@ def test_fixture_names_only_decision_scoped_exemptions():
     ]
 
 
+def test_q5_baseline_exempts_only_reworked_cards_and_settled_labels():
+    config = DIFF.load_json(ROOT / "tests/fixtures/reference_ui_screenshot_diff_q5.json")
+    old = DIFF.load_json(ROOT / "tests/fixtures/reference_ui_screenshot_diff.json")
+    assert config["max_different_pixel_percent"] == old["max_different_pixel_percent"] == 2.0
+    assert config["max_largest_region_percent"] == old["max_largest_region_percent"] == 1.0
+    assert config["viewports"] == old["viewports"]
+    assert config["exemptions"][:-2] == old["exemptions"]
+    assert config["exemptions"][-2:] == [
+        {"id": "q5-settled-speaker-labels", "reference_selector": ".legend-chip",
+         "candidate_selector": ".legend-chip"},
+        {"id": "q5-transcript-cards", "reference_selector": ".utt",
+         "candidate_selector": ".transcript-card"},
+    ]
+
+
 def test_candidate_only_multiple_and_absent_exemptions():
     reference = Page({})
     candidate = Page({".d9": [(1, 1, 2, 2), (5, 1, 2, 2)]})

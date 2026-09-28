@@ -22,6 +22,19 @@ function makeItem(overrides: Partial<TranscriptItem> = {}): TranscriptItem {
 }
 
 describe("mergeTranscript", () => {
+  it.each([[undefined, false], [false, undefined]] as const)(
+    "merges adjacent speech with unset/false settlement bits (%s, %s)",
+    (firstBit, secondBit) => {
+      const first = makeItem({ start: 0, end: 1, text: "first", segment_id: "first",
+        state: "confirmed", settled: firstBit });
+      const second = makeItem({ start: 1, end: 2, text: "second", segment_id: "second",
+        state: "confirmed", settled: secondBit });
+      expect(groupSegmentsIntoTurns([first, second])[0]?.segments.map(segment => segment.text))
+        .toEqual(["first", "second"]);
+      expect(groupSegmentsIntoTurns([first, second])).toHaveLength(1);
+    }
+  );
+
   it("replaces today's single live-provisional tail in-place", () => {
     const merged = upsertTranscriptItems([], [
       makeItem({

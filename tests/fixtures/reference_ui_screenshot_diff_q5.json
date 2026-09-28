@@ -1,0 +1,59 @@
+{
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1280,
+      "height": 800
+    }
+  ],
+  "max_different_pixel_percent": 2.0,
+  "max_largest_region_percent": 1.0,
+  "pixel_channel_tolerance": 1,
+  "connectivity": 4,
+  "exemptions": [
+    {
+      "id": "transcript-summary-toggle",
+      "reference_selector": ".tr-legend-right",
+      "candidate_selector": ".tr-legend-right"
+    },
+    {
+      "id": "d7-review-banner",
+      "reference_selector": null,
+      "candidate_selector": ".hint[role=\"status\"]:has(> strong)"
+    },
+    {
+      "id": "d7-uncertain-legend-chip",
+      "reference_selector": null,
+      "candidate_selector": ".legend-chip[data-speaker-id=\"S00\"]"
+    },
+    {
+      "id": "d7-uncertain-speaker-label",
+      "reference_selector": null,
+      "candidate_selector": "button.utt-speaker[data-speaker-id=\"S00\"] .utt-speaker-label"
+    },
+    {
+      "id": "d9-reassign-passage",
+      "reference_selector": null,
+      "candidate_selector": "[data-reassign-passage]"
+    },
+    {
+      "id": "d7-shifted-transcript-tools",
+      "reference_selector": ".tr-floating-tools",
+      "candidate_selector": "#transcript-panel:has(.transcript-pane > .hint[role=\"status\"]:has(> strong)) .tr-floating-tools",
+      "candidate_optional": true
+    },
+    {
+      "id": "q5-settled-speaker-labels",
+      "reference_selector": ".legend-chip",
+      "candidate_selector": ".legend-chip"
+    },
+    {
+      "id": "q5-transcript-cards",
+      "reference_selector": ".utt",
+      "candidate_selector": ".transcript-card"
+    }
+  ]
+}

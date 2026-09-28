@@ -13,6 +13,7 @@ export interface TranscriptItem {
   display_name: string;
   confidence?: number | null;
   state: "provisional" | "confirmed" | "final";
+  settled?: boolean;
   segment_id?: string | null;
   provisional_stale?: boolean | null;
   refinement_status?: "online_preview" | "tentative_refined" | "confirmed" | null;
@@ -51,6 +52,7 @@ export type WsEvent =
       error?: string | null;
       status_line?: string | null;
       needs_review?: boolean;
+      live_label_policy?: "current" | "La";
     }
   | {
       type: "transcript_update";

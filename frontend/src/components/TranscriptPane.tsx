@@ -1,31 +1,27 @@
-import { transcriptLaneLabel } from "../lib/transcriptOrder";
-import { Fragment, type JSX } from "preact";
+import { type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { requestMeetingHistoryRefresh, SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { nameMeetingSpeaker, reassignMeetingPassages } from "../api/speakers";
 import {
   buildTranscriptExportText,
-  formatTranscriptClockTime,
   serializeTranscriptExport,
   triggerTranscriptExportDownload,
   type TranscriptExportFormat
 } from "../lib/transcriptExport";
 import { groupSegmentsIntoTurns, type TranscriptTurn } from "../lib/mergeTranscript";
 import {
-  buildConsecutiveSpeakerMap,
   buildSpeakerColorMap,
   buildSpeakerLegendKey,
   isBackendUnknownSpeakerId,
-  resolveSpeakerColorToken,
-  resolveVisibleSpeakerLabel
+  resolveSpeakerColorToken
 } from "../lib/speakerMap";
+import { buildTranscriptSearchResults } from "../lib/transcriptSearch";
+import { isSettledTurn, settledSpeakerNumbers, transcriptCardSpeakerLabel } from "../lib/transcriptCards";
 import {
-  buildTranscriptSearchResults,
-  type TranscriptSearchPart
-} from "../lib/transcriptSearch";
-import {
+  liveLabelPolicy,
   sessionId,
   sessionNeedsReview,
+  sessionMode,
   sessionStatus,
   sessionTitle,
   sessionTranscriptItems,
@@ -33,6 +29,7 @@ import {
   transcriptSearchQuery
 } from "../state/session";
 import { autoscroll } from "../state/ui";
+import { TranscriptCards } from "./TranscriptCards";
 
 interface TranscriptLegendEntry {
   colorToken: string;
@@ -53,25 +50,6 @@ function matchesFindShortcut(event: KeyboardEvent): boolean {
     event.key.toLocaleLowerCase() === "f" &&
     (event.metaKey || event.ctrlKey) &&
     !event.altKey
-  );
-}
-
-function renderSearchParts(
-  parts: readonly TranscriptSearchPart[],
-  activeMatchId: number
-): JSX.Element[] {
-  return parts.map((part, index) =>
-    part.matchId === null ? (
-      <Fragment key={`text-${index}`}>{part.text}</Fragment>
-    ) : (
-      <mark
-        key={`match-${part.matchId}-${index}`}
-        className={`tr-search-match${part.matchId === activeMatchId ? " is-active" : ""}`}
-        data-search-match-id={part.matchId}
-      >
-        {part.text}
-      </mark>
-    )
   );
 }
 
@@ -122,16 +100,20 @@ export function TranscriptPane() {
 
   const fullTranscriptItems = transcript.value;
   const searchQuery = transcriptSearchQuery.value.trim();
-  const genericSpeakerNames = fullTranscriptItems.filter(item => item.display_name === item.speaker).map((item) => ({
-    display_name: item.display_name
-  }));
-  const consecutiveSpeakerMap = buildConsecutiveSpeakerMap(genericSpeakerNames);
   const speakerColorMap = buildSpeakerColorMap(fullTranscriptItems);
   const allTurns = groupSegmentsIntoTurns(fullTranscriptItems);
+  const automaticProcessingRunning =
+    sessionStatus.value === "active" ||
+    sessionStatus.value === "closing" ||
+    (sessionStatus.value === "closed" && allTurns.some(turn => turn.state !== "final"));
+  const finalized = !automaticProcessingRunning;
+  const speakerNumbers = settledSpeakerNumbers(allTurns, finalized);
+  const speakerLabel = (item: typeof allTurns[number]) =>
+    transcriptCardSpeakerLabel(item, speakerNumbers, liveLabelPolicy.value, finalized);
   const searchResults = buildTranscriptSearchResults(
     allTurns,
     searchQuery,
-    (turn) => visibleSpeakerName(turn, consecutiveSpeakerMap)
+    speakerLabel
   );
   const activeSearchMatchId =
     searchResults.matchCount > 0
@@ -143,20 +125,18 @@ export function TranscriptPane() {
   const transcriptExportAvailable = transcriptAvailable && activeSessionId !== null;
   const legendEntries = buildLegendEntries(
     fullTranscriptItems,
-    consecutiveSpeakerMap,
+    (item) => transcriptCardSpeakerLabel(item, speakerNumbers, liveLabelPolicy.value, finalized),
     speakerColorMap
   );
   const correctionSpeakers = legendEntries.filter(
     entry => !isBackendUnknownSpeakerId(entry.speakerId)
   );
-  const automaticProcessingRunning =
-    sessionStatus.value === "active" ||
-    sessionStatus.value === "closing" ||
-    (sessionStatus.value === "closed" && allTurns.some(turn => turn.state !== "final"));
   const canCorrectPassages =
     activeSessionId !== null &&
     ["closed", "failed", "aborted"].includes(sessionStatus.value) &&
     !automaticProcessingRunning;
+  const settlingVisible = transcriptAvailable && !finalized &&
+    allTurns.some(turn => !isSettledTurn(turn, finalized));
 
   useEffect(() => {
     setNamingTarget(null);
@@ -232,10 +212,10 @@ export function TranscriptPane() {
       setNamingMessage(result.enrollment === "not_requested"
         ? `Saved ${result.label}. Voiceprint not saved.`
         : result.enrollment === "unavailable"
-        ? `Saved ${result.label}. No retained voice evidence is available for a new voiceprint.`
+        ? `Saved ${result.label}. Voiceprint not saved: at least 2 seconds of finished, clear speech is needed.`
         : result.enrollment === "enrolled"
         ? `Saved ${result.label}. Voiceprint saved privately in this browser workspace.`
-        : `Saved ${result.label}. Voiceprint will save when enough clear speech arrives before Stop.`);
+        : `Saved ${result.label}. Voiceprint will save when at least 2 seconds of finished, clear speech is available before Stop.`);
       setNamingTarget(null);
     } catch (error) {
       if (sessionId.value === meetingId) {
@@ -344,6 +324,21 @@ export function TranscriptPane() {
     return () => window.cancelAnimationFrame(frameId);
   }, [activeSearchMatchId, findOpen, searchQuery]);
 
+  useEffect(() => {
+    if (activeSessionId && sessionMode.value === "live" && sessionStatus.value === "active") {
+      autoscroll.value = true;
+    }
+  }, [activeSessionId]);
+
+  useEffect(() => {
+    if (!autoscroll.value || findOpen) return;
+    const frameId = window.requestAnimationFrame(() => {
+      const node = transcriptScrollRef.current;
+      if (node) node.scrollTop = node.scrollHeight;
+    });
+    return () => window.cancelAnimationFrame(frameId);
+  }, [autoscroll.value, findOpen, fullTranscriptItems]);
+
   function cycleSearchMatch(direction: -1 | 1) {
     if (searchResults.matchCount === 0) {
       return;
@@ -355,9 +350,7 @@ export function TranscriptPane() {
   }
 
   async function handleCopy(): Promise<void> {
-    const text = buildTranscriptExportText(allTurns, (turn) =>
-      visibleSpeakerName(turn, consecutiveSpeakerMap)
-    );
+    const text = buildTranscriptExportText(allTurns, speakerLabel);
     try {
       await copyTextToClipboard(text);
       setCopied(true);
@@ -374,7 +367,7 @@ export function TranscriptPane() {
     triggerTranscriptExportDownload(serializeTranscriptExport(
       format,
       allTurns,
-      (turn) => visibleSpeakerName(turn, consecutiveSpeakerMap),
+      speakerLabel,
       { sessionId: activeSessionId, exportedAt: new Date() },
       { needsReview: sessionNeedsReview.value }
     ));
@@ -442,7 +435,7 @@ export function TranscriptPane() {
             <input ref={namingInputRef} id="speaker-name-input" value={speakerName} required
               disabled={savingName} onInput={(event) => setSpeakerName(event.currentTarget.value)} />
             <label className="sp-voiceprint"><input type="checkbox" checked={saveVoiceprint} onChange={event => setSaveVoiceprint(event.currentTarget.checked)} disabled={savingName} /><span>Save voiceprint</span></label>
-            <p className="hint">Applies to this speaker throughout this meeting. When checked, enough clear speech also saves a private voiceprint. People may share the same name.</p>
+            <p className="hint">Applies to this speaker throughout this meeting. Saving a private voiceprint needs at least 2 seconds of finished, clear speech; speech still being reviewed does not count. People may share the same name.</p>
             {namingError ? <p role="alert">{namingError}</p> : null}
             <div className="history-dialog-actions">
               <button className="history-toolbar-btn" type="button" disabled={savingName} onClick={() => setNamingTarget(null)}>Cancel</button>
@@ -638,60 +631,16 @@ export function TranscriptPane() {
           </div>
         ) : null}
 
+        {settlingVisible ? <p className="transcript-settling-hint" data-settling-hint="true">
+          Identity settling. Live labels may change as speech is reviewed.
+        </p> : null}
         <div ref={transcriptScrollRef} className="tr-body" id="tr-body">
           {transcriptAvailable ? (
-            searchResults.turns.map((searchTurn, index) => {
-              const { speakerLabel, speakerParts, textParts, turn } = searchTurn;
-              const previousTurn = index > 0 ? searchResults.turns[index - 1]?.turn : null;
-              const isLastTurn = index === searchResults.turns.length - 1;
-              const colorToken = resolveSpeakerColorToken(turn.speaker, speakerColorMap);
-              return (
-                <article
-                  key={`${turn.segment_ids.join(",")}-${turn.start}-${index}`}
-                  className="utt"
-                  data-continuation={String(previousTurn?.speaker_entity_id === turn.speaker_entity_id && previousTurn?.source_lane === turn.source_lane)}
-                  data-new-speaker={String(index === 0 || previousTurn?.speaker_entity_id !== turn.speaker_entity_id || previousTurn?.source_lane !== turn.source_lane)}
-                  data-preview-stale={String(turn.state === "provisional" && turn.provisional_stale)}
-                  data-state={turn.state}
-                  data-source-lane={turn.source_lane}
-                  data-turn-start={turn.start}
-                  data-turn-end={turn.end}
-                  data-target-keys={turn.target_segment_keys.join("|")}
-                  data-segments={JSON.stringify(turn.segments)}
-                  style={{ "--sp": colorToken } as JSX.CSSProperties}
-                >
-                  <div className="utt-meta">
-                    <button type="button" className="utt-speaker" data-speaker-id={turn.speaker_entity_id}
-                      aria-label={`Name speaker ${speakerLabel}`}
-                      onClick={() => openSpeakerName(legendEntries.find(entry => entry.speakerId === turn.speaker_entity_id))}>
-                      <span className="utt-speaker-label">
-                        {renderSearchParts(speakerParts, activeSearchMatchId)}
-                      </span>
-                    </button>
-                    {automaticProcessingRunning ? <span className="hint">Identity provisional</span> : null}
-                    {turn.source_lane && <span className="utt-lane">{transcriptLaneLabel(turn.source_lane)}</span>}
-                    <div className="utt-time">{formatTranscriptClockTime(turn.start)}</div>
-                  </div>
-                  <p className="utt-text">
-                    {turn.state === "provisional" ? (
-                      <>
-                        <span className={`prov${turn.provisional_stale ? " is-stale" : ""}`}>
-                          {renderSearchParts(textParts, activeSearchMatchId)}
-                        </span>
-                        {isLastTurn ? <span className="live-caret" aria-hidden="true" /> : null}
-                      </>
-                    ) : (
-                      renderSearchParts(textParts, activeSearchMatchId)
-                    )}
-                  </p>
-                  {canCorrectPassages && turn.segment_ids.length > 0 ? (
-                    <button type="button" className="history-action-btn"
-                      data-reassign-passage={turn.segment_ids.join(",")}
-                      onClick={() => openPassageCorrection(turn)}>Reassign passage</button>
-                  ) : null}
-                </article>
-              );
-            })
+            <TranscriptCards searchTurns={searchResults.turns} activeMatchId={activeSearchMatchId}
+              finalized={finalized} canCorrectPassages={canCorrectPassages}
+              speakerColorMap={speakerColorMap}
+              onSpeakerClick={(id) => openSpeakerName(legendEntries.find(entry => entry.speakerId === id))}
+              onPassageCorrection={openPassageCorrection} />
           ) : (
             <p className="empty-state transcript-empty-state">
               Transcript will appear here when a session starts.
@@ -704,23 +653,9 @@ export function TranscriptPane() {
   );
 }
 
-function visibleSpeakerName(
-  item: { speaker: string; speaker_entity_id: string; display_name: string },
-  consecutiveSpeakerMap: ReadonlyMap<string, string>
-): string {
-  if (isBackendUnknownSpeakerId(item.speaker_entity_id)) {
-    return resolveVisibleSpeakerLabel(item.speaker_entity_id, consecutiveSpeakerMap);
-  }
-  // A user may choose a label that looks like a generic speaker tag. Names are
-  // literal display text, not input to automatic numbering.
-  return item.display_name !== item.speaker
-    ? item.display_name
-    : resolveVisibleSpeakerLabel(item.speaker, consecutiveSpeakerMap);
-}
-
 function buildLegendEntries(
   items: typeof transcript.value,
-  consecutiveSpeakerMap: ReadonlyMap<string, string>,
+  speakerLabel: (item: typeof transcript.value[number]) => string,
   speakerColorMap: ReadonlyMap<string, string>
 ): TranscriptLegendEntry[] {
   const entries = new Map<string, TranscriptLegendEntry>();
@@ -732,7 +667,7 @@ function buildLegendEntries(
       continue;
     }
 
-    const visibleLabel = visibleSpeakerName(item, consecutiveSpeakerMap);
+    const visibleLabel = speakerLabel(item);
     const legendKey = buildSpeakerLegendKey(item.speaker_entity_id, visibleLabel);
     if (!entries.has(legendKey)) {
       entries.set(legendKey, {

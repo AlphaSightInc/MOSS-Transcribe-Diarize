@@ -53,6 +53,7 @@ interface MossSnapshot {
   statusLine: string | null;
   needsReview?: boolean;
   labelRevisionVersion: number;
+  liveLabelPolicy: "current" | "La";
   canonicalSpeakers: string[];
   committed: MossCanonicalCommit[];
   publishedSegments: TranscriptItem[] | null;
@@ -246,7 +247,8 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
             snapshot.terminalFailureReason ??
             snapshot.persistenceFailure,
           status_line: snapshot.statusLine,
-          needs_review: snapshot.needsReview
+          needs_review: snapshot.needsReview,
+          live_label_policy: snapshot.liveLabelPolicy
         });
         lastRenderedItems = renderedSnapshot.event.items;
         dispatch({ ...renderedSnapshot.event, items: applySpeakerLabels(lastRenderedItems, labelState.labels) });
@@ -660,6 +662,7 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
   const session = record(snapshot.session, "snapshot session");
   const descriptor = record(snapshot.descriptor, "snapshot descriptor");
   const identity = record(session.identity_snapshot, "identity snapshot");
+  const settledThrough = parseSettledThroughSamples(session.settled_through_samples);
   return {
     sessionId: requiredString(snapshot.session_id, "snapshot session_id"),
     status: lifecycle(session.status),
@@ -676,8 +679,10 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
       session.label_revision_version ?? 0,
       "label revision version"
     ),
+    liveLabelPolicy: session.live_label_policy === "La" ? "La" : "current",
     canonicalSpeakers: stringList(identity.canonical_speakers),
-    publishedSegments: parsePublishedSegments(session.effective_transcript, descriptor.sample_rate, stringList(identity.canonical_speakers)),
+    publishedSegments: parsePublishedSegments(session.effective_transcript, descriptor.sample_rate,
+      stringList(identity.canonical_speakers), settledThrough),
     committed: Array.isArray(session.committed)
       ? session.committed.map(parseCanonicalCommit)
       : fail("snapshot committed"),
@@ -693,8 +698,21 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
   };
 }
 
+function parseSettledThroughSamples(value: unknown): Map<string, number> {
+  const frontiers = new Map<string, number>();
+  if (value === undefined || value === null) return frontiers;
+  if (!Array.isArray(value)) return fail("settled through samples");
+  for (const entry of value) {
+    if (!Array.isArray(entry) || entry.length !== 2 ||
+        (entry[0] !== "system" && entry[0] !== "microphone")) return fail("settled lane frontier");
+    frontiers.set(entry[0], requiredNonNegativeNumber(entry[1], "settled lane frontier"));
+  }
+  return frontiers;
+}
+
 /** Published segments are authoritative, including an empty surface; old snapshots omit them. */
-function parsePublishedSegments(value: unknown, sampleRate: unknown, speakers: string[]): TranscriptItem[] | null {
+function parsePublishedSegments(value: unknown, sampleRate: unknown, speakers: string[],
+                                settledThrough: ReadonlyMap<string, number>): TranscriptItem[] | null {
   if (value === undefined) return null;
   if (!Array.isArray(value)) return fail("effective transcript");
   const rate = requiredPositiveNumber(sampleRate, "snapshot sample_rate");
@@ -705,13 +723,16 @@ function parsePublishedSegments(value: unknown, sampleRate: unknown, speakers: s
     const entity = optionalString(segment.canonical_speaker) ?? "S00";
     const speakerIndex = speakers.indexOf(entity);
     const speaker = speakerIndex < 0 ? "S00" : `S${String(speakerIndex + 1).padStart(2, "0")}`;
+    const endSample = requiredNonNegativeNumber(segment.end_sample, "segment end");
     return {
       ...(lane ? { source_lane: lane } : {}),
       start: requiredNonNegativeNumber(segment.start_sample, "segment start") / rate,
-      end: requiredNonNegativeNumber(segment.end_sample, "segment end") / rate,
+      end: endSample / rate,
       text: requiredString(segment.text, "segment text"),
       speaker, speaker_entity_id: entity, display_name: speaker,
-      state: "confirmed", segment_id: `effective:${index}`
+      state: "confirmed", segment_id: `effective:${index}`,
+      settled: segment.authority === "settled" &&
+        (!lane || !settledThrough.has(lane) || endSample <= settledThrough.get(lane)!)
     };
   });
 }

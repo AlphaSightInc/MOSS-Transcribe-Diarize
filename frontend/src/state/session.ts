@@ -24,10 +24,12 @@ export const sessionError = signal<string | null>(null);
 export const sessionTitle = signal("");
 export const sessionStatusLine = signal<string | null>(null);
 export const sessionNeedsReview = signal(false);
+export const liveLabelPolicy = signal<"current" | "La">("current");
 
 export function applySessionStateEvent(
   event: Extract<WsEvent, { type: "session_state" }>
 ): void {
+  const previousSessionId = sessionId.value;
   sessionId.value = event.session_id;
   sessionMode.value = event.mode;
   sessionState.value = event.state;
@@ -36,6 +38,8 @@ export function applySessionStateEvent(
   sessionStatusLine.value = event.status_line ?? null;
   if (typeof event.needs_review === "boolean") sessionNeedsReview.value = event.needs_review;
   else if (event.status === "active") sessionNeedsReview.value = false;
+  if (event.live_label_policy) liveLabelPolicy.value = event.live_label_policy;
+  else if (previousSessionId !== event.session_id) liveLabelPolicy.value = "current";
 }
 
 export function applyTranscriptUpdate(
@@ -63,5 +67,6 @@ export function resetSessionState(): void {
   sessionError.value = null;
   sessionStatusLine.value = null;
   sessionNeedsReview.value = false;
+  liveLabelPolicy.value = "current";
   clearSessionDisplay();
 }

@@ -48,6 +48,7 @@ it.each([
   expect(root.querySelector("dialog")?.textContent).not.toContain("active meeting");
   const checkbox = root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')!;
   expect(checkbox.checked).toBe(true);
+  expect(root.querySelector('dialog .hint')?.textContent).toContain("at least 2 seconds of finished, clear speech");
   if (!saveVoiceprint) act(() => checkbox.click());
   act(() => {
     const input = root.querySelector<HTMLInputElement>('#speaker-name-input')!;
@@ -55,8 +56,9 @@ it.each([
   });
   await act(async () => { root.querySelector('dialog form')!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   const assertNames = () => {
-    expect([...root.querySelectorAll('.utt-lane')].map(n => n.textContent)).toEqual(["System", "Microphone", "System"]);
-    expect([...root.querySelectorAll('.utt-speaker-label')].map(n => n.textContent)).toEqual(["After", "Other", "After"]);
+    expect([...root.querySelectorAll('.utt-lane')].map(n => n.textContent)).toEqual(["System", "Microphone"]);
+    expect([...root.querySelectorAll('.utt-speaker-label')].map(n => n.textContent)).toEqual(["After", "Other"]);
+    expect([...root.querySelectorAll('.utt-text')].map(n => n.textContent)).toEqual(["Words 0", "Words 2", "Words 1"]);
     expect([...root.querySelectorAll('.legend-chip-name')].map(n => n.textContent)).toEqual(["After", "Other"]);
     if (status === "completed") {
       const body = providerBody(meeting(), {endpoint:"", model:"test", apiKey:"", prompt:"Summarize", language:"English", timeoutSeconds:60});
@@ -69,6 +71,9 @@ it.each([
     }
   };
   await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
+  if (saveVoiceprint && status === "completed") {
+    expect(root.textContent).toContain("Voiceprint not saved: at least 2 seconds of finished, clear speech is needed.");
+  }
   assertNames();
   await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="m"]')!.click());
   await vi.waitFor(assertNames);
@@ -161,7 +166,9 @@ it("keeps adjacent unknown passages as separate correction targets", async () =>
     render(<TranscriptPane />, root);
   });
 
-  expect(root.querySelectorAll(".utt")).toHaveLength(2);
+  expect(root.querySelectorAll(".utt")).toHaveLength(1);
+  expect(root.querySelector('[data-reassign-passage="unknown-one"]')).not.toBeNull();
+  expect(root.querySelector('[data-reassign-passage="unknown-two"]')).not.toBeNull();
   act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="unknown-two"]')!.click());
   act(() => {
     const input = root.querySelector<HTMLInputElement>('dialog input[aria-label="New person name"]')!;
@@ -372,13 +379,14 @@ it("keeps closed-but-finalizing identity provisional and passage correction unav
     render(<TranscriptPane />, root);
   });
 
-  expect(root.textContent).toContain("Identity provisional");
+  expect(root.textContent).toContain("Identity settling");
+  expect(root.querySelectorAll('[data-settling-hint="true"]')).toHaveLength(1);
   expect(root.querySelector('[data-reassign-passage="one"]')).toBeNull();
 
   act(() => replaceTranscript([
     {segment_id:"one",start:0,end:1,text:"Settled",speaker:"person-a",speaker_entity_id:"person-a",display_name:"Alex",state:"final"}
   ]));
-  expect(root.textContent).not.toContain("Identity provisional");
+  expect(root.textContent).not.toContain("Identity settling");
   expect(root.querySelector('[data-reassign-passage="one"]')).not.toBeNull();
 });
 

@@ -31,6 +31,7 @@ export interface TranscriptTurn {
   speaker_entity_id: string;
   display_name: string;
   state: TranscriptState;
+  settled?: boolean;
   text: string;
   segment_ids: string[];
   target_segment_keys: string[];
@@ -172,7 +173,8 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
     const sameTranscriptLane =
       last !== null && last.source_lane === segment.source_lane &&
       ((last.state === "provisional" && segment.state === "provisional") ||
-        (isCommittedState(last) && isCommittedState(segment)));
+        (isCommittedState(last) && isCommittedState(segment))) &&
+      Boolean(last.settled) === Boolean(segment.settled);
     const lastIdentity = last === null
       ? ""
       : trimString(last.speaker_entity_id) || last.speaker;
@@ -222,6 +224,7 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
       speaker_entity_id: segment.speaker_entity_id,
       display_name: segment.display_name,
       state: segment.state,
+      settled: segment.settled,
       text: resolvedText,
       segment_ids: segmentIds,
       target_segment_keys: [buildTranscriptTargetKey(segment)],
@@ -248,6 +251,7 @@ function stripDecorations(item: TranscriptLike): TranscriptItem {
     display_name: item.display_name,
     confidence: item.confidence ?? null,
     state: normalizeSegmentState(item.state),
+    settled: item.settled === true,
     segment_id: trimString(item.segment_id) || null,
     provisional_stale: item.provisional_stale === true,
     refinement_status: item.refinement_status ?? null,
@@ -279,6 +283,7 @@ function normalizeTranscriptItem(rawItem: TranscriptItem): TranscriptItem | null
     display_name: displayName,
     confidence: rawItem.confidence ?? null,
     state: normalizeSegmentState(rawItem.state),
+    settled: rawItem.settled === true,
     segment_id: trimString(rawItem.segment_id) || null,
     provisional_stale: rawItem.provisional_stale === true,
     refinement_status: rawItem.refinement_status ?? null,
