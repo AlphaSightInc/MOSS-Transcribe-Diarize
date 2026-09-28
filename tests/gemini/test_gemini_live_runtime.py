@@ -457,6 +457,43 @@ def test_system_first_voiced_word_reaches_public_preview_after_silent_ingress(tm
     rt._sessions["one"].engine.close()
 
 
+def test_public_provisional_suffix_collapses_overlapping_echo_preview(tmp_path):
+    from moss_transcribe_diarize.app.gemini_lane_engine import LaneGeminiEngine
+    from moss_transcribe_diarize.app.gemini_live_runtime import GeminiPreview
+
+    class IdleLane:
+        def __init__(self, publish): self.publish = publish
+        def push_audio(self, start_sample, pcm16): pass
+        def close(self): pass
+
+    engines = []
+    def factory(_id, publish, _usage):
+        engine = LaneGeminiEngine(
+            publish, system_factory=IdleLane, microphone_factory=IdleLane,
+            tape_root=tmp_path)
+        engines.append(engine)
+        return engine
+
+    rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
+                           engine_factory=factory)
+    rt.create(session_id="one")
+    for second in range(10):
+        rt.accept_frame("one", frame(second))
+    system_text = "After researching Nvidia for something like 500 hours"
+    echoed_text = "After researching NVIDIA forsomething like 500 hours. At the time"
+    engines[0]._on_update("system", GeminiPreview(10*16000, (
+        GeminiSegment(0, round(8.5*16000), system_text, source_lane="system"),)))
+    engines[0]._on_update("microphone", GeminiPreview(10*16000, (
+        GeminiSegment(0, 10*16000, echoed_text, source_lane="microphone"),)))
+    transcript = rt.snapshot("one").to_dict()["session"]["provisional"]["transcript"]
+    assert transcript == f"[0][S00]{system_text}[8.5]"
+    engines[0]._on_update("microphone", GeminiPreview(10*16000, (
+        GeminiSegment(0, 10*16000, "local operator", source_lane="microphone"),)))
+    transcript = rt.snapshot("one").to_dict()["session"]["provisional"]["transcript"]
+    assert "local operator" in transcript and system_text in transcript
+    engines[0].close()
+
+
 def test_stop_drains_rolling_tail_before_session_closes(tmp_path):
     async def run():
         first = GeminiSegment(0, 16000, "first", "speaker-0001")

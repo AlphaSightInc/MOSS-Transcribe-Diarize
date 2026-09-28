@@ -22,6 +22,19 @@ def _token(text: str) -> str:
     return "".join(re.findall(r"[^\W_]+(?:'[^\W_]+)?", text.lower(), flags=re.UNICODE))
 
 
+def _duplicate_preview(left: GeminiSegment, right: GeminiSegment) -> bool:
+    """Detect the same Live phrase in both capture lanes, including echo spacing drift."""
+    overlap = min(left.end_sample, right.end_sample) - max(left.start_sample, right.start_sample)
+    if overlap <= 0 or 2 * overlap < min(left.end_sample-left.start_sample,
+                                         right.end_sample-right.start_sample):
+        return False
+    a = "".join(character for character in left.text.casefold() if character.isalnum())
+    b = "".join(character for character in right.text.casefold() if character.isalnum())
+    shorter, longer = sorted((a, b), key=len)
+    return bool(shorter and (shorter == longer or len(shorter) >= 16
+                             and longer.startswith(shorter)))
+
+
 class TextEchoGuard:
     """Drop an exact normalized mic token near a system token in audio time."""
 
@@ -362,9 +375,15 @@ class LaneGeminiEngine:
                                    row.end_sample, row.text, row.speaker, lane_name)
                      for lane_name, preview in self._previews.items() if preview is not None
                      for row in preview.segments if row.end_sample > self._base_committed),
-                    key=lambda row: (row.start_sample, self.LANES.index(row.source_lane))))
+                    key=lambda row: (self.LANES.index(row.source_lane), row.start_sample)))
+                unique: list[GeminiSegment] = []
+                for row in segments:
+                    if not any(_duplicate_preview(prior, row) for prior in unique):
+                        unique.append(row)
                 if end > self._base_committed:
-                    self.publish(GeminiPreview(end, segments))
+                    self.publish(GeminiPreview(end, tuple(sorted(
+                        unique, key=lambda row: (row.start_sample,
+                                                 self.LANES.index(row.source_lane))))))
             elif isinstance(update, GeminiBase):
                 # Inner engines account locally. The public base advances only when
                 # both lane windows are ready, except for the bounded lag fallback.

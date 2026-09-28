@@ -148,6 +148,7 @@ GEMINI_MIC_WINDOW_STRIDE_SECONDS = 15
 GEMINI_CONTINUITY_E = 0.46
 GEMINI_CONTINUITY_W = 0.60
 GEMINI_BIRTH_MIN_SECONDS = 2
+GEMINI_EMBEDDING_INTERVAL_WORKERS = 3
 
 
 def _gemini_http_options():
@@ -199,7 +200,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     bounds = replace(_bounds(config.bounds_config),
                      max_tape_bytes=max(int(config.bounds_config["max_tape_bytes"]),
                                         60 * 60 * 16_000 * 2))
-    encoder = _identity_encoder(config)
+    encoder = _identity_encoder(config, interval_workers=GEMINI_EMBEDDING_INTERVAL_WORKERS)
     policy = {"model": "gemini-3.5-transcribe",
               "window_max_seconds": GEMINI_WINDOW_LMAX_SECONDS,
               "stride_seconds": GEMINI_WINDOW_STRIDE_SECONDS,

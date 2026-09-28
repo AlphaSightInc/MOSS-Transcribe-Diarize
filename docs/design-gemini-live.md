@@ -362,3 +362,27 @@ DER .048287. Its Bill label lag p50 was 17.845 s and system batch+Live cost
 was $2.345/h; that cost excludes the per-meeting terminal and mic costs
 included in this model. Product-path qualification remains pane 6.2's run.
 One-command state: `python prototypes/gemini-runtime/mic_window_cost.py`.
+
+## Paced long-form lag and provisional echo
+
+The paced long60 receipt on `6c5776e3` exposed rolling work that sometimes
+outlasted its 15 s stride. In the first 600 s, 39 windows committed with one
+skipped tick; label delay grew while the worker was busy. P61's cached 180 s
+provider calls had 10.367 s median latency on 29 full windows there. A
+production ONNX probe of two labels with three attributed spans each took
+5.574/4.969 s with serial embedding and 2.719/2.645 s with three existing
+interval workers, with zero vector difference. The composition root now uses
+three workers. A 1.0x HTTP replay of the first 600 s of public long60 then
+lowered label p50 from 26.761 to 18.262 s and p90 from 37.508 to 25.015 s;
+skipped ticks fell from one to zero. The before run was part of continuous
+long60 and labeled 597/600 one-second buckets; the standalone after run
+labeled 583/600. The coverage difference and the unmeasured full-meeting lag
+remain limits of this latency verdict. P63 retains both receipts.
+
+The E1 browser receipt showed two provisional S00 lines for one 60–70 s phrase.
+Both system and microphone W3 streams were open, and the text differed mainly
+in capitalization and spacing. The lane composer now removes a temporally
+overlapping near-identical preview phrase, preferring the system lane in an
+echo tie. Distinct simultaneous microphone speech remains visible. Rolling and
+terminal text authority is unchanged; a public LiveSession snapshot regression
+checks the two cases.
