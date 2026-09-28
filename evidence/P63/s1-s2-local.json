@@ -1,0 +1,44 @@
+{
+  "s1": {
+    "fault": "loopback HTTP 503",
+    "physical_post_attempts": 2,
+    "adapter_errors_503": 2,
+    "adapter_retries_503": 1,
+    "max_attempts": 2,
+    "result": "pass"
+  },
+  "s2": {
+    "scope": "local TerminalTranscriber timing, fake Gemini provider with 2-second latency per call; not full paced HTTP or real Gemini latency",
+    "scenarios": [
+      {
+        "name": "silence10",
+        "audio_seconds": 600,
+        "terminal_seconds": 0.053,
+        "provider_calls": 0,
+        "peak_inflight": 0,
+        "voice_check": "production WebRTC mode 1"
+      },
+      {
+        "name": "manyspk",
+        "audio_seconds": 604,
+        "terminal_seconds": 2.006,
+        "provider_calls": 1,
+        "peak_inflight": 1,
+        "voice_check": "synthetic nonzero predicate"
+      },
+      {
+        "name": "long60",
+        "audio_seconds": 2586,
+        "terminal_seconds": 2.015,
+        "provider_calls": 3,
+        "peak_inflight": 3,
+        "voice_check": "synthetic nonzero predicate"
+      }
+    ],
+    "real_stop_to_final": "UNMEASURED; pane 6.4 must rerun paced public-audio stress on committed SHA"
+  },
+  "parent_sha": "6c5776e3",
+  "s3": {
+    "music5": "A single token on synthetic music is an accepted content limitation; no runtime change."
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "parent_sha": "56513e30",
+  "zero_send_prototype": {
+    "audio_seconds": 600,
+    "source": "existing voiced gate + GeminiLiveWordSource with fake Live transport",
+    "live_sessions": 0,
+    "usage_rows": 0,
+    "audio_seconds_sent": 0,
+    "cost_usd": 0,
+    "first_voiced_preview_latency_seconds": 0.0211,
+    "reopen_preview_latency_seconds": 0.0012
+  },
+  "real_live_probe": {
+    "source": "public Lex/Bill WAV, paced 1.0x, production WebRTC mode 1 and Gemini Live adapter",
+    "initial_digital_silence_seconds": 2,
+    "calls_before_voice": 0,
+    "audio_seconds_sent_before_voice": 0,
+    "cost_usd_before_voice": 0,
+    "first_voiced_preview_latency_seconds": 1.334,
+    "preview_events": 8,
+    "live_calls": 1,
+    "audio_seconds_sent": 6.5,
+    "cost_basis": "list_price_estimate",
+    "cost_usd": 0.000542,
+    "errors": []
+  },
+  "snapshot_test": "first voiced word appears in LiveSession provisional transcript at the correct absolute sample span"
+}
