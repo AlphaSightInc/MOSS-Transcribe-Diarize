@@ -85,6 +85,7 @@ async def run(root, chrome_binary=None, timeout_evidence=None):
                         await page.locator('[data-history-boot="ready"]').wait_for()
                         await page.get_by_role("button", name="Refresh", exact=True).click()
                         await page.locator(f'[data-open-meeting="{handle.meeting_id}"]').click()
+                        await page.get_by_role("button", name="Open summary", exact=True).click()
                         await page.get_by_test_id("final-summary-generate").wait_for()
                     evidence["history_causes_zero_provider_requests"] = len(calls) == 0
                     for index, page in enumerate(pages):
@@ -118,6 +119,7 @@ async def run(root, chrome_binary=None, timeout_evidence=None):
                     page = pages[0]
                     page.stage = "provider-probe.relay"
                     await page.get_by_role("region", name="Meeting history", exact=True).locator(f'[data-open-meeting="{ids[0]}"]').click()
+                    await page.get_by_role("button", name="Open summary", exact=True).click()
                     region = page.get_by_role("region", name="Browser AI settings", exact=True)
                     if await region.locator("form").count() == 0:
                         await region.get_by_role("button").click()

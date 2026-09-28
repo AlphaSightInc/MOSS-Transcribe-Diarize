@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 
 from moss_transcribe_diarize.app.phase2 import Meeting, _workspace_html
 from moss_transcribe_diarize.phase2_acceptance_browser import _meeting_opener
-from moss_transcribe_diarize.phase2_acceptance_summary import _summary_action
+from moss_transcribe_diarize.phase2_acceptance_summary import _summary_action, open_completed_summary
 from moss_transcribe_diarize.phase2_acceptance_external import FixedAccountCampaign, ExternalMeasurementError
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -19,7 +19,8 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
         browser = p.chromium.launch(executable_path=str(require_browser(p)))
         try:
             meeting = Meeting('audit-meeting', 'file', 'Audit title', 'completed', 1,
-                              transcript={'segments': []})
+                              transcript={'segments': [{'id': 'seg_0001', 'start': 0, 'end': 1,
+                                                         'speaker': 'S01', 'text': 'Local passage'}]})
             html = _workspace_html(SimpleNamespace(display_name='Audit'), [meeting], live_enabled=True)
             page = browser.new_page()
             def route(r):
@@ -40,8 +41,10 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
             assert page.get_by_text('Meeting history', exact=True).count() == 2
             assert page.locator('[data-open-meeting="audit-meeting"]').count() == 1
             assert opener.count() == 1
-            opener.click()
-            page.get_by_role('region', name='Final summary', exact=True).wait_for()
+            assert page.get_by_role('region', name='Final summary', exact=True).count() == 0
+            open_completed_summary(page, meeting.meeting_id)
+            expect(page.get_by_role('main', name='Summary view')).to_have_count(1)
+            expect(page.get_by_role('button', name='Back to meeting')).to_have_count(1)
             # Use the acceptance predicate's actual selector against the built UI.
             action = _summary_action(page)
             expect(action).to_have_count(1)
@@ -65,10 +68,29 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
             action.evaluate("button => button.textContent = 'Different wording'")
             expect(_summary_action(page)).to_have_count(1)
 
+            # G9 changes meetings while this page is open; its helper must return first.
+            open_completed_summary(page, meeting.meeting_id)
+            expect(page.get_by_role('main', name='Summary view')).to_have_count(1)
+            page.get_by_role('button', name='Back to meeting').click()
             page.get_by_role('region', name='Meeting history', exact=True).get_by_role('tab', name='Voiceprints', exact=True).click()
             assert page.get_by_role('button', name='Refresh', exact=True).count() == 2
             history = page.get_by_role('region', name='Meeting history', exact=True)
             history.locator('.history-panel-actions').get_by_role('button', name='Refresh', exact=True).click()
+
+            phone = browser.new_page(viewport={'width': 400, 'height': 900})
+            phone.route('**/*', route)
+            phone.goto('http://audit.test')
+            phone.locator('[data-history-boot="ready"]').wait_for()
+            _meeting_opener(phone, meeting.meeting_id).click()
+            phone.get_by_role('button', name='Reassign passage', exact=True).click()
+            expect(phone.locator('#passage-speaker-title')).to_be_visible()
+            phone.get_by_role('dialog', name='Reassign passage').get_by_role('button', name='Cancel').click()
+            phone.get_by_role('button', name='Open summary', exact=True).click()
+            expect(phone.get_by_role('main', name='Summary view')).to_be_visible()
+            assert phone.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+            phone.get_by_role('button', name='Back to meeting').click()
+            expect(phone.get_by_role('main', name='Summary view')).to_have_count(0)
+            assert phone.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
         finally:
             browser.close()
 

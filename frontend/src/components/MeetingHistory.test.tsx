@@ -11,6 +11,7 @@ import {
 import { replaceTranscript, resetSessionState, sessionTitle, sessionId, sessionMode, sessionNeedsReview, sessionStatus, transcript } from "../state/session";
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
+import { resetUiState } from "../state/ui";
 
 // These fixtures script history requests; model discovery is covered in FinalSummary.test.tsx.
 vi.mock("../lib/finalSummary", async importOriginal => ({
@@ -44,6 +45,7 @@ describe("MeetingHistory", () => {
     root = document.createElement("div");
     document.body.append(root);
     resetSessionState();
+    resetUiState();
     vi.restoreAllMocks();
   });
 
@@ -51,6 +53,7 @@ describe("MeetingHistory", () => {
     act(() => render(null, root));
     root.remove();
     resetSessionState();
+    resetUiState();
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });
@@ -81,6 +84,45 @@ describe("MeetingHistory", () => {
     await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: selected.id } })); });
     await vi.waitFor(() => expect([...root.querySelectorAll('[role="status"]')].some(node => node.textContent === notice)).toBe(true));
     expect(transcript.value.map(segment => segment.text)).toEqual(["first words"]);
+  });
+
+  it("opens the browser-owned summary page for only the selected completed meeting", async () => {
+    const first = meeting({ id: "first", title: "First meeting" });
+    const second = meeting({ id: "second", title: "Second meeting" });
+    const active = meeting({ id: "active", title: "In progress", status: "active" });
+    const meetings = [first, second, active];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url === "/api/meetings") return response({ meetings });
+      if (url === "/api/llm/models") return response({ data: [] });
+      if (url.endsWith("/summary")) return response({ summary: null });
+      return response(meetings.find(item => url.endsWith(`/${item.id}`)));
+    }));
+
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="first"]')).not.toBeNull());
+    const entry = document.body.querySelector<HTMLButtonElement>('[aria-label="Open summary"]')!;
+    expect(entry.disabled).toBe(true);
+    expect(document.body.querySelector('[aria-label="Final summary"]')).toBeNull();
+
+    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="first"]')!.click());
+    await vi.waitFor(() => expect(entry.disabled).toBe(false));
+    act(() => entry.click());
+    expect(document.body.querySelector('[aria-label="Summary view"] h2')?.textContent).toBe("First meeting");
+    expect(document.body.querySelectorAll('[aria-label="Browser AI settings"]')).toHaveLength(1);
+    expect(document.body.querySelectorAll('[aria-label="Final summary"]')).toHaveLength(1);
+    expect(document.body.querySelectorAll('[data-testid="final-summary-generate"]')).toHaveLength(1);
+
+    act(() => document.body.querySelector<HTMLButtonElement>(".summary-page-head button")!.click());
+    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="second"]')!.click());
+    await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="second"]')?.getAttribute("aria-pressed")).toBe("true"));
+    act(() => entry.click());
+    expect(document.body.querySelector('[aria-label="Summary view"] h2')?.textContent).toBe("Second meeting");
+    act(() => document.body.querySelector<HTMLButtonElement>(".summary-page-head button")!.click());
+    expect(document.body.querySelector('[aria-label="Summary view"]')).toBeNull();
+
+    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="active"]')!.click());
+    await vi.waitFor(() => expect(entry.disabled).toBe(true));
+    expect(document.body.querySelector('[aria-label="Final summary"]')).toBeNull();
   });
 
   it("hydrates saved review truth after Stop settles without a manual reopen", async () => {

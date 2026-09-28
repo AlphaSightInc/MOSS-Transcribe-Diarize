@@ -29,7 +29,7 @@
       "candidate_selector": "button.utt-speaker[data-speaker-id=\"S00\"] .utt-speaker-label"
     },
     {
-      "id": "d9-reassign-passage",
+      "id": "d9-u1-inline-reassign",
       "reference_selector": null,
       "candidate_selector": "[data-reassign-passage]"
     },

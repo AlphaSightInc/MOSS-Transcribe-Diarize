@@ -161,7 +161,15 @@ it("reassigns only a selected settled passage to a new recording-local person", 
     ]);
     render(<TranscriptPane />, root);
   });
-  act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="two"]')!.click());
+  const action = root.querySelector<HTMLButtonElement>('[data-reassign-passage="two"]')!;
+  expect(action.getAttribute("aria-label")).toBe("Reassign passage");
+  expect(action.title).toBe("Reassign passage");
+  expect(action.closest(".utt-content")?.querySelector(".utt-text")?.textContent).toBe("Selected");
+  expect(action.querySelector("svg[aria-hidden='true']")).not.toBeNull();
+  action.focus();
+  expect(document.activeElement).toBe(action);
+  act(() => action.click());
+  expect(root.querySelector("#passage-speaker-title")?.textContent).toBe("Reassign passage");
   const radios = root.querySelectorAll<HTMLInputElement>('dialog input[type="radio"]');
   act(() => radios[1].click());
   act(() => {

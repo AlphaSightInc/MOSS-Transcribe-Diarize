@@ -2005,6 +2005,13 @@ button.legend-chip:disabled {
   white-space: pre-line;
 }
 
+.utt-content { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.utt-content .utt-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.utt-reassign { flex: 0 0 34px; display: grid; place-items: center; align-self: flex-start; width: 34px; height: 34px; padding: 5px; appearance: none; border: 0; border-radius: 8px; background: transparent; color: var(--muted); opacity: .28; }
+.utt-reassign svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.utt:hover .utt-reassign, .utt-reassign:hover, .utt-reassign:focus-visible { opacity: 1; color: var(--ink); }
+.utt-reassign:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
 .utt-text .prov {
   color: var(--muted);
   background: linear-gradient(120deg, transparent 0%, rgba(181, 121, 30, 0.08) 25%, transparent 50%);
@@ -3585,6 +3592,29 @@ button.legend-chip:disabled {
 /* Continuations keep the reference columns without repeated metadata or segment gaps. */
 .utt[data-continuation="true"] .utt-meta { display: none; }
 .utt[data-continuation="true"] .utt-text { grid-column: -2 / -1; }
+.utt[data-continuation="true"] .utt-content { grid-column: -2 / -1; }
+.summary-page-entry { position: fixed; top: 18px; right: 24px; z-index: 60; border: 1px solid var(--line-2); border-radius: 999px; background: var(--surface); padding: 6px 13px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.summary-page-entry:disabled { opacity: .55; }
+.summary-page-entry:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.summary-page { position: fixed; inset: 0; z-index: 100; min-width: 0; min-height: 0; overflow: auto; background: var(--paper); }
+.summary-page-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 18px; padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.summary-page-head > div, .summary-page-body, .summary-page-body > * { min-width: 0; }
+.summary-page-head h2 { margin: 2px 0 0; font: 600 24px/1.2 var(--f-display); overflow-wrap: anywhere; }
+.summary-page-body { max-width: 880px; margin: auto; padding: 24px; display: grid; gap: 18px; }
+.summary-page-body .history-state-card { background: var(--surface); }
+@media (min-width: 1025px) {
+  .summary-page-entry { right: calc(var(--side-col) + 38px); }
+}
+@media (min-width: 1025px) and (max-width: 1280px) {
+  .summary-page-entry { right: 278px; }
+}
+@media (max-width: 768px) {
+  .summary-page-entry { top: 14px; right: 14px; }
+  .utt-reassign { opacity: .75; }
+  .summary-page-head { padding: 14px; gap: 10px; }
+  .summary-page-head h2 { font-size: 19px; }
+  .summary-page-body { padding: 14px; }
+}
 .workspace-nav { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 18px; padding: 12px 18px; background: var(--paper); border-bottom: 1px solid var(--line); }
 .workspace-nav a { color: var(--ink); }
 .phase2-workspace [data-workspace-section] { scroll-margin-top: 70px; }

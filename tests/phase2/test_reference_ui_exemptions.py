@@ -52,7 +52,7 @@ def test_fixture_names_only_decision_scoped_exemptions():
         "d7-review-banner",
         "d7-uncertain-legend-chip",
         "d7-uncertain-speaker-label",
-        "d9-reassign-passage",
+        "d9-u1-inline-reassign",
         "d7-shifted-transcript-tools",
     ]
 

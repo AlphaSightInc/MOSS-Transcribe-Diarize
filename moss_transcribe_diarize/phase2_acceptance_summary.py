@@ -52,6 +52,18 @@ def configure_external_summary(page, *, endpoint, model, api_key, prompt, timeou
     region.get_by_role("button", name="Save on this browser", exact=True).click()
 
 
+def open_completed_summary(page, meeting):
+    """Open the selected completed Meeting's browser-owned summary page."""
+    back = page.get_by_role("button", name="Back to meeting")
+    if back.count():
+        back.click()
+        page.get_by_role("main", name="Summary view", exact=True).wait_for(state="detached")
+    page.get_by_role("region", name="Meeting history", exact=True).get_by_role("button", name="Refresh", exact=True).click()
+    _meeting_opener(page, meeting).click()
+    page.get_by_role("button", name="Open summary", exact=True).click()
+    page.get_by_role("region", name="Final summary", exact=True).wait_for()
+
+
 def _provider_timestamp(seconds: object) -> str:
     whole = math.floor(float(seconds))
     hours, remainder = divmod(whole, 3600)
@@ -290,9 +302,7 @@ def measure_browser_summary(campaign):
 
                     def select(page, meeting):
                         page.stage = "summary.select-meeting"
-                        page.get_by_role("region", name="Meeting history", exact=True).get_by_role("button", name="Refresh", exact=True).click()
-                        _meeting_opener(page, meeting).click()
-                        page.get_by_role("region", name="Final summary", exact=True).wait_for()
+                        open_completed_summary(page, meeting)
                     def configure(page, owner, mode):
                         page.stage = f"summary.configure.{owner}.{mode}"
                         configure_external_summary(page, endpoint=provider.endpoint(mode), model=f"g9-model-{owner}",
@@ -311,8 +321,8 @@ def measure_browser_summary(campaign):
                         while len(provider.requests(mode)) < number and time.monotonic() < deadline: page.wait_for_timeout(100)
                         if len(provider.requests(mode)) != number: raise RuntimeError("Provider request count mismatch")
 
-                    configure(pages[0], "a", "history"); configure(pages[1], "b", "history")
                     select(pages[0], first); select(pages[1], second)
+                    configure(pages[0], "a", "history"); configure(pages[1], "b", "history")
                     for page in pages: page.wait_for_load_state("networkidle")
                     checks["history_does_not_infer"] = len(provider.calls) == 0
                     configure(pages[0], "a", "retry"); start(pages[0]); state(pages[0], "failed", 500000)

@@ -1,4 +1,5 @@
 import { computed, signal } from "@preact/signals";
+import type { Meeting } from "../api/meetings";
 import { browserStorage, loadBoolean, saveBoolean, storageKeys, type StorageLike } from "../lib/persistence";
 
 export type AppView = "transcript" | "summary";
@@ -13,6 +14,8 @@ export interface ToastItem {
 }
 
 export const view = signal<AppView>("transcript");
+export const selectedSummaryMeeting = signal<Meeting | null>(null);
+export const summaryPageOpen = signal(false);
 export const displayMode = signal<DisplayMode>("formatted");
 export const controlPanelCollapsed = signal(false);
 export const historyPanelCollapsed = signal(false);
@@ -73,6 +76,8 @@ export function clearToasts(): void {
 
 export function resetUiState(): void {
   view.value = "transcript";
+  selectedSummaryMeeting.value = null;
+  summaryPageOpen.value = false;
   displayMode.value = "formatted";
   controlPanelCollapsed.value = false;
   historyPanelCollapsed.value = false;

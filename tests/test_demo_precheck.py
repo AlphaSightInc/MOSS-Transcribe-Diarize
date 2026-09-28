@@ -14,7 +14,7 @@ SHA = 'a' * 40
 @pytest.mark.parametrize('case,failed', [
     ('okay', None), ('primary_only', None), ('openrouter', None),
     ('tls', 'trusted host'), ('identity', 'candidate identity'),
-    ('models', 'relay models'), ('bootstrap', 'bootstrap'),
+    ('models', 'relay models'), ('bootstrap', 'bootstrap'), ('ui', 'summary UI bundle'),
     ('empty', 'rtx4090'), ('timeout', 'macstudio'), ('malformed', 'rtx4090'),
 ])
 def test_precheck_go_requires_all_checks_and_keeps_protocol_bounds(tmp_path,case,failed):
@@ -38,6 +38,9 @@ elif url.endswith('/models'):
     result={'data':[{'upstream':'macstudio','id':'qwen/qwen3.6-35b-a3b'}, {'upstream':'rtx4090','id':'qwen38-27b-mtp'}]}
     if case=='primary_only': result={'data':[{'upstream':'macstudio','id':'qwen/qwen3.6-35b-a3b'}]}
     if case=='models': result={'data':[]}
+elif url.endswith('/static/app.js'):
+    body.write_text('Open summary Summary view Reassign passage' if case!='ui' else 'old bundle')
+    print('200\n0.012');sys.exit(0)
 elif url.endswith('/chat/completions'):
     request=json.loads(sys.stdin.read())
     assert request['max_tokens']==16 and request['stream'] is False

@@ -6,10 +6,9 @@ import importlib.util
 import json
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright, expect as sync_expect
 from playwright.async_api import async_playwright, expect as async_expect
 
-from moss_transcribe_diarize.phase2_acceptance_summary import configure_external_summary
+from moss_transcribe_diarize.app import phase2
 from tests.phase2.browser_support import require_browser
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -18,32 +17,47 @@ probe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(probe)
 
 
+async def open_selected_summary(page, context, app):
+    cookie = next(c["value"] for c in await context.cookies() if c["name"] == phase2.SESSION_COOKIE)
+    account = await app.state.phase2_store.account_for_session(cookie)
+    handle = await app.state.phase2_store.workspace(account).create_meeting("file")
+    await handle.commit_transcript({"segments": [{"start": 0, "end": 1,
+        "speaker": "S01", "text": "Local summary fixture"}]}, terminal=True)
+    await page.get_by_role("region", name="Meeting history", exact=True).get_by_role("button", name="Refresh", exact=True).click()
+    await page.locator(f'[data-open-meeting="{handle.meeting_id}"]').click()
+    await page.get_by_role("button", name="Open summary", exact=True).click()
+    await page.get_by_role("region", name="Browser AI settings", exact=True).wait_for()
+
+
 def test_deployed_predicate_selects_external_when_relay_is_default(tmp_path):
-    def browser_check(origin, chrome):
-        with sync_playwright() as p:
-            browser = p.chromium.launch(executable_path=chrome, headless=True)
+    async def browser_check(origin, chrome, app):
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(executable_path=chrome, headless=True)
             try:
-                page = browser.new_page()
-                page.goto(origin)
-                page.locator('[data-history-boot="ready"]').wait_for()
+                context = await browser.new_context()
+                page = await context.new_page()
+                await page.goto(origin)
+                await page.locator('[data-history-boot="ready"]').wait_for()
+                await open_selected_summary(page, context, app)
                 region = page.get_by_role("region", name="Browser AI settings", exact=True)
-                region.get_by_role("button").click()
-                sync_expect(region.get_by_label("Provider", exact=True)).to_have_value("relay")
-                assert region.get_by_label("Provider HTTPS URL", exact=True).count() == 0
-                configure_external_summary(page, endpoint="https://example.test/v1", model="external-test",
-                    api_key="test-key", prompt="test-prompt")
-                assert region.get_by_label("Provider", exact=True).input_value() == "external"
-                assert region.get_by_label("Provider HTTPS URL", exact=True).input_value() == "https://example.test/v1"
-                assert region.get_by_label("Model", exact=True).input_value() == "external-test"
+                await region.get_by_role("button").click()
+                await async_expect(region.get_by_label("Provider", exact=True)).to_have_value("relay")
+                assert await region.get_by_label("Provider HTTPS URL", exact=True).count() == 0
+                await probe.select_external_summary_provider(region)
+                await region.get_by_label("Provider HTTPS URL", exact=True).fill("https://example.test/v1")
+                await region.get_by_label("Model", exact=True).fill("external-test")
+                assert await region.get_by_label("Provider", exact=True).input_value() == "external"
+                assert await region.get_by_label("Provider HTTPS URL", exact=True).input_value() == "https://example.test/v1"
+                assert await region.get_by_label("Model", exact=True).input_value() == "external-test"
             finally:
-                browser.close()
+                await browser.close()
 
     async def run():
         async with async_playwright() as p:
             chrome = str(require_browser(p))
         config = json.dumps([{"name": "Test relay", "base_url": "http://127.0.0.1:1/v1", "models": ["test-model"]}])
-        async with probe.bench.running(tmp_path / "predicate.sqlite", llm_upstreams=config) as (_, port):
-            await asyncio.to_thread(browser_check, f"http://localhost:{port}", chrome)
+        async with probe.bench.running(tmp_path / "predicate.sqlite", llm_upstreams=config) as (app, port):
+            await browser_check(f"http://localhost:{port}", chrome, app)
     asyncio.run(run())
 
 
@@ -63,12 +77,13 @@ def test_deterministic_probe_selection_with_relay_models_present(tmp_path):
         async with async_playwright() as p:
             chrome = str(require_browser(p))
             config = json.dumps([{"name": "Selection fixture", "base_url": "http://127.0.0.1:1/v1", "models": ["relay-model"]}])
-            async with probe.bench.running(tmp_path / "async-selection.sqlite", llm_upstreams=config) as (_, port):
+            async with probe.bench.running(tmp_path / "async-selection.sqlite", llm_upstreams=config) as (app, port):
                 browser = await p.chromium.launch(executable_path=chrome, headless=True)
                 try:
                     page = await browser.new_page()
                     await page.goto(f"http://localhost:{port}")
                     await page.locator('[data-history-boot="ready"]').wait_for()
+                    await open_selected_summary(page, page.context, app)
                     region = page.get_by_role("region", name="Browser AI settings", exact=True)
                     await region.get_by_role("button").click()
                     await async_expect(region.get_by_label("Provider", exact=True)).to_have_value("relay")
