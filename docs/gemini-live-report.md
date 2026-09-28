@@ -1,6 +1,6 @@
 # Gemini Live Bake-off — decision report (2026-09-28)
 
-Markdown copy of the published report (https://claude.ai/artifact/7s7ufT7cauULkbDbfdi5Mx). Branch `gemini/live-hybrid`;
+Markdown copy of the published report (https://claude.ai/artifact/KSifNWFMk8wTghZSgW1cq6 (earlier version in the other org: https://claude.ai/artifact/7s7ufT7cauULkbDbfdi5Mx)). Branch `gemini/live-hybrid`;
 qualified runtime `0b9deed5` + preview fixes L-3 `fe1610f5`, L-4 `3901d2db`; base `8d8fb682`.
 MOSS comparator = recorded H1 #3 receipts (no GPU used in this campaign).
 
