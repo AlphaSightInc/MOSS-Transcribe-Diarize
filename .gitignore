@@ -119,3 +119,7 @@ evidence/mvpfix/*/raw/
 .wp35-tmp/
 # WP30 isolated load-campaign state, audio and credentials.
 .wp30/
+
+# local secrets (Gemini key etc.)
+.env.local
+.env
