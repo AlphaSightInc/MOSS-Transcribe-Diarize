@@ -23,7 +23,7 @@ def windows(seconds: int, *, length: int, stride: int) -> list[tuple[int, int]]:
             result.append((start // RATE, end // RATE))
             previous = end
     if previous < seconds * RATE:
-        result.append((max(0, seconds-length), seconds))  # idle/Stop drain
+        result.append((previous // RATE, seconds))  # exact idle/Stop suffix
     return result
 
 
@@ -48,8 +48,7 @@ def main() -> None:
     batch_cost_per_second = ((observed["cost_usd"]-
                               observed["live_list_price_estimate_usd"]) / batch_seconds)
     live_cost_per_second = observed["live_list_price_estimate_usd"] / (2*live_seconds_per_lane)
-    configs = {"observed_e1_system": (60, 10), "observed_e1_microphone": (60, 10),
-               "selected_system": (180, 15), "selected_microphone": (30, 15)}
+    configs = {"selected_system": (180, 15), "selected_microphone": (30, 15)}
     output = {"source_seconds": seconds, "observed_batch_usd_per_second": batch_cost_per_second,
               "observed_live_estimate_usd_per_second": live_cost_per_second,
               "observed_total_usd_per_audio_hour": observed["cost_usd"] / seconds * 3600,

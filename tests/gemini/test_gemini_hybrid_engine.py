@@ -430,7 +430,7 @@ def test_growing_window_skips_busy_ticks_and_counts_them_once():
     engine.close()
 
 
-def test_growing_idle_window_uses_max_context_and_exact_accepted_end():
+def test_growing_idle_window_uses_exact_unrevised_suffix():
     import time
     calls = []
     class Source:
@@ -452,7 +452,30 @@ def test_growing_idle_window_uses_max_context_and_exact_accepted_end():
     while engine._rolling_frontier < 45*16000 and time.monotonic() < until:
         time.sleep(.01)
     assert engine._rolling_frontier == 45*16000
-    assert calls == [30, 30]  # t40 [10,40], idle [15,45].
+    assert calls == [30, 5]  # t40 [10,40], exact idle suffix [40,45].
+    engine.close()
+
+
+def test_c4_stop_drain_sends_only_unrevised_suffix():
+    calls = []
+    class Source:
+        def bind(self, listener): pass
+        def push_audio(self, start_sample, pcm16): pass
+        async def finish(self): pass
+        def close(self): pass
+    class Diarizer:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            calls.append(len(pcm16)//32000)
+            return GeminiWords(())
+    engine = GeminiHybridEngine(lambda _update: None, word_source=Source(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=180, stride_seconds=15),
+        registry=OverlapRegistry(), diarizer=Diarizer(), terminal=FakeTerminal())
+    engine.push_audio(0, bytes(195*32000))
+    engine._future.result(timeout=5)
+    engine.push_audio(195*16000, bytes(5*32000))
+    assert asyncio.run(engine.drain_tail(2))
+    assert calls == [180, 5]
+    assert engine._rolling_frontier == 200*16000
     engine.close()
 
 

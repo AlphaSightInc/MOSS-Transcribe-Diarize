@@ -345,13 +345,15 @@ covered since the prior mic window contains WebRTC voice. An old utterance in
 the 30 s overlap cannot reopen a quiet stride; silent strides still advance
 the lane and shared meeting frontier. W3 remains lazy on first voiced mic audio.
 
-The provider-free production-scheduler probe uses E1's observed batch unit
-cost and Live list-price estimate. With the selected system S15/L180 and mic
-L30/S15, a 302 s E1-shaped meeting models
-**$2.146 per audio-hour system + $0.849 mic = $2.995 total**. For an hour with
+Idle and Stop drains send only the unrevised suffix `[rolling frontier,
+accepted end]`, matching P61's exact C4 Stop calls rather than repeating the
+full 180 s context. The provider-free production-scheduler probe uses E1's
+observed batch unit cost and Live list-price estimate. With selected system
+S15/L180 and mic L30/S15, a 302 s E1-shaped meeting models
+**$2.040 per audio-hour system + $0.832 mic = $2.872 total**. For an hour with
 both lanes continuously voiced, the same plan models **$2.598 system + $0.846
 mic = $3.444/hour**, including the existing 900 s/30 s terminal chunk cost.
-Thus the $3 target has negligible margin for E1 and fails for continuous
+Thus the $3 target passes this short E1 model and fails for continuous
 long-form speech. These are modeled dollars, not a new provider bill.
 The C4 **offline recorded-response prototype** measured accept6 H1 #3 settled
 ruled/raw DER .098518/.108748, E1 first displayed 3 system/4 mixed IDs,

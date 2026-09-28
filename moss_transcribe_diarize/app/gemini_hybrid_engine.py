@@ -329,7 +329,7 @@ class GeminiHybridEngine:
                     return
                 accepted = self._accepted
                 if self._idle_due and self._rolling_frontier < accepted:
-                    window = (max(0, accepted - self._window_max_samples), accepted, accepted)
+                    window = (self._rolling_frontier, accepted, accepted)
                     self._idle_due = False
                 else:
                     window = self.window_scheduler.next_window(accepted, self._last_window_end)
@@ -444,7 +444,7 @@ class GeminiHybridEngine:
             accepted = self._accepted
             if self._rolling_frontier >= accepted:
                 return True
-            start = max(0, accepted - self._window_max_samples)
+            start = self._rolling_frontier
             pcm = self._read_locked(start, accepted)
             new_audio = pcm[(max(start, self._last_window_end)-start)*2:]
         try:
