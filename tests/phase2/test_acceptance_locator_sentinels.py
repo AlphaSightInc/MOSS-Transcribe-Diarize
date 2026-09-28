@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from urllib.parse import urlsplit
 
 import pytest
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright, expect
 
 from moss_transcribe_diarize.app.phase2 import Meeting, _workspace_html
 from moss_transcribe_diarize.phase2_acceptance_browser import _meeting_opener
@@ -107,7 +107,7 @@ def test_summary_collector_waits_for_delayed_meeting_selection():
         from tests.phase2.browser_support import require_browser
         browser = p.chromium.launch(executable_path=str(require_browser(p)))
         try:
-            page = browser.new_page()
+            page = browser.new_page(viewport={'width': 1280, 'height': 720})
             page.set_default_timeout(3000)
             page.add_init_script("""(() => {
                 const originalFetch = window.fetch;
@@ -183,6 +183,49 @@ def test_summary_entry_does_not_cover_upload_or_navigation(width, height):
             nav = page.get_by_role('navigation', name='Workspace').bounding_box()
             assert overlap(upload) == 0
             assert overlap(nav) == 0
+        finally:
+            browser.close()
+
+
+@pytest.mark.parametrize('width,height', [(1280, 720), (1440, 900)])
+def test_every_meeting_card_is_clickable_at_g9_viewport(width, height):
+    meetings = [Meeting(f'card-{index}', 'file', f'Meeting {index}', 'completed',
+                        1789700400000 - index * 60000, transcript={'segments': []})
+                for index in range(6)]
+    by_id = {meeting.meeting_id: meeting for meeting in meetings}
+    html = _workspace_html(SimpleNamespace(display_name='Audit'), meetings, live_enabled=True)
+    with sync_playwright() as p:
+        from tests.phase2.browser_support import require_browser
+        browser = p.chromium.launch(executable_path=str(require_browser(p)))
+        try:
+            page = browser.new_page(viewport={'width': width, 'height': height})
+
+            def route(r):
+                path = urlsplit(r.request.url).path
+                if path == '/':
+                    r.fulfill(body=html, content_type='text/html')
+                elif path.startswith('/static/'):
+                    asset = ROOT / 'moss_transcribe_diarize/app/frontend_assets' / path.removeprefix('/static/')
+                    r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+                elif path.startswith('/api/meetings/') and path.split('/')[3] in by_id:
+                    r.fulfill(json=by_id[path.split('/')[3]].to_dict())
+                else:
+                    r.fulfill(json={'meetings': [meeting.to_dict() for meeting in meetings],
+                                    'voiceprints': [], 'summary': None})
+
+            page.route('**/*', route)
+            failed = []
+            for meeting in meetings:
+                page.goto('http://audit.test')
+                page.locator('[data-history-boot="ready"]').wait_for()
+                expect(page.locator('.account-history-panel [data-open-meeting]')).to_have_count(len(meetings))
+                card = page.locator(f'.account-history-panel [data-open-meeting="{meeting.meeting_id}"]')
+                try:
+                    card.click(timeout=1500)
+                    expect(card).to_have_attribute('aria-pressed', 'true', timeout=1500)
+                except (PlaywrightTimeoutError, AssertionError):
+                    failed.append(meeting.meeting_id)
+            assert not failed, f'Cards blocked at {width}x{height}: {failed}'
         finally:
             browser.close()
 

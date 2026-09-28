@@ -2816,6 +2816,8 @@ button.legend-chip:disabled {
   padding-bottom: 4px;
 }
 
+.history-panel .history-stack { flex-shrink: 0; }
+
 .history-group {
   display: grid;
   gap: 8px;
