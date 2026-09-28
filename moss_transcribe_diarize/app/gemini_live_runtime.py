@@ -875,12 +875,33 @@ def _trim_committed_preview(
                 for word in _PREVIEW_WORD.findall(tail.casefold())][-60:]
         matches = list(_PREVIEW_WORD.finditer(segment.text.casefold()))
         words = [_PREVIEW_NUMBERS.get(match.group(), match.group()) for match in matches]
+        tail = tails[segment.source_lane]
         blocks = [block for block in difflib.SequenceMatcher(
-            None, tails[segment.source_lane], words, autojunk=False
+            None, tail, words, autojunk=False
         ).get_matching_blocks() if block.size]
+        # Only a near-contiguous run anchored at the chunk's head counts as repeated speech:
+        # scattered common words ("and", "you", "the") also match and must not trim new words.
+        # Small insertions/deletions between the two models' wording are allowed (gaps of up
+        # to 8 words); the run must still be dense (>= 60 % of its span matched).
+        chain_end = matched = 0
+        first = previous = None
+        for block in blocks:
+            if previous is None:
+                if block.b > 3:
+                    break
+                first = block
+            elif (block.b - (previous.b + previous.size) > 8
+                  or block.a - (previous.a + previous.size) > 8):
+                break
+            matched += block.size
+            chain_end = block.b + block.size
+            previous = block
+        dense = first is not None and matched >= 0.6 * (chain_end - first.b)
+        repeats_tail_end = previous is not None and previous.a + previous.size >= len(tail) - 3
+        repeats_whole_chunk = previous is not None and chain_end >= len(words) - 1
         text = segment.text
-        if blocks and blocks[0].b <= 3 and sum(block.size for block in blocks) >= 5:
-            text = text[matches[max(block.b + block.size for block in blocks) - 1].end():]
+        if matched >= 5 and dense and (repeats_tail_end or repeats_whole_chunk):
+            text = text[matches[chain_end - 1].end():]
             text = text.lstrip(" \t\r\n,.;:!?")
         if text:
             result.append(replace(segment, text=text))
