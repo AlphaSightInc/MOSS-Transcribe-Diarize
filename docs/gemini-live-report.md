@@ -94,3 +94,8 @@ scripts/gemini-live/start-gemini.sh        # → https://127.0.0.1:18600/
   D14: drop the after-Stop pass (live 0.099 vs final 0.105 on 6 clips; long meetings lose 0.050 → 0.034 DER).
 - **Preview fixes after the report:** over-trim of fresh words fixed (`135e00a2`); preview repeats of committed text
   64% → 10% of screens with fresh words kept.
+- **Pilot guards (final branch 7ad946dc, runtime db643d8c):** preview-stall restart (witness: batch words ≥ 10 s the
+  preview missed) and final-pass coverage guard (witness: committed live rows; retry once, else keep live rows). A
+  WebRTC-witness v1 fired 22× on normal E1 audio (music counts as voiced) and raised label p50 18 → 62 s; reverted.
+  A preview-witnessed rolling retry fired 12× (mic preview hears echo) and was removed. Shipped set on real E1:
+  0 triggers, label p50/p90 19.0/26.5 s, calls/cost unchanged. Backend 2,544 passed, frontend 331.
