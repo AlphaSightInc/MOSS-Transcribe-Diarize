@@ -2040,6 +2040,9 @@ def create_phase2_app(
             audio_archive,
             max_bytes=max_tape_bytes,
         )
+        bind_stages = getattr(live_runtime, "bind_account_audio_stages", None)
+        if callable(bind_stages):
+            bind_stages(live_audio_stages)
         phase2_live = Phase2LiveMeetings(
             live_runtime,
             audio_archive=audio_archive,

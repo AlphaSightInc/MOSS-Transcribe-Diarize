@@ -97,6 +97,9 @@ async def _relabel_and_terminal_revision_replace_visible_rows(tmp_path):
     assert final.finalization_status == "final"
     assert [row.authority for row in final.effective_transcript] == ["terminal", "terminal"]
     assert final.accepted_samples == final.accounted_samples == 16000
+    terminal_events = [event for event in rt.events("one") if event.kind == "text_revision_applied" and event.payload.get("source") == "terminal"]
+    assert len(terminal_events) == 1
+    assert {key: terminal_events[0].payload[key] for key in ("start_sample", "end_sample", "finalization_status")} == {"start_sample": 0, "end_sample": 16000, "finalization_status": "final"}
 
 
 def test_two_sessions_abort_and_engine_failure_are_isolated(tmp_path):
@@ -162,9 +165,10 @@ def test_tape_degradation_is_unavailable_and_releases_scratch(tmp_path):
         )
         rt.create(session_id="one")
         rt.accept_frame("one", frame(0))
+        rt._sessions["one"].tape.release()  # Simulate a real tape loss before Stop.
         stopped = await rt.stop("one", 1.0)
         assert stopped.session.finalization_status == "unavailable"
-        assert "session_tape_released" in [event.kind for event in rt.events("one")]
+        assert rt._sessions["one"].tape.accounting(through_sample=16000).released
 
     asyncio.run(run())
 
@@ -186,7 +190,7 @@ def test_engine_usage_counters_are_per_session_content_free_and_copied(tmp_path)
     reporters["one"](kind="rolling", error_code="429", retry_code="429")
     reporters["two"](kind="terminal", audio_seconds_sent=20.0, cost_usd=0.02)
     first = rt.engine_diagnostics("one")
-    assert first == {
+    assert {key: first[key] for key in ("calls_by_kind", "errors_by_code", "retries_by_code", "timing_anomalies", "audio_seconds_sent", "cost_usd")} == {
         "calls_by_kind": {"live": 1, "rolling": 2}, "errors_by_code": {"429": 1},
         "retries_by_code": {"429": 1},
         "timing_anomalies": {"clamped": 1, "dropped": 2},
@@ -197,3 +201,43 @@ def test_engine_usage_counters_are_per_session_content_free_and_copied(tmp_path)
     assert rt.engine_diagnostics("two")["calls_by_kind"] == {"live": 1, "terminal": 1}
     with pytest.raises(ValueError):
         reporters["one"](kind="rolling", error_code="meeting words")
+
+
+def test_stale_preview_after_degraded_commit_is_ignored(tmp_path):
+    rt = GeminiLiveRuntime(
+        descriptor=descriptor(), tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage: ScriptedGeminiEngine(
+            publish, batches=[], terminal=()),
+    )
+    rt.create(session_id="one")
+    for sequence in range(50):
+        rt.accept_frame("one", frame(sequence))
+    rt.publish_update("one", GeminiBase(10*16000, (), degraded=True))
+    rt.publish_update("one", GeminiPreview(5*16000, (GeminiSegment(0, 16000, "stale"),)))
+    snap = rt.snapshot("one")
+    assert snap.session.status == "active"
+    assert snap.session.committed_samples == 10*16000
+    assert rt.engine_diagnostics("one")["degraded_path_activations"] == 1
+
+
+def test_account_stage_is_terminal_source_and_survives_view_release(tmp_path):
+    from moss_transcribe_diarize.app.phase2_audio import LiveMeetingAudioStages, MeetingAudioArchive
+    stages = LiveMeetingAudioStages(MeetingAudioArchive(tmp_path / "archive"), max_bytes=115_200_000)
+    stages.reserve("owner", "one")
+    rt = GeminiLiveRuntime(
+        descriptor=descriptor(), tape_storage_root=tmp_path / "scratch",
+        engine_factory=lambda _id, publish, _usage: ScriptedGeminiEngine(
+            publish, batches=[], terminal=(GeminiSegment(0, 16000, "hello", "speaker-0001"),)),
+    )
+    rt.bind_account_audio_stages(stages)
+    rt.create(session_id="one")
+    rt.accept_frame("one", frame(0))  # Legacy mono route writes into the same stage.
+    assert stages.get("one").path.stat().st_size == 32000
+    async def finish():
+        await rt.stop("one", 1.0)
+        await rt.wait_terminal("one")
+    asyncio.run(finish())
+    assert rt.snapshot("one").session.finalization_status == "final"
+    assert stages.get("one").path.exists()  # Account owns durable audio settlement.
+    assert not (tmp_path / "scratch").exists()  # No duplicate whole-recording tape.
+    stages.discard("owner", "one")

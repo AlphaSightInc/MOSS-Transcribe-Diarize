@@ -105,10 +105,8 @@ def _build_file_runner(args: argparse.Namespace):
 def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
     if args.live_helper_lease_seconds <= 0:
         raise SystemExit("--live-helper-lease-seconds must be positive.")
-    if args.live_engine == "gemini":
-        # Phase 1 ships the runtime contract and deterministic fake only. Do not start
-        # a meeting under a fake provider while the measured engine is still undecided.
-        raise SystemExit("Gemini Live engine is not installed; await the bake-off adapter.")
+    if getattr(args, "live_engine", "moss") == "gemini":
+        return _build_gemini_live_runtime_factory(args)
     from .live_provider_bundle import LiveProviderBundleConfig, build_live_runtime_factory
     from .runner_composition import LazyLiveRunner, build_terminal_finalizer
 
@@ -141,6 +139,75 @@ def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
     )
 
 
+def _build_gemini_live_runtime_factory(args: argparse.Namespace):
+    """Load the provider key only here; MOSS model/GPU construction stays outside this path."""
+    from google import genai
+    from google.genai import types
+    from .gemini_hybrid_engine import (BatchTailWordSource, FixedWindowScheduler,
+                                       GeminiHybridEngine, OverlapRegistry, WeSpeakerWindowEmbeddings)
+    from .gemini_live_runtime import GeminiLiveRuntime
+    from .gemini_provider import WindowDiarizer, TerminalTranscriber
+    from .live_provider_bundle import LiveProviderBundleConfig, _bounds, _identity_encoder
+    from .live_service_runtime import LiveServiceConfigHashes, LiveServiceDescriptor
+    from .live_service_runtime import hash_config
+
+    key = None
+    key_path = Path(__file__).resolve().parents[2] / ".env.local"
+    if key_path.exists():
+        for line in key_path.read_text().splitlines():
+            if line.startswith("GEMINI_API_KEY="):
+                key = line.partition("=")[2].strip()
+                break
+    key = key or os.environ.get("MOSS_GEMINI_API_KEY")
+    if not key:
+        raise SystemExit("Gemini key missing from .env.local or MOSS_GEMINI_API_KEY")
+    config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
+    bounds = _bounds(config.bounds_config)
+    encoder = _identity_encoder(config)
+    policy = {"model": "gemini-3.5-transcribe", "window_seconds": 60,
+              "stride_seconds": 10, "holdback_seconds": 10, "terminal_chunk_seconds": 1200}
+    identity_policy = {
+        "registry": "word-time-overlap-hungarian",
+        "voiceprint": f"{encoder.spec.provider}:{encoder.spec.revision}",
+        "voiceprint_state_sha": encoder.spec.state_sha256,
+        "embedding_dimension": encoder.spec.embedding_dimension,
+    }
+    descriptor = LiveServiceDescriptor(
+        source_revision=config.source_revision,
+        provider_name="gemini-3.5-transcribe",
+        provider_revision="hybrid-placeholder-v1",
+        provider_manifest_hash=hash_config({"gemini_policy": policy, "identity": identity_policy}),
+        config_hashes=LiveServiceConfigHashes.from_parts(
+            endpoint_config={"preview_seconds": 10, "preview_stride_seconds": 3},
+            identity_config=identity_policy,
+            decoder_config=policy,
+        ),
+        bounds=bounds,
+        frame_samples=int(config.bounds_config.get("frame_samples", bounds.max_frame_samples)),
+    )
+    client = genai.Client(api_key=key, http_options=types.HttpOptions(timeout=120_000))
+
+    def factory():
+        def engine_factory(_sid, publish, report_usage):
+            diarizer = WindowDiarizer(client, report_usage)
+            return GeminiHybridEngine(
+                publish,
+                word_source=BatchTailWordSource(diarizer),
+                window_scheduler=FixedWindowScheduler(),
+                registry=OverlapRegistry(),
+                diarizer=diarizer,
+                terminal=TerminalTranscriber(diarizer),
+                embedding_source=WeSpeakerWindowEmbeddings(encoder),
+                encoder_spec=encoder.spec,
+            )
+        return GeminiLiveRuntime(
+            descriptor=descriptor, engine_factory=engine_factory,
+            tape_storage_root=Path(args.file_work_root).expanduser() / "live-tapes",
+            voiceprint_encoder=encoder,
+        )
+    return factory
+
+
 def main(argv: Sequence[str] | None = None) -> None:
     try:
         import uvicorn
@@ -148,22 +215,17 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise SystemExit("Install uvicorn to run mtd-phase2-web.") from exc
 
     args = parse_args(argv)
-    if args.live_engine == "gemini":
-        # A phase-1 binary must refuse before constructing the MOSS file runner, which
-        # may load the local model/GPU. Real Gemini selection is wired after the bake-off.
-        raise SystemExit("Gemini Live engine is not installed; await the bake-off adapter.")
-    from .inference_scheduler import InferenceDispatchScheduler
-
-    args._inference_scheduler = InferenceDispatchScheduler(
-        max_calls=2,
-        max_background_calls=1,
-    )
+    if args.live_engine == "moss":
+        from .inference_scheduler import InferenceDispatchScheduler
+        args._inference_scheduler = InferenceDispatchScheduler(max_calls=2, max_background_calls=1)
+    else:
+        args._inference_scheduler = None
     from .phase2_llm import parse_upstreams
     parse_upstreams(args.llm_upstreams)
     from .phase2_operator import configure_operator_journal
 
     configure_operator_journal()
-    file_runner = _build_file_runner(args)
+    file_runner = _build_file_runner(args) if args.live_engine == "moss" else None
     live_runtime_factory = _build_live_runtime_factory(args, file_runner)
     app = create_phase2_app(
         database_path=Path(args.database).expanduser(),

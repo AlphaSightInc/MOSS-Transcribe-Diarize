@@ -1,8 +1,7 @@
 """Session-local Gemini engine seam behind the existing Live service contract.
 
-The engine is injected. This phase contains a deterministic fake, not a Google client.
-An engine may publish updates from its own worker; `push_audio` must return promptly and
-`finish` must await its last live updates before returning the terminal transcript.
+The engine is injected. Its worker may publish updates; `push_audio` must return promptly
+and `finish` must await live updates before returning the terminal transcript.
 """
 
 from __future__ import annotations
@@ -10,9 +9,11 @@ from __future__ import annotations
 import asyncio
 import math
 import re
+import tempfile
 import threading
 import time
 import uuid
+import wave
 from collections import deque
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -40,7 +41,75 @@ from .live_session import (
     TextRevisionProposal,
 )
 from .live_span_bounds import LIVE_SAMPLE_RATE, render_segments
-from .live_tape import CompleteMixedTape
+from .live_tape import CompleteMixedTape, CompleteMixedTapeUnavailable
+
+
+class _AccountStageTape:
+    """Read-only terminal view over Account's already-owned canonical mixed stage."""
+
+    def __init__(self, stage: object, *, capacity_bytes: int):
+        self.stage = stage
+        self.capacity_bytes = capacity_bytes
+        self._released = False
+
+    @property
+    def sample_count(self) -> int:
+        try:
+            return self.stage.path.stat().st_size // 2
+        except OSError:
+            return 0
+
+    @property
+    def taping(self) -> bool:
+        return not self._released and not self.stage.degraded
+
+    def covers(self, start_sample: int, end_sample: int) -> bool:
+        return self.taping and 0 <= start_sample < end_sample <= self.sample_count
+
+    def read(self, *, start_sample: int = 0, end_sample: int | None = None) -> bytes:
+        end = self.sample_count if end_sample is None else end_sample
+        if not self.covers(start_sample, end):
+            raise CompleteMixedTapeUnavailable("Account mixed stage does not cover requested audio")
+        with self.stage.path.open("rb") as source:
+            source.seek(start_sample * 2)
+            pcm = source.read((end - start_sample) * 2)
+        if len(pcm) != (end - start_sample) * 2:
+            raise CompleteMixedTapeUnavailable("Account mixed stage returned a short read")
+        return pcm
+
+    def write_wav(self, destination: str | Path, *, start_sample: int = 0,
+                  end_sample: int | None = None) -> int:
+        end = self.sample_count if end_sample is None else end_sample
+        pcm = self.read(start_sample=start_sample, end_sample=end)
+        with wave.open(str(destination), "wb") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(2)
+            wav.setframerate(LIVE_SAMPLE_RATE)
+            wav.writeframes(pcm)
+        return end - start_sample
+
+    def accounting(self, *, through_sample: int):
+        stage = self
+        class Accounting:
+            sample_count = stage.sample_count
+            released = stage._released
+            complete = (not stage.stage.degraded and sample_count == through_sample)
+            def to_dict(self):
+                return {
+                    "sample_count": self.sample_count,
+                    "through_sample": through_sample,
+                    "retained_bytes": self.sample_count * 2,
+                    "capacity_bytes": stage.capacity_bytes,
+                    "released": self.released,
+                    "complete": self.complete,
+                    "degradation": "account_stage_unavailable" if stage.stage.degraded else None,
+                    "source": "account_mixed_stage",
+                }
+        return Accounting()
+
+    def release(self) -> None:
+        # Account retains and later settles this canonical stage independently.
+        self._released = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +131,7 @@ class GeminiPreview:
 class GeminiBase:
     through_sample: int
     segments: tuple[GeminiSegment, ...]
+    degraded: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +139,7 @@ class GeminiRolling:
     start_sample: int
     end_sample: int
     segments: tuple[GeminiSegment, ...]
+    observations: tuple[object, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -123,8 +194,9 @@ class _GeminiState:
     session_id: str
     session: LiveSession
     engine: GeminiEngine | None
-    tape: CompleteMixedTape | None
+    tape: CompleteMixedTape | _AccountStageTape | None
     events: deque[LiveServiceEvent]
+    ingress_lock: threading.RLock = field(default_factory=threading.RLock)
     next_event_seq: int = 0
     terminal_failure: LiveServiceFailureRecord | None = None
     stop_task: asyncio.Task[LiveServiceSnapshot] | None = None
@@ -136,11 +208,21 @@ class _GeminiState:
     dropped_words: int = 0
     audio_seconds_sent: float = 0.0
     cost_usd: float = 0.0
+    degraded_path_activations: int = 0
+    window_lag_samples: list[int] = field(default_factory=list)
+    preview_lag_samples: list[int] = field(default_factory=list)
+    rolling_frontier: int = 0
+    voice_observations: dict[str, object] = field(default_factory=dict)
+    voiceprint_errors: int = 0
 
 
+@dataclass(frozen=True, slots=True)
 class GeminiLiveSnapshot(LiveServiceSnapshot):
+    diagnostics: dict[str, object] | None = None
+
     def to_dict(self) -> dict:
-        payload = super().to_dict()
+        payload = LiveServiceSnapshot.to_dict(self)
+        payload["engine_diagnostics"] = payload.pop("diagnostics")
         for row in payload["session"]["effective_transcript"]:
             if row.get("source_lane") is None:
                 row.pop("source_lane", None)
@@ -156,17 +238,37 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         descriptor: LiveServiceDescriptor,
         engine_factory: Callable[[str, Callable[[GeminiUpdate], None], Callable[..., None]], GeminiEngine],
         tape_storage_root: str | Path,
+        voiceprint_encoder: object | None = None,
     ) -> None:
-        self.descriptor = descriptor
+        # The same bound governs our scratch tape and Account's canonical audio stage.
+        # PCM16 mono at 16 kHz takes 115.2 MB for the supported 60-minute meeting.
+        self.descriptor = replace(
+            descriptor, bounds=replace(
+                descriptor.bounds,
+                max_retained_samples=max(descriptor.bounds.max_retained_samples, 960_000),
+                max_tape_bytes=max(descriptor.bounds.max_tape_bytes or 0, 115_200_000),
+            ),
+        )
         self._engine_factory = engine_factory
         self._tape_storage_root = Path(tape_storage_root)
+        self._account_audio_stages = None
+        self._voiceprint_encoder = voiceprint_encoder
         self._sessions: dict[str, _GeminiState] = {}
         self._lock = threading.RLock()
         self._publication_observer = None
         # Phase 2 binds the real finalizer. The sentinel tells Account publication that
         # terminal status must settle after session_closed, just as the MOSS path does.
         self._terminal_finalizer = object()
-        self._voiceprint_embedder_identity = None
+        spec = getattr(voiceprint_encoder, "spec", None)
+        self._voiceprint_embedder_identity = None if spec is None else (
+            f"{spec.provider}:{spec.revision}", spec.embedding_dimension,
+        )
+
+    def bind_account_audio_stages(self, stages: object) -> None:
+        """Use Account's reserved mixed stage for HTTP meetings before any create."""
+        if self._sessions:
+            raise RuntimeError("Account audio stages must bind before meeting creation")
+        self._account_audio_stages = stages
 
     def create(self, *, echo_mode: str | None = None, session_id: str | None = None) -> LiveServiceCreateResult:
         if echo_mode is not None and echo_mode not in {"headphones", "speakers"}:
@@ -176,12 +278,16 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             if session_id in self._sessions:
                 raise ValueError("live session id already exists.")
             session = LiveSession(max_retained_samples=self.descriptor.bounds.max_retained_samples)
-            tape = (
-                CompleteMixedTape(epoch=session.epoch,
+            stage = (None if self._account_audio_stages is None
+                     else self._account_audio_stages.get(session_id))
+            if stage is not None:
+                tape = _AccountStageTape(stage, capacity_bytes=self.descriptor.bounds.max_tape_bytes)
+            elif self.descriptor.bounds.max_tape_bytes is not None:
+                tape = CompleteMixedTape(epoch=session.epoch,
                     capacity_bytes=self.descriptor.bounds.max_tape_bytes,
                     storage_root=self._tape_storage_root)
-                if self.descriptor.bounds.max_tape_bytes is not None else None
-            )
+            else:
+                tape = None
             state = _GeminiState(session_id, session, None, tape,
                                  deque(maxlen=self.descriptor.bounds.max_events))
             self._sessions[session_id] = state
@@ -204,23 +310,32 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         del retryable_queue_backpressure
         with self._lock:
             state = self._get(session_id)
-            self._raise_terminal(state)
-            if state.stop_task is not None:
-                raise LiveSessionClosed("live session is stopping; no new frames are accepted.")
-            ack = state.session.accept_frame(frame)
-            if state.tape is not None:
-                state.tape.append(start_sample=ack.start_sample, pcm=frame.pcm)
-            self._record_event(state, "frame_accepted", {
-                "sequence": frame.sequence, "start_sample": ack.start_sample,
-                "end_sample": ack.end_sample, "queued_item_ids": (),
-            })
+        with state.ingress_lock:
+            with self._lock:
+                self._raise_terminal(state)
+                if state.stop_task is not None:
+                    raise LiveSessionClosed("live session is stopping; no new frames are accepted.")
+                ack = state.session.accept_frame(frame)
+                if isinstance(state.tape, CompleteMixedTape):
+                    state.tape.append(start_sample=ack.start_sample, pcm=frame.pcm)
+                elif isinstance(state.tape, _AccountStageTape) and not frame.lane_pcm:
+                    state.tape.stage.append_mixed(
+                        pcm=frame.pcm, start_timestamp_ns=ack.start_sample * 1_000_000_000 // LIVE_SAMPLE_RATE,
+                        sample_count=frame.sample_count, sample_rate=frame.sample_rate,
+                    )
+                self._record_event(state, "frame_accepted", {
+                    "sequence": frame.sequence, "start_sample": ack.start_sample,
+                    "end_sample": ack.end_sample, "queued_item_ids": (),
+                })
             try:
                 assert state.engine is not None
                 state.engine.push_audio(ack.start_sample, frame.pcm)
             except Exception as exc:
-                self._fail(state, "gemini_live_failed", exc)
+                with self._lock:
+                    self._fail(state, "gemini_live_failed", exc)
                 raise
-            return LiveServiceFrameResult(ack=ack, queued_item_ids=(), snapshot=self._snapshot(state))
+            with self._lock:
+                return LiveServiceFrameResult(ack=ack, queued_item_ids=(), snapshot=self._snapshot(state))
 
     def publish_update(self, session_id: str, update: GeminiUpdate) -> None:
         """Thread-safe engine callback; each accepted update advances the same public stream."""
@@ -233,6 +348,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             try:
                 if isinstance(update, GeminiPreview):
                     epoch, generation, start = session.begin_provisional()
+                    if update.end_sample < start:
+                        return
                     transcript = _unlabelled_transcript(update.segments, start)
                     if not session.publish_provisional(
                         epoch=epoch, generation=generation, start_sample=start,
@@ -240,7 +357,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     ):
                         return
                     kind = "provisional_published"
+                    state.preview_lag_samples.append(max(0, session.snapshot().accepted_samples - update.end_sample))
                 elif isinstance(update, GeminiBase):
+                    if update.degraded:
+                        state.degraded_path_activations += 1
                     start = session.snapshot().committed_samples
                     span = session.freeze_until(update.through_sample, reason="gemini_base")
                     transcript = _unlabelled_transcript(update.segments, start)
@@ -269,6 +389,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     if not outcome.applied:
                         raise ValueError(f"rolling update refused: {outcome.refusal}")
                     kind = "text_revision_applied"
+                    state.rolling_frontier = max(state.rolling_frontier, update.end_sample)
+                    state.window_lag_samples.append(max(0, session.snapshot().accepted_samples - state.rolling_frontier))
+                    for observation in update.observations:
+                        state.voice_observations.setdefault(observation.speaker_label, observation)
+                    self._observe_voiceprints(state, update.segments)
                 elif isinstance(update, GeminiRelabel):
                     _register_speakers(session, update.segments)
                     outcome = session.revise_rolling_interval(
@@ -331,6 +456,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "timing_anomalies": {"clamped": state.clamped_words, "dropped": state.dropped_words},
                 "audio_seconds_sent": state.audio_seconds_sent,
                 "cost_usd": state.cost_usd,
+                "degraded_path_activations": state.degraded_path_activations,
+                "window_lag_seconds": _lag_summary(state.window_lag_samples),
+                "preview_lag_seconds": _lag_summary(state.preview_lag_samples),
+                "voiceprint_errors": state.voiceprint_errors,
             }
 
     def snapshot(self, session_id: str, since_version: int | None = None) -> LiveServiceSnapshot | None:
@@ -352,12 +481,53 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         return self.events(session_id, since_seq), time.monotonic_ns()
 
     def _identity_observations(self, session_id: str) -> tuple[object, ...]:
-        self._get(session_id)
-        return ()
+        with self._lock:
+            return tuple(self._get(session_id).voice_observations.values())
 
     def _identity_match_observations(self, session_id: str) -> tuple[object, ...]:
-        self._get(session_id)
-        return ()
+        return self._identity_observations(session_id)
+
+    def _observe_voiceprints(self, state: _GeminiState, segments: Sequence[GeminiSegment]) -> None:
+        encoder = self._voiceprint_encoder
+        tape = state.tape
+        if encoder is None or tape is None:
+            return
+        from .live_provider_bundle import LiveSpeakerJournalObservation
+        spec = encoder.spec
+        grouped: dict[str, list[GeminiSegment]] = {}
+        for row in segments:
+            if row.speaker is not None and row.end_sample > row.start_sample:
+                grouped.setdefault(row.speaker, []).append(row)
+        for speaker, rows in grouped.items():
+            if speaker in state.voice_observations:
+                continue
+            rows.sort(key=lambda row: row.start_sample)
+            start = end = 0
+            for row in rows:
+                if start == end or row.start_sample > end + LIVE_SAMPLE_RATE // 2:
+                    start, end = row.start_sample, row.end_sample
+                else:
+                    end = max(end, row.end_sample)
+                if end - start >= 2 * LIVE_SAMPLE_RATE:
+                    break
+            if end - start < 2 * LIVE_SAMPLE_RATE or not tape.covers(start, end):
+                continue
+            try:
+                with tempfile.NamedTemporaryFile(suffix=".wav", dir=self._tape_storage_root) as wav:
+                    tape.write_wav(wav.name, start_sample=start, end_sample=end)
+                    vector = tuple(float(value) for value in encoder.embed(
+                        wav.name, [(0.0, (end - start) / LIVE_SAMPLE_RATE)]))
+                if len(vector) != spec.embedding_dimension or any(not math.isfinite(v) for v in vector):
+                    raise ValueError("voiceprint encoder returned invalid vector")
+                state.voice_observations[speaker] = LiveSpeakerJournalObservation(
+                    speaker_label=speaker, centroid=vector,
+                    sample_seconds=(end - start) / LIVE_SAMPLE_RATE,
+                    exemplar_count=1, provisional=False,
+                    embedder_id=f"{spec.provider}:{spec.revision}",
+                    embedder_state_sha=spec.state_sha256,
+                )
+            except Exception:
+                state.voiceprint_errors += 1
 
     def _operator_queue_snapshot(self) -> dict[str, int | bool]:
         with self._lock:
@@ -369,11 +539,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
     async def stop(self, session_id: str, deadline: float) -> LiveServiceSnapshot:
         with self._lock:
             state = self._get(session_id)
-            self._raise_terminal(state)
-            if state.stop_task is None:
-                self._record_event(state, "stop_requested", {})
-                state.stop_task = asyncio.create_task(self._finish_stop(state))
-            task = state.stop_task
+        with state.ingress_lock:
+            with self._lock:
+                self._raise_terminal(state)
+                if state.stop_task is None:
+                    self._record_event(state, "stop_requested", {})
+                    state.stop_task = asyncio.create_task(self._finish_stop(state))
+                task = state.stop_task
         try:
             return await asyncio.wait_for(asyncio.shield(task), timeout=max(0.0, deadline))
         except TimeoutError as exc:
@@ -397,7 +569,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             self._record_event(state, "session_closed", {
                 "accepted_samples": state.session.snapshot().accepted_samples,
             })
-            if state.tape is None or not state.tape.accounting(
+            if state.tape is None or not state.tape.taping or not state.tape.accounting(
                 through_sample=state.session.snapshot().accepted_samples
             ).complete:
                 state.session.note_finalization("unavailable")
@@ -421,6 +593,23 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         try:
             rows = tuple(await state.engine.finish(state.tape))
             with self._lock:
+                from .live_transcript_convergence import terminal_speaker_mapping
+                before = state.session.snapshot()
+                mapping = terminal_speaker_mapping(
+                    tuple((row.speaker, row.start_sample, row.end_sample, row.text)
+                          for row in rows if row.speaker is not None),
+                    base_surface=before.effective_transcript,
+                    canonical_speakers=before.identity_snapshot.canonical_speakers,
+                )
+                next_id = 1
+                for label in dict.fromkeys(row.speaker for row in rows if row.speaker is not None):
+                    if label not in mapping:
+                        while f"speaker-{next_id:04d}" in before.identity_snapshot.canonical_speakers or f"speaker-{next_id:04d}" in mapping.values():
+                            next_id += 1
+                        mapping[label] = f"speaker-{next_id:04d}"
+                        next_id += 1
+                rows = tuple(replace(row, speaker=mapping.get(row.speaker) if row.speaker is not None else None)
+                             for row in rows)
                 _register_speakers(state.session, rows)
                 snapshot = state.session.snapshot()
                 outcome = state.session.apply_text_revision(TextRevisionProposal(
@@ -432,7 +621,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 ))
                 if not outcome.applied:
                     raise ValueError(f"terminal revision refused: {outcome.refusal}")
-                self._record_event(state, "text_revision_applied", {"source": "terminal"})
+                self._record_event(state, "text_revision_applied", {
+                    "source": "terminal", "start_sample": 0,
+                    "end_sample": snapshot.committed_samples,
+                    "finalization_status": "final",
+                })
                 self._record_event(state, "terminal_finalization_completed", {"outcome": "final"})
         except Exception as exc:
             with self._lock:
@@ -479,6 +672,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         return GeminiLiveSnapshot(
             session_id=state.session_id, descriptor=self.descriptor, session=session,
             pending_work_items=0, terminal_failure=state.terminal_failure,
+            diagnostics=self.engine_diagnostics(state.session_id),
         )
 
     def _record_event(self, state: _GeminiState, kind: str, payload: dict) -> None:
@@ -501,6 +695,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         state.terminal_failure = LiveServiceFailureRecord(kind=kind, code=code,
             message=str(exc) or type(exc).__name__)
         self._record_event(state, event_kind, {"failure": state.terminal_failure.to_dict()})
+        close = getattr(state.engine, "close", None)
+        if callable(close):
+            close()
         self._release_tape(state)
 
     def _raise_terminal(self, state: _GeminiState) -> None:
@@ -537,3 +734,11 @@ def _surface_segments(segments: Sequence[GeminiSegment], authority: str) -> tupl
 def _register_speakers(session: LiveSession, segments: Sequence[GeminiSegment]) -> None:
     speakers = tuple(dict.fromkeys(row.speaker for row in segments if row.speaker is not None))
     session.register_canonical_speakers(speakers)
+
+
+def _lag_summary(samples: Sequence[int]) -> dict[str, float | int]:
+    if not samples:
+        return {"count": 0, "p50": 0.0, "max": 0.0}
+    ordered = sorted(samples)
+    return {"count": len(ordered), "p50": ordered[(len(ordered) - 1) // 2] / LIVE_SAMPLE_RATE,
+            "max": ordered[-1] / LIVE_SAMPLE_RATE}
