@@ -68,7 +68,9 @@ bars across the acceptance population remain unmeasured here.
    committed exceeds 45 seconds, a degraded `GeminiBase` commits cached fast words as S00
    rows to stay within retention; later rolling supersedes them. The count is exposed.
    `revise_rolling_interval` remains the narrow later speaker correction operation; it
-   preserves exact text while changing speaker boundaries/IDs.
+   preserves exact text while changing speaker boundaries/IDs. A pending rolling unit stays
+   visible until a revision covers accepted audio. After 10 s without new frames, one idle
+   window commits the accepted suffix before Stop; continuous frames reset that timer.
 6. On Stop, the engine requests one final rolling window through accepted audio within the
    5 s configured deadline. If it misses that deadline, the remaining suffix is accounted
    as an empty base span. Terminal Transcribe makes one whole-recording call up to 30 minutes,
@@ -158,19 +160,32 @@ word p50 was 0.0 s on this coarse bucket metric, while labelled rows appeared in
 so this paired replay specifically tests the in-flight promotion. Receipt:
 `evidence/P63/h1-fixes-public-javier-after-stop.json`.
 
-The H1 `settled` capture occurs **before** Stop, so it still measures .446 DER and a
-30/50 s committed frontier; it cannot assess the later successful drain. The Stop event
-and final snapshot prove 50/50 s accounted, but a post-drain/pre-terminal snapshot is
-needed to score the drained rolling surface itself.
+That replay preceded D-4: the H1 `settled` capture occurs **before** Stop and had no
+idle-ingress drain to wait for. The later D-4 replay below measures settled coverage on
+the same public clip without changing the collector.
+
+## D-4: settled work before Stop
+
+A public snapshot now reports **one pending rolling window** while the accepted end exceeds
+the successfully revised rolling frontier, including during an in-flight request. Empty
+base accounting does not clear that unit. After accepted audio stops advancing for the
+rolling stride **S=10 s**, the session's single worker issues a window ending at the accepted
+sample and commits its full result. Continuous capture resets the idle clock; Stop still
+has its separate deadline-bounded drain.
+
+The paced Javier50 H1 #3 replay proves the collector sees this state: `pre_stop_immediate`
+had pending=1 and frontier 30/50 s. It waited **13.374 s** (51 polls) before Stop, then
+captured pending=0 and frontier **50/50 s**. Single-case DER changed from **.446 immediate**
+to **.063999 settled**; final remained **.019999**. The run made one Live connection, five
+rolling calls, and one terminal call, with **0/7 calls** having clamped or dropped timing
+words. Cost was $0.0163453, including the Live list-price estimate. Receipt:
+`evidence/P63/d4-idle-settle-javier.json`. The 12-pass accept6 result remains pending
+pane 6.2; this one case is software integration evidence.
 
 ## Decision state
 
-The provider, lifecycle, Account/voiceprint and HTTP wiring are implemented. W3 preview
-reached the public snapshot in the paced Javier case. The selected final policy produced one
-turn and .020 final DER on that case against H1 #3. The first Stop tail drain missed the
-5 s deadline. A TDD repair promoted an in-flight window that already covered accepted audio;
-the second paced replay drained successfully with 4 rolling calls instead of 5. The H1
-harness samples its settled surface **before** Stop and still reports .446 DER with a 30/50 s
-frontier. Post-Stop, pre-terminal coverage must be measured separately to credit the drain.
-Neither single-case result is a population qualification. Pane 6.1 still owns the continuity winner; the current registry is the
-short-window overlap placeholder. Sparse acquired references remain diagnostic only.
+The D-4 pending count and idle drain let H1 measure a genuinely settled pre-Stop surface.
+W3 preview, speaker turns, Stop drain, and the selected final identity policy are wired
+through Account's public snapshot path. Pane 6.1 still owns the continuity winner; the
+current registry is the short-window overlap placeholder. Sparse acquired references
+remain diagnostic only.

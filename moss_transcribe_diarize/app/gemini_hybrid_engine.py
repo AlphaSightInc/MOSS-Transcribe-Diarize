@@ -134,6 +134,8 @@ class OverlapRegistry:
 class GeminiHybridEngine:
     """A session owns a bounded live cache and coalesced background provider work."""
 
+    _IDLE_SECONDS = 10  # The rolling stride S; one final window after ingress pauses.
+
     def __init__(self, publish: Callable[[GeminiUpdate], None], *, word_source: WordSource,
                  window_scheduler: WindowScheduler, registry: SpeakerRegistry,
                  diarizer: WindowDiarizer, terminal: TerminalTranscriber,
@@ -164,6 +166,9 @@ class GeminiHybridEngine:
         self._live_interim: GeminiWord | None = None
         self._stopping = False
         self._closed = False
+        self._last_ingress_at = 0.0
+        self._idle_timer: threading.Timer | None = None
+        self._idle_due = False
         self._streaming_words = callable(getattr(word_source, "bind", None))
         if self._streaming_words:
             word_source.bind(self._on_live_text)
@@ -202,6 +207,10 @@ class GeminiHybridEngine:
                 raise ValueError("Gemini engine audio is not contiguous")
             self._recent_audio.extend(pcm16)
             self._accepted += len(pcm16) // 2
+            self._last_ingress_at = time.monotonic()
+            self._idle_due = False
+            if self._idle_timer is None:
+                self._arm_idle_locked(self._IDLE_SECONDS)
             # A 60-second window ends on a 10-second boundary. Keep that extra
             # stride so a window is still readable between boundaries.
             excess = len(self._recent_audio) - 70 * LIVE_SAMPLE_RATE * 2
@@ -213,6 +222,25 @@ class GeminiHybridEngine:
                 self._future = self._executor.submit(self._work)
         if self._streaming_words:
             self.word_source.push_audio(start_sample, pcm16)
+
+    def _arm_idle_locked(self, delay: float) -> None:
+        timer = threading.Timer(delay, self._on_idle)
+        timer.daemon = True
+        self._idle_timer = timer
+        timer.start()
+
+    def _on_idle(self) -> None:
+        with self._lock:
+            self._idle_timer = None
+            if self._closed or self._stopping:
+                return
+            remaining = self._IDLE_SECONDS - (time.monotonic() - self._last_ingress_at)
+            if remaining > 0:
+                self._arm_idle_locked(remaining)
+            elif self._rolling_frontier < self._accepted:
+                self._idle_due = True
+                if self._future is None or self._future.done():
+                    self._future = self._executor.submit(self._work)
 
     def _read_locked(self, start: int, end: int) -> bytes:
         if start < self._recent_start or end > self._accepted:
@@ -241,7 +269,11 @@ class GeminiHybridEngine:
                 if self._closed or self._stopping:
                     return
                 accepted = self._accepted
-                window = self.window_scheduler.next_window(accepted, self._last_window_end)
+                if self._idle_due and self._rolling_frontier < accepted:
+                    window = (max(0, accepted - 60 * LIVE_SAMPLE_RATE), accepted, accepted)
+                    self._idle_due = False
+                else:
+                    window = self.window_scheduler.next_window(accepted, self._last_window_end)
                 preview_due = (not self._streaming_words and accepted >= 10 * LIVE_SAMPLE_RATE
                                and accepted - self._last_preview_end >= 3 * LIVE_SAMPLE_RATE)
                 if window is None and not preview_due:
@@ -258,11 +290,12 @@ class GeminiHybridEngine:
                 words = self.diarizer.diarize(pcm, deadline=time.monotonic() + 120,
                                               kind="rolling").words
                 with self._lock:
-                    if self._stopping and end == self._accepted:
+                    if (self._stopping or self._idle_due) and end == self._accepted:
                         # This in-flight call already spans the Stop suffix.
                         # Publish its held-back ten seconds instead of making
                         # a second sequential request under the Stop deadline.
                         frontier = end
+                        self._idle_due = False
                 self._publish_window(start, frontier, pcm, words)
                 continue
             words = self.word_source.words(pcm, deadline=time.monotonic() + 60)
@@ -324,6 +357,9 @@ class GeminiHybridEngine:
         expires = time.monotonic() + deadline
         with self._lock:
             self._stopping = True
+            if self._idle_timer is not None:
+                self._idle_timer.cancel()
+                self._idle_timer = None
             future = self._future
         if future is not None:
             try:
@@ -350,6 +386,9 @@ class GeminiHybridEngine:
     async def finish(self, tape: CompleteMixedTape) -> Sequence[GeminiSegment]:
         with self._lock:
             self._closed = True
+            if self._idle_timer is not None:
+                self._idle_timer.cancel()
+                self._idle_timer = None
             future = self._future
         if future is not None:
             await asyncio.to_thread(future.result)
@@ -363,6 +402,8 @@ class GeminiHybridEngine:
         # Do not take the engine lock: a provider worker may be publishing while
         # the runtime holds its lock on this failure path.
         self._closed = True
+        if self._idle_timer is not None:
+            self._idle_timer.cancel()
         self._executor.shutdown(wait=False, cancel_futures=True)
         if self._streaming_words:
             self.word_source.close()

@@ -694,9 +694,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         session = state.session.snapshot()
         if state.terminal_failure is not None and session.status not in LIVE_TERMINAL_SESSION_STATUSES:
             session = replace(session, status="failed", failure_reason=state.terminal_failure.message)
+        # One final rolling window can cover the entire uncovered accepted suffix.
+        # The recorded rolling frontier moves only after the revision succeeds.
+        rolling_pending = int(session.status == "active" and
+                              state.rolling_frontier < session.accepted_samples)
         return GeminiLiveSnapshot(
             session_id=state.session_id, descriptor=self.descriptor, session=session,
-            pending_work_items=0, terminal_failure=state.terminal_failure,
+            pending_work_items=rolling_pending, terminal_failure=state.terminal_failure,
             diagnostics=self.engine_diagnostics(state.session_id),
         )
 

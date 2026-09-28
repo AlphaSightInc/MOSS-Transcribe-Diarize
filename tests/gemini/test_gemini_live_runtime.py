@@ -346,3 +346,64 @@ def test_streaming_preview_reaches_public_snapshot_before_rolling(tmp_path):
     assert session["effective_transcript"] == []
     assert "[S00]fast words" in session["provisional"]["transcript"]
     rt._sessions["one"].engine.close()
+
+
+def test_snapshot_pending_work_tracks_uncovered_accepted_audio(tmp_path):
+    first = GeminiSegment(0, 16000, "first", "speaker-0001")
+    tail = GeminiSegment(16000, 32000, "tail", "speaker-0001")
+    rt = runtime(tmp_path, {"one": ([
+        (GeminiBase(16000, ()), GeminiRolling(0, 16000, (first,))),
+        (),
+    ], ())})
+    assert rt.create(session_id="one").snapshot.pending_work_items == 0
+    rt.accept_frame("one", frame(0))
+    assert rt.snapshot("one").pending_work_items == 0
+    rt.accept_frame("one", frame(1))
+    payload = rt.snapshot("one").to_dict()
+    assert payload["pending_work_items"] == 1
+    assert payload["session"]["accepted_samples"] == 32000
+    assert payload["session"]["canonical_through_sample"] == 16000
+    rt.publish_update("one", GeminiBase(32000, ()))
+    assert rt.snapshot("one").session.committed_samples == 32000
+    assert rt.snapshot("one").pending_work_items == 1  # Empty base is not labelled coverage.
+    rt.publish_update("one", GeminiRolling(16000, 32000, (tail,)))
+    assert rt.snapshot("one").pending_work_items == 0
+
+
+def test_idle_ingress_drains_accepted_tail_before_stop_and_not_during_capture(tmp_path, monkeypatch):
+    monkeypatch.setattr(GeminiHybridEngine, "_IDLE_SECONDS", .08)
+    calls = []
+    class StreamingWords:
+        def bind(self, listener): self.listener = listener
+        def push_audio(self, start_sample, pcm16): pass
+        async def finish(self): pass
+        def close(self): pass
+    class Diarizer:
+        def diarize(self, pcm, *, deadline, kind, diarize=True):
+            calls.append((len(pcm)//2, kind))
+            end = len(pcm)//2
+            return GeminiWords((GeminiWord("tail", "local", end-16000, end),))
+    class Terminal:
+        def transcribe(self, tape): return ()
+    base = descriptor(tape_bytes=20*32000)
+    full = replace(base, bounds=replace(base.bounds, max_retained_samples=60*16000))
+    rt = GeminiLiveRuntime(descriptor=full, tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage: GeminiHybridEngine(
+            publish, word_source=StreamingWords(), window_scheduler=FixedWindowScheduler(),
+            registry=OverlapRegistry(), diarizer=Diarizer(), terminal=Terminal()))
+    rt.create(session_id="one")
+    for sequence in range(6):
+        rt.accept_frame("one", frame(sequence))
+        assert rt.snapshot("one").pending_work_items == 1
+        time.sleep(.02)
+    assert calls == []  # Continuous ingress kept resetting the idle clock.
+    until = time.monotonic() + 2
+    while rt.snapshot("one").pending_work_items and time.monotonic() < until:
+        time.sleep(.01)
+    settled = rt.snapshot("one")
+    assert settled.pending_work_items == 0
+    assert settled.session.status == "active"
+    assert settled.session.accepted_samples == settled.session.canonical_through_sample == 6*16000
+    assert [row.text for row in settled.session.effective_transcript] == ["tail"]
+    assert calls == [(6*16000, "rolling")]
+    rt._sessions["one"].engine.close()

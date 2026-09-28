@@ -149,7 +149,7 @@ def test_registry_and_account_observation_receive_same_vector():
     assert len(observations) == 1
     assert observations[0].speaker_label == "speaker-0001"
     assert observations[0].centroid == registry.seen["spk:0"][0]
-    engine._executor.shutdown(wait=True)
+    engine.close()
 
 
 def test_abort_closes_idle_engine_without_provider_call():
@@ -227,4 +227,36 @@ def test_stop_promotes_inflight_window_covering_accepted_tail():
     assert asyncio.run(stop())
     assert engine._rolling_frontier == 50*16000
     assert len(calls) == 1
+    engine.close()
+
+
+def test_idle_drain_promotes_inflight_window_without_second_call(monkeypatch):
+    import time
+    monkeypatch.setattr(GeminiHybridEngine, "_IDLE_SECONDS", .05)
+    started = threading.Event()
+    release = threading.Event()
+    calls = []
+    class Source:
+        def bind(self, listener): pass
+        def push_audio(self, start_sample, pcm16): pass
+        async def finish(self): pass
+        def close(self): pass
+    class SlowDiarizer:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            calls.append(len(pcm16))
+            started.set()
+            release.wait(2)
+            return GeminiWords((GeminiWord("tail", "s0", 18*16000, 19*16000),))
+    engine = GeminiHybridEngine(lambda _update: None, word_source=Source(),
+        window_scheduler=FixedWindowScheduler(), registry=OverlapRegistry(),
+        diarizer=SlowDiarizer(), terminal=FakeTerminal())
+    for second in range(20):
+        engine.push_audio(second*16000, bytes(32000))
+    assert started.wait(2)
+    time.sleep(.08)
+    assert engine._rolling_frontier == 0  # In-flight request is still pending.
+    release.set()
+    engine._future.result(timeout=2)
+    assert engine._rolling_frontier == 20*16000
+    assert calls == [20*32000]
     engine.close()
