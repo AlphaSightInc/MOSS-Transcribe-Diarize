@@ -13,6 +13,7 @@ Tiers (id -> Clip):
 from __future__ import annotations
 
 import json
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -21,6 +22,22 @@ REAL = WORKTREE / "prototypes" / "streaming-diarization" / "data" / "real"
 SYNTH = WORKTREE / "prototypes" / "streaming-diarization" / "data"
 ACCEPT = WORKTREE / "evidence" / "live-policy-sweep-20260825" / "corpus"
 E1 = Path("/Users/gao/Documents/Codex/2026-09-23/moss-round6/evidence/dx-replay")
+# H1 #3 scored accept6 against the corpus manifest sha 80fc15bd…; in this checkout the Bill Ackman and
+# Keyu Jin references were later corrected (966d250b). Comparisons with recorded MOSS numbers must use
+# the H1 truth set, so accept6 clips point at the manifest-matching references (materialized from git).
+H1_REFERENCE_REVISION = "966d250b^"
+H1_REFS = WORKTREE / "prototypes" / "gemini-live" / ".cache" / "h1-references"
+
+
+def _h1_reference(case: str, current: Path) -> Path:
+    target = H1_REFS / case / "reference.jsonl"
+    if not target.exists():
+        rel = current.relative_to(WORKTREE).as_posix()
+        blob = subprocess.run(["git", "-C", str(WORKTREE), "show", f"{H1_REFERENCE_REVISION}:{rel}"],
+                              capture_output=True, check=True).stdout
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(blob)
+    return target
 
 
 @dataclass(frozen=True)
@@ -51,7 +68,7 @@ def clips(tier: str | None = None) -> list[Clip]:
     out: list[Clip] = []
     for d in sorted(ACCEPT.glob("*/")):
         if (d / "audio.wav").exists():
-            out.append(Clip(d.name, "accept6", d / "audio.wav", d / "reference.jsonl"))
+            out.append(Clip(d.name, "accept6", d / "audio.wav", _h1_reference(d.name, d / "reference.jsonl")))
     for sub in ("benchmark_diarization_1min", "calibration_diarization_3min"):
         for d in sorted((REAL / sub / "samples").glob("*/")):
             if (d / "audio.wav").exists():
