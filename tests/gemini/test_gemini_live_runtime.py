@@ -458,6 +458,7 @@ def test_system_first_voiced_word_reaches_public_preview_after_silent_ingress(tm
 
 
 def test_public_provisional_suffix_collapses_overlapping_echo_preview(tmp_path):
+    import re
     from moss_transcribe_diarize.app.gemini_lane_engine import LaneGeminiEngine
     from moss_transcribe_diarize.app.gemini_live_runtime import GeminiPreview
 
@@ -491,6 +492,59 @@ def test_public_provisional_suffix_collapses_overlapping_echo_preview(tmp_path):
         GeminiSegment(0, 10*16000, "local operator", source_lane="microphone"),)))
     transcript = rt.snapshot("one").to_dict()["session"]["provisional"]["transcript"]
     assert "local operator" in transcript and system_text in transcript
+
+    # P64 lead-final-merged-E1 at committed_samples=4560000: the two W3 lanes
+    # chunk the same speech at 0/4.5/10.5/17.5 s, so neither pair has equal starts.
+    for second in range(10, 18):
+        rt.accept_frame("one", frame(second))
+    system_long = (
+        "NVIDIA 1 and NVIDIA 2 were based on forward texture mapping, no triangles but curves "
+        "and it tessellated the curves and because we were rendering higher level objects we "
+        "essentially avoided using z-buffers and we thought that that was going to be a good "
+        "rendering approach and turns out to have been completely the wrong answer.what Riva "
+        "128 was was a reset of our company. Now remember, at the time that we started the "
+        "company in 1993, we were the only consumer 3D graphics company ever created and we "
+        "we were focused on transforming the PC into an accelerated PC because at the time "
+        "Windows was really a software rendered system. And so anyways, Riva 128"
+    )
+    mic_head = (
+        "So what Revo 128 was was a reset of our company. Now remember at the time that we "
+        "started the company 1993 we were the only consumer 3D graphics company ever created "
+        "and we we were focused on transforming the PC into an accelerator PC because at the time"
+    )
+    mic_tail = (
+        "was really a software rendered system. And so anyways, Riva 128was a reset of our "
+        "company because by the time that we realized we had gone down the wrong road, "
+        "Microsoft had already rolled out Direct"
+    )
+    system_tail = (
+        "was a reset of our company because by the time that we realized we had gone down "
+        "the wrong road, Microsoft had already rolled out Direct"
+    )
+    sec = lambda value: round(value * 16000)
+    engines[0]._on_update("system", GeminiPreview(sec(18), (
+        GeminiSegment(0, sec(10.5), system_long, source_lane="system"),
+        GeminiSegment(sec(10.5), sec(17.5), system_tail, source_lane="system"))))
+    engines[0]._on_update("microphone", GeminiPreview(sec(18), (
+        GeminiSegment(0, sec(4.5), mic_head, source_lane="microphone"),
+        GeminiSegment(sec(4.5), sec(17.5), mic_tail, source_lane="microphone"))))
+    def visible_texts():
+        rendered = rt.snapshot("one").to_dict()["session"]["provisional"]["transcript"]
+        return re.findall(r"\[S00\](.*?)\[[0-9.]+\]", rendered)
+    assert visible_texts() == [system_long, system_tail]
+
+    operator = "Can you pause? I need to check my microphone."
+    engines[0]._on_update("microphone", GeminiPreview(sec(18), (
+        GeminiSegment(0, sec(4.5), mic_head, source_lane="microphone"),
+        GeminiSegment(sec(4.5), sec(17.5), mic_tail, source_lane="microphone"),
+        GeminiSegment(sec(12), sec(17.5), operator, source_lane="microphone"))))
+    assert visible_texts() == [system_long, system_tail, operator]
+
+    engines[0]._on_update("system", GeminiPreview(sec(18), ()))
+    engines[0]._on_update("microphone", GeminiPreview(sec(18), (
+        GeminiSegment(0, sec(4.5), "stale replay", source_lane="microphone"),
+        GeminiSegment(0, sec(5), "replacement", source_lane="microphone"))))
+    assert visible_texts() == ["replacement"]
     engines[0].close()
 
 
