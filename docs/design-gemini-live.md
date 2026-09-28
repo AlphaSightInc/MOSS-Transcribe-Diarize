@@ -68,12 +68,14 @@ All product defaults live in `app/phase2_web_cli.py`; the selected word source i
 | Batch requests | `gemini-3.5-transcribe` verbatim word timestamps and speaker labels for system; app retries 429, 5xx, timeout up to three attempts with bounded backoff; SDK internal retry disabled so physical attempts match counters |
 | Terminal | One call through 900 s; above 900 s, 900 s chunks with 30 s overlap, at most three concurrent final calls, midpoint word-core ownership and seam/cosine stitch; skip any WebRTC-unvoiced final chunk |
 
-Pilot guards: W3 rotates its socket after 8 s of WebRTC-voiced audio without
-interim/final text, using the existing 5 s replay. A rolling window with 3 s
-new voiced audio and no words, or a 10 s voiced wordless interval, retries once;
-after another bad result its frontier stays back for the next tick. A final
-chunk with a 10 s voiced wordless interval retries once; if still incomplete,
-the terminal revision carries the live rows for that interval.
+Pilot guards use cross-pass transcript witnesses, since WebRTC can mark music
+as voiced. W3 rotates with its existing 5 s replay only after batch words cover
+at least 10 s since the last preview text. Rolling windows have no coverage
+retry: on the real E1 run the preview witness (which also hears speaker echo on
+the microphone lane) fired 12 times on normal audio and re-inserted echo text,
+and a missed live window only affects the live view. A final chunk uses
+committed live rows as its witness, retries once, then carries live rows across
+any remaining missing interval, so the saved transcript never loses live speech.
 
 The provider parser clamps a word end before its start or beyond the call audio to
 `min(start+1 s, audio end)` and drops a word starting past the audio tolerance. The
@@ -138,7 +140,8 @@ real stress or browser checks; deterministic regressions cover the code paths.
 retries by code, audio seconds sent, provider cost, W3 list-price estimate,
 clamped/dropped/repaired word counts, chunked status, skipped ticks, degraded
 activations, preview/window lag, microphone acoustic/text drop decisions, preview
-stall restarts, coverage retries, and terminal coverage fallbacks.
+stall restarts, coverage retries, rolling preview fallbacks, and terminal
+coverage fallbacks.
 Counters contain no meeting content. The SDK retry proxy test verifies physical
 attempt accounting; Stop failures produce visible `failed`/`unavailable` state.
 

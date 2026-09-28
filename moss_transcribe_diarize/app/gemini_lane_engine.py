@@ -224,6 +224,13 @@ class VoicedLiveWords:
         if source is self._active and self._listener is not None:
             self._listener(text, self._origin + start, self._origin + end, final)
 
+    def observe_batch_words(self, spans: Sequence[tuple[int, int]]) -> None:
+        if self._active is not None:
+            observe = getattr(self._active, "observe_batch_words", None)
+            if callable(observe):
+                observe(tuple((start - self._origin, end - self._origin)
+                              for start, end in spans))
+
     async def finish(self) -> None:
         if self._active is not None:
             source = self._active
@@ -245,6 +252,9 @@ class ConditionalMicrophoneTerminal:
 
     def transcribe(self, tape) -> tuple[GeminiSegment, ...]:
         return self.terminal.transcribe(tape) if self.source.ever_voiced else ()
+
+    def set_witness(self, rows: Sequence[GeminiSegment]) -> None:
+        self.terminal.set_witness(rows)
 
     @property
     def coverage_gaps(self) -> tuple[tuple[int, int], ...]:
@@ -465,6 +475,9 @@ class LaneGeminiEngine:
             rows = []
             gaps = []
             for lane in self.LANES:
+                witness = getattr(self._engines[lane], "set_terminal_witness", None)
+                if callable(witness):
+                    witness(self._rows[lane])
                 rows.extend(await self._engines[lane].finish(self._tapes[lane]))
                 gaps.extend(getattr(self._engines[lane], "terminal_coverage_gaps", ()))
             self.terminal_coverage_gaps = tuple(gaps)

@@ -13,7 +13,6 @@ from scipy.optimize import linear_sum_assignment
 
 from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
 from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
-from .gemini_coverage import voiced_word_gaps
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .live_provider_bundle import LiveSpeakerJournalObservation
@@ -369,10 +368,8 @@ class GeminiHybridEngine:
                 self.report_usage(kind="rolling", count_call=False,
                                   skipped_window_ticks=skipped)
             if window is not None:
-                words = self._decode_covered_window(
+                words, fallback = self._decode_covered_window(
                     pcm, start, voice_start, deadline=time.monotonic() + 120)
-                if words is None:
-                    continue
                 with self._lock:
                     if (self._stopping or self._idle_due) and end == self._accepted:
                         # This in-flight call already spans the Stop suffix.
@@ -380,7 +377,7 @@ class GeminiHybridEngine:
                         # a second sequential request under the Stop deadline.
                         frontier = end
                         self._idle_due = False
-                self._publish_window(start, frontier, pcm, words)
+                self._publish_window(start, frontier, pcm, words, fallback)
                 continue
             words = self.word_source.words(pcm, deadline=time.monotonic() + 60)
             absolute = [GeminiWord(w.text, w.speaker, w.start_sample + start,
@@ -398,31 +395,27 @@ class GeminiHybridEngine:
                 self.publish(GeminiPreview(end, preview))
 
     def _decode_covered_window(self, pcm: bytes, start: int, voice_start: int,
-                               *, deadline: float) -> Sequence[GeminiWord] | None:
+                               *, deadline: float) -> tuple[Sequence[GeminiWord], Sequence[GeminiWord]]:
         new_audio = pcm[(max(start, min(voice_start, self._rolling_frontier))-start)*2:]
         if self.voiced_audio is not None and not self.voiced_audio(new_audio):
-            return ()
-        for attempt in range(2):
-            words = self.diarizer.diarize(
-                pcm, deadline=deadline, kind="rolling", diarize=self.diarize_windows).words
-            missing = (self.voiced_audio is not None and (
-                (not words and bool(voiced_word_gaps(
-                    new_audio, (), minimum_voiced_samples=3*LIVE_SAMPLE_RATE)))
-                or bool(voiced_word_gaps(
-                    pcm, tuple((w.start_sample, w.end_sample) for w in words),
-                    minimum_voiced_samples=10*LIVE_SAMPLE_RATE))))
-            if not missing:
-                return words
-            if attempt == 0 and self.report_usage is not None:
-                self.report_usage(kind="rolling", count_call=False, coverage_retry=1)
-        return None
+            return (), ()
+        # No rolling coverage retry: on the real E1 run the preview witness (which also hears
+        # speaker echo on the mic lane) fired 12 times on normal audio and re-inserted echo text.
+        # A missed live window affects only the live view; the guarded final pass repairs it.
+        words = self.diarizer.diarize(
+            pcm, deadline=deadline, kind="rolling", diarize=self.diarize_windows).words
+        return words, ()
 
     def _publish_window(self, start: int, frontier: int, pcm: bytes,
-                        words: Sequence[GeminiWord]) -> None:
+                        words: Sequence[GeminiWord],
+                        fallback: Sequence[GeminiWord] = ()) -> None:
         absolute = tuple(GeminiWord(w.text, w.speaker, w.start_sample + start,
                                      w.end_sample + start) for w in words)
         if self.word_gate is not None:
             absolute = self.word_gate.filter(pcm, absolute, offset_sample=start)
+        observe_batch = getattr(self.word_source, "observe_batch_words", None)
+        if callable(observe_batch):
+            observe_batch(tuple((w.start_sample, w.end_sample) for w in absolute))
         if self.word_observer is not None:
             self.word_observer(absolute, frontier)
         embeddings = (self.embedding_source(pcm, start, absolute)
@@ -452,6 +445,12 @@ class GeminiHybridEngine:
                           if old < w.end_sample <= frontier),
                     start_sample=old, end_sample=frontier, preserve_order=True,
                 ))
+                rows += tuple(GeminiSegment(max(old, w.start_sample), min(frontier, w.end_sample),
+                                            w.text, None, self.source_lane)
+                              for w in fallback if w.start_sample < frontier
+                              and w.end_sample > old)
+                if fallback:
+                    rows = ordered_segments(rows, start_sample=old, end_sample=frontier)
                 visible = {row.speaker for row in rows}
                 self.publish(GeminiRolling(old, frontier, rows,
                                            tuple(obs for obs in observations
@@ -492,16 +491,14 @@ class GeminiHybridEngine:
             start = self._rolling_frontier
             pcm = self._read_locked(start, accepted)
         try:
-            words = await asyncio.wait_for(
+            words, fallback = await asyncio.wait_for(
                 asyncio.to_thread(self._decode_covered_window, pcm, start,
                                   max(start, self._last_window_end), deadline=expires),
                 timeout=max(0.0, expires - time.monotonic()),
             )
         except Exception:
             return False
-        if words is None:
-            return False
-        self._publish_window(start, accepted, pcm, words)
+        self._publish_window(start, accepted, pcm, words, fallback)
         return self._rolling_frontier >= accepted
 
     async def finish(self, tape: CompleteMixedTape) -> Sequence[GeminiSegment]:
@@ -521,6 +518,11 @@ class GeminiHybridEngine:
             (self.source_lane, start, end)
             for start, end in getattr(self.terminal, "coverage_gaps", ()))
         return rows
+
+    def set_terminal_witness(self, rows: Sequence[GeminiSegment]) -> None:
+        setter = getattr(self.terminal, "set_witness", None)
+        if callable(setter):
+            setter(rows)
 
     def close(self) -> None:
         """Fence an aborted/failed meeting without waiting on a provider request."""

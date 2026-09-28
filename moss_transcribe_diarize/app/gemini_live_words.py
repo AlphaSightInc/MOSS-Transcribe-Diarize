@@ -9,7 +9,6 @@ from concurrent.futures import Future
 from typing import Callable
 
 from google.genai import types
-import webrtcvad
 
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .gemini_provider import _error_code
@@ -50,8 +49,8 @@ class _LiveCore:
         self._history: deque[tuple[int, int, bytes]] = deque()
         self._handle: str | None = None
         self._reconnect_requested = False
-        self._vad = webrtcvad.Vad(1)
-        self._voiced_since_text = 0
+        self._last_text_at_sample = 0
+        self._open_at_sample = 0
 
     async def start(self) -> None:
         await self._open(None)
@@ -62,6 +61,8 @@ class _LiveCore:
                 context = self.client.aio.live.connect(model=_MODEL, config=_config(handle))
                 session = await context.__aenter__()
                 self.context, self.session = context, session
+                self._open_at_sample = self.sent_samples
+                self._last_text_at_sample = self.sent_samples
                 self.report(kind="live_preview")
                 self.reader = asyncio.create_task(self._read())
                 return
@@ -112,7 +113,7 @@ class _LiveCore:
                         retry_code=code)
 
     def _publish(self, text: str, final: bool) -> None:
-        self._voiced_since_text = 0
+        self._last_text_at_sample = self.sent_samples
         start, end = self.turn_start, self.sent_samples
         norm = " ".join(text.lower().split())
         if not any(lo < end and start < hi and prior == norm and was_final == final
@@ -128,7 +129,6 @@ class _LiveCore:
         replay_start = max(0, end - 5 * LIVE_SAMPLE_RATE)
         await self.close()
         await self._open(self._handle)
-        self._voiced_since_text = 0
         self.turn_start = min(self.turn_start, replay_start)
         for start, stop, chunk in self._history:
             if stop > replay_start:
@@ -137,9 +137,6 @@ class _LiveCore:
 
     async def _send_audio(self, pcm16: bytes, *, end_sample: int) -> None:
         assert self.session is not None
-        self._voiced_since_text += 160 * sum(
-            self._vad.is_speech(pcm16[i:i+320], LIVE_SAMPLE_RATE)
-            for i in range(0, len(pcm16)-319, 320))
         self.sent_samples = max(self.sent_samples, end_sample)
         seconds = len(pcm16) / (2 * LIVE_SAMPLE_RATE)
         self.report(kind="live_preview", count_call=False, audio_seconds_sent=seconds,
@@ -162,10 +159,22 @@ class _LiveCore:
                         retry_code=code)
             await self._rotate()  # The failed chunk is already in the replay buffer.
             return
-        await asyncio.sleep(0)  # Let a just-arrived interim reset the watchdog.
-        if self._voiced_since_text >= 8 * LIVE_SAMPLE_RATE:
-            self.report(kind="live_preview", count_call=False,
-                        preview_stall_restarts=1)
+
+    async def observe_batch_words(self, spans: tuple[tuple[int, int], ...]) -> None:
+        if self.session is None:
+            return
+        boundary = max(self._open_at_sample, self._last_text_at_sample)
+        merged = []
+        for start, end in sorted(spans):
+            start = max(start, boundary)
+            if end <= start:
+                continue
+            if merged and start <= merged[-1][1]:
+                merged[-1][1] = max(merged[-1][1], end)
+            else:
+                merged.append([start, end])
+        if sum(end-start for start, end in merged) >= 10*LIVE_SAMPLE_RATE:
+            self.report(kind="live_preview", count_call=False, preview_stall_restarts=1)
             await self._rotate()
 
     async def finish(self) -> None:
@@ -248,6 +257,13 @@ class GeminiLiveWordSource:
             assert self._core is not None
             await self._core.push(start_sample, pcm16)
         self._submit(send).add_done_callback(lambda _done: self._pending_slots.release())
+
+    def observe_batch_words(self, spans: tuple[tuple[int, int], ...]) -> None:
+        if not self._closed:
+            async def check():
+                assert self._core is not None
+                await self._core.observe_batch_words(spans)
+            self._submit(check)
 
     async def finish(self) -> None:
         if self._closed:
