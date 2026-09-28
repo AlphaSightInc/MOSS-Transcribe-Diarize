@@ -3,7 +3,6 @@
 set -eo pipefail
 
 wt="$(cd "$(dirname "$0")/../.." && pwd)"
-py="${wt}.venv/bin/python"
 port=18500
 stub=0
 state=""
@@ -11,6 +10,7 @@ manifest="${HOME}/.local/share/moss-transcribe-diarize/live/live-provider-manife
 extra=()
 while (($#)); do
   case "$1" in
+    --tree) wt="$2"; shift 2 ;;
     --port) port="$2"; shift 2 ;;
     --state) state="$2"; shift 2 ;;
     --manifest) manifest="$2"; shift 2 ;;
@@ -19,6 +19,7 @@ while (($#)); do
     *) extra+=("$1"); shift ;;
   esac
 done
+py="${wt}.venv/bin/python"
 if ((port < 18500 || port > 18508)); then
   echo "port must be 18500..18508 (stub uses port+1)" >&2
   exit 2
@@ -62,6 +63,7 @@ if ((stub)); then
 fi
 echo "state=$state base_url=https://127.0.0.1:$port stub=$stub" >&2
 cd "$wt"
+PYTHONDONTWRITEBYTECODE=1 "$py" -c 'import moss_transcribe_diarize as m; print("moss_import=" + m.__file__)' >&2
 MOSS_OPEN_WORKSPACE=1 PYTHONDONTWRITEBYTECODE=1 "$py" -m moss_transcribe_diarize.app.phase2_web_cli \
   --database "$state/phase2.sqlite" --control-socket "$state/control.sock" \
   --tls-certfile "$state/cert.pem" --tls-keyfile "$state/key.pem" \

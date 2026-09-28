@@ -58,7 +58,7 @@ def _case_inputs(case_id: str):
     prefix, separator, name = case_id.partition(":")
     if case_id == "rtfl90":
         directory = ROOT / "prototypes/streaming-diarization/data/real/regression_fixtures/youtube_rtfl_first_90s"
-        category = "rtfl"
+        category = "rtfl partial diagnostic"
     elif separator and prefix in roots and name and "/" not in name and name != "..":
         subdir, category = roots[prefix]
         if prefix == "benchmark_5m" and name not in {
@@ -67,6 +67,8 @@ def _case_inputs(case_id: str):
             category = "bench5m sparse diagnostic"
         if prefix == "benchmark_30m" and name != "lex_bill_ackman":
             category = "long30m sparse diagnostic"
+        if prefix == "benchmark" and name == "acquired_jamie_dimon":
+            category = "gold9 sparse diagnostic"
         directory = ROOT / "prototypes/streaming-diarization/data/real" / subdir / name
     else:
         raise ValueError(f"unknown timed reference case: {case_id}")

@@ -3,8 +3,8 @@
 One command: PYTHONDONTWRITEBYTECODE=1 <worktree>.venv/bin/python
     prototypes/gemini-live/harness/run_quality.py --base-url https://127.0.0.1:18500 --out <dir>
 
-The optional --case/--passes flags are plumbing probes; only the default 12-session
-run emits the H1 content-free-metrics projection.
+The optional --case/--passes flags produce partial per-case metrics; only a
+12-session run emits the H1 content-free-metrics projection.
 """
 from __future__ import annotations
 
@@ -173,6 +173,8 @@ def main() -> None:
     parser.add_argument("--mic", type=Path)
     parser.add_argument("--case", choices=sorted(QUALITY_CASE_IDS))
     parser.add_argument("--passes", type=int, choices=(1, 2), default=2)
+    parser.add_argument("--pass-number", type=int, choices=(1, 2), default=1,
+                        help="first pass number; standalone pass 2 runs in reverse order")
     args = parser.parse_args()
     if not args.base_url.startswith("https://127.0.0.1:"):
         parser.error("local HTTPS 127.0.0.1 stack required")
@@ -201,10 +203,12 @@ def main() -> None:
     cookie.write_text("local-open-workspace\n", encoding="utf-8")
     cookie.chmod(0o600)
     observations = []
+    timed_cases = []
+    engine_cases = []
     descriptor_identity = None
     try:
-        for pass_number in range(1, args.passes + 1):
-            pass_order = selected if pass_number == 1 else list(reversed(selected))
+        for pass_number in range(args.pass_number, args.pass_number + args.passes):
+            pass_order = selected if pass_number % 2 == 1 else list(reversed(selected))
             for case_id in pass_order:
                 case_dir = corpus / case_id
                 audio = case_dir / "audio.wav"
@@ -229,11 +233,15 @@ def main() -> None:
                 elif identity != descriptor_identity:
                     raise RuntimeError("quality descriptor changed during campaign")
                 print(f"pass={pass_number} case={case_id} duration={duration:.3f}s", flush=True)
+                raw_snapshot = None
                 try:
                     run_service_replay(service=timed, audio_path=audio, out_dir=run_dir,
                                        pace=1.0, max_pacing_lag=3.0, runs=1,
                                        expect_revision=identity[0], expect_provider_hash=identity[1],
                                        expect_config_hash=identity[2])
+                    raw_snapshot = adapter._json(
+                        "GET", f"/api/live/sessions/{adapter._quoted(timed._session_id)}/snapshot"
+                    )["snapshot"]
                 finally:
                     timed.finish()
                     adapter.close()
@@ -242,9 +250,11 @@ def main() -> None:
                     raise RuntimeError(f"missing surface in {case_id}")
                 scored = {}
                 settled_rows = None
+                surface_rows = {}
                 case = surface.Case(case_id, case_dir, reference)
                 for name in SURFACES:
                     rows = surface.transcript_rows(captured.captures[name]["snapshot"], duration)
+                    surface_rows[name] = rows
                     key = {"pre_stop_immediate": "immediate", "pre_stop_settled": "settled",
                            "post_stop_final": "final"}[name]
                     scored[key] = surface.score_surface(case, rows)
@@ -275,6 +285,35 @@ def main() -> None:
                     "surface_observations": _quality_surface_observations(
                         captured.captures, reference_speaker_count=len({json.loads(line)["speaker"]
                             for line in reference.read_text().splitlines() if line.strip()}))})
+                reference_rows = [
+                    {key: row[key] for key in ("start", "end", "speaker", "text")}
+                    for line in reference.read_text(encoding="utf-8").splitlines() if line.strip()
+                    for row in (json.loads(line),)
+                ]
+                timed_case = {"case_id": case_id, "pass": pass_number,
+                              "reference": reference_rows, "surfaces": surface_rows}
+                write_json(run_dir / "timed-segments.json", timed_case)
+                timed_cases.append(timed_case)
+                write_json(args.out / "h1-timed-segments.json", {
+                    "schema": "h1-timed-segments.v1",
+                    "corpus_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+                    "cases": timed_cases,
+                })
+                diagnostics = raw_snapshot.get("engine_diagnostics") if isinstance(raw_snapshot, dict) else None
+                if diagnostics is None:
+                    diagnostics = {"status": "UNMEASURED", "reason": "runtime snapshot has no engine_diagnostics"}
+                at_stop = captured.captures["pre_stop_immediate"]["snapshot"]["session"]["effective_transcript"]
+                labels_at_stop = len({row.get("canonical_speaker") for row in at_stop
+                                      if row.get("canonical_speaker") is not None and row.get("text", "").strip()})
+                engine_cases.append({"case_id": case_id, "pass": pass_number,
+                                     "labels_at_stop": labels_at_stop,
+                                     "engine_diagnostics": diagnostics})
+                write_json(args.out / "engine-diagnostics.json", {"cases": engine_cases})
+                write_json(args.out / "pass-content-free-metrics.json", {
+                    "schema": "h1-partial-quality.v1", "h1_comparable": len(observations) == 12,
+                    "corpus_manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+                    "per_case": observations,
+                })
                 write_json(args.out / "progress.json", {"completed": len(observations),
                            "case_id": case_id, "pass": pass_number, "coverage": coverage})
                 if args.status:
