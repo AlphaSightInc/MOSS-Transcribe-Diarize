@@ -42,17 +42,18 @@ bars across the acceptance population remain unmeasured here.
    at least 960,000 retained samples and 115,200,000 stage bytes. The 60-minute synthetic
    probe wrote 360/360 ten-second chunks, 57.6 million samples, and read its first and last
    16,000 samples exactly. Account also owns durable MP3 recovery.
-3. `gemini_hybrid_engine.py` keeps a bounded 70-second, 2.24 MB live PCM cache for window
-   requests: a 60-second window can end up to 10 seconds behind current capture because
-   windows end on stride boundaries. The Account stage supplies full audio at Stop. Its measured W3 `GeminiLiveWordSource` streams accepted audio to
-   `gemini-3.5-transcribe-live` with TEXT, 500 ms automatic silence detection,
-   a 2 s Stop flush and 5 s buffered replay on bounded reconnect. It feeds preview
-   only. The legacy batch source remains available for isolated tests. Its
-   `FixedWindowScheduler` asks for up to 60 seconds every 10 seconds, with a 10-second
-   holdback. Warm-up windows start at 20 seconds. Its `OverlapRegistry` uses a Hungarian
-   word-time co-occurrence assignment to keep IDs stable as Gemini changes local labels.
-   Unmatched voices get new `speaker-NNNN` IDs. The registry interface accepts
-   `embeddings` so the measured C3 policy can consume the same WeSpeaker vectors.
+3. `gemini_hybrid_engine.py` keeps a bounded `Lmax + S` live PCM cache. The
+   composition root currently sets growing context to **Lmax=30 s, S=10 s** while pane
+   6.1 finishes C4. At the latest stride tick `t`, the single worker asks for
+   `[max(0,t-Lmax),t]` and commits through `t`. If a call is still in flight, newer
+   ticks coalesce to the latest one and omitted ticks are counted. The same scheduler
+   accepts Lmax up to 300 s; its cache then holds 310 s at S10. Account's stage supplies
+   full audio at Stop. W3 `GeminiLiveWordSource` streams accepted audio to
+   `gemini-3.5-transcribe-live` with TEXT, 500 ms automatic silence detection, a 2 s
+   Stop flush and 5 s buffered replay on bounded reconnect. It feeds preview only.
+   `OverlapRegistry` remains the placeholder Hungarian word-time assignment; it keeps
+   stable meeting IDs when local labels overlap and creates new IDs otherwise. Its
+   `embeddings` argument already accepts the measured C3 policy's WeSpeaker vectors.
 4. `gemini_provider.py` sends verbatim Interactions requests with word timestamps and
    speaker mode for rolling/terminal. It repairs invalid offsets using the observed
    `bc567bb2` rule: end before start or past the audio becomes
@@ -104,7 +105,7 @@ the assigned meeting IDs for Account. A one-command fake encoder/registry probe 
 
 `engine_diagnostics(session_id)` and the additive `engine_diagnostics` snapshot field expose
 calls by kind, errors/retries by code, clamped/dropped timing words, audio seconds sent,
-USD cost, degraded activations, and window/preview lag p50/max. The frontend ignores the
+USD cost, degraded activations, skipped window ticks, and window/preview lag p50/max. The frontend ignores the
 field. All values are operational metadata; no content or credential is serialized.
 
 | Final-path public accept6 `interview_bill_ackman_60s`, 1.0× | Preview | Rolling | Terminal | Total |

@@ -23,6 +23,9 @@ class WordSource(Protocol):
 
 
 class WindowScheduler(Protocol):
+    max_samples: int
+    stride_samples: int
+    cache_seconds: int
     def next_window(self, accepted_sample: int, last_end_sample: int) -> tuple[int, int, int] | None: ...
 
 
@@ -89,6 +92,11 @@ class BatchTailWordSource:
 class FixedWindowScheduler:
     """Placeholder L=60s, S=10s, H=10s; window ownership stays monotone."""
 
+    max_samples = 60 * LIVE_SAMPLE_RATE
+    stride_samples = 10 * LIVE_SAMPLE_RATE
+    stride_seconds = 10
+    cache_seconds = 70
+
     def next_window(self, accepted_sample: int, last_end_sample: int) -> tuple[int, int, int] | None:
         length = 60 * LIVE_SAMPLE_RATE
         stride = 10 * LIVE_SAMPLE_RATE
@@ -96,6 +104,27 @@ class FixedWindowScheduler:
             return None
         end = (accepted_sample // stride) * stride
         return max(0, end - length), end, end - stride
+
+
+class GrowingContextWindowScheduler:
+    """Use the latest stride tick with context growing to a bounded recent span."""
+
+    def __init__(self, *, max_seconds: int, stride_seconds: int):
+        if not 0 < stride_seconds <= max_seconds <= 300:
+            raise ValueError("Gemini growing window requires 0 < S <= Lmax <= 300 seconds")
+        self.max_seconds = max_seconds
+        self.stride_seconds = stride_seconds
+        self.stride_samples = stride_seconds * LIVE_SAMPLE_RATE
+        self.max_samples = max_seconds * LIVE_SAMPLE_RATE
+        self.cache_seconds = max_seconds + stride_seconds
+        self.idle_seconds = stride_seconds
+
+    def next_window(self, accepted_sample: int,
+                    last_end_sample: int) -> tuple[int, int, int] | None:
+        end = (accepted_sample // self.stride_samples) * self.stride_samples
+        if end < self.stride_samples or end <= last_end_sample:
+            return None
+        return max(0, end - self.max_samples), end, end
 
 
 class OverlapRegistry:
@@ -141,7 +170,8 @@ class GeminiHybridEngine:
                  diarizer: WindowDiarizer, terminal: TerminalTranscriber,
                  embedding_source: Callable[[bytes, int, Sequence[GeminiWord]],
                                             dict[str, tuple[tuple[float, ...], float]]] | None = None,
-                 encoder_spec: object | None = None, word_gate=None):
+                 encoder_spec: object | None = None, word_gate=None,
+                 report_usage: Callable[..., None] | None = None):
         self.publish = publish
         self.word_source = word_source
         self.window_scheduler = window_scheduler
@@ -151,6 +181,11 @@ class GeminiHybridEngine:
         self.embedding_source = embedding_source
         self.encoder_spec = encoder_spec
         self.word_gate = word_gate
+        self.report_usage = report_usage
+        self._window_max_samples = window_scheduler.max_samples
+        self._cache_samples = window_scheduler.cache_seconds * LIVE_SAMPLE_RATE
+        self._stride_samples = window_scheduler.stride_samples
+        self._idle_seconds = getattr(window_scheduler, "idle_seconds", self._IDLE_SECONDS)
         self._recent_audio = bytearray()
         self._recent_start = 0
         self._lock = threading.RLock()
@@ -210,10 +245,9 @@ class GeminiHybridEngine:
             self._last_ingress_at = time.monotonic()
             self._idle_due = False
             if self._idle_timer is None:
-                self._arm_idle_locked(self._IDLE_SECONDS)
-            # A 60-second window ends on a 10-second boundary. Keep that extra
-            # stride so a window is still readable between boundaries.
-            excess = len(self._recent_audio) - 70 * LIVE_SAMPLE_RATE * 2
+                self._arm_idle_locked(self._idle_seconds)
+            # Retain one extra stride so a delayed tick can still read Lmax.
+            excess = len(self._recent_audio) - self._cache_samples * 2
             if excess > 0:
                 del self._recent_audio[:excess]
                 self._recent_start += excess // 2
@@ -234,7 +268,7 @@ class GeminiHybridEngine:
             self._idle_timer = None
             if self._closed or self._stopping:
                 return
-            remaining = self._IDLE_SECONDS - (time.monotonic() - self._last_ingress_at)
+            remaining = self._idle_seconds - (time.monotonic() - self._last_ingress_at)
             if remaining > 0:
                 self._arm_idle_locked(remaining)
             elif self._rolling_frontier < self._accepted:
@@ -244,7 +278,7 @@ class GeminiHybridEngine:
 
     def _read_locked(self, start: int, end: int) -> bytes:
         if start < self._recent_start or end > self._accepted:
-            raise ValueError("Gemini live window is outside the 70-second cache")
+            raise ValueError("Gemini live window is outside the bounded cache")
         low = (start - self._recent_start) * 2
         return bytes(self._recent_audio[low:low + (end - start) * 2])
 
@@ -270,7 +304,7 @@ class GeminiHybridEngine:
                     return
                 accepted = self._accepted
                 if self._idle_due and self._rolling_frontier < accepted:
-                    window = (max(0, accepted - 60 * LIVE_SAMPLE_RATE), accepted, accepted)
+                    window = (max(0, accepted - self._window_max_samples), accepted, accepted)
                     self._idle_due = False
                 else:
                     window = self.window_scheduler.next_window(accepted, self._last_window_end)
@@ -280,12 +314,17 @@ class GeminiHybridEngine:
                     return
                 if window is not None:
                     start, end, frontier = window
+                    skipped = max(0, (end - self._last_window_end) // self._stride_samples - 1)
                     self._last_window_end = end
                 else:
+                    skipped = 0
                     end = accepted
                     start = max(0, end - 10 * LIVE_SAMPLE_RATE)
                     self._last_preview_end = end
                 pcm = self._read_locked(start, end)
+            if skipped and self.report_usage is not None:
+                self.report_usage(kind="rolling", count_call=False,
+                                  skipped_window_ticks=skipped)
             if window is not None:
                 words = self.diarizer.diarize(pcm, deadline=time.monotonic() + 120,
                                               kind="rolling").words
@@ -371,7 +410,7 @@ class GeminiHybridEngine:
             accepted = self._accepted
             if self._rolling_frontier >= accepted:
                 return True
-            start = max(0, accepted - 60 * LIVE_SAMPLE_RATE)
+            start = max(0, accepted - self._window_max_samples)
             pcm = self._read_locked(start, accepted)
         try:
             result = await asyncio.wait_for(

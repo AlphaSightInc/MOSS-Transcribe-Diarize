@@ -2,7 +2,7 @@ import asyncio
 import threading
 from types import SimpleNamespace
 
-from moss_transcribe_diarize.app.gemini_hybrid_engine import FixedWindowScheduler, GeminiHybridEngine, OverlapRegistry
+from moss_transcribe_diarize.app.gemini_hybrid_engine import FixedWindowScheduler, GrowingContextWindowScheduler, GeminiHybridEngine, OverlapRegistry
 from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord, GeminiWords
 from moss_transcribe_diarize.app.live_tape import CompleteMixedTape
@@ -259,4 +259,124 @@ def test_idle_drain_promotes_inflight_window_without_second_call(monkeypatch):
     engine._future.result(timeout=2)
     assert engine._rolling_frontier == 20*16000
     assert calls == [20*32000]
+    engine.close()
+
+
+def test_growing_context_scheduler_uses_latest_stride_tick_and_variable_start():
+    scheduler = GrowingContextWindowScheduler(max_seconds=30, stride_seconds=10)
+    assert scheduler.next_window(9*16000, 0) is None
+    assert scheduler.next_window(10*16000, 0) == (0, 10*16000, 10*16000)
+    assert scheduler.next_window(20*16000, 10*16000) == (0, 20*16000, 20*16000)
+    assert scheduler.next_window(35*16000, 30*16000) is None
+    assert scheduler.next_window(50*16000, 20*16000) == (20*16000, 50*16000, 50*16000)
+    long = GrowingContextWindowScheduler(max_seconds=300, stride_seconds=10)
+    assert long.next_window(310*16000, 300*16000) == (10*16000, 310*16000, 310*16000)
+    assert long.cache_seconds == 310
+
+
+def test_growing_window_cache_reads_three_hundred_seconds_after_delayed_tick():
+    engine = GeminiHybridEngine(lambda _update: None, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=300, stride_seconds=10),
+        registry=OverlapRegistry(), diarizer=FakeDiarizer(), terminal=FakeTerminal())
+    engine.push_audio(0, bytes(621*16000))  # 310.5 s, deliberately between ticks.
+    assert engine._future.result(timeout=5) is None
+    assert len(engine._recent_audio) == 310*32000
+    assert len(engine._read_locked(10*16000, 310*16000)) == 300*32000
+    engine.close()
+
+
+def test_growing_window_skips_busy_ticks_and_counts_them_once():
+    started = threading.Event()
+    release = threading.Event()
+    calls = []
+    usage = []
+    active = {"now": 0, "peak": 0}
+    class SlowDiarizer:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            active["now"] += 1
+            active["peak"] = max(active["peak"], active["now"])
+            try:
+                calls.append(len(pcm16)//32000)
+                if len(calls) == 1:
+                    started.set()
+                    release.wait(2)
+                return GeminiWords(())
+            finally:
+                active["now"] -= 1
+    class Source:
+        def bind(self, listener): pass
+        def push_audio(self, start_sample, pcm16): pass
+        async def finish(self): pass
+        def close(self): pass
+    engine = GeminiHybridEngine(lambda _update: None, word_source=Source(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=30, stride_seconds=10),
+        registry=OverlapRegistry(), diarizer=SlowDiarizer(), terminal=FakeTerminal(),
+        report_usage=lambda **row: usage.append(row))
+    engine.push_audio(0, bytes(10*32000))
+    assert started.wait(2)
+    engine.push_audio(10*16000, bytes(25*32000))
+    release.set()
+    engine._future.result(timeout=5)
+    assert calls == [10, 30]  # t=20 was skipped; one call at t=30.
+    assert active["peak"] == 1
+    assert usage == [{"kind": "rolling", "count_call": False, "skipped_window_ticks": 1}]
+    engine.close()
+
+
+def test_growing_idle_window_uses_max_context_and_exact_accepted_end():
+    import time
+    calls = []
+    class Source:
+        def bind(self, listener): pass
+        def push_audio(self, start_sample, pcm16): pass
+        async def finish(self): pass
+        def close(self): pass
+    class Diarizer:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            calls.append(len(pcm16)//32000)
+            return GeminiWords(())
+    scheduler = GrowingContextWindowScheduler(max_seconds=30, stride_seconds=20)
+    scheduler.idle_seconds = .05  # Compress only the idle wait, not window geometry.
+    engine = GeminiHybridEngine(lambda _update: None, word_source=Source(),
+        window_scheduler=scheduler, registry=OverlapRegistry(),
+        diarizer=Diarizer(), terminal=FakeTerminal())
+    engine.push_audio(0, bytes(45*32000))
+    until = time.monotonic() + 2
+    while engine._rolling_frontier < 45*16000 and time.monotonic() < until:
+        time.sleep(.01)
+    assert engine._rolling_frontier == 45*16000
+    assert calls == [30, 30]  # t40 [10,40], idle [15,45].
+    engine.close()
+
+
+def test_idle_window_counts_ticks_skipped_while_prior_call_was_busy():
+    import time
+    started = threading.Event()
+    release = threading.Event()
+    usage = []
+    class Source:
+        def bind(self, listener): pass
+        def push_audio(self, start_sample, pcm16): pass
+        async def finish(self): pass
+        def close(self): pass
+    class SlowDiarizer:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            if not started.is_set():
+                started.set()
+                release.wait(2)
+            return GeminiWords(())
+    scheduler = GrowingContextWindowScheduler(max_seconds=30, stride_seconds=10)
+    scheduler.idle_seconds = .05
+    engine = GeminiHybridEngine(lambda _update: None, word_source=Source(),
+        window_scheduler=scheduler, registry=OverlapRegistry(),
+        diarizer=SlowDiarizer(), terminal=FakeTerminal(),
+        report_usage=lambda **row: usage.append(row))
+    engine.push_audio(0, bytes(10*32000))
+    assert started.wait(2)
+    engine.push_audio(10*16000, bytes(25*32000))
+    time.sleep(.08)  # t20 and t30 pass while t10 is in flight.
+    release.set()
+    engine._future.result(timeout=5)
+    assert engine._rolling_frontier == 35*16000
+    assert usage == [{"kind": "rolling", "count_call": False, "skipped_window_ticks": 1}]
     engine.close()

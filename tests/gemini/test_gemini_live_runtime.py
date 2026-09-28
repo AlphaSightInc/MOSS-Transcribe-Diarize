@@ -407,3 +407,19 @@ def test_idle_ingress_drains_accepted_tail_before_stop_and_not_during_capture(tm
     assert [row.text for row in settled.session.effective_transcript] == ["tail"]
     assert calls == [(6*16000, "rolling")]
     rt._sessions["one"].engine.close()
+
+
+def test_skipped_window_ticks_are_per_session_content_free_diagnostics(tmp_path):
+    rt = runtime(tmp_path, {"one": ([], ()), "two": ([], ())})
+    rt.create(session_id="one")
+    rt.create(session_id="two")
+    rt.record_engine_call("one", kind="rolling", count_call=False, skipped_window_ticks=2)
+    rt.record_engine_call("one", kind="rolling", count_call=False, skipped_window_ticks=1)
+    one = rt.snapshot("one").to_dict()["engine_diagnostics"]
+    two = rt.snapshot("two").to_dict()["engine_diagnostics"]
+    assert one["skipped_window_ticks"] == 3
+    assert one["calls_by_kind"] == {}
+    assert two["skipped_window_ticks"] == 0
+    with pytest.raises(ValueError):
+        rt.record_engine_call("one", kind="rolling", count_call=False,
+                              skipped_window_ticks=-1)

@@ -216,6 +216,7 @@ class _GeminiState:
     audio_seconds_sent: float = 0.0
     cost_usd: float = 0.0
     live_list_price_estimate_usd: float = 0.0
+    skipped_window_ticks: int = 0
     degraded_path_activations: int = 0
     window_lag_samples: list[int] = field(default_factory=list)
     preview_lag_samples: list[int] = field(default_factory=list)
@@ -432,13 +433,15 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         cost_usd: float = 0.0,
         count_call: bool = True,
         cost_basis: str = "provider_usage",
+        skipped_window_ticks: int = 0,
     ) -> None:
         """Record one provider request attempt, with operational metadata only."""
 
         for value in (kind, error_code, retry_code):
             if value is not None and not re.fullmatch(r"[A-Za-z0-9_:-]{1,64}", value):
                 raise ValueError("engine usage kind and codes must be stable metadata tokens.")
-        if any(not isinstance(value, int) or value < 0 for value in (clamped_words, dropped_words)):
+        if any(not isinstance(value, int) or value < 0
+               for value in (clamped_words, dropped_words, skipped_window_ticks)):
             raise ValueError("word-timing anomaly counts must be nonnegative integers.")
         if any(not math.isfinite(value) or value < 0 for value in (audio_seconds_sent, cost_usd)):
             raise ValueError("engine audio seconds and cost must be finite and nonnegative.")
@@ -454,6 +457,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     counters[code] = counters.get(code, 0) + 1
             state.clamped_words += clamped_words
             state.dropped_words += dropped_words
+            state.skipped_window_ticks += skipped_window_ticks
             state.audio_seconds_sent += audio_seconds_sent
             state.cost_usd += cost_usd
             if cost_basis == "list_price_estimate":
@@ -474,6 +478,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "cost_usd_basis": ("provider_usage_plus_live_list_price_estimate"
                                    if state.live_list_price_estimate_usd else "provider_usage"),
                 "live_list_price_estimate_usd": state.live_list_price_estimate_usd,
+                "skipped_window_ticks": state.skipped_window_ticks,
                 "degraded_path_activations": state.degraded_path_activations,
                 "window_lag_seconds": _lag_summary(state.window_lag_samples),
                 "preview_lag_seconds": _lag_summary(state.preview_lag_samples),
