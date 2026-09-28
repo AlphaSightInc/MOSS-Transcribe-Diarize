@@ -51,3 +51,5 @@ Evidence: `evidence/mvpfix/wp17/NOTES.md`.
 ## Freeze-5 Q6 dialog copy amendment (2026-09-28)
 
 The naming dialog now says the existing 2.0 s floor in plain language and clarifies that speech still being reviewed does not count. If the server saves the display name but reports enrollment unavailable, the notice says the voiceprint was not saved and repeats the two-second requirement. The server admission rule and its own evidence belong to the freeze-5 gate slice; this frontend wording does not claim that rule passed.
+
+The Q6 follow-up proposes one API refusal for speech that is provisional, content-guarded, or below album admission: HTTP 400 with `detail.code = voiceprint_evidence_not_admitted`. The frontend maps this code to a plain-language alert inside the still-open naming dialog and offers an immediate name-only retry. The server contract awaits FX-GATE confirmation; the earlier `enrollment=unavailable` notice remains for legacy responses.

@@ -79,6 +79,45 @@ it.each([
   await vi.waitFor(assertNames);
 });
 
+it("explains a voiceprint admission refusal and still lets the operator save the name", async () => {
+  const requests: boolean[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (_url, init) => {
+    const saveVoiceprint = JSON.parse(init.body).save_voiceprint !== false;
+    requests.push(saveVoiceprint);
+    return saveVoiceprint
+      ? Response.json({ detail: { code: "voiceprint_evidence_not_admitted" } }, { status: 400 })
+      : Response.json({ meeting_id: "m", speaker_id: "person-a", label: "Alex",
+          enrollment: "not_requested" });
+  }));
+  await act(async () => {
+    sessionId.value = "m";
+    sessionStatus.value = "active";
+    replaceTranscript([{ segment_id: "one", start: 0, end: 1, text: "Short speech", speaker: "S01",
+      speaker_entity_id: "person-a", display_name: "S01", state: "confirmed" }]);
+    render(<TranscriptPane />, root);
+  });
+  act(() => root.querySelector<HTMLButtonElement>('.utt-speaker')!.click());
+  act(() => {
+    const input = root.querySelector<HTMLInputElement>('#speaker-name-input')!;
+    input.value = "Alex";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => { root.querySelector('dialog form')!.dispatchEvent(
+    new Event("submit", { bubbles: true, cancelable: true })); });
+  await vi.waitFor(() => expect(root.querySelector('dialog [role="alert"]')).not.toBeNull());
+  expect(root.querySelector('dialog [role="alert"]')?.textContent).toContain("Voiceprint not saved yet");
+  expect(root.querySelector('dialog [role="alert"]')?.textContent).toContain("2 seconds of clear speech");
+  expect(root.querySelector('dialog [role="alert"]')?.textContent).toContain("turn off Save voiceprint");
+  expect(root.querySelector<HTMLInputElement>('#speaker-name-input')?.value).toBe("Alex");
+  expect(transcript.value[0]?.display_name).toBe("S01");
+  act(() => root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')!.click());
+  await act(async () => { root.querySelector('dialog form')!.dispatchEvent(
+    new Event("submit", { bubbles: true, cancelable: true })); });
+  await vi.waitFor(() => expect(root.querySelector('dialog')).toBeNull());
+  expect(requests).toEqual([true, false]);
+  expect(transcript.value[0]?.display_name).toBe("Alex");
+});
+
 it("discards a pre-rename poll response and fetches the acknowledged labels", async () => {
   let release!: (value: Response) => void;
   let snapshots = 0;
