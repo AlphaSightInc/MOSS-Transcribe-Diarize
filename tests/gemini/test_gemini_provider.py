@@ -1,4 +1,6 @@
 import time
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import SimpleNamespace
 
 import pytest
@@ -145,6 +147,46 @@ def test_terminal_caps_calls_at_900_seconds_and_marks_chunked():
     assert usage == [{"kind": "terminal", "count_call": False, "chunked": True}]
 
 
+def test_terminal_skips_unvoiced_chunks_without_a_provider_call():
+    class Tape:
+        sample_count = 600*16000
+        def read(self, *, start_sample=0, end_sample=None):
+            return bytes(2*((self.sample_count if end_sample is None else end_sample)-start_sample))
+    class Provider:
+        def diarize(self, *_args, **_kwargs):
+            raise AssertionError("digital silence must not reach Gemini")
+    from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
+    terminal = TerminalTranscriber(Provider(), voiced_audio=WebRtcSpeechDetector())
+    assert terminal.transcribe(Tape()) == ()
+    assert terminal.last_words == ()
+
+
+def test_terminal_chunks_fetch_three_at_once_but_stitch_in_chunk_order():
+    from moss_transcribe_diarize.app.gemini_lane_engine import SerializedDiarizer
+    barrier = threading.Barrier(3, timeout=2)
+    active = {"now": 0, "peak": 0}
+    lock = threading.Lock()
+    class Tape:
+        sample_count = 10*16000
+        def read(self, *, start_sample=0, end_sample=None):
+            end = self.sample_count if end_sample is None else end_sample
+            return bytes([start_sample//16000, 0]) + bytes(2*(end-start_sample)-2)
+    class Provider:
+        def diarize(self, pcm, *, deadline, kind, diarize=True):
+            with lock:
+                active["now"] += 1
+                active["peak"] = max(active["peak"], active["now"])
+            barrier.wait()
+            with lock:
+                active["now"] -= 1
+            return GeminiWords((GeminiWord(f"part{pcm[0]}", "A", 0, 16000),))
+    terminal = TerminalTranscriber(SerializedDiarizer(Provider()),
+                                   chunk_seconds=4, overlap_seconds=1)
+    rows = terminal.transcribe(Tape())
+    assert active["peak"] == 3
+    assert [row.text for row in rows] == ["part0", "part3", "part6"]
+
+
 def test_terminal_rejects_explicit_call_cap_above_900_seconds():
     with pytest.raises(ValueError, match="900"):
         TerminalTranscriber(object(), chunk_seconds=901)
@@ -218,6 +260,41 @@ def test_all_5xx_retry_but_4xx_other_than_429_do_not(monkeypatch):
     with pytest.raises(RuntimeError, match="400"):
         provider.diarize(bytes(32000), deadline=time.monotonic()+5)
     assert len(refused.requests) == 1 and usage[-1]["retry_code"] is None
+
+
+def test_sdk_503_wire_attempts_match_adapter_error_and_retry_counters(monkeypatch):
+    from moss_transcribe_diarize.app.phase2_web_cli import _gemini_client
+    seen = []
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            seen.append(self.path)
+            self.rfile.read(int(self.headers.get("Content-Length", "0")))
+            body = b'{"error":{"code":503,"message":"injected"}}'
+            self.send_response(503)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        def log_message(self, *args): pass
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    monkeypatch.setenv("GOOGLE_GEMINI_BASE_URL", f"http://127.0.0.1:{server.server_port}")
+    monkeypatch.setattr("moss_transcribe_diarize.app.gemini_provider.time.sleep", lambda _s: None)
+    client = _gemini_client("local-test")
+    usage = []
+    try:
+        provider = WindowDiarizer(client, lambda **row: usage.append(row), max_attempts=2)
+        with pytest.raises(Exception):
+            provider.diarize(bytes(32000), deadline=time.monotonic()+5)
+        assert len(seen) == 2
+        assert [row["error_code"] for row in usage] == ["503", "503"]
+        assert [row["retry_code"] for row in usage] == ["503", None]
+    finally:
+        client.close()
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
 
 
 def test_terminal_applies_selected_identity_and_word_gate_before_turns(tmp_path):

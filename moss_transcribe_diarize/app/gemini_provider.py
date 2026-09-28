@@ -12,6 +12,7 @@ import random
 import re
 import time
 import wave
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
@@ -282,7 +283,7 @@ class TerminalTranscriber:
                  diarize: bool = True, word_filter=None,
                  source_lane: str | None = None, fixed_speaker: str | None = None,
                  report_usage: Callable[..., None] | None = None,
-                 stitcher=None):
+                 stitcher=None, voiced_audio: Callable[[bytes], bool] | None = None):
         if not 0 < overlap_seconds < chunk_seconds <= 900:
             raise ValueError("terminal chunks must be at most 900 seconds with a smaller overlap")
         self.diarizer = diarizer
@@ -294,6 +295,7 @@ class TerminalTranscriber:
         self.fixed_speaker = fixed_speaker
         self.report_usage = report_usage
         self.stitcher = stitcher
+        self.voiced_audio = voiced_audio
         self.last_words: tuple[GeminiWord, ...] = ()
         self.chunk_samples = chunk_seconds * LIVE_SAMPLE_RATE
         self.overlap_samples = overlap_seconds * LIVE_SAMPLE_RATE
@@ -308,47 +310,64 @@ class TerminalTranscriber:
         all_words: list[GeminiWord] = []
         chunks: list[TerminalChunk] = []
         previous_chunk_words: list[GeminiWord] = []
+        schedule: list[tuple[int, int, int]] = []
         start = 0
-        next_id = 1
         while start < end:
             stop = min(end, start + self.chunk_samples)
-            parsed = self.diarizer.diarize(tape.read(start_sample=start, end_sample=stop),
-                                           deadline=time.monotonic() + 240, kind="terminal",
-                                           diarize=self.diarize)
-            local_words = [GeminiWord(w.text, w.speaker, w.start_sample + start,
-                                      w.end_sample + start) for w in parsed.words]
             core_end = end if stop == end else stop - self.overlap_samples
-            chunks.append(TerminalChunk(len(chunks), start, stop, core_end,
-                                        tuple(local_words)))
-            local_labels = tuple(dict.fromkeys(w.speaker for w in local_words))
-            overlaps: dict[tuple[str, str], int] = {}
-            for word in local_words:
-                if word.start_sample >= start + self.overlap_samples:
-                    continue
-                for old in previous_chunk_words:
-                    shared = min(word.end_sample, old.end_sample) - max(word.start_sample, old.start_sample)
-                    if shared > 0:
-                        key = (word.speaker, old.speaker)
-                        overlaps[key] = overlaps.get(key, 0) + shared
-            mapping: dict[str, str] = {}
-            pairs = sorted(overlaps, key=lambda pair: overlaps[pair], reverse=True)
-            claimed: set[str] = set()
-            for local, global_id in pairs:
-                if local not in mapping and global_id not in claimed:
-                    mapping[local] = global_id
-                    claimed.add(global_id)
-            for local in local_labels:
-                if local not in mapping:
-                    mapping[local] = f"terminal-{next_id:04d}"
-                    next_id += 1
-            mapped_words = [GeminiWord(w.text, mapping[w.speaker], w.start_sample, w.end_sample)
-                            for w in local_words]
-            all_words.extend(w for w in mapped_words
-                             if start <= (w.start_sample+w.end_sample)/2 < core_end)
-            previous_chunk_words = mapped_words
+            schedule.append((start, stop, core_end))
             if stop == end:
                 break
             start = stop - self.overlap_samples
+        decode = getattr(self.diarizer, "diarize_terminal", self.diarizer.diarize)
+        next_id = 1
+        with ThreadPoolExecutor(max_workers=min(3, len(schedule)),
+                                thread_name_prefix="gemini-final") as executor:
+            for offset in range(0, len(schedule), 3):
+                batch = schedule[offset:offset+3]
+                pending = []
+                for start, stop, _core_end in batch:
+                    pcm = tape.read(start_sample=start, end_sample=stop)
+                    pending.append(None if self.voiced_audio is not None
+                                   and not self.voiced_audio(pcm) else
+                                   executor.submit(decode, pcm,
+                                                   deadline=time.monotonic() + 240,
+                                                   kind="terminal", diarize=self.diarize))
+                for (start, stop, core_end), future in zip(batch, pending):
+                    parsed = future.result() if future is not None else GeminiWords(())
+                    local_words = [GeminiWord(w.text, w.speaker, w.start_sample + start,
+                                              w.end_sample + start) for w in parsed.words]
+                    chunks.append(TerminalChunk(len(chunks), start, stop, core_end,
+                                                tuple(local_words)))
+                    local_labels = tuple(dict.fromkeys(w.speaker for w in local_words))
+                    overlaps: dict[tuple[str, str], int] = {}
+                    for word in local_words:
+                        if word.start_sample >= start + self.overlap_samples:
+                            continue
+                        for old in previous_chunk_words:
+                            shared = min(word.end_sample, old.end_sample) - max(word.start_sample, old.start_sample)
+                            if shared > 0:
+                                key = (word.speaker, old.speaker)
+                                overlaps[key] = overlaps.get(key, 0) + shared
+                    mapping: dict[str, str] = {}
+                    pairs = sorted(overlaps, key=lambda pair: overlaps[pair], reverse=True)
+                    claimed: set[str] = set()
+                    for local, global_id in pairs:
+                        if local not in mapping and global_id not in claimed:
+                            mapping[local] = global_id
+                            claimed.add(global_id)
+                    for local in local_labels:
+                        if local not in mapping:
+                            mapping[local] = f"terminal-{next_id:04d}"
+                            next_id += 1
+                    mapped_words = [GeminiWord(w.text, mapping[w.speaker], w.start_sample, w.end_sample)
+                                    for w in local_words]
+                    all_words.extend(w for w in mapped_words
+                                     if start <= (w.start_sample+w.end_sample)/2 < core_end)
+                    previous_chunk_words = mapped_words
+        if not any(chunk.words for chunk in chunks):
+            self.last_words = ()
+            return ()
         if self.identity_policy is not None or self.word_gate is not None or (chunked and self.stitcher):
             pcm = tape.read(start_sample=0, end_sample=end)
             if chunked and self.stitcher is not None:

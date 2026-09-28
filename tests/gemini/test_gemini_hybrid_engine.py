@@ -197,6 +197,25 @@ def test_silent_microphone_skips_batch_calls_then_births_one_local_speaker():
     engine.close()
 
 
+def test_silent_system_window_advances_frontier_without_gemini_call():
+    from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
+    updates = []
+    class ForbiddenDiarizer:
+        def diarize(self, *_args, **_kwargs):
+            raise AssertionError("unvoiced rolling audio must not reach Gemini")
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=180, stride_seconds=15),
+        registry=OverlapRegistry(), diarizer=ForbiddenDiarizer(), terminal=FakeTerminal(),
+        voiced_audio=WebRtcSpeechDetector(), source_lane="system")
+    engine.push_audio(0, bytes(15*32000))
+    engine._future.result(timeout=5)
+    rolls = [row for row in updates if isinstance(row, GeminiRolling)]
+    assert len(rolls) == 1
+    assert rolls[0].end_sample == 15*16000 and rolls[0].segments == ()
+    engine.close()
+
+
 def test_microphone_short_windows_open_only_on_new_voiced_audio_and_drain_quiet_tail():
     from moss_transcribe_diarize.app.gemini_hybrid_engine import SingleMicrophoneRegistry
     calls = []

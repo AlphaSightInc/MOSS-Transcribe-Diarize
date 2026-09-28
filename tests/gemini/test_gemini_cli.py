@@ -20,6 +20,13 @@ def test_c4_system_and_mic_window_defaults_at_composition_root():
     assert microphone.next_window(195*16000, 180*16000) == (165*16000, 195*16000, 195*16000)
 
 
+def test_gemini_client_options_leave_retries_to_the_counted_adapter():
+    from moss_transcribe_diarize.app.phase2_web_cli import _gemini_http_options
+    options = _gemini_http_options()
+    assert options.retry_options.attempts == 1
+    assert options.base_url is None  # GOOGLE_GEMINI_BASE_URL remains effective.
+
+
 def test_gemini_cli_selects_real_composition(monkeypatch):
     argv = ["--tls-certfile", "cert", "--tls-keyfile", "key",
             "--live-provider-manifest", "manifest", "--live-helper-lease-seconds", "10"]

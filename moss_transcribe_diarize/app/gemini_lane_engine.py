@@ -243,6 +243,14 @@ class SerializedDiarizer:
             return self.diarizer.diarize(pcm16, deadline=deadline,
                                          kind=kind, diarize=diarize)
 
+    def diarize_terminal(self, pcm16: bytes, *, deadline: float, kind: str,
+                         diarize: bool = True):
+        # Stop drained rolling work before the final pass. Its independent
+        # chunks may use the shared HTTP client concurrently (bounded by the
+        # TerminalTranscriber) without reopening live-window concurrency.
+        return self.diarizer.diarize(pcm16, deadline=deadline,
+                                     kind=kind, diarize=diarize)
+
 
 class _LaneTape:
     """Temporary complete accepted source PCM; Account's mixed stage remains untouched."""
