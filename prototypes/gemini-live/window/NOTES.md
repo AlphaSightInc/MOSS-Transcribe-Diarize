@@ -430,3 +430,98 @@ The **first 1800 s one-call** comparator reuses the first chunk response, **not 
 | `[1770,2586]` s | 816 s / 2025 | 1 clamped, 0 dropped (1/2025 words) | new / **$0.040802** |
 
 **Artifact custody.** Deterministic builder `window/long60/build.py` produced 16-kHz mono PCM16 `prototypes/gemini-live/.cache/long60/audio.wav` (ignored, **2586 s**) and tracked `window/long60/reference.jsonl` (**97 rows, 2580 s timed truth + 6 s explicit silence**). The exact absolute paths are in `PANE-5.3-STATUS.md` STEP 3 for the lead to register as `long60` in `common/corpus.py` for panes 6.1/6.4. The `long60` name is a routing label; this public fixture is **43 min 06 s**. Source references were complete and nonduplicate: Bill30m, Keyu5m, Javier5m, Adam3m. Shapiro's incomplete reference and duplicate Gold slices were excluded. One command to rebuild: `PYTHONDONTWRITEBYTECODE=1 ../MOSS-Transcribe-Diarize-wt-gemini-live.venv/bin/python prototypes/gemini-live/window/long60/build.py`. Numeric receipt: `evidence/P53/long60-{calls,results}.json`; ledger `P53-long60` records the one new billed call and **$0.040802**, below the $3 cap. No private/operator audio used.
+
+## Word-timestamp structural contract (before cache inventory or policy sweep)
+
+**Structural question.** Are long Gemini calls returning word timestamps that disagree with their annotation order, and does turn construction need to distrust isolated offsets while preserving the intended speaker sequence? What maximum single-call length avoids an observed timestamp failure without creating worse chunk-identity error?
+
+**Minimum primitives.** A cached call has audio duration, annotation-order words, parsed start/end, and parser clamp/drop counts. Consecutive starts expose backward jumps; duration and local neighbour times expose outliers. A turn builder maps ordered words into speaker intervals; a local timestamp repair may alter only offending times, never speaker/text/order. Complete timed references and H1-exact scoring for accept6 measure diarization error; common production scoring covers other supported clips. A chunk plan plus POLICY-LONG tests the alternate call length. These are sufficient to separate timestamp pathology from speaker-label fragmentation.
+
+**Invariants.** Inventory every shared cached diarization call, not only favorable P53 responses, and stratify by the brief's length buckets. Preserve Gemini annotation order and all words except any explicitly measured drop rule; enforce start<=end and keep repaired times within call audio. Compare raw, sorted, and repaired turns from identical responses. Freeze a repair threshold before scoring held-out populations. Use public audio only, keep new spend < $1, and do not edit common/ or production code.
+
+**Assumptions/unknowns.** Cache metadata may not retain audio duration or parser anomalies for every historical call; derive only from recorded request/usage when possible and mark the rest unknown. A long call may mix speakers regardless of timestamp quality; better timestamps alone may not fix its DER. Previously reported Lex30m .084 used raw annotation order and is not comparable to chronologically sorted .414; whether either matches product rendering is unmeasured until the actual turn path is checked. Synthetic s1 timed truth has gaps and chapter changes. The long60 fixture is 43m06, not 60m.
+
+**Falsifier and tool decision.** Reject a timestamp repair if it worsens H1 accept6 final DER or complete real clips, drops speech, or leaves the long-call pathology; report negative outcome rather than tuning indefinitely. Read shared cache JSON and the production turn path to locate the failure and collect 3 concrete examples. Use a cache-only prototype sweep to select the smallest local rule, with H1-exact accept6 and complete Lex references. Only call Gemini for missing public 10-minute long60 chunks needed to compare the safe-length option; one cached-response comparison is not a stability guarantee. The length recommendation changes only if chunked DER/IDs beat the 30-minute call without a new false merge.
+
+**Predeclared repair candidate R1 (before quality scoring).** Keep annotation order. Treat a word start as an isolated typo only if it differs by **>10 s from both adjacent starts** while those neighbours differ by ≤10 s; move it between the adjacent words and keep at most 1 s duration. Treat a ≤10-word jump-and-return by >10 s in opposite directions as one displaced island; shift its word times together between its unchanged neighbours, preserving internal spacing. Cap any remaining single-word duration >5 s to at most 1 s. Keep every word, speaker, and text; clamp repaired offsets to the call boundary. The 10 s threshold targets the observed +460.6 s five-word island and −999.9 s single-word typo while leaving the 6.2 s backchannel inversion alone. Falsifier: any accept6 H1 final DER regression, poorer complete Lex30m DER, changed word count, or persistent >5 s duration or >10 s short excursion after repair. If R1 fails, allow at most two bounded revisions as in common method; do not retune on all held-out cases.
+
+**Call-length comparison contract (before shorter-chunk scoring).** Compare the repaired 1800 s single-call Lex30m and 1800 s long60 stitch against **900 s and 600 s calls with 30 s overlap**, using the same public complete references, frozen R1, and frozen cosine-gated POLICY-LONG. Reuse shared cached chunks; allow only the missing long60 public calls under this brief's $1 cap. Preserve each chunk's annotation order in its retained core and concatenate cores in start order; do not globally sort words. Score raw and R1 variants from the same call responses, output ID count, dominant-truth false merges, and Lex IDs with ≥2 s union support. A shorter maximum is supported only if it lowers DER without creating a false merge or worse speaker fragmentation on **both** clips. If no tested cap meets that, report no qualified safe maximum rather than choosing by a single rate table.
+
+**One bounded midpoint after the 600/900/1800 measurements.** The 900 s cap beat 1800 s on both complete clips and avoided long60's Bill–Adam false merge, but 1200–1799 s is unmeasured. Run exactly **1200 s / 30 s overlap** on the same two clips and frozen R1/POLICY-LONG. If it retains no false merge and no worse DER/fragmentation, recommend 1200 s as the largest supported cap; otherwise retain 900 s. This is a cap boundary check, not policy retuning, and the $1 spend guard still applies.
+
+**R1 falsifier in cache inventory; bounded R2 before replay.** R1 fixed the six Lex30m target words, but two other public 1800 s cached calls retain >10 s backward jumps. One contains a 1000 s single-word start typo with an implausible 1000 s duration adjacent to a separate four-word shifted island; R1's island-first pass wrongly shifts the legitimate word between them. Another has a **20-word** −1000 s island, beyond R1's 10-word bound. R2 changes only evidence order and island bound: repair isolated/duration-implausible words first, requiring both neighbours to have plausible ≤5 s duration before trusting their starts; then shift jump-return islands of ≤30 words. The 30-word bound covers the observed 20-word block while remaining local. Same >10 s threshold, same word/order/speaker/text invariants. Falsifier: residual >10 s jump-return islands in these calls, any accept6 DER increase or complete Lex30m DER regression, or worse 900 s/1200 s/1800 s chunk verdicts. No new provider calls for this replay.
+
+### F17 — Word offsets, turn construction, and final-call cap
+
+**Verdict.** Gemini word offset corruption is **rare per word but consequential for long-call turns**. A local R2 repair preserves annotation order and fixes the measured gross errors without dropping a word; it passes the H1-exact accept6 no-harm check and improves complete Lex Bill 30-minute final-policy DER **.060764→.038491**. Chronological sorting alone scores **.391357** there. For meetings longer than one call, **900 s / 15 min with 30 s overlap is the largest favorable cap tested** on both complete real fixtures; it is a candidate, not a universal safety guarantee. The 1200 s and 1800 s alternatives fail the predeclared DER/identity comparison.
+
+**Shared-cache snapshot.** All **3,571** available `gemini-3.5-transcribe` response JSON files at the final scan were re-parsed with the current clamp/drop fix: **650,207 returned words**, lengths 2–1800 s. Each file is an audio/config cache key; many are overlapping or repeated-source clips, not independent meetings. A backward event means adjacent annotation-order starts fall by >0.5 s. An outlier call has a parsed word duration >5 s or a start >5 s from both adjacent starts while those neighbours are within 5 s of each other. Counts are **affected calls / calls in bucket**, followed by parser clamped/dropped **word totals** in parentheses. No populated bucket is anomaly-free; 1800 s is especially poorly supported by only five calls. Zero 2586 s calls exist because diarization is capped at 1800 s.
+
+| Call length (s) | Calls / parsed words | Backward calls | Outlier calls | Parser clamped calls (words) | Parser dropped calls (words) |
+|---|---:|---:|---:|---:|---:|
+| ≤30 | 2,234 / 106,750 | 50/2,234 | 12/2,234 | 129/2,234 (144) | 7/2,234 (4,489) |
+| (30,60] | 412 / 70,161 | 61/412 | 6/412 | 12/412 (12) | 1/412 (1) |
+| (60,120] | 600 / 200,686 | 90/600 | 9/600 | 14/600 (14) | 2/600 (2) |
+| (120,300] | 281 / 160,974 | 98/281 | 12/281 | 6/281 (6) | 1/281 (1) |
+| (300,600] | 13 / 20,814 | 5/13 | 1/13 | 1/13 (1) | 0/13 (0) |
+| (600,1200] | 26 / 64,101 | 13/26 | 6/26 | 2/26 (2) | 1/26 (1) |
+| (1200,1800] | 5 / 26,721 | 4/5 | 2/5 | 2/5 (5) | 0/5 (0) |
+| (1800,2586] | 0 / 0 | 0/0 | 0/0 | 0/0 (0) | 0/0 (0) |
+
+The ≤30 s dropped-word total is dominated by **one 30 s cached response with 4,483/4,489 dropped words**; use the 7/2,234 *call* rate rather than treating those 4,489 words as independent failures. This is a provider-response pathology, not a private-audio case. R2 changed **115/650,207 words in 33/3,571 calls**, repaired all **15** observed backward jumps >10 s, and left zero parsed durations >5 s; smaller inversions remain. Parser-dropped words cannot be recovered by a turn repair. Receipts: `evidence/P53/timestamps-inventory.json` and `timestamps-repair-inventory-r2.json`.
+
+**Why sorting fails on the same 30-minute Bill response (three public examples).** Gemini emits words in an annotation sequence; `words_to_segments` joins adjacent same-speaker words in that sequence and extends the turn end. Sorting corrupt offsets relocates words into unrelated turns:
+
+1. Words **3551–3555**, “So, the problem is those,” jump from a preceding **1074.6 s** word to **1535.2–1537.3 s**, then word 3556 “companies” returns to **1076.5 s** (−459.8 s). The reference phrase is at ~1076 s. R2 shifts the five-word island by **−460.4 s**.
+2. Word **4887**, “basics,” starts at **485.4 s** and ends at **1486.1 s** (1000.7 s duration) between words near **1485.3** and **1486.4 s**. Sorting makes it a **standalone 1000.7 s turn**, overlapping other turns by ~982.5 s; R2 moves it to **1486.35–1486.4 s**.
+3. Word **2507**, “Yes,” starts at **763.1 s** after a **769.3 s** word (−6.2 s), with the next word at **770.7 s**. It may be a delayed backchannel annotation; R2 intentionally leaves sub-10-second jumps alone.
+
+With the frozen final speaker mapping, the same 5900 words make **77 raw-order turns / 100 sorted turns / 76 repaired turns**. Turn-overlap sum is **7.7 / 982.5 / 5.6 s**. The sorted 1000.7 s ghost turn drives the huge DER rise; raw order hides its malformed start by joining it into a plausible surrounding turn. R2 repairs the time without that accidental masking. The legacy .060764 DER should not be read as proof that its word times were valid.
+
+**Same-response final DER (speaker mapping frozen before timestamp variants).** Accept6 uses the **H1 #3 reference set and H1-exact `score_case` final surface**; Lex30m and synthetic use the common production DER scorer (polynomial exact assignment when needed). Long60's first 1800 s is byte-identical to the Lex30m one-call audio/reference and is the *same cached response*, not an independent result. Synthetic s1 references have untimed gaps, so those scores are diagnostic. R2 edits **0 words** in all six accept6 and all four s1 clips.
+
+| Case | Raw order DER | Sorted DER | R2 repaired DER |
+|---|---:|---:|---:|
+| Jamie 180 s | .063795 | .063795 | .063795 |
+| RTFL 90 s (partial timed truth) | .414255 | .414255 | .414255 |
+| Adam 180 s | .026111 | .026111 | .026111 |
+| Bill 60 s | .068333 | .068333 | .068333 |
+| Keyu 60 s | .036667 | .036667 | .036667 |
+| Javier 50 s | .020000 | .020000 | .020000 |
+| **accept6 final DER macro** | **.104860** | **.104860** | **.104860** |
+| Complete Lex Bill 1800 s / long60 first 1800 s | .060764 | **.391357** | **.038491** |
+| Synthetic K2 s1 | .157602 | .157602 | .157602 |
+| Synthetic K3 s1 | .131871 | .131871 | .131871 |
+| Synthetic K4 s1 | .158978 | .158978 | .158978 |
+| Synthetic K6 s1 | .275779 | .275779 | .275779 |
+
+**Call-length decision, complete real references, frozen R2 + cosine-gated POLICY-LONG.** Each row reuses the same chunk responses for raw and repaired; retained cores stay in chunk/annotation order and are never globally sorted. The one-call Lex row has no seam. Material Lex IDs mean output IDs with ≥2 s *union* overlap against Lex truth; truth is one Lex. False merges use F15's dominant-node diagnostic. All shorter-cap rows had raw=repaired DER because R2 found no offending word in those calls.
+
+| Clip / max call / overlap | Calls | Raw DER | R2 DER | Output IDs / truth | Lex IDs | False-merge groups |
+|---|---:|---:|---:|---:|---:|---:|
+| Lex30m / 600 / 30 s | 4 | .041435 | .041435 | 2 / 2 | 2 | 0 |
+| Lex30m / **900** / 30 s | 3 | .032382 | **.032382** | 2 / 2 | 2 | 0 |
+| Lex30m / 1200 / 30 s | 2 | .106865 | .106865 | 2 / 2 | 2 | 0 |
+| Lex30m / 1800 s one-call | 1 | .060764 | .038491 | 2 / 2 | 2 | 0 |
+| long60 / 600 / 30 s | 5 | .037281 | .037281 | 6 / 5 | 2 | 0 |
+| long60 / **900** / 30 s | 3 | .034568 | **.034568** | 5 / 5 | 2 | 0 |
+| long60 / 1200 / 30 s | 3 | .086692 | .086692 | 5 / 5 | 2 | 0 |
+| long60 / 1800 / 30 s | 2 | .105488 | .089947 | **4 / 5** | 3 | **1 (Bill + Adam)** |
+
+The 1200 s midpoint is worse than 900 s in both clips despite the same repaired rule; its first 1200 s Bill call also has one parser-dropped word. The 1800 s long60 call retains the within-chunk Bill/Adam label reuse from F16, which word-time repair cannot undo. Thus **15 min is the largest favorable cap among 10/15/20/30 min tested**, not a statistical or all-speaker guarantee; 16–19 and 21–29 min were unmeasured. Lex remains split across two material IDs even at the selected cap, so long-meeting speaker identity remains **unqualified**. The complete long60 reference covers 2580 s speech plus 6 s intended silence in a 2586 s fixture.
+
+Across the **22 chunk call slots**, T600 and T900 had **0 parser repairs/drops in 15 slots**; the two T1200 first-chunk slots reuse one cached response with one dropped word each; T1800's two slots had **2 and 1 clamped** words, no drops. Six new public calls cost **$0.191412** total (ledger `P53-timestamps`, 0 provider errors), below the $1 cap. Numeric receipts: `evidence/P53/timestamps-{quality-r2,chunks-r2,chunk-calls}.json`. No operator/private audio used.
+
+#### POLICY-TIMESTAMPS — candidate handoff to pane 6.3 (7 pseudocode lines)
+
+```text
+cap each final Gemini call at 900 s; for longer audio use O=30 s and POLICY-LONG stitch with its T=1800 overridden to 900
+parse offsets with existing window clamp/drop; keep surviving words in Gemini annotation order, never sort
+first fix an interior word with duration>5 s, or start >10 s from both valid-duration neighbours whose starts differ <=10 s
+place that word between neighbour times, cap its new duration at 1 s, clamp to [0,call_duration]
+then if opposite >10 s start jumps return within 10 s in <=30 words, shift the intervening words together between anchors
+skip a proposed shift if any changed interval leaves [0,call_duration] or end<=start; keep text/speaker/order and every parsed word
+run frozen .65 identity policy on repaired words, then build same-speaker turns with <=1.5 s gap; report parser/repair counts
+```
+
+**Boundary:** This cap recommendation supersedes only POLICY-LONG's `T=1800`; it keeps the measured 30 s overlap and cosine-gated identity mapping. The >10 s rule intentionally leaves smaller backward starts, and Gemini's own parser may drop impossible offsets before this rule sees them. Pane 6.3 should treat 900 s as a measured candidate cap and retain final identity qualification as open, especially on new speakers/recordings. The prototype command is `PYTHONDONTWRITEBYTECODE=1 ../MOSS-Transcribe-Diarize-wt-gemini-live.venv/bin/python prototypes/gemini-live/window/timestamps.py {quality,chunks,repair_inventory}` (run one mode at a time; no new calls on the retained cache).
