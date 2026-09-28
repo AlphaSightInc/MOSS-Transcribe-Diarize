@@ -236,13 +236,26 @@ def passage_gate(paths: list[Path], baseline: dict) -> tuple[dict, list[dict]]:
 
 def stress_receipt(path: Path) -> tuple[dict | None, dict]:
     data = read(path)
+    sessions = data.get("sessions") or []
     providers = [provider_from_snapshot(path.parent / row["name"] / "final-snapshot.json")
-                 for row in data.get("sessions") or []]
+                 for row in sessions]
     eligible = bool(providers) and all(isinstance(v, str) and "gemini" in v.lower() for v in providers)
     eligible = eligible and (data.get("expectations") or {}).get("scope") == "full named scenario"
-    eligible = eligible and isinstance(data.get("gemini_calls"), (int, float)) and data["gemini_calls"] > 0
-    eligible = eligible and isinstance(data.get("timing_anomalies_per_call"), dict)
-    eligible = eligible and all(isinstance(row.get("engine"), dict) for row in data.get("sessions") or [])
+    measured_calls = (isinstance(data.get("gemini_calls"), (int, float)) and data["gemini_calls"] > 0
+                      and isinstance(data.get("timing_anomalies_per_call"), dict))
+    zero_silence = data.get("scenario") == "silence10" and data.get("status") == "PASS" and len(sessions) == 1
+    if zero_silence:
+        session = sessions[0]
+        engine = session.get("engine") or {}
+        zero_silence = (session.get("sent_audio_s") == 600 and session.get("retained_mp3_duration_s") == 600
+                        and session.get("finalization_status") == "final" and session.get("terminal_rows") == 0
+                        and session.get("live_rows_at_stop") == 0 and data.get("gemini_calls") == 0
+                        and data.get("gemini_cost_usd") == 0 and data.get("timing_anomalies_per_call") == "UNMEASURED"
+                        and engine.get("calls_by_kind") == {} and engine.get("calls_total") == 0
+                        and engine.get("audio_seconds_sent") == 0 and engine.get("cost_usd") == 0
+                        and engine.get("timing_anomalies") == {"clamped": 0, "dropped": 0})
+    eligible = eligible and (measured_calls or zero_silence)
+    eligible = eligible and all(isinstance(row.get("engine"), dict) for row in sessions)
     return (data if eligible else None), {"source_path": str(path.resolve()), "eligible": bool(eligible),
                                           "reason": "full Gemini runtime scenario" if eligible else
                                           "stub, short smoke, or provider unverified"}
@@ -536,14 +549,22 @@ def main() -> None:
         eligibility.append({"source_path": str(path.resolve()), "eligible": False,
                             "reason": "per-run p50 retained; pooled second-level p50 unavailable without raw bucket delays"})
     cost_rows = []
-    for data, path in stress_data.values():
-        if data.get("scenario") not in ("long60", "concurrent2") or data.get("status") != "PASS":
+    cost_scenario = None
+    for name in ("long60", "concurrent2"):
+        receipt = stress_data.get(name)
+        if receipt is None or receipt[0].get("status") != "PASS":
             continue
-        for session in data.get("sessions") or []:
+        data, path = receipt
+        sessions = data.get("sessions") or []
+        rows = []
+        for session in sessions:
             engine = session.get("engine")
             duration = session.get("sent_audio_s")
             if isinstance(engine, dict) and isinstance(engine.get("cost_usd"), (int, float)) and isinstance(duration, (int, float)) and duration > 0:
-                cost_rows.append((engine["cost_usd"], duration, path))
+                rows.append((engine["cost_usd"], duration, path))
+        if sessions and len(rows) == len(sessions):
+            cost_rows, cost_scenario = rows, name
+            break
     cost = (sum(row[0] for row in cost_rows) / sum(row[1] for row in cost_rows) * 3600) if cost_rows else None
     cost_source = cost_rows[0][2] if cost_rows else None
     if not cost_rows and gemini_e1_data is not None:
@@ -554,7 +575,8 @@ def main() -> None:
         if isinstance(engine.get("cost_usd"), (int, float)) and isinstance(seconds, (int, float)) and seconds > 0:
             cost = engine["cost_usd"] / seconds * 3600
             cost_source = final_path
-    cost_population = (f"Gemini:{len(cost_rows)} full non-fault meeting sessions" if cost_rows else
+    cost_population = (f"Gemini:{cost_scenario} {len(cost_rows)} full non-fault meeting session"
+                       f"{'s' if len(cost_rows) != 1 else ''}" if cost_rows else
                        "Gemini:one paced E1 meeting" if cost is not None else "Gemini:meeting-hour unmeasured")
     gemini_cost = cell(cost, cost_source, "engine.cost_usd / meeting_audio_s * 3600", cost_population)
     soft = {

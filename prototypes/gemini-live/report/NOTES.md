@@ -1,5 +1,19 @@
 # D6 scorecard prototype
 
+## Stress cost denominator amendment, 2026-09-28
+
+**Structural question.** What does a measured Gemini meeting-hour cost mean when retained stress receipts come from different runtime SHAs? **Minimum primitives:** a complete non-fault session with engine cost, accepted audio duration, and one receipt/SHA; its cost is total engine dollars divided by total meeting seconds. Mixing two SHAs removes the identity of the measured implementation. **Invariant:** one cost cell uses sessions from one complete scenario receipt; prefer the complete long60 meeting because it covers the requested sustained workload, else the complete concurrent2 receipt. **Unknown:** the final SHA long60 cost is not yet measured. **Falsifier:** the selected long60 receipt lacks a completed terminal state, a cost counter, or an accepted duration, or the reducer still includes concurrent2 dollars after selecting it. **Tool decision:** an offline arithmetic probe over real P62 long60 (6c5776e3) and P64 concurrent2 (c58595da) measures the contamination; no provider call or new data structure is needed.
+
+One-command probe printed full inputs: P62 long60 2586 s, $1.767767, $2.460929/h; P64 concurrent2 600 s, $0.167457, $1.004744/h; pooling across SHAs gives $2.186695/h, which describes neither measured implementation. **Verdict:** use the complete long60 stress receipt alone when present, else concurrent2 alone; retain the exact source path in the cell. The final 56513e30 long60 run will test this selection.
+
+## Zero-call silence eligibility amendment, 2026-09-28
+
+**Structural question.** How can the scorecard accept the intended zero-provider result for 600 s silence without mistaking missing counters for zero? **Minimum primitives:** verified Gemini runtime descriptor, full named silence10 receipt, exact 600 s accepted and saved tape, final empty transcript, measured engine counters with zero calls/sent audio/cost. Removing any one loses provider identity, workload completeness, terminal evidence, or the actual zero-cost observation. **Invariant:** 0/0 anomaly rates stay `UNMEASURED`; other stress scenarios still require positive measured calls and per-call anomaly rates. **Unknown:** one digital-zero corpus clip cannot prove all possible quiet rooms. **Falsifier:** the final-SHA real silence receipt is excluded, or a short stub smoke/positive-call receipt is accepted by this exception. **Tool decision:** call `stress_receipt` on the real final zero-call receipt plus a short stub and prior paid S12 receipt before/after the narrow change; this tests the exact eligibility branch with no provider call.
+
+Before change, `runtime-final-silence10-full1/summary.json` was excluded as `stub, short smoke, or provider unverified` despite 600/600 s tape, final empty transcript, `calls_by_kind={}`, `calls_total=0`, `audio_seconds_sent=0`, `cost_usd=0`, errors/retries/anomalies0. This is a real eligibility false negative. The exception is limited to that complete measurable zero-call shape; after-change probe outcome is recorded below.
+
+After change: final zero-call silence `eligible=True`; prior paid full S12 silence `eligible=True` under the ordinary positive-call branch; short stub silence smoke `eligible=False`. **Verdict:** the narrow exception admits the measured S-4 result without converting a 0/0 anomaly rate into zero or weakening other scenario eligibility.
+
 ## Structural contract
 
 **Question.** Can a reader compare MOSS and Gemini on the same public population and three transcript surfaces without promoting a stub, a partial run, or an unrelated provider call into product evidence?
