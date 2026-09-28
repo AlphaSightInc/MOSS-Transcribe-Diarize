@@ -19,7 +19,6 @@ from typing import Callable, Sequence
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .gemini_live_runtime import GeminiSegment
-from .gemini_coverage import voiced_word_gaps
 
 MODEL = "gemini-3.5-transcribe"
 
@@ -298,12 +297,10 @@ class TerminalTranscriber:
         self.stitcher = stitcher
         self.voiced_audio = voiced_audio
         self.last_words: tuple[GeminiWord, ...] = ()
-        self.coverage_gaps: tuple[tuple[int, int], ...] = ()
         self.chunk_samples = chunk_seconds * LIVE_SAMPLE_RATE
         self.overlap_samples = overlap_seconds * LIVE_SAMPLE_RATE
 
     def transcribe(self, tape: CompleteMixedTape) -> tuple[GeminiSegment, ...]:
-        self.coverage_gaps = ()
         end = tape.sample_count
         if end == 0:
             return ()
@@ -323,21 +320,6 @@ class TerminalTranscriber:
                 break
             start = stop - self.overlap_samples
         decode = getattr(self.diarizer, "diarize_terminal", self.diarizer.diarize)
-        def decode_checked(pcm: bytes) -> tuple[GeminiWords, tuple[tuple[int, int], ...]]:
-            parsed = decode(pcm, deadline=time.monotonic() + 240,
-                            kind="terminal", diarize=self.diarize)
-            gaps = voiced_word_gaps(
-                pcm, tuple((w.start_sample, w.end_sample) for w in parsed.words),
-                minimum_voiced_samples=10*LIVE_SAMPLE_RATE)
-            if gaps:
-                if self.report_usage is not None:
-                    self.report_usage(kind="terminal", count_call=False, coverage_retry=1)
-                parsed = decode(pcm, deadline=time.monotonic() + 240,
-                                kind="terminal", diarize=self.diarize)
-                gaps = voiced_word_gaps(
-                    pcm, tuple((w.start_sample, w.end_sample) for w in parsed.words),
-                    minimum_voiced_samples=10*LIVE_SAMPLE_RATE)
-            return parsed, gaps
         next_id = 1
         with ThreadPoolExecutor(max_workers=min(3, len(schedule)),
                                 thread_name_prefix="gemini-final") as executor:
@@ -348,15 +330,11 @@ class TerminalTranscriber:
                     pcm = tape.read(start_sample=start, end_sample=stop)
                     pending.append(None if self.voiced_audio is not None
                                    and not self.voiced_audio(pcm) else
-                                   executor.submit(decode_checked, pcm))
+                                   executor.submit(decode, pcm,
+                                                   deadline=time.monotonic() + 240,
+                                                   kind="terminal", diarize=self.diarize))
                 for (start, stop, core_end), future in zip(batch, pending):
-                    parsed, gaps = future.result() if future is not None else (GeminiWords(()), ())
-                    if gaps:
-                        self.coverage_gaps += tuple((start + lo, start + min(hi, core_end-start))
-                                                    for lo, hi in gaps if start + lo < core_end)
-                        if self.report_usage is not None:
-                            self.report_usage(kind="terminal", count_call=False,
-                                              terminal_coverage_fallbacks=1)
+                    parsed = future.result() if future is not None else GeminiWords(())
                     local_words = [GeminiWord(w.text, w.speaker, w.start_sample + start,
                                               w.end_sample + start) for w in parsed.words]
                     chunks.append(TerminalChunk(len(chunks), start, stop, core_end,

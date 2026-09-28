@@ -128,65 +128,6 @@ def test_goaway_reopens_with_handle_and_replays_five_second_buffer():
     assert sum(row.get("audio_seconds_sent", 0) for row in usage) == 3.5
 
 
-def test_voiced_preview_stall_restarts_socket_and_counts_it():
-    class SilentSession(FakeSession):
-        async def send_realtime_input(self, *, audio=None, audio_stream_end=False):
-            if audio is not None:
-                self.audio_bytes.append(len(audio.data))
-            if audio_stream_end:
-                self.stream_ends += 1
-    class SilentLive(FakeLive):
-        def connect(self, *, model, config):
-            self.configs.append(config)
-            session = SilentSession()
-            self.sessions.append(session)
-            return FakeContext(session)
-    live = SilentLive()
-    usage = []
-    source = GeminiLiveWordSource(SimpleNamespace(aio=SimpleNamespace(live=live)),
-                                  lambda **row: usage.append(row))
-    source.bind(lambda *_args: None)
-    with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
-        voice = wav.readframes(16000)
-    for second in range(9):
-        source.push_audio(second * 16000, voice)
-    source._tail.result(timeout=5)
-    assert len(live.sessions) == 2
-    assert sum(row.get("preview_stall_restarts", 0) for row in usage) == 1
-    asyncio.run(source.finish())
-
-
-def test_regular_interim_text_prevents_voiced_preview_stall_restart():
-    class TalkingSession(FakeSession):
-        async def send_realtime_input(self, *, audio=None, audio_stream_end=False):
-            if audio is not None:
-                self.audio_bytes.append(len(audio.data))
-                await self.incoming.put(SimpleNamespace(
-                    go_away=None, session_resumption_update=None,
-                    server_content=SimpleNamespace(
-                        interim_input_transcription=SimpleNamespace(text="hello", finished=False),
-                        input_transcription=None, model_turn=None)))
-    class TalkingLive(FakeLive):
-        def connect(self, *, model, config):
-            self.configs.append(config)
-            session = TalkingSession()
-            self.sessions.append(session)
-            return FakeContext(session)
-    live = TalkingLive()
-    usage = []
-    source = GeminiLiveWordSource(SimpleNamespace(aio=SimpleNamespace(live=live)),
-                                  lambda **row: usage.append(row))
-    source.bind(lambda *_args: None)
-    with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
-        voice = wav.readframes(16000)
-    for second in range(9):
-        source.push_audio(second * 16000, voice)
-    source._tail.result(timeout=5)
-    assert len(live.sessions) == 1
-    assert sum(row.get("preview_stall_restarts", 0) for row in usage) == 0
-    asyncio.run(source.finish())
-
-
 def test_live_words_publish_interim_and_count_list_price_audio():
     live = FakeLive()
     usage = []

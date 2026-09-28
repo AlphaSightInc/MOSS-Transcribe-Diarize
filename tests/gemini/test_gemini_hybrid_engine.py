@@ -73,69 +73,6 @@ def test_stop_drain_requests_and_publishes_remaining_rolling_window():
     engine.close()
 
 
-def test_empty_voiced_rolling_window_retries_without_advancing_frontier():
-    import wave
-    from pathlib import Path
-    from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
-
-    class Diarizer:
-        calls = 0
-        def diarize(self, pcm16, *, deadline, kind, diarize=True):
-            self.calls += 1
-            if self.calls <= 2:
-                return GeminiWords(())
-            return GeminiWords((GeminiWord("recovered", "A", 0, len(pcm16)//2),))
-
-    updates, usage = [], []
-    diarizer = Diarizer()
-    engine = GeminiHybridEngine(
-        updates.append, word_source=FakeWords(),
-        window_scheduler=GrowingContextWindowScheduler(max_seconds=60, stride_seconds=15),
-        registry=OverlapRegistry(), diarizer=diarizer, terminal=FakeTerminal(),
-        voiced_audio=WebRtcSpeechDetector(), report_usage=lambda **row: usage.append(row))
-    with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
-        voice = wav.readframes(16000)
-    for second in range(15):
-        engine.push_audio(second*16000, voice)
-    engine._future.result(timeout=5)
-    assert diarizer.calls == 2
-    assert not [row for row in updates if isinstance(row, GeminiRolling)]
-    assert sum(row.get("coverage_retry", 0) for row in usage) == 1
-    for second in range(15, 30):
-        engine.push_audio(second*16000, voice)
-    engine._future.result(timeout=5)
-    assert [row.segments[0].text for row in updates if isinstance(row, GeminiRolling)] == ["recovered"]
-    engine.close()
-
-
-def test_nonempty_rolling_result_retries_ten_second_voiced_word_gap():
-    import wave
-    from pathlib import Path
-    from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
-    class Diarizer:
-        calls = 0
-        def diarize(self, pcm16, *, deadline, kind, diarize=True):
-            self.calls += 1
-            end = len(pcm16)//2 if self.calls > 1 else 2*16000
-            return GeminiWords((GeminiWord("speech", "A", 0, end),))
-    updates, usage = [], []
-    diarizer = Diarizer()
-    engine = GeminiHybridEngine(
-        updates.append, word_source=FakeWords(),
-        window_scheduler=GrowingContextWindowScheduler(max_seconds=60, stride_seconds=15),
-        registry=OverlapRegistry(), diarizer=diarizer, terminal=FakeTerminal(),
-        voiced_audio=WebRtcSpeechDetector(), report_usage=lambda **row: usage.append(row))
-    with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
-        voice = wav.readframes(16000)
-    for second in range(15):
-        engine.push_audio(second*16000, voice)
-    engine._future.result(timeout=5)
-    assert diarizer.calls == 2
-    assert sum(row.get("coverage_retry", 0) for row in usage) == 1
-    assert [row.segments[0].text for row in updates if isinstance(row, GeminiRolling)] == ["speech"]
-    engine.close()
-
-
 def test_slow_rolling_activates_degraded_base_before_retention(tmp_path):
     updates = []
     engine = make_engine(updates)

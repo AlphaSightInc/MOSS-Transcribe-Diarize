@@ -161,33 +161,6 @@ def test_terminal_skips_unvoiced_chunks_without_a_provider_call():
     assert terminal.last_words == ()
 
 
-def test_terminal_voiced_gap_retries_and_exposes_live_fallback_interval():
-    import wave
-    from pathlib import Path
-    from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
-    with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
-        voice = wav.readframes(16000)
-    class Tape:
-        sample_count = 20*16000
-        def read(self, *, start_sample=0, end_sample=None):
-            end = self.sample_count if end_sample is None else end_sample
-            return voice * ((end-start_sample)//16000)
-    class Diarizer:
-        calls = 0
-        def diarize(self, pcm16, *, deadline, kind, diarize=True):
-            self.calls += 1
-            return GeminiWords((GeminiWord("opening", "A", 0, 2*16000),))
-    usage = []
-    diarizer = Diarizer()
-    terminal = TerminalTranscriber(diarizer, voiced_audio=WebRtcSpeechDetector(),
-                                   report_usage=lambda **row: usage.append(row))
-    assert [row.text for row in terminal.transcribe(Tape())] == ["opening"]
-    assert diarizer.calls == 2
-    assert terminal.coverage_gaps == ((2*16000, 20*16000),)
-    assert sum(row.get("coverage_retry", 0) for row in usage) == 1
-    assert sum(row.get("terminal_coverage_fallbacks", 0) for row in usage) == 1
-
-
 def test_terminal_chunks_fetch_three_at_once_but_stitch_in_chunk_order():
     from moss_transcribe_diarize.app.gemini_lane_engine import SerializedDiarizer
     barrier = threading.Barrier(3, timeout=2)
