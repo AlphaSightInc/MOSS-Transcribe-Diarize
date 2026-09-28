@@ -13,7 +13,6 @@ from scipy.optimize import linear_sum_assignment
 
 from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
 from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
-from .gemini_coverage import missing_witness_intervals
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .live_provider_bundle import LiveSpeakerJournalObservation
@@ -400,28 +399,12 @@ class GeminiHybridEngine:
         new_audio = pcm[(max(start, min(voice_start, self._rolling_frontier))-start)*2:]
         if self.voiced_audio is not None and not self.voiced_audio(new_audio):
             return (), ()
-        with self._lock:
-            preview = tuple(w for w in self._fast_words
-                            if w.end_sample > self._rolling_frontier
-                            and w.start_sample < start + len(pcm)//2)
-        for attempt in range(2):
-            words = self.diarizer.diarize(
-                pcm, deadline=deadline, kind="rolling", diarize=self.diarize_windows).words
-            gaps = missing_witness_intervals(
-                tuple((w.start_sample, w.end_sample) for w in preview),
-                tuple((start+w.start_sample, start+w.end_sample) for w in words))
-            if not gaps:
-                return words, ()
-            if attempt == 0 and self.report_usage is not None:
-                self.report_usage(kind="rolling", count_call=False, coverage_retry=1)
-        fallback = tuple(GeminiWord(w.text, w.speaker,
-                                    max(w.start_sample, lo), min(w.end_sample, hi))
-                         for w in preview for lo, hi in gaps
-                         if w.start_sample < hi and w.end_sample > lo)
-        if fallback and self.report_usage is not None:
-            self.report_usage(kind="rolling", count_call=False,
-                              coverage_preview_fallbacks=1)
-        return words, fallback
+        # No rolling coverage retry: on the real E1 run the preview witness (which also hears
+        # speaker echo on the mic lane) fired 12 times on normal audio and re-inserted echo text.
+        # A missed live window affects only the live view; the guarded final pass repairs it.
+        words = self.diarizer.diarize(
+            pcm, deadline=deadline, kind="rolling", diarize=self.diarize_windows).words
+        return words, ()
 
     def _publish_window(self, start: int, frontier: int, pcm: bytes,
                         words: Sequence[GeminiWord],

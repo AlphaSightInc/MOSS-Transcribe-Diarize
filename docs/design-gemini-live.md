@@ -70,11 +70,12 @@ All product defaults live in `app/phase2_web_cli.py`; the selected word source i
 
 Pilot guards use cross-pass transcript witnesses, since WebRTC can mark music
 as voiced. W3 rotates with its existing 5 s replay only after batch words cover
-at least 10 s since the last preview text. A rolling window retries once when
-its preview has words in a missing interval of at least 10 s (or its whole
-response is empty); a second miss advances the frontier and keeps preview text
-as unattributed rows. A final chunk uses committed live rows as its witness,
-retries once, then carries live rows across any remaining missing interval.
+at least 10 s since the last preview text. Rolling windows have no coverage
+retry: on the real E1 run the preview witness (which also hears speaker echo on
+the microphone lane) fired 12 times on normal audio and re-inserted echo text,
+and a missed live window only affects the live view. A final chunk uses
+committed live rows as its witness, retries once, then carries live rows across
+any remaining missing interval, so the saved transcript never loses live speech.
 
 The provider parser clamps a word end before its start or beyond the call audio to
 `min(start+1 s, audio end)` and drops a word starting past the audio tolerance. The
