@@ -86,6 +86,9 @@ and final mic words. W3's provisional text lacks reliable word timing, so the la
 composer drops a mic preview row when at least 60% of its normalized tokens occur
 in the union of system preview rows overlapping it within ±2 s. System text wins
 an echo tie; a later overlapping row in the same lane replaces the earlier one.
+At the commit frontier, the public publisher aligns each preview chunk's head to
+the last 60 tokens of committed effective speech in the same lane. A match of at
+least five tokens trims the repeated prefix; number words and digits align.
 A truly identical simultaneous phrase can be hidden in preview.
 
 The pinned WeSpeaker observations for Gemini-attributed meeting IDs flow through
@@ -136,6 +139,7 @@ attempt accounting; Stop failures produce visible `failed`/`unavailable` state.
 - Product H1/E1/long60 scorecard: `evidence/P62/gemini-c4-6c57-scorecard-1032/scorecard.json` and `evidence/P62/gemini-c4-6c57-long60-0953/summary.json` in the campaign evidence root.
 - L1 first-600 comparison: `evidence/P63/l1-before-first600.json` and `evidence/P63/l1-paced-10min-130f3d39-candidate/result.json`; one-command encoder and paced probes are in `prototypes/gemini-live/runtime-lag/`.
 - L2 public provisional regression: `tests/gemini/test_gemini_live_runtime.py::test_public_provisional_suffix_collapses_overlapping_echo_preview`; E1 observed preview pair is retained in `evidence/P61/uimerge-e1-browser/service-snapshots.jsonl`.
+- L4 commit-frontier preview regression: `tests/gemini/test_gemini_live_runtime.py::test_public_preview_trims_committed_speech_in_same_lane`; E1 observed overlap is retained in `evidence/P64/lead-final-merged-E1-L3/service-snapshots.jsonl`.
 - Voiceprint: `evidence/P52/voiceprint-{A,B,D,E}.json`; echo gate: `evidence/P63/echogate-e1-http.json`; stress: `evidence/P64/runtime-s12-{faults-http-503,silence10,manyspk}-full1/summary.json`.
 
 All campaign evidence paths in this section resolve under

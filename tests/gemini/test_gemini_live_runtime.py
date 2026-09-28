@@ -548,6 +548,56 @@ def test_public_provisional_suffix_collapses_overlapping_echo_preview(tmp_path):
     engines[0].close()
 
 
+def test_public_preview_trims_committed_speech_in_same_lane(tmp_path):
+    rt = GeminiLiveRuntime(
+        descriptor=descriptor(tape_bytes=15 * 32000), tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage: ScriptedGeminiEngine(
+            publish, batches=(), terminal=()),
+    )
+    rt.create(session_id="one")
+    for second in range(15):
+        rt.accept_frame("one", frame(second))
+    committed = (
+        "and you guys have about 6 months of cash left. And so you decide to do the entire "
+        "testing in simulation rather than ever receiving a physical prototype. You commission "
+        "the production run sight unseen with the rest of the company's money. So you're "
+        "betting it all right here on the"
+    )
+    repeated = (
+        "you guys have about six months of cash left. And you're running out of money. "
+        "And so you decide to do the entire testing in simulation rather than ever receiving "
+        "a physical prototype. You commission the production run sight unseen with the rest "
+        "of the company's money. So you're betting it all right here on the Rivian 120"
+    )
+    rt.publish_update("one", GeminiBase(10 * 16000, ()))
+    rt.publish_update("one", GeminiRolling(0, 10 * 16000, (
+        GeminiSegment(0, 10 * 16000, committed, "speaker-0001", "system"),),
+        revision_lanes=("system",)))
+    rt.publish_update("one", GeminiPreview(15 * 16000, (
+        GeminiSegment(10 * 16000, 15 * 16000, repeated, source_lane="system"),)))
+    session = rt.snapshot("one").to_dict()["session"]
+    assert session["effective_transcript"][-1]["text"] == committed
+    assert session["provisional"]["transcript"] == "[0][S00]Rivian 120[5]"
+
+    rt.publish_update("one", GeminiPreview(15 * 16000, (
+        GeminiSegment(10 * 16000, 15 * 16000, committed,
+                      source_lane="system"),)))
+    assert rt.snapshot("one").to_dict()["session"]["provisional"]["transcript"] == ""
+    fresh = "The next prototype is ready for testing."
+    rt.publish_update("one", GeminiPreview(15 * 16000, (
+        GeminiSegment(10 * 16000, 15 * 16000, fresh,
+                      source_lane="system"),)))
+    assert rt.snapshot("one").to_dict()["session"]["provisional"]["transcript"] == (
+        f"[0][S00]{fresh}[5]")
+
+    rt.publish_update("one", GeminiPreview(15 * 16000, (
+        GeminiSegment(10 * 16000, 15 * 16000,
+                      "Can you pause? I need to check my microphone.",
+                      source_lane="microphone"),)))
+    assert "Can you pause? I need to check my microphone." in (
+        rt.snapshot("one").to_dict()["session"]["provisional"]["transcript"])
+
+
 def test_stop_drains_rolling_tail_before_session_closes(tmp_path):
     async def run():
         first = GeminiSegment(0, 16000, "first", "speaker-0001")

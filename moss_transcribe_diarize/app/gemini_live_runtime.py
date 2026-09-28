@@ -7,6 +7,7 @@ and `finish` must await live updates before returning the terminal transcript.
 from __future__ import annotations
 
 import asyncio
+import difflib
 import math
 import re
 import tempfile
@@ -377,7 +378,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     epoch, generation, start = session.begin_provisional()
                     if update.end_sample < start:
                         return
-                    transcript = _unlabelled_transcript(update.segments, start)
+                    segments = _trim_committed_preview(
+                        update.segments, session.snapshot().effective_transcript)
+                    transcript = _unlabelled_transcript(segments, start)
                     if not session.publish_provisional(
                         epoch=epoch, generation=generation, start_sample=start,
                         end_sample=update.end_sample, transcript=transcript,
@@ -841,6 +844,47 @@ def _unlabelled_transcript(segments: Sequence[GeminiSegment], start_sample: int)
             for row in segments
         ), lambda _row: "S00",
     )
+
+
+_PREVIEW_NUMBERS = {word: str(index) for index, word in enumerate(
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen "
+    "fourteen fifteen sixteen seventeen eighteen nineteen twenty".split())}
+_PREVIEW_WORD = re.compile(r"[^\W_\d]+|\d+")
+
+
+def _trim_committed_preview(
+    segments: Sequence[GeminiSegment], committed: Sequence[EffectiveTranscriptSegment]
+) -> tuple[GeminiSegment, ...]:
+    """Remove a W3 chunk's already committed head, using only its capture lane."""
+    tails: dict[str | None, list[str]] = {}
+    result = []
+    for segment in segments:
+        if segment.source_lane not in tails:
+            parts = []
+            count = 0
+            for row in reversed(committed):
+                if row.source_lane != segment.source_lane:
+                    continue
+                parts.append(row.text)
+                count += len(_PREVIEW_WORD.findall(row.text))
+                if count >= 60:
+                    break
+            tail = " ".join(reversed(parts))
+            tails[segment.source_lane] = [
+                _PREVIEW_NUMBERS.get(word, word)
+                for word in _PREVIEW_WORD.findall(tail.casefold())][-60:]
+        matches = list(_PREVIEW_WORD.finditer(segment.text.casefold()))
+        words = [_PREVIEW_NUMBERS.get(match.group(), match.group()) for match in matches]
+        blocks = [block for block in difflib.SequenceMatcher(
+            None, tails[segment.source_lane], words, autojunk=False
+        ).get_matching_blocks() if block.size]
+        text = segment.text
+        if blocks and blocks[0].b <= 3 and sum(block.size for block in blocks) >= 5:
+            text = text[matches[max(block.b + block.size for block in blocks) - 1].end():]
+            text = text.lstrip(" \t\r\n,.;:!?")
+        if text:
+            result.append(replace(segment, text=text))
+    return tuple(result)
 
 
 def _surface_segments(segments: Sequence[GeminiSegment], authority: str) -> tuple[EffectiveTranscriptSegment, ...]:
