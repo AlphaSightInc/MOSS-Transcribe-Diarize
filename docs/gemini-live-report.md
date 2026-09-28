@@ -19,10 +19,10 @@ meeting-hour. "Gemini 3.8 Live" alone cannot label speakers; the design uses Gem
 |---|---:|---:|---:|---|
 | Settled DER, 6 clips × 2 passes | 0.145 (raw 0.171) | **0.099** (raw 0.108) | < 0.145 | PASS |
 | Final DER | 0.110 | **0.105** | ≤ 0.110 | PASS |
-| E1 labels at Stop (true 4) | 10 | **4** | ≤ 5 | PASS |
+| E1 labels at Stop (true 4) | 10 | **4–5** (6 runs) | ≤ 5 | PASS |
 | Dropped passages | not measured | **0/1,216 s** | 0 | PASS |
-| Words visible, median | ~2.3 s | **< 1 s** | ≤ 5 s | PASS |
-| Labels visible, median | ~2.5 s | **11–16 s clips, 18.3 s E1, 19.3 s at min 40** | ≤ 20 s | PASS |
+| Words on screen after spoken, median / p90 | ~2.3 s | **0.7 s / 1.0 s** | ≤ 5 s | PASS |
+| Speaker name on those words, median | ~2.5 s | **11–16 s clips, 18.3 s E1, 19.3 s at min 40** | ≤ 20 s | PASS |
 | Cost / meeting-hour | GPU host | **$1.35 / $2.57 (43 min) / $2.90 (E1)** | ≤ $3 | PASS |
 | Final WER | 0.095 | 0.104 | report | worse |
 
@@ -31,7 +31,7 @@ Long meeting (43 min, 5 voices, Lex recorded across four sessions): 5 labels, Le
 
 ## Design
 
-- **Words:** Gemini 3.5 Transcribe Live streams provisional words (grey "Speaker uncertain" preview), opened only
+- **Words:** Gemini 3.5 Transcribe Live streams provisional words (grey "Speaker TBD" preview), opened only
   on voiced audio.
 - **Who spoke (system lane):** every 15 s, Gemini 3.5 Transcribe diarizes a window growing to 3 min; a speaker
   ledger maps window-local labels to meeting IDs by word overlap + WeSpeaker fingerprints; a new speaker needs 2 s.
@@ -74,3 +74,23 @@ session not yet run (reserved for the user).
 cd ~/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-gemini-live
 scripts/gemini-live/start-gemini.sh        # → https://127.0.0.1:18600/
 ```
+
+## Readiness and follow-up answers (2026-09-28)
+
+- **Ready for user testing?** Yes for an attended pilot on this Mac after A1 (rotate the Gemini key) and A2 (10-minute
+  real-capture check: real tab share + real mic, headphones and speakers). Not yet for remote testers (A4: needs a
+  deployment behind sign-in). Brief testers (A3): words appear at once in the grey "Speaker TBD" card, names fill in
+  ~15 s later, use headphones.
+- **Label renamed** "Speaker uncertain" → "Speaker TBD" in live view, cards, saved transcripts and exports (`ad798f4c`);
+  both names stay reserved.
+- **Two delays:** words on screen 0.7 s median / 1.0 s p90 after spoken (3.5 Transcribe Live); speaker name on those
+  words 11–19 s median. Responsiveness is the first number.
+- **Q1 3.8 Live vs 3.5 Transcribe Live:** 3.8 Live is a talk-back voice assistant (audio out; transcript per turn;
+  4.2 s; WER .150); 3.5 Transcribe Live is streaming speech-to-text (text out while speaking; 0.7 s; WER .135; no
+  invented words on silence). Neither labels speakers. 3.5 Transcribe Live is sufficient; 3.8 Live is not used.
+- **Q2 one pass instead of fast + accurate?** No: fast words need seconds of audio, stable speakers need minutes.
+  Live-only has no speakers; batch-only gives words in 2.3–3.1 s with worse WER and unstable speakers, or costs
+  ~$16/h with 3-min windows every 2 s. Keep two passes (the fast one is display-only). Real simplification option
+  D14: drop the after-Stop pass (live 0.099 vs final 0.105 on 6 clips; long meetings lose 0.050 → 0.034 DER).
+- **Preview fixes after the report:** over-trim of fresh words fixed (`135e00a2`); preview repeats of committed text
+  64% → 10% of screens with fresh words kept.
