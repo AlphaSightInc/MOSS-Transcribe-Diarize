@@ -339,6 +339,7 @@ class GeminiHybridEngine:
                     return
                 if window is not None:
                     start, end, frontier = window
+                    voice_start = max(start, self._last_window_end)
                     skipped = max(0, (end - self._last_window_end) // self._stride_samples - 1)
                     self._last_window_end = end
                 else:
@@ -351,7 +352,8 @@ class GeminiHybridEngine:
                 self.report_usage(kind="rolling", count_call=False,
                                   skipped_window_ticks=skipped)
             if window is not None:
-                words = (() if self.voiced_audio is not None and not self.voiced_audio(pcm)
+                new_audio = pcm[(voice_start-start)*2:]
+                words = (() if self.voiced_audio is not None and not self.voiced_audio(new_audio)
                          else self.diarizer.diarize(pcm, deadline=time.monotonic() + 120,
                                                      kind="rolling", diarize=self.diarize_windows).words)
                 with self._lock:
@@ -444,8 +446,9 @@ class GeminiHybridEngine:
                 return True
             start = max(0, accepted - self._window_max_samples)
             pcm = self._read_locked(start, accepted)
+            new_audio = pcm[(max(start, self._last_window_end)-start)*2:]
         try:
-            if self.voiced_audio is not None and not self.voiced_audio(pcm):
+            if self.voiced_audio is not None and not self.voiced_audio(new_audio):
                 words = ()
             else:
                 result = await asyncio.wait_for(

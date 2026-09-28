@@ -334,3 +334,29 @@ were timestamp-repaired across 64 batch calls; none were dropped by the parser.
 Provider errors, retries, and skipped ticks were zero. Reported cost was
 $0.251995 including the $0.050667 Live list-price estimate. Receipt:
 `evidence/P63/echogate-e1-http.json`.
+
+## Separate short microphone batch windows
+
+The microphone lane now uses its own recent L30/S15 window schedule. Pane 6.1's
+C4 verdict sets the system default to growing S15/Lmax180, H0, with the already
+selected C3 WeSpeaker thresholds E=.46/W=.60 and the 2 s speaker-birth rule.
+Mic windows have diarization off. The engine calls Gemini only when audio newly
+covered since the prior mic window contains WebRTC voice. An old utterance in
+the 30 s overlap cannot reopen a quiet stride; silent strides still advance
+the lane and shared meeting frontier. W3 remains lazy on first voiced mic audio.
+
+The provider-free production-scheduler probe uses E1's observed batch unit
+cost and Live list-price estimate. With the selected system S15/L180 and mic
+L30/S15, a 302 s E1-shaped meeting models
+**$2.146 per audio-hour system + $0.849 mic = $2.995 total**. For an hour with
+both lanes continuously voiced, the same plan models **$2.598 system + $0.846
+mic = $3.444/hour**, including the existing 900 s/30 s terminal chunk cost.
+Thus the $3 target has negligible margin for E1 and fails for continuous
+long-form speech. These are modeled dollars, not a new provider bill.
+The C4 **offline recorded-response prototype** measured accept6 H1 #3 settled
+ruled/raw DER .098518/.108748, E1 first displayed 3 system/4 mixed IDs,
+complete Bill30m 2/2 IDs at DER .056321, and complete long60 5/5 IDs at first
+DER .048287. Its Bill label lag p50 was 17.845 s and system batch+Live cost
+was $2.345/h; that cost excludes the per-meeting terminal and mic costs
+included in this model. Product-path qualification remains pane 6.2's run.
+One-command state: `python prototypes/gemini-runtime/mic_window_cost.py`.

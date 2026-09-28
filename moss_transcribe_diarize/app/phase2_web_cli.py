@@ -141,8 +141,10 @@ def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
     )
 
 
-GEMINI_WINDOW_LMAX_SECONDS = 60
-GEMINI_WINDOW_STRIDE_SECONDS = 10
+GEMINI_WINDOW_LMAX_SECONDS = 180
+GEMINI_WINDOW_STRIDE_SECONDS = 15
+GEMINI_MIC_WINDOW_SECONDS = 30
+GEMINI_MIC_WINDOW_STRIDE_SECONDS = 15
 GEMINI_CONTINUITY_E = 0.46
 GEMINI_CONTINUITY_W = 0.60
 GEMINI_BIRTH_MIN_SECONDS = 2
@@ -187,6 +189,9 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     policy = {"model": "gemini-3.5-transcribe",
               "window_max_seconds": GEMINI_WINDOW_LMAX_SECONDS,
               "stride_seconds": GEMINI_WINDOW_STRIDE_SECONDS,
+              "microphone_window_seconds": GEMINI_MIC_WINDOW_SECONDS,
+              "microphone_stride_seconds": GEMINI_MIC_WINDOW_STRIDE_SECONDS,
+              "microphone_window_activation": "new_voiced_audio_only",
               "holdback_seconds": 0, "terminal_chunk_seconds": 900,
               "terminal_overlap_seconds": 30,
               "timestamp_repair": "P53-R2-annotation-order",
@@ -206,7 +211,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     descriptor = LiveServiceDescriptor(
         source_revision=config.source_revision,
         provider_name="gemini-3.5-transcribe",
-        provider_revision="hybrid-w3-echogate-v7",
+        provider_revision="hybrid-w3-mic-short-v8",
         provider_manifest_hash=hash_config({"gemini_policy": policy, "identity": identity_policy}),
         config_hashes=LiveServiceConfigHashes.from_parts(
             endpoint_config={"preview_model": "gemini-3.5-transcribe-live",
@@ -274,8 +279,8 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                 return GeminiHybridEngine(
                     lane_publish, word_source=mic_source,
                     window_scheduler=GrowingContextWindowScheduler(
-                        max_seconds=GEMINI_WINDOW_LMAX_SECONDS,
-                        stride_seconds=GEMINI_WINDOW_STRIDE_SECONDS),
+                        max_seconds=GEMINI_MIC_WINDOW_SECONDS,
+                        stride_seconds=GEMINI_MIC_WINDOW_STRIDE_SECONDS),
                     registry=SingleMicrophoneRegistry(), diarizer=mic_diarizer,
                     terminal=ConditionalMicrophoneTerminal(mic_source, mic_terminal),
                     embedding_source=WeSpeakerWindowEmbeddings(encoder),

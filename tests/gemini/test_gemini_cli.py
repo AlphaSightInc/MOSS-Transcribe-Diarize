@@ -3,6 +3,23 @@ import pytest
 from moss_transcribe_diarize.app.phase2_web_cli import _build_live_runtime_factory, main, parse_args
 
 
+def test_c4_system_and_mic_window_defaults_at_composition_root():
+    from moss_transcribe_diarize.app.gemini_hybrid_engine import GrowingContextWindowScheduler
+    from moss_transcribe_diarize.app.phase2_web_cli import (
+        GEMINI_WINDOW_LMAX_SECONDS, GEMINI_WINDOW_STRIDE_SECONDS,
+        GEMINI_MIC_WINDOW_SECONDS, GEMINI_MIC_WINDOW_STRIDE_SECONDS,
+        GEMINI_CONTINUITY_E, GEMINI_CONTINUITY_W, GEMINI_BIRTH_MIN_SECONDS)
+    assert (GEMINI_WINDOW_STRIDE_SECONDS, GEMINI_WINDOW_LMAX_SECONDS) == (15, 180)
+    assert (GEMINI_MIC_WINDOW_STRIDE_SECONDS, GEMINI_MIC_WINDOW_SECONDS) == (15, 30)
+    assert (GEMINI_CONTINUITY_E, GEMINI_CONTINUITY_W, GEMINI_BIRTH_MIN_SECONDS) == (.46, .60, 2)
+    system = GrowingContextWindowScheduler(
+        max_seconds=GEMINI_WINDOW_LMAX_SECONDS, stride_seconds=GEMINI_WINDOW_STRIDE_SECONDS)
+    microphone = GrowingContextWindowScheduler(
+        max_seconds=GEMINI_MIC_WINDOW_SECONDS, stride_seconds=GEMINI_MIC_WINDOW_STRIDE_SECONDS)
+    assert system.next_window(195*16000, 180*16000) == (15*16000, 195*16000, 195*16000)
+    assert microphone.next_window(195*16000, 180*16000) == (165*16000, 195*16000, 195*16000)
+
+
 def test_gemini_cli_selects_real_composition(monkeypatch):
     argv = ["--tls-certfile", "cert", "--tls-keyfile", "key",
             "--live-provider-manifest", "manifest", "--live-helper-lease-seconds", "10"]

@@ -197,6 +197,42 @@ def test_silent_microphone_skips_batch_calls_then_births_one_local_speaker():
     engine.close()
 
 
+def test_microphone_short_windows_open_only_on_new_voiced_audio_and_drain_quiet_tail():
+    from moss_transcribe_diarize.app.gemini_hybrid_engine import SingleMicrophoneRegistry
+    calls = []
+    updates = []
+    class Source:
+        def bind(self, listener): pass
+        def push_audio(self, start_sample, pcm16): pass
+        async def finish(self): pass
+        def close(self): pass
+    class MicDiarizer:
+        def diarize(self, pcm, *, deadline, kind, diarize=True):
+            calls.append((len(pcm)//32000, diarize))
+            return GeminiWords(())
+    engine = GeminiHybridEngine(updates.append, word_source=Source(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=30, stride_seconds=15),
+        registry=SingleMicrophoneRegistry(), diarizer=MicDiarizer(), terminal=FakeTerminal(),
+        source_lane="microphone", voiced_audio=lambda pcm: any(pcm),
+        diarize_windows=False)
+    engine.push_audio(0, b"\x01\x00"*(15*16000))
+    engine._future.result(timeout=5)
+    assert calls == [(15, False)]
+    engine.push_audio(15*16000, bytes(15*32000))
+    engine._future.result(timeout=5)
+    assert calls == [(15, False)]  # Old voice in the 30 s overlap is not new speech.
+    engine.push_audio(30*16000, b"\x01\x00"*(15*16000))
+    engine._future.result(timeout=5)
+    assert calls == [(15, False), (30, False)]
+    engine.push_audio(45*16000, bytes(5*32000))
+    assert asyncio.run(engine.drain_tail(1.0))
+    assert calls == [(15, False), (30, False)]
+    assert engine._rolling_frontier == 50*16000
+    assert [row.end_sample for row in updates if isinstance(row, GeminiRolling)] == [
+        15*16000, 30*16000, 45*16000, 50*16000]
+    engine.close()
+
+
 def test_registry_and_account_observation_receive_same_vector():
     updates = []
     class SpyRegistry(OverlapRegistry):
