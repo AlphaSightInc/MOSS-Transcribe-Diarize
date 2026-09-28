@@ -5,6 +5,12 @@ from moss_transcribe_diarize.app.gemini_provider import GeminiWord
 S = 16_000
 
 
+def test_c4_overlap_default_is_point_three_seconds():
+    registry = ContinuityRegistry(embedding_threshold=.46, within_window_threshold=.60,
+                                  birth_min_seconds=2)
+    assert registry.min_overlap_samples == round(.3*S)
+
+
 def word(label, start, end):
     return GeminiWord("word", label, round(start*S), round(end*S))
 
@@ -58,10 +64,10 @@ def test_overlap_assignment_is_one_to_one_across_local_labels():
     assert mapped == {"X": "speaker-0002", "Y": "speaker-0001"}
 
 
-def test_uncommitted_window_tail_is_not_overlap_evidence():
+def test_full_window_tail_is_overlap_evidence_for_c4():
     registry = ContinuityRegistry(embedding_threshold=.46, within_window_threshold=.60,
                                   birth_min_seconds=2)
     registry.observe_window(0, (word("A", 0, 2.1),),
                             committed_through_sample=S)
     mapped, _ = registry.observe_window(1, (word("B", 1.2, 3.3),))
-    assert mapped == {"B": "speaker-0002"}
+    assert mapped == {"B": "speaker-0001"}

@@ -777,6 +777,47 @@ class LiveSession:
         self._notify_waiters()
         return self._text_revision_outcome(applied=True, revised_segments=len(replacement))
 
+    def bridge_rolling_turn(
+        self, *, prior_start_sample: int, prior_end_sample: int,
+        new_end_sample: int, source_lane: str | None,
+        base_text_revision_version: int,
+    ) -> TextRevisionOutcome:
+        """Fill the short silence between same-speaker turns across rolling frontiers.
+
+        The following window supplies the evidence. Only the prior row's end changes;
+        both words and speaker attribution stay intact.
+        """
+        def refuse(reason: str) -> TextRevisionOutcome:
+            _count_refusal(self._text_revision_refusals, reason, 1)
+            return self._text_revision_outcome(applied=False, refusal=reason)
+
+        if self._finalization_status == "final":
+            return refuse("already_finalized")
+        if base_text_revision_version != self._text_revision_version:
+            return refuse("stale_text_revision_version")
+        if not 0 <= prior_start_sample < prior_end_sample < new_end_sample <= self._canonical_through_sample:
+            return refuse("bridge_outside_rolling_frontier")
+        prior = next((i for i, row in enumerate(self._revision_segments)
+                      if row.start_sample == prior_start_sample
+                      and row.end_sample == prior_end_sample
+                      and row.source_lane == source_lane), None)
+        if prior is None:
+            return refuse("bridge_prior_not_owned")
+        old = self._revision_segments[prior]
+        following = next((row for row in self._revision_segments[prior + 1:]
+                          if row.source_lane == source_lane), None)
+        if (following is None or following.start_sample != new_end_sample
+                or following.canonical_speaker != old.canonical_speaker):
+            return refuse("bridge_following_turn_mismatch")
+        self._revision_segments = (self._revision_segments[:prior]
+                                   + (replace(old, end_sample=new_end_sample),)
+                                   + self._revision_segments[prior + 1:])
+        self._text_revision_version += 1
+        self._surface_version += 1
+        self._bump()
+        self._notify_waiters()
+        return self._text_revision_outcome(applied=True, revised_segments=1)
+
     def _revised_span(
         self,
         commit: CanonicalCommit,

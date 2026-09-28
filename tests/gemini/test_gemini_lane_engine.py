@@ -3,7 +3,7 @@ from array import array
 
 from moss_transcribe_diarize.app.gemini_lane_engine import (LaneGeminiEngine, TextEchoGuard,
     SystemWordLedger, LazyMicrophoneWords, AcousticEchoGuard, MicrophoneWordGate)
-from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiRolling, GeminiSegment
+from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiRolling, GeminiSegment, GeminiTurnBridge
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord
 
 
@@ -42,6 +42,54 @@ def test_two_lane_engines_publish_one_overlapping_forward_revision(tmp_path):
     assert [(row.source_lane, row.start_sample) for row in rolls[0].segments] == [
         ("system", 0), ("microphone", 4000)]
     assert asyncio.run(engine.drain_tail(1.0))
+    engine.close()
+
+
+def test_lane_engine_forwards_system_turn_bridge_after_both_lanes_commit(tmp_path):
+    updates = []
+    class FakeLane:
+        def __init__(self, publish): self.publish = publish
+        def push_audio(self, start_sample, pcm16): pass
+        async def drain_tail(self, deadline): return True
+        async def finish(self, tape): return ()
+        def close(self): pass
+    engine = LaneGeminiEngine(
+        updates.append, system_factory=FakeLane, microphone_factory=FakeLane,
+        tape_root=tmp_path)
+    prior = GeminiSegment(0, 9*16000, "one", "speaker-0001", "system")
+    following = GeminiSegment(10*16000, 11*16000, "two", "speaker-0001", "system")
+    engine._on_update("system", GeminiRolling(0, 10*16000, (prior,)))
+    engine._on_update("microphone", GeminiRolling(0, 10*16000, ()))
+    engine._on_update("system", GeminiRolling(10*16000, 20*16000, (following,)))
+    bridge = GeminiTurnBridge(0, 9*16000, 10*16000, "system")
+    engine._on_update("system", bridge)
+    assert not any(isinstance(row, GeminiTurnBridge) for row in updates)
+    engine._on_update("microphone", GeminiRolling(10*16000, 20*16000, ()))
+    assert [row for row in updates if isinstance(row, GeminiTurnBridge)] == [bridge]
+    engine.close()
+
+
+def test_lane_turn_bridge_waits_when_microphone_frontier_lags(tmp_path):
+    updates = []
+    class FakeLane:
+        def __init__(self, publish): pass
+        def push_audio(self, start_sample, pcm16): pass
+        async def drain_tail(self, deadline): return True
+        async def finish(self, tape): return ()
+        def close(self): pass
+    engine = LaneGeminiEngine(updates.append, system_factory=FakeLane,
+                              microphone_factory=FakeLane, tape_root=tmp_path)
+    prior = GeminiSegment(0, 9*16000, "one", "speaker-0001", "system")
+    following = GeminiSegment(10*16000, 11*16000, "two", "speaker-0001", "system")
+    engine._on_update("system", GeminiRolling(0, 10*16000, (prior,)))
+    engine._on_update("system", GeminiRolling(10*16000, 20*16000, (following,)))
+    engine._on_update("system", GeminiTurnBridge(0, 9*16000, 10*16000, "system"))
+    engine._on_update("microphone", GeminiRolling(0, 10*16000, ()))
+    first = next(row for row in updates if isinstance(row, GeminiRolling))
+    assert first.segments == (prior,)
+    assert not any(isinstance(row, GeminiTurnBridge) for row in updates)
+    engine._on_update("microphone", GeminiRolling(10*16000, 20*16000, ()))
+    assert sum(isinstance(row, GeminiTurnBridge) for row in updates) == 1
     engine.close()
 
 

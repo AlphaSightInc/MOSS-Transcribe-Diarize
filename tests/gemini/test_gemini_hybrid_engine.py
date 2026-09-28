@@ -143,7 +143,7 @@ def test_rolling_turns_keep_annotation_order_after_timestamp_repair():
     engine.close()
 
 
-def test_continuity_registry_uses_only_committed_overlap_in_engine():
+def test_continuity_registry_uses_full_observation_overlap_with_end_owned_words():
     updates = []
     class TailWords:
         calls = 0
@@ -165,8 +165,8 @@ def test_continuity_registry_uses_only_committed_overlap_in_engine():
             engine._future.result(timeout=5)
     rolls = [update for update in updates if isinstance(update, GeminiRolling)]
     assert len(rolls) == 2
-    assert rolls[0].segments[0].speaker == "speaker-0001"
-    assert rolls[1].segments[0].speaker == "speaker-0002"
+    assert rolls[0].segments == ()
+    assert rolls[1].segments[0].speaker == "speaker-0001"
     engine.close()
 
 
@@ -279,6 +279,41 @@ def test_wespeaker_window_source_uses_attributed_two_second_interval():
              GeminiWord("short", "spk:1", 64000, 72000))
     result = WeSpeakerWindowEmbeddings(Encoder())(bytes(5*32000), 0, words)
     assert result == {"spk:0": ((0.6, 0.8), 3.0)}
+
+
+def test_wespeaker_window_source_uses_prototype_continuous_intervals():
+    from moss_transcribe_diarize.app.gemini_hybrid_engine import WeSpeakerWindowEmbeddings
+    calls = []
+    class Encoder:
+        spec = SimpleNamespace(embedding_dimension=2)
+        def embed(self, _path, intervals):
+            calls.append(intervals)
+            return [0.6, 0.8]
+    S = 16000
+    words = tuple(GeminiWord(str(i), "A", round(start*S), round(end*S))
+                  for i, (start, end) in enumerate(((1.5, 3.5), (4.0, 7.0),
+                                                     (7.6, 12.5), (14.0, 16.5))))
+    result = WeSpeakerWindowEmbeddings(Encoder())(bytes(20*32000), 0, words)
+    assert calls == [[(1.5, 11.5), (14.0, 16.5)]]
+    assert result == {"A": ((0.6, 0.8), 12.5)}
+
+
+def test_rolling_owns_words_by_end_and_bridges_same_speaker_frontier_gap():
+    from moss_transcribe_diarize.app.gemini_live_runtime import GeminiTurnBridge
+    updates = []
+    engine = make_engine(updates)
+    S = 16000
+    engine._publish_window(0, 15*S, bytes(15*32000), (
+        GeminiWord("before", "A", 14*S, round(14.5*S)),
+        GeminiWord("bank", "A", round(14.9*S), round(15.2*S))))
+    engine._publish_window(0, 30*S, bytes(30*32000), (
+        GeminiWord("bank", "A", round(14.9*S), round(15.2*S)),
+        GeminiWord("next", "A", 16*S, round(16.4*S))))
+    rolls = [row for row in updates if isinstance(row, GeminiRolling)]
+    assert [[s.text for s in roll.segments] for roll in rolls] == [["before"], ["bank next"]]
+    assert rolls[1].segments[0].start_sample == 15*S
+    assert [row.new_end_sample for row in updates if isinstance(row, GeminiTurnBridge)] == [15*S]
+    engine.close()
 
 
 def test_rolling_word_gate_runs_before_registry_and_publication():

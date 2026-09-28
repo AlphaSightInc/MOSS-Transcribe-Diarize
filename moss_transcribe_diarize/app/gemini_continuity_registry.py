@@ -19,7 +19,7 @@ class ContinuityRegistry:
     """One session's overlap evidence and visible-birth state."""
 
     def __init__(self, *, embedding_threshold: float, within_window_threshold: float,
-                 birth_min_seconds: float, min_overlap_seconds: float = .6):
+                 birth_min_seconds: float, min_overlap_seconds: float = .3):
         self.embedding_threshold = embedding_threshold
         self.within_window_threshold = within_window_threshold
         self.birth_min_samples = round(birth_min_seconds * LIVE_SAMPLE_RATE)
@@ -103,12 +103,12 @@ class ContinuityRegistry:
                               default=(0, None))
                 mapped_groups[label] = closest[1] if closest[0] > 0 else None
         mapping = {label: mapped_groups[group_by_label[label]] for label in labels}
-        limit = (max((word.end_sample for word in words), default=0)
-                 if committed_through_sample is None else committed_through_sample)
+        # C4 retains the entire last Gemini observation as overlap evidence;
+        # publication ownership is a separate word-end frontier decision.
+        del committed_through_sample
         self._previous = [GeminiWord(word.text, mapping[word.speaker],
-                                     word.start_sample, min(word.end_sample, limit))
-                          for word in words if mapping[word.speaker] is not None
-                          and word.start_sample < limit]
+                                     word.start_sample, word.end_sample)
+                          for word in words if mapping[word.speaker] is not None]
         for label, vector in group_vectors.items():
             mid = mapped_groups[label]
             if mid is None:

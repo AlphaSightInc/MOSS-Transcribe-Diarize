@@ -11,7 +11,7 @@ from typing import Callable, Protocol, Sequence
 
 from scipy.optimize import linear_sum_assignment
 
-from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment, GeminiUpdate
+from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
 from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
@@ -36,6 +36,34 @@ class SpeakerRegistry(Protocol):
                        ) -> tuple[dict[str, str | None], tuple[GeminiUpdate, ...]]: ...
 
 
+def attributed_embedding_intervals(words: Sequence[GeminiWord],
+                                   window_start_sample: int = 0) -> dict[str, list[tuple[int, int]]]:
+    """C4's continuous attributed spans: .6 s join, >=2 s, three <=10 s excerpts."""
+    candidates: dict[str, list[GeminiWord]] = {}
+    for word in words:
+        if word.end_sample > word.start_sample:
+            candidates.setdefault(word.speaker, []).append(word)
+    intervals: dict[str, list[tuple[int, int]]] = {}
+    window_start_s = window_start_sample / LIVE_SAMPLE_RATE
+    for label, rows in candidates.items():
+        rows.sort(key=lambda row: row.start_sample)
+        merged: list[tuple[float, float]] = []
+        for row in rows:
+            start = window_start_s + (row.start_sample - window_start_sample) / LIVE_SAMPLE_RATE
+            end = window_start_s + (row.end_sample - window_start_sample) / LIVE_SAMPLE_RATE
+            if merged and start - merged[-1][1] <= .6:
+                begin, previous_end = merged[-1]
+                merged[-1] = (begin, max(previous_end, end))
+            else:
+                merged.append((start, end))
+        eligible = [(round(begin * LIVE_SAMPLE_RATE),
+                     round(min(end, begin + 10.0) * LIVE_SAMPLE_RATE))
+                    for begin, end in merged if end - begin >= 2.0][:3]
+        if eligible:
+            intervals[label] = eligible
+    return intervals
+
+
 class WeSpeakerWindowEmbeddings:
     """One pinned encoder observation per eligible Gemini-local voice interval."""
 
@@ -44,22 +72,7 @@ class WeSpeakerWindowEmbeddings:
 
     def __call__(self, pcm16: bytes, window_start_sample: int,
                  words: Sequence[GeminiWord]) -> dict[str, tuple[tuple[float, ...], float]]:
-        candidates: dict[str, list[GeminiWord]] = {}
-        for word in words:
-            if word.end_sample > word.start_sample:
-                candidates.setdefault(word.speaker, []).append(word)
-        intervals: dict[str, tuple[int, int]] = {}
-        for label, rows in candidates.items():
-            rows.sort(key=lambda row: row.start_sample)
-            begin = end = 0
-            for row in rows:
-                if begin == end or row.start_sample > end + LIVE_SAMPLE_RATE // 2:
-                    begin, end = row.start_sample, row.end_sample
-                else:
-                    end = max(end, row.end_sample)
-                if end - begin >= 2 * LIVE_SAMPLE_RATE:
-                    intervals[label] = (begin, end)
-                    break
+        intervals = attributed_embedding_intervals(words, window_start_sample)
         if not intervals:
             return {}
         result: dict[str, tuple[tuple[float, ...], float]] = {}
@@ -69,15 +82,16 @@ class WeSpeakerWindowEmbeddings:
                 wav.setsampwidth(2)
                 wav.setframerate(LIVE_SAMPLE_RATE)
                 wav.writeframes(pcm16)
-            for label, (begin, end) in intervals.items():
-                relative = ((begin - window_start_sample) / LIVE_SAMPLE_RATE,
-                            (end - window_start_sample) / LIVE_SAMPLE_RATE)
+            for label, spans in intervals.items():
+                relative = [((begin - window_start_sample) / LIVE_SAMPLE_RATE,
+                             (end - window_start_sample) / LIVE_SAMPLE_RATE)
+                            for begin, end in spans]
                 try:
-                    vector = tuple(float(v) for v in self.encoder.embed(path.name, [relative]))
+                    vector = tuple(float(v) for v in self.encoder.embed(path.name, relative))
                 except Exception:
                     continue
                 if len(vector) == self.encoder.spec.embedding_dimension:
-                    result[label] = (vector, (end - begin) / LIVE_SAMPLE_RATE)
+                    result[label] = (vector, sum(end - begin for begin, end in spans) / LIVE_SAMPLE_RATE)
         return result
 
 
@@ -217,6 +231,7 @@ class GeminiHybridEngine:
         self._accepted = 0
         self._committed = 0
         self._rolling_frontier = 0
+        self._last_rolling_turn: GeminiSegment | None = None
         self._last_window_end = 0
         self._last_preview_end = 0
         self._fast_words: list[GeminiWord] = []
@@ -412,7 +427,7 @@ class GeminiHybridEngine:
                 rows = speaker_turns(ordered_segments(
                     tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
                                         w.text, mapping[w.speaker], self.source_lane) for w in absolute
-                          if old <= w.start_sample < frontier),
+                          if old < w.end_sample <= frontier),
                     start_sample=old, end_sample=frontier, preserve_order=True,
                 ))
                 visible = {row.speaker for row in rows}
@@ -420,6 +435,14 @@ class GeminiHybridEngine:
                                            tuple(obs for obs in observations
                                                  if obs.speaker_label in visible),
                                            (self.source_lane,) if self.source_lane else ()))
+                prior = self._last_rolling_turn
+                if (prior is not None and rows and prior.speaker == rows[0].speaker
+                        and prior.source_lane == rows[0].source_lane
+                        and 0 < rows[0].start_sample - prior.end_sample <= round(1.5 * LIVE_SAMPLE_RATE)):
+                    self.publish(GeminiTurnBridge(prior.start_sample, prior.end_sample,
+                                                   rows[0].start_sample, self.source_lane))
+                if rows:
+                    self._last_rolling_turn = rows[-1]
                 self._rolling_frontier = frontier
                 self._live_finals = [w for w in self._live_finals if w.end_sample > self._committed]
                 self._fast_words = [w for w in self._fast_words if w.end_sample > self._committed]

@@ -150,7 +150,15 @@ class GeminiRelabel:
     segments: tuple[GeminiSegment, ...]
 
 
-GeminiUpdate = GeminiPreview | GeminiBase | GeminiRolling | GeminiRelabel
+@dataclass(frozen=True, slots=True)
+class GeminiTurnBridge:
+    prior_start_sample: int
+    prior_end_sample: int
+    new_end_sample: int
+    source_lane: str | None = None
+
+
+GeminiUpdate = GeminiPreview | GeminiBase | GeminiRolling | GeminiRelabel | GeminiTurnBridge
 
 
 class GeminiEngine(Protocol):
@@ -424,6 +432,17 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     if not outcome.applied:
                         raise ValueError(f"rolling relabel refused: {outcome.refusal}")
                     kind = "label_revision_applied"
+                elif isinstance(update, GeminiTurnBridge):
+                    outcome = session.bridge_rolling_turn(
+                        prior_start_sample=update.prior_start_sample,
+                        prior_end_sample=update.prior_end_sample,
+                        new_end_sample=update.new_end_sample,
+                        source_lane=update.source_lane,
+                        base_text_revision_version=session.snapshot().text_revision_version,
+                    )
+                    if not outcome.applied:
+                        raise ValueError(f"rolling turn bridge refused: {outcome.refusal}")
+                    kind = "turn_bridge_applied"
                 else:
                     raise TypeError("unknown Gemini engine update")
             except Exception as exc:

@@ -1,0 +1,17 @@
+{
+  "baseline_runtime_sha": "a3fbf081",
+  "reference_set": "accept6 H1 #3 truth set (manifest 80fc15bd)",
+  "method": "P61 retained S15/L180/H0 words and WeSpeaker vectors; production GeminiHybridEngine -> GeminiLiveRuntime -> LiveSession snapshot; no provider or encoder calls",
+  "threshold_abs_der": 0.002,
+  "embedding_intervals": {"cases": 10, "window_label_observations": 861, "eligible": 832, "mismatches": 0},
+  "cases": [
+    {"id": "discussion_jamie_dimon_180s", "prototype_der": 0.060331, "snapshot_der": 0.060331},
+    {"id": "discussion_rtfl_90s", "prototype_der": 0.283553, "snapshot_der": 0.285195},
+    {"id": "interview_adam_frank_180s", "prototype_der": 0.117222, "snapshot_der": 0.117778},
+    {"id": "interview_bill_ackman_60s", "prototype_der": 0.073333, "snapshot_der": 0.073333},
+    {"id": "interview_keyu_jin_60s", "prototype_der": 0.036667, "snapshot_der": 0.036667},
+    {"id": "mono_javier_intro_50s", "prototype_der": 0.020000, "snapshot_der": 0.020000}
+  ],
+  "regression_command": "../MOSS-Transcribe-Diarize-wt-gemini-live.venv/bin/python -m pytest -q tests/gemini/test_gemini_c4_parity.py -s",
+  "result": "6 passed"
+}

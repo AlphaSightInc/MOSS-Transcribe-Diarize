@@ -12,7 +12,7 @@ from pathlib import Path
 from array import array
 from typing import Callable, Sequence
 
-from .gemini_live_runtime import (GeminiBase, GeminiPreview, GeminiRelabel,
+from .gemini_live_runtime import (GeminiBase, GeminiPreview, GeminiRelabel, GeminiTurnBridge,
                                   GeminiRolling, GeminiSegment, GeminiUpdate)
 from .gemini_provider import GeminiWord
 from .live_span_bounds import LIVE_SAMPLE_RATE
@@ -306,6 +306,7 @@ class LaneGeminiEngine:
         self._frontier = 0
         self._lane_frontiers = {lane: 0 for lane in self.LANES}
         self._rows: dict[str, list[GeminiSegment]] = {lane: [] for lane in self.LANES}
+        self._pending_turn_bridges: list[GeminiTurnBridge] = []
         self._previews: dict[str, GeminiPreview | None] = {lane: None for lane in self.LANES}
         self._observations: dict[str, object] = {}
         self._tapes = {lane: _LaneTape(tape_root) for lane in self.LANES}
@@ -373,6 +374,9 @@ class LaneGeminiEngine:
                 if update.end_sample <= self._frontier:
                     rows = self._rows_in(update.start_sample, update.end_sample)
                     self.publish(GeminiRelabel(update.start_sample, update.end_sample, rows))
+            elif isinstance(update, GeminiTurnBridge):
+                self._pending_turn_bridges.append(update)
+                self._publish_turn_bridges()
 
     def _rows_in(self, start: int, end: int) -> tuple[GeminiSegment, ...]:
         return tuple(sorted((row for lane in self.LANES for row in self._rows[lane]
@@ -393,6 +397,15 @@ class LaneGeminiEngine:
         self.publish(GeminiRolling(self._frontier, through, rows, observations,
                                    revision_lanes=self.LANES))
         self._frontier = through
+        self._publish_turn_bridges()
+
+    def _publish_turn_bridges(self) -> None:
+        ready = [row for row in self._pending_turn_bridges
+                 if row.new_end_sample < self._frontier]
+        self._pending_turn_bridges = [row for row in self._pending_turn_bridges
+                                      if row.new_end_sample >= self._frontier]
+        for row in ready:
+            self.publish(row)
 
     async def drain_tail(self, deadline: float) -> bool:
         started = time.monotonic()
