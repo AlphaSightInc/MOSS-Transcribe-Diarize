@@ -20,8 +20,10 @@ _MODEL = "gemini-3.5-transcribe-live"
 def _config(handle: str | None = None) -> types.LiveConnectConfig:
     return types.LiveConnectConfig(
         response_modalities=["TEXT"],
+        # No language lock: auto-detect matched English accuracy in the bake-off (accept6 WER
+        # .133 auto vs .135 en) and keeps non-English meetings usable, like the batch passes.
         input_audio_transcription=types.AudioTranscriptionConfig(
-            mode="VERBATIM", language_codes=["en"], word_timestamp=True),
+            mode="VERBATIM", word_timestamp=True),
         realtime_input_config=types.RealtimeInputConfig(
             automatic_activity_detection=types.AutomaticActivityDetection(
                 disabled=False, end_of_speech_sensitivity="END_SENSITIVITY_LOW",
