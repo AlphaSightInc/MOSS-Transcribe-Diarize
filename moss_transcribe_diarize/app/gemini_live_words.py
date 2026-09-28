@@ -156,15 +156,17 @@ class _LiveCore:
             self._history.popleft()
         try:
             await self._send_audio(pcm16, end_sample=end_sample)
-            if self._voiced_since_text >= 8 * LIVE_SAMPLE_RATE:
-                self.report(kind="live_preview", count_call=False,
-                            preview_stall_restarts=1)
-                await self._rotate()
         except Exception as exc:
             code = _error_code(exc)
             self.report(kind="live_preview", count_call=False, error_code=code,
                         retry_code=code)
             await self._rotate()  # The failed chunk is already in the replay buffer.
+            return
+        await asyncio.sleep(0)  # Let a just-arrived interim reset the watchdog.
+        if self._voiced_since_text >= 8 * LIVE_SAMPLE_RATE:
+            self.report(kind="live_preview", count_call=False,
+                        preview_stall_restarts=1)
+            await self._rotate()
 
     async def finish(self) -> None:
         if self.session is None:
