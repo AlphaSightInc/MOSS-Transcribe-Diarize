@@ -22,20 +22,20 @@ def _token(text: str) -> str:
     return "".join(re.findall(r"[^\W_]+(?:'[^\W_]+)?", text.lower(), flags=re.UNICODE))
 
 
-def _preview_tokens(text: str) -> list[str]:
+def _preview_words(text: str) -> list[str]:
     return re.findall(r"[^\W_\d]+|\d+", text.casefold())
 
 
 def _echoed_preview(row: GeminiSegment, system: Sequence[GeminiSegment]) -> bool:
     """A mic phrase repeats the union of nearby system preview phrases."""
-    words = _preview_tokens(row.text)
+    words = _preview_words(row.text)
     if not words:
         return False
     tolerance = 2 * LIVE_SAMPLE_RATE
     other = {word for segment in system
              if segment.start_sample <= row.end_sample + tolerance
              and segment.end_sample + tolerance >= row.start_sample
-             for word in _preview_tokens(segment.text)}
+             for word in _preview_words(segment.text)}
     return 5 * sum(word in other for word in words) >= 3 * len(words)
 
 
