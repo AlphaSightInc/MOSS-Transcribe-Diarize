@@ -16,3 +16,20 @@ Checked 2026-09-28 00:39 EDT against `$WT` `gemini/live-hybrid` at `7fce0f3d` (b
 **00:44 EDT recheck:** Heads unchanged: integration `8d8fb682`, D53 `a9301117`, combined `032cb1ce`, replay `27334d4c`. No new UI delta was detected during this pane's run. This pane closes before the 01:39 scheduled watch; the lead may continue the hourly watch.
 
 **00:47 EDT worktree update:** Gemini head advanced to `bc567bb2` for `common/gemini_common.py` word-offset repair. `frontend/` has no diff from `7fce0f3d`; the D53 and D55 source patches do not touch `common/gemini_common.py`. The temporary-worktree apply checks above were made against `7fce0f3d`; no conflicting path appeared in the new commit.
+
+## 02:30 EDT recheck — 2026-09-28
+
+- `round6/integration` in the candidate repo remains `8d8fb682`; **no UI merge**. Gemini worktree has no committed or dirty `frontend/` or static-asset delta from that base.
+- `round6/impl-ui-u1u2` is clean at `c7de8550` (adds `c225749a` review fixes and `c7de8550` clickable G9 meeting cards since the earlier `a9301117` check). Its full committed `8d8fb682..c7de8550` patch passes independent `git apply --check` against the current Gemini worktree.
+- `dx/combined` is clean at `a357553f`, advanced from `63c5df60` by the D55 two-session harness commits `5bc7ec04`, `3b6d7c2a`, `a357553f`; those three commits change `prototypes/round6-combined-harness/` only. Its full committed patch passes independent `git apply --check` against the current Gemini worktree.
+- `round6/proto-ui-u1u2` at `/private/tmp/moss-round6-ui-u1u2` is an older clean prototype head `b2b3b8a8` (2026-09-27 21:26 EDT), not a newly merged branch. Its patch also passes independent `git apply --check`. No other new `round6/*ui*` branch appeared in the candidate or implementation checkout branch lists.
+
+These are independent textual checks only; no branch was copied or merged. Combined behavior remains unmeasured. Next watch: ~03:30 EDT.
+
+## 03:30 EDT recheck — 2026-09-28
+
+- Candidate `round6/integration` remains `8d8fb682`; **no UI merge**. Gemini worktree still has no committed or dirty frontend/static-asset delta from the frozen base.
+- `round6/impl-ui-u1u2` is clean at `d564f784` (03:17 EDT), advanced/rebuilt since `c7de8550`. The branch history now includes Q5 card presentation and inline passage action (`f24af179`, `170f6ea0`), voiceprint refusal copy (`2bf37732`), and rebuilt static assets (`d564f784`). Its full committed `8d8fb682..d564f784` patch independently passes `git apply --check` against the current Gemini worktree. The new delta touches frontend poller, transcript cards/pane, merge state, CSS, static assets, docs, and UI tests; no UI was copied here.
+- `dx/combined` remains clean at `a357553f`; its full committed patch independently passes `git apply --check`. The older clean `round6/proto-ui-u1u2` remains `b2b3b8a8` and also independently passes. No `round6/*ui*` branch appeared in the candidate branch list.
+
+Textual applicability is separate for each branch; combined runtime/UI behavior remains unmeasured. There is no integration merge to escalate.
