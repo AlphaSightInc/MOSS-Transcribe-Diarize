@@ -232,6 +232,29 @@ describe("TranscriptPane", () => {
       .toBe("Settled remote");
   });
 
+  it("keeps headers on later cards after a long same-speaker gap and an S00 split", () => {
+    act(() => {
+      render(<TranscriptPane />, root);
+      applySessionStateEvent({ type: "session_state", session_id: "q5-split", mode: "live",
+        state: "active", status: "active", live_label_policy: "La" });
+      replaceTranscript([
+        { source_lane: "system", start: 0, end: 1, text: "Settled first", speaker: "S01",
+          speaker_entity_id: "same", display_name: "S01", state: "confirmed", settled: true },
+        { source_lane: "system", start: 5, end: 6, text: "Unsettled later", speaker: "S01",
+          speaker_entity_id: "same", display_name: "S01", state: "confirmed", settled: false },
+        { source_lane: "system", start: 10, end: 11, text: "Unknown first", speaker: "S00",
+          speaker_entity_id: "S00", display_name: "S00", state: "confirmed" },
+        { source_lane: "system", start: 15, end: 16, text: "Unknown later", speaker: "S00",
+          speaker_entity_id: "S00", display_name: "S00", state: "confirmed" }
+      ]);
+    });
+    const cards = [...root.querySelectorAll<HTMLElement>(".transcript-card")];
+    expect(cards).toHaveLength(4);
+    expect(cards.map(card => card.dataset.continuation)).toEqual(["false", "false", "false", "false"]);
+    expect(cards.map(card => card.querySelector(".utt-meta .utt-speaker-label")?.textContent))
+      .toEqual(["Speaker 1", "Remote", "Speaker uncertain", "Speaker uncertain"]);
+  });
+
   it("follows new text only while Auto-scroll is on and Find is closed", () => {
     vi.spyOn(window, "requestAnimationFrame").mockImplementation(callback => { callback(0); return 1; });
     vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => undefined);

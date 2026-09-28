@@ -610,6 +610,64 @@ def measure_diagnostic_regions(
     return evidence
 
 
+def _normal_text(value: str) -> str:
+    return " ".join(value.split())
+
+
+def validate_q5_card_content(
+    cards: list[dict[str, Any]], fixture: list[dict[str, Any]]
+) -> dict[str, int]:
+    """Recover the content hidden by Q5's generic card masks from the fixture."""
+    expected = sorted(fixture, key=lambda item: (item["start"], item["end"]))
+    numbers: dict[str, int] = {}
+    for item in expected:
+        speaker = item["speaker"]
+        if speaker not in {"S00", "UNKNOWN"} and speaker not in numbers:
+            numbers[speaker] = len(numbers) + 1
+    cursor = 0
+    passages = 0
+    if not cards:
+        raise AssertionError("Q5 masked transcript cards are absent")
+    for card_index, card in enumerate(cards):
+        segments = card.get("segments")
+        shown = card.get("passages")
+        if not isinstance(segments, list) or not segments or not isinstance(shown, list) or not shown:
+            raise AssertionError(f"Q5 card {card_index} has no passage content")
+        source = expected[cursor : cursor + len(segments)]
+        if len(source) != len(segments):
+            raise AssertionError(f"Q5 card {card_index} adds fixture segments")
+        for actual, item in zip(segments, source):
+            if not isinstance(actual, dict) or any(
+                actual.get(key) != item[key] for key in ("start", "end", "text")
+            ):
+                raise AssertionError(f"Q5 card {card_index} segment differs from fixture")
+        speaker = source[0]["speaker"]
+        if any(item["speaker"] != speaker for item in source):
+            raise AssertionError(f"Q5 card {card_index} mixes fixture speakers")
+        expected_label = "Speaker uncertain" if speaker in {"S00", "UNKNOWN"} else f"Speaker {numbers[speaker]}"
+        if _normal_text(str(card.get("speaker_label", ""))) != expected_label:
+            raise AssertionError(f"Q5 card {card_index} speaker label differs from fixture")
+        if _normal_text(" ".join(str(text) for text in shown)) != _normal_text(
+            " ".join(item["text"] for item in source)
+        ):
+            raise AssertionError(f"Q5 card {card_index} passage text differs from fixture")
+        cursor += len(source)
+        passages += len(shown)
+    if cursor != len(expected):
+        raise AssertionError("Q5 masked cards omit fixture segments")
+    return {"cards": len(cards), "passages": passages}
+
+
+def capture_q5_card_content(page: Page) -> list[dict[str, Any]]:
+    return page.locator(".transcript-card").evaluate_all(
+        """nodes => nodes.map(card => ({
+          speaker_label: card.querySelector('.utt-meta .utt-speaker-label')?.textContent ?? '',
+          passages: Array.from(card.querySelectorAll('.utt-content .utt-text'), node => node.textContent ?? ''),
+          segments: JSON.parse(card.getAttribute('data-segments') || 'null')
+        }))"""
+    )
+
+
 def largest_component(difference: bytearray, width: int, height: int, connectivity: int) -> int:
     if connectivity != 4:
         raise ValueError(f"Only four-connected regions are supported, got {connectivity}.")
@@ -645,7 +703,13 @@ def compare_viewport(
     diagnostic_regions: list[tuple[str, str]],
     reference_page: Page,
     candidate_page: Page,
+    fixture: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    content_check = None
+    if config.get("require_masked_card_content") is True:
+        if fixture is None:
+            raise ValueError("Q5 card content check requires the transcript fixture")
+        content_check = validate_q5_card_content(capture_q5_card_content(candidate_page), fixture)
     reference = Image.open(reference_path).convert("RGB")
     candidate = Image.open(candidate_path).convert("RGB")
     if reference.size != candidate.size:
@@ -697,6 +761,7 @@ def compare_viewport(
         "largest_four_connected_region_percent": largest_percent,
         "exemptions": exemptions,
         "diagnostic_regions": diagnostics,
+        "masked_card_content": content_check,
         "passed": (
             differing_percent <= config["max_different_pixel_percent"]
             and largest_percent <= config["max_largest_region_percent"]
@@ -789,6 +854,7 @@ def main() -> int:
                                     diagnostic_regions,
                                     reference_page,
                                     candidate_page,
+                                    fixture,
                                 )
                                 result["fixture"] = {
                                     "reference": reference_fixture,

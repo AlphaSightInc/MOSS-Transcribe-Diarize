@@ -573,7 +573,7 @@ class BrowserCampaign:
         if not isinstance(meeting_id, str):
             raise BrowserMeasurementError("fidelity Meeting ID is absent")
         harness = _load_reference_harness(self.repo)
-        config = harness.load_json(self.repo / "tests/fixtures/reference_ui_screenshot_diff.json")
+        config = harness.load_json(self.repo / "tests/fixtures/reference_ui_screenshot_diff_q5.json")
         reference_root = Path(_text(self.config, "live_transcribe_reference")).expanduser().resolve()
         head = subprocess.run(
             ("git", "-C", str(reference_root), "rev-parse", "HEAD"),
@@ -671,6 +671,7 @@ class BrowserCampaign:
                                 [],
                                 reference_page,
                                 candidate_page,
+                                fixture,
                             )
                             results.append(
                                 {
@@ -690,6 +691,7 @@ class BrowserCampaign:
                                     "raw_differing_pixels_before_exemptions": measured.get(
                                         "raw_differing_pixels_before_exemptions"
                                     ),
+                                    "masked_card_content": measured.get("masked_card_content"),
                                     "exemptions": [
                                         {"id": item.get("id"), "masked_union_boxes": item.get("masked_union_boxes", [])}
                                         for item in measured.get("exemptions", [])

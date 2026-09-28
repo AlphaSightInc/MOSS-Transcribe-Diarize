@@ -57,6 +57,13 @@ describe("Q5 transcript cards", () => {
       .toEqual([["settled-a", 1]]);
   });
 
+  it("uses lane labels for unnumbered unsettled raw tags under L-a", () => {
+    const remote = { ...turn(0, 1, "system", "S01", "remote"), display_name: "S04" };
+    const local = { ...turn(1, 2, "microphone", "S02", "local"), display_name: "S07" };
+    expect(transcriptCardSpeakerLabel(remote, new Map(), "La", false)).toBe("Remote");
+    expect(transcriptCardSpeakerLabel(local, new Map(), "La", false)).toBe("You");
+  });
+
   it("keeps displayed generic numbers dense when a settled person has a chosen name", () => {
     const named = { ...turn(0, 1, "system", "named", "first", true), display_name: "Alex" };
     const generic = turn(1, 2, "microphone", "generic", "second", true);

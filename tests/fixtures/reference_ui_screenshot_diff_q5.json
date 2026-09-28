@@ -13,6 +13,7 @@
   "max_largest_region_percent": 1.0,
   "pixel_channel_tolerance": 1,
   "connectivity": 4,
+  "require_masked_card_content": true,
   "exemptions": [
     {
       "id": "transcript-summary-toggle",

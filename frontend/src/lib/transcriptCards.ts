@@ -20,7 +20,8 @@ function speakerId(turn: SpeakerRow): string {
 
 function hasCustomName(turn: SpeakerRow): boolean {
   const display = turn.display_name.trim();
-  return !!display && display !== turn.speaker && display !== "Remote" && display !== "You";
+  return !!display && display !== turn.speaker && display !== "Remote" && display !== "You" &&
+    !/^S\d{2,}$/.test(display);
 }
 
 function turnKey(turn: TranscriptTurn): string {

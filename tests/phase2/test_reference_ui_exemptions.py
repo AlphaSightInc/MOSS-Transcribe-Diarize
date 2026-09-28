@@ -1,9 +1,11 @@
 """G10 fixture controls through the production screenshot comparator."""
 
 import importlib.util
+from copy import deepcopy
 from pathlib import Path
 
 from PIL import Image
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -68,6 +70,26 @@ def test_q5_baseline_exempts_only_reworked_cards_and_settled_labels():
         {"id": "q5-transcript-cards", "reference_selector": ".utt",
          "candidate_selector": ".transcript-card"},
     ]
+    assert config["require_masked_card_content"] is True
+
+
+def test_q5_masked_cards_reject_wrong_label_and_passage_text():
+    fixture = DIFF.load_json(ROOT / "tests/fixtures/reference_ui_screenshot_fixture.json")
+    labels = ["Speaker 1", "Speaker 2", "Speaker 1"]
+    cards = [
+        {"speaker_label": label, "passages": [item["text"]],
+         "segments": [{key: item[key] for key in ("start", "end", "text")}]}
+        for label, item in zip(labels, fixture)
+    ]
+    assert DIFF.validate_q5_card_content(cards, fixture) == {"cards": 3, "passages": 3}
+    wrong_label = deepcopy(cards)
+    wrong_label[1]["speaker_label"] = "Wrong Person XYZ"
+    with pytest.raises(AssertionError, match="speaker label"):
+        DIFF.validate_q5_card_content(wrong_label, fixture)
+    wrong_text = deepcopy(cards)
+    wrong_text[2]["passages"] = ["Wrong passage"]
+    with pytest.raises(AssertionError, match="passage text"):
+        DIFF.validate_q5_card_content(wrong_text, fixture)
 
 
 def test_candidate_only_multiple_and_absent_exemptions():

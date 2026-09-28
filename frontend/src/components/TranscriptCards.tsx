@@ -35,16 +35,14 @@ export function TranscriptCards({ searchTurns, activeMatchId, finalized, canCorr
       const foundFirst = byTurn.get(first);
       const label = foundFirst?.speakerLabel ?? first.display_name;
       const unknown = card.speakerId === "S00" || card.speakerId === "UNKNOWN";
-      const prior = cards[index - 1];
-      const continuation = prior?.speakerId === card.speakerId && prior.lane === card.lane;
       const state = card.rows.some(row => row.state === "provisional") ? "provisional" :
         card.rows.every(row => row.state === "final") ? "final" : "confirmed";
       const segments = card.rows.flatMap(row => row.segments);
       const targetKeys = card.rows.flatMap(row => row.target_segment_keys);
       const colorToken = resolveSpeakerColorToken(first.speaker, speakerColorMap);
       return <article key={card.key} className="utt transcript-card" data-card-key={card.key}
-          data-s00={String(unknown)} data-continuation={String(continuation)}
-          data-new-speaker={String(!continuation)} data-state={state}
+          data-s00={String(unknown)} data-continuation="false"
+          data-new-speaker="true" data-state={state}
           data-preview-stale={String(card.rows.some(row => row.provisional_stale))}
           data-source-lane={first.source_lane} data-turn-start={card.start} data-turn-end={card.end}
           data-target-keys={targetKeys.join("|")} data-segments={JSON.stringify(segments)}
