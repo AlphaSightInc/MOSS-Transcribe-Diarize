@@ -31,7 +31,9 @@ class WindowScheduler(Protocol):
 
 class SpeakerRegistry(Protocol):
     def observe_window(self, window_start_s: float, words: Sequence[GeminiWord],
-                       embeddings: object | None = None) -> tuple[dict[str, str], tuple[GeminiUpdate, ...]]: ...
+                       embeddings: object | None = None, *,
+                       committed_through_sample: int | None = None
+                       ) -> tuple[dict[str, str | None], tuple[GeminiUpdate, ...]]: ...
 
 
 class WeSpeakerWindowEmbeddings:
@@ -135,8 +137,10 @@ class OverlapRegistry:
         self._next_id = 1
 
     def observe_window(self, window_start_s: float, words: Sequence[GeminiWord],
-                       embeddings: object | None = None) -> tuple[dict[str, str], tuple[GeminiUpdate, ...]]:
-        del window_start_s, embeddings
+                       embeddings: object | None = None, *,
+                       committed_through_sample: int | None = None
+                       ) -> tuple[dict[str, str], tuple[GeminiUpdate, ...]]:
+        del window_start_s, embeddings, committed_through_sample
         local = tuple(dict.fromkeys(word.speaker for word in words))
         old = tuple(dict.fromkeys(word.speaker for word in self._seen))
         weights = [[0 for _ in old] for _ in local]
@@ -164,8 +168,10 @@ class SingleMicrophoneRegistry:
     """One local participant identity, created only after the mic word gates pass."""
 
     def observe_window(self, window_start_s: float, words: Sequence[GeminiWord],
-                       embeddings: object | None = None) -> tuple[dict[str, str], tuple[GeminiUpdate, ...]]:
-        del window_start_s, embeddings
+                       embeddings: object | None = None, *,
+                       committed_through_sample: int | None = None
+                       ) -> tuple[dict[str, str], tuple[GeminiUpdate, ...]]:
+        del window_start_s, embeddings, committed_through_sample
         return ({label: "speaker-microphone" for label in dict.fromkeys(w.speaker for w in words)}, ())
 
 
@@ -382,8 +388,9 @@ class GeminiHybridEngine:
             self.word_observer(absolute, frontier)
         embeddings = (self.embedding_source(pcm, start, absolute)
                       if self.embedding_source is not None else {})
-        mapping, relabels = self.registry.observe_window(start / LIVE_SAMPLE_RATE,
-                                                         absolute, embeddings)
+        mapping, relabels = self.registry.observe_window(
+            start / LIVE_SAMPLE_RATE, absolute, embeddings,
+            committed_through_sample=frontier)
         observations = ()
         if self.encoder_spec is not None:
             spec = self.encoder_spec
@@ -392,7 +399,8 @@ class GeminiHybridEngine:
                 exemplar_count=1, provisional=False,
                 embedder_id=f"{spec.provider}:{spec.revision}",
                 embedder_state_sha=spec.state_sha256,
-            ) for local, (vector, seconds) in embeddings.items() if local in mapping)
+            ) for local, (vector, seconds) in embeddings.items()
+              if mapping.get(local) is not None)
         with self._lock:
             old = self._rolling_frontier
             if frontier > old:

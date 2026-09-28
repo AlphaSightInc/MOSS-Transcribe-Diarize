@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from moss_transcribe_diarize.app.gemini_hybrid_engine import FixedWindowScheduler, GrowingContextWindowScheduler, GeminiHybridEngine, OverlapRegistry
 from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord, GeminiWords
+from moss_transcribe_diarize.app.gemini_continuity_registry import ContinuityRegistry
 from moss_transcribe_diarize.app.live_tape import CompleteMixedTape
 
 
@@ -128,6 +129,33 @@ def test_overlap_registry_keeps_id_when_local_label_changes():
     assert one["spk:0"] == two["spk:9"] == "speaker-0001"
 
 
+def test_continuity_registry_uses_only_committed_overlap_in_engine():
+    updates = []
+    class TailWords:
+        calls = 0
+        def diarize(self, _pcm, *, deadline, kind, diarize=True):
+            del deadline, kind, diarize
+            self.calls += 1
+            if self.calls == 1:
+                return GeminiWords((GeminiWord("a", "A", 9*16000, round(11.1*16000)),))
+            return GeminiWords((GeminiWord("b", "B", round(10.2*16000),
+                                           round(12.3*16000)),))
+    registry = ContinuityRegistry(embedding_threshold=.46, within_window_threshold=.60,
+                                  birth_min_seconds=2)
+    engine = GeminiHybridEngine(updates.append, word_source=FakeWords(),
+        window_scheduler=FixedWindowScheduler(), registry=registry,
+        diarizer=TailWords(), terminal=FakeTerminal())
+    for second in range(30):
+        engine.push_audio(second*16000, bytes(32000))
+        if second in {19, 29}:
+            engine._future.result(timeout=5)
+    rolls = [update for update in updates if isinstance(update, GeminiRolling)]
+    assert len(rolls) == 2
+    assert rolls[0].segments[0].speaker == "speaker-0001"
+    assert rolls[1].segments[0].speaker == "speaker-0002"
+    engine.close()
+
+
 def test_silent_microphone_skips_batch_calls_then_births_one_local_speaker():
     from moss_transcribe_diarize.app.gemini_hybrid_engine import SingleMicrophoneRegistry
     calls = []
@@ -159,9 +187,10 @@ def test_registry_and_account_observation_receive_same_vector():
     updates = []
     class SpyRegistry(OverlapRegistry):
         seen = None
-        def observe_window(self, start, words, embeddings=None):
+        def observe_window(self, start, words, embeddings=None, *, committed_through_sample=None):
             self.seen = embeddings
-            return super().observe_window(start, words, embeddings)
+            return super().observe_window(start, words, embeddings,
+                                          committed_through_sample=committed_through_sample)
     registry = SpyRegistry()
     spec = SimpleNamespace(provider="wespeaker", revision="test", state_sha256="ab"*32)
     engine = GeminiHybridEngine(updates.append, word_source=FakeWords(),
@@ -211,9 +240,10 @@ def test_rolling_word_gate_runs_before_registry_and_publication():
             assert [w.text for w in words] == ["silent", "voiced"]
             return tuple(w for w in words if w.text == "voiced")
     class Registry(OverlapRegistry):
-        def observe_window(self, start, words, embeddings=None):
+        def observe_window(self, start, words, embeddings=None, *, committed_through_sample=None):
             assert [w.text for w in words] == ["voiced"]
-            return super().observe_window(start, words, embeddings)
+            return super().observe_window(start, words, embeddings,
+                                          committed_through_sample=committed_through_sample)
     engine = GeminiHybridEngine(updates.append, word_source=FakeWords(),
         window_scheduler=FixedWindowScheduler(), registry=Registry(),
         diarizer=FakeDiarizer(), terminal=FakeTerminal(), word_gate=Gate())

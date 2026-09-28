@@ -239,3 +239,26 @@ terminal chunk stitch remains an unqualified candidate: long60 complete truth
 falsified POLICY-LONG (DER .328, Bill/Adam false merge, Lex split across three IDs).
 The cancelled policy is not incorporated here. Pane 5.3 is investigating long-call
 timestamps before a turn-building change.
+
+## C1+C3 continuity registry candidate
+
+Each system window supplies timed Gemini-local speaker labels. The registry first
+groups local labels whose production WeSpeaker vectors agree at cosine ≥0.60 and
+whose words do not materially overlap (prototype tolerance 0.15 s). It then maps
+those groups one-to-one to existing meeting IDs by maximum word-time overlap with
+**committed** prior rows. Where overlap is below 0.6 s, a centroid cosine ≥0.46
+can link a returning voice. A wholly unmatched group needs at least 2 s of
+Gemini-attributed speech within the window before it gets a displayed ID;
+otherwise its words remain unattributed and render as S00. Existing positive
+overlap may carry a shorter local label to its known ID. The registry retains
+the most recent committed observation and a smoothed centroid per known ID;
+it never rewrites a previously committed interval.
+
+The composition root currently sets S=10 s, Lmax=60 s, E=0.46, W=0.60, and H=0.
+These are provisional C4 constants until pane 6.1's final verdict. The mic lane
+continues to use its one local speaker rule. Deterministic fake windows cover
+birth, one-to-one assignment, acoustic return, same-window split, simultaneous
+voices, and the committed-frontier boundary. Real paced E1 and Bill receipts
+qualify only those public paths; broader C4 quality remains pane 6.1's decision.
+The full backend gate on this port passed 2,484 tests, skipped 3, xfailed 2,
+and passed 37 subtests.

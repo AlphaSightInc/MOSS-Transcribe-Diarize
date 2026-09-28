@@ -95,6 +95,22 @@ def test_combined_rolling_revision_keeps_overlapping_capture_lanes(tmp_path):
         "system": 16000, "microphone": 16000}
 
 
+def test_unborn_continuity_word_renders_s00_without_registering_speaker(tmp_path):
+    unknown = GeminiSegment(0, 8000, "brief", None, "system")
+    scripts = {"one": ([(GeminiBase(16000, ()),
+                         GeminiRolling(0, 16000, (unknown,),
+                                       revision_lanes=("system",)))], ())}
+    rt = runtime(tmp_path, scripts)
+    rt.create(session_id="one")
+    rt.accept_frame("one", AudioFrame(0, bytes(32000), 16000,
+                                     lane_pcm=(("system", bytes(32000)),
+                                               ("microphone", bytes(32000)))))
+    session = rt.snapshot("one").to_dict()["session"]
+    assert session["identity_snapshot"]["canonical_speakers"] == []
+    assert [(row["text"], row["canonical_speaker"], row["source_lane"])
+            for row in session["effective_transcript"]] == [("brief", None, "system")]
+
+
 def test_runtime_passes_aligned_pcm_lanes_to_lane_engine(tmp_path):
     got = []
     class Engine:

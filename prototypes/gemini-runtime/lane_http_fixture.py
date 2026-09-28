@@ -63,6 +63,14 @@ def _surface_counts(snapshot: dict) -> dict:
                                      if row.get("canonical_speaker")}),
         "microphone_speaker_count": len({row["canonical_speaker"] for row in mic
                                          if row.get("canonical_speaker")}),
+        "system_speaker_ids": sorted({row["canonical_speaker"] for row in system
+                                      if row.get("canonical_speaker")}),
+        "microphone_speaker_ids": sorted({row["canonical_speaker"] for row in mic
+                                          if row.get("canonical_speaker")}),
+        "system_unattributed_seconds": round(sum(row["end_sample"]-row["start_sample"]
+                                                   for row in system if row.get("canonical_speaker") is None)/RATE, 3),
+        "microphone_unattributed_seconds": round(sum(row["end_sample"]-row["start_sample"]
+                                                       for row in mic if row.get("canonical_speaker") is None)/RATE, 3),
         "mic_words": mic_words, "mic_words_outside_operator_intervals": outside,
         "mic_stray_rate": outside/mic_words if mic_words else None,
         "operator_recall": recall,

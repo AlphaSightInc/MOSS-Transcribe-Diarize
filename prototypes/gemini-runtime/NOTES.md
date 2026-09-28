@@ -1,5 +1,19 @@
 # Gemini runtime seam probe (pane P63)
 
+## C1+C3 continuity port contract (before product changes)
+
+**Structural question.** When Gemini changes local speaker labels between growing windows, which established meeting voice owns each word, and when has an unmatched voice earned a visible identity?
+
+**Minimum primitives.** Timed words in the current window; prior window words carrying established meeting IDs; optional production WeSpeaker vectors from at least 2 s of Gemini-attributed speech; one-to-one assignment over overlap/acoustic evidence; a 2 s new-birth threshold. Timed words establish overlap, vectors bridge absent overlap, assignment prevents one ID being claimed twice, and the threshold withholds unsupported new identities. Each has a distinct role.
+
+**Invariants.** Map each current local label to at most one meeting ID. Maximize positive overlap by Hungarian assignment, with acoustic cosine >= E=.46 as fallback. Merge same-window labels only when cosine >= W=.60 and their attributed words do not overlap. A new ID appears only at >=2 s attributed speech in that window; shorter unmatched words remain unattributed (product `None`, displayed S00), while positive overlap can retain an old ID. Previous observations never fabricate acoustic evidence. Use one production WeSpeaker vector only from an eligible Gemini-attributed span. Growing scheduler uses composition S10/Lmax60/H0 pending final C4 ruling. Do not relabel an already committed interval retroactively.
+
+**Assumptions and unknowns.** C4 final constants and population qualification are pending pane 6.1. The prototype's 0.6 s minimum overlap and 0.15 s same-window overlap tolerance are copied, not newly tuned. The current production vector helper embeds a continuous >=2 s span, whereas birth counts total attributed speech in the window. The L3 raw-echo quality miss remains a separate lane problem.
+
+**Falsifier and tool decision.** A deterministic window sequence that merges simultaneous voices, births a <2 s fragment, misses a cosine-supported returning voice, or assigns two labels to one ID without allowed within-window merge falsifies the port. Run the prototype on fixed timed words/vectors and print full mappings/centroids before coding. Then TDD those behaviours through the product registry and runtime publication, and run paced public E1+Bill HTTP to test the actual composition and Stop surface. Those tests change whether the port can be accepted; no new threshold sweep here.
+
+**Prototype and TDD verdict.** The one-command P61 registry replay printed 1.5 s unmatched A→S00 with 0 births; 2.1 s A→M1 with 1 birth; changed-label overlap B→M1; no-overlap cosine C→M1; nonoverlapping X/Y with cosine .8→one M1; simultaneous X/Y→M1/M2. Product tests then failed first on missing registry, missing acoustic return, missing within-window merge, and uncommitted-tail overlap, and passed after each slice. The product represents S00 as `canonical_speaker=None` and exposes no false speaker in the snapshot. Focused Gemini tree: 66/66 passed after composition to S10/L60/E.46/W.60/birth2/H0; full backend gate passed 2,484, skipped 3, xfailed 2, and passed 37 subtests (21 existing warnings). Public replays follow. No provider calls in this step.
+
 ## Contract before implementation
 
 - **Structural question:** Can one session-local stream of mixed 16 kHz PCM and engine updates be published through the existing `LiveSession` snapshot authority without changing the HTTP/UI contract?
