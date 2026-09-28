@@ -28,7 +28,7 @@ MODEL = {"w1": "gemini-3.8-live", "w2": "gemini-3.8-live", "w3": "gemini-3.5-tra
 
 def live_config(arm: str, turn_s: int, sensitivity: str, silence_ms: int,
                 thinking: int | None, max_output: int | None,
-                handle: str | None = None) -> types.LiveConnectConfig:
+                handle: str | None = None, language_code: str = "en") -> types.LiveConnectConfig:
     manual = arm == "w2" or (arm == "w3" and turn_s > 0)
     vad = types.AutomaticActivityDetection(
         disabled=manual,
@@ -39,7 +39,8 @@ def live_config(arm: str, turn_s: int, sensitivity: str, silence_ms: int,
     d = dict(
         response_modalities=["AUDIO"] if arm in ("w1", "w2") else ["TEXT"],
         input_audio_transcription=types.AudioTranscriptionConfig(
-            mode="VERBATIM", language_codes=["en"], word_timestamp=True),
+            mode="VERBATIM", language_codes=None if language_code == "auto" else [language_code],
+            word_timestamp=True),
         realtime_input_config=types.RealtimeInputConfig(
             automatic_activity_detection=vad,
             activity_handling="NO_INTERRUPTION", turn_coverage="TURN_INCLUDES_ALL_INPUT"),
@@ -121,7 +122,8 @@ async def run_live(args, clip):
     stop = asyncio.Event()
 
     async with client().aio.live.connect(model=model, config=live_config(
-        args.arm, args.turn, args.sensitivity, args.silence_ms, args.thinking, args.max_output)) as session:
+        args.arm, args.turn, args.sensitivity, args.silence_ms, args.thinking, args.max_output,
+        language_code=getattr(args, "language_code", "en"))) as session:
         t0 = time.monotonic()  # connect() has already consumed setup_complete
 
         async def receive():
@@ -240,7 +242,8 @@ async def run_live(args, clip):
     usage_events = [e for e in event_rows if "usage" in e]
     last_usage_audio_s = usage_events[-1]["audio_sent_s"] if usage_events else None
     cost_complete = last_usage_audio_s is not None and last_usage_audio_s >= sent / RATE - 2.0
-    result = {"arm": args.arm, "model": model, "clip": clip.clip_id, "audio_s": round(len(pcm) / RATE, 3),
+    result = {"arm": args.arm, "model": model, "clip": clip.clip_id,
+              "language_code": getattr(args, "language_code", "en"), "audio_s": round(len(pcm) / RATE, 3),
               "source_audio_s": source_s, "tail_silence_s": args.tail_silence,
               "sent_s": round(sent / RATE, 3), "events": len(event_rows), "updates": len(update_rows),
               "model_audio_bytes": sum(e.get("model_audio_bytes", 0) for e in event_rows),
@@ -336,6 +339,7 @@ async def run_batch(args, clip):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--arm", choices=["w1", "w2", "w3", "w4"], required=True)
+    p.add_argument("--language-code", choices=["en", "en-US", "auto"], default="en")
     p.add_argument("--clip", default="mono_javier_intro_50s")
     p.add_argument("--turn", type=int, default=0)
     p.add_argument("--window", type=int, choices=[8, 15], default=8)

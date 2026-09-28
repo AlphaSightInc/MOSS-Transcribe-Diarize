@@ -133,3 +133,93 @@ The extended set is eight gold9 clips plus three complete lex5m clips. `benchmar
 The winner rule's 0.03 WER band is satisfied by W3 and W1 on the primary and extended sets. W4 is `.0534` above W3 on the extended set, outside the band. On the paired paced Javier50 latency comparison, fastest W4 8/2 p50 `2.285 s` trails W3 `.714–.752 s` by more than the 1 s falsifier threshold; thus the stated falsifier for needing Live was **not met**, regardless of the unmeasured Live price. The W3 30-minute complete lex-Bill run scored `.163589` WER with three recovered GoAway rotations and at most a 1.240 s on-screen no-update hole, but exact provider-consumed audio and time until rolling correction remain unmeasured. Live cost/min and the `$3/meeting-hour` soft gate are unqualified because Live usage metadata was absent or incomplete.
 
 Manual turns are parked: on the same Javier50 public clip, W2 N=2/3/5 s scored `.460/.549/.478` WER and W3 N=2/3/5 s `.469/.522/.460`, versus W3 auto `.080`; all sent 50/50 s, but W2 N=5 also had one uncovered second and emitted 99,844 model-audio bytes. W4 overlap-stitch alternatives were only useful on the sparse acquired-alphabet diagnostic and did not change the winner.
+
+## F0 — Robustness follow-up: measurement contract (2026-09-28)
+
+**Structural question:** When the provisional W3 Live words stream receives non-speech, an echoed microphone mix, or two simultaneous speakers, which visible words reflect real speech and which failure persists until the rolling diarized pass corrects it?
+
+**Minimum primitives:** the retained mono audio tape with known sample time; an input condition (generated non-speech, public single-speaker reference, E1 synthetic microphone mix, or two public references); the W3 visible interim and final text events; and, for overlap, a batch transcript of the identical mix. Audio time separates genuine signal from quiet intervals; references provide a denominator where they exist; final text and first appearance distinguish provisional display from committed words. None supplies word-accurate timing for Live, so event-time claims remain bounds.
+
+**Invariants:** send PCM16 mono at 16 kHz in 100 ms chunks paced 1.0×; hold model, auto-VAD 500 ms, and tail flush fixed while changing only language hint or input condition; compare overlap arms on byte-identical mixtures; count false words only where the audio truth is known silent/non-speech; call E1 words descriptive because there is no transcript reference. The H1 #3 accept6 reference set is primary.
+
+**Assumptions and unknowns:** synthetic white/pink noise and chord/rhythm are controlled falsifiers, not field music; the E1 operator lane is a synthetic corpus voice; Live has no word offsets and still lacks complete usage metadata, so true cost and exact word onset remain unmeasured. An `en-US` hint could suppress foreign-script errors or could damage legitimate words. A VAD gate is a candidate policy only after measured false-positive removal and real-speech retention.
+
+**Falsifiers:** a language hint fails if it leaves hallucinations or materially worsens H1 accept6 WER; a gate fails if it cuts real words; W3 overlap fails if it loses the quiet reference words at −10 dB while batch retains them; echo tolerance fails if the E1 mix adds repeated phrases or suppresses the three known utterances. A bounded provisional error is tolerable only with a measured correction path and duration.
+
+**Tool decisions:** use the existing `proto_words.run_live` production-path configuration and shared corpus/score helpers for paired Live calls, the shared `diarize_window` for the identical overlap mix, and deterministic local PCM generation for non-speech. These calls change whether to recommend a language hint, VAD gate, or overlap caveat. Limit this follow-up to $3; absent complete Live usage, also bound the number and duration of calls and report cost as unmeasured.
+
+After the baseline batch −10 dB mixture retained 0 distinctive Keyu bigrams, two one-variable batch probes were registered: an `en-US` hint with diarization unchanged, and diarization off with language auto. If either recovers quiet words, that simple configuration could mitigate overlap; otherwise the mono mixture remains an unresolved source-separation problem. Each is one 60 s public batch call.
+
+The actual rolling-window candidate from P53 is 30 s length / 10 s stride. Before claiming the quiet voice cannot be filled by rolling correction, probe those four windows on the same mixture and count a quiet reference bigram as present if it appears in any window. This is an optimistic union bound rather than stitched output; zero recall would falsify rolling recovery on this example, while positive recall would require a stitching test.
+
+### F1 — Non-speech and inserted gap (paired paced W3 Live)
+
+Eight 60 s non-speech signals—digital zero; white and pink noise each at full-scale RMS `.0003`, `.0010`, `.0030`; and a synthetic chord/rhythm at RMS `.018`—were each sent with auto language and `en-US`, 100 ms PCM chunks at 1.0× plus a 2 s tail. **All 16 calls emitted 0 interim words and 0 final words: 0 hallucinated visible/final words per minute.** No foreign-script output appeared. This differs from the separate batch model's `2`/`好的。` generated-signal hallucinations; it does not prove immunity to real music or other noise.
+
+A public Javier 50 s clip with 20 s of digital zero inserted at audio 25–45 s also had **0 updates in the central 29–42 s gap** in both language modes. The last pre-gap final appeared at audio 25.9 s; new speech first appeared at 46.3 s (auto) or 45.8 s (`en-US`). Both produced 108 final token units and `.079646` WER against the H1 #3 Javier reference with times shifted after the inserted gap. The original W3 `en` Javier50 receipt scored about `.080`; this gap did not create a dropped passage or measurable quality loss. Exact Live word onset is unavailable.
+
+**Verdict:** no VAD gate or language hint is justified by these controlled non-speech results alone. The two modes are identical on this cohort; accept6 determines whether `en-US` affects real speech. Receipts: `evidence/P52/robust-live-{case}-{auto,en-US}.json` and `robust-manifest.json`.
+
+### F2 — Language hint on H1 #3 accept6
+
+Six public acceptance clips were rerun at 1.0×, with only `language_codes` changed between omitted (auto) and `["en-US"]`; model W3, 500 ms auto VAD, and 2 s tail were identical. References are the manifest-matching H1 #3 set in `common/corpus.py` (the 90 s rtfl fixture remains partial but is part of this fixed primary population).
+
+| Clip | Auto WER | `en-US` WER |
+|---|---:|---:|
+| Jamie 180 s | .085366 | .081882 |
+| rtfl 90 s | .160194 | .165049 |
+| Adam 180 s | .143126 | .143126 |
+| Bill 60 s | .227273 | .227273 |
+| Keyu 60 s | .122302 | .115108 |
+| Javier 50 s | .061947 | .079646 |
+| **Macro, six clips** | **.133368** | **.135347** |
+
+All 12 sends completed, no Live errors or model audio; none had a complete usage receipt. The prior selected W3 `en` baseline is also `.135347` on the same H1 population, from earlier calls. The `en-US` hint neither suppressed a hallucination in this test (auto already had zero on its eight non-speech minutes) nor improved macro WER. Its +`.001979` WER over auto is small, with one larger Javier regression and modest Jamie/Keyu gains. **Verdict:** keep the existing W3 configuration; no evidence supports adding an `en-US` hint as a robustness policy. Actual Live spend remains unmeasured.
+
+### F3 — Simultaneous public voices; rolling correction falsifier
+
+The complete gold9 60 s Bill and Keyu clips were RMS-matched, summed to mono, and sent at equal level or with Keyu 10 dB quieter. W3 Live used `en-US` in both cases; batch Gemini 3.5 Transcribe saw the byte-identical whole 60 s mixtures with diarization and word offsets. Each human reference is complete. **Word fraction** below is the longest common subsequence (LCS) count over each voice's ordered reference words and the combined output. It is optimistic because shared words such as “the” can be credited to both voices. The **distinctive two-word phrase** fraction excludes phrases occurring in the other reference and is the stronger voice-presence check.
+
+| Mix / method | Bill words | Keyu words | Bill distinctive phrases | Keyu distinctive phrases |
+|---|---:|---:|---:|---:|
+| Equal / W3 Live | 59/176 (33.5%) | 75/139 (54.0%) | 39/168 (23.2%) | 51/131 (38.9%) |
+| Equal / whole-clip batch | 113/176 (64.2%) | 72/139 (51.8%) | 83/168 (49.4%) | 51/131 (38.9%) |
+| −10 dB / W3 Live | 124/176 (70.5%) | 39/139 (28.1%) | 103/168 (61.3%) | **17/131 (13.0%)** |
+| −10 dB / whole-clip batch | 159/176 (90.3%) | 23/139 (16.5%) | 139/168 (82.7%) | **0/131** |
+
+At −10 dB, the default batch call, an `en-US`-hinted batch call, and a no-diarization batch call each found **0/131** distinctive Keyu phrases. The actual P53 rolling candidate (30 s window, 10 s stride) was also probed at ends 30/40/50/60 s: an optimistic union of all four transcripts found Keyu **0/131** at −10 dB (Bill 138/168); at equal level it found Keyu 87/131 and Bill 104/168. That optimistic union overstates any stitcher's output, so zero is a strong failure signal for the rolling correction path on this mixture. The whole-clip batch call is also a terminal-pass proxy and did not recover Keyu. One of 12 batch overlap calls had a timestamp anomaly (one clamped word in equal-level whole-clip batch); none dropped a word by invalid offset. All Live sends and batch calls completed without reported errors.
+
+**Verdict:** W3 displays a short Keyu fragment at −10 dB, but the proposed same-mono rolling and terminal Gemini passes cannot be credited with filling this quiet voice on the measured example. The independent Keyu 60 s W3 gold9 receipt scored `.129496` WER, showing the source is transcribable when separate. The smallest supported recovery is to **preserve and transcribe physically separate input lanes before summing, wherever lanes exist**; that does not solve two voices already mixed on one lane. For that case, mark quiet-overlap completeness **UNRESOLVED** and retain the audio for review; source separation or another overlap-specific method needs its own measured prototype. Do not claim D6 no-dropped-passages from the rolling/terminal path on this condition.
+
+### F4 — E1 delayed echo and three synthetic operator utterances
+
+The public E1 fixture's 302 s `system.wav` and `E1-microphone.wav` were summed sample-for-sample at their fixture gains into one PCM16 mono stream (0 clipped samples). The microphone contains −25 dB delayed system echo, noise, and three 3 s corpus utterances at 30/135/248 s. System-only and mixed W3 Live calls used `en-US`, 500 ms auto VAD, 1.0× pacing, and 2 s tail. E1 has no human system transcript, so **no WER is asserted**.
+
+| Stream | Final words / 302 s | Words/min | Nearby repeated four-word phrases / opportunities |
+|---|---:|---:|---:|
+| System only | 808 | 160.53 | 1/805 (0.124%) |
+| System + E1 mic | 833 | 165.50 | 1/830 (0.120%) |
+
+The one repeated phrase, “so we want to,” occurs in both outputs. Thus the echo did **not** measurably double phrases under this local definition (same four-word phrase repeated within 20 tokens), despite 25 more total words in the mix. Different ordinary transcript wording accounts for some total-word difference; the 25 cannot all be assigned to the mic.
+
+The synthetic mic voice is drawn from the public Keyu clip. Its complete human transcript contains these phrases; the fixture gives utterance start/duration, not human word offsets. Counts below are distinctive phrase bigrams in the final transcript, compared with the system-only control:
+
+| Mic at | Human source phrase | System only | Mixed | Assessment |
+|---|---|---:|---:|---|
+| 30 s | “they think that they're responsible for you” | 0/6 | 0/6 | Not recovered |
+| 135 s | “deference to authority is not blind submission” | 1/6 | 1/6 | No mic-specific gain; shared incidental phrase |
+| 248 s | “in exchange for some deference” | 0/4 | 3/4 | Partially recovered as “An exchange for some deference” |
+
+The third phrase appeared only in a final chunk ending at sent-audio 272.5 s, roughly 24.5 s after utterance onset, and did not appear in the nearby interim updates. The first two source phrases were not detected in mixed output. The separate 3 s echo-free mic batch probes returned 8/7/6 words and 0 timing anomalies in all three calls; they are a model cross-check, not an independent human timed reference. **Operator outcome: two lost, one partial and late.** This is a provisional mono-stream failure, not an echo-doubling failure.
+
+There is no long natural E1 silence: WebRTC VAD mode 1 on 10 ms frames found 0 stretches ≥2 s in both tracks (longest unvoiced run 0.84 s system, 0.73 s mixed). To make the requested silence test measurable, a derived 60 s E1 excerpt inserted 20 s of digital zero between its first and second 20 s of speech. It produced **0 interim/final updates in the central audio 24–36 s gap**; last pre-gap final ended at audio 21.0 s and next speech appeared at 41.3 s. This supports no hallucination on the controlled E1 gap, while natural E1 silent-stretch hallucination remains unmeasured because that condition did not occur.
+
+**Verdict:** do not rely on one mixed mono W3 stream to expose brief overlapping microphone speech; two of three known utterances were absent. Where separate system/mic lanes already exist, retaining and transcribing them before mixing is the smallest supported candidate; the measured echo-only duplication rate gives no reason for an echo-specific dedupe rule. All three E1 Live sends completed without reported errors; actual Live cost remains unmeasured. Receipts and exact text are in `evidence/P52/robust-analysis.json` and `robust-live-e1_*.json`.
+
+### F5 — Follow-up decision and limits
+
+**Keep W3 for provisional single-stream words, with its existing language setting.** The controlled silence/noise/music cohort and both inserted gaps produced no visible hallucinations, so a VAD gate and `en-US` hint have no measured benefit. The earlier W3 WER/latency selection stands for its qualified corpora.
+
+**Mixed concurrent speech is a qualification gap, not a cosmetic transcript issue.** On E1, two of three known mic utterances disappeared from the mono mix; on public same-lane −10 dB overlap, rolling 30 s windows and a whole-clip terminal proxy recovered 0/131 quiet-voice distinctive phrases. The minimal supported candidate is to retain separate capture lanes when they exist and transcribe them before mixing. For already mixed single-lane overlap, no tested config fixes the loss; preserve the audio, mark completeness unresolved, and prototype a recovery method before asserting D6. This follow-up makes no product-code change.
+
+Receipt audit: **35/35 Live calls and 15/15 batch calls completed**, all audio sent, zero call errors; batch timing anomalies **1/15 calls, one clamped and zero dropped-offset words**. P52 ledger grew from about `$0.753` before this follow-up to `$0.7775` observed, mainly the 15 batch calls. **0/35 Live calls had complete usage metadata**, so actual Live spend and independent reconciliation against the follow-up `$3` cap remain **UNMEASURED**. The experiment bounded Live audio to these 35 public/generated calls and stopped. Evidence is `evidence/P52/robust-analysis.json`, `robust-manifest.json`, and individual retained receipts. One E1 fixture and one two-voice overlap pair cannot establish general overlap failure rates; the demonstrated missed passages are enough to falsify an unconditional completeness claim.
