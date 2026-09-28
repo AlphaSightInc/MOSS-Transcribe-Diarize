@@ -10,6 +10,8 @@
 
 **TDD verdict before real call.** Deterministic tests went red/green for the ratio and unvoiced bypass, rolling and terminal conjunction with text guard, and content-free per-session/per-lane drop counters. Focused Gemini tests passed 83/83. The product E1 result is pending.
 
+**Product E1 verdict.** On committed `e7078edc`, the 1.0× public Account HTTPS E1 run settled 302/302 s and finalized with 0/20 final stray mic words, final operator recall 7/7, 6/7, 4/5. The previous product population was 14/35 stray, so this is not a paired-word comparison. Settled mic was 0/21 stray. Diagnostics: 5,395 acoustic gate drops and 10 text guard drops across overlapping windows/final, 64 batch calls, one parser clamp, zero parser drops, two timestamp repairs, zero provider errors/retries/skips, $0.251995 including Live list-price estimate. The full backend gate passed 2,501 tests, skipped 3, xfailed 2, 37 subtests. This confirms baseline E1 transfer only; P52's harder-case failures remain.
+
 ## POLICY-TIMESTAMPS port contract (before implementation)
 
 **Structural question.** How can the product retain Gemini's annotation sequence when long-call offsets jump to the wrong part of the recording, while meeting the provider call cap and joining chunk-local voices across seams?

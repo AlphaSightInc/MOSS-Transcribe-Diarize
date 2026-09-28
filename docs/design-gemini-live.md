@@ -319,5 +319,18 @@ Pane 5.2 measured baseline E1 at **0/19** stray words and M2 at **22/22**
 operator words retained with this combined rule on its timed-word bench.
 Its harder cases reject a general echo-safe claim: at echo ≥−15 dB, stray words
 survive; with operator gain .1, true words are lost. Natural-room performance
-is unmeasured. The product-paced E1 receipt and test outcome are recorded below
-when available.
+is unmeasured.
+
+The real 1.0× E1 Account HTTPS replay on `e7078edc` settled all 302 s and
+finalized. The final mic surface had **0/20 stray words** outside the three
+operator intervals, with source-phrase recall **7/7, 6/7, 4/5**. The earlier
+product run had 14/35 stray final words; its word population differs, so this
+is a product-path before/after observation rather than a paired-word test.
+The settled mic surface had 0/21 stray words and recall 7/7, 7/7, 4/5.
+Diagnostics reported 5,395 acoustic drops and 10 text drops; growing
+overlapping windows can evaluate the same word repeatedly, so these are
+gate decisions, not unique source words. One offset was clamped and two words
+were timestamp-repaired across 64 batch calls; none were dropped by the parser.
+Provider errors, retries, and skipped ticks were zero. Reported cost was
+$0.251995 including the $0.050667 Live list-price estimate. Receipt:
+`evidence/P63/echogate-e1-http.json`.

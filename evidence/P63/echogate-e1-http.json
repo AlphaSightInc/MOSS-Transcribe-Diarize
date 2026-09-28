@@ -1,0 +1,196 @@
+{
+  "schema": "p63-l3-real-http-v1",
+  "case": "E1",
+  "pace": 1.0,
+  "source_seconds": 302.0,
+  "session_id": "V2hsaBYp74fK8AV3ICMGrlUy",
+  "frame_count_per_lane": 604,
+  "max_pacing_lag_seconds": 0.01,
+  "settled": {
+    "accepted_samples": 4832000,
+    "canonical_through_sample": 4832000,
+    "pending_work_items": 0,
+    "system_turn_count": 45,
+    "microphone_turn_count": 4,
+    "system_speaker_count": 4,
+    "microphone_speaker_count": 1,
+    "system_speaker_ids": [
+      "speaker-0001",
+      "speaker-0002",
+      "speaker-0003",
+      "speaker-0004"
+    ],
+    "microphone_speaker_ids": [
+      "speaker-microphone"
+    ],
+    "system_unattributed_seconds": 0.2,
+    "microphone_unattributed_seconds": 0.0,
+    "mic_words": 21,
+    "mic_words_outside_operator_intervals": 0,
+    "mic_stray_rate": 0.0,
+    "operator_recall": [
+      {
+        "matched": 7,
+        "reference_words": 7
+      },
+      {
+        "matched": 7,
+        "reference_words": 7
+      },
+      {
+        "matched": 4,
+        "reference_words": 5
+      }
+    ]
+  },
+  "at_stop": {
+    "status": "closed",
+    "finalization_status": "final",
+    "speaker_count": 5,
+    "system_turn_count": 23,
+    "microphone_turn_count": 3,
+    "system_speaker_count": 3,
+    "microphone_speaker_count": 1,
+    "system_speaker_ids": [
+      "speaker-0001",
+      "speaker-0002",
+      "speaker-0004"
+    ],
+    "microphone_speaker_ids": [
+      "speaker-microphone"
+    ],
+    "system_unattributed_seconds": 0.0,
+    "microphone_unattributed_seconds": 0.0,
+    "mic_words": 20,
+    "mic_words_outside_operator_intervals": 0,
+    "mic_stray_rate": 0.0,
+    "operator_recall": [
+      {
+        "matched": 7,
+        "reference_words": 7
+      },
+      {
+        "matched": 6,
+        "reference_words": 7
+      },
+      {
+        "matched": 4,
+        "reference_words": 5
+      }
+    ]
+  },
+  "final": {
+    "status": "closed",
+    "finalization_status": "final",
+    "system_turn_count": 23,
+    "microphone_turn_count": 3,
+    "system_speaker_count": 3,
+    "microphone_speaker_count": 1,
+    "system_speaker_ids": [
+      "speaker-0001",
+      "speaker-0002",
+      "speaker-0004"
+    ],
+    "microphone_speaker_ids": [
+      "speaker-microphone"
+    ],
+    "system_unattributed_seconds": 0.0,
+    "microphone_unattributed_seconds": 0.0,
+    "mic_words": 20,
+    "mic_words_outside_operator_intervals": 0,
+    "mic_stray_rate": 0.0,
+    "operator_recall": [
+      {
+        "matched": 7,
+        "reference_words": 7
+      },
+      {
+        "matched": 6,
+        "reference_words": 7
+      },
+      {
+        "matched": 4,
+        "reference_words": 5
+      }
+    ]
+  },
+  "engine_diagnostics": {
+    "calls_by_kind": {
+      "microphone_live_preview": 1,
+      "system_live_preview": 1,
+      "system_rolling": 31,
+      "microphone_rolling": 31,
+      "system_terminal": 1,
+      "microphone_terminal": 1
+    },
+    "errors_by_code": {},
+    "retries_by_code": {},
+    "timing_anomalies": {
+      "clamped": 1,
+      "dropped": 0
+    },
+    "repaired_words": 2,
+    "mic_words_dropped_by_acoustic_gate": 5395,
+    "mic_words_dropped_by_text_guard": 10,
+    "chunked": false,
+    "audio_seconds_sent": 4632.0,
+    "cost_usd": 0.2519946666666636,
+    "cost_usd_basis": "provider_usage_plus_live_list_price_estimate",
+    "live_list_price_estimate_usd": 0.05066666666666742,
+    "skipped_window_ticks": 0,
+    "degraded_path_activations": 0,
+    "window_lag_seconds": {
+      "count": 31,
+      "p50": 8.0,
+      "max": 10.0
+    },
+    "preview_lag_seconds": {
+      "count": 1009,
+      "p50": 0.0,
+      "max": 0.5
+    },
+    "voiceprint_errors": 0,
+    "lanes": {
+      "microphone": {
+        "calls_by_kind": {
+          "live_preview": 1,
+          "rolling": 31,
+          "terminal": 1
+        },
+        "errors_by_code": {},
+        "retries_by_code": {},
+        "timing_anomalies": {
+          "clamped": 1,
+          "dropped": 0
+        },
+        "repaired_words": 0,
+        "chunked": false,
+        "mic_words_dropped_by_acoustic_gate": 5395,
+        "mic_words_dropped_by_text_guard": 10,
+        "audio_seconds_sent": 2316.0,
+        "cost_usd": 0.12599733333333268,
+        "skipped_window_ticks": 0
+      },
+      "system": {
+        "calls_by_kind": {
+          "live_preview": 1,
+          "rolling": 31,
+          "terminal": 1
+        },
+        "errors_by_code": {},
+        "retries_by_code": {},
+        "timing_anomalies": {
+          "clamped": 0,
+          "dropped": 0
+        },
+        "repaired_words": 2,
+        "chunked": false,
+        "mic_words_dropped_by_acoustic_gate": 0,
+        "mic_words_dropped_by_text_guard": 0,
+        "audio_seconds_sent": 2316.0,
+        "cost_usd": 0.1259973333333327,
+        "skipped_window_ticks": 0
+      }
+    }
+  }
+}
