@@ -364,12 +364,14 @@ def test_engine_usage_counters_are_per_session_content_free_and_copied(tmp_path)
     assert "microphone_gate" not in gates["calls_by_kind"]
     reporters["one"](kind="system_live_preview", count_call=False,
                      preview_stall_restarts=1)
-    reporters["one"](kind="system_rolling", count_call=False, coverage_retry=1)
+    reporters["one"](kind="system_rolling", count_call=False, coverage_retry=1,
+                     coverage_preview_fallbacks=1)
     reporters["one"](kind="system_terminal", count_call=False,
                      coverage_retry=1, terminal_coverage_fallbacks=1)
     diagnostics = rt.engine_diagnostics("one")
     assert (diagnostics["preview_stall_restarts"], diagnostics["coverage_retries"],
             diagnostics["terminal_coverage_fallbacks"]) == (1, 2, 1)
+    assert diagnostics["coverage_preview_fallbacks"] == 1
     assert diagnostics["lanes"]["system"]["coverage_retries"] == 2
     with pytest.raises(ValueError):
         reporters["one"](kind="rolling", error_code="meeting words")

@@ -233,6 +233,7 @@ class _GeminiState:
     skipped_window_ticks: int = 0
     preview_stall_restarts: int = 0
     coverage_retries: int = 0
+    coverage_preview_fallbacks: int = 0
     terminal_coverage_fallbacks: int = 0
     degraded_path_activations: int = 0
     window_lag_samples: list[int] = field(default_factory=list)
@@ -476,6 +477,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         skipped_window_ticks: int = 0,
         preview_stall_restarts: int = 0,
         coverage_retry: int = 0,
+        coverage_preview_fallbacks: int = 0,
         terminal_coverage_fallbacks: int = 0,
     ) -> None:
         """Record one provider request attempt, with operational metadata only."""
@@ -485,7 +487,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 raise ValueError("engine usage kind and codes must be stable metadata tokens.")
         if any(not isinstance(value, int) or value < 0
                for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks,
-                             preview_stall_restarts, coverage_retry, terminal_coverage_fallbacks,
+                             preview_stall_restarts, coverage_retry, coverage_preview_fallbacks,
+                             terminal_coverage_fallbacks,
                              acoustic_gate_dropped_words, text_guard_dropped_words)):
             raise ValueError("word-timing anomaly counts must be nonnegative integers.")
         if any(not math.isfinite(value) or value < 0 for value in (audio_seconds_sent, cost_usd)):
@@ -510,6 +513,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.skipped_window_ticks += skipped_window_ticks
             state.preview_stall_restarts += preview_stall_restarts
             state.coverage_retries += coverage_retry
+            state.coverage_preview_fallbacks += coverage_preview_fallbacks
             state.terminal_coverage_fallbacks += terminal_coverage_fallbacks
             state.audio_seconds_sent += audio_seconds_sent
             state.cost_usd += cost_usd
@@ -527,6 +531,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "skipped_window_ticks": 0})
                 totals.setdefault("preview_stall_restarts", 0)
                 totals.setdefault("coverage_retries", 0)
+                totals.setdefault("coverage_preview_fallbacks", 0)
                 totals.setdefault("terminal_coverage_fallbacks", 0)
                 if count_call:
                     calls = totals["calls_by_kind"]
@@ -547,6 +552,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["skipped_window_ticks"] += skipped_window_ticks
                 totals["preview_stall_restarts"] += preview_stall_restarts
                 totals["coverage_retries"] += coverage_retry
+                totals["coverage_preview_fallbacks"] += coverage_preview_fallbacks
                 totals["terminal_coverage_fallbacks"] += terminal_coverage_fallbacks
 
     def engine_diagnostics(self, session_id: str) -> dict[str, object]:
@@ -571,6 +577,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "skipped_window_ticks": state.skipped_window_ticks,
                 "preview_stall_restarts": state.preview_stall_restarts,
                 "coverage_retries": state.coverage_retries,
+                "coverage_preview_fallbacks": state.coverage_preview_fallbacks,
                 "terminal_coverage_fallbacks": state.terminal_coverage_fallbacks,
                 "degraded_path_activations": state.degraded_path_activations,
                 "window_lag_seconds": _lag_summary(state.window_lag_samples),

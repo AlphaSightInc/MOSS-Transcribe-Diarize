@@ -19,7 +19,7 @@ from typing import Callable, Sequence
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .gemini_live_runtime import GeminiSegment
-from .gemini_coverage import voiced_word_gaps
+from .gemini_coverage import missing_witness_intervals
 
 MODEL = "gemini-3.5-transcribe"
 
@@ -299,8 +299,12 @@ class TerminalTranscriber:
         self.voiced_audio = voiced_audio
         self.last_words: tuple[GeminiWord, ...] = ()
         self.coverage_gaps: tuple[tuple[int, int], ...] = ()
+        self._witness: tuple[GeminiSegment, ...] = ()
         self.chunk_samples = chunk_seconds * LIVE_SAMPLE_RATE
         self.overlap_samples = overlap_seconds * LIVE_SAMPLE_RATE
+
+    def set_witness(self, rows: Sequence[GeminiSegment]) -> None:
+        self._witness = tuple(rows)
 
     def transcribe(self, tape: CompleteMixedTape) -> tuple[GeminiSegment, ...]:
         self.coverage_gaps = ()
@@ -323,20 +327,23 @@ class TerminalTranscriber:
                 break
             start = stop - self.overlap_samples
         decode = getattr(self.diarizer, "diarize_terminal", self.diarizer.diarize)
-        def decode_checked(pcm: bytes) -> tuple[GeminiWords, tuple[tuple[int, int], ...]]:
+        def decode_checked(pcm: bytes, start: int, stop: int) -> tuple[GeminiWords, tuple[tuple[int, int], ...]]:
+            witness = tuple((max(start, row.start_sample), min(stop, row.end_sample))
+                            for row in self._witness if row.text.strip()
+                            and row.start_sample < stop and row.end_sample > start)
             parsed = decode(pcm, deadline=time.monotonic() + 240,
                             kind="terminal", diarize=self.diarize)
-            gaps = voiced_word_gaps(
-                pcm, tuple((w.start_sample, w.end_sample) for w in parsed.words),
-                minimum_voiced_samples=10*LIVE_SAMPLE_RATE)
+            gaps = missing_witness_intervals(
+                witness, tuple((start+w.start_sample, start+w.end_sample)
+                               for w in parsed.words))
             if gaps:
                 if self.report_usage is not None:
                     self.report_usage(kind="terminal", count_call=False, coverage_retry=1)
                 parsed = decode(pcm, deadline=time.monotonic() + 240,
                                 kind="terminal", diarize=self.diarize)
-                gaps = voiced_word_gaps(
-                    pcm, tuple((w.start_sample, w.end_sample) for w in parsed.words),
-                    minimum_voiced_samples=10*LIVE_SAMPLE_RATE)
+                gaps = missing_witness_intervals(
+                    witness, tuple((start+w.start_sample, start+w.end_sample)
+                                   for w in parsed.words))
             return parsed, gaps
         next_id = 1
         with ThreadPoolExecutor(max_workers=min(3, len(schedule)),
@@ -348,12 +355,12 @@ class TerminalTranscriber:
                     pcm = tape.read(start_sample=start, end_sample=stop)
                     pending.append(None if self.voiced_audio is not None
                                    and not self.voiced_audio(pcm) else
-                                   executor.submit(decode_checked, pcm))
+                                   executor.submit(decode_checked, pcm, start, stop))
                 for (start, stop, core_end), future in zip(batch, pending):
                     parsed, gaps = future.result() if future is not None else (GeminiWords(()), ())
                     if gaps:
-                        self.coverage_gaps += tuple((start + lo, start + min(hi, core_end-start))
-                                                    for lo, hi in gaps if start + lo < core_end)
+                        self.coverage_gaps += tuple((lo, min(hi, core_end))
+                                                    for lo, hi in gaps if lo < core_end)
                         if self.report_usage is not None:
                             self.report_usage(kind="terminal", count_call=False,
                                               terminal_coverage_fallbacks=1)

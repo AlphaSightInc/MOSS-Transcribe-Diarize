@@ -162,6 +162,7 @@ def test_terminal_skips_unvoiced_chunks_without_a_provider_call():
 
 
 def test_terminal_voiced_gap_retries_and_exposes_live_fallback_interval():
+    from moss_transcribe_diarize.app.gemini_live_runtime import GeminiSegment
     import wave
     from pathlib import Path
     from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
@@ -181,11 +182,58 @@ def test_terminal_voiced_gap_retries_and_exposes_live_fallback_interval():
     diarizer = Diarizer()
     terminal = TerminalTranscriber(diarizer, voiced_audio=WebRtcSpeechDetector(),
                                    report_usage=lambda **row: usage.append(row))
+    terminal.set_witness((GeminiSegment(0, 20*16000, "live", "speaker-0001", "system"),))
     assert [row.text for row in terminal.transcribe(Tape())] == ["opening"]
     assert diarizer.calls == 2
     assert terminal.coverage_gaps == ((2*16000, 20*16000),)
     assert sum(row.get("coverage_retry", 0) for row in usage) == 1
     assert sum(row.get("terminal_coverage_fallbacks", 0) for row in usage) == 1
+
+
+def test_terminal_audible_audio_without_live_words_has_no_coverage_retry():
+    from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
+    import wave
+    from pathlib import Path
+    with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
+        audible = wav.readframes(16000)
+    class Tape:
+        sample_count = 15*16000
+        def read(self, *, start_sample=0, end_sample=None):
+            stop = self.sample_count if end_sample is None else end_sample
+            return audible * ((stop-start_sample)//16000)
+    class Empty:
+        calls = 0
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            self.calls += 1
+            return GeminiWords(())
+    usage = []
+    batch = Empty()
+    terminal = TerminalTranscriber(batch, voiced_audio=WebRtcSpeechDetector(),
+                                   report_usage=lambda **row: usage.append(row))
+    assert terminal.transcribe(Tape()) == ()
+    assert batch.calls == 1
+    assert terminal.coverage_gaps == ()
+    assert sum(row.get("coverage_retry", 0) for row in usage) == 0
+
+
+def test_empty_terminal_response_retries_when_short_live_row_exists():
+    from moss_transcribe_diarize.app.gemini_live_runtime import GeminiSegment
+    class Tape:
+        sample_count = 2*16000
+        def read(self, *, start_sample=0, end_sample=None):
+            stop = self.sample_count if end_sample is None else end_sample
+            return bytes(2*(stop-start_sample))
+    class Empty:
+        calls = 0
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            self.calls += 1
+            return GeminiWords(())
+    batch = Empty()
+    terminal = TerminalTranscriber(batch)
+    terminal.set_witness((GeminiSegment(0, 2*16000, "live words", "speaker-0001"),))
+    assert terminal.transcribe(Tape()) == ()
+    assert batch.calls == 2
+    assert terminal.coverage_gaps == ((0, 2*16000),)
 
 
 def test_terminal_chunks_fetch_three_at_once_but_stitch_in_chunk_order():

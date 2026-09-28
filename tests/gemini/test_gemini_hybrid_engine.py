@@ -96,15 +96,47 @@ def test_empty_voiced_rolling_window_retries_without_advancing_frontier():
     with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
         voice = wav.readframes(16000)
     for second in range(15):
+        if second == 14:
+            engine._on_live_text("visible speech", 0, 14*16000, False)
         engine.push_audio(second*16000, voice)
     engine._future.result(timeout=5)
     assert diarizer.calls == 2
-    assert not [row for row in updates if isinstance(row, GeminiRolling)]
+    assert engine._rolling_frontier == 15*16000
+    assert [row.segments[0].speaker for row in updates if isinstance(row, GeminiRolling)] == [None]
     assert sum(row.get("coverage_retry", 0) for row in usage) == 1
+    assert sum(row.get("coverage_preview_fallbacks", 0) for row in usage) == 1
     for second in range(15, 30):
         engine.push_audio(second*16000, voice)
     engine._future.result(timeout=5)
-    assert [row.segments[0].text for row in updates if isinstance(row, GeminiRolling)] == ["recovered"]
+    assert [row.segments[0].text for row in updates if isinstance(row, GeminiRolling)] == [
+        "visible speech", "recovered"]
+    engine.close()
+
+
+def test_music_shaped_window_without_preview_words_advances_without_retry():
+    from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
+    import wave
+    from pathlib import Path
+    class Empty:
+        calls = 0
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            self.calls += 1
+            return GeminiWords(())
+    usage, updates = [], []
+    batch = Empty()
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=60, stride_seconds=15),
+        registry=OverlapRegistry(), diarizer=batch, terminal=FakeTerminal(),
+        voiced_audio=WebRtcSpeechDetector(), report_usage=lambda **row: usage.append(row))
+    with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
+        audible = wav.readframes(16000)
+    for second in range(15):
+        engine.push_audio(second*16000, audible)
+    engine._future.result(timeout=5)
+    assert batch.calls == 1
+    assert engine._rolling_frontier == 15*16000
+    assert sum(row.get("coverage_retry", 0) for row in usage) == 0
     engine.close()
 
 
@@ -128,11 +160,40 @@ def test_nonempty_rolling_result_retries_ten_second_voiced_word_gap():
     with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
         voice = wav.readframes(16000)
     for second in range(15):
+        if second == 14:
+            engine._on_live_text("visible speech", 0, 14*16000, False)
         engine.push_audio(second*16000, voice)
     engine._future.result(timeout=5)
     assert diarizer.calls == 2
     assert sum(row.get("coverage_retry", 0) for row in usage) == 1
     assert [row.segments[0].text for row in updates if isinstance(row, GeminiRolling)] == ["speech"]
+    engine.close()
+
+
+def test_persistent_partial_rolling_gap_fallback_does_not_overlap_batch_row():
+    class Partial:
+        calls = 0
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            self.calls += 1
+            return GeminiWords((GeminiWord("batch", "A", 0, 2*16000),))
+    updates, usage = [], []
+    batch = Partial()
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=60, stride_seconds=15),
+        registry=OverlapRegistry(), diarizer=batch, terminal=FakeTerminal(),
+        voiced_audio=lambda pcm: True, report_usage=lambda **row: usage.append(row))
+    for second in range(15):
+        if second == 14:
+            engine._on_live_text("preview continues", 0, 14*16000, False)
+        engine.push_audio(second*16000, bytes(32000))
+    engine._future.result(timeout=5)
+    rows = [row for update in updates if isinstance(update, GeminiRolling)
+            for row in update.segments]
+    assert batch.calls == 2
+    assert [(row.start_sample, row.end_sample, row.speaker) for row in rows] == [
+        (0, 2*16000, "speaker-0001"), (2*16000, 14*16000, None)]
+    assert sum(row.get("coverage_preview_fallbacks", 0) for row in usage) == 1
     engine.close()
 
 

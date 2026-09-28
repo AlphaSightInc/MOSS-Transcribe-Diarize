@@ -148,8 +148,13 @@ def test_voiced_preview_stall_restarts_socket_and_counts_it():
     source.bind(lambda *_args: None)
     with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
         voice = wav.readframes(16000)
-    for second in range(9):
+    for second in range(10):
         source.push_audio(second * 16000, voice)
+    source.observe_batch_words(())  # Audible music with no batch words is no stall witness.
+    source._tail.result(timeout=5)
+    assert len(live.sessions) == 1
+    source.observe_batch_words(tuple((second*16000, (second+1)*16000)
+                                    for second in range(10)))
     source._tail.result(timeout=5)
     assert len(live.sessions) == 2
     assert sum(row.get("preview_stall_restarts", 0) for row in usage) == 1
@@ -179,8 +184,10 @@ def test_regular_interim_text_prevents_voiced_preview_stall_restart():
     source.bind(lambda *_args: None)
     with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
         voice = wav.readframes(16000)
-    for second in range(9):
+    for second in range(10):
         source.push_audio(second * 16000, voice)
+    source.observe_batch_words(tuple((second*16000, (second+1)*16000)
+                                    for second in range(10)))
     source._tail.result(timeout=5)
     assert len(live.sessions) == 1
     assert sum(row.get("preview_stall_restarts", 0) for row in usage) == 0

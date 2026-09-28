@@ -1,39 +1,35 @@
-"""WebRTC voiced audio absent from Gemini word spans."""
+"""Find wordless stretches witnessed by a different transcript pass."""
 from __future__ import annotations
 
 from typing import Sequence
 
-import webrtcvad
-
 from .live_span_bounds import LIVE_SAMPLE_RATE
 
 
-def voiced_word_gaps(pcm16: bytes, spans: Sequence[tuple[int, int]], *,
-                     minimum_voiced_samples: int,
-                     offset_sample: int = 0) -> tuple[tuple[int, int], ...]:
-    """Return wordless intervals with enough mode-1, 10 ms voiced frames."""
-    frame = LIVE_SAMPLE_RATE // 100
-    count = len(pcm16) // (2 * frame)
-    vad = webrtcvad.Vad(1)
-    voiced = [0]
-    for index in range(count):
-        voiced.append(voiced[-1] + int(vad.is_speech(
-            pcm16[index*320:(index+1)*320], LIVE_SAMPLE_RATE)))
-    boundaries = []
-    for start, end in sorted(spans):
-        start = max(offset_sample, min(offset_sample + count*frame, start))
-        end = max(start, min(offset_sample + count*frame, end))
-        if boundaries and start <= boundaries[-1][1]:
-            boundaries[-1] = (boundaries[-1][0], max(boundaries[-1][1], end))
+def missing_witness_intervals(
+    witness: Sequence[tuple[int, int]], result: Sequence[tuple[int, int]], *,
+    minimum_samples: int = 10 * LIVE_SAMPLE_RATE,
+) -> tuple[tuple[int, int], ...]:
+    """Return witnessed intervals absent from result (all if result is empty)."""
+    merged: list[list[int]] = []
+    for start, end in sorted(witness):
+        if end <= start:
+            continue
+        if merged and start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
         else:
-            boundaries.append((start, end))
+            merged.append([start, end])
+    if not result:
+        return tuple((start, end) for start, end in merged)
     gaps = []
-    cursor = offset_sample
-    for start, end in (*boundaries, (offset_sample + count*frame,
-                                     offset_sample + count*frame)):
-        lo = max(0, (cursor - offset_sample + frame - 1) // frame)
-        hi = min(count, (start - offset_sample) // frame)
-        if hi > lo and (voiced[hi] - voiced[lo]) * frame >= minimum_voiced_samples:
-            gaps.append((cursor, start))
-        cursor = max(cursor, end)
+    for start, end in merged:
+        cursor = start
+        for lo, hi in sorted(result):
+            if hi <= cursor or lo >= end:
+                continue
+            if lo - cursor >= minimum_samples:
+                gaps.append((cursor, lo))
+            cursor = max(cursor, hi)
+        if end - cursor >= minimum_samples:
+            gaps.append((cursor, end))
     return tuple(gaps)
