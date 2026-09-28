@@ -173,7 +173,8 @@ def diarize_window(
             if ledger_lane:
                 ledger(ledger_lane, {"kind": "diarize_window", "model": model,
                                      "audio_s": len(pcm16) / SAMPLE_RATE, "latency_s": latency,
-                                     "cost_usd": res.cost_usd(), "usage": res.usage})
+                                     "cost_usd": res.cost_usd(), "usage": res.usage,
+                                     "timing_anomalies": res.timing_anomalies})
             return res
         except Exception as exc:  # retry transient API failures with jittered backoff
             last = exc
