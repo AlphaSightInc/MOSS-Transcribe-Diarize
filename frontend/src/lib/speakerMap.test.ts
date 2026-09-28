@@ -56,9 +56,9 @@ describe("speakerMap", () => {
     expect(resolveVisibleSpeakerLabel("UNKNOWN", new Map())).toBe("Preview");
   });
 
-  it("displays backend S00 as Speaker uncertain", () => {
-    expect(resolveDisplayLabel("S00")).toBe("Speaker uncertain");
-    expect(resolveVisibleSpeakerLabel("S00", new Map())).toBe("Speaker uncertain");
+  it("displays backend S00 as Speaker TBD", () => {
+    expect(resolveDisplayLabel("S00")).toBe("Speaker TBD");
+    expect(resolveVisibleSpeakerLabel("S00", new Map())).toBe("Speaker TBD");
   });
 
   it.each(reservedSpeakerLabels.reserved_labels)(

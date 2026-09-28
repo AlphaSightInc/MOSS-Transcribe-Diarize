@@ -205,8 +205,8 @@ it("keeps adjacent unknown passages as separate correction targets", async () =>
     sessionStatus.value = "closed";
     sessionNeedsReview.value = true;
     replaceTranscript([
-      {segment_id:"unknown-one",start:0,end:1,text:"First unknown",speaker:"S00",speaker_entity_id:"S00",display_name:"Speaker uncertain",state:"final"},
-      {segment_id:"unknown-two",start:1,end:2,text:"Second unknown",speaker:"S00",speaker_entity_id:"S00",display_name:"Speaker uncertain",state:"final"}
+      {segment_id:"unknown-one",start:0,end:1,text:"First unknown",speaker:"S00",speaker_entity_id:"S00",display_name:"Speaker TBD",state:"final"},
+      {segment_id:"unknown-two",start:1,end:2,text:"Second unknown",speaker:"S00",speaker_entity_id:"S00",display_name:"Speaker TBD",state:"final"}
     ]);
     render(<TranscriptPane />, root);
   });
@@ -228,7 +228,7 @@ it("keeps adjacent unknown passages as separate correction targets", async () =>
 
   await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
   expect(transcript.value.map(row => [row.segment_id, row.display_name, row.speaker_entity_id])).toEqual([
-    ["unknown-one", "Speaker uncertain", "S00"],
+    ["unknown-one", "Speaker TBD", "S00"],
     ["unknown-two", "Blair", "manual-two"]
   ]);
   expect(sessionNeedsReview.value).toBe(true);
@@ -403,7 +403,7 @@ it.each(["S00", "UNKNOWN"])("never offers persisted unknown id %s as an existing
     sessionNeedsReview.value = true;
     replaceTranscript([
       {segment_id:"known",start:0,end:1,text:"Known",speaker:"person-a",speaker_entity_id:"person-a",display_name:"Alex",state:"final"},
-      {segment_id:"unknown",start:1,end:2,text:"Unknown",speaker:unknownId,speaker_entity_id:unknownId,display_name:"Speaker uncertain",state:"final"}
+      {segment_id:"unknown",start:1,end:2,text:"Unknown",speaker:unknownId,speaker_entity_id:unknownId,display_name:"Speaker TBD",state:"final"}
     ]);
     render(<TranscriptPane />, root);
   });
@@ -411,7 +411,7 @@ it.each(["S00", "UNKNOWN"])("never offers persisted unknown id %s as an existing
   act(() => root.querySelector<HTMLButtonElement>('[data-reassign-passage="known"]')!.click());
   const options = [...root.querySelectorAll<HTMLOptionElement>('dialog select option')];
   expect(options.map(option => option.value)).not.toContain(unknownId);
-  expect(options.map(option => option.textContent)).not.toContain("Speaker uncertain");
+  expect(options.map(option => option.textContent)).not.toContain("Speaker TBD");
 });
 
 it("keeps closed-but-finalizing identity provisional and passage correction unavailable", async () => {

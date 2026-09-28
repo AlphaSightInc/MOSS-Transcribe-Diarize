@@ -5,12 +5,13 @@ const SPEAKER_ID_PATTERN = /^SPEAKER_(\d+)$/;
 export const UNKNOWN_SPEAKER_ID = "UNKNOWN";
 export const UNRESOLVED_SPEAKER_ID = "S00";
 const UNKNOWN_DISPLAY_LABEL = "Preview";
-const UNCERTAIN_DISPLAY_LABEL = "Speaker uncertain";
+const UNCERTAIN_DISPLAY_LABEL = "Speaker TBD";
 const RESERVED_UNCERTAINTY_LABELS = new Set([
   "",
   "s00",
   "unknown",
   "speaker uncertain",
+  "speaker tbd",
   "preview"
 ]);
 

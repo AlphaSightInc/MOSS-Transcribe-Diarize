@@ -79,7 +79,7 @@ export function transcriptCardSpeakerLabel(
   policy: "current" | "La", finalized: boolean
 ): string {
   const id = speakerId(turn);
-  if (id === "S00" || id === "UNKNOWN") return "Speaker uncertain";
+  if (id === "S00" || id === "UNKNOWN") return "Speaker TBD";
   const display = turn.display_name.trim();
   // A name chosen by the operator is literal, including a generic-looking name.
   if (hasCustomName(turn)) return display;

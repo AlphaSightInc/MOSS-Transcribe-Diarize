@@ -436,7 +436,7 @@ export function TranscriptPane() {
       </div>
 
       {namingMessage ? <p className="hint" role="status">{namingMessage}</p> : null}
-      {sessionNeedsReview.value ? <p className="hint" role="status"><strong>Needs review.</strong> Check passages marked Speaker uncertain or a partial processing notice.</p> : null}
+      {sessionNeedsReview.value ? <p className="hint" role="status"><strong>Needs review.</strong> Check passages marked Speaker TBD or a partial processing notice.</p> : null}
       {namingTarget ? (
         <dialog ref={namingDialogRef} className="history-dialog" aria-labelledby="speaker-name-title"
           onCancel={() => setNamingTarget(null)}>

@@ -252,7 +252,7 @@ describe("TranscriptPane", () => {
     expect(cards).toHaveLength(4);
     expect(cards.map(card => card.dataset.continuation)).toEqual(["false", "false", "false", "false"]);
     expect(cards.map(card => card.querySelector(".utt-meta .utt-speaker-label")?.textContent))
-      .toEqual(["Speaker 1", "Remote", "Speaker uncertain", "Speaker uncertain"]);
+      .toEqual(["Speaker 1", "Remote", "Speaker TBD", "Speaker TBD"]);
   });
 
   it("follows new text only while Auto-scroll is on and Find is closed", () => {
@@ -284,7 +284,7 @@ describe("TranscriptPane", () => {
     showSpeakers();
     act(() => replaceTranscript([{ start: 0, end: 1, text: "Unattributed speech", speaker: "S00", speaker_entity_id: "S00", display_name: "S00", state: "confirmed" }]));
     expect(root.querySelector<HTMLButtonElement>(".legend-chip")?.disabled).toBe(true);
-    expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Speaker uncertain");
+    expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Speaker TBD");
     expect(root.querySelector(".utt-text")?.textContent).toBe("Unattributed speech");
   });
 

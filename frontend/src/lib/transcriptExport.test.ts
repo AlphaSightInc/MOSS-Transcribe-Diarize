@@ -154,7 +154,7 @@ it.each(["md", "txt", "json", "srt", "vtt"] as const)(
   format => {
     const file = serializeTranscriptExport(
       format,
-      [makeTurn(0, "Speaker uncertain", "Uncertain words", {
+      [makeTurn(0, "Speaker TBD", "Uncertain words", {
         speaker: "S00", speaker_entity_id: "S00"
       })],
       item => item.display_name,
@@ -162,7 +162,7 @@ it.each(["md", "txt", "json", "srt", "vtt"] as const)(
       { needsReview: true }
     );
     expect(file.content).toContain("Needs review");
-    expect(file.content).toContain("Speaker uncertain");
+    expect(file.content).toContain("Speaker TBD");
     if (format !== "json") expect(file.content).not.toContain("S00");
   }
 );
@@ -170,7 +170,7 @@ it.each(["md", "txt", "json", "srt", "vtt"] as const)(
 it("keeps the API unresolved identity in JSON exports", () => {
   const file = serializeTranscriptExport(
     "json",
-    [makeTurn(0, "Speaker uncertain", "Uncertain words", {
+    [makeTurn(0, "Speaker TBD", "Uncertain words", {
       speaker: "S00", speaker_entity_id: "S00"
     })],
     item => item.display_name,
@@ -180,14 +180,14 @@ it("keeps the API unresolved identity in JSON exports", () => {
   const [turn] = JSON.parse(file.content).turns;
   expect(turn.speaker).toBe("S00");
   expect(turn.speaker_entity_id).toBe("S00");
-  expect(turn.display_name).toBe("Speaker uncertain");
+  expect(turn.display_name).toBe("Speaker TBD");
 });
 
 it("does not synthesize an SRT artifact for an empty review transcript", () => {
   const file = serializeTranscriptExport(
     "srt",
     [],
-    () => "Speaker uncertain",
+    () => "Speaker TBD",
     { sessionId: "empty-review", exportedAt: new Date(0) },
     { needsReview: true }
   );

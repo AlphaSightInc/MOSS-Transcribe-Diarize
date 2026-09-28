@@ -628,7 +628,7 @@ def validate_q5_card_content(
         speaker = str(item["speaker"])
         if re.fullmatch(r"S\d{2,}", speaker) and speaker != "S00" and speaker not in numbers:
             numbers[speaker] = len(numbers) + 1
-        label = "Speaker uncertain" if speaker in {"S00", "UNKNOWN"} else (
+        label = "Speaker TBD" if speaker in {"S00", "UNKNOWN"} else (
             f"Speaker {numbers[speaker]}" if speaker in numbers else speaker
         )
         if speaker != "UNKNOWN" and speaker not in seen_speakers:
@@ -664,7 +664,7 @@ def validate_q5_card_content(
         speaker = source[0]["speaker"]
         if any(item["speaker"] != speaker for item in source):
             raise AssertionError(f"Q5 card {card_index} mixes fixture speakers")
-        expected_label = "Speaker uncertain" if speaker in {"S00", "UNKNOWN"} else (
+        expected_label = "Speaker TBD" if speaker in {"S00", "UNKNOWN"} else (
             f"Speaker {numbers[speaker]}" if speaker in numbers else str(speaker)
         )
         if _normal_text(str(card.get("speaker_label", ""))) != expected_label:

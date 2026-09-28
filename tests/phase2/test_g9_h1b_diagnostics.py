@@ -25,7 +25,7 @@ def _provider_body():
                                 "source_lane": "system",
                                 "start": "00:00:00",
                                 "end": "00:00:04",
-                                "speaker": "Speaker uncertain",
+                                "speaker": "Speaker TBD",
                                 "text": "synthetic owner A speech",
                             },
                             {

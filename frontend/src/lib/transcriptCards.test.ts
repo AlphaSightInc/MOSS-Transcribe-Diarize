@@ -30,7 +30,7 @@ describe("Q5 transcript cards", () => {
     const cards = projectTranscriptCards(source);
     expect(cards).toHaveLength(3);
     expect(cards[0]?.speakerId).toBe("S00");
-    expect(transcriptCardSpeakerLabel(source[0]!, new Map(), "La", false)).toBe("Speaker uncertain");
+    expect(transcriptCardSpeakerLabel(source[0]!, new Map(), "La", false)).toBe("Speaker TBD");
   });
 
   it("keeps a source key through text and label revision", () => {

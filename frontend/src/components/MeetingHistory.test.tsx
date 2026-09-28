@@ -134,7 +134,7 @@ describe("MeetingHistory", () => {
       notice: "Final transcript refinement was unavailable for some audio. Previously committed words were kept.",
       transcript_version: 2,
       transcript: { segments: [
-        { id: "uncertain", start: 0, end: 1, speaker: "Speaker uncertain", speaker_entity_id: "S00", text: "kept words" }
+        { id: "uncertain", start: 0, end: 1, speaker: "Speaker TBD", speaker_entity_id: "S00", text: "kept words" }
       ] }
     });
     let lists = 0;
@@ -380,7 +380,7 @@ describe("MeetingHistory", () => {
     );
 
     expect(root.textContent).toContain("Needs review.");
-    expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Speaker uncertain");
+    expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Speaker TBD");
     for (const label of [
       "Markdown (.md)",
       "Plain text (.txt)",
@@ -404,7 +404,7 @@ describe("MeetingHistory", () => {
     expect(downloadedText).toHaveLength(5);
     for (const content of downloadedText) {
       expect(content).toContain("Needs review");
-      expect(content).toContain("Speaker uncertain");
+      expect(content).toContain("Speaker TBD");
     }
     for (const content of downloadedText.filter((_, index) => index !== 2)) {
       expect(content).not.toContain("S00");

@@ -13,8 +13,8 @@ UNKNOWN_MEETING = {
     'needs_review': True,
     'transcript': {'segments': [
         {'id':'known-a','start':0.0,'end':1.0,'speaker':'Alex','speaker_entity_id':'person-a','text':'First known','source_lane':'system'},
-        {'id':'unknown-a','start':1.0,'end':2.0,'speaker':'Speaker uncertain','speaker_entity_id':'S00','text':'First unknown','source_lane':'microphone'},
-        {'id':'unknown-b','start':2.0,'end':3.0,'speaker':'Speaker uncertain','speaker_entity_id':'S00','text':'Second unknown','source_lane':'microphone'},
+        {'id':'unknown-a','start':1.0,'end':2.0,'speaker':'Speaker TBD','speaker_entity_id':'S00','text':'First unknown','source_lane':'microphone'},
+        {'id':'unknown-b','start':2.0,'end':3.0,'speaker':'Speaker TBD','speaker_entity_id':'S00','text':'Second unknown','source_lane':'microphone'},
         {'id':'known-b1','start':3.0,'end':4.0,'speaker':'Blair','speaker_entity_id':'person-b','text':'Known part one','source_lane':'system'},
         {'id':'known-b2','start':4.0,'end':5.0,'speaker':'Blair','speaker_entity_id':'person-b','text':'Known part two','source_lane':'system'},
     ]}
@@ -24,8 +24,8 @@ UNKNOWN_MEETING = {
 def test_expected_rows_keep_unknown_passages_separate_and_known_turns_grouped():
     assert expected_rows(UNKNOWN_MEETING) == [
         {'start':0.0,'end':1.0,'label':'Alex','identity':'person-a','tokens':['first','known'],'lane':'system','segment_ids':['known-a']},
-        {'start':1.0,'end':2.0,'label':'Speaker uncertain','identity':'S00','tokens':['first','unknown'],'lane':'microphone','segment_ids':['unknown-a']},
-        {'start':2.0,'end':3.0,'label':'Speaker uncertain','identity':'S00','tokens':['second','unknown'],'lane':'microphone','segment_ids':['unknown-b']},
+        {'start':1.0,'end':2.0,'label':'Speaker TBD','identity':'S00','tokens':['first','unknown'],'lane':'microphone','segment_ids':['unknown-a']},
+        {'start':2.0,'end':3.0,'label':'Speaker TBD','identity':'S00','tokens':['second','unknown'],'lane':'microphone','segment_ids':['unknown-b']},
         {'start':3.0,'end':5.0,'label':'Blair','identity':'person-b','tokens':['known','part','one','known','part','two'],'lane':'system','segment_ids':['known-b1','known-b2']},
     ]
 
@@ -79,7 +79,7 @@ def test_unknown_passage_exports_round_trip_with_review_metadata(fmt, source_mod
     assert result['review'] is True
     if fmt == 'json':
         unresolved = [turn for turn in json.loads(exported)['turns']
-                      if turn['speaker_label'] == 'Speaker uncertain']
+                      if turn['speaker_label'] == 'Speaker TBD']
         assert unresolved
         assert all(turn['speaker_entity_id'] == 'S00' for turn in unresolved)
     else:
@@ -95,7 +95,7 @@ def test_unknown_passage_exports_round_trip_with_review_metadata(fmt, source_mod
 ])
 def test_unknown_passage_export_corruptions_fail(fmt, mutation, failed_check, unknown_exports):
     text=unknown_exports[fmt]
-    if mutation=='wrong_speaker': text=text.replace('Speaker uncertain','Wrong speaker')
+    if mutation=='wrong_speaker': text=text.replace('Speaker TBD','Wrong speaker')
     if mutation=='dropped_word': text=text.replace('Second unknown','Second')
     if mutation=='changed_time':
         if fmt=='json':

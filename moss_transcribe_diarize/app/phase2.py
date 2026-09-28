@@ -2600,7 +2600,7 @@ def _is_unknown_speaker_value(value: object) -> bool:
     """Normalize and identify the product's reserved uncertainty vocabulary."""
 
     normalized = " ".join(value.split()).casefold() if isinstance(value, str) else ""
-    if normalized in {"", "s00", "unknown", "speaker uncertain", "preview"}:
+    if normalized in {"", "s00", "unknown", "speaker uncertain", "speaker tbd", "preview"}:
         return True
     prefix = "speaker_"
     return normalized.startswith(prefix) and normalized.removeprefix(prefix).isdigit()
@@ -2628,7 +2628,7 @@ def _settled_transcript(document: dict[str, object]) -> dict[str, object]:
             continue
         if _segment_speaker_id(segment) is None:
             segment["speaker_entity_id"] = "S00"
-            segment["speaker"] = "Speaker uncertain"
+            segment["speaker"] = "Speaker TBD"
     return document
 
 

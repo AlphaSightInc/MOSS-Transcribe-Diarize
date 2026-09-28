@@ -93,7 +93,7 @@ def _provider_transcript(source: Mapping[str, object]) -> dict[str, object] | No
                 return None
             speaker = row["speaker"]
             if speaker == "S00":
-                speaker = "Speaker uncertain"
+                speaker = "Speaker TBD"
             segment = {
                 "start": _provider_timestamp(row["start"]),
                 "end": _provider_timestamp(row["end"]),

@@ -87,7 +87,7 @@ def test_passage_correction_refuses_unsettled_and_persists_exact_new_person(tmp_
             "start": 2.0,
             "end": 3.0,
             "speaker_entity_id": "S00",
-            "speaker": "Speaker uncertain",
+            "speaker": "Speaker TBD",
             "text": "uncertain words",
         }
         original_words = [row["text"] for row in before["transcript"]["segments"]]
@@ -107,7 +107,7 @@ def test_passage_correction_refuses_unsettled_and_persists_exact_new_person(tmp_
         reopened = client.get(f"/api/meetings/{meeting_id}").json()
         rows = reopened["transcript"]["segments"]
         assert [row["text"] for row in rows] == original_words
-        assert [row["speaker"] for row in rows] == ["Alex", "Blair", "Speaker uncertain"]
+        assert [row["speaker"] for row in rows] == ["Alex", "Blair", "Speaker TBD"]
         assert rows[0]["speaker_entity_id"] == "person-a"
         assert rows[1]["speaker_entity_id"] == result["speaker_id"]
         assert rows[2]["speaker_entity_id"] == "S00"
@@ -302,7 +302,7 @@ def test_terminal_mapper_abstention_stays_unknown_after_save_and_reopen(tmp_path
                 "start": 1.0,
                 "end": 2.0,
                 "speaker_entity_id": "S00",
-                "speaker": "Speaker uncertain",
+                "speaker": "Speaker TBD",
                 "text": "new voice words",
             }
         ]
@@ -351,7 +351,7 @@ def test_persisted_unknown_ids_stay_reviewable_when_another_passage_changes(
         meeting_id = client.portal.call(seed)
         before = client.get(f"/api/meetings/{meeting_id}").json()
         assert before["needs_review"] is True
-        assert before["transcript"]["segments"][1]["speaker"] == "Speaker uncertain"
+        assert before["transcript"]["segments"][1]["speaker"] == "Speaker TBD"
 
         changed = client.put(
             f"/api/meetings/{meeting_id}/passages/speaker",
@@ -367,7 +367,7 @@ def test_persisted_unknown_ids_stay_reviewable_when_another_passage_changes(
             "start": 1.0,
             "end": 2.0,
             "speaker_entity_id": "S00",
-            "speaker": "Speaker uncertain",
+            "speaker": "Speaker TBD",
             "text": "unattributed words",
         }
         assert client.put(
