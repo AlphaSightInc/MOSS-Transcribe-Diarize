@@ -189,3 +189,11 @@ W3 preview, speaker turns, Stop drain, and the selected final identity policy ar
 through Account's public snapshot path. Pane 6.1 still owns the continuity winner; the
 current registry is the short-window overlap placeholder. Sparse acquired references
 remain diagnostic only.
+
+## Full-suite gate on D-4 commit
+
+On clean `ea2249722422154223970318227ba3377172fc43`, before the growing-window or
+voiceprint changes: backend `pytest tests -q` passed **2,460**, skipped 3, xfailed 2,
+and passed 37 subtests; frontend `npm test -- --run` passed **313/313** across 28 files;
+`npm run typecheck` passed. Existing deprecation warnings only. This is a software
+regression gate, not the H1 quality population result.
