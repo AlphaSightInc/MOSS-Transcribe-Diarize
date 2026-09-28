@@ -22,17 +22,21 @@ def _token(text: str) -> str:
     return "".join(re.findall(r"[^\W_]+(?:'[^\W_]+)?", text.lower(), flags=re.UNICODE))
 
 
-def _duplicate_preview(left: GeminiSegment, right: GeminiSegment) -> bool:
-    """Detect the same Live phrase in both capture lanes, including echo spacing drift."""
-    overlap = min(left.end_sample, right.end_sample) - max(left.start_sample, right.start_sample)
-    if overlap <= 0 or 2 * overlap < min(left.end_sample-left.start_sample,
-                                         right.end_sample-right.start_sample):
+def _preview_tokens(text: str) -> list[str]:
+    return re.findall(r"[^\W_\d]+|\d+", text.casefold())
+
+
+def _echoed_preview(row: GeminiSegment, system: Sequence[GeminiSegment]) -> bool:
+    """A mic phrase repeats the union of nearby system preview phrases."""
+    words = _preview_tokens(row.text)
+    if not words:
         return False
-    a = "".join(character for character in left.text.casefold() if character.isalnum())
-    b = "".join(character for character in right.text.casefold() if character.isalnum())
-    shorter, longer = sorted((a, b), key=len)
-    return bool(shorter and (shorter == longer or len(shorter) >= 16
-                             and longer.startswith(shorter)))
+    tolerance = 2 * LIVE_SAMPLE_RATE
+    other = {word for segment in system
+             if segment.start_sample <= row.end_sample + tolerance
+             and segment.end_sample + tolerance >= row.start_sample
+             for word in _preview_tokens(segment.text)}
+    return 5 * sum(word in other for word in words) >= 3 * len(words)
 
 
 class TextEchoGuard:
@@ -370,16 +374,24 @@ class LaneGeminiEngine:
             if isinstance(update, GeminiPreview):
                 self._previews[lane] = update
                 end = max(p.end_sample for p in self._previews.values() if p is not None)
-                segments = tuple(sorted(
-                    (GeminiSegment(max(row.start_sample, self._base_committed),
-                                   row.end_sample, row.text, row.speaker, lane_name)
-                     for lane_name, preview in self._previews.items() if preview is not None
-                     for row in preview.segments if row.end_sample > self._base_committed),
-                    key=lambda row: (self.LANES.index(row.source_lane), row.start_sample)))
-                unique: list[GeminiSegment] = []
-                for row in segments:
-                    if not any(_duplicate_preview(prior, row) for prior in unique):
-                        unique.append(row)
+                segments: list[GeminiSegment] = []
+                for lane_name in self.LANES:
+                    preview = self._previews[lane_name]
+                    if preview is None:
+                        continue
+                    for row in preview.segments:
+                        if row.end_sample <= self._base_committed:
+                            continue
+                        current = GeminiSegment(max(row.start_sample, self._base_committed),
+                                                row.end_sample, row.text, row.speaker, lane_name)
+                        segments = [prior for prior in segments
+                                    if prior.source_lane != lane_name
+                                    or prior.end_sample <= current.start_sample
+                                    or prior.start_sample >= current.end_sample]
+                        segments.append(current)
+                system = [row for row in segments if row.source_lane == "system"]
+                unique = [row for row in segments
+                          if row.source_lane == "system" or not _echoed_preview(row, system)]
                 if end > self._base_committed:
                     self.publish(GeminiPreview(end, tuple(sorted(
                         unique, key=lambda row: (row.start_sample,

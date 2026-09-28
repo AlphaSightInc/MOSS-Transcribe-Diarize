@@ -83,8 +83,10 @@ The microphone gate also requires either no system WebRTC voice over a word or
 microphone RMS at least −15 dB relative to the best system RMS at a 0–100 ms lag.
 The existing normalized-token echo guard must also pass. Both filters run on rolling
 and final mic words. W3's provisional text lacks reliable word timing, so the lane
-composer removes overlapping near-identical preview text; it prefers system text
-for an echo tie. A truly identical simultaneous phrase can be hidden in preview.
+composer drops a mic preview row when at least 60% of its normalized tokens occur
+in the union of system preview rows overlapping it within ±2 s. System text wins
+an echo tie; a later overlapping row in the same lane replaces the earlier one.
+A truly identical simultaneous phrase can be hidden in preview.
 
 The pinned WeSpeaker observations for Gemini-attributed meeting IDs flow through
 `_identity_observations` and `_identity_match_observations` to Account's existing
