@@ -117,3 +117,69 @@ The 12 successful sessions produced settled D45b DER `0.464568` (MOSS `0.144626`
 Provider diagnostics for the 12 successful sessions: 380 Gemini calls, 8 clamped words (`8/380 = 0.021053` per call), 0 dropped (`0/380`), 0 errors/retries, $0.444760. The smoke cost $0.013032; all observed pane spend including the interrupted attempt is $0.458796, within the $5 cap. The runtime engine is the phase-2 placeholder, with batch-tail words and L=60/S=10/hold-back=10 policy. It is not a qualification run. Main receipts: `/Users/gao/Documents/Codex/2026-09-28/moss-gemini/evidence/P62/gemini-placeholder-h1-12/{FIRSTRUN.md,first-run-summary.json,content-free-metrics.json,h1-timed-segments.json,engine-diagnostics.json}` and `gemini-placeholder-scorecard/scorecard.json`. The stack was stopped and port 18500 has no listener.
 
 To reproduce the two-pass collection from a ready runtime stack, run `run_quality.py --passes 1` for pass 1, then `run_quality.py --passes 1 --pass-number 2` for reverse pass 2, each with a new `--out`. `merge_quality_passes.py --pass1 <dir> --pass2 <dir> --out <new-dir>` requires exact six-case populations and one frozen manifest, then calls production `_quality_projection`. `latency_probe.py --run-dir <combined-dir>` reports the per-case timing summaries. Pane 6.4's scorecard accepts the combined quality directory and its exact `h1-timed-segments.json` sidecar. Its optional `--latency` currently rejects `latency_probe.py`'s `runs: int` JSON (`TypeError` expecting a list); the scorecard was run without that optional flag, and the per-case latency values are in this pane's report. The scorecard evaluated the sidecar for a passage FAIL but also emitted an inconsistent “EXCLUDED” eligibility line; pane 6.4/lead were informed in status.
+
+## Scorecard latency handoff correction
+
+**Structural question.** Can the latency probe hand the scorecard its run population and observed one-second bucket counts without changing how latency is measured?
+
+**Minimum primitives.** Each saved case-pass latency row is one run. Its `words.buckets`, `words.observed`, and `labelled_rows.observed` are the only counts the scorecard needs. The ordered `runs` list preserves per-case p50/p90; the totals count buckets across those rows. Removing a run loses a case-pass; pooling its p50 values would invent a statistic.
+
+**Invariants.** `runs` is a list with one row per saved `latency.json`; `total_audio_buckets`, `word_observed_buckets`, and `label_observed_buckets` sum those same rows. Existing per-run quantiles remain unchanged. The scorecard still marks pooled p50 unmeasured.
+
+**Assumptions and unknowns.** The scorecard currently reads `len(runs)` and the three totals. A future pooled-percentile gate would need raw one-second delay samples, which these receipts do not retain.
+
+**Falsifier and tool decision.** If the retained 12-pass receipt gives any population other than 12 runs and 1,240 buckets, or if the scorecard still rejects the corrected JSON, the handoff is unresolved. An inline throwaway read of the production saved rows showed 12 runs, 1,240 total buckets, 964 word-observed, 964 label-observed, with word/label bucket denominators equal in all 12. Change only the serializer; then consume its output through pane 6.4's scorecard. No provider call is needed.
+
+**Measured verdict.** The corrected serializer produced `latency-scorecard.json` for the retained 12-pass run. Pane 6.4's unmodified scorecard consumed it and recorded 12 runs, 1,240 audio buckets, 964 word-observed and 964 label-observed buckets. The quality decision remained FAIL; its latency eligibility text still correctly says pooled p50 is unavailable.
+
+## Fixed-runtime E1 visual command
+
+Lead explicitly assigned `evidence/P64/p62-gemini-e1-*/` to this pane for the visual run. Both PUBLIC fixture WAVs are 16 kHz mono PCM16, 302.0 s. Run these after pane 6.3 reports D-1/D-2/D-3 fixed and the paid-run cap is known. Terminal 1 runs the fixed `$RT` code on pane 6.2's port; terminal 2 runs pane 6.4's unchanged DOM harness against it:
+
+```bash
+RT=/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-gemini-runtime
+scripts/gemini-live/run-local-stack.sh --tree "$RT" --port 18500 -- --live-engine gemini
+
+# Separate terminal, cwd=this worktree:
+FIXTURE=/Users/gao/Documents/Codex/2026-09-23/moss-round6/evidence/dx-replay/fixture
+E1_OUT=/Users/gao/Documents/Codex/2026-09-28/moss-gemini/evidence/P64/p62-gemini-e1-$(date -u +%Y%m%dT%H%M%SZ)
+PYTHONDONTWRITEBYTECODE=1 ../MOSS-Transcribe-Diarize-wt-gemini-live.venv/bin/python \
+  prototypes/gemini-live/e2e/run.py --stack-url https://127.0.0.1:18500 \
+  --system "$FIXTURE/system.wav" --mic "$FIXTURE/E1-microphone.wav" --out "$E1_OUT"
+```
+
+The external-stack mode's `summary.source_revision` is this harness worktree SHA; report the actual `$RT` SHA beside it. The harness records the filmstrip, pre-Stop and final snapshots, and visual metrics in the assigned P64 directory. It does not calculate provider spend in external-stack mode, so count those calls and cost from the runtime diagnostics snapshot.
+
+## Preview visibility correction before fixed rerun
+
+**Structural question.** Does the 250 ms observer count text the frontend can render when the runtime publishes a canonical preview?
+
+**Minimum primitives.** `session.provisional` is the current canonical preview; `draft` is shown only while active, with no provisional, and starting at the committed frontier. Both carry MOSS-formatted timed text relative to their `start_sample`. The production transcript parser yields the relative segment bounds; the frontend adds the start offset. A visibility observation is an overlap between those absolute bounds and a one-second audio bucket.
+
+**Invariants.** Provisional and draft rows count as words but never committed speaker labels. A draft hidden by a provisional cannot count. No span-wide surrogate interval is inferred from text presence. The effective transcript remains the source of committed words and labels.
+
+**Assumptions and unknowns.** The browser's `parseMossTranscript` and Python's production `parse_transcript` accept the same emitted grammar. If a future preview uses another grammar, these buckets stay unobserved until that surface is measured separately. The old run's aggregate latency cannot be retroactively corrected because its 250 ms snapshots were not retained.
+
+**Falsifier and tool decision.** A public snapshot with a word-bearing provisional that produces no earlier word observation, or a hidden draft that produces one, falsifies the probe. An inline throwaway snapshot probe will print all observed bucket delays for both cases before the full paid rerun. This is necessary because the first-run word/label bucket equality can reflect an observer omission rather than actual UI latency.
+
+**Probe verdict.** PASS on the emitted transcript grammar: two provisional words at absolute 10.2–10.8 s and 11.2–11.8 s observed buckets 10 and 11 at a 12 s snapshot, with delays 1.0 and 0.0 s; the simultaneous hidden draft at 20 s observed no bucket; no speaker label was attributed to the preview. After removing provisional, a visible draft at the committed frontier observed bucket 0. The old 964/1,240 word-latency total is superseded as a UI preview measurement; the fixed real run will provide a fresh value.
+
+For the fixed H1 rerun, collect `run_quality.py --passes 1 --out <new-pass1>` and then `--passes 1 --pass-number 2 --out <new-pass2>` against the same stack. Merge with `merge_quality_passes.py --pass1 <new-pass1> --pass2 <new-pass2> --out <new-combined>`, write `latency_probe.py --run-dir <new-combined>` output to `<new-combined>/latency-summary.json`, then run `report/scorecard.py --gemini-quality <new-combined> --passages <new-combined>/h1-timed-segments.json --latency <new-combined>/latency-summary.json --gemini-e1 <E1_OUT>/summary.json --out-dir <new-scorecard>`. Require exact six-plus-six case population and fixed runtime commit receipt before the comparison table.
+
+## Stop drain diagnostic seam
+
+**Structural question.** Did Stop publish the accepted tail before terminal finalization, even when H1's settled surface still has its pre-Stop lag?
+
+**Minimum primitives.** H1's existing `pre_stop_settled` snapshot defines the comparable live surface. Its capture service also records `stop_return`, the public snapshot returned after the runtime's Stop drain. The reference and `stop_return` timed rows permit the same ±3 s passage check as a separate D-2 diagnostic. These are distinct clocks and neither can stand in for the other.
+
+**Invariants.** Keep H1's three surfaces and scorecard sidecar unchanged. Save `stop_return` rows with the session's finalization status; if it is already final, the row cannot establish a pre-terminal drain. Report Stop passage coverage separately from pre-Stop settled DER/missing seconds.
+
+**Assumptions and unknowns.** The runtime's Stop return is after its drain and before terminal completion on the reachable Gemini path; this must be checked in the fixed run. Exact tail coverage is unmeasured until then.
+
+**Falsifier and tool decision.** A missing `stop_return` capture, terminal-already-final status, or missing reference seconds in its rows prevents the D-2 claim. Source inspection found H1's `SurfaceCaptureService.stop()` always captures `stop_return` from the published service `stop()` result. Persist that already captured snapshot's rows; score with pane 6.4's existing passage predicate after the run. No new scorer or paid probe is needed.
+
+**Stub probe verdict.** A 50 s 1.0× Javier loopback replay wrote the new receipt with one reference and one Stop-return row. Its Stop-return status was already `final`, so it validates serialization only and cannot prove a pre-terminal drain. The fixed Gemini run must report its Stop-return status and coverage. Stub service stopped with no port 18500 listener; Gemini spend $0.
+
+## Fixed-runtime measured verdict
+
+The scorecard-compatible latency schema and provisional-preview observer completed 12/12 paced H1 case-passes on the `ea224972` server process: 1,238/1,240 word and 1,124/1,240 committed-label buckets observed. Pane 6.4's unchanged scorecard consumed the latency file and timed-segment sidecar. The D-4 pre-Stop settled surface reached the accepted frontier in every case; missing reference seconds fell from 208/1,216 to 0/1,216, but settled DER was 0.175830, above the strict 0.145 bar. Final DER was 0.109542, narrowly within 0.110. The separate E1 visual run, as directed on earlier `034baf1e`, showed 11 speaker labels at Stop versus a limit of five. Thus D6 is FAIL, with E1 not on the H1 runtime revision. All 12 supplemental Stop-return captures were already final and cannot isolate a distinct pre-terminal Stop drain. The accept6 RTF90 reference covers only 60.894/89.994 s; omitting it gives a diagnostic 0.106686 settled DER, not the official H1 verdict. Full tables and custody: `/Users/gao/Documents/Codex/2026-09-28/moss-gemini/evidence/P62/gemini-fixed-ea224972-h1-12-0702/FIXEDRUN.md`. Known follow-up spend $0.598896 plus an interrupted, unmeasured pre-D4 attempt; cap $8. No listener retained.

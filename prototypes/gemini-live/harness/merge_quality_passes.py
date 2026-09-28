@@ -58,7 +58,8 @@ def merge(pass1: Path, pass2: Path, out: Path) -> None:
         for case_id in QUALITY_CASE_IDS:
             case_dir = source / f"pass-{index}" / case_id
             if not all((case_dir / name).is_file() for name in (
-                "replay-manifest.json", "latency.json", "timed-segments.json"
+                "replay-manifest.json", "latency.json", "timed-segments.json",
+                "stop-return-timed-segments.json",
             )):
                 raise ValueError(f"pass {index} case {case_id} lacks a replay receipt")
     out.mkdir(parents=True)
@@ -82,7 +83,8 @@ def merge(pass1: Path, pass2: Path, out: Path) -> None:
         for case_id in QUALITY_CASE_IDS:
             target = out / f"pass-{index}" / case_id
             target.mkdir(parents=True)
-            for name in ("replay-manifest.json", "latency.json", "timed-segments.json"):
+            for name in ("replay-manifest.json", "latency.json", "timed-segments.json",
+                         "stop-return-timed-segments.json"):
                 shutil.copy2(source / f"pass-{index}" / case_id / name, target / name)
 
 

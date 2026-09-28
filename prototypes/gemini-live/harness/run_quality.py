@@ -290,6 +290,15 @@ def main() -> None:
                     for line in reference.read_text(encoding="utf-8").splitlines() if line.strip()
                     for row in (json.loads(line),)
                 ]
+                stop_return = captured.captures.get("stop_return")
+                if stop_return is not None:
+                    stop_snapshot = stop_return["snapshot"]
+                    write_json(run_dir / "stop-return-timed-segments.json", {
+                        "case_id": case_id, "pass": pass_number,
+                        "finalization_status": stop_snapshot["session"]["finalization_status"],
+                        "reference": reference_rows,
+                        "stop_return": surface.transcript_rows(stop_snapshot, duration),
+                    })
                 timed_case = {"case_id": case_id, "pass": pass_number,
                               "reference": reference_rows, "surfaces": surface_rows}
                 write_json(run_dir / "timed-segments.json", timed_case)
