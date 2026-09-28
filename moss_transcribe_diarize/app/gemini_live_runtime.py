@@ -140,6 +140,7 @@ class GeminiRolling:
     end_sample: int
     segments: tuple[GeminiSegment, ...]
     observations: tuple[object, ...] = ()
+    revision_lanes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -223,6 +224,7 @@ class _GeminiState:
     rolling_frontier: int = 0
     voice_observations: dict[str, object] = field(default_factory=dict)
     voiceprint_errors: int = 0
+    lane_counters: dict[str, dict[str, object]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
@@ -338,7 +340,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 })
             try:
                 assert state.engine is not None
-                state.engine.push_audio(ack.start_sample, frame.pcm)
+                push_lanes = getattr(state.engine, "push_lanes", None)
+                if frame.lane_pcm and callable(push_lanes):
+                    push_lanes(ack.start_sample, frame.lane_pcm)
+                else:
+                    state.engine.push_audio(ack.start_sample, frame.pcm)
             except Exception as exc:
                 with self._lock:
                     self._fail(state, "gemini_live_failed", exc)
@@ -394,6 +400,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         source="rolling", start_sample=update.start_sample,
                         end_sample=update.end_sample,
                         segments=_surface_segments(update.segments, "rolling"),
+                        revision_lanes=update.revision_lanes,
                     ))
                     if not outcome.applied:
                         raise ValueError(f"rolling update refused: {outcome.refusal}")
@@ -462,6 +469,26 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.cost_usd += cost_usd
             if cost_basis == "list_price_estimate":
                 state.live_list_price_estimate_usd += cost_usd
+            lane, separator, lane_kind = kind.partition("_")
+            if separator and lane in {"system", "microphone"}:
+                totals = state.lane_counters.setdefault(lane, {
+                    "calls_by_kind": {}, "errors_by_code": {}, "retries_by_code": {},
+                    "timing_anomalies": {"clamped": 0, "dropped": 0},
+                    "audio_seconds_sent": 0.0, "cost_usd": 0.0,
+                    "skipped_window_ticks": 0})
+                if count_call:
+                    calls = totals["calls_by_kind"]
+                    calls[lane_kind] = calls.get(lane_kind, 0) + 1
+                for key, code in (("errors_by_code", error_code),
+                                  ("retries_by_code", retry_code)):
+                    if code is not None:
+                        codes = totals[key]
+                        codes[code] = codes.get(code, 0) + 1
+                totals["timing_anomalies"]["clamped"] += clamped_words
+                totals["timing_anomalies"]["dropped"] += dropped_words
+                totals["audio_seconds_sent"] += audio_seconds_sent
+                totals["cost_usd"] += cost_usd
+                totals["skipped_window_ticks"] += skipped_window_ticks
 
     def engine_diagnostics(self, session_id: str) -> dict[str, object]:
         """Copy one meeting's content-free provider totals for QA and operator harnesses."""
@@ -483,6 +510,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "window_lag_seconds": _lag_summary(state.window_lag_samples),
                 "preview_lag_seconds": _lag_summary(state.preview_lag_samples),
                 "voiceprint_errors": state.voiceprint_errors,
+                "lanes": {lane: {
+                    key: (dict(value) if isinstance(value, dict) else value)
+                    for key, value in totals.items()}
+                    for lane, totals in state.lane_counters.items()},
             }
 
     def snapshot(self, session_id: str, since_version: int | None = None) -> LiveServiceSnapshot | None:
@@ -525,6 +556,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             if speaker in state.voice_observations:
                 continue
             rows.sort(key=lambda row: row.start_sample)
+            lane_tape = getattr(state.engine, "lane_tape", None)
+            source_tape = (lane_tape(rows[0].source_lane)
+                           if rows[0].source_lane in {"system", "microphone"}
+                           and callable(lane_tape) else tape)
             start = end = 0
             for row in rows:
                 if start == end or row.start_sample > end + LIVE_SAMPLE_RATE // 2:
@@ -533,11 +568,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     end = max(end, row.end_sample)
                 if end - start >= 2 * LIVE_SAMPLE_RATE:
                     break
-            if end - start < 2 * LIVE_SAMPLE_RATE or not tape.covers(start, end):
+            if end - start < 2 * LIVE_SAMPLE_RATE or not source_tape.covers(start, end):
                 continue
             try:
                 with tempfile.NamedTemporaryFile(suffix=".wav", dir=self._tape_storage_root) as wav:
-                    tape.write_wav(wav.name, start_sample=start, end_sample=end)
+                    source_tape.write_wav(wav.name, start_sample=start, end_sample=end)
                     vector = tuple(float(value) for value in encoder.embed(
                         wav.name, [(0.0, (end - start) / LIVE_SAMPLE_RATE)]))
                 if len(vector) != spec.embedding_dimension or any(not math.isfinite(v) for v in vector):
@@ -625,12 +660,17 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             with self._lock:
                 from .live_transcript_convergence import terminal_speaker_mapping
                 before = state.session.snapshot()
-                mapping = terminal_speaker_mapping(
-                    tuple((row.speaker, row.start_sample, row.end_sample, row.text)
-                          for row in rows if row.speaker is not None),
-                    base_surface=before.effective_transcript,
-                    canonical_speakers=before.identity_snapshot.canonical_speakers,
-                )
+                mapping = {}
+                for lane in dict.fromkeys(row.source_lane for row in rows):
+                    surface = tuple(s for s in before.effective_transcript
+                                    if s.source_lane == lane)
+                    speakers = tuple(dict.fromkeys(s.canonical_speaker for s in surface
+                                                   if s.canonical_speaker is not None))
+                    mapping.update(terminal_speaker_mapping(
+                        tuple((row.speaker, row.start_sample, row.end_sample, row.text)
+                              for row in rows if row.speaker is not None
+                              and row.source_lane == lane),
+                        base_surface=surface, canonical_speakers=speakers))
                 next_id = 1
                 for label in dict.fromkeys(row.speaker for row in rows if row.speaker is not None):
                     if label not in mapping:

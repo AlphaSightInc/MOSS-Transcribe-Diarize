@@ -128,6 +128,33 @@ def test_overlap_registry_keeps_id_when_local_label_changes():
     assert one["spk:0"] == two["spk:9"] == "speaker-0001"
 
 
+def test_silent_microphone_skips_batch_calls_then_births_one_local_speaker():
+    from moss_transcribe_diarize.app.gemini_hybrid_engine import SingleMicrophoneRegistry
+    calls = []
+    updates = []
+    class MicDiarizer:
+        def diarize(self, pcm, *, deadline, kind, diarize=True):
+            calls.append((len(pcm)//32000, diarize))
+            return GeminiWords((GeminiWord("local", "spk:?", 10*16000, 11*16000),))
+    engine = GeminiHybridEngine(updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=30, stride_seconds=10),
+        registry=SingleMicrophoneRegistry(), diarizer=MicDiarizer(), terminal=FakeTerminal(),
+        source_lane="microphone", voiced_audio=lambda pcm: any(pcm),
+        diarize_windows=False)
+    engine.push_audio(0, bytes(10*32000))
+    engine._future.result(timeout=5)
+    assert calls == []
+    assert all(not row.segments for row in updates if isinstance(row, GeminiRolling))
+    engine.push_audio(10*16000, b"\x01\x00"*(10*16000))
+    engine._future.result(timeout=5)
+    assert calls == [(20, False)]
+    mic = [row for update in updates if isinstance(update, GeminiRolling)
+           for row in update.segments]
+    assert [(row.text, row.speaker, row.source_lane) for row in mic] == [
+        ("local", "speaker-microphone", "microphone")]
+    engine.close()
+
+
 def test_registry_and_account_observation_receive_same_vector():
     updates = []
     class SpyRegistry(OverlapRegistry):

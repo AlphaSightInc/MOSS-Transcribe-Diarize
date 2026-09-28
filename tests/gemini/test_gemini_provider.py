@@ -80,6 +80,23 @@ def test_terminal_publishes_speaker_turns_with_1_5_second_gap_limit(tmp_path):
     tape.release()
 
 
+def test_microphone_terminal_transcribes_without_diarization_and_filters_words(tmp_path):
+    fake = FakeInteractions([response(word("echo", "spk:?", 0, 1),
+                                      word("local", "spk:?", 1, 2))])
+    provider = WindowDiarizer(SimpleNamespace(interactions=fake), lambda **_row: None)
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=2*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(2*32000))
+    terminal = TerminalTranscriber(provider, diarize=False,
+        word_filter=lambda words: tuple(w for w in words if w.text == "local"),
+        source_lane="microphone", fixed_speaker="speaker-microphone")
+    rows = terminal.transcribe(tape)
+    assert fake.requests[0]["generation_config"]["transcription_config"]["mode"] == {
+        "type": "verbatim", "timestamp_granularities": ["word"]}
+    assert [(r.text, r.speaker, r.source_lane) for r in rows] == [
+        ("local", "speaker-microphone", "microphone")]
+    tape.release()
+
+
 def test_unordered_overlapping_annotations_keep_all_words_on_one_sample_line():
     from moss_transcribe_diarize.app.gemini_live_runtime import GeminiSegment
     from moss_transcribe_diarize.app.gemini_provider import ordered_segments

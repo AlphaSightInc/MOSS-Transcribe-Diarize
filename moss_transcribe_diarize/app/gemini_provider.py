@@ -199,12 +199,19 @@ class TerminalTranscriber:
     """Whole-meeting chunk pass; overlap resolves local labels by word-time agreement."""
 
     def __init__(self, diarizer: WindowDiarizer, *, chunk_seconds: int = 1800,
-                 overlap_seconds: int = 20, identity_policy=None, word_gate=None):
+                 overlap_seconds: int = 20, identity_policy=None, word_gate=None,
+                 diarize: bool = True, word_filter=None,
+                 source_lane: str | None = None, fixed_speaker: str | None = None):
         if not 0 < overlap_seconds < chunk_seconds <= 1800:
             raise ValueError("terminal chunks must be at most 30 minutes with a smaller overlap")
         self.diarizer = diarizer
         self.identity_policy = identity_policy
         self.word_gate = word_gate
+        self.diarize = diarize
+        self.word_filter = word_filter
+        self.source_lane = source_lane
+        self.fixed_speaker = fixed_speaker
+        self.last_words: tuple[GeminiWord, ...] = ()
         self.chunk_samples = chunk_seconds * LIVE_SAMPLE_RATE
         self.overlap_samples = overlap_seconds * LIVE_SAMPLE_RATE
 
@@ -218,7 +225,8 @@ class TerminalTranscriber:
         while start < end:
             stop = min(end, start + self.chunk_samples)
             parsed = self.diarizer.diarize(tape.read(start_sample=start, end_sample=stop),
-                                           deadline=time.monotonic() + 240, kind="terminal")
+                                           deadline=time.monotonic() + 240, kind="terminal",
+                                           diarize=self.diarize)
             local_words = [GeminiWord(w.text, w.speaker, w.start_sample + start,
                                       w.end_sample + start) for w in parsed.words]
             local_labels = tuple(dict.fromkeys(w.speaker for w in local_words))
@@ -255,8 +263,14 @@ class TerminalTranscriber:
                 all_words = list(self.identity_policy.remap(all_words, pcm))
             if self.word_gate is not None:
                 all_words = list(self.word_gate.filter(pcm, all_words))
+        if self.word_filter is not None:
+            all_words = list(self.word_filter(all_words))
+        if self.fixed_speaker is not None:
+            all_words = [GeminiWord(w.text, self.fixed_speaker, w.start_sample, w.end_sample)
+                         for w in all_words]
+        self.last_words = tuple(all_words)
         return speaker_turns(ordered_segments(
             tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
-                                w.text, w.speaker) for w in all_words),
+                                w.text, w.speaker, self.source_lane) for w in all_words),
             start_sample=0, end_sample=end,
         ))

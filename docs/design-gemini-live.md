@@ -198,3 +198,34 @@ voiceprint changes: backend `pytest tests -q` passed **2,460**, skipped 3, xfail
 and passed 37 subtests; frontend `npm test -- --run` passed **313/313** across 28 files;
 `npm run typecheck` passed. Existing deprecation warnings only. This is a software
 regression gate, not the H1 quality population result.
+
+## L3 capture lanes candidate
+
+The Account mixer still owns one accepted recording clock and canonical mixed stage.
+The Gemini engine receives the aligned `system` and `microphone` PCM on that clock.
+Separate temporary source tapes supply the per-lane terminal calls and WeSpeaker
+voiceprint observations; the mixed stage continues to serve Account audio retention.
+The Gemini descriptor raises that stage's bound to 60 minutes, since the old 300 s
+manifest bound would make the 302 s E1/M2 terminal passes unavailable.
+
+The system path keeps W3 preview, growing-context diarized windows, the registry,
+and whole-call final policy. The mic path opens W3 only on WebRTC-voiced audio,
+closes after 60 s quiet, and transcribes rolling and terminal audio without Gemini
+diarization. WebRTC rejects unsupported words; a mic word matching a normalized
+system word within ±1.5 s by midpoint is then dropped. Only a surviving mic word
+creates the fixed local meeting identity `speaker-microphone`. Several people sharing
+the local mic remain one identity. The exact guard applies to timed rolling/terminal
+words; W3's untimed provisional text cannot support that exact comparison.
+
+Both lanes have independent provider work and PCM tapes, but one serialized batch
+request per meeting. Their rolling results meet at a synchronized frontier: one
+`GeminiRolling` update contains the overlapping source-lane turns and asks
+`LiveSession` to advance both `revision_lanes` together. A late independent lane
+revision would be refused at `not_at_frontier`. Terminal labels map to live IDs by
+sample overlap **within** each lane. The public snapshot retains `source_lane` on
+each turn and exposes content-free `engine_diagnostics.lanes` counters.
+
+Offline TDD for aligned PCM, overlapping rows, silent mic call suppression, the
+local ID, W3 activation, echo filtering, terminal no-diarization, and lane counters
+passed; the full backend gate after L3 passed **2,476**, skipped 3, xfailed 2,
+and passed 37 subtests. Real paced E1/M2 results are recorded separately in P63.

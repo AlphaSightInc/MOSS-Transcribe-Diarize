@@ -160,6 +160,15 @@ class OverlapRegistry:
         return mapping, ()
 
 
+class SingleMicrophoneRegistry:
+    """One local participant identity, created only after the mic word gates pass."""
+
+    def observe_window(self, window_start_s: float, words: Sequence[GeminiWord],
+                       embeddings: object | None = None) -> tuple[dict[str, str], tuple[GeminiUpdate, ...]]:
+        del window_start_s, embeddings
+        return ({label: "speaker-microphone" for label in dict.fromkeys(w.speaker for w in words)}, ())
+
+
 class GeminiHybridEngine:
     """A session owns a bounded live cache and coalesced background provider work."""
 
@@ -171,7 +180,11 @@ class GeminiHybridEngine:
                  embedding_source: Callable[[bytes, int, Sequence[GeminiWord]],
                                             dict[str, tuple[tuple[float, ...], float]]] | None = None,
                  encoder_spec: object | None = None, word_gate=None,
-                 report_usage: Callable[..., None] | None = None):
+                 report_usage: Callable[..., None] | None = None,
+                 source_lane: str | None = None,
+                 voiced_audio: Callable[[bytes], bool] | None = None,
+                 diarize_windows: bool = True,
+                 word_observer: Callable[[Sequence[GeminiWord], int], None] | None = None):
         self.publish = publish
         self.word_source = word_source
         self.window_scheduler = window_scheduler
@@ -182,6 +195,10 @@ class GeminiHybridEngine:
         self.encoder_spec = encoder_spec
         self.word_gate = word_gate
         self.report_usage = report_usage
+        self.source_lane = source_lane
+        self.voiced_audio = voiced_audio
+        self.diarize_windows = diarize_windows
+        self.word_observer = word_observer
         self._window_max_samples = window_scheduler.max_samples
         self._cache_samples = window_scheduler.cache_seconds * LIVE_SAMPLE_RATE
         self._stride_samples = window_scheduler.stride_samples
@@ -230,7 +247,8 @@ class GeminiHybridEngine:
             if end <= self._committed:
                 return
             preview = ordered_segments(
-                tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1), w.text)
+                tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
+                                    w.text, source_lane=self.source_lane)
                       for w in self._fast_words if w.end_sample > self._committed),
                 start_sample=self._committed, end_sample=end,
             )
@@ -287,7 +305,8 @@ class GeminiHybridEngine:
             return
         through = max(self._committed, self._accepted - 40 * LIVE_SAMPLE_RATE)
         rows = ordered_segments(
-            tuple(GeminiSegment(w.start_sample, min(through, max(w.end_sample, w.start_sample + 1)), w.text)
+            tuple(GeminiSegment(w.start_sample, min(through, max(w.end_sample, w.start_sample + 1)),
+                                w.text, source_lane=self.source_lane)
                   for w in self._fast_words if self._committed <= w.start_sample < through),
             start_sample=self._committed, end_sample=through,
         )
@@ -326,8 +345,9 @@ class GeminiHybridEngine:
                 self.report_usage(kind="rolling", count_call=False,
                                   skipped_window_ticks=skipped)
             if window is not None:
-                words = self.diarizer.diarize(pcm, deadline=time.monotonic() + 120,
-                                              kind="rolling").words
+                words = (() if self.voiced_audio is not None and not self.voiced_audio(pcm)
+                         else self.diarizer.diarize(pcm, deadline=time.monotonic() + 120,
+                                                     kind="rolling", diarize=self.diarize_windows).words)
                 with self._lock:
                     if (self._stopping or self._idle_due) and end == self._accepted:
                         # This in-flight call already spans the Stop suffix.
@@ -345,7 +365,8 @@ class GeminiHybridEngine:
                 self._fast_words.extend(w for w in absolute if (w.start_sample, w.text) not in known)
                 self._degrade_if_needed()
                 preview = ordered_segments(
-                    tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1), w.text)
+                    tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
+                                        w.text, source_lane=self.source_lane)
                           for w in absolute if w.start_sample >= self._committed),
                     start_sample=self._committed, end_sample=end,
                 )
@@ -357,6 +378,8 @@ class GeminiHybridEngine:
                                      w.end_sample + start) for w in words)
         if self.word_gate is not None:
             absolute = self.word_gate.filter(pcm, absolute, offset_sample=start)
+        if self.word_observer is not None:
+            self.word_observer(absolute, frontier)
         embeddings = (self.embedding_source(pcm, start, absolute)
                       if self.embedding_source is not None else {})
         mapping, relabels = self.registry.observe_window(start / LIVE_SAMPLE_RATE,
@@ -378,14 +401,15 @@ class GeminiHybridEngine:
                     self._committed = frontier
                 rows = speaker_turns(ordered_segments(
                     tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
-                                        w.text, mapping[w.speaker]) for w in absolute
+                                        w.text, mapping[w.speaker], self.source_lane) for w in absolute
                           if old <= w.start_sample < frontier),
                     start_sample=old, end_sample=frontier,
                 ))
                 visible = {row.speaker for row in rows}
                 self.publish(GeminiRolling(old, frontier, rows,
                                            tuple(obs for obs in observations
-                                                 if obs.speaker_label in visible)))
+                                                 if obs.speaker_label in visible),
+                                           (self.source_lane,) if self.source_lane else ()))
                 self._rolling_frontier = frontier
                 self._live_finals = [w for w in self._live_finals if w.end_sample > self._committed]
                 self._fast_words = [w for w in self._fast_words if w.end_sample > self._committed]
@@ -413,13 +437,18 @@ class GeminiHybridEngine:
             start = max(0, accepted - self._window_max_samples)
             pcm = self._read_locked(start, accepted)
         try:
-            result = await asyncio.wait_for(
-                asyncio.to_thread(self.diarizer.diarize, pcm, deadline=expires, kind="rolling"),
-                timeout=max(0.0, expires - time.monotonic()),
-            )
+            if self.voiced_audio is not None and not self.voiced_audio(pcm):
+                words = ()
+            else:
+                result = await asyncio.wait_for(
+                    asyncio.to_thread(self.diarizer.diarize, pcm, deadline=expires,
+                                      kind="rolling", diarize=self.diarize_windows),
+                    timeout=max(0.0, expires - time.monotonic()),
+                )
+                words = result.words
         except Exception:
             return False
-        self._publish_window(start, accepted, pcm, result.words)
+        self._publish_window(start, accepted, pcm, words)
         return self._rolling_frontier >= accepted
 
     async def finish(self, tape: CompleteMixedTape) -> Sequence[GeminiSegment]:

@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
+import threading
+from dataclasses import replace
 from pathlib import Path
 from typing import Sequence
 
@@ -148,7 +150,12 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     from google import genai
     from google.genai import types
     from .gemini_hybrid_engine import (GrowingContextWindowScheduler,
-                                       GeminiHybridEngine, OverlapRegistry, WeSpeakerWindowEmbeddings)
+                                       GeminiHybridEngine, OverlapRegistry,
+                                       SingleMicrophoneRegistry, WeSpeakerWindowEmbeddings)
+    from .gemini_lane_engine import (ConditionalMicrophoneTerminal, LaneGeminiEngine,
+                                     LazyMicrophoneWords, MicrophoneWordGate,
+                                     SerializedDiarizer, SystemWordLedger,
+                                     TextEchoGuard, WebRtcSpeechDetector)
     from .gemini_live_words import GeminiLiveWordSource
     from .gemini_final_policy import FinalWordPolicy, WebRtcWordGate
     from .gemini_live_runtime import GeminiLiveRuntime
@@ -168,14 +175,18 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     if not key:
         raise SystemExit("Gemini key missing from .env.local or MOSS_GEMINI_API_KEY")
     config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
-    bounds = _bounds(config.bounds_config)
+    bounds = replace(_bounds(config.bounds_config),
+                     max_tape_bytes=max(int(config.bounds_config["max_tape_bytes"]),
+                                        60 * 60 * 16_000 * 2))
     encoder = _identity_encoder(config)
     policy = {"model": "gemini-3.5-transcribe",
               "window_max_seconds": GEMINI_WINDOW_LMAX_SECONDS,
               "stride_seconds": GEMINI_WINDOW_STRIDE_SECONDS,
               "holdback_seconds": 0, "terminal_chunk_seconds": 1800,
               "terminal_merge_cosine": 0.65, "terminal_converse_gap_seconds": 2,
-              "word_gate": "webrtc-mode1-10ms-pad200ms"}
+              "word_gate": "webrtc-mode1-10ms-pad200ms",
+              "capture_lanes": "system_diarized_microphone_single_speaker",
+              "microphone_echo_guard": "exact_normalized_token_midpoint_1p5s"}
     identity_policy = {
         "registry": "word-time-overlap-hungarian",
         "voiceprint": f"{encoder.spec.provider}:{encoder.spec.revision}",
@@ -185,7 +196,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     descriptor = LiveServiceDescriptor(
         source_revision=config.source_revision,
         provider_name="gemini-3.5-transcribe",
-        provider_revision="hybrid-w3-growing-v3",
+        provider_revision="hybrid-w3-lanes-v4",
         provider_manifest_hash=hash_config({"gemini_policy": policy, "identity": identity_policy}),
         config_hashes=LiveServiceConfigHashes.from_parts(
             endpoint_config={"preview_model": "gemini-3.5-transcribe-live",
@@ -200,23 +211,58 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
 
     def factory():
         def engine_factory(_sid, publish, report_usage):
-            diarizer = WindowDiarizer(client, report_usage)
-            word_gate = WebRtcWordGate()
-            return GeminiHybridEngine(
-                publish,
-                word_source=GeminiLiveWordSource(client, report_usage),
-                window_scheduler=GrowingContextWindowScheduler(
-                    max_seconds=GEMINI_WINDOW_LMAX_SECONDS,
-                    stride_seconds=GEMINI_WINDOW_STRIDE_SECONDS),
-                registry=OverlapRegistry(),
-                diarizer=diarizer,
-                terminal=TerminalTranscriber(diarizer, identity_policy=FinalWordPolicy(encoder),
-                                             word_gate=word_gate),
-                embedding_source=WeSpeakerWindowEmbeddings(encoder),
-                encoder_spec=encoder.spec,
-                word_gate=word_gate,
-                report_usage=report_usage,
-            )
+            def lane_report(lane):
+                def report(**usage):
+                    report_usage(**{**usage, "kind": f"{lane}_{usage['kind']}"})
+                return report
+            system_report, mic_report = lane_report("system"), lane_report("microphone")
+            batch_lock = threading.Lock()
+            system_diarizer = SerializedDiarizer(WindowDiarizer(client, system_report), batch_lock)
+            mic_diarizer = SerializedDiarizer(WindowDiarizer(client, mic_report), batch_lock)
+            system_words = SystemWordLedger()
+            system_gate = WebRtcWordGate()
+            mic_gate = WebRtcWordGate()
+            speech_detector = WebRtcSpeechDetector()
+            echo_guard = TextEchoGuard()
+            system_terminal = TerminalTranscriber(
+                system_diarizer, identity_policy=FinalWordPolicy(encoder),
+                word_gate=system_gate, source_lane="system")
+            mic_terminal = TerminalTranscriber(
+                mic_diarizer, diarize=False, word_gate=mic_gate,
+                word_filter=lambda words: echo_guard.filter(words, system_terminal.last_words),
+                source_lane="microphone", fixed_speaker="speaker-microphone")
+            mic_source = LazyMicrophoneWords(
+                lambda: GeminiLiveWordSource(client, mic_report),
+                voiced_audio=speech_detector)
+            def system_factory(lane_publish):
+                return GeminiHybridEngine(
+                    lane_publish, word_source=GeminiLiveWordSource(client, system_report),
+                    window_scheduler=GrowingContextWindowScheduler(
+                        max_seconds=GEMINI_WINDOW_LMAX_SECONDS,
+                        stride_seconds=GEMINI_WINDOW_STRIDE_SECONDS),
+                    registry=OverlapRegistry(), diarizer=system_diarizer,
+                    terminal=system_terminal,
+                    embedding_source=WeSpeakerWindowEmbeddings(encoder),
+                    encoder_spec=encoder.spec, word_gate=system_gate,
+                    report_usage=system_report, source_lane="system",
+                    word_observer=system_words.observe)
+            def microphone_factory(lane_publish):
+                return GeminiHybridEngine(
+                    lane_publish, word_source=mic_source,
+                    window_scheduler=GrowingContextWindowScheduler(
+                        max_seconds=GEMINI_WINDOW_LMAX_SECONDS,
+                        stride_seconds=GEMINI_WINDOW_STRIDE_SECONDS),
+                    registry=SingleMicrophoneRegistry(), diarizer=mic_diarizer,
+                    terminal=ConditionalMicrophoneTerminal(mic_source, mic_terminal),
+                    embedding_source=WeSpeakerWindowEmbeddings(encoder),
+                    encoder_spec=encoder.spec,
+                    word_gate=MicrophoneWordGate(mic_gate, system_words),
+                    report_usage=mic_report, source_lane="microphone",
+                    voiced_audio=speech_detector, diarize_windows=False)
+            return LaneGeminiEngine(
+                publish, system_factory=system_factory,
+                microphone_factory=microphone_factory,
+                tape_root=Path(args.file_work_root).expanduser() / "gemini-lanes")
         return GeminiLiveRuntime(
             descriptor=descriptor, engine_factory=engine_factory,
             tape_storage_root=Path(args.file_work_root).expanduser() / "live-tapes",

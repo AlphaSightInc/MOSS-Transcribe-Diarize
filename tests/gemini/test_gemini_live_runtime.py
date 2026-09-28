@@ -75,6 +75,90 @@ def test_create_frame_preview_and_diarized_commit_are_poller_shaped(tmp_path):
     assert payload["descriptor"]["sample_rate"] == 16000
 
 
+def test_combined_rolling_revision_keeps_overlapping_capture_lanes(tmp_path):
+    system = GeminiSegment(0, 12000, "remote", "speaker-0001", "system")
+    microphone = GeminiSegment(4000, 14000, "local", "speaker-0002", "microphone")
+    scripts = {"one": ([(GeminiBase(16000, ()),
+                         GeminiRolling(0, 16000, (system, microphone),
+                                       revision_lanes=("system", "microphone")))],
+                       (system, microphone))}
+    rt = runtime(tmp_path, scripts)
+    rt.create(session_id="one")
+    rt.accept_frame("one", AudioFrame(0, bytes(32000), 16000,
+                                     lane_pcm=(("system", bytes(32000)),
+                                               ("microphone", bytes(32000)))))
+    snapshot = rt.snapshot("one").to_dict()
+    assert [(row["source_lane"], row["canonical_speaker"]) for row in
+            snapshot["session"]["effective_transcript"]] == [
+                ("system", "speaker-0001"), ("microphone", "speaker-0002")]
+    assert rt._sessions["one"].session._lane_revision_frontiers == {
+        "system": 16000, "microphone": 16000}
+
+
+def test_runtime_passes_aligned_pcm_lanes_to_lane_engine(tmp_path):
+    got = []
+    class Engine:
+        def push_audio(self, start_sample, pcm16):
+            raise AssertionError("lane engine must receive source lanes")
+        def push_lanes(self, start_sample, lane_pcm):
+            got.append((start_sample, dict(lane_pcm)))
+        async def drain_tail(self, deadline): return False
+        async def finish(self, tape): return ()
+    rt = GeminiLiveRuntime(descriptor=descriptor(),
+        engine_factory=lambda _sid, _publish, _usage: Engine(),
+        tape_storage_root=tmp_path)
+    rt.create(session_id="one")
+    rt.accept_frame("one", AudioFrame(0, bytes(32000), 16000,
+        lane_pcm=(("system", b"\x01\x00"*16000),
+                  ("microphone", b"\x02\x00"*16000))))
+    assert len(got) == 1 and got[0][0] == 0
+    assert {lane: (len(audio), audio[:2]) for lane, audio in got[0][1].items()} == {
+        "system": (32000, b"\x01\x00"), "microphone": (32000, b"\x02\x00")}
+
+
+def test_engine_diagnostics_exposes_content_free_per_lane_totals(tmp_path):
+    rt = runtime(tmp_path, {"one": ([], ())})
+    rt.create(session_id="one")
+    rt.record_engine_call("one", kind="system_rolling", audio_seconds_sent=30,
+                          cost_usd=.01, clamped_words=1)
+    rt.record_engine_call("one", kind="microphone_rolling", audio_seconds_sent=30,
+                          cost_usd=.01, dropped_words=2)
+    rt.record_engine_call("one", kind="microphone_rolling", count_call=False,
+                          skipped_window_ticks=1)
+    lanes = rt.snapshot("one").to_dict()["engine_diagnostics"]["lanes"]
+    assert lanes["system"]["calls_by_kind"] == {"rolling": 1}
+    assert lanes["system"]["timing_anomalies"] == {"clamped": 1, "dropped": 0}
+    assert lanes["system"]["skipped_window_ticks"] == 0
+    assert lanes["microphone"]["calls_by_kind"] == {"rolling": 1}
+    assert lanes["microphone"]["timing_anomalies"] == {"clamped": 0, "dropped": 2}
+    assert lanes["microphone"]["skipped_window_ticks"] == 1
+    assert lanes["microphone"]["audio_seconds_sent"] == 30
+    assert lanes["microphone"]["cost_usd"] == .01
+
+
+def test_terminal_maps_overlapping_labels_within_each_capture_lane(tmp_path):
+    async def run():
+        system = GeminiSegment(0, 14000, "remote", "speaker-0001", "system")
+        microphone = GeminiSegment(0, 14000, "local", "speaker-microphone", "microphone")
+        terminal = (GeminiSegment(0, 14000, "remote", "terminal-a", "system"),
+                    GeminiSegment(0, 14000, "local", "terminal-b", "microphone"))
+        rt = runtime(tmp_path, {"one": ([(GeminiBase(16000, ()),
+                                           GeminiRolling(0, 16000, (system, microphone),
+                                               revision_lanes=("system", "microphone")))],
+                                 terminal)})
+        rt.create(session_id="one")
+        rt.accept_frame("one", frame(0))
+        await rt.stop("one", 1.0)
+        await rt.wait_terminal("one")
+        final = rt.snapshot("one").session
+        assert final.finalization_status == "final"
+        assert [(row.source_lane, row.canonical_speaker) for row in
+                final.effective_transcript] == [
+                    ("system", "speaker-0001"),
+                    ("microphone", "speaker-microphone")]
+    asyncio.run(run())
+
+
 def test_relabel_and_terminal_revision_replace_visible_rows(tmp_path):
     asyncio.run(_relabel_and_terminal_revision_replace_visible_rows(tmp_path))
 
