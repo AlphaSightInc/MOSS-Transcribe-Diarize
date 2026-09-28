@@ -75,11 +75,12 @@ def assignment(weights):
 
 class SpeakerRegistry:
     def __init__(self, *, min_overlap_s=0.6, embedding_threshold=None,
-                 within_window_threshold=None, reuse_overlap=False):
+                 within_window_threshold=None, reuse_overlap=False, birth_min_s=0.0):
         self.min_overlap_s = min_overlap_s
         self.embedding_threshold = embedding_threshold
         self.within_window_threshold = within_window_threshold
         self.reuse_overlap = reuse_overlap
+        self.birth_min_s = birth_min_s
         self.next_id = 1
         self.previous = []  # (absolute start, end, meeting ID)
         self.centroids = {}  # meeting ID -> vector; optional acoustic evidence
@@ -131,7 +132,7 @@ class SpeakerRegistry:
                 if vectors:
                     group_embeddings[min(group)] = [sum(v[i] for v in vectors) / len(vectors)
                                                     for i in range(len(vectors[0]))]
-        previous_ids = sorted({row[2] for row in self.previous})
+        previous_ids = sorted({row[2] for row in self.previous if row[2] != "S00"})
         available_ids = sorted(set(previous_ids) | set(self.centroids))
         support = {(label, mid): 0.0 for label in representatives for mid in available_ids}
         for w in words:
@@ -142,7 +143,7 @@ class SpeakerRegistry:
                           for ps, pe, mid in self.previous]
             if candidates:
                 duration, mid = max(candidates)
-                if duration > 0:
+                if duration > 0 and mid != "S00":
                     support[(label, mid)] += duration
 
         weights = []
@@ -162,11 +163,20 @@ class SpeakerRegistry:
             weights.append(row)
         chosen = assignment(weights)
         mapped_groups = {}
+        born_groups = set()
         for label, col in zip(representatives, chosen):
             if col is None:
-                mapped_groups[label] = f"M{self.next_id}"
-                self.next_id += 1
-                self.births += 1
+                speech_s = sum(max(0.0, float(field(w, "end")) - float(field(w, "start")))
+                               for w in words if group_by_label[str(field(w, "speaker"))] == label)
+                if speech_s < self.birth_min_s:
+                    closest = max(((support[(label, mid)], mid) for mid in available_ids),
+                                  default=(0.0, None))
+                    mapped_groups[label] = closest[1] if closest[0] > 0 else "S00"
+                else:
+                    mapped_groups[label] = f"M{self.next_id}"
+                    self.next_id += 1
+                    self.births += 1
+                    born_groups.add(label)
             else:
                 mapped_groups[label] = available_ids[col]
         if self.reuse_overlap:
@@ -174,7 +184,7 @@ class SpeakerRegistry:
                              for w in words if group_by_label[str(field(w, "speaker"))] == label]
                      for label in representatives}
             for label, col in zip(representatives, chosen):
-                if col is not None:
+                if label not in born_groups:
                     continue
                 candidates = sorted(((support[(label, mid)], mid) for mid in set(mapped_groups.values())
                                      if mid in available_ids and support[(label, mid)] >= self.min_overlap_s),
@@ -194,10 +204,12 @@ class SpeakerRegistry:
         self.previous = [
             (window_start_s + float(field(w, "start")),
              window_start_s + float(field(w, "end")), mapped[str(field(w, "speaker"))])
-            for w in words
+            for w in words if mapped[str(field(w, "speaker"))] != "S00"
         ]
         for label, vector in group_embeddings.items():
             mid = mapped_groups[label]
+            if mid == "S00":
+                continue
             old = self.centroids.get(mid)
             self.centroids[mid] = list(vector) if old is None else [
                 0.8 * a + 0.2 * b for a, b in zip(old, vector)

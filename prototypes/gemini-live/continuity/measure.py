@@ -45,6 +45,17 @@ def percentile(values, p):
     return round(float(np.percentile(values, p)), 3) if values else None
 
 
+def span_seconds(rows):
+    spans = sorted((w["start"], w["end"]) for w in rows if w["end"] > w["start"])
+    merged = []
+    for start, end in spans:
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(end, merged[-1][1]))
+        else:
+            merged.append((start, end))
+    return round(sum(end - start for start, end in merged), 3)
+
+
 def segmentize(rows):
     """Use the shared Gemini word grouping before production DER scoring."""
     ordered = sorted(rows, key=lambda w: (w["start"], w["end"]))
@@ -76,26 +87,37 @@ def measured_score(reference, hypothesis):
 
 
 def evaluate(reference, observations, hold_s, threshold, embedding_threshold=None,
-             within_window_threshold=None, reuse_overlap=False, include_segments=False):
+             within_window_threshold=None, reuse_overlap=False, include_segments=False,
+             stop_drain=False, birth_min_s=0.0):
     registry = SpeakerRegistry(min_overlap_s=threshold, embedding_threshold=embedding_threshold,
                                within_window_threshold=within_window_threshold,
-                               reuse_overlap=reuse_overlap)
+                               reuse_overlap=reuse_overlap, birth_min_s=birth_min_s)
     first, revised, latency, latency_with_api = [], [], [], []
     visible_relabels = 0
     frontier = 0.0
     state = []
     preview = []
+    pre_stop_first_immediate = None
+    pre_stop_last_immediate = None
+    stop_drained_words = 0
     for n, obs in enumerate(observations):
+        is_stop = stop_drain and n == len(observations) - 1
+        if is_stop:
+            pre_stop_first_immediate = sorted(first + preview, key=lambda w: (w["start"], w["end"]))
+            pre_stop_last_immediate = sorted(revised + preview, key=lambda w: (w["start"], w["end"]))
         start, t, words = obs["start"], obs["end"], obs["words"]
         mapping, relabels = registry.observe_window(start, words, obs.get("embeddings"))
-        new_frontier = max(0.0, t - hold_s)
+        new_frontier = t if is_stop else max(0.0, t - hold_s)
         absolute = [{"start": start + w["start"], "end": start + w["end"],
                      "speaker": mapping[w["speaker"]], "text": w["text"]} for w in words]
         preview = [w for w in absolute if w["end"] > new_frontier]
         fresh = [w for w in absolute if frontier < w["end"] <= new_frontier]
         first.extend(fresh)
-        latency.extend(t - w["end"] for w in fresh)
-        latency_with_api.extend(t + obs["api_latency_s"] - w["end"] for w in fresh)
+        if is_stop:
+            stop_drained_words = len(fresh)
+        else:
+            latency.extend(t - w["end"] for w in fresh)
+            latency_with_api.extend(t + obs["api_latency_s"] - w["end"] for w in fresh)
         # Latest observation replaces already shown words only inside this audio window.
         changed_pairs = set()
         for old in revised:
@@ -116,14 +138,23 @@ def evaluate(reference, observations, hold_s, threshold, embedding_threshold=Non
                       "committed": len(fresh), "frontier": round(frontier, 3),
                       "relabels": relabels, "visible_relabel_pairs": len(changed_pairs)})
     first.sort(key=lambda w: (w["start"], w["end"]))
-    first_immediate = sorted(first + preview, key=lambda w: (w["start"], w["end"]))
-    last_immediate = sorted(revised + preview, key=lambda w: (w["start"], w["end"]))
+    first_immediate = (pre_stop_first_immediate if stop_drain else
+                       sorted(first + preview, key=lambda w: (w["start"], w["end"])))
+    last_immediate = (pre_stop_last_immediate if stop_drain else
+                      sorted(revised + preview, key=lambda w: (w["start"], w["end"])))
     first_score = measured_score(reference, segmentize(first)) if reference else None
     revised_score = measured_score(reference, segmentize(revised)) if reference else None
     result = {"first": first_score, "last_revised": revised_score,
             "first_word_count": len(first), "last_word_count": len(revised),
-            "speaker_count": len({w["speaker"] for w in first}), "births": registry.births,
-            "immediate_speaker_count": len({w["speaker"] for w in first_immediate}),
+            "speaker_count": len({w["speaker"] for w in first if w["speaker"] != "S00"}),
+            "last_speaker_count": len({w["speaker"] for w in revised if w["speaker"] != "S00"}),
+            "births": registry.births,
+            "immediate_speaker_count": len({w["speaker"] for w in first_immediate
+                                            if w["speaker"] != "S00"}),
+            "unattributed_s": span_seconds([w for w in first if w["speaker"] == "S00"]),
+            "last_unattributed_s": span_seconds([w for w in revised if w["speaker"] == "S00"]),
+            "stop_drained_words": stop_drained_words,
+            "stop_api_latency_s": observations[-1]["api_latency_s"] if stop_drain else None,
             "merges": registry.merges, "local_merges": registry.local_merges,
             "overlap_reuses": registry.overlap_reuses,
             "visible_relabel_events": visible_relabels,
