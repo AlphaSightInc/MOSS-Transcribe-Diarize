@@ -166,8 +166,8 @@ class WebRtcSpeechDetector:
                    for i in range(0, len(pcm16)-319, 320))
 
 
-class LazyMicrophoneWords:
-    """Open W3 on first voiced mic frame; rotate after 60 s with no voiced frame."""
+class VoicedLiveWords:
+    """Open a lane's W3 socket on voice; close after 60 s without voice."""
 
     def __init__(self, source_factory: Callable[[], object], *, voiced_audio: Callable[[bytes], bool]):
         self.source_factory = source_factory
@@ -184,7 +184,7 @@ class LazyMicrophoneWords:
 
     def push_audio(self, start_sample: int, pcm16: bytes) -> None:
         if start_sample != self._expected:
-            raise ValueError("microphone preview audio is not contiguous")
+            raise ValueError("Live preview audio is not contiguous")
         end = start_sample + len(pcm16) // 2
         self._expected = end
         voiced = self.voiced_audio(pcm16)
@@ -222,7 +222,7 @@ class LazyMicrophoneWords:
 class ConditionalMicrophoneTerminal:
     """A digital-silent mic has no terminal provider request."""
 
-    def __init__(self, source: LazyMicrophoneWords, terminal):
+    def __init__(self, source: VoicedLiveWords, terminal):
         self.source = source
         self.terminal = terminal
 

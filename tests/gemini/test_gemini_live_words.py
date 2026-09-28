@@ -1,9 +1,47 @@
 import asyncio
 import threading
 import time
+import wave
+from pathlib import Path
 from types import SimpleNamespace
 
 from moss_transcribe_diarize.app.gemini_live_words import GeminiLiveWordSource
+
+
+def test_system_voiced_live_words_skip_silence_then_open_and_reopen_promptly():
+    from moss_transcribe_diarize.app.gemini_lane_engine import VoicedLiveWords, WebRtcSpeechDetector
+    live = FakeLive()
+    usage = []
+    visible = threading.Event()
+    events = []
+    source = VoicedLiveWords(
+        lambda: GeminiLiveWordSource(SimpleNamespace(aio=SimpleNamespace(live=live)),
+                                     lambda **row: usage.append(row)),
+        voiced_audio=WebRtcSpeechDetector())
+    source.bind(lambda text, start, end, final:
+                (events.append((text, start, end, time.monotonic())), visible.set()))
+    for second in range(600):
+        source.push_audio(second*16000, bytes(32000))
+    assert not live.sessions and not usage
+    with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
+        voice = wav.readframes(16000)
+    opened = time.monotonic()
+    source.push_audio(600*16000, voice)
+    assert visible.wait(2)
+    assert events[-1][:3] == ("hello", 600*16000, 601*16000)
+    assert events[-1][3] - opened < 1.0
+    assert len(live.sessions) == 1
+    visible.clear()
+    for second in range(601, 671):
+        source.push_audio(second*16000, bytes(32000))
+    assert source._active is None
+    reopened = time.monotonic()
+    source.push_audio(671*16000, voice)
+    assert visible.wait(2)
+    assert events[-1][:3] == ("hello", 671*16000, 672*16000)
+    assert events[-1][3] - reopened < 1.0
+    assert len(live.sessions) == 2
+    asyncio.run(source.finish())
 
 
 class FakeSession:

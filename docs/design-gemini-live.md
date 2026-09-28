@@ -43,17 +43,16 @@ bars across the acceptance population remain unmeasured here.
    probe wrote 360/360 ten-second chunks, 57.6 million samples, and read its first and last
    16,000 samples exactly. Account also owns durable MP3 recovery.
 3. `gemini_hybrid_engine.py` keeps a bounded `Lmax + S` live PCM cache. The
-   composition root currently sets growing context to **Lmax=30 s, S=10 s** while pane
-   6.1 finishes C4. At the latest stride tick `t`, the single worker asks for
+   composition root sets growing context to **Lmax=180 s, S=15 s**. At the latest stride tick `t`, the single worker asks for
    `[max(0,t-Lmax),t]` and commits through `t`. If a call is still in flight, newer
    ticks coalesce to the latest one and omitted ticks are counted. The same scheduler
-   accepts Lmax up to 300 s; its cache then holds 310 s at S10. Account's stage supplies
-   full audio at Stop. W3 `GeminiLiveWordSource` streams accepted audio to
+   accepts Lmax up to 300 s. Account's stage supplies
+   full audio at Stop. A per-lane `VoicedLiveWords` gate opens W3 only after WebRTC
+   voice and closes it after 60 s without voice. W3 `GeminiLiveWordSource` then streams audio to
    `gemini-3.5-transcribe-live` with TEXT, 500 ms automatic silence detection, a 2 s
    Stop flush and 5 s buffered replay on bounded reconnect. It feeds preview only.
-   `OverlapRegistry` remains the placeholder Hungarian word-time assignment; it keeps
-   stable meeting IDs when local labels overlap and creates new IDs otherwise. Its
-   `embeddings` argument already accepts the measured C3 policy's WeSpeaker vectors.
+   The C4 `ContinuityRegistry` maps window labels to meeting IDs by overlap and
+   WeSpeaker evidence, with a 2 s birth rule.
 4. `gemini_provider.py` sends verbatim Interactions requests with word timestamps and
    speaker mode for rolling/terminal. It repairs invalid offsets using the observed
    `bc567bb2` rule: end before start or past the audio becomes
@@ -208,17 +207,18 @@ voiceprint observations; the mixed stage continues to serve Account audio retent
 The Gemini descriptor raises that stage's bound to 60 minutes, since the old 300 s
 manifest bound would make the 302 s E1/M2 terminal passes unavailable.
 
-The system path keeps W3 preview, growing-context diarized windows, the registry,
-and whole-call final policy. The mic path opens W3 only on WebRTC-voiced audio,
-closes after 60 s quiet, and transcribes rolling and terminal audio without Gemini
+The system and mic paths each open W3 only on WebRTC-voiced audio and close it
+after 60 s quiet. The system keeps growing-context diarized windows, the registry,
+and whole-call final policy. The mic transcribes rolling and terminal audio without Gemini
 diarization. WebRTC rejects unsupported words; a mic word matching a normalized
 system word within ±1.5 s by midpoint is then dropped. Only a surviving mic word
 creates the fixed local meeting identity `speaker-microphone`. Several people sharing
 the local mic remain one identity. The exact guard applies to timed rolling/terminal
 words; W3's untimed provisional text cannot support that exact comparison.
 
-Both lanes have independent provider work and PCM tapes, but one serialized batch
-request per meeting. Their rolling results meet at a synchronized frontier: one
+Both lanes have independent provider work and PCM tapes. Rolling keeps one serialized
+batch request per meeting; after Stop, up to three final chunks run concurrently.
+Their rolling results meet at a synchronized frontier: one
 `GeminiRolling` update contains the overlapping source-lane turns and asks
 `LiveSession` to advance both `revision_lanes` together. A late independent lane
 revision would be refused at `not_at_frontier`. Terminal labels map to live IDs by
@@ -343,7 +343,7 @@ selected C3 WeSpeaker thresholds E=.46/W=.60 and the 2 s speaker-birth rule.
 Mic windows have diarization off. The engine calls Gemini only when audio newly
 covered since the prior mic window contains WebRTC voice. An old utterance in
 the 30 s overlap cannot reopen a quiet stride; silent strides still advance
-the lane and shared meeting frontier. W3 remains lazy on first voiced mic audio.
+the lane and shared meeting frontier. W3 remains lazy on first voiced audio in both lanes.
 
 Idle and Stop drains send only the unrevised suffix `[rolling frontier,
 accepted end]`, matching P61's exact C4 Stop calls rather than repeating the

@@ -2,7 +2,7 @@ import asyncio
 from array import array
 
 from moss_transcribe_diarize.app.gemini_lane_engine import (LaneGeminiEngine, TextEchoGuard,
-    SystemWordLedger, LazyMicrophoneWords, AcousticEchoGuard, MicrophoneWordGate)
+    SystemWordLedger, VoicedLiveWords, AcousticEchoGuard, MicrophoneWordGate)
 from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiRolling, GeminiSegment, GeminiTurnBridge
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord
 
@@ -158,7 +158,7 @@ def test_lazy_microphone_preview_opens_on_voice_and_closes_after_60s_quiet():
             self.callback("local", start, start+len(pcm)//2, True)
         def close(self): self.closed = True
         async def finish(self): self.closed = True
-    lazy = LazyMicrophoneWords(Source, voiced_audio=lambda pcm: any(pcm))
+    lazy = VoicedLiveWords(Source, voiced_audio=lambda pcm: any(pcm))
     lazy.bind(lambda text, start, end, final: observed.append((text, start, end)))
     lazy.push_audio(0, bytes(32000))
     assert made == []

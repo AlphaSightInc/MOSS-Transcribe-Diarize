@@ -417,6 +417,46 @@ def test_rolling_public_snapshot_contains_speaker_turns(tmp_path):
     rt._sessions["one"].engine.close()
 
 
+def test_system_first_voiced_word_reaches_public_preview_after_silent_ingress(tmp_path):
+    import wave
+    from pathlib import Path
+    from moss_transcribe_diarize.app.gemini_lane_engine import VoicedLiveWords, WebRtcSpeechDetector
+    from moss_transcribe_diarize.app.gemini_hybrid_engine import GrowingContextWindowScheduler
+    opened = []
+    class LiveSource:
+        def __init__(self): opened.append(time.monotonic())
+        def bind(self, listener): self.listener = listener
+        def push_audio(self, start_sample, pcm16):
+            self.listener("first", start_sample, start_sample + 8000, False)
+        async def finish(self): pass
+        def close(self): pass
+    class NoBatch:
+        def diarize(self, *_args, **_kwargs):
+            raise AssertionError("2 s ingress must not open a batch window")
+        def transcribe(self, _tape): return ()
+    rt = GeminiLiveRuntime(
+        descriptor=descriptor(), tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage: GeminiHybridEngine(
+            publish,
+            word_source=VoicedLiveWords(LiveSource, voiced_audio=WebRtcSpeechDetector()),
+            window_scheduler=GrowingContextWindowScheduler(max_seconds=180, stride_seconds=15),
+            registry=OverlapRegistry(), diarizer=NoBatch(), terminal=NoBatch(),
+            source_lane="system"),
+    )
+    rt.create(session_id="one")
+    rt.accept_frame("one", frame(0))
+    assert not opened and rt.snapshot("one").session.provisional is None
+    with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
+        voice = wav.readframes(16000)
+    started = time.monotonic()
+    rt.accept_frame("one", AudioFrame(sequence=1, pcm=voice, sample_count=16000))
+    provisional = rt.snapshot("one").to_dict()["session"]["provisional"]
+    assert len(opened) == 1
+    assert time.monotonic() - started < 1.0
+    assert provisional["transcript"] == "[1][S00]first[1.5]"
+    rt._sessions["one"].engine.close()
+
+
 def test_stop_drains_rolling_tail_before_session_closes(tmp_path):
     async def run():
         first = GeminiSegment(0, 16000, "first", "speaker-0001")
