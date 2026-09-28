@@ -60,6 +60,7 @@ def open_completed_summary(page, meeting):
         page.get_by_role("main", name="Summary view", exact=True).wait_for(state="detached")
     page.get_by_role("region", name="Meeting history", exact=True).get_by_role("button", name="Refresh", exact=True).click()
     _meeting_opener(page, meeting).click()
+    page.locator(f'[data-open-meeting="{meeting}"][aria-pressed="true"]').wait_for()
     page.get_by_role("button", name="Open summary", exact=True).click()
     page.get_by_role("region", name="Final summary", exact=True).wait_for()
 

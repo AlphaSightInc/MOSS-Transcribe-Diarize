@@ -25,6 +25,7 @@ async def open_selected_summary(page, context, app):
         "speaker": "S01", "text": "Local summary fixture"}]}, terminal=True)
     await page.get_by_role("region", name="Meeting history", exact=True).get_by_role("button", name="Refresh", exact=True).click()
     await page.locator(f'[data-open-meeting="{handle.meeting_id}"]').click()
+    await page.locator(f'[data-open-meeting="{handle.meeting_id}"][aria-pressed="true"]').wait_for()
     await page.get_by_role("button", name="Open summary", exact=True).click()
     await page.get_by_role("region", name="Browser AI settings", exact=True).wait_for()
 

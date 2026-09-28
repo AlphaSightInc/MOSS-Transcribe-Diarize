@@ -84,6 +84,7 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
             _meeting_opener(phone, meeting.meeting_id).click()
             phone.get_by_role('button', name='Reassign passage', exact=True).click()
             expect(phone.locator('#passage-speaker-title')).to_be_visible()
+            assert phone.locator('#tr-body').evaluate('(el) => el.scrollWidth <= el.clientWidth')
             phone.get_by_role('dialog', name='Reassign passage').get_by_role('button', name='Cancel').click()
             phone.get_by_role('button', name='Open summary', exact=True).click()
             expect(phone.get_by_role('main', name='Summary view')).to_be_visible()
@@ -91,6 +92,97 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
             phone.get_by_role('button', name='Back to meeting').click()
             expect(phone.get_by_role('main', name='Summary view')).to_have_count(0)
             assert phone.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+        finally:
+            browser.close()
+
+
+def test_summary_collector_waits_for_delayed_meeting_selection():
+    first = Meeting('first-meeting', 'file', 'First meeting', 'completed', 1,
+                    transcript={'segments': []})
+    second = Meeting('second-meeting', 'file', 'Second meeting', 'completed', 1,
+                     transcript={'segments': []})
+    meetings = [first, second]
+    html = _workspace_html(SimpleNamespace(display_name='Audit'), meetings)
+    with sync_playwright() as p:
+        from tests.phase2.browser_support import require_browser
+        browser = p.chromium.launch(executable_path=str(require_browser(p)))
+        try:
+            page = browser.new_page()
+            page.set_default_timeout(3000)
+            page.add_init_script("""(() => {
+                const originalFetch = window.fetch;
+                window.fetch = async (...args) => {
+                    const url = typeof args[0] === 'string' ? args[0] : args[0].url;
+                    if (new URL(url, location.href).pathname === '/api/meetings/second-meeting') {
+                        await new Promise(resolve => setTimeout(resolve, 150));
+                    }
+                    return originalFetch(...args);
+                };
+            })()""")
+
+            def route(r):
+                path = urlsplit(r.request.url).path
+                if path == '/':
+                    r.fulfill(body=html, content_type='text/html')
+                elif path.startswith('/static/'):
+                    asset = ROOT / 'moss_transcribe_diarize/app/frontend_assets' / path.removeprefix('/static/')
+                    r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+                elif path == '/api/meetings/second-meeting':
+                    r.fulfill(json=second.to_dict())
+                elif path == '/api/meetings/first-meeting':
+                    r.fulfill(json=first.to_dict())
+                else:
+                    r.fulfill(json={'meetings': [m.to_dict() for m in meetings], 'voiceprints': [], 'summary': None})
+
+            page.route('**/*', route)
+            page.goto('http://audit.test')
+            page.locator('[data-history-boot="ready"]').wait_for()
+            open_completed_summary(page, first.meeting_id)
+            open_completed_summary(page, second.meeting_id)
+            expect(page.get_by_role('main', name='Summary view').locator('h2')).to_have_text('Second meeting')
+        finally:
+            browser.close()
+
+
+@pytest.mark.parametrize('width,height', [(1440, 900), (1280, 800), (400, 900)])
+def test_summary_entry_does_not_cover_upload_or_navigation(width, height):
+    meeting = Meeting('audit-meeting', 'file', 'Audit title', 'completed', 1,
+                      transcript={'segments': []})
+    html = _workspace_html(SimpleNamespace(display_name='Audit'), [meeting], live_enabled=True)
+    with sync_playwright() as p:
+        from tests.phase2.browser_support import require_browser
+        browser = p.chromium.launch(executable_path=str(require_browser(p)))
+        try:
+            page = browser.new_page(viewport={'width': width, 'height': height})
+
+            def route(r):
+                path = urlsplit(r.request.url).path
+                if path == '/':
+                    r.fulfill(body=html, content_type='text/html')
+                elif path.startswith('/static/'):
+                    asset = ROOT / 'moss_transcribe_diarize/app/frontend_assets' / path.removeprefix('/static/')
+                    r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+                else:
+                    r.fulfill(json={'meetings': [meeting.to_dict()], 'voiceprints': [], 'summary': None})
+
+            page.route('**/*', route)
+            page.goto('http://audit.test')
+            page.locator('[data-history-boot="ready"]').wait_for()
+            summary = page.get_by_role('button', name='Open summary', exact=True).bounding_box()
+            assert summary is not None
+            assert page.get_by_role('button', name='Open summary', exact=True).evaluate(
+                '(el) => getComputedStyle(el).position') != 'fixed'
+
+            def overlap(other):
+                if other is None:
+                    return 0
+                return max(0, min(summary['x'] + summary['width'], other['x'] + other['width']) - max(summary['x'], other['x'])) * max(
+                    0, min(summary['y'] + summary['height'], other['y'] + other['height']) - max(summary['y'], other['y']))
+
+            upload = page.get_by_role('button', name='Transcribe files and URLs').bounding_box()
+            nav = page.get_by_role('navigation', name='Workspace').bounding_box()
+            assert overlap(upload) == 0
+            assert overlap(nav) == 0
         finally:
             browser.close()
 

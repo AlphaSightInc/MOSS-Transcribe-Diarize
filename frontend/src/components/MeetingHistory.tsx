@@ -206,6 +206,11 @@ export function MeetingHistory() {
   return (<>
     <section className="panel history-panel account-history-panel" aria-label="Meeting history">
       <div className="panel-body">
+        <div className="summary-entry-row">
+          <button ref={summaryButtonRef} type="button" className="summary-page-entry"
+            aria-label="Open summary" aria-expanded={summaryOpen} disabled={!summaryMeeting || summaryOpen}
+            onClick={() => { summaryPageOpen.value = true; }}>Summary ↗</button>
+        </div>
         <div className="seg history-tabs" role="tablist" aria-label="History views">
           <button
             type="button"
@@ -372,9 +377,6 @@ export function MeetingHistory() {
         </dialog>
       ) : null}
     </section>
-    {createPortal(<button ref={summaryButtonRef} type="button" className="summary-page-entry"
-      aria-label="Open summary" aria-expanded={summaryOpen} disabled={!summaryMeeting || summaryOpen}
-      onClick={() => { summaryPageOpen.value = true; }}>Summary ↗</button>, document.body)}
     {summaryOpen && summaryMeeting && createPortal(
       <main className="summary-page" aria-label="Summary view">
         <div className="summary-page-head">

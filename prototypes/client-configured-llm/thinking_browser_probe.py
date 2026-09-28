@@ -44,7 +44,6 @@ async def run(root, output, source_path):
                     context = await browser.new_context()
                     page = await context.new_page()
                     await bench.open_workspace(page, f'http://localhost:{port}')
-                    await page.get_by_role('button', name='Optional AI summaries · configured', exact=True).click()
                     cookie = next(c['value'] for c in await context.cookies() if c['name'] == phase2.SESSION_COOKIE)
                     account = await app.state.phase2_store.account_for_session(cookie)
                     meeting = await app.state.phase2_store.workspace(account).create_meeting('file')
@@ -52,6 +51,9 @@ async def run(root, output, source_path):
                     await page.locator('[data-history-boot="ready"]').wait_for()
                     await page.get_by_role('button', name='Refresh', exact=True).click()
                     await page.locator(f'.account-history-panel [data-open-meeting="{meeting.meeting_id}"]').click()
+                    await page.locator(f'[data-open-meeting="{meeting.meeting_id}"][aria-pressed="true"]').wait_for()
+                    await page.get_by_role('button', name='Open summary', exact=True).click()
+                    await page.get_by_role('button', name='Optional AI summaries · configured', exact=True).click()
                     results = []
                     for upstream in CONFIG:
                         name, model = upstream['name'], upstream['models'][0]

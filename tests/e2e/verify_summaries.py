@@ -127,6 +127,8 @@ def main():
                 for trial in range(TRIALS):
                     page.locator('[aria-label="Meeting history"]').get_by_role('button', name='Refresh', exact=True).click()
                     page.locator(f'.account-history-panel [data-open-meeting="{meeting_id}"]').click()
+                    page.locator(f'[data-open-meeting="{meeting_id}"][aria-pressed="true"]').wait_for()
+                    page.get_by_role('button', name='Open summary', exact=True).click()
                     page.wait_for_load_state('networkidle')
                     settings = page.locator('[aria-label="Browser AI settings"]').first
                     if not settings.get_by_label('Provider', exact=True).count():
@@ -154,6 +156,7 @@ def main():
                     print(f"  {'PASS' if outcomes[-1] else 'FAIL'}  {provider:8s} {model:26s} {corpus:28s} "
                           f"#{trial} state={artifact.get('state')} error={artifact.get('error_code')} "
                           f"{time.monotonic() - started:.1f}s", flush=True)
+                    page.get_by_role('button', name='Back to meeting', exact=True).click()
         browser.close()
     print(f'\n  {sum(outcomes)}/{len(outcomes)} summaries current')
     return 0 if all(outcomes) else 1

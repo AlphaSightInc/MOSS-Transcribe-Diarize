@@ -44,11 +44,7 @@ async def run(root):
                     context = await browser.new_context()
                     page = await context.new_page()
                     await bench.open_workspace(page, f"http://localhost:{port}")
-                    await page.get_by_role("button", name="Optional AI summaries · configured", exact=True).wait_for()
                     checks = {"default_relay_configured": True, "discovery_does_not_infer": not calls}
-                    await page.get_by_role("button", name="Optional AI summaries · configured", exact=True).click()
-                    await page.get_by_label("Relay model", exact=True).wait_for()
-                    checks["two_models_and_no_key"] = await page.get_by_label("Relay model", exact=True).locator("option").count() == 2 and await page.get_by_label("API key (optional)", exact=True).count() == 0
                     cookie = next(c["value"] for c in await context.cookies() if c["name"] == phase2.SESSION_COOKIE)
                     store = app.state.phase2_store
                     account = await store.account_for_session(cookie)
@@ -57,6 +53,11 @@ async def run(root):
                     await page.locator('[data-history-boot="ready"]').wait_for()
                     await page.get_by_role("button", name="Refresh", exact=True).click()
                     await page.locator(f'[data-open-meeting="{meeting.meeting_id}"]').click()
+                    await page.locator(f'[data-open-meeting="{meeting.meeting_id}"][aria-pressed="true"]').wait_for()
+                    await page.get_by_role("button", name="Open summary", exact=True).click()
+                    await page.get_by_role("button", name="Optional AI summaries · configured", exact=True).click()
+                    await page.get_by_label("Relay model", exact=True).wait_for()
+                    checks["two_models_and_no_key"] = await page.get_by_label("Relay model", exact=True).locator("option").count() == 2 and await page.get_by_label("API key (optional)", exact=True).count() == 0
                     await page.get_by_test_id("final-summary-generate").click()
                     await page.locator('[data-summary-state="current"]').wait_for(timeout=10000)
                     checks["one_fallback"] = [c["model"] for c in calls] == ["primary-model", "primary-model", "fallback-model"]

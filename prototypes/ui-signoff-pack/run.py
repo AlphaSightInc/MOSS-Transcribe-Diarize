@@ -59,7 +59,8 @@ def fixture_page(browser,v,meetings,*,snapshot=None,voiceprints=None,summary=Non
     return page
 
 def open_meeting(page,id):
-    page.locator(f'[data-open-meeting="{id}"]').click();page.wait_for_timeout(200)
+    page.locator(f'[data-open-meeting="{id}"]').click()
+    page.locator(f'[data-open-meeting="{id}"][aria-pressed="true"]').wait_for()
 
 def write_index(out,records):
     grouped={}
@@ -119,6 +120,7 @@ def main():
             if file:
                 saved=file['saved'];page=fixture_page(browser,v,[saved]);open_meeting(page,saved['id'])
                 capture(page,out,'file-final','Replayed genuine file upload and vLLM decode',records)
+                page.get_by_role('button',name='Open summary',exact=True).click()
                 page.get_by_role('button',name='Generate summary',exact=True).click()
                 capture(page,out,'summary-unconfigured','Native no-provider explanation on genuine file meeting',records)
                 page.get_by_role('button',name='Optional AI summaries · off',exact=True).click()
@@ -128,7 +130,8 @@ def main():
                 page.close()
                 for state in ['queued','generating','retry_wait','current','failed','cancelled']:
                     artifact=dict(state=state,attempt_id='wp24-fake-summary',source_version=saved['transcript_version'],artifact_version=1,error_code='provider_unavailable' if state=='failed' else None,document=dict(summary='FAKE ENDPOINT REVIEW: the public interview discusses investment decisions.',topics=[],details=[],speaker_background=[],data_references=[]) if state=='current' else None)
-                    page=fixture_page(browser,v,[saved],summary=artifact);open_meeting(page,saved['id']);page.wait_for_timeout(200)
+                    page=fixture_page(browser,v,[saved],summary=artifact);open_meeting(page,saved['id'])
+                    page.get_by_role('button',name='Open summary',exact=True).click()
                     capture(page,out,'summary-'+state,'Explicit fake summary endpoint response; presentation only',records);page.close()
             interrupted_path=OUT/'interrupted-source.json'
             if interrupted_path.exists():
