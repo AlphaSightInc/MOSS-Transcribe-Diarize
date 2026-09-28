@@ -246,6 +246,10 @@ class ConditionalMicrophoneTerminal:
     def transcribe(self, tape) -> tuple[GeminiSegment, ...]:
         return self.terminal.transcribe(tape) if self.source.ever_voiced else ()
 
+    @property
+    def coverage_gaps(self) -> tuple[tuple[int, int], ...]:
+        return self.terminal.coverage_gaps if self.source.ever_voiced else ()
+
 
 class SerializedDiarizer:
     """One provider batch window in flight across both lanes of a meeting."""
@@ -333,6 +337,7 @@ class LaneGeminiEngine:
         self._rows: dict[str, list[GeminiSegment]] = {lane: [] for lane in self.LANES}
         self._pending_turn_bridges: list[GeminiTurnBridge] = []
         self._previews: dict[str, GeminiPreview | None] = {lane: None for lane in self.LANES}
+        self.terminal_coverage_gaps: tuple[tuple[str | None, int, int], ...] = ()
         self._observations: dict[str, object] = {}
         self._tapes = {lane: _LaneTape(tape_root) for lane in self.LANES}
         self._engines = {
@@ -458,8 +463,11 @@ class LaneGeminiEngine:
     async def finish(self, _mixed_tape) -> Sequence[GeminiSegment]:
         try:
             rows = []
+            gaps = []
             for lane in self.LANES:
                 rows.extend(await self._engines[lane].finish(self._tapes[lane]))
+                gaps.extend(getattr(self._engines[lane], "terminal_coverage_gaps", ()))
+            self.terminal_coverage_gaps = tuple(gaps)
             return tuple(sorted(rows, key=lambda row: (row.start_sample,
                 self.LANES.index(row.source_lane), row.end_sample)))
         finally:

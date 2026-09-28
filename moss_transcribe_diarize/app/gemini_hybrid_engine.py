@@ -13,6 +13,7 @@ from scipy.optimize import linear_sum_assignment
 
 from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
 from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
+from .gemini_coverage import voiced_word_gaps
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .live_provider_bundle import LiveSpeakerJournalObservation
@@ -243,6 +244,7 @@ class GeminiHybridEngine:
         self._idle_timer: threading.Timer | None = None
         self._idle_due = False
         self._streaming_words = callable(getattr(word_source, "bind", None))
+        self.terminal_coverage_gaps: tuple[tuple[str | None, int, int], ...] = ()
         if self._streaming_words:
             word_source.bind(self._on_live_text)
 
@@ -367,10 +369,10 @@ class GeminiHybridEngine:
                 self.report_usage(kind="rolling", count_call=False,
                                   skipped_window_ticks=skipped)
             if window is not None:
-                new_audio = pcm[(voice_start-start)*2:]
-                words = (() if self.voiced_audio is not None and not self.voiced_audio(new_audio)
-                         else self.diarizer.diarize(pcm, deadline=time.monotonic() + 120,
-                                                     kind="rolling", diarize=self.diarize_windows).words)
+                words = self._decode_covered_window(
+                    pcm, start, voice_start, deadline=time.monotonic() + 120)
+                if words is None:
+                    continue
                 with self._lock:
                     if (self._stopping or self._idle_due) and end == self._accepted:
                         # This in-flight call already spans the Stop suffix.
@@ -394,6 +396,26 @@ class GeminiHybridEngine:
                     start_sample=self._committed, end_sample=end,
                 )
                 self.publish(GeminiPreview(end, preview))
+
+    def _decode_covered_window(self, pcm: bytes, start: int, voice_start: int,
+                               *, deadline: float) -> Sequence[GeminiWord] | None:
+        new_audio = pcm[(max(start, min(voice_start, self._rolling_frontier))-start)*2:]
+        if self.voiced_audio is not None and not self.voiced_audio(new_audio):
+            return ()
+        for attempt in range(2):
+            words = self.diarizer.diarize(
+                pcm, deadline=deadline, kind="rolling", diarize=self.diarize_windows).words
+            missing = (self.voiced_audio is not None and (
+                (not words and bool(voiced_word_gaps(
+                    new_audio, (), minimum_voiced_samples=3*LIVE_SAMPLE_RATE)))
+                or bool(voiced_word_gaps(
+                    pcm, tuple((w.start_sample, w.end_sample) for w in words),
+                    minimum_voiced_samples=10*LIVE_SAMPLE_RATE))))
+            if not missing:
+                return words
+            if attempt == 0 and self.report_usage is not None:
+                self.report_usage(kind="rolling", count_call=False, coverage_retry=1)
+        return None
 
     def _publish_window(self, start: int, frontier: int, pcm: bytes,
                         words: Sequence[GeminiWord]) -> None:
@@ -469,18 +491,15 @@ class GeminiHybridEngine:
                 return True
             start = self._rolling_frontier
             pcm = self._read_locked(start, accepted)
-            new_audio = pcm[(max(start, self._last_window_end)-start)*2:]
         try:
-            if self.voiced_audio is not None and not self.voiced_audio(new_audio):
-                words = ()
-            else:
-                result = await asyncio.wait_for(
-                    asyncio.to_thread(self.diarizer.diarize, pcm, deadline=expires,
-                                      kind="rolling", diarize=self.diarize_windows),
-                    timeout=max(0.0, expires - time.monotonic()),
-                )
-                words = result.words
+            words = await asyncio.wait_for(
+                asyncio.to_thread(self._decode_covered_window, pcm, start,
+                                  max(start, self._last_window_end), deadline=expires),
+                timeout=max(0.0, expires - time.monotonic()),
+            )
         except Exception:
+            return False
+        if words is None:
             return False
         self._publish_window(start, accepted, pcm, words)
         return self._rolling_frontier >= accepted
@@ -497,7 +516,11 @@ class GeminiHybridEngine:
         self._executor.shutdown(wait=True)
         if self._streaming_words:
             await self.word_source.finish()
-        return await asyncio.to_thread(self.terminal.transcribe, tape)
+        rows = await asyncio.to_thread(self.terminal.transcribe, tape)
+        self.terminal_coverage_gaps = tuple(
+            (self.source_lane, start, end)
+            for start, end in getattr(self.terminal, "coverage_gaps", ()))
+        return rows
 
     def close(self) -> None:
         """Fence an aborted/failed meeting without waiting on a provider request."""
