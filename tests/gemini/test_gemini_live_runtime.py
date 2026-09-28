@@ -1,5 +1,7 @@
 import asyncio
 import hashlib
+import time
+from dataclasses import replace
 
 import pytest
 
@@ -18,6 +20,8 @@ from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceDescriptor,
 )
 from moss_transcribe_diarize.app.live_session import AudioFrame
+from moss_transcribe_diarize.app.gemini_hybrid_engine import GeminiHybridEngine, FixedWindowScheduler, OverlapRegistry
+from moss_transcribe_diarize.app.gemini_provider import GeminiWord, GeminiWords
 
 
 def descriptor(*, tape_bytes=64000):
@@ -199,6 +203,13 @@ def test_engine_usage_counters_are_per_session_content_free_and_copied(tmp_path)
     first["calls_by_kind"]["rolling"] = 999
     assert rt.engine_diagnostics("one")["calls_by_kind"]["rolling"] == 2
     assert rt.engine_diagnostics("two")["calls_by_kind"] == {"live": 1, "terminal": 1}
+    reporters["one"](kind="live_preview", count_call=False, audio_seconds_sent=2.5,
+                     cost_usd=2.5 * 0.005 / 60, cost_basis="list_price_estimate")
+    estimated = rt.engine_diagnostics("one")
+    assert estimated["calls_by_kind"] == {"live": 1, "rolling": 2}
+    assert estimated["audio_seconds_sent"] == 12.5
+    assert estimated["live_list_price_estimate_usd"] == pytest.approx(2.5 * 0.005 / 60)
+    assert estimated["cost_usd_basis"] == "provider_usage_plus_live_list_price_estimate"
     with pytest.raises(ValueError):
         reporters["one"](kind="rolling", error_code="meeting words")
 
@@ -241,3 +252,97 @@ def test_account_stage_is_terminal_source_and_survives_view_release(tmp_path):
     assert stages.get("one").path.exists()  # Account owns durable audio settlement.
     assert not (tmp_path / "scratch").exists()  # No duplicate whole-recording tape.
     stages.discard("owner", "one")
+
+
+def test_rolling_public_snapshot_contains_speaker_turns(tmp_path):
+    class Diarizer:
+        def diarize(self, _pcm, *, deadline, kind, diarize=True):
+            del deadline, kind, diarize
+            return GeminiWords((GeminiWord("a", "spk:0", 0, 8000),
+                                GeminiWord("b", "spk:0", 12800, 24000),
+                                GeminiWord("c", "spk:0", 51200, 64000),
+                                GeminiWord("d", "spk:1", 67200, 80000)))
+    class EmptyWords:
+        def words(self, _pcm, *, deadline):
+            del deadline
+            return ()
+    class Terminal:
+        def transcribe(self, _tape):
+            return ()
+    base = descriptor()
+    full = replace(base, bounds=replace(base.bounds, max_retained_samples=60*16000,
+                                        max_tape_bytes=20*32000))
+    rt = GeminiLiveRuntime(
+        descriptor=full, tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage: GeminiHybridEngine(
+            publish, word_source=EmptyWords(), window_scheduler=FixedWindowScheduler(),
+            registry=OverlapRegistry(), diarizer=Diarizer(), terminal=Terminal()),
+    )
+    rt.create(session_id="one")
+    for sequence in range(20):
+        rt.accept_frame("one", frame(sequence))
+    until = time.monotonic() + 2
+    while rt.snapshot("one").session.canonical_through_sample < 10*16000 and time.monotonic() < until:
+        time.sleep(0.01)
+    rows = rt.snapshot("one").to_dict()["session"]["effective_transcript"]
+    assert [(row["text"], row["start_sample"], row["end_sample"]) for row in rows] == [
+        ("a b", 0, 24000), ("c", 51200, 64000), ("d", 67200, 80000)]
+    assert rows[0]["canonical_speaker"] == rows[1]["canonical_speaker"]
+    assert rows[1]["canonical_speaker"] != rows[2]["canonical_speaker"]
+    rt._sessions["one"].engine.close()
+
+
+def test_stop_drains_rolling_tail_before_session_closes(tmp_path):
+    async def run():
+        first = GeminiSegment(0, 16000, "first", "speaker-0001")
+        tail = GeminiSegment(16000, 32000, "tail", "speaker-0001")
+        class DrainingEngine(ScriptedGeminiEngine):
+            async def drain_tail(self, deadline):
+                assert deadline > 0
+                self._publish(GeminiBase(32000, ()))
+                self._publish(GeminiRolling(16000, 32000, (tail,)))
+                return True
+        rt = GeminiLiveRuntime(
+            descriptor=descriptor(tape_bytes=16000), tape_storage_root=tmp_path,
+            engine_factory=lambda _id, publish, _usage: DrainingEngine(
+                publish, batches=[(GeminiBase(16000, ()), GeminiRolling(0, 16000, (first,))), ()],
+                terminal=()),
+        )
+        rt.create(session_id="one")
+        rt.accept_frame("one", frame(0))
+        rt.accept_frame("one", frame(1))
+        before = rt.snapshot("one").session
+        assert before.canonical_through_sample == 16000
+        stopped = await rt.stop("one", 1.0)
+        assert stopped.session.status == "closed"
+        assert stopped.session.canonical_through_sample == stopped.session.accepted_samples == 32000
+        assert [(row.text, row.authority) for row in stopped.session.effective_transcript] == [
+            ("first", "rolling"), ("tail", "rolling")]
+    asyncio.run(run())
+
+
+def test_streaming_preview_reaches_public_snapshot_before_rolling(tmp_path):
+    class FastSource:
+        def bind(self, listener): self.listener = listener
+        def push_audio(self, start_sample, pcm16):
+            self.listener("fast words", start_sample, start_sample + len(pcm16)//2, False)
+        async def finish(self): pass
+        def close(self): pass
+    class Diarizer:
+        def diarize(self, _pcm, *, deadline, kind, diarize=True):
+            return GeminiWords(())
+    class Terminal:
+        def transcribe(self, _tape): return ()
+    rt = GeminiLiveRuntime(
+        descriptor=descriptor(), tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage: GeminiHybridEngine(
+            publish, word_source=FastSource(), window_scheduler=FixedWindowScheduler(),
+            registry=OverlapRegistry(), diarizer=Diarizer(), terminal=Terminal()),
+    )
+    rt.create(session_id="one")
+    rt.accept_frame("one", frame(0))
+    session = rt.snapshot("one").to_dict()["session"]
+    assert session["committed_samples"] == 0
+    assert session["effective_transcript"] == []
+    assert "[S00]fast words" in session["provisional"]["transcript"]
+    rt._sessions["one"].engine.close()

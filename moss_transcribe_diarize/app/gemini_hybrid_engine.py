@@ -12,7 +12,7 @@ from typing import Callable, Protocol, Sequence
 from scipy.optimize import linear_sum_assignment
 
 from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment, GeminiUpdate
-from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments
+from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .live_provider_bundle import LiveSpeakerJournalObservation
@@ -139,7 +139,7 @@ class GeminiHybridEngine:
                  diarizer: WindowDiarizer, terminal: TerminalTranscriber,
                  embedding_source: Callable[[bytes, int, Sequence[GeminiWord]],
                                             dict[str, tuple[tuple[float, ...], float]]] | None = None,
-                 encoder_spec: object | None = None):
+                 encoder_spec: object | None = None, word_gate=None):
         self.publish = publish
         self.word_source = word_source
         self.window_scheduler = window_scheduler
@@ -148,6 +148,7 @@ class GeminiHybridEngine:
         self.terminal = terminal
         self.embedding_source = embedding_source
         self.encoder_spec = encoder_spec
+        self.word_gate = word_gate
         self._recent_audio = bytearray()
         self._recent_start = 0
         self._lock = threading.RLock()
@@ -159,7 +160,41 @@ class GeminiHybridEngine:
         self._last_window_end = 0
         self._last_preview_end = 0
         self._fast_words: list[GeminiWord] = []
+        self._live_finals: list[GeminiWord] = []
+        self._live_interim: GeminiWord | None = None
+        self._stopping = False
         self._closed = False
+        self._streaming_words = callable(getattr(word_source, "bind", None))
+        if self._streaming_words:
+            word_source.bind(self._on_live_text)
+
+    def _on_live_text(self, text: str, start_sample: int, end_sample: int,
+                      final: bool) -> None:
+        if not text.strip():
+            return
+        with self._lock:
+            if self._closed or end_sample <= self._committed:
+                return
+            row = GeminiWord(text.strip(), "spk:?", start_sample, end_sample)
+            if final:
+                self._live_finals.append(row)
+                self._live_interim = None
+            else:
+                self._live_interim = row
+            self._live_finals = [w for w in self._live_finals if w.end_sample > self._committed]
+            self._fast_words = list(self._live_finals)
+            if self._live_interim is not None:
+                self._fast_words.append(self._live_interim)
+            self._degrade_if_needed()
+            end = min(self._accepted, max(self._committed, end_sample))
+            if end <= self._committed:
+                return
+            preview = ordered_segments(
+                tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1), w.text)
+                      for w in self._fast_words if w.end_sample > self._committed),
+                start_sample=self._committed, end_sample=end,
+            )
+            self.publish(GeminiPreview(end, preview))
 
     def push_audio(self, start_sample: int, pcm16: bytes) -> None:
         with self._lock:
@@ -176,6 +211,8 @@ class GeminiHybridEngine:
             self._degrade_if_needed()
             if self._future is None or self._future.done():
                 self._future = self._executor.submit(self._work)
+        if self._streaming_words:
+            self.word_source.push_audio(start_sample, pcm16)
 
     def _read_locked(self, start: int, end: int) -> bytes:
         if start < self._recent_start or end > self._accepted:
@@ -195,16 +232,18 @@ class GeminiHybridEngine:
         self.publish(GeminiBase(through, rows, degraded=True))
         self._committed = through
         self._fast_words = [w for w in self._fast_words if w.start_sample >= through]
+        self._live_finals = [w for w in self._live_finals if w.end_sample > through]
 
     def _work(self) -> None:
         # Every loop inspects the latest accepted position. Slow calls are coalesced, not queued.
         while True:
             with self._lock:
-                if self._closed:
+                if self._closed or self._stopping:
                     return
                 accepted = self._accepted
                 window = self.window_scheduler.next_window(accepted, self._last_window_end)
-                preview_due = accepted >= 10 * LIVE_SAMPLE_RATE and accepted - self._last_preview_end >= 3 * LIVE_SAMPLE_RATE
+                preview_due = (not self._streaming_words and accepted >= 10 * LIVE_SAMPLE_RATE
+                               and accepted - self._last_preview_end >= 3 * LIVE_SAMPLE_RATE)
                 if window is None and not preview_due:
                     return
                 if window is not None:
@@ -218,40 +257,13 @@ class GeminiHybridEngine:
             if window is not None:
                 words = self.diarizer.diarize(pcm, deadline=time.monotonic() + 120,
                                               kind="rolling").words
-                absolute = tuple(GeminiWord(w.text, w.speaker, w.start_sample + start,
-                                             w.end_sample + start) for w in words)
-                embeddings = (self.embedding_source(pcm, start, absolute)
-                              if self.embedding_source is not None else {})
-                mapping, relabels = self.registry.observe_window(start / LIVE_SAMPLE_RATE,
-                                                                 absolute, embeddings)
-                observations = ()
-                if self.encoder_spec is not None:
-                    spec = self.encoder_spec
-                    observations = tuple(LiveSpeakerJournalObservation(
-                        speaker_label=mapping[local], centroid=vector, sample_seconds=seconds,
-                        exemplar_count=1, provisional=False,
-                        embedder_id=f"{spec.provider}:{spec.revision}",
-                        embedder_state_sha=spec.state_sha256,
-                    ) for local, (vector, seconds) in embeddings.items() if local in mapping)
                 with self._lock:
-                    old = self._rolling_frontier
-                    if frontier > old:
-                        if frontier > self._committed:
-                            self.publish(GeminiBase(frontier, ()))
-                            self._committed = frontier
-                        rows = ordered_segments(
-                            tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
-                                                w.text, mapping[w.speaker]) for w in absolute
-                                  if old <= w.start_sample < frontier),
-                            start_sample=old, end_sample=frontier,
-                        )
-                        visible = {row.speaker for row in rows}
-                        self.publish(GeminiRolling(old, frontier, rows,
-                                                   tuple(obs for obs in observations
-                                                         if obs.speaker_label in visible)))
-                        self._rolling_frontier = frontier
-                    for update in relabels:
-                        self.publish(update)
+                    if self._stopping and end == self._accepted:
+                        # This in-flight call already spans the Stop suffix.
+                        # Publish its held-back ten seconds instead of making
+                        # a second sequential request under the Stop deadline.
+                        frontier = end
+                self._publish_window(start, frontier, pcm, words)
                 continue
             words = self.word_source.words(pcm, deadline=time.monotonic() + 60)
             absolute = [GeminiWord(w.text, w.speaker, w.start_sample + start,
@@ -267,6 +279,74 @@ class GeminiHybridEngine:
                 )
                 self.publish(GeminiPreview(end, preview))
 
+    def _publish_window(self, start: int, frontier: int, pcm: bytes,
+                        words: Sequence[GeminiWord]) -> None:
+        absolute = tuple(GeminiWord(w.text, w.speaker, w.start_sample + start,
+                                     w.end_sample + start) for w in words)
+        if self.word_gate is not None:
+            absolute = self.word_gate.filter(pcm, absolute, offset_sample=start)
+        embeddings = (self.embedding_source(pcm, start, absolute)
+                      if self.embedding_source is not None else {})
+        mapping, relabels = self.registry.observe_window(start / LIVE_SAMPLE_RATE,
+                                                         absolute, embeddings)
+        observations = ()
+        if self.encoder_spec is not None:
+            spec = self.encoder_spec
+            observations = tuple(LiveSpeakerJournalObservation(
+                speaker_label=mapping[local], centroid=vector, sample_seconds=seconds,
+                exemplar_count=1, provisional=False,
+                embedder_id=f"{spec.provider}:{spec.revision}",
+                embedder_state_sha=spec.state_sha256,
+            ) for local, (vector, seconds) in embeddings.items() if local in mapping)
+        with self._lock:
+            old = self._rolling_frontier
+            if frontier > old:
+                if frontier > self._committed:
+                    self.publish(GeminiBase(frontier, ()))
+                    self._committed = frontier
+                rows = speaker_turns(ordered_segments(
+                    tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
+                                        w.text, mapping[w.speaker]) for w in absolute
+                          if old <= w.start_sample < frontier),
+                    start_sample=old, end_sample=frontier,
+                ))
+                visible = {row.speaker for row in rows}
+                self.publish(GeminiRolling(old, frontier, rows,
+                                           tuple(obs for obs in observations
+                                                 if obs.speaker_label in visible)))
+                self._rolling_frontier = frontier
+                self._live_finals = [w for w in self._live_finals if w.end_sample > self._committed]
+                self._fast_words = [w for w in self._fast_words if w.end_sample > self._committed]
+            for update in relabels:
+                self.publish(update)
+
+    async def drain_tail(self, deadline: float) -> bool:
+        expires = time.monotonic() + deadline
+        with self._lock:
+            self._stopping = True
+            future = self._future
+        if future is not None:
+            try:
+                await asyncio.wait_for(asyncio.shield(asyncio.wrap_future(future)),
+                                       timeout=max(0.0, expires - time.monotonic()))
+            except Exception:
+                return False
+        with self._lock:
+            accepted = self._accepted
+            if self._rolling_frontier >= accepted:
+                return True
+            start = max(0, accepted - 60 * LIVE_SAMPLE_RATE)
+            pcm = self._read_locked(start, accepted)
+        try:
+            result = await asyncio.wait_for(
+                asyncio.to_thread(self.diarizer.diarize, pcm, deadline=expires, kind="rolling"),
+                timeout=max(0.0, expires - time.monotonic()),
+            )
+        except Exception:
+            return False
+        self._publish_window(start, accepted, pcm, result.words)
+        return self._rolling_frontier >= accepted
+
     async def finish(self, tape: CompleteMixedTape) -> Sequence[GeminiSegment]:
         with self._lock:
             self._closed = True
@@ -274,6 +354,8 @@ class GeminiHybridEngine:
         if future is not None:
             await asyncio.to_thread(future.result)
         self._executor.shutdown(wait=True)
+        if self._streaming_words:
+            await self.word_source.finish()
         return await asyncio.to_thread(self.terminal.transcribe, tape)
 
     def close(self) -> None:
@@ -282,3 +364,5 @@ class GeminiHybridEngine:
         # the runtime holds its lock on this failure path.
         self._closed = True
         self._executor.shutdown(wait=False, cancel_futures=True)
+        if self._streaming_words:
+            self.word_source.close()

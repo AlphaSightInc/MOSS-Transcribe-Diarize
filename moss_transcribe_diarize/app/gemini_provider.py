@@ -60,6 +60,22 @@ def ordered_segments(rows: Sequence[GeminiSegment], *, start_sample: int,
     return tuple(result)
 
 
+def speaker_turns(rows: Sequence[GeminiSegment]) -> tuple[GeminiSegment, ...]:
+    """Group ordered words by speaker with the common 1.5-second gap rule."""
+    turns: list[GeminiSegment] = []
+    max_gap = 3 * LIVE_SAMPLE_RATE // 2
+    for row in rows:
+        if (turns and turns[-1].speaker == row.speaker
+                and turns[-1].source_lane == row.source_lane
+                and row.start_sample - turns[-1].end_sample <= max_gap):
+            prior = turns[-1]
+            turns[-1] = GeminiSegment(prior.start_sample, max(prior.end_sample, row.end_sample),
+                                      prior.text + " " + row.text, prior.speaker, prior.source_lane)
+        else:
+            turns.append(row)
+    return tuple(turns)
+
+
 def _wav(pcm16: bytes) -> bytes:
     with io.BytesIO() as out:
         with wave.open(out, "wb") as wav:
@@ -182,11 +198,13 @@ class WindowDiarizer:
 class TerminalTranscriber:
     """Whole-meeting chunk pass; overlap resolves local labels by word-time agreement."""
 
-    def __init__(self, diarizer: WindowDiarizer, *, chunk_seconds: int = 1200,
-                 overlap_seconds: int = 20):
+    def __init__(self, diarizer: WindowDiarizer, *, chunk_seconds: int = 1800,
+                 overlap_seconds: int = 20, identity_policy=None, word_gate=None):
         if not 0 < overlap_seconds < chunk_seconds <= 1800:
             raise ValueError("terminal chunks must be at most 30 minutes with a smaller overlap")
         self.diarizer = diarizer
+        self.identity_policy = identity_policy
+        self.word_gate = word_gate
         self.chunk_samples = chunk_seconds * LIVE_SAMPLE_RATE
         self.overlap_samples = overlap_seconds * LIVE_SAMPLE_RATE
 
@@ -231,8 +249,14 @@ class TerminalTranscriber:
             if stop == end:
                 break
             start = stop - self.overlap_samples
-        return ordered_segments(
+        if self.identity_policy is not None or self.word_gate is not None:
+            pcm = tape.read(start_sample=0, end_sample=end)
+            if self.identity_policy is not None:
+                all_words = list(self.identity_policy.remap(all_words, pcm))
+            if self.word_gate is not None:
+                all_words = list(self.word_gate.filter(pcm, all_words))
+        return speaker_turns(ordered_segments(
             tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
                                 w.text, w.speaker) for w in all_words),
             start_sample=0, end_sample=end,
-        )
+        ))

@@ -56,9 +56,27 @@ def test_terminal_overlap_maps_local_labels_and_keeps_one_owner(tmp_path):
     tape = CompleteMixedTape(epoch=0, capacity_bytes=7*32000, storage_root=tmp_path)
     tape.append(start_sample=0, pcm=bytes(7*32000))
     rows = TerminalTranscriber(provider, chunk_seconds=4, overlap_seconds=1).transcribe(tape)
-    assert [row.text for row in rows] == ["a", "b", "c"]
+    assert [row.text for row in rows] == ["a", "b c"]
     assert len({row.speaker for row in rows}) == 1
-    assert [row.start_sample for row in rows] == [0, 48000, 80000]
+    assert [row.start_sample for row in rows] == [0, 48000]
+    tape.release()
+
+
+def test_terminal_publishes_speaker_turns_with_1_5_second_gap_limit(tmp_path):
+    fake = FakeInteractions([response(
+        word("a", "spk:0", 0, 1), word("b", "spk:0", 1.4, 2),
+        word("c", "spk:0", 2.5, 3), word("d", "spk:1", 3.1, 4),
+        word("e", "spk:1", 5.8, 6),
+    )])
+    provider = WindowDiarizer(SimpleNamespace(interactions=fake), lambda **_row: None)
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=7*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(7*32000))
+    rows = TerminalTranscriber(provider).transcribe(tape)
+    assert [(row.text, row.start_sample, row.end_sample) for row in rows] == [
+        ("a b c", 0, 3*16000), ("d", 49600, 4*16000),
+        ("e", 92800, 6*16000),
+    ]
+    assert rows[0].speaker != rows[1].speaker == rows[2].speaker
     tape.release()
 
 
@@ -85,3 +103,25 @@ def test_all_5xx_retry_but_4xx_other_than_429_do_not(monkeypatch):
     with pytest.raises(RuntimeError, match="400"):
         provider.diarize(bytes(32000), deadline=time.monotonic()+5)
     assert len(refused.requests) == 1 and usage[-1]["retry_code"] is None
+
+
+def test_terminal_applies_selected_identity_and_word_gate_before_turns(tmp_path):
+    fake = FakeInteractions([response(word("a", "spk:0", 0, 1),
+                                      word("silent", "spk:1", 2, 3))])
+    provider = WindowDiarizer(SimpleNamespace(interactions=fake), lambda **_row: None)
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=4*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(4*32000))
+    seen = []
+    class Policy:
+        def remap(self, words, pcm):
+            seen.append(("identity", len(pcm)))
+            return tuple(type(w)(w.text, "one", w.start_sample, w.end_sample) for w in words)
+    class Gate:
+        def filter(self, pcm, words, **kwargs):
+            seen.append(("gate", len(words)))
+            return tuple(w for w in words if w.text != "silent")
+    rows = TerminalTranscriber(provider, identity_policy=Policy(), word_gate=Gate()).transcribe(tape)
+    assert seen == [("identity", 4*32000), ("gate", 2)]
+    assert [(r.text, r.speaker) for r in rows] == [("a", "one")]
+    assert len(fake.requests) == 1
+    tape.release()

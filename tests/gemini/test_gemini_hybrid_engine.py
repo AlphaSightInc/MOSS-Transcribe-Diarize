@@ -48,6 +48,30 @@ def test_normal_frontier_and_preview_are_separate(tmp_path):
     tape.release()
 
 
+def test_stop_drain_requests_and_publishes_remaining_rolling_window():
+    updates = []
+    class TailDiarizer:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            del deadline, kind, diarize
+            end = len(pcm16) // 2
+            return GeminiWords((GeminiWord("tail", "spk:0", end-2*16000, end-16000),))
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(), window_scheduler=FixedWindowScheduler(),
+        registry=OverlapRegistry(), diarizer=TailDiarizer(), terminal=FakeTerminal())
+    for second in range(30):
+        engine.push_audio(second*16000, bytes(32000))
+        if second in {9, 19, 29}:
+            engine._future.result(timeout=5)
+    assert engine._rolling_frontier == 20*16000
+    assert asyncio.run(engine.drain_tail(1.0))
+    tail = [row for row in updates if isinstance(row, GeminiRolling)
+            and row.start_sample == 20*16000 and row.end_sample == 30*16000]
+    assert len(tail) == 1
+    assert [(row.text, row.start_sample, row.end_sample) for row in tail[0].segments] == [
+        ("tail", 28*16000, 29*16000)]
+    engine.close()
+
+
 def test_slow_rolling_activates_degraded_base_before_retention(tmp_path):
     updates = []
     engine = make_engine(updates)
@@ -149,3 +173,58 @@ def test_wespeaker_window_source_uses_attributed_two_second_interval():
              GeminiWord("short", "spk:1", 64000, 72000))
     result = WeSpeakerWindowEmbeddings(Encoder())(bytes(5*32000), 0, words)
     assert result == {"spk:0": ((0.6, 0.8), 3.0)}
+
+
+def test_rolling_word_gate_runs_before_registry_and_publication():
+    updates = []
+    class Gate:
+        def filter(self, pcm, words, *, offset_sample):
+            assert offset_sample == 10*16000
+            assert len(pcm) == 10*32000
+            assert [w.text for w in words] == ["silent", "voiced"]
+            return tuple(w for w in words if w.text == "voiced")
+    class Registry(OverlapRegistry):
+        def observe_window(self, start, words, embeddings=None):
+            assert [w.text for w in words] == ["voiced"]
+            return super().observe_window(start, words, embeddings)
+    engine = GeminiHybridEngine(updates.append, word_source=FakeWords(),
+        window_scheduler=FixedWindowScheduler(), registry=Registry(),
+        diarizer=FakeDiarizer(), terminal=FakeTerminal(), word_gate=Gate())
+    engine._publish_window(10*16000, 20*16000, bytes(10*32000), (
+        GeminiWord("silent", "s0", 0, 16000),
+        GeminiWord("voiced", "s1", 16000, 32000)))
+    rolls = [u for u in updates if isinstance(u, GeminiRolling)]
+    assert len(rolls) == 1 and [r.text for r in rolls[0].segments] == ["voiced"]
+    engine.close()
+
+
+def test_stop_promotes_inflight_window_covering_accepted_tail():
+    updates = []
+    started = threading.Event()
+    release = threading.Event()
+    calls = []
+    class SlowDiarizer:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            calls.append(len(pcm16))
+            started.set()
+            release.wait(2)
+            return GeminiWords((GeminiWord("tail", "s0", 45*16000, 49*16000),))
+    engine = GeminiHybridEngine(updates.append, word_source=FakeWords(),
+        window_scheduler=FixedWindowScheduler(), registry=OverlapRegistry(),
+        diarizer=SlowDiarizer(), terminal=FakeTerminal())
+    with engine._lock:
+        engine._recent_audio = bytearray(50*32000)
+        engine._accepted = 50*16000
+        engine._last_window_end = 40*16000
+        engine._rolling_frontier = engine._committed = 30*16000
+    engine._future = engine._executor.submit(engine._work)
+    assert started.wait(2)
+    async def stop():
+        task = asyncio.create_task(engine.drain_tail(2))
+        await asyncio.sleep(.02)
+        release.set()
+        return await task
+    assert asyncio.run(stop())
+    assert engine._rolling_frontier == 50*16000
+    assert len(calls) == 1
+    engine.close()

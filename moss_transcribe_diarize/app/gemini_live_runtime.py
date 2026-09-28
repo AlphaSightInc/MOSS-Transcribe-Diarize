@@ -158,6 +158,9 @@ class GeminiEngine(Protocol):
     def push_audio(self, start_sample: int, pcm16: bytes) -> None:
         """Enqueue accepted 16 kHz mono PCM; publish via the supplied callback."""
 
+    async def drain_tail(self, deadline: float) -> bool:
+        """Try to label the accepted suffix before the session closes."""
+
     async def finish(self, tape: CompleteMixedTape) -> Sequence[GeminiSegment]:
         """Flush live work, then return the whole-recording transcript."""
 
@@ -184,6 +187,10 @@ class ScriptedGeminiEngine:
                 self._publish(update)
         self._frame_index += 1
 
+    async def drain_tail(self, deadline: float) -> bool:
+        del deadline
+        return False
+
     async def finish(self, tape: CompleteMixedTape) -> Sequence[GeminiSegment]:
         del tape
         return self._terminal
@@ -208,6 +215,7 @@ class _GeminiState:
     dropped_words: int = 0
     audio_seconds_sent: float = 0.0
     cost_usd: float = 0.0
+    live_list_price_estimate_usd: float = 0.0
     degraded_path_activations: int = 0
     window_lag_samples: list[int] = field(default_factory=list)
     preview_lag_samples: list[int] = field(default_factory=list)
@@ -422,6 +430,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         dropped_words: int = 0,
         audio_seconds_sent: float = 0.0,
         cost_usd: float = 0.0,
+        count_call: bool = True,
+        cost_basis: str = "provider_usage",
     ) -> None:
         """Record one provider request attempt, with operational metadata only."""
 
@@ -432,9 +442,12 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             raise ValueError("word-timing anomaly counts must be nonnegative integers.")
         if any(not math.isfinite(value) or value < 0 for value in (audio_seconds_sent, cost_usd)):
             raise ValueError("engine audio seconds and cost must be finite and nonnegative.")
+        if not isinstance(count_call, bool) or cost_basis not in {"provider_usage", "list_price_estimate"}:
+            raise ValueError("engine call count and cost basis must be operational metadata.")
         with self._lock:
             state = self._get(session_id)
-            state.calls_by_kind[kind] = state.calls_by_kind.get(kind, 0) + 1
+            if count_call:
+                state.calls_by_kind[kind] = state.calls_by_kind.get(kind, 0) + 1
             for counters, code in ((state.errors_by_code, error_code),
                                    (state.retries_by_code, retry_code)):
                 if code is not None:
@@ -443,6 +456,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.dropped_words += dropped_words
             state.audio_seconds_sent += audio_seconds_sent
             state.cost_usd += cost_usd
+            if cost_basis == "list_price_estimate":
+                state.live_list_price_estimate_usd += cost_usd
 
     def engine_diagnostics(self, session_id: str) -> dict[str, object]:
         """Copy one meeting's content-free provider totals for QA and operator harnesses."""
@@ -456,6 +471,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "timing_anomalies": {"clamped": state.clamped_words, "dropped": state.dropped_words},
                 "audio_seconds_sent": state.audio_seconds_sent,
                 "cost_usd": state.cost_usd,
+                "cost_usd_basis": ("provider_usage_plus_live_list_price_estimate"
+                                   if state.live_list_price_estimate_usd else "provider_usage"),
+                "live_list_price_estimate_usd": state.live_list_price_estimate_usd,
                 "degraded_path_activations": state.degraded_path_activations,
                 "window_lag_seconds": _lag_summary(state.window_lag_samples),
                 "preview_lag_seconds": _lag_summary(state.preview_lag_samples),
@@ -544,7 +562,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 self._raise_terminal(state)
                 if state.stop_task is None:
                     self._record_event(state, "stop_requested", {})
-                    state.stop_task = asyncio.create_task(self._finish_stop(state))
+                    state.stop_task = asyncio.create_task(self._finish_stop(state, deadline))
                 task = state.stop_task
         try:
             return await asyncio.wait_for(asyncio.shield(task), timeout=max(0.0, deadline))
@@ -553,8 +571,15 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 return task.result()
             raise LiveServiceStopPending("live service stop deadline expired; drain continues on the server.") from exc
 
-    async def _finish_stop(self, state: _GeminiState) -> LiveServiceSnapshot:
+    async def _finish_stop(self, state: _GeminiState, deadline: float) -> LiveServiceSnapshot:
+        drained = False
+        if state.engine is not None and deadline > 0:
+            try:
+                drained = await asyncio.wait_for(state.engine.drain_tail(deadline), timeout=deadline)
+            except Exception:
+                pass  # Preserve the existing empty-base Stop fallback.
         with self._lock:
+            self._record_event(state, "stop_tail_drain", {"drained": drained})
             snapshot = state.session.snapshot()
             if snapshot.accepted_samples > snapshot.committed_samples:
                 span = state.session.freeze_until(snapshot.accepted_samples, reason="stop_flush")

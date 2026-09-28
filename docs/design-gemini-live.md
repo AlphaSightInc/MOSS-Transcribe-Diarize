@@ -44,8 +44,10 @@ bars across the acceptance population remain unmeasured here.
    16,000 samples exactly. Account also owns durable MP3 recovery.
 3. `gemini_hybrid_engine.py` keeps a bounded 70-second, 2.24 MB live PCM cache for window
    requests: a 60-second window can end up to 10 seconds behind current capture because
-   windows end on stride boundaries. The Account stage supplies full audio at Stop. Its placeholder
-   `BatchTailWordSource` asks for the last 10 seconds every 3 seconds, preview only. Its
+   windows end on stride boundaries. The Account stage supplies full audio at Stop. Its measured W3 `GeminiLiveWordSource` streams accepted audio to
+   `gemini-3.5-transcribe-live` with TEXT, 500 ms automatic silence detection,
+   a 2 s Stop flush and 5 s buffered replay on bounded reconnect. It feeds preview
+   only. The legacy batch source remains available for isolated tests. Its
    `FixedWindowScheduler` asks for up to 60 seconds every 10 seconds, with a 10-second
    holdback. Warm-up windows start at 20 seconds. Its `OverlapRegistry` uses a Hungarian
    word-time co-occurrence assignment to keep IDs stable as Gemini changes local labels.
@@ -67,21 +69,29 @@ bars across the acceptance population remain unmeasured here.
    rows to stay within retention; later rolling supersedes them. The count is exposed.
    `revise_rolling_interval` remains the narrow later speaker correction operation; it
    preserves exact text while changing speaker boundaries/IDs.
-6. On Stop, the remaining accepted suffix is accounted as an empty base span. Terminal
-   Transcribe processes default 20-minute chunks with 20-second overlap, maps chunk-local
+6. On Stop, the engine requests one final rolling window through accepted audio within the
+   5 s configured deadline. If it misses that deadline, the remaining suffix is accounted
+   as an empty base span. Terminal Transcribe makes one whole-recording call up to 30 minutes,
+   then 30-minute chunks with 20-second overlap beyond that, and maps chunk-local
    labels by overlap word time, and maps final labels to live meeting IDs by sample overlap
    through `terminal_speaker_mapping`. New unmatched labels receive new meeting IDs. A final
    revision owns the whole recording, and the stage view is released. Missing/degraded
    tape becomes `unavailable`; a terminal provider failure becomes visible `failed`.
+   Final words follow the measured policy: same-label turns join across gaps up to 1.5 s;
+   WeSpeaker embeds eligible attributed spans; centroids merge by descending cosine at
+   0.65 unless a 2 s A-B-A turn pattern vetoes a pair. Production WebRTC mode 1, 10 ms
+   frames removes words with no voice in a padded 0.2 s interval. Rolling words use the
+   same gate. The final label map still uses `terminal_speaker_mapping`.
 7. After a rolling speaker row spans at least 2 seconds, the pinned production WeSpeaker
    encoder embeds that exact tape interval. `LiveSpeakerJournalObservation` is available
    through `_identity_observations` and `_identity_match_observations` before settlement.
    Account's existing name/enroll and next-meeting match path consumes it. An offline
    two-meeting test enrolled one voice and auto-matched the same vector in the second.
 
-The exact one-file policy swap points are `BatchTailWordSource` (pane 5.2 words winner) and
-`OverlapRegistry` (pane 6.1 continuity winner) in `gemini_hybrid_engine.py`. The stable
-interfaces are `WordSource.words(pcm16, deadline)` and
+The preview source is selected in `phase2_web_cli.py` as `GeminiLiveWordSource`; its
+implementation is `gemini_live_words.py`. The remaining continuity swap point is
+`OverlapRegistry` in `gemini_hybrid_engine.py`. The stable
+interfaces are `WordSource.bind(listener)/push_audio(start, pcm16)` and
 `SpeakerRegistry.observe_window(window_start_s, words, embeddings|None) ->
 (assignments, relabels)`. The current engine computes pinned WeSpeaker vectors from ≥2-second Gemini-local intervals,
 passes them into that argument before assignment, and publishes the same vectors under
@@ -133,10 +143,34 @@ observed buckets, again missing the soft 5-second target. This is software integ
 evidence, with partial rtfl90 timed reference coverage 60.9/90 seconds; no DER/WER verdict.
 Receipt: `/Users/gao/Documents/Codex/2026-09-28/moss-gemini/evidence/P63/phase2-public-http-90.json`.
 
+## F3 public replay after W3 and final policy
+
+The paced H1 #3 Javier50 case is software integration evidence, not an accept6 aggregate.
+The second replay reported one Live connection, four rolling calls, and one terminal call;
+clamped/dropped timing anomalies were **0/1, 0/4, 0/1 calls** respectively. No errors
+or retries occurred. It sent 242 audio seconds across overlapping requests and Live
+streaming, costing $0.0138433 including a $0.0043333 Live list-price estimate.
+Accepted/accounted were **800,000/800,000 samples**. Stop drain
+reported `true`; final rendered **one turn** with DER **.019999** and WER **.088496**.
+Public-snapshot polling at 250 ms observed preview text in 50/50 one-second buckets;
+word p50 was 0.0 s on this coarse bucket metric, while labelled rows appeared in
+29/50 buckets at p50 17.263 s. The earlier run's Stop drain missed the deadline,
+so this paired replay specifically tests the in-flight promotion. Receipt:
+`evidence/P63/h1-fixes-public-javier-after-stop.json`.
+
+The H1 `settled` capture occurs **before** Stop, so it still measures .446 DER and a
+30/50 s committed frontier; it cannot assess the later successful drain. The Stop event
+and final snapshot prove 50/50 s accounted, but a post-drain/pre-terminal snapshot is
+needed to score the drained rolling surface itself.
+
 ## Decision state
 
-The provider, lifecycle, Account/voiceprint and HTTP wiring are implemented. The placeholder
-fast-word source is **not latency-qualified**. The measured pane 5.2 words source and pane
-6.1 registry replace their single policy classes; a 1.0× acceptance population run then
-tests the hard live/final diarization and passage-coverage bars. Sparse acquired 5-minute
-and acquired 30-minute references are diagnostic only, per the lead's corpus audit.
+The provider, lifecycle, Account/voiceprint and HTTP wiring are implemented. W3 preview
+reached the public snapshot in the paced Javier case. The selected final policy produced one
+turn and .020 final DER on that case against H1 #3. The first Stop tail drain missed the
+5 s deadline. A TDD repair promoted an in-flight window that already covered accepted audio;
+the second paced replay drained successfully with 4 rolling calls instead of 5. The H1
+harness samples its settled surface **before** Stop and still reports .446 DER with a 30/50 s
+frontier. Post-Stop, pre-terminal coverage must be measured separately to credit the drain.
+Neither single-case result is a population qualification. Pane 6.1 still owns the continuity winner; the current registry is the
+short-window overlap placeholder. Sparse acquired references remain diagnostic only.

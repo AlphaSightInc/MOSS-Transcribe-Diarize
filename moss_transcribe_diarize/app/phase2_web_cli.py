@@ -143,8 +143,10 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     """Load the provider key only here; MOSS model/GPU construction stays outside this path."""
     from google import genai
     from google.genai import types
-    from .gemini_hybrid_engine import (BatchTailWordSource, FixedWindowScheduler,
+    from .gemini_hybrid_engine import (FixedWindowScheduler,
                                        GeminiHybridEngine, OverlapRegistry, WeSpeakerWindowEmbeddings)
+    from .gemini_live_words import GeminiLiveWordSource
+    from .gemini_final_policy import FinalWordPolicy, WebRtcWordGate
     from .gemini_live_runtime import GeminiLiveRuntime
     from .gemini_provider import WindowDiarizer, TerminalTranscriber
     from .live_provider_bundle import LiveProviderBundleConfig, _bounds, _identity_encoder
@@ -165,7 +167,9 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     bounds = _bounds(config.bounds_config)
     encoder = _identity_encoder(config)
     policy = {"model": "gemini-3.5-transcribe", "window_seconds": 60,
-              "stride_seconds": 10, "holdback_seconds": 10, "terminal_chunk_seconds": 1200}
+              "stride_seconds": 10, "holdback_seconds": 10, "terminal_chunk_seconds": 1800,
+              "terminal_merge_cosine": 0.65, "terminal_converse_gap_seconds": 2,
+              "word_gate": "webrtc-mode1-10ms-pad200ms"}
     identity_policy = {
         "registry": "word-time-overlap-hungarian",
         "voiceprint": f"{encoder.spec.provider}:{encoder.spec.revision}",
@@ -175,10 +179,11 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     descriptor = LiveServiceDescriptor(
         source_revision=config.source_revision,
         provider_name="gemini-3.5-transcribe",
-        provider_revision="hybrid-placeholder-v1",
+        provider_revision="hybrid-w3-final-v2",
         provider_manifest_hash=hash_config({"gemini_policy": policy, "identity": identity_policy}),
         config_hashes=LiveServiceConfigHashes.from_parts(
-            endpoint_config={"preview_seconds": 10, "preview_stride_seconds": 3},
+            endpoint_config={"preview_model": "gemini-3.5-transcribe-live",
+                             "preview_vad_silence_ms": 500, "preview_replay_seconds": 5},
             identity_config=identity_policy,
             decoder_config=policy,
         ),
@@ -190,15 +195,18 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     def factory():
         def engine_factory(_sid, publish, report_usage):
             diarizer = WindowDiarizer(client, report_usage)
+            word_gate = WebRtcWordGate()
             return GeminiHybridEngine(
                 publish,
-                word_source=BatchTailWordSource(diarizer),
+                word_source=GeminiLiveWordSource(client, report_usage),
                 window_scheduler=FixedWindowScheduler(),
                 registry=OverlapRegistry(),
                 diarizer=diarizer,
-                terminal=TerminalTranscriber(diarizer),
+                terminal=TerminalTranscriber(diarizer, identity_policy=FinalWordPolicy(encoder),
+                                             word_gate=word_gate),
                 embedding_source=WeSpeakerWindowEmbeddings(encoder),
                 encoder_spec=encoder.spec,
+                word_gate=word_gate,
             )
         return GeminiLiveRuntime(
             descriptor=descriptor, engine_factory=engine_factory,
