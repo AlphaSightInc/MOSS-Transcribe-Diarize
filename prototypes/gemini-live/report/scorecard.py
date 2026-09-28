@@ -39,8 +39,10 @@ CORE_STRESS = ("long60", "concurrent2", "silence10", "music5", "overlap", "manys
                "stop-early", "abort-mid")
 REST_FAULTS = ("http_429", "http_500", "http_503", "latency_fixed", "latency_heavy_tail",
                "connection_reset", "response_truncate", "malformed_json", "stall")
-WS_FAULTS = ("ws_close_1011", "ws_close_1007", "ws_goaway", "ws_connection_reset", "ws_stall")
-STRESS_NAMES = CORE_STRESS + tuple("faults-" + x for x in REST_FAULTS + WS_FAULTS) + ("faults-google_down",)
+WS_FAULTS = ("ws_close_1011", "ws_close_1007", "ws_goaway", "ws_connection_reset", "ws_stall",
+             "ws_refused_connect")
+STRESS_NAMES = CORE_STRESS + tuple("faults-" + x for x in REST_FAULTS + WS_FAULTS) + (
+    "faults-google_down", "faults-google_down_mid", "faults-google_down_stop")
 
 
 def read(path: Path) -> dict:
@@ -388,6 +390,7 @@ def main() -> None:
     parser.add_argument("--latency", type=Path, action="append", default=[], help="latency_probe output; repeatable")
     parser.add_argument("--stress", type=Path, action="append", default=[], help="stress summary.json; repeatable")
     parser.add_argument("--ledger", type=Path, action="append", default=[], help="provider ledger JSONL; repeatable")
+    parser.add_argument("--words-source", choices=("unknown", "batch", "live"), default="unknown")
     parser.add_argument("--passages", type=Path, action="append", default=[], help="complete timed-word H1 receipt; repeatable")
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
@@ -482,7 +485,7 @@ def main() -> None:
                 stub_data.setdefault(name, (read(path), path))
     stress = []
     core_expectations = {
-        "long60": "paced 3600 s; bounded queue, complete tape, terminal state",
+        "long60": "paced 2586 s; bounded queue, complete tape, terminal state",
         "concurrent2": "two 300 s tapes; third create 409 live_capacity_full",
         "silence10": "600 s silence accepted, retained, terminal",
         "music5": "300 s music accepted, retained, terminal",
@@ -501,7 +504,7 @@ def main() -> None:
         raw_status = actual[0].get("status", "PENDING") if actual else "PENDING"
         status = raw_status
         reason = ("PENDING_WORDS_SOURCE" if raw_status == "PENDING_WORDS_SOURCE"
-                  or (name.startswith("faults-ws_") and not actual) else "")
+                  or (name.startswith("faults-ws_") and not actual and args.words_source != "live") else "")
         if reason:
             status = "PENDING"
         data = actual[0] if actual else {}

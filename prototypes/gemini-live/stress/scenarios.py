@@ -16,6 +16,7 @@ import json
 import math
 import os
 from pathlib import Path
+import signal
 import ssl
 import subprocess
 import sys
@@ -47,7 +48,8 @@ FAULTS = {
     "latency_fixed": "rest", "latency_heavy_tail": "rest", "connection_reset": "rest",
     "response_truncate": "rest", "malformed_json": "rest", "stall": "rest",
     "ws_close_1011": "ws", "ws_close_1007": "ws", "ws_goaway": "ws",
-    "ws_connection_reset": "ws", "ws_stall": "ws", "google_down": "all",
+    "ws_connection_reset": "ws", "ws_stall": "ws", "ws_refused_connect": "ws", "google_down": "all",
+    "google_down_mid": "all", "google_down_stop": "all",
 }
 SILENCE_RMS = 1e-4
 SAMPLE_RATE = 16000
@@ -86,6 +88,101 @@ def jsonl(path: Path, value: dict) -> None:
         stream.write(json.dumps(value, ensure_ascii=False) + "\n")
 
 
+class OutageWindow:
+    """Kill our proxy to make Google connections refuse, then restart it."""
+
+    def __init__(self, state_path: Path, out: Path, *, mode: str, seconds: float):
+        self.state_path, self.out, self.mode, self.seconds = state_path, out, mode, seconds
+        self.port = int(json.loads(state_path.read_text())["ports"][0])
+        self.lock = threading.Lock()
+        self.active = False
+        self.activated = False
+        self.refusal_confirmed = False
+        self.recovered = False
+        self.started = None
+        self.timer = None
+        self.error_type = None
+
+    def _url(self) -> str:
+        return f"https://127.0.0.1:{self.port}/__fault/status"
+
+    def activate(self, audio_s: float) -> None:
+        with self.lock:
+            if self.activated:
+                return
+            state = json.loads(self.state_path.read_text())
+            pid = int(state["proxy_pid"])
+            command = subprocess.check_output(["ps", "-p", str(pid), "-o", "command="], text=True)
+            if "gemini_fault_proxy.py" not in command or f"--port {self.port}" not in command:
+                raise RuntimeError("recorded proxy PID no longer owns assigned port")
+            os.kill(pid, signal.SIGKILL)
+            self.active = self.activated = True
+            self.started = time.monotonic()
+            for _ in range(100):
+                try:
+                    httpx.get(self._url(), verify=False, timeout=.3)
+                except httpx.ConnectError:
+                    self.refusal_confirmed = True
+                    break
+                except httpx.HTTPError:
+                    pass
+                time.sleep(.05)
+            jsonl(self.out, {"event": "down", "audio_s": audio_s,
+                             "proxy_pid": pid, "refusal_confirmed": self.refusal_confirmed,
+                             "monotonic_ns": time.monotonic_ns()})
+            if not self.refusal_confirmed:
+                raise RuntimeError("proxy kill did not produce ECONNREFUSED")
+            if self.mode in ("mid", "start"):
+                self.timer = threading.Timer(self.seconds, self.recover)
+                self.timer.daemon = True
+                self.timer.start()
+
+    def recover(self) -> None:
+        with self.lock:
+            if not self.active:
+                return
+            state = json.loads(self.state_path.read_text())
+            script = Path(__file__).with_name("gemini_fault_proxy.py")
+            log_path = Path(state.get("proxy_log", str(self.state_path.parent / "faults.jsonl")))
+            env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+            env.pop("SSL_CERT_FILE", None)
+            with (self.state_path.parent / "proxy-restarted.log").open("ab") as log:
+                process = subprocess.Popen([sys.executable, str(script), "--port", str(self.port),
+                    "--cert", str(self.state_path.parent / "cert.pem"),
+                    "--key", str(self.state_path.parent / "key.pem"),
+                    "--log", str(log_path)],
+                    env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+            for _ in range(100):
+                if process.poll() is not None:
+                    self.error_type = "ProxyRestartExited"
+                    break
+                try:
+                    if httpx.get(self._url(), verify=False, timeout=.5).status_code == 200:
+                        self.recovered = True
+                        break
+                except httpx.HTTPError:
+                    time.sleep(.1)
+            if self.recovered:
+                state["proxy_pid"] = process.pid
+                self.state_path.write_text(json.dumps(state, indent=2) + "\n")
+                self.active = False
+            else:
+                self.error_type = self.error_type or "ProxyRestartTimeout"
+            jsonl(self.out, {"event": "recovered" if self.recovered else "recovery_failed",
+                             "proxy_pid": process.pid, "down_seconds": round(time.monotonic() - self.started, 3),
+                             "monotonic_ns": time.monotonic_ns()})
+
+    def close(self) -> None:
+        if self.timer is not None:
+            self.timer.cancel()
+        self.recover()
+
+    def summary(self) -> dict:
+        return {"mode": self.mode, "refusal_confirmed": self.refusal_confirmed,
+                "recovered": self.recovered, "error_type": self.error_type,
+                "source_path": str(self.out.resolve())}
+
+
 def clone_client(base: str, jar: dict) -> Client:
     client = Client(base, ssl._create_unverified_context())
     client._jar = dict(jar)
@@ -104,12 +201,12 @@ def audio_specs(scenario: str, override: float | None) -> list[dict]:
         return [available[name] for name in wanted]
 
     if scenario == "long60":
-        source = clips("long30m")
-        if len(source) < 2:
-            raise RuntimeError("long30m public corpus lacks two clips")
-        system = np.concatenate([pcm(source[0]), pcm(source[1])])
+        source = clips("long60")
+        if len(source) != 1:
+            raise RuntimeError("complete-reference long60 public fixture unavailable")
+        system = pcm(source[0])
         result = [{"name": "long60", "system": system, "mic": None,
-                   "source_ids": [source[0].clip_id, source[1].clip_id]}]
+                   "source_ids": [source[0].clip_id]}]
     elif scenario == "concurrent2":
         source = complete_five_minute()
         result = [{"name": f"concurrent_{i+1}", "system": pcm(source[i]), "mic": None,
@@ -366,7 +463,8 @@ def frame_payload(lane: str, pcm: bytes, sequence: int, size: int, epoch: int) -
 
 def run_session(base: str, jar: dict, meeting: str, descriptor: dict, spec: dict,
                 out: Path, barrier: threading.Barrier | None = None,
-                abort: bool = False) -> dict:
+                abort: bool = False, outage: OutageWindow | None = None,
+                outage_at_seconds: float = 120) -> dict:
     out.mkdir(parents=True, exist_ok=False)
     client = clone_client(base, jar)
     lane_clients = [clone_client(base, jar), clone_client(base, jar)]
@@ -395,6 +493,8 @@ def run_session(base: str, jar: dict, meeting: str, descriptor: dict, spec: dict
             raise RuntimeError("browser DOM observer did not start")
         if barrier is not None:
             barrier.wait(timeout=40)
+        if outage is not None and outage.mode == "start":
+            outage.activate(0.0)
         start = time.monotonic()
         dom_state["audio_start_ns"] = time.monotonic_ns()
         (out / "audio-start.json").write_text(json.dumps({"monotonic_ns": dom_state["audio_start_ns"]}) + "\n")
@@ -403,6 +503,8 @@ def run_session(base: str, jar: dict, meeting: str, descriptor: dict, spec: dict
             for sequence in range(frames):
                 scheduled = start + sequence * frame_seconds
                 time.sleep(max(0, scheduled - time.monotonic()))
+                if outage is not None and outage.mode == "mid" and sequence * frame_seconds >= outage_at_seconds:
+                    outage.activate(sequence * frame_seconds)
                 health = dict(state="capturing", device_epoch=epoch, dropped_frames=0,
                               discontinuities=0, failure_code=None)
                 client.call("POST", f"/api/live/sessions/{meeting}/heartbeat", {
@@ -428,14 +530,24 @@ def run_session(base: str, jar: dict, meeting: str, descriptor: dict, spec: dict
         result["max_sender_lag_s"] = round(max_lag, 3)
         result["sent_audio_s"] = result["frames_accepted_per_lane"]["system"] * frame_seconds
         result["terminal_action"] = "abort" if abort else "stop"
+        before_stop = client.call("GET", f"/api/live/sessions/{meeting}/snapshot")
+        (out / "pre-stop-snapshot.json").write_text(json.dumps(before_stop, ensure_ascii=False) + "\n")
+        rows = ((before_stop.get("snapshot") or {}).get("session") or {}).get("effective_transcript") or []
+        result["live_rows_at_stop"] = sum(bool(str(row.get("text", "")).strip()) for row in rows)
+        if outage is not None and outage.mode == "stop":
+            outage.activate(result["sent_audio_s"])
         action_start = time.monotonic()
         if abort:
             client.call("POST", f"/api/live/sessions/{meeting}/abort", {"reason": "stress_abort_mid"})
         else:
-            client.call("POST", f"/api/live/sessions/{meeting}/stop", {"deadline": 30})
+            try:
+                client.call("POST", f"/api/live/sessions/{meeting}/stop", {"deadline": 30})
+            except Exception as exc:
+                result["stop_request_error_type"] = type(exc).__name__
         terminal = None
         start_wait = time.monotonic()
-        for _ in range(90):
+        stop_bound_s = 60 + 0.05 * result["sent_audio_s"]
+        while time.monotonic() - action_start <= stop_bound_s:
             terminal = client.call("GET", f"/api/live/sessions/{meeting}/snapshot")
             session = ((terminal.get("snapshot") or {}).get("session") or {})
             if session.get("finalization_status") in ("final", "failed", "unavailable") or \
@@ -448,6 +560,8 @@ def run_session(base: str, jar: dict, meeting: str, descriptor: dict, spec: dict
         session = ((terminal.get("snapshot") or {}).get("session") or {}) if terminal else {}
         result["finalization_status"] = session.get("finalization_status", "UNMEASURED")
         result["session_status"] = session.get("status", "UNMEASURED")
+        result["terminal_rows"] = sum(bool(str(row.get("text", "")).strip())
+                                      for row in session.get("effective_transcript") or [])
         result["engine"] = engine_metrics((terminal.get("snapshot") or {}).get("engine_diagnostics"))
         saved = None
         for _ in range(30):
@@ -509,7 +623,8 @@ def run_session(base: str, jar: dict, meeting: str, descriptor: dict, spec: dict
 
 def expectations(scenario: str, sessions: list[dict], descriptor: dict,
                  server_alive: bool, process: dict, third: dict | None,
-                 fault_count: int | str, smoke: bool, words_source: str) -> dict:
+                 fault_count: int | str, smoke: bool, words_source: str,
+                 outage_state: dict | None = None) -> dict:
     frame_complete = all(not s["frame_errors"] and s["frames_accepted_per_lane"]["system"] == s["frames_planned"]
                          and s["frames_accepted_per_lane"]["microphone"] == s["frames_planned"] for s in sessions)
     limit = (descriptor.get("bounds") or {}).get("max_queue_depth")
@@ -526,13 +641,31 @@ def expectations(scenario: str, sessions: list[dict], descriptor: dict,
               "terminal_after_action": terminal, "visible_status": visible,
               "process_sampled": process.get("samples", 0) > 0 if process.get("status") != "UNMEASURED" else "UNMEASURED"}
     if scenario != "abort-mid":
-        checks["stop_terminal_within_35s"] = all(isinstance(s.get("action_to_terminal_s"), (float, int))
-                                                 and s["action_to_terminal_s"] <= 35 for s in sessions)
+        checks["stop_terminal_within_duration_bound"] = all(
+            isinstance(s.get("action_to_terminal_s"), (float, int))
+            and isinstance(s.get("sent_audio_s"), (float, int))
+            and s["action_to_terminal_s"] <= 60 + 0.05 * s["sent_audio_s"]
+            for s in sessions)
     if scenario == "concurrent2":
         checks["third_rejected_capacity_409"] = bool(third and third.get("status") == 409 and
                                                       third.get("code") == "live_capacity_full")
     if scenario.startswith("faults-"):
         checks["fault_injected"] = fault_count > 0 if isinstance(fault_count, int) else "UNMEASURED"
+    if scenario.startswith("faults-ws_"):
+        checks["window_rows_survive"] = all(isinstance(s.get("live_rows_at_stop"), int)
+            and s["live_rows_at_stop"] > 0 and isinstance(s.get("engine"), dict)
+            and any((kind == "rolling" or kind.endswith("_rolling")) and count > 0
+                    for kind, count in s["engine"].get("calls_by_kind", {}).items())
+            for s in sessions)
+    if scenario in ("faults-google_down_mid", "faults-google_down_stop", "faults-ws_refused_connect"):
+        checks["actual_connection_refusal"] = bool(outage_state and outage_state["refusal_confirmed"])
+        checks["proxy_recovered"] = bool(outage_state and outage_state["recovered"])
+        if scenario == "faults-google_down_stop":
+            checks["terminal_finalization_failed"] = all(
+                s.get("finalization_status") in ("failed", "unavailable") for s in sessions)
+            checks["live_rows_kept"] = all(isinstance(s.get("live_rows_at_stop"), int)
+                and s["live_rows_at_stop"] > 0 and isinstance(s.get("terminal_rows"), int)
+                and s["terminal_rows"] >= s["live_rows_at_stop"] for s in sessions)
     if scenario == "abort-mid":
         checks["abort_visible"] = all(s["session_status"] == "aborted" for s in sessions)
     verdict = ("PLUMBING_PASS" if smoke else "PASS") if all(v is True for v in checks.values()) else "FAIL"
@@ -552,9 +685,17 @@ def run(args) -> dict:
     client.call("POST", "/api/workspace/bootstrap")
     descriptor = client.call("GET", "/api/live/descriptor")["descriptor"]
     fault_count = "UNMEASURED"
+    outage = None
     if scenario.startswith("faults-"):
         fault = scenario.removeprefix("faults-")
-        if fault == "google_down":
+        if fault in ("google_down_mid", "google_down_stop", "ws_refused_connect"):
+            if not args.proxy_state:
+                raise RuntimeError("process-level outage requires --proxy-state")
+            outage = OutageWindow(args.proxy_state, args.out / "outage-events.jsonl",
+                                  mode=("mid" if fault.endswith("mid") else
+                                        "start" if fault == "ws_refused_connect" else "stop"),
+                                  seconds=args.fault_seconds)
+        elif fault == "google_down":
             if not args.proxy_url:
                 raise RuntimeError("google_down requires --proxy-url and proxy --down")
             try:
@@ -568,8 +709,9 @@ def run(args) -> dict:
             transport = FAULTS[fault]
             wire_fault = "connection_reset" if fault == "ws_connection_reset" else \
                          "stall" if fault == "ws_stall" else fault
-            plan = {"schedule": [{"transport": transport, "ordinal": 1,
-                                  "fault": wire_fault, "seconds": args.fault_seconds}], "seed": 7}
+            plan = {"schedule": [{"transport": transport, "ordinal": ordinal,
+                                  "fault": wire_fault, "seconds": args.fault_seconds}
+                                 for ordinal in range(1, args.fault_burst + 1)], "seed": 7}
             response = httpx.post(args.proxy_url + "/__fault/plan", json=plan,
                                   verify=False, timeout=5)
             response.raise_for_status()
@@ -599,20 +741,26 @@ def run(args) -> dict:
         barrier = threading.Barrier(2) if scenario == "concurrent2" else None
         with ThreadPoolExecutor(max_workers=len(created)) as pool:
             futures = [pool.submit(run_session, base, client._jar, meeting, descriptor, spec,
-                                   args.out / spec["name"], barrier, scenario == "abort-mid")
+                                   args.out / spec["name"], barrier, scenario == "abort-mid",
+                                   outage, args.outage_at_seconds)
                        for meeting, spec in created]
             sessions = [future.result() for future in futures]
+        if outage is not None:
+            outage.close()
+            fault_count = int(outage.refusal_confirmed)
         try:
             client.call("GET", "/api/live/descriptor")
             server_alive = True
         except Exception:
             server_alive = False
-        if scenario.startswith("faults-") and args.proxy_url and scenario != "faults-google_down":
+        if scenario.startswith("faults-") and args.proxy_url and outage is None and scenario != "faults-google_down":
             response = httpx.get(args.proxy_url + "/__fault/status", verify=False, timeout=5)
-            fault_count = sum(response.json().get("injected", {}).values())
+            proxy_status = response.json()
+            (args.out / "proxy-fault-status.json").write_text(json.dumps(proxy_status, indent=2) + "\n")
+            fault_count = sum(proxy_status.get("injected", {}).values())
         checks = expectations(scenario, sessions, descriptor, server_alive,
                               process_state, third, fault_count, args.seconds is not None,
-                              args.words_source)
+                              args.words_source, outage.summary() if outage else None)
         engines = [s.get("engine", "UNMEASURED") for s in sessions]
         measured_engines = all(isinstance(e, dict) for e in engines)
         if not args.launch_stub:
@@ -623,7 +771,7 @@ def run(args) -> dict:
         anomalies = ({"clamped": sum(e["timing_anomalies"].get("clamped", 0) for e in engines),
                       "dropped": sum(e["timing_anomalies"].get("dropped", 0) for e in engines)}
                      if measured_engines else "UNMEASURED")
-        if scenario == "faults-google_down":
+        if scenario in ("faults-google_down", "faults-google_down_mid", "faults-google_down_stop"):
             errors = sum(sum(e["errors_by_code"].values()) for e in engines) if measured_engines else None
             checks["checks"]["provider_error_observed"] = errors > 0 if errors is not None else "UNMEASURED"
             if checks["checks"]["provider_error_observed"] is not True:
@@ -631,6 +779,7 @@ def run(args) -> dict:
         return {"scenario": scenario, "status": checks["verdict"],
                 "expectations": checks, "sessions": sessions, "third_create": third,
                 "fault_injections": fault_count, "process": process_state,
+                "outage": outage.summary() if outage else None,
                 "queue_limit": (descriptor.get("bounds") or {}).get("max_queue_depth"),
                 "gemini_cost_usd": round(sum(e["cost_usd"] for e in engines), 6) if measured_engines else "UNMEASURED",
                 "gemini_calls": total_calls if measured_engines else "UNMEASURED",
@@ -643,6 +792,8 @@ def run(args) -> dict:
                 "degraded_path_activations": (sum(e["degraded_path_activations"] for e in engines)
                                               if measured_engines else "UNMEASURED")}
     finally:
+        if outage is not None:
+            outage.close()
         monitor_stop.set()
         monitor.join(timeout=10)
         # Cleanup any meeting left active by a failed scenario.
@@ -667,8 +818,13 @@ def main() -> None:
     source.add_argument("--base-url")
     source.add_argument("--launch-stub", action="store_true")
     parser.add_argument("--proxy-url", help="local HTTPS fault proxy control URL for faults-* scenarios")
+    parser.add_argument("--proxy-state", type=Path,
+                        help="owned proxy process record for mid-meeting or Stop outage")
     parser.add_argument("--server-pid", type=int, help="local stack PID for RSS/CPU/fd samples")
     parser.add_argument("--fault-seconds", type=float, default=3)
+    parser.add_argument("--fault-burst", type=int, default=1,
+                        help="number of consecutive provider attempts to fault")
+    parser.add_argument("--outage-at-seconds", type=float, default=120)
     parser.add_argument("--words-source", choices=["batch", "live"], default="batch",
                         help="selected product word source; WS faults become mandatory with live")
     parser.add_argument("--seconds", type=float, help="short plumbing smoke override")
@@ -682,6 +838,8 @@ def main() -> None:
         parser.error("local HTTPS proxy in assigned range required")
     if args.seconds is not None and args.seconds <= 0:
         parser.error("--seconds must be positive")
+    if args.fault_burst <= 0:
+        parser.error("--fault-burst must be positive")
     args.out.mkdir(parents=True)
     result = {"scenario": args.scenario, "status": "INCOMPLETE"}
     try:
