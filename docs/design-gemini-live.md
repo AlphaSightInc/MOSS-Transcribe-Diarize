@@ -228,4 +228,14 @@ each turn and exposes content-free `engine_diagnostics.lanes` counters.
 Offline TDD for aligned PCM, overlapping rows, silent mic call suppression, the
 local ID, W3 activation, echo filtering, terminal no-diarization, and lane counters
 passed; the full backend gate after L3 passed **2,476**, skipped 3, xfailed 2,
-and passed 37 subtests. Real paced E1/M2 results are recorded separately in P63.
+and passed 37 subtests. In paced 302 s HTTPS fixtures, both lanes settled and Stop
+finalized. M2 headphones audio produced one mic ID with 21/21 final words inside
+operator intervals. E1 speaker audio produced one mic ID but 11/32 final mic words
+outside those intervals (34.4%; 21/40 settled, 52.5%). The selected exact echo
+guard therefore does not qualify raw speaker echo without browser echo cancellation.
+These are two fixtures, not a population estimate; receipts are
+`evidence/P63/l3-{e1,m2}-http.json`. For >30-minute recordings, the existing
+terminal chunk stitch remains an unqualified candidate: long60 complete truth
+falsified POLICY-LONG (DER .328, Bill/Adam false merge, Lex split across three IDs).
+The cancelled policy is not incorporated here. Pane 5.3 is investigating long-call
+timestamps before a turn-building change.
