@@ -1,26 +1,33 @@
-"""Zero-send C4 registry parity against the read-only product runtime.
+"""Zero-send C4 registry and public-snapshot parity against the product runtime.
 
 Run from the prototype worktree root:
 PYTHONDONTWRITEBYTECODE=1 ../MOSS-Transcribe-Diarize-wt-gemini-live.venv/bin/python \
   prototypes/gemini-live/continuity/parity.py
 
-Both registries consume the same retained S15/L180/H0 Gemini words and numeric
-WeSpeaker vectors. This isolates registry decisions from provider and encoder calls.
+Both registries and the real product LiveSession consume retained S15/L180/H0
+Gemini words and numeric WeSpeaker vectors. No provider or encoder is called.
 """
 from __future__ import annotations
 
 import json
 import inspect
+import hashlib
 import sys
+import tempfile
+from dataclasses import replace
 from pathlib import Path
 
 RUNTIME = Path("/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Diarize-wt-gemini-runtime")
 sys.path.insert(0, str(RUNTIME))
 from moss_transcribe_diarize.app.gemini_continuity_registry import ContinuityRegistry  # noqa: E402
-from moss_transcribe_diarize.app.gemini_provider import (GeminiWord, ordered_segments,
-                                                        speaker_turns)  # noqa: E402
-from moss_transcribe_diarize.app.gemini_hybrid_engine import GrowingContextWindowScheduler  # noqa: E402
-from moss_transcribe_diarize.app.gemini_live_runtime import GeminiSegment  # noqa: E402
+from moss_transcribe_diarize.app.gemini_provider import GeminiWord  # noqa: E402
+from moss_transcribe_diarize.app.gemini_hybrid_engine import (  # noqa: E402
+    GeminiHybridEngine, GrowingContextWindowScheduler, attributed_embedding_intervals)
+from moss_transcribe_diarize.app.gemini_live_runtime import (  # noqa: E402
+    GeminiLiveRuntime, ScriptedGeminiEngine)
+from moss_transcribe_diarize.app.live_service_runtime import (  # noqa: E402
+    LiveServiceBounds, LiveServiceConfigHashes, LiveServiceDescriptor)
+from moss_transcribe_diarize.app.live_session import AudioFrame  # noqa: E402
 
 from c4 import observation_path
 from measure import EVIDENCE, embedding_intervals, note, segmentize
@@ -101,19 +108,75 @@ def absolute_words(observation, mapping):
 
 
 def product_embedding_interval(observation, label):
-    """Mirror the runtime's first contiguous 2 s span selection, without encoding."""
-    rows = sorted((word.start_sample, word.end_sample)
-                  for word in product_words(observation) if word.speaker == label
-                  and word.end_sample > word.start_sample)
-    begin = end = 0
-    for start, stop in rows:
-        if begin == end or start > end + SAMPLE_RATE // 2:
-            begin, end = start, stop
-        else:
-            end = max(end, stop)
-        if end - begin >= 2 * SAMPLE_RATE:
-            return [(begin / SAMPLE_RATE, end / SAMPLE_RATE)]
-    return []
+    """Use the product's selected spans without calling its encoder."""
+    intervals = attributed_embedding_intervals(
+        product_words(observation), round(observation["start"] * SAMPLE_RATE))
+    return [(start / SAMPLE_RATE, end / SAMPLE_RATE)
+            for start, end in intervals.get(label, [])]
+
+
+def snapshot_segments(observations, baseline):
+    """Publish cached words through the real product LiveSession; zero provider calls."""
+    duration = round(baseline["duration_s"])
+    descriptor = LiveServiceDescriptor(
+        source_revision="P61-parity", provider_name="gemini", provider_revision="cached",
+        provider_manifest_hash=hashlib.sha256(b"P61-parity").hexdigest(),
+        config_hashes=LiveServiceConfigHashes.from_parts(
+            endpoint_config={}, identity_config={}, decoder_config={}),
+        bounds=LiveServiceBounds(max_frame_samples=SAMPLE_RATE, max_queue_depth=4,
+                                 max_retained_samples=(duration + 1) * SAMPLE_RATE,
+                                 max_identity_speakers=64, max_events=128,
+                                 max_tape_bytes=(duration + 1) * SAMPLE_RATE * 2),
+        frame_samples=SAMPLE_RATE)
+
+    class Unused:
+        def words(self, _pcm, *, deadline):
+            raise AssertionError("parity must not call Gemini Live")
+
+        def diarize(self, _pcm, *, deadline, kind, diarize=True):
+            raise AssertionError("parity must not call Gemini batch")
+
+        def transcribe(self, _tape):
+            raise AssertionError("parity must not run final")
+
+    with tempfile.TemporaryDirectory(prefix="moss-p61-parity-") as directory:
+        runtime = GeminiLiveRuntime(
+            descriptor=descriptor, tape_storage_root=Path(directory),
+            engine_factory=lambda _id, publish, _usage: ScriptedGeminiEngine(
+                publish, batches=[], terminal=()))
+        runtime.create(session_id="parity")
+        for sequence in range(duration):
+            runtime.accept_frame("parity", AudioFrame(
+                sequence=sequence, pcm=bytes(2 * SAMPLE_RATE), sample_count=SAMPLE_RATE))
+        cached_vectors = {}
+        engine = GeminiHybridEngine(
+            lambda update: runtime.publish_update("parity", update),
+            word_source=Unused(),
+            window_scheduler=GrowingContextWindowScheduler(max_seconds=LENGTH,
+                                                            stride_seconds=STEP),
+            registry=ContinuityRegistry(embedding_threshold=.46,
+                                        within_window_threshold=.6,
+                                        birth_min_seconds=2),
+            diarizer=Unused(), terminal=Unused(),
+            embedding_source=lambda _pcm, _start, _words: cached_vectors)
+        try:
+            for observation in observations:
+                cached_vectors = {label: (tuple(vector), 2.0)
+                                  for label, vector in observation["embeddings"].items()}
+                start = round(observation["start"] * SAMPLE_RATE)
+                end = round(observation["end"] * SAMPLE_RATE)
+                words = tuple(replace(word,
+                                      start_sample=word.start_sample - start,
+                                      end_sample=word.end_sample - start)
+                              for word in product_words(observation))
+                engine._publish_window(start, end, bytes((end - start) * 2), words)
+            rows = runtime.snapshot("parity").to_dict()["session"]["effective_transcript"]
+            return [{"start": row["start_sample"] / SAMPLE_RATE,
+                     "end": row["end_sample"] / SAMPLE_RATE,
+                     "speaker": canonical(row["canonical_speaker"]),
+                     "text": row["text"]} for row in rows]
+        finally:
+            engine.close()
 
 
 def score_words(clip, words):
@@ -131,16 +194,21 @@ def score_segments(clip, segments):
     return measured_score(clip.reference_segments(), segments)["der"]
 
 
+def intervals_agree(left, right):
+    return len(left) == len(right) and all(
+        abs(a - c) <= 2 / SAMPLE_RATE and abs(b - d) <= 2 / SAMPLE_RATE
+        for (a, b), (c, d) in zip(left, right))
+
+
 def run_case(clip, mix=False):
     observations, baseline = load(clip, mix)
     prototype = SpeakerRegistry(min_overlap_s=.3, embedding_threshold=.46,
                                 within_window_threshold=.6, birth_min_s=2)
-    # Match phase2_web_cli.system_factory: it omits min_overlap_seconds, so the
-    # runtime registry uses its .6 s default rather than C4's measured .3 s.
+    # Match phase2_web_cli.system_factory and the runtime's selected .3 s default.
     product = ContinuityRegistry(embedding_threshold=.46,
                                  within_window_threshold=.6, birth_min_seconds=2)
     scheduler = GrowingContextWindowScheduler(max_seconds=LENGTH, stride_seconds=STEP)
-    first_prototype, first_product, published_product = [], [], []
+    first_prototype, first_product = [], []
     seen_prototype, seen_product = set(), set()
     window_rows = []
     first_difference = None
@@ -174,7 +242,7 @@ def run_case(clip, mix=False):
         for label in sorted({word["speaker"] for word in observation["words"]}):
             prototype_intervals = embedding_intervals(start, observation["words"], label)
             runtime_intervals = product_embedding_interval(observation, label)
-            if prototype_intervals != runtime_intervals:
+            if not intervals_agree(prototype_intervals, runtime_intervals):
                 embedding_interval_mismatches += 1
                 embedding_eligibility_mismatches += bool(prototype_intervals) != bool(runtime_intervals)
                 if first_embedding_interval_difference is None:
@@ -223,21 +291,9 @@ def run_case(clip, mix=False):
         new_frontier = end
         fresh_prototype = [word for word in absolute_prototype
                            if frontier < word["end"] <= new_frontier]
-        # Product GeminiHybridEngine._publish_window owns words by start sample.
+        # The fixed product and C4 both own completed words by end frontier.
         fresh_product = [word for word in absolute_product
-                         if frontier <= word["start"] < new_frontier]
-        old_sample = round(frontier * SAMPLE_RATE)
-        new_sample = round(new_frontier * SAMPLE_RATE)
-        turns = speaker_turns(ordered_segments(
-            tuple(GeminiSegment(word.start_sample,
-                                max(word.end_sample, word.start_sample + 1),
-                                word.text, rmap[word.speaker], "system")
-                  for word in words if old_sample <= word.start_sample < new_sample),
-            start_sample=old_sample, end_sample=new_sample, preserve_order=True))
-        published_product.extend({"start": row.start_sample / SAMPLE_RATE,
-                                  "end": row.end_sample / SAMPLE_RATE,
-                                  "speaker": canonical(row.speaker), "text": row.text}
-                                 for row in turns)
+                         if frontier < word["end"] <= new_frontier]
         if first_ownership_difference is None and fresh_prototype != fresh_product:
             prototype_only = next((word for word in fresh_prototype
                                    if word not in fresh_product), None)
@@ -247,7 +303,7 @@ def run_case(clip, mix=False):
                 "window": index, "start": start, "end": end, "prior_frontier": frontier,
                 "prototype_only_word": prototype_only,
                 "product_only_word": product_only,
-                "cause": "prototype owns by word end in (old, new]; product owns by word start in [old, new)"}
+                "cause": "sample rounding or registry assignment differs under end-owned frontier"}
         positive_prototype = [word for word in fresh_prototype if word["end"] > word["start"]]
         positive_product = [word for word in fresh_product if word["end"] > word["start"]]
         if first_positive_ownership_difference is None and positive_prototype != positive_product:
@@ -276,6 +332,7 @@ def run_case(clip, mix=False):
         frontier = new_frontier
     first_prototype.sort(key=lambda word: (word["start"], word["end"]))
     first_product.sort(key=lambda word: (word["start"], word["end"]))
+    published_product = snapshot_segments(observations, baseline)
     result = {"case": clip.clip_id, "tier": clip.tier, "mix": mix,
               "windows": len(window_rows),
               "assignment_agreement_windows": sum(row["agree"] for row in window_rows),
@@ -297,8 +354,10 @@ def run_case(clip, mix=False):
               "product_committed_words": len(first_product),
               "prototype_settled_der": score_words(clip, first_prototype),
               "product_word_projection_der": score_words(clip, first_product),
-              "product_published_settled_der": score_segments(clip, published_product),
-              "product_published_turns": len(published_product),
+              "product_snapshot_settled_der": score_segments(clip, published_product),
+              "product_snapshot_segments": len(published_product),
+              "product_snapshot_displayed_ids": len({row["speaker"] for row in published_product
+                                                     if row["speaker"] != "S00"}),
               "c4_recorded_ids": baseline["by_hold"]["H0"]["variants"]["C1_C3_local_birth2"]["speaker_count"],
               "c4_recorded_der": (None if clip.tier == "e1" else
                                   baseline["by_hold"]["H0"]["variants"]["C1_C3_local_birth2"]["first"]["metrics"]["der"]),
@@ -321,15 +380,15 @@ def main():
              f"assignments {result['assignment_agreement_windows']}/{result['windows']}, "
              f"births proto/product {result['prototype_births']}/{result['product_births']}, "
              f"IDs {result['prototype_displayed_ids']}/{result['product_displayed_ids']}, "
-             f"DER prototype/product-word/product-published "
+             f"DER prototype/product-word/product-snapshot "
              f"{result['prototype_settled_der']}/{result['product_word_projection_der']}/"
-             f"{result['product_published_settled_der']}; "
+             f"{result['product_snapshot_settled_der']}; "
              f"first difference {result['first_difference']}")
     path = EVIDENCE / "parity-S15-L180-H0.json"
     path.write_text(json.dumps({"runtime": str(RUNTIME),
                                 "registry_source": inspect.getfile(ContinuityRegistry),
                                 "scheduler_source": inspect.getfile(GrowingContextWindowScheduler),
-                                "comparison": "identical cached words and vectors, product start-owned versus prototype end-owned committed words",
+                                "comparison": "identical cached words/vectors; direct registry maps plus real product LiveSession snapshot",
                                 "S": STEP, "Lmax": LENGTH, "H": 0, "cases": results}, indent=2))
     print(f"receipt {path}")
 
