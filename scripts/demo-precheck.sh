@@ -119,6 +119,18 @@ def main():
         else:
             report('bootstrap / relay models', False, 'not checked: trusted host check failed')
 
+        # G9 exercises the navigation in a browser. This cheap served-bundle check
+        # catches a stale UI before the presenter starts the manual summary flow.
+        if host_ok:
+            asset_status, _, _, elapsed = request(origin + '/static/app.js', workspace=True)
+            bundle = (root / f'{sequence}.json').read_text(errors='replace') if asset_status == 200 else ''
+            markers = ('Open summary', 'Summary view', 'Reassign passage')
+            missing = [marker for marker in markers if marker not in bundle]
+            report('summary UI bundle', asset_status == 200 and not missing,
+                   f'HTTP {asset_status}; {elapsed}' + (f'; missing {", ".join(missing)}' if missing else '') if asset_status else elapsed)
+        else:
+            report('summary UI bundle', False, 'not checked: trusted host check failed')
+
         # Deliberately sequential: primary first, then fallback. Never go through the
         # relay here: its 2048-token minimum would defeat the 16-token health probe.
         for name, model, base in models:

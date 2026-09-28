@@ -1,0 +1,36 @@
+[
+  {
+    "start": 0,
+    "end": 3.2,
+    "text": "A completed passage preserves the speaker context while the operator reads the exact words in order. The account transcript must keep every line at the reference width so a small correction control cannot push a trailing clause down into another line. The final sentence closes this longer settled turn clearly.",
+    "speaker": "S01",
+    "speaker_entity_id": "fixture-speaker-01",
+    "display_name": "S01",
+    "confidence": 0.98,
+    "state": "final",
+    "segment_id": "fixture-segment-001"
+  },
+  {
+    "start": 3.5,
+    "end": 7.1,
+    "text": "A second generic speaker makes the legend and turn boundary visible.",
+    "speaker": "S02",
+    "speaker_entity_id": "fixture-speaker-02",
+    "display_name": "S02",
+    "confidence": 0.97,
+    "state": "final",
+    "segment_id": "fixture-segment-002"
+  },
+  {
+    "start": 7.3,
+    "end": 9.4,
+    "text": "The fixture ends with a provisional tail.",
+    "speaker": "S01",
+    "speaker_entity_id": "fixture-speaker-01",
+    "display_name": "S01",
+    "confidence": 0.81,
+    "state": "provisional",
+    "provisional_stale": false,
+    "segment_id": "fixture-segment-003"
+  }
+]

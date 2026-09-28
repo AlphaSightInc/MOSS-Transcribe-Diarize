@@ -522,6 +522,8 @@ class Harness:
         if not models: return {'skip':True,'reason_code':'no_configured_relay_models','configured_models':0}
         ident=self.state['meetings'].get('live') or self.state['meetings'].get('file') or self.state['meetings']['url']
         await self.select(ident)
+        await self.page.locator(f'[data-open-meeting="{ident}"][aria-pressed="true"]').wait_for()
+        await self.page.get_by_role('button',name='Open summary',exact=True).click()
         cancel=self.page.get_by_role('button',name='Cancel summary',exact=True)
         if await cancel.count():
             await cancel.click()  # Resume after a closed prior worker tab; explicit UI cancellation.
@@ -542,6 +544,7 @@ class Harness:
             attempts.append({'requested_model':model['id'],'state':summary['state'],'error_code':summary.get('error_code'),
                 'status_names_requested_model':model['id'] in status,'rendered':await self.page.locator('[data-final-summary]').count()>0,'artifact':path.name})
             await self.snapshot(9,'-'+model['upstream'])
+        await self.page.get_by_role('button',name='Back to meeting',exact=True).click()
         return {'ok':len(attempts)==2 and all(a['state']=='current' and a['status_names_requested_model'] and a['rendered'] for a in attempts),'attempts':attempts,
                 'fallback_note':'Both configured models exercised directly; natural 502 fallback recorded if produced, never injected.'}
 

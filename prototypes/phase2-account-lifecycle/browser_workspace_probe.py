@@ -106,6 +106,8 @@ async def probe(root):
                 control = await profile("no-lock-control")
                 try:
                     observed_ids = []
+                    pending_bootstraps = 0
+                    both_ready = asyncio.Event()
                     async def remove_lock(route):
                         response = await route.fetch()
                         body = (await response.text()).replace(
@@ -115,6 +117,12 @@ async def probe(root):
                         await route.fulfill(response=response, body=body)
 
                     async def observe(route):
+                        nonlocal pending_bootstraps
+                        pending_bootstraps += 1
+                        if pending_bootstraps == 2:
+                            both_ready.set()
+                        # Exercise the no-lock race only after both tabs request bootstrap.
+                        await asyncio.wait_for(both_ready.wait(), timeout=10)
                         response = await route.fetch()
                         observed_ids.append((await response.json())["workspace_id"])
                         await route.fulfill(response=response)

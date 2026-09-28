@@ -332,9 +332,13 @@ class Bench(Harness):
     async def no_summary(self):
         rows=(await self.api('/api/meetings'))['body']['meetings'];ident=next(r['id'] for r in rows if r['status']=='completed');await self.select(ident)
         models=(await self.api('/api/llm/models'))['body'];assert not models.get('data'), 'Expected unconfigured relay'
+        await self.page.locator(f'[data-open-meeting="{ident}"][aria-pressed="true"]').wait_for()
+        await self.page.get_by_role('button',name='Open summary',exact=True).click()
         await self.page.get_by_test_id('final-summary-generate').click();await asyncio.sleep(.5)
         explained=await self.page.get_by_text('Configure Optional AI summaries above, then start your summary.',exact=True).is_visible();paid=[p for p in self.posts if 'chat/completions' in p]
-        await self.state_at('no-provider-summary');return {'explained':explained,'provider_posts':len(paid),'ok':explained and not paid}
+        await self.state_at('no-provider-summary')
+        await self.page.get_by_role('button',name='Back to meeting',exact=True).click()
+        return {'explained':explained,'provider_posts':len(paid),'ok':explained and not paid}
     async def restart(self):
         before=(await self.api('/api/meetings'))['body']['meetings'];cookies=await self.context.cookies();docs={r['id']:(await self.api('/api/meetings/'+r['id']))['body'].get('transcript') for r in before}
         # Restart only the stack launched by this bench, preserving state and runtime arguments.

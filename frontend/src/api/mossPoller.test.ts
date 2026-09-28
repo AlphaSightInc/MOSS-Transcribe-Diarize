@@ -6,7 +6,7 @@ import {
   type MossSessionPoller
 } from "./mossPoller";
 import { dispatchWsEvent } from "./ws";
-import { resetSessionState, transcript } from "../state/session";
+import { liveLabelPolicy, resetSessionState, transcript } from "../state/session";
 
 describe("MOSS session poller", () => {
   beforeEach(() => {
@@ -994,11 +994,12 @@ it.each([false, true])("consumes published overlapping lane segments with finali
       speaker_labels:{"speaker-0001":"Alex","speaker-0002":"Alex"},
       snapshot:{session_id:"lane-meeting",descriptor:{sample_rate:16000},session:{
         committed_samples:48000,status:"active",version:1,failure_reason:null,
+        live_label_policy:"La",settled_through_samples:[["system",48000],["microphone",0]],
         identity_snapshot:{canonical_speakers:["speaker-0001","speaker-0002"]},
         committed:[{span_id:1,start_sample:0,transcript:"[0][S01]Obsolete mono words[3]",revised_transcript:null}],
         effective_transcript:[
           {start_sample:0,end_sample:16000,text:"Microphone words",canonical_speaker:"speaker-0002",source_lane:"microphone",authority:"terminal"},
-          {start_sample:0,end_sample:48000,text:"System words",canonical_speaker:"speaker-0001",source_lane:"system",authority:"terminal"}
+          {start_sample:0,end_sample:48000,text:"System words",canonical_speaker:"speaker-0001",source_lane:"system",authority:"settled"}
         ],provisional:null
       }}
     })) as typeof fetch});
@@ -1008,6 +1009,8 @@ it.each([false, true])("consumes published overlapping lane segments with finali
     ["system","speaker-0001","Alex",0,3,"System words"],
     ["microphone","speaker-0002","Alex",0,1,"Microphone words"]
   ]);
+  expect(transcript.value.map(s => s.settled)).toEqual([true, false]);
+  expect(liveLabelPolicy.value).toBe("La");
   resetSessionState();
 });
 

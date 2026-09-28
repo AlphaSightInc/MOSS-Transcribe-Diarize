@@ -23,6 +23,7 @@ import asyncio
 from collections import deque
 import json
 from pathlib import Path
+import re
 import socket
 import subprocess
 import sys
@@ -610,6 +611,93 @@ def measure_diagnostic_regions(
     return evidence
 
 
+def _normal_text(value: str) -> str:
+    return " ".join(value.split())
+
+
+def validate_q5_card_content(
+    cards: list[dict[str, Any]], chips: list[str], fixture: list[dict[str, Any]]
+) -> dict[str, int]:
+    """Recover content hidden by Q5's generic card and legend masks."""
+    expected = sorted(fixture, key=lambda item: (item["start"], item["end"]))
+    numbers: dict[str, int] = {}
+    expected_chips: list[str] = []
+    seen_speakers: set[str] = set()
+    expected_by_span: dict[tuple[Any, Any, Any], dict[str, Any]] = {}
+    for item in expected:
+        speaker = str(item["speaker"])
+        if re.fullmatch(r"S\d{2,}", speaker) and speaker != "S00" and speaker not in numbers:
+            numbers[speaker] = len(numbers) + 1
+        label = "Speaker uncertain" if speaker in {"S00", "UNKNOWN"} else (
+            f"Speaker {numbers[speaker]}" if speaker in numbers else speaker
+        )
+        if speaker != "UNKNOWN" and speaker not in seen_speakers:
+            expected_chips.append(label)
+            seen_speakers.add(speaker)
+        span = (item["start"], item["end"], item["text"])
+        if span in expected_by_span:
+            raise AssertionError("Q5 fixture has duplicate segment coordinates and text")
+        expected_by_span[span] = item
+    if [_normal_text(str(chip)) for chip in chips] != expected_chips:
+        raise AssertionError("Q5 legend chip labels differ from fixture")
+    consumed: set[tuple[Any, Any, Any]] = set()
+    passages = 0
+    if not cards:
+        raise AssertionError("Q5 masked transcript cards are absent")
+    for card_index, card in enumerate(cards):
+        segments = card.get("segments")
+        shown = card.get("passages")
+        if not isinstance(segments, list) or not segments or not isinstance(shown, list) or not shown:
+            raise AssertionError(f"Q5 card {card_index} has no passage content")
+        source: list[dict[str, Any]] = []
+        for actual in segments:
+            if not isinstance(actual, dict):
+                raise AssertionError(f"Q5 card {card_index} segment differs from fixture")
+            span = tuple(actual.get(key) for key in ("start", "end", "text"))
+            item = expected_by_span.get(span)
+            if item is None:
+                raise AssertionError(f"Q5 card {card_index} segment differs from fixture")
+            if span in consumed:
+                raise AssertionError(f"Q5 card {card_index} renders a fixture segment more than once")
+            consumed.add(span)
+            source.append(item)
+        speaker = source[0]["speaker"]
+        if any(item["speaker"] != speaker for item in source):
+            raise AssertionError(f"Q5 card {card_index} mixes fixture speakers")
+        expected_label = "Speaker uncertain" if speaker in {"S00", "UNKNOWN"} else (
+            f"Speaker {numbers[speaker]}" if speaker in numbers else str(speaker)
+        )
+        if _normal_text(str(card.get("speaker_label", ""))) != expected_label:
+            raise AssertionError(f"Q5 card {card_index} speaker label differs from fixture")
+        if card.get("speaker_label_visible") is not True:
+            raise AssertionError(f"Q5 card {card_index} speaker label is hidden")
+        if _normal_text(" ".join(str(text) for text in shown)) != _normal_text(
+            " ".join(item["text"] for item in source)
+        ):
+            raise AssertionError(f"Q5 card {card_index} passage text differs from fixture")
+        passages += len(shown)
+    if len(consumed) != len(expected):
+        raise AssertionError("Q5 masked cards omit fixture segments")
+    return {"cards": len(cards), "passages": passages, "chips": len(chips)}
+
+
+def capture_q5_card_content(page: Page) -> list[dict[str, Any]]:
+    return page.locator(".transcript-card").evaluate_all(
+        """nodes => nodes.map(card => ({
+          speaker_label: card.querySelector('.utt-meta .utt-speaker-label')?.textContent ?? '',
+          speaker_label_visible: card.querySelector('.utt-meta .utt-speaker-label')?.checkVisibility({checkOpacity: true, checkVisibilityCSS: true}) ?? false,
+          passages: Array.from(card.querySelectorAll('.utt-content .utt-text'), node => node.textContent ?? ''),
+          segments: JSON.parse(card.getAttribute('data-segments') || 'null')
+        }))"""
+    )
+
+
+def capture_q5_legend_content(page: Page) -> list[str]:
+    return page.locator(".legend-chip .legend-chip-name").evaluate_all(
+        "nodes => nodes.map(node => node.textContent ?? '')"
+    )
+
+
 def largest_component(difference: bytearray, width: int, height: int, connectivity: int) -> int:
     if connectivity != 4:
         raise ValueError(f"Only four-connected regions are supported, got {connectivity}.")
@@ -645,7 +733,15 @@ def compare_viewport(
     diagnostic_regions: list[tuple[str, str]],
     reference_page: Page,
     candidate_page: Page,
+    fixture: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    content_check = None
+    if config.get("require_masked_card_content") is True:
+        if fixture is None:
+            raise ValueError("Q5 card content check requires the transcript fixture")
+        content_check = validate_q5_card_content(
+            capture_q5_card_content(candidate_page), capture_q5_legend_content(candidate_page), fixture
+        )
     reference = Image.open(reference_path).convert("RGB")
     candidate = Image.open(candidate_path).convert("RGB")
     if reference.size != candidate.size:
@@ -697,6 +793,7 @@ def compare_viewport(
         "largest_four_connected_region_percent": largest_percent,
         "exemptions": exemptions,
         "diagnostic_regions": diagnostics,
+        "masked_card_content": content_check,
         "passed": (
             differing_percent <= config["max_different_pixel_percent"]
             and largest_percent <= config["max_largest_region_percent"]
@@ -789,6 +886,7 @@ def main() -> int:
                                     diagnostic_regions,
                                     reference_page,
                                     candidate_page,
+                                    fixture,
                                 )
                                 result["fixture"] = {
                                     "reference": reference_fixture,

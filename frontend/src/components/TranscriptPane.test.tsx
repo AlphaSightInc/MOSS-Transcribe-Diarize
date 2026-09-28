@@ -3,7 +3,8 @@
 import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus } from "../state/session";
+import { applySessionStateEvent, captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus } from "../state/session";
+import { autoscroll } from "../state/ui";
 import { TranscriptPane } from "./TranscriptPane";
 
 describe("TranscriptPane", () => {
@@ -11,6 +12,7 @@ describe("TranscriptPane", () => {
 
   beforeEach(() => {
     resetSessionState();
+    autoscroll.value = false;
     root = document.createElement("div");
     document.body.appendChild(root);
   });
@@ -21,6 +23,7 @@ describe("TranscriptPane", () => {
     });
     root.remove();
     resetSessionState();
+    autoscroll.value = false;
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     vi.useRealTimers();
@@ -197,9 +200,84 @@ describe("TranscriptPane", () => {
       { start: 2, end: 3, text: "Preview", speaker: "S01", speaker_entity_id: "b", display_name: "Alex", state: "provisional" },
       { start: 3, end: 4, text: "Other speaker", speaker: "S01", speaker_entity_id: "b", display_name: "Alex", state: "confirmed" }
     ]));
-    expect(root.querySelectorAll(".utt")).toHaveLength(3);
+    expect(root.querySelectorAll(".utt")).toHaveLength(2);
     expect(root.querySelector(".utt-text")?.textContent).toBe("First sentence. Second sentence.");
-    expect([...root.querySelectorAll(".utt")].map(row => row.getAttribute("data-new-speaker"))).toEqual(["true", "true", "false"]);
+    expect([...root.querySelectorAll(".utt")].map(row => row.getAttribute("data-new-speaker"))).toEqual(["true", "true"]);
+    expect([...root.querySelectorAll(".utt")[1].querySelectorAll(".utt-text")].map(row => row.textContent))
+      .toEqual(["Other speaker", "Preview"]);
+  });
+
+  it("shows L-a live labels, dense settled numbers, one hint and source custody", () => {
+    act(() => {
+      render(<TranscriptPane />, root);
+      applySessionStateEvent({ type: "session_state", session_id: "q5-live", mode: "live",
+        state: "active", status: "active", live_label_policy: "La" });
+      replaceTranscript([
+        { source_lane: "system", start: 0, end: 1, text: "Early remote", speaker: "S01",
+          speaker_entity_id: "birth-1", display_name: "S01", state: "confirmed", segment_id: "early" },
+        { source_lane: "microphone", start: 1, end: 2, text: "Early local", speaker: "S02",
+          speaker_entity_id: "birth-2", display_name: "S02", state: "confirmed", segment_id: "local" },
+        { source_lane: "system", start: 2, end: 3, text: "Settled remote", speaker: "S04",
+          speaker_entity_id: "settled-a", display_name: "S04", state: "confirmed", settled: true, segment_id: "settled-a" },
+        { source_lane: "system", start: 3, end: 4, text: "Settled second", speaker: "S07",
+          speaker_entity_id: "settled-b", display_name: "S07", state: "confirmed", settled: true, segment_id: "settled-b" }
+      ]);
+    });
+    expect([...root.querySelectorAll(".utt-speaker-label")].map(node => node.textContent))
+      .toEqual(["Remote", "You", "Speaker 1", "Speaker 2"]);
+    expect(root.querySelectorAll("[data-settling-hint]")).toHaveLength(1);
+    expect(root.querySelectorAll("[data-text-status='confirmed']")).toHaveLength(2);
+    expect(root.querySelectorAll("[data-text-status='settled']")).toHaveLength(2);
+    expect(root.querySelector("[data-target-keys='segment:settled-a'] .utt-text")?.textContent)
+      .toBe("Settled remote");
+  });
+
+  it("keeps headers on later cards after a long same-speaker gap and an S00 split", () => {
+    act(() => {
+      render(<TranscriptPane />, root);
+      applySessionStateEvent({ type: "session_state", session_id: "q5-split", mode: "live",
+        state: "active", status: "active", live_label_policy: "La" });
+      replaceTranscript([
+        { source_lane: "system", start: 0, end: 1, text: "Settled first", speaker: "S01",
+          speaker_entity_id: "same", display_name: "S01", state: "confirmed", settled: true },
+        { source_lane: "system", start: 5, end: 6, text: "Unsettled later", speaker: "S01",
+          speaker_entity_id: "same", display_name: "S01", state: "confirmed", settled: false },
+        { source_lane: "system", start: 10, end: 11, text: "Unknown first", speaker: "S00",
+          speaker_entity_id: "S00", display_name: "S00", state: "confirmed" },
+        { source_lane: "system", start: 15, end: 16, text: "Unknown later", speaker: "S00",
+          speaker_entity_id: "S00", display_name: "S00", state: "confirmed" }
+      ]);
+    });
+    const cards = [...root.querySelectorAll<HTMLElement>(".transcript-card")];
+    expect(cards).toHaveLength(4);
+    expect(cards.map(card => card.dataset.continuation)).toEqual(["false", "false", "false", "false"]);
+    expect(cards.map(card => card.querySelector(".utt-meta .utt-speaker-label")?.textContent))
+      .toEqual(["Speaker 1", "Remote", "Speaker uncertain", "Speaker uncertain"]);
+  });
+
+  it("follows new text only while Auto-scroll is on and Find is closed", () => {
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation(callback => { callback(0); return 1; });
+    vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => undefined);
+    act(() => render(<TranscriptPane />, root));
+    const body = root.querySelector<HTMLDivElement>("#tr-body")!;
+    Object.defineProperty(body, "scrollHeight", { configurable: true, value: 500 });
+    const control = [...root.querySelectorAll<HTMLButtonElement>("button")]
+      .find(button => button.textContent === "Auto-scroll")!;
+    act(() => control.click());
+    expect(body.scrollTop).toBe(500);
+    act(() => control.click());
+    body.scrollTop = 120;
+    act(() => replaceTranscript([{ start: 0, end: 1, text: "New text", speaker: "S01",
+      speaker_entity_id: "person", display_name: "S01", state: "confirmed" }]));
+    expect(body.scrollTop).toBe(120);
+    act(() => control.click());
+    const find = [...root.querySelectorAll<HTMLButtonElement>("button")]
+      .find(button => button.textContent === "Find")!;
+    act(() => find.click());
+    body.scrollTop = 80;
+    act(() => replaceTranscript([{ start: 0, end: 1, text: "Revised text", speaker: "S01",
+      speaker_entity_id: "person", display_name: "S01", state: "confirmed" }]));
+    expect(body.scrollTop).toBe(80);
   });
 
   it("renders committed S00 as uncertain and never offers to name it", () => {
