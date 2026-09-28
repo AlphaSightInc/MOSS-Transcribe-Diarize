@@ -327,6 +327,14 @@ def test_engine_usage_counters_are_per_session_content_free_and_copied(tmp_path)
     assert estimated["audio_seconds_sent"] == 12.5
     assert estimated["live_list_price_estimate_usd"] == pytest.approx(2.5 * 0.005 / 60)
     assert estimated["cost_usd_basis"] == "provider_usage_plus_live_list_price_estimate"
+    reporters["one"](kind="microphone_gate", count_call=False,
+                     acoustic_gate_dropped_words=3, text_guard_dropped_words=2)
+    gates = rt.engine_diagnostics("one")
+    assert gates["mic_words_dropped_by_acoustic_gate"] == 3
+    assert gates["mic_words_dropped_by_text_guard"] == 2
+    assert gates["lanes"]["microphone"]["mic_words_dropped_by_acoustic_gate"] == 3
+    assert gates["lanes"]["microphone"]["mic_words_dropped_by_text_guard"] == 2
+    assert "microphone_gate" not in gates["calls_by_kind"]
     with pytest.raises(ValueError):
         reporters["one"](kind="rolling", error_code="meeting words")
 

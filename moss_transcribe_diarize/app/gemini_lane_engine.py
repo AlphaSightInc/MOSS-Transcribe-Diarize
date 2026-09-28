@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import asyncio
+import math
 import re
 import tempfile
 import threading
 import time
 import wave
 from pathlib import Path
+from array import array
 from typing import Callable, Sequence
 
 from .gemini_live_runtime import (GeminiBase, GeminiPreview, GeminiRelabel,
@@ -63,18 +65,91 @@ class SystemWordLedger:
             return self._guard.filter(words, self._words)
 
 
+class AcousticEchoGuard:
+    """Keep mic words with no competing system voice or sufficient local level."""
+
+    def __init__(self, system_read: Callable[[int, int], bytes], *, vad=None):
+        if vad is None:
+            import webrtcvad
+            vad = webrtcvad.Vad(1)
+        self.system_read = system_read
+        self.vad = vad
+
+    @staticmethod
+    def _rms(pcm16: bytes) -> float:
+        samples = array("h")
+        samples.frombytes(pcm16)
+        return math.sqrt(sum(value * value for value in samples) / len(samples)) if samples else 0.0
+
+    def filter(self, mic_pcm16: bytes, words: Sequence[GeminiWord], *,
+               offset_sample: int = 0) -> tuple[GeminiWord, ...]:
+        end_sample = offset_sample + len(mic_pcm16) // 2
+        kept = []
+        frame = LIVE_SAMPLE_RATE // 100
+        max_lag = LIVE_SAMPLE_RATE // 10
+        threshold = 10 ** (-15 / 20)
+        for word in words:
+            start = max(offset_sample, min(end_sample - 1, word.start_sample))
+            end = min(end_sample, max(start + 1, word.end_sample))
+            if end <= start:
+                continue
+            system_start = max(0, start - max_lag)
+            system_end = min(end_sample, math.ceil(end / frame) * frame)
+            system = self.system_read(system_start, system_end)
+            first_frame = start // frame
+            last_frame = math.ceil(end / frame)
+            system_voiced = any(
+                self.vad.is_speech(system[(i*frame-system_start)*2:
+                                          ((i+1)*frame-system_start)*2], LIVE_SAMPLE_RATE)
+                for i in range(first_frame, last_frame)
+                if (i+1)*frame <= system_end)
+            if not system_voiced:
+                kept.append(word)
+                continue
+            mic = mic_pcm16[(start-offset_sample)*2:(end-offset_sample)*2]
+            mic_rms = self._rms(mic)
+            duration = end - start
+            system_rms = max(self._rms(system[(max(0, start-lag)-system_start)*2:
+                                          (min(system_end, max(0, start-lag)+duration)-system_start)*2])
+                             for lag in range(0, max_lag+1, frame))
+            if mic_rms >= system_rms * threshold:
+                kept.append(word)
+        return tuple(kept)
+
+
 class MicrophoneWordGate:
-    def __init__(self, webrtc_gate, system_words: SystemWordLedger):
+    def __init__(self, webrtc_gate, system_words: SystemWordLedger,
+                 acoustic_gate=None, report_drops=None):
         self.webrtc_gate = webrtc_gate
         self.system_words = system_words
+        self.acoustic_gate = acoustic_gate
+        self.report_drops = report_drops
+
+    def _record(self, before: int, acoustic: int, after: int) -> None:
+        if self.report_drops is not None:
+            self.report_drops({"acoustic_gate_dropped_words": before-acoustic,
+                               "text_guard_dropped_words": acoustic-after})
 
     def filter(self, pcm16: bytes, words: Sequence[GeminiWord], *,
                offset_sample: int = 0) -> tuple[GeminiWord, ...]:
         voiced = self.webrtc_gate.filter(pcm16, words, offset_sample=offset_sample)
         if not voiced:
             return ()
-        return self.system_words.filter_mic(
-            voiced, through_sample=offset_sample + len(pcm16) // 2)
+        acoustic = (self.acoustic_gate.filter(pcm16, voiced, offset_sample=offset_sample)
+                    if self.acoustic_gate is not None else voiced)
+        kept = self.system_words.filter_mic(
+            acoustic, through_sample=offset_sample + len(pcm16) // 2)
+        self._record(len(voiced), len(acoustic), len(kept))
+        return kept
+
+    def filter_terminal(self, mic_pcm16: bytes, words: Sequence[GeminiWord],
+                        system_words: Sequence[GeminiWord]) -> tuple[GeminiWord, ...]:
+        # TerminalTranscriber has already applied the mic WebRTC word gate.
+        acoustic = (self.acoustic_gate.filter(mic_pcm16, words)
+                    if self.acoustic_gate is not None else tuple(words))
+        kept = TextEchoGuard().filter(acoustic, system_words)
+        self._record(len(words), len(acoustic), len(kept))
+        return kept
 
 
 class WebRtcSpeechDetector:

@@ -215,6 +215,8 @@ class _GeminiState:
     clamped_words: int = 0
     dropped_words: int = 0
     repaired_words: int = 0
+    mic_words_dropped_by_acoustic_gate: int = 0
+    mic_words_dropped_by_text_guard: int = 0
     chunked: bool = False
     audio_seconds_sent: float = 0.0
     cost_usd: float = 0.0
@@ -439,6 +441,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         clamped_words: int = 0,
         dropped_words: int = 0,
         repaired_words: int = 0,
+        acoustic_gate_dropped_words: int = 0,
+        text_guard_dropped_words: int = 0,
         chunked: bool = False,
         audio_seconds_sent: float = 0.0,
         cost_usd: float = 0.0,
@@ -452,7 +456,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             if value is not None and not re.fullmatch(r"[A-Za-z0-9_:-]{1,64}", value):
                 raise ValueError("engine usage kind and codes must be stable metadata tokens.")
         if any(not isinstance(value, int) or value < 0
-               for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks)):
+               for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks,
+                             acoustic_gate_dropped_words, text_guard_dropped_words)):
             raise ValueError("word-timing anomaly counts must be nonnegative integers.")
         if any(not math.isfinite(value) or value < 0 for value in (audio_seconds_sent, cost_usd)):
             raise ValueError("engine audio seconds and cost must be finite and nonnegative.")
@@ -470,6 +475,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.clamped_words += clamped_words
             state.dropped_words += dropped_words
             state.repaired_words += repaired_words
+            state.mic_words_dropped_by_acoustic_gate += acoustic_gate_dropped_words
+            state.mic_words_dropped_by_text_guard += text_guard_dropped_words
             state.chunked = state.chunked or chunked
             state.skipped_window_ticks += skipped_window_ticks
             state.audio_seconds_sent += audio_seconds_sent
@@ -482,6 +489,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "calls_by_kind": {}, "errors_by_code": {}, "retries_by_code": {},
                     "timing_anomalies": {"clamped": 0, "dropped": 0},
                     "repaired_words": 0, "chunked": False,
+                    "mic_words_dropped_by_acoustic_gate": 0,
+                    "mic_words_dropped_by_text_guard": 0,
                     "audio_seconds_sent": 0.0, "cost_usd": 0.0,
                     "skipped_window_ticks": 0})
                 if count_call:
@@ -495,6 +504,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["timing_anomalies"]["clamped"] += clamped_words
                 totals["timing_anomalies"]["dropped"] += dropped_words
                 totals["repaired_words"] += repaired_words
+                totals["mic_words_dropped_by_acoustic_gate"] += acoustic_gate_dropped_words
+                totals["mic_words_dropped_by_text_guard"] += text_guard_dropped_words
                 totals["chunked"] = totals["chunked"] or chunked
                 totals["audio_seconds_sent"] += audio_seconds_sent
                 totals["cost_usd"] += cost_usd
@@ -511,6 +522,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "retries_by_code": dict(state.retries_by_code),
                 "timing_anomalies": {"clamped": state.clamped_words, "dropped": state.dropped_words},
                 "repaired_words": state.repaired_words,
+                "mic_words_dropped_by_acoustic_gate": state.mic_words_dropped_by_acoustic_gate,
+                "mic_words_dropped_by_text_guard": state.mic_words_dropped_by_text_guard,
                 "chunked": state.chunked,
                 "audio_seconds_sent": state.audio_seconds_sent,
                 "cost_usd": state.cost_usd,

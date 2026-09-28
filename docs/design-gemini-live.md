@@ -303,3 +303,21 @@ still occupies two material IDs, so long-form identity remains unqualified.
 These are cached-call prototype scores, not fresh product-path quality evidence.
 The port passed 81 focused Gemini tests and the full backend gate (2,499 passed,
 3 skipped, 2 expected failures, 37 subtests).
+
+## Microphone acoustic echo gate candidate
+
+For each WebRTC-supported microphone word, the gate checks whether the system
+lane has any WebRTC mode-1 voiced 10 ms frame in that word span. With no system
+voice, it keeps the word. With system voice, it compares microphone RMS with the
+loudest equal-duration system RMS at 0–100 ms earlier lags in 10 ms steps and
+keeps the word at ≥−15 dB. The existing exact-token ±1.5 s text guard must
+also keep it. Both rolling and terminal mic words follow this rule. Public
+diagnostics count mic words dropped by the acoustic gate and by the text guard,
+per session and microphone lane, without retaining content.
+
+Pane 5.2 measured baseline E1 at **0/19** stray words and M2 at **22/22**
+operator words retained with this combined rule on its timed-word bench.
+Its harder cases reject a general echo-safe claim: at echo ≥−15 dB, stray words
+survive; with operator gain .1, true words are lost. Natural-room performance
+is unmeasured. The product-paced E1 receipt and test outcome are recorded below
+when available.

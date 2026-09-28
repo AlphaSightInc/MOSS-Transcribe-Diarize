@@ -1,5 +1,15 @@
 # Gemini runtime seam probe (pane P63)
 
+## ECHOGATE candidate port
+
+**Question and hypothesis.** When Gemini gives a mic word that the exact text guard misses, aligned source levels may identify returned system speech. The frozen candidate keeps a mic WebRTC-supported word only if system WebRTC mode 1 has no voiced 10 ms frame over the word, or the mic RMS on its word span is at least the loudest same-duration system RMS at a 0–100 ms earlier lag minus 15 dB. The existing ±1.5 s exact-token text guard must also pass.
+
+**Primitives and invariants.** Aligned append-only system/mic PCM, word bounds, system voiced frames, same-duration RMS, and text tokens are independent evidence. Both rolling and terminal apply acoustic then text admission; terminal first applies its existing mic WebRTC word gate. A system-unvoiced word bypasses only the level comparison. The public counter stores only aggregate dropped-word counts; it does not store text, PCM, or vectors.
+
+**Assumptions, falsifier, and tool.** Pane 5.2's public-fixture prototype measured baseline E1 combined 0/19 stray and M2 22/22 operator words at D15, but **rejected a stable envelope**: echo at −15 dB and quiet operator gain .1 fail. Natural rooms are unmeasured. A product-paced E1 with surviving stray mic words or lost operator phrases falsifies transfer from prototype to product. Reuse the P52 one-command measured prototype and test the production gate with deterministic aligned PCM before a single real paced E1 HTTP call; that call tests integration/publication, not a new threshold sweep.
+
+**TDD verdict before real call.** Deterministic tests went red/green for the ratio and unvoiced bypass, rolling and terminal conjunction with text guard, and content-free per-session/per-lane drop counters. Focused Gemini tests passed 83/83. The product E1 result is pending.
+
 ## POLICY-TIMESTAMPS port contract (before implementation)
 
 **Structural question.** How can the product retain Gemini's annotation sequence when long-call offsets jump to the wrong part of the recording, while meeting the provider call cap and joining chunk-local voices across seams?

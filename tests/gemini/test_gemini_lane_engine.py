@@ -1,7 +1,8 @@
 import asyncio
+from array import array
 
 from moss_transcribe_diarize.app.gemini_lane_engine import (LaneGeminiEngine, TextEchoGuard,
-    SystemWordLedger, LazyMicrophoneWords)
+    SystemWordLedger, LazyMicrophoneWords, AcousticEchoGuard, MicrophoneWordGate)
 from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiRolling, GeminiSegment
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord
 
@@ -59,6 +60,40 @@ def test_microphone_word_gate_uses_system_words_before_local_identity():
     words = (GeminiWord("hello", "m", 0, 16000),
              GeminiWord("local", "m", 0, 16000))
     assert [w.text for w in ledger.filter_mic(words, through_sample=16000)] == ["local"]
+
+
+def test_acoustic_guard_system_voice_ratio_lag_and_unvoiced_bypass():
+    class Vad:
+        def is_speech(self, frame, sample_rate):
+            return any(memoryview(frame).cast("h"))
+    # A 30 ms mic delay: 1000-amplitude system speech arrives as 100-amplitude echo.
+    system = array("h", [0]*1600 + [1000]*3200 + [0]*1600).tobytes()
+    mic = array("h", [0]*2080 + [100]*3200 + [0]*1120).tobytes()
+    guard = AcousticEchoGuard(lambda start, end: system[start*2:end*2], vad=Vad())
+    echoed = GeminiWord("echo", "m", 2080, 5280)
+    quiet_source = GeminiWord("local", "m", 5280, 5920)
+    assert guard.filter(mic, (echoed, quiet_source)) == (quiet_source,)
+    loud = array("h", [0]*2080 + [200]*3200 + [0]*1120).tobytes()
+    assert guard.filter(loud, (echoed,)) == (echoed,)
+
+
+def test_microphone_gate_requires_acoustic_and_text_admission_with_separate_counts():
+    class PassVoice:
+        def filter(self, pcm, words, *, offset_sample=0): return tuple(words)
+    class Acoustic:
+        def filter(self, pcm, words, *, offset_sample=0):
+            return tuple(w for w in words if w.text != "echo")
+    ledger = SystemWordLedger()
+    ledger.observe((GeminiWord("same", "s", 0, 16000),), 16000)
+    counts = []
+    gate = MicrophoneWordGate(PassVoice(), ledger, Acoustic(), counts.append)
+    words = tuple(GeminiWord(text, "m", 0, 16000)
+                  for text in ("echo", "same", "local"))
+    assert [w.text for w in gate.filter(bytes(32000), words)] == ["local"]
+    assert counts == [{"acoustic_gate_dropped_words": 1, "text_guard_dropped_words": 1}]
+    assert [w.text for w in gate.filter_terminal(bytes(32000), words,
+        (GeminiWord("same", "s", 0, 16000),))] == ["local"]
+    assert counts[-1] == counts[0]
 
 
 def test_lazy_microphone_preview_opens_on_voice_and_closes_after_60s_quiet():
