@@ -17,7 +17,11 @@ export interface PassageSpeakerResult {
 export type PassageSpeakerTarget = { speaker_id: string } | { label: string };
 
 const VOICEPRINT_EVIDENCE_NOT_ADMITTED = "voiceprint_evidence_not_admitted";
-const VOICEPRINT_REFUSAL_COPY = "Voiceprint not saved yet. We need to finish identifying this speaker and hear at least 2 seconds of clear speech. You can turn off Save voiceprint to save the name now.";
+const VOICEPRINT_REFUSAL_COPY = "Save voiceprint needs at least 2 seconds of finished, clear speech from this speaker.";
+
+export class VoiceprintEvidenceNotAdmittedError extends Error {
+  readonly code = VOICEPRINT_EVIDENCE_NOT_ADMITTED;
+}
 
 export interface Voiceprint {
   id: string;
@@ -65,10 +69,14 @@ export async function nameMeetingSpeaker(
   );
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
+    const detail = payload?.detail;
+    const message = typeof detail?.message === "string" && detail.message.trim()
+      ? detail.message
+      : null;
     if (payload?.detail?.code === VOICEPRINT_EVIDENCE_NOT_ADMITTED) {
-      throw new Error(VOICEPRINT_REFUSAL_COPY);
+      throw new VoiceprintEvidenceNotAdmittedError(message || VOICEPRINT_REFUSAL_COPY);
     }
-    throw new Error(typeof payload?.detail === "string" ? payload.detail : `Speaker naming failed (${response.status}).`);
+    throw new Error(message || (typeof detail === "string" ? detail : `Speaker naming failed (${response.status}).`));
   }
   if (payload?.meeting_id !== meetingId || payload?.speaker_id !== speakerId ||
       typeof payload?.label !== "string" || !["pending", "enrolled", "not_requested", "unavailable"].includes(payload?.enrollment)) {

@@ -79,24 +79,27 @@ it.each([
   await vi.waitFor(assertNames);
 });
 
-it("explains a voiceprint admission refusal and still lets the operator save the name", async () => {
-  const requests: boolean[] = [];
+it.each(["active", "after Stop"])("saves the name in one action after a %s voiceprint refusal", async phase => {
+  const requests: Array<{ label: string; save_voiceprint?: boolean }> = [];
+  const serverMessage = "Save voiceprint needs at least 2 seconds of clear speech from this speaker. You can name the speaker without saving a voiceprint.";
   vi.stubGlobal("fetch", vi.fn(async (_url, init) => {
-    const saveVoiceprint = JSON.parse(init.body).save_voiceprint !== false;
-    requests.push(saveVoiceprint);
-    return saveVoiceprint
-      ? Response.json({ detail: { code: "voiceprint_evidence_not_admitted" } }, { status: 400 })
+    const body = JSON.parse(init.body);
+    requests.push(body);
+    return body.save_voiceprint !== false
+      ? Response.json({ detail: { code: "voiceprint_evidence_not_admitted", message: serverMessage } }, { status: 400 })
       : Response.json({ meeting_id: "m", speaker_id: "person-a", label: "Alex",
           enrollment: "not_requested" });
   }));
   await act(async () => {
     sessionId.value = "m";
-    sessionStatus.value = "active";
+    sessionStatus.value = phase === "active" ? "active" : "closed";
+    captureMeetingId.value = phase === "active" ? "m" : null;
     replaceTranscript([{ segment_id: "one", start: 0, end: 1, text: "Short speech", speaker: "S01",
       speaker_entity_id: "person-a", display_name: "S01", state: "confirmed" }]);
     render(<TranscriptPane />, root);
   });
   act(() => root.querySelector<HTMLButtonElement>('.utt-speaker')!.click());
+  expect(root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')?.checked).toBe(true);
   act(() => {
     const input = root.querySelector<HTMLInputElement>('#speaker-name-input')!;
     input.value = "Alex";
@@ -104,18 +107,13 @@ it("explains a voiceprint admission refusal and still lets the operator save the
   });
   await act(async () => { root.querySelector('dialog form')!.dispatchEvent(
     new Event("submit", { bubbles: true, cancelable: true })); });
-  await vi.waitFor(() => expect(root.querySelector('dialog [role="alert"]')).not.toBeNull());
-  expect(root.querySelector('dialog [role="alert"]')?.textContent).toContain("Voiceprint not saved yet");
-  expect(root.querySelector('dialog [role="alert"]')?.textContent).toContain("2 seconds of clear speech");
-  expect(root.querySelector('dialog [role="alert"]')?.textContent).toContain("turn off Save voiceprint");
-  expect(root.querySelector<HTMLInputElement>('#speaker-name-input')?.value).toBe("Alex");
-  expect(transcript.value[0]?.display_name).toBe("S01");
-  act(() => root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')!.click());
-  await act(async () => { root.querySelector('dialog form')!.dispatchEvent(
-    new Event("submit", { bubbles: true, cancelable: true })); });
   await vi.waitFor(() => expect(root.querySelector('dialog')).toBeNull());
-  expect(requests).toEqual([true, false]);
+  expect(requests).toEqual([{ label: "Alex" }, { label: "Alex", save_voiceprint: false }]);
   expect(transcript.value[0]?.display_name).toBe("Alex");
+  expect(root.textContent).toContain("Saved Alex. Voiceprint not saved.");
+  expect(root.textContent).toContain(serverMessage);
+  act(() => root.querySelector<HTMLButtonElement>('.utt-speaker')!.click());
+  expect(root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')?.checked).toBe(true);
 });
 
 it("discards a pre-rename poll response and fetches the acknowledged labels", async () => {

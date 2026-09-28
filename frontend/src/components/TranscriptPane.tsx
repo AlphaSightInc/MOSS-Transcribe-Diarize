@@ -1,7 +1,7 @@
 import { type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 import { requestMeetingHistoryRefresh, SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
-import { nameMeetingSpeaker, reassignMeetingPassages } from "../api/speakers";
+import { nameMeetingSpeaker, reassignMeetingPassages, VoiceprintEvidenceNotAdmittedError } from "../api/speakers";
 import {
   buildTranscriptExportText,
   serializeTranscriptExport,
@@ -199,17 +199,28 @@ export function TranscriptPane() {
     event.preventDefault();
     if (!namingTarget || !activeSessionId || !canNameSpeakers || savingName) return;
     const meetingId = activeSessionId;
+    const requestedName = speakerName.trim();
     setSavingName(true);
     setNamingError(null);
     try {
-      const result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, speakerName.trim(), undefined, saveVoiceprint);
+      let result;
+      let refusalMessage: string | null = null;
+      try {
+        result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, requestedName, undefined, saveVoiceprint);
+      } catch (error) {
+        if (!saveVoiceprint || !(error instanceof VoiceprintEvidenceNotAdmittedError) || sessionId.value !== meetingId) throw error;
+        refusalMessage = error.message;
+        result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, requestedName, undefined, false);
+      }
       if (sessionId.value !== meetingId) return;
       // The response acknowledges a durable display label, not a new identity.
       sessionTranscriptItems.value = sessionTranscriptItems.value.map(item =>
         item.speaker_entity_id === result.speaker_id ? { ...item, display_name: result.label } : item);
       document.dispatchEvent(new CustomEvent(SPEAKER_NAMED_EVENT, { detail: { meetingId } }));
       requestMeetingHistoryRefresh();
-      setNamingMessage(result.enrollment === "not_requested"
+      setNamingMessage(refusalMessage
+        ? `Saved ${result.label}. Voiceprint not saved. ${refusalMessage}`
+        : result.enrollment === "not_requested"
         ? `Saved ${result.label}. Voiceprint not saved.`
         : result.enrollment === "unavailable"
         ? `Saved ${result.label}. Voiceprint not saved: at least 2 seconds of finished, clear speech is needed.`

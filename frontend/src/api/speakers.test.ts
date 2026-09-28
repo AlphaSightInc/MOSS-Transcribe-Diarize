@@ -18,6 +18,25 @@ describe("speaker naming API", () => {
   it("reports invalid JSON on a failed request without inventing success", async () => {
     await expect(nameMeetingSpeaker("m", "s", "Alex", vi.fn().mockResolvedValue(new Response("unavailable", { status: 503 })))).rejects.toThrow("Speaker naming failed (503)");
   });
+
+  it("shows a structured server message, including a voiceprint refusal", async () => {
+    const plain = "Save voiceprint needs more clear speech. You can name the speaker without it.";
+    const refused = vi.fn().mockResolvedValue(Response.json({ detail: {
+      code: "voiceprint_evidence_not_admitted", message: plain
+    } }, { status: 400 }));
+    await expect(nameMeetingSpeaker("m", "s", "Alex", refused)).rejects.toThrow(plain);
+    const other = vi.fn().mockResolvedValue(Response.json({ detail: {
+      code: "another_refusal", message: "This name cannot be saved yet."
+    } }, { status: 400 }));
+    await expect(nameMeetingSpeaker("m", "s", "Alex", other)).rejects.toThrow("This name cannot be saved yet.");
+  });
+
+  it("keeps plain refusal copy if a coded response omits its message", async () => {
+    const fetcher = vi.fn().mockResolvedValue(Response.json({ detail: {
+      code: "voiceprint_evidence_not_admitted"
+    } }, { status: 400 }));
+    await expect(nameMeetingSpeaker("m", "s", "Alex", fetcher)).rejects.toThrow("at least 2 seconds of finished, clear speech");
+  });
 });
 
 describe("settled passage correction API", () => {
