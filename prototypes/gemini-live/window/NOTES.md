@@ -290,3 +290,49 @@ drop a word only if WebRTC mode-1/10-ms at 16 kHz has no voiced frame in [start-
 ```
 
 The word gate can run before or after identity remapping because it uses only audio/times. **Verdict:** the identity policy passes the nominated accept6 DER bound and observed real false-merge check; it is a **candidate** because tune/test overlap, mixed labels, and true-same synthetic converse motifs limit generalization. F12's gate removes the measured silence/noise hallucinations with zero returned-word drops on covered real clips; real music and independent word truth remain unmeasured. Receipts: `evidence/P53/final-policy-{vectors,tune,test,pair-audit,vad}.json`; reproducible offline command: `python prototypes/gemini-live/window/final_policy.py {vectors,tune,test,audit,vad}` (run each stage separately, with `selection.json` frozen before `test`).
+
+## Variance follow-up structural contract (before new measurement)
+
+**Structural question.** Does the selected final-pass policy meet DER ≤.110 across repeated Gemini responses, or did one favorable response create the apparent win? On RTFL, which timed error source causes its .414 DER, and can a general rule repair it without moving error to other cases?
+
+**Minimum primitives.** A fresh response is an independent whole-clip Gemini draw; its raw response and usage form one receipt. The frozen acoustic-vector extraction and turn-veto rules map that response's labels to final IDs. H1 #3 timed reference and exact final scorer yield comparable DER. For RTFL, timed reference speech, its overlap with other reference speakers, hypothesis speech, and the scorer's fixed speaker mapping are the smallest facts needed to attribute missed time, false time, and wrong-speaker time. There is no need for a new model or production component.
+
+**Invariants.** Four uncached responses per accept6 clip and two for complete Lex Bill 30 minutes; the canonical cache remains untouched. Every fresh response uses the same frozen .65/2 s/single-link policy and production ONNX embedder. H1-exact final scoring applies to accept6. Pair draw index only to form four six-case macro samples; also enumerate all 4^6 cross-case recombinations so the pass fraction is not an arbitrary pairing effect. No reference label informs the policy. Stay below $3 new spend and use public corpus audio only.
+
+**Assumptions/unknowns.** Gemini calls may be correlated despite `use_cache=False`; four draws are a small sample, not a probability guarantee. The RTFL reference covers only part of 90 s, and its word times are turn-level rather than independent word truth. The existing cache's Lex Bill response was overwritten, so earlier and current whole-call results are distinct draws. Exact request success, output form, variance, and source of RTFL error are unmeasured until receipts land.
+
+**Falsifiers and tool decisions.** A meaningful stability claim fails if the four paired macros or exact 4^6 combinations often exceed .110, or if a fresh response creates a real false merge. Use `diarize_window(use_cache=False)` with a per-draw raw JSON cache directory because it exercises the actual Gemini path without replacing canonical responses; record usage/cost and stop under cap. Reuse `embedding_intervals`, production WeSpeaker, the frozen merge rule, and `h1_offline.score_case` so any change is response variance, not a scorer or policy rewrite. For RTFL, reproduce production DER decomposition with interval arithmetic; any proposed general adjustment must be scored across all accept6 draws and must not worsen the non-RTFL cases. If evidence cannot separate timing from attribution, report unknown rather than invent a cause.
+
+**One bounded RTFL counterfactual.** Lowering cosine to .55 merges RTFL's true-same labels (cosine .5529), but also merges a Shapiro pair at .6382 and raises its DER .188852→.193443. This may be due to `words_to_segments` extending timing when it merges adjacent words after speaker remapping. Test one structural adjustment: group Gemini words into turns first, then remap only the turn's speaker without changing its start/end/text. Falsifier: RTFL fails to improve, any other covered real clip or synthetic meeting worsens in DER/false merges, or fresh accept6 draws fail the .110 macro bound. This uses only cached responses and production scoring; it does not change the accepted rule unless measured and adopted by the lead.
+
+### F13 — Fresh whole-call variance under the frozen final policy
+
+**Verdict:** the policy's accept6 H1-exact final DER was **.104860 in all four fresh six-case rounds**, below .110 each time. Pure Gemini's four macro scores were .125138/.125138/.110694/.125138, all above .110. The measured win is repeatable on these responses; it is not a statistical guarantee because five of six cases returned identical parsed words, speakers, and times on all four uncached calls. Adam's third draw changed 60/549 speaker labels, 44 word timestamps, and two texts. All 26 calls were billed, SDK-cache `cached=false`, with zero provider error rows and zero parser timing anomalies.
+
+| accept6 case, H1 #3 truth | Pure Gemini DER mean [min, max], 4 draws | Policy DER mean [min, max], 4 draws |
+|---|---:|---:|
+| Jamie Dimon 180 s | .063795 [.063795, .063795] | .063795 [.063795, .063795] |
+| RTFL discussion 90 s, partial timed reference | .414255 [.414255, .414255] | .414255 [.414255, .414255] |
+| Adam Frank 180 s | .126111 [.061111, .147778] | **.026111** [.026111, .026111] |
+| Bill Ackman 60 s | .068333 [.068333, .068333] | .068333 [.068333, .068333] |
+| Keyu Jin 60 s | .036667 [.036667, .036667] | .036667 [.036667, .036667] |
+| Javier intro 50 s | .020000 [.020000, .020000] | .020000 [.020000, .020000] |
+| **Macro of six** | **.121527** [.110694, .125138] | **.104860** [.104860, .104860] |
+
+The fraction of the **four paired macro draws** at DER ≤.110 is **0/4 pure versus 4/4 policy**. Enumerating all **4⁶=4,096 cross-case recombinations** of these observed draws gives 0/4,096 versus 4,096/4,096; those recombinations are arithmetic, not 4,096 independent model calls. The policy detected zero false-merge groups among truth-attributable labels in 24 accept6 draws; RTFL retains one split in each. Its margin to the .110 bound is only .005140, so unobserved response modes remain material.
+
+Two fresh complete-reference Lex Bill 30-minute calls were identical: pure common-scorer DER **.061542 [.061542, .061542]**, policy **.038603 [.038603, .038603]**, 3→2 speaker labels. The current canonical cache contains a different later response (pure .083704, policy .060764; F11), showing that longer-call outputs can vary even though this pair did not. All raw responses are isolated at `evidence/P53/variance-raw/<case>/draw-N/`; one numeric receipt per draw is in `variance-draws/`, aggregate in `variance-summary.json`. New Gemini spend **$0.304052 for 26/26 successful calls**, below this brief's $3 cap. No operator/private audio or canonical cache write.
+
+### F14 — RTFL 90-second error anatomy and bounded policy check
+
+The H1 #3 RTFL reference times **60.894/90 s (67.7%)**; 29.106 s lacks a timed speaker label. The timed reference and Gemini hypothesis each have **zero annotated overlapping-speaker time**, so overlap contributes no measured DER here; simultaneous voices in the audio without annotation remain unknown. The canonical response and four fresh draws have identical 205 parsed words and identical H1-exact DER **.414255**. The retained MOSS H1 #3 final is **.344855**; its final intervals were not retained for component-by-component attribution. On reference speech alone, Gemini's H1 DER **.378412** exceeds MOSS's **.261404**, so untimed gaps do not explain the whole gap.
+
+| Production-score component | Error seconds / 60.894 timed seconds | Share of 25.226 total error seconds | Interval evidence |
+|---|---:|---:|---|
+| Missed reference speech | 9.253 / .151955 DER | 36.7% | ENG_A absent 41.80–44.79 s (2.99 s), 73.80–75.40 s (1.60 s); 4.831 s miss in 30–60 s bin |
+| False alarm against timed reference | 6.359 / .104429 DER | 25.2% | All in untimed gaps by scorer definition; 5.729 s within 0.5 s of a reference turn edge; 525/638 ten-ms WebRTC frames there voiced |
+| Wrong speaker on timed speech | 9.613 / .157872 DER | 38.1% | Fixed mapping BOSS→Gemini spk:2, yet BOSS 24.61–27.15 s was spk:0 (2.54 s); ENG_A→spk:2 2.410 s, ENG_B→spk:0 2.040 s |
+
+Within ±0.5 s of a **reference turn** boundary lie 4.553/9.253 s of miss, 5.729/6.359 s of false alarm, and 5.737/9.613 s of confusion. This is boundary proximity, **not a measured word-timestamp error**: the corpus has turn intervals but no independently timed word truth. Fourteen of 205 Gemini word midpoints fall outside timed reference; 82.3% of WebRTC frames in scored false-alarm zones are voiced, consistent with some missing reference coverage but not proof of who spoke. The wrong-speaker overlap occurs mainly in the first 60 s, while the last 30 s has zero confusion; this is local turn attribution, not a global label permutation. Receipt: `evidence/P53/rtfl-variance-anatomy.json` (atomic and joined error intervals; production component totals reproduce H1 final DER).
+
+**No no-harm general change found.** Lowering cosine .65→.55 with the same A–B–A veto merges RTFL's true-same spk:0/spk:2 (cosine .5529), reducing its DER to .374685; it also merges an unclassified Shapiro pair at higher cosine .6382, worsening covered-gold DER .188852→.193443. A single threshold cannot select RTFL while excluding that pair. Grouping words *before* remapping avoids Shapiro's regression but worsens Adam .026111→.032778, complete Lex five-minute Bill .023→.027 and Javier .032→.036667, Lex Bill 30-minute .060764→.061431, and two synthetic meetings. The existing WebRTC word gate removes zero RTFL words. The group-first hypothesis is falsified; leave the accepted .65 rule unchanged. Receipt: `evidence/P53/rtfl-general-counterfactual.json`.
