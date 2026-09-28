@@ -123,3 +123,7 @@ evidence/mvpfix/*/raw/
 # local secrets (Gemini key etc.)
 .env.local
 .env
+prototypes/streaming-diarization/data
+prototypes/gemini-live/.cache/
+prototypes/gemini-live/.ledger/
+prototypes/gemini-live/**/out/
