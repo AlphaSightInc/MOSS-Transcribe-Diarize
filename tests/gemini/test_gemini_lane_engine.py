@@ -13,6 +13,7 @@ def test_two_lane_engines_publish_one_overlapping_forward_revision(tmp_path):
     class FakeLane:
         def __init__(self, lane, publish):
             self.lane, self.publish = lane, publish
+            self.terminal_coverage_gaps = ((lane, 12000, 14000),)
         def push_audio(self, start_sample, pcm16):
             received[self.lane] = pcm16
             self.publish(GeminiBase(16000, ()))
@@ -42,6 +43,9 @@ def test_two_lane_engines_publish_one_overlapping_forward_revision(tmp_path):
     assert [(row.source_lane, row.start_sample) for row in rolls[0].segments] == [
         ("system", 0), ("microphone", 4000)]
     assert asyncio.run(engine.drain_tail(1.0))
+    assert asyncio.run(engine.finish(None)) == ()
+    assert engine.terminal_coverage_gaps == (("system", 12000, 14000),
+                                             ("microphone", 12000, 14000))
     engine.close()
 
 

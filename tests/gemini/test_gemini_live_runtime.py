@@ -192,6 +192,33 @@ def test_terminal_maps_overlapping_labels_within_each_capture_lane(tmp_path):
     asyncio.run(run())
 
 
+def test_terminal_coverage_gap_preserves_live_rows_in_final_revision(tmp_path):
+    async def run():
+        class GapEngine(ScriptedGeminiEngine):
+            terminal_coverage_gaps = (("system", 2*16000, 20*16000),)
+        final = (GeminiSegment(0, 2*16000, "opening final", "terminal-a", "system"),)
+        rt = GeminiLiveRuntime(
+            descriptor=descriptor(tape_bytes=20*32000), tape_storage_root=tmp_path,
+            engine_factory=lambda _id, publish, _usage: GapEngine(
+                publish, batches=(), terminal=final))
+        rt.create(session_id="one")
+        for second in range(20):
+            rt.accept_frame("one", frame(second))
+        rt.publish_update("one", GeminiBase(20*16000, ()))
+        rt.publish_update("one", GeminiRolling(0, 20*16000, (
+            GeminiSegment(0, 2*16000, "opening live", "speaker-0001", "system"),
+            GeminiSegment(2*16000, 20*16000, "protected live speech", "speaker-0001", "system")),
+            revision_lanes=("system",)))
+        await rt.stop("one", 1.0)
+        await rt.wait_terminal("one")
+        session = rt.snapshot("one").session
+        assert session.finalization_status == "final"
+        assert [(row.text, row.canonical_speaker) for row in session.effective_transcript] == [
+            ("opening final", "speaker-0001"),
+            ("protected live speech", "speaker-0001")]
+    asyncio.run(run())
+
+
 def test_relabel_and_terminal_revision_replace_visible_rows(tmp_path):
     asyncio.run(_relabel_and_terminal_revision_replace_visible_rows(tmp_path))
 
@@ -335,6 +362,15 @@ def test_engine_usage_counters_are_per_session_content_free_and_copied(tmp_path)
     assert gates["lanes"]["microphone"]["mic_words_dropped_by_acoustic_gate"] == 3
     assert gates["lanes"]["microphone"]["mic_words_dropped_by_text_guard"] == 2
     assert "microphone_gate" not in gates["calls_by_kind"]
+    reporters["one"](kind="system_live_preview", count_call=False,
+                     preview_stall_restarts=1)
+    reporters["one"](kind="system_rolling", count_call=False, coverage_retry=1)
+    reporters["one"](kind="system_terminal", count_call=False,
+                     coverage_retry=1, terminal_coverage_fallbacks=1)
+    diagnostics = rt.engine_diagnostics("one")
+    assert (diagnostics["preview_stall_restarts"], diagnostics["coverage_retries"],
+            diagnostics["terminal_coverage_fallbacks"]) == (1, 2, 1)
+    assert diagnostics["lanes"]["system"]["coverage_retries"] == 2
     with pytest.raises(ValueError):
         reporters["one"](kind="rolling", error_code="meeting words")
 
