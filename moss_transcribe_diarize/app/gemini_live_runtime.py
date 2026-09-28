@@ -231,6 +231,7 @@ class _GeminiState:
     cost_usd: float = 0.0
     live_list_price_estimate_usd: float = 0.0
     skipped_window_ticks: int = 0
+    preview_stall_restarts: int = 0
     degraded_path_activations: int = 0
     window_lag_samples: list[int] = field(default_factory=list)
     preview_lag_samples: list[int] = field(default_factory=list)
@@ -471,6 +472,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         count_call: bool = True,
         cost_basis: str = "provider_usage",
         skipped_window_ticks: int = 0,
+        preview_stall_restarts: int = 0,
     ) -> None:
         """Record one provider request attempt, with operational metadata only."""
 
@@ -479,6 +481,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 raise ValueError("engine usage kind and codes must be stable metadata tokens.")
         if any(not isinstance(value, int) or value < 0
                for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks,
+                             preview_stall_restarts,
                              acoustic_gate_dropped_words, text_guard_dropped_words)):
             raise ValueError("word-timing anomaly counts must be nonnegative integers.")
         if any(not math.isfinite(value) or value < 0 for value in (audio_seconds_sent, cost_usd)):
@@ -501,6 +504,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.mic_words_dropped_by_text_guard += text_guard_dropped_words
             state.chunked = state.chunked or chunked
             state.skipped_window_ticks += skipped_window_ticks
+            state.preview_stall_restarts += preview_stall_restarts
             state.audio_seconds_sent += audio_seconds_sent
             state.cost_usd += cost_usd
             if cost_basis == "list_price_estimate":
@@ -515,6 +519,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "mic_words_dropped_by_text_guard": 0,
                     "audio_seconds_sent": 0.0, "cost_usd": 0.0,
                     "skipped_window_ticks": 0})
+                totals.setdefault("preview_stall_restarts", 0)
                 if count_call:
                     calls = totals["calls_by_kind"]
                     calls[lane_kind] = calls.get(lane_kind, 0) + 1
@@ -532,6 +537,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["audio_seconds_sent"] += audio_seconds_sent
                 totals["cost_usd"] += cost_usd
                 totals["skipped_window_ticks"] += skipped_window_ticks
+                totals["preview_stall_restarts"] += preview_stall_restarts
 
     def engine_diagnostics(self, session_id: str) -> dict[str, object]:
         """Copy one meeting's content-free provider totals for QA and operator harnesses."""
@@ -553,6 +559,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                                    if state.live_list_price_estimate_usd else "provider_usage"),
                 "live_list_price_estimate_usd": state.live_list_price_estimate_usd,
                 "skipped_window_ticks": state.skipped_window_ticks,
+                "preview_stall_restarts": state.preview_stall_restarts,
                 "degraded_path_activations": state.degraded_path_activations,
                 "window_lag_seconds": _lag_summary(state.window_lag_samples),
                 "preview_lag_seconds": _lag_summary(state.preview_lag_samples),

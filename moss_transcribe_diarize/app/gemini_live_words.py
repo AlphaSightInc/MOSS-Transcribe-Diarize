@@ -9,6 +9,7 @@ from concurrent.futures import Future
 from typing import Callable
 
 from google.genai import types
+import webrtcvad
 
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .gemini_provider import _error_code
@@ -49,6 +50,8 @@ class _LiveCore:
         self._history: deque[tuple[int, int, bytes]] = deque()
         self._handle: str | None = None
         self._reconnect_requested = False
+        self._vad = webrtcvad.Vad(1)
+        self._voiced_since_text = 0
 
     async def start(self) -> None:
         await self._open(None)
@@ -109,6 +112,7 @@ class _LiveCore:
                         retry_code=code)
 
     def _publish(self, text: str, final: bool) -> None:
+        self._voiced_since_text = 0
         start, end = self.turn_start, self.sent_samples
         norm = " ".join(text.lower().split())
         if not any(lo < end and start < hi and prior == norm and was_final == final
@@ -124,6 +128,7 @@ class _LiveCore:
         replay_start = max(0, end - 5 * LIVE_SAMPLE_RATE)
         await self.close()
         await self._open(self._handle)
+        self._voiced_since_text = 0
         self.turn_start = min(self.turn_start, replay_start)
         for start, stop, chunk in self._history:
             if stop > replay_start:
@@ -132,6 +137,9 @@ class _LiveCore:
 
     async def _send_audio(self, pcm16: bytes, *, end_sample: int) -> None:
         assert self.session is not None
+        self._voiced_since_text += 160 * sum(
+            self._vad.is_speech(pcm16[i:i+320], LIVE_SAMPLE_RATE)
+            for i in range(0, len(pcm16)-319, 320))
         self.sent_samples = max(self.sent_samples, end_sample)
         seconds = len(pcm16) / (2 * LIVE_SAMPLE_RATE)
         self.report(kind="live_preview", count_call=False, audio_seconds_sent=seconds,
@@ -148,6 +156,10 @@ class _LiveCore:
             self._history.popleft()
         try:
             await self._send_audio(pcm16, end_sample=end_sample)
+            if self._voiced_since_text >= 8 * LIVE_SAMPLE_RATE:
+                self.report(kind="live_preview", count_call=False,
+                            preview_stall_restarts=1)
+                await self._rotate()
         except Exception as exc:
             code = _error_code(exc)
             self.report(kind="live_preview", count_call=False, error_code=code,
