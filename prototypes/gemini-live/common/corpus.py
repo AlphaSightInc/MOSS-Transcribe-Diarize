@@ -7,6 +7,7 @@ Tiers (id -> Clip):
 - bench5m : 8 x 300 s real interviews/discussions (K=2-3)
 - long30m : 2 x 1800 s
 - synth   : LibriSpeech synthetic meetings K=2..6 (600 s)
+- long60  : 43-min public Lex concatenation, 5 true speakers (build: window/long60/build.py)
 - e1      : round-6 E1 fixture (Acquired/Jensen, 302 s, 3 true voices on system lane; mic lanes
             synthetic). No timed reference: speaker-count truth only (3 system + 1 mic).
 """
@@ -85,6 +86,12 @@ def clips(tier: str | None = None) -> list[Clip]:
         j = w.with_suffix(".json")
         k = int(w.stem.split("_")[1][1:])
         out.append(Clip(f"synth:{w.stem}", "synth", w, j if j.exists() else None, k))
+    long60 = WORKTREE / "prototypes" / "gemini-live" / ".cache" / "long60" / "audio.wav"
+    long60_ref = WORKTREE / "prototypes" / "gemini-live" / "window" / "long60" / "reference.jsonl"
+    if long60.exists() and long60_ref.exists():
+        # 43m06 concatenation of complete-reference public Lex clips (window/long60/build.py):
+        # Lex Fridman hosts every part (separate recording sessions) + four guests = 5 true speakers.
+        out.append(Clip("long60", "long60", long60, long60_ref, 5))
     if (E1 / "fixture" / "system.wav").exists():
         out.append(Clip("e1", "e1", E1 / "fixture" / "system.wav", None, 4,
                         mic_audio=E1 / "fixture" / "E1-microphone.wav"))
