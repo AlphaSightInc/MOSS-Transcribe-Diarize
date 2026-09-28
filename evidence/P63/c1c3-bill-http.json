@@ -1,0 +1,133 @@
+{
+  "schema": "p63-c1c3-bill-http-v1",
+  "clip": "interview_bill_ackman_60s",
+  "pace": 1.0,
+  "audio_seconds": 60.0,
+  "capture_lanes": [
+    "system",
+    "microphone_digital_silence"
+  ],
+  "session_id": "_E2WUivQ46aWXV-soNYb1tTR",
+  "frame_count_per_lane": 120,
+  "max_pacing_lag_seconds": 0.01,
+  "settled": {
+    "accepted_samples": 960000,
+    "canonical_through_sample": 960000,
+    "pending_work_items": 0,
+    "status": "active",
+    "finalization_status": "not_started",
+    "turn_count": 9,
+    "displayed_speaker_count": 2,
+    "display_labels_at_surface": {
+      "S02": "speaker-0002",
+      "S01": "speaker-0001"
+    },
+    "unattributed_seconds": 0.0,
+    "reference_overlap_seconds_by_display_label": {
+      "Bill Ackman": {
+        "S01": 48.8,
+        "S02": 0.7
+      },
+      "Lex Fridman": {
+        "S01": 1.2,
+        "S02": 3.6
+      }
+    }
+  },
+  "at_stop": {
+    "accepted_samples": 960000,
+    "canonical_through_sample": 960000,
+    "pending_work_items": 0,
+    "status": "closed",
+    "finalization_status": "final",
+    "turn_count": 5,
+    "displayed_speaker_count": 2,
+    "display_labels_at_surface": {
+      "S02": "speaker-0002",
+      "S01": "speaker-0001"
+    },
+    "unattributed_seconds": 0.0,
+    "reference_overlap_seconds_by_display_label": {
+      "Bill Ackman": {
+        "S01": 52.0,
+        "S02": 0.7
+      },
+      "Lex Fridman": {
+        "S01": 0.6,
+        "S02": 3.9
+      }
+    }
+  },
+  "final": {
+    "accepted_samples": 960000,
+    "canonical_through_sample": 960000,
+    "pending_work_items": 0,
+    "status": "closed",
+    "finalization_status": "final",
+    "turn_count": 5,
+    "displayed_speaker_count": 2,
+    "display_labels_at_surface": {
+      "S02": "speaker-0002",
+      "S01": "speaker-0001"
+    },
+    "unattributed_seconds": 0.0,
+    "reference_overlap_seconds_by_display_label": {
+      "Bill Ackman": {
+        "S01": 52.0,
+        "S02": 0.7
+      },
+      "Lex Fridman": {
+        "S01": 0.6,
+        "S02": 3.9
+      }
+    }
+  },
+  "engine_diagnostics": {
+    "calls_by_kind": {
+      "system_live_preview": 1,
+      "system_rolling": 6,
+      "system_terminal": 1
+    },
+    "errors_by_code": {},
+    "retries_by_code": {},
+    "timing_anomalies": {
+      "clamped": 0,
+      "dropped": 0
+    },
+    "audio_seconds_sent": 332.0,
+    "cost_usd": 0.018680666666666682,
+    "cost_usd_basis": "provider_usage_plus_live_list_price_estimate",
+    "live_list_price_estimate_usd": 0.0051666666666666675,
+    "skipped_window_ticks": 0,
+    "degraded_path_activations": 0,
+    "window_lag_seconds": {
+      "count": 6,
+      "p50": 3.5,
+      "max": 4.5
+    },
+    "preview_lag_seconds": {
+      "count": 99,
+      "p50": 0.0,
+      "max": 0.5
+    },
+    "voiceprint_errors": 0,
+    "lanes": {
+      "system": {
+        "calls_by_kind": {
+          "live_preview": 1,
+          "rolling": 6,
+          "terminal": 1
+        },
+        "errors_by_code": {},
+        "retries_by_code": {},
+        "timing_anomalies": {
+          "clamped": 0,
+          "dropped": 0
+        },
+        "audio_seconds_sent": 332.0,
+        "cost_usd": 0.018680666666666682,
+        "skipped_window_ticks": 0
+      }
+    }
+  }
+}

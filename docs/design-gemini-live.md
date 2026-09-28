@@ -262,3 +262,12 @@ voices, and the committed-frontier boundary. Real paced E1 and Bill receipts
 qualify only those public paths; broader C4 quality remains pane 6.1's decision.
 The full backend gate on this port passed 2,484 tests, skipped 3, xfailed 2,
 and passed 37 subtests.
+
+At 1.0× through Account HTTPS, E1 settled all 302 s with four displayed system
+IDs for three true voices; its final pass showed three system IDs and one mic ID.
+Its raw speaker echo still caused 14/35 final mic words outside operator intervals.
+The 60 s H1 #3 Bill acceptance clip settled and finalized with two system labels:
+S01 mostly Bill (52.0 s truth overlap), S02 mostly Lex (3.9 s), and no mic ID
+or mic provider call on digital silence. E1 had 1 clamped offset in 64 batch
+calls; Bill had 0 anomalies in 7. These are product-path spot checks, not the
+six-clip settled-error verdict. Receipts: `evidence/P63/c1c3-{e1,bill}-http.json`.
