@@ -34,6 +34,7 @@ from .live_service_runtime import (
     LiveServiceSnapshot,
     LiveServiceStopPending,
 )
+from .gemini_tentative import GeminiTentativeLabeler
 from .live_session import (
     AudioFrame,
     EffectiveTranscriptSegment,
@@ -231,6 +232,8 @@ class _GeminiState:
     tape: CompleteMixedTape | _AccountStageTape | None
     events: deque[LiveServiceEvent]
     engine_settings: dict[str, object] = field(default_factory=dict)
+    tentative: GeminiTentativeLabeler | None = None
+    tentative_closed: bool = False
     ingress_lock: threading.RLock = field(default_factory=threading.RLock)
     next_event_seq: int = 0
     terminal_failure: LiveServiceFailureRecord | None = None
@@ -352,7 +355,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             else:
                 tape = None
             state = _GeminiState(session_id, session, None, tape,
-                                 deque(maxlen=self.descriptor.bounds.max_events), settings)
+                                 deque(maxlen=self.descriptor.bounds.max_events), settings,
+                                 GeminiTentativeLabeler(self._voiceprint_encoder)
+                                 if self._voiceprint_encoder is not None else None)
             self._sessions[session_id] = state
             try:
                 factory_args = (session_id, lambda update: self.publish_update(session_id, update),
@@ -361,6 +366,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                                 else self._engine_factory(*factory_args))
             except BaseException:
                 self._sessions.pop(session_id)
+                if state.tentative is not None:
+                    state.tentative.close()
                 if tape is not None:
                     tape.release()
                 raise
@@ -391,6 +398,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "end_sample": ack.end_sample, "queued_item_ids": (),
                 })
             try:
+                if state.tentative is not None:
+                    for lane, pcm in (frame.lane_pcm or (("system", frame.pcm),)):
+                        state.tentative.accept_audio(lane, ack.start_sample, pcm)
                 assert state.engine is not None
                 push_lanes = getattr(state.engine, "push_lanes", None)
                 if frame.lane_pcm and callable(push_lanes):
@@ -420,9 +430,20 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     segments = _trim_committed_preview(
                         update.segments, session.snapshot().effective_transcript)
                     transcript = _unlabelled_transcript(segments, start)
+                    spans = ()
+                    if state.tentative is not None:
+                        spans = tuple(span for lane in dict.fromkeys(
+                            row.source_lane or "system" for row in segments)
+                            for span in state.tentative.spans(lane, start, update.end_sample))
+                    preview_segments = tuple({
+                        "start_sample": row.start_sample, "end_sample": row.end_sample,
+                        "text": row.text, "source_lane": row.source_lane or "system",
+                        "tentative_speaker": _tentative_speaker(row, spans),
+                    } for row in segments)
                     if not session.publish_provisional(
                         epoch=epoch, generation=generation, start_sample=start,
                         end_sample=update.end_sample, transcript=transcript,
+                        tentative_spans=spans, segments=preview_segments,
                     ):
                         return
                     kind = "provisional_published"
@@ -463,7 +484,17 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     state.window_lag_samples.append(max(0, session.snapshot().accepted_samples - state.rolling_frontier))
                     for observation in update.observations:
                         state.voice_observations.setdefault(observation.speaker_label, observation)
-                    self._observe_voiceprints(state, update.segments)
+                    if state.tentative is not None:
+                        lanes_by_speaker = {row.speaker: row.source_lane or "system"
+                                            for row in update.segments if row.speaker is not None}
+                        for observation in update.observations:
+                            lane = lanes_by_speaker.get(observation.speaker_label)
+                            if lane is not None:
+                                state.tentative.observe((observation,), lane=lane)
+                    new_voiceprints = self._observe_voiceprints(state, update.segments)
+                    if state.tentative is not None:
+                        for lane, observation in new_voiceprints:
+                            state.tentative.observe((observation,), lane=lane)
                 elif isinstance(update, GeminiRelabel):
                     _register_speakers(session, update.segments)
                     lane = update.segments[0].source_lane if update.segments else None
@@ -482,6 +513,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         state.f13_relabel_refused += 1
                         return
                     state.f13_relabels += speakerless
+                    new_voiceprints = self._observe_voiceprints(state, update.segments)
+                    if state.tentative is not None:
+                        for lane, observation in new_voiceprints:
+                            state.tentative.observe((observation,), lane=lane)
                     kind = "label_revision_applied"
                 elif isinstance(update, GeminiTurnBridge):
                     outcome = session.bridge_rolling_turn(
@@ -623,6 +658,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state = self._get(session_id)
             return {
                 "engine_settings": dict(state.engine_settings),
+                **(state.tentative.diagnostics() if state.tentative is not None else {
+                    "tentative_shown_s": 0.0, "tentative_abstained_s": 0.0,
+                    "tentative_embed_p50_ms": None, "tentative_embed_p95_ms": None,
+                    "tentative_embed_wall_s": 0.0, "tentative_busy_ticks": 0}),
                 "calls_by_kind": dict(state.calls_by_kind),
                 "errors_by_code": dict(state.errors_by_code),
                 "retries_by_code": dict(state.retries_by_code),
@@ -684,13 +723,16 @@ class GeminiLiveRuntime(LiveServiceRuntime):
     def _identity_match_observations(self, session_id: str) -> tuple[object, ...]:
         return self._identity_observations(session_id)
 
-    def _observe_voiceprints(self, state: _GeminiState, segments: Sequence[GeminiSegment]) -> None:
+    def _observe_voiceprints(
+        self, state: _GeminiState, segments: Sequence[GeminiSegment]
+    ) -> tuple[tuple[str, object], ...]:
         encoder = self._voiceprint_encoder
         tape = state.tape
         if encoder is None or tape is None:
-            return
+            return ()
         from .live_provider_bundle import LiveSpeakerJournalObservation
         spec = encoder.spec
+        seeded: list[tuple[str, object]] = []
         grouped: dict[str, list[GeminiSegment]] = {}
         for row in segments:
             if row.speaker is not None and row.end_sample > row.start_sample:
@@ -720,15 +762,18 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         wav.name, [(0.0, (end - start) / LIVE_SAMPLE_RATE)]))
                 if len(vector) != spec.embedding_dimension or any(not math.isfinite(v) for v in vector):
                     raise ValueError("voiceprint encoder returned invalid vector")
-                state.voice_observations[speaker] = LiveSpeakerJournalObservation(
+                observation = LiveSpeakerJournalObservation(
                     speaker_label=speaker, centroid=vector,
                     sample_seconds=(end - start) / LIVE_SAMPLE_RATE,
                     exemplar_count=1, provisional=False,
                     embedder_id=f"{spec.provider}:{spec.revision}",
                     embedder_state_sha=spec.state_sha256,
                 )
+                state.voice_observations[speaker] = observation
+                seeded.append((rows[0].source_lane or "system", observation))
             except Exception:
                 state.voiceprint_errors += 1
+        return tuple(seeded)
 
     def _operator_queue_snapshot(self) -> dict[str, int | bool]:
         with self._lock:
@@ -1067,6 +1112,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             raise RuntimeError(state.terminal_failure.message)
 
     def _release_tape(self, state: _GeminiState) -> None:
+        if state.tentative is not None and not state.tentative_closed:
+            state.tentative.close()
+            state.tentative_closed = True
         if (state.tape is not None and not state.tape.accounting(
             through_sample=state.session.snapshot().accepted_samples
         ).released):
@@ -1074,6 +1122,14 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             self._record_event(state, "session_tape_released", state.tape.accounting(
                 through_sample=state.session.snapshot().accepted_samples
             ).to_dict())
+
+
+def _tentative_speaker(row: GeminiSegment, spans: Sequence[dict[str, object]]) -> str | None:
+    lane = row.source_lane or "system"
+    best = max(((min(row.end_sample, int(span["end_sample"])) -
+                 max(row.start_sample, int(span["start_sample"])), str(span["speaker"]))
+                for span in spans if span["source_lane"] == lane), default=(0, ""))
+    return best[1] if best[0] > 0 else None
 
 
 def _unlabelled_transcript(segments: Sequence[GeminiSegment], start_sample: int) -> str:

@@ -126,6 +126,13 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
 - **Tentative names** (`app/gemini_tentative.py`): per-lane EMA centroids of settled canonical speakers; every 0.5 s of voiced
   audio the trailing 1.0 s is embedded (single-thread pinned encoder) and assigned at cosine ≥ .40, else abstain; display-only
   `provisional.segments[].tentative_speaker`, never saved or exported (`prototypes/gemini-live/tentative/NOTES.md`).
+  The S1-fixed, paced public long60 product run showed 96.36% first-visible guess coverage but only 91.89% accuracy
+  (≥95% gate failed), despite full audio settlement; embed p95 was 213 ms. The final settled transcript conflated Javier
+  with Lex under one canonical ID and split Bill/Lex across IDs. The earlier 98.98% five-clean-ID offline result was
+  conditional and does not establish product acceptance. See the WP4 NOTES verdict and P66/wp4/long60-fixed receipt.
+  A zero-send shared-encoder falsifier found identical serial/concurrent WeSpeaker vectors on ten fixed public clips
+  (20 overlapping call pairs, max component delta 0, min cosine 1); this tested concurrency path does not explain the
+  collapse (`prototypes/streaming-diarization/shared-encoder-concurrency/NOTES.md`). Fresh provider output remains unmeasured.
 - **After-Stop voiceprints** (D17): naming a completed Live meeting's speaker fingerprints that speaker's rows in the saved
   recording minus intervals overlapped by any other row (either lane), ≥ 2 s (3/3 cases: 3.0 s eligible, 1.0 s refused;
   `prototypes/gemini-live/wp3-overlap/NOTES.md`).
@@ -139,6 +146,7 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   dropped `source_lane` when merging a fully-overlapped tail word, and the two-lane combiner raised on every later publication
   (reproduced $0 with cached real responses, `prototypes/gemini-live/s1-cached/NOTES.md`; fixed replay labels through 2579.9 s).
   Engine worker exceptions are now counted as `errors_by_code["worker_<Exception>"]` instead of staying silent.
+  The fixed paced long60 run (WP4) published labels through the whole meeting and settled all 2,586 s.
 
 ## Measured envelope and custody
 

@@ -922,7 +922,10 @@ def _live_snapshot_from_dict(payload: dict[str, Any]) -> LiveSnapshot:
         committed_prefix_hash=str(payload["committed_prefix_hash"]),
         identity_snapshot=_identity_snapshot_from_dict(payload["identity_snapshot"]),
         committed=tuple(_commit_from_dict(item) for item in payload.get("committed", ())),
-        provisional=None if provisional is None else ProvisionalSuffix(**provisional),
+        provisional=None if provisional is None else ProvisionalSuffix(
+            **{**provisional,
+               "tentative_spans": tuple(provisional.get("tentative_spans") or ()),
+               "segments": tuple(provisional.get("segments") or ())}),
         next_frame_sequence=int(payload["next_frame_sequence"]),
         frozen_until_sample=int(payload["frozen_until_sample"]),
         pending_span_ids=tuple(int(item) for item in payload.get("pending_span_ids", ())),
