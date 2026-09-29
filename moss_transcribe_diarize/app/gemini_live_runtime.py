@@ -742,7 +742,30 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             self._record_event(state, "session_closed", {
                 "accepted_samples": state.session.snapshot().accepted_samples,
             })
-            if state.tape is None or not state.tape.taping or not state.tape.accounting(
+            if (not state.engine_settings["cleanup_after_stop"] and
+                    state.session.snapshot().accepted_samples > 0):
+                before = state.session.snapshot()
+                outcome = state.session.apply_text_revision(TextRevisionProposal(
+                    epoch=state.session.epoch,
+                    base_text_revision_version=before.text_revision_version,
+                    source="terminal", start_sample=0,
+                    end_sample=before.committed_samples,
+                    segments=tuple(replace(row, authority="terminal")
+                                   for row in before.effective_transcript),
+                ))
+                if not outcome.applied:
+                    raise ValueError(f"live final revision refused: {outcome.refusal}")
+                self._record_event(state, "text_revision_applied", {
+                    "source": "live", "start_sample": 0,
+                    "end_sample": before.committed_samples,
+                    "finalization_status": "final",
+                })
+                self._record_event(state, "terminal_finalization_completed", {"outcome": "final"})
+                closer = getattr(state.engine, "close", None)
+                if callable(closer):
+                    closer()
+                self._release_tape(state)
+            elif state.tape is None or not state.tape.taping or not state.tape.accounting(
                 through_sample=state.session.snapshot().accepted_samples
             ).complete:
                 state.session.note_finalization("unavailable")
