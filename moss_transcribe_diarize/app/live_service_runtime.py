@@ -229,6 +229,7 @@ class LiveServiceDescriptor:
     sample_rate: int = LIVE_SAMPLE_RATE
     frame_samples: int = LIVE_SAMPLE_RATE
     feature_enabled: bool = True
+    engine_options: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         if self.schema_version != LIVE_SERVICE_SCHEMA_VERSION:
@@ -254,7 +255,10 @@ class LiveServiceDescriptor:
             raise ValueError("live service descriptor is only valid for an explicitly enabled runtime.")
 
     def to_dict(self) -> dict[str, Any]:
-        return _jsonable(asdict(self))
+        payload = _jsonable(asdict(self))
+        if self.engine_options is None:
+            payload.pop("engine_options")
+        return payload
 
 
 @dataclass(frozen=True, slots=True)

@@ -140,7 +140,7 @@ def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
     )
 
 
-GEMINI_WINDOW_LMAX_SECONDS = 180
+GEMINI_WINDOW_LMAX_SECONDS = 90
 GEMINI_WINDOW_STRIDE_SECONDS = 15
 GEMINI_MIC_WINDOW_SECONDS = 30
 GEMINI_MIC_WINDOW_STRIDE_SECONDS = 15
@@ -184,7 +184,8 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     from .gemini_live_words import GeminiLiveWordSource
     from .gemini_final_policy import FinalWordPolicy, WebRtcWordGate
     from .gemini_long_final import LongFinalStitcher
-    from .gemini_live_runtime import GeminiLiveRuntime
+    from .gemini_live_runtime import (GeminiLiveRuntime, GEMINI_SPEAKER_WINDOW_PRESETS,
+                                      GEMINI_DEFAULT_ENGINE_SETTINGS)
     from .gemini_provider import WindowDiarizer, TerminalTranscriber
     from .live_provider_bundle import LiveProviderBundleConfig, _bounds, _identity_encoder
     from .live_service_runtime import LiveServiceConfigHashes, LiveServiceDescriptor
@@ -241,11 +242,16 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
         ),
         bounds=bounds,
         frame_samples=int(config.bounds_config.get("frame_samples", bounds.max_frame_samples)),
+        engine_options={"speaker_windows": list(GEMINI_SPEAKER_WINDOW_PRESETS),
+                        "default_speaker_window": "balanced",
+                        "cleanup_after_stop": {"available": True, "default": False}},
     )
     client = _gemini_client(key)
 
     def factory():
-        def engine_factory(_sid, publish, report_usage):
+        def engine_factory(_sid, publish, report_usage, settings=None):
+            settings = settings or GEMINI_DEFAULT_ENGINE_SETTINGS
+            stride, length = GEMINI_SPEAKER_WINDOW_PRESETS[settings["speaker_window"]]
             def lane_report(lane):
                 def report(**usage):
                     report_usage(**{**usage, "kind": f"{lane}_{usage['kind']}"})
@@ -289,8 +295,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                 return GeminiHybridEngine(
                     lane_publish, word_source=system_source,
                     window_scheduler=GrowingContextWindowScheduler(
-                        max_seconds=GEMINI_WINDOW_LMAX_SECONDS,
-                        stride_seconds=GEMINI_WINDOW_STRIDE_SECONDS),
+                        max_seconds=length, stride_seconds=stride),
                     registry=ContinuityRegistry(
                         embedding_threshold=GEMINI_CONTINUITY_E,
                         within_window_threshold=GEMINI_CONTINUITY_W,

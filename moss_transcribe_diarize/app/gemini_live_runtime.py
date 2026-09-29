@@ -161,6 +161,23 @@ class GeminiTurnBridge:
 
 GeminiUpdate = GeminiPreview | GeminiBase | GeminiRolling | GeminiRelabel | GeminiTurnBridge
 
+GEMINI_DEFAULT_ENGINE_SETTINGS = {"speaker_window": "balanced", "cleanup_after_stop": False}
+GEMINI_SPEAKER_WINDOW_PRESETS = {"balanced": (15, 90), "economy": (30, 90),
+                                 "max": (15, 180)}
+
+
+def validate_engine_settings(value: object) -> dict[str, object]:
+    if value is None:
+        return GEMINI_DEFAULT_ENGINE_SETTINGS.copy()
+    if not isinstance(value, dict) or set(value) - set(GEMINI_DEFAULT_ENGINE_SETTINGS):
+        raise ValueError("engine_settings contains unknown keys or is not an object.")
+    settings = {**GEMINI_DEFAULT_ENGINE_SETTINGS, **value}
+    if (not isinstance(settings["speaker_window"], str) or
+            settings["speaker_window"] not in GEMINI_SPEAKER_WINDOW_PRESETS or
+            type(settings["cleanup_after_stop"]) is not bool):
+        raise ValueError("engine_settings contains an unsupported value.")
+    return settings
+
 
 class GeminiEngine(Protocol):
     """One engine per meeting. All positions are absolute mixed-track sample indices."""
@@ -213,6 +230,7 @@ class _GeminiState:
     engine: GeminiEngine | None
     tape: CompleteMixedTape | _AccountStageTape | None
     events: deque[LiveServiceEvent]
+    engine_settings: dict[str, object] = field(default_factory=dict)
     ingress_lock: threading.RLock = field(default_factory=threading.RLock)
     next_event_seq: int = 0
     terminal_failure: LiveServiceFailureRecord | None = None
@@ -298,9 +316,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             raise RuntimeError("Account audio stages must bind before meeting creation")
         self._account_audio_stages = stages
 
-    def create(self, *, echo_mode: str | None = None, session_id: str | None = None) -> LiveServiceCreateResult:
+    def create(self, *, echo_mode: str | None = None, session_id: str | None = None,
+               engine_settings: object = None) -> LiveServiceCreateResult:
         if echo_mode is not None and echo_mode not in {"headphones", "speakers"}:
             raise ValueError("echo_mode must be headphones or speakers.")
+        settings = validate_engine_settings(engine_settings)
         with self._lock:
             session_id = session_id or uuid.uuid4().hex
             if session_id in self._sessions:
@@ -317,13 +337,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             else:
                 tape = None
             state = _GeminiState(session_id, session, None, tape,
-                                 deque(maxlen=self.descriptor.bounds.max_events))
+                                 deque(maxlen=self.descriptor.bounds.max_events), settings)
             self._sessions[session_id] = state
             try:
-                state.engine = self._engine_factory(
-                    session_id, lambda update: self.publish_update(session_id, update),
-                    lambda **usage: self.record_engine_call(session_id, **usage),
-                )
+                factory_args = (session_id, lambda update: self.publish_update(session_id, update),
+                                lambda **usage: self.record_engine_call(session_id, **usage))
+                state.engine = (self._engine_factory(*factory_args, settings) if engine_settings is not None
+                                else self._engine_factory(*factory_args))
             except BaseException:
                 self._sessions.pop(session_id)
                 if tape is not None:
@@ -561,6 +581,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         with self._lock:
             state = self._get(session_id)
             return {
+                "engine_settings": dict(state.engine_settings),
                 "calls_by_kind": dict(state.calls_by_kind),
                 "errors_by_code": dict(state.errors_by_code),
                 "retries_by_code": dict(state.retries_by_code),

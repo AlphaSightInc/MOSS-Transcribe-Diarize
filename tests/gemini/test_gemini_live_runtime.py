@@ -52,6 +52,35 @@ def runtime(tmp_path, scripts):
                              tape_storage_root=tmp_path)
 
 
+def test_meeting_settings_reach_engine_and_are_recorded(tmp_path):
+    seen = []
+    rt = GeminiLiveRuntime(
+        descriptor=descriptor(), tape_storage_root=tmp_path,
+        engine_factory=lambda _sid, publish, _usage, settings: (
+            seen.append(settings) or ScriptedGeminiEngine(publish, batches=[], terminal=())))
+    rt.create(session_id="one", engine_settings={"speaker_window": "max",
+                                                  "cleanup_after_stop": True})
+    assert seen == [{"speaker_window": "max", "cleanup_after_stop": True}]
+    assert rt.engine_diagnostics("one")["engine_settings"] == seen[0]
+
+
+def test_engine_options_are_advertised_only_when_supplied():
+    assert "engine_options" not in descriptor().to_dict()
+    options = {"speaker_windows": ["balanced", "economy", "max"],
+               "default_speaker_window": "balanced",
+               "cleanup_after_stop": {"available": True, "default": False}}
+    assert replace(descriptor(), engine_options=options).to_dict()["engine_options"] == options
+
+
+@pytest.mark.parametrize("settings", [
+    {"speaker_window": "invalid"}, {"cleanup_after_stop": "false"},
+    {"other": 1}, {"speaker_window": []}, []])
+def test_meeting_settings_reject_unknown_keys_and_values(tmp_path, settings):
+    rt = runtime(tmp_path, {})
+    with pytest.raises(ValueError):
+        rt.create(session_id="one", engine_settings=settings)
+
+
 def test_create_frame_preview_and_diarized_commit_are_poller_shaped(tmp_path):
     row = GeminiSegment(0, 8000, "hello", "speaker-0001")
     scripts = {"one": ([

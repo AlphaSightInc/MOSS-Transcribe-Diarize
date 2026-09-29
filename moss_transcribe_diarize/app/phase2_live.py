@@ -218,6 +218,7 @@ class Phase2LiveMeetings:
         workspace: Any,
         origin_session: str,
         echo_mode: str | None,
+        engine_settings: dict[str, object] | None = None,
     ) -> _LiveBinding:
         async with self._creation_lock:
             if (
@@ -244,7 +245,12 @@ class Phase2LiveMeetings:
             )
             self._bindings[handle.meeting_id] = binding
             try:
-                self.runtime.create(echo_mode=echo_mode, session_id=handle.meeting_id)
+                from .gemini_live_runtime import GeminiLiveRuntime
+                if isinstance(self.runtime, GeminiLiveRuntime):
+                    self.runtime.create(echo_mode=echo_mode, session_id=handle.meeting_id,
+                                        engine_settings=engine_settings)
+                else:
+                    self.runtime.create(echo_mode=echo_mode, session_id=handle.meeting_id)
                 await self.sync_and_flush(handle.meeting_id)
             except BaseException:
                 self._bindings.pop(handle.meeting_id, None)
@@ -1181,12 +1187,21 @@ class _Phase2LiveTransportAdapter:
     ) -> LiveTransportCreated:
         if not isinstance(authority, _Phase2CreateAuthority):
             raise TypeError("Phase-2 Live creation requires Account authority.")
+        from .gemini_live_runtime import GeminiLiveRuntime, validate_engine_settings
+        engine_settings = None
+        if isinstance(self.live.runtime, GeminiLiveRuntime):
+            try:
+                engine_settings = validate_engine_settings(payload.get("engine_settings"))
+            except ValueError as exc:
+                from fastapi import HTTPException
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
         try:
             binding = await self.live.create(
                 account=authority.account,
                 workspace=authority.workspace,
                 origin_session=authority.origin_session,
                 echo_mode=payload.get("echo_mode"),
+                engine_settings=engine_settings,
             )
         except LiveMeetingCapacityFull as exc:
             from fastapi import HTTPException
