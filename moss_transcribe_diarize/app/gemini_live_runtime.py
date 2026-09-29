@@ -161,6 +161,23 @@ class GeminiTurnBridge:
 
 GeminiUpdate = GeminiPreview | GeminiBase | GeminiRolling | GeminiRelabel | GeminiTurnBridge
 
+GEMINI_DEFAULT_ENGINE_SETTINGS = {"speaker_window": "balanced", "cleanup_after_stop": False}
+GEMINI_SPEAKER_WINDOW_PRESETS = {"balanced": (15, 90), "economy": (30, 90),
+                                 "max": (15, 180)}
+
+
+def validate_engine_settings(value: object) -> dict[str, object]:
+    if value is None:
+        return GEMINI_DEFAULT_ENGINE_SETTINGS.copy()
+    if not isinstance(value, dict) or set(value) - set(GEMINI_DEFAULT_ENGINE_SETTINGS):
+        raise ValueError("engine_settings contains unknown keys or is not an object.")
+    settings = {**GEMINI_DEFAULT_ENGINE_SETTINGS, **value}
+    if (not isinstance(settings["speaker_window"], str) or
+            settings["speaker_window"] not in GEMINI_SPEAKER_WINDOW_PRESETS or
+            type(settings["cleanup_after_stop"]) is not bool):
+        raise ValueError("engine_settings contains an unsupported value.")
+    return settings
+
 
 class GeminiEngine(Protocol):
     """One engine per meeting. All positions are absolute mixed-track sample indices."""
@@ -213,6 +230,7 @@ class _GeminiState:
     engine: GeminiEngine | None
     tape: CompleteMixedTape | _AccountStageTape | None
     events: deque[LiveServiceEvent]
+    engine_settings: dict[str, object] = field(default_factory=dict)
     ingress_lock: threading.RLock = field(default_factory=threading.RLock)
     next_event_seq: int = 0
     terminal_failure: LiveServiceFailureRecord | None = None
@@ -226,9 +244,12 @@ class _GeminiState:
     repaired_words: int = 0
     mic_words_dropped_by_acoustic_gate: int = 0
     mic_words_dropped_by_text_guard: int = 0
+    mic_echo_dropped_by_voice: int = 0
+    veto_fired: int = 0
     chunked: bool = False
     audio_seconds_sent: float = 0.0
     cost_usd: float = 0.0
+    output_cost_estimate_usd: float = 0.0
     live_list_price_estimate_usd: float = 0.0
     skipped_window_ticks: int = 0
     preview_stall_restarts: int = 0
@@ -241,6 +262,8 @@ class _GeminiState:
     rolling_frontier: int = 0
     voice_observations: dict[str, object] = field(default_factory=dict)
     voiceprint_errors: int = 0
+    f13_relabels: int = 0
+    f13_relabel_refused: int = 0
     lane_counters: dict[str, dict[str, object]] = field(default_factory=dict)
 
 
@@ -298,9 +321,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             raise RuntimeError("Account audio stages must bind before meeting creation")
         self._account_audio_stages = stages
 
-    def create(self, *, echo_mode: str | None = None, session_id: str | None = None) -> LiveServiceCreateResult:
+    def create(self, *, echo_mode: str | None = None, session_id: str | None = None,
+               engine_settings: object = None) -> LiveServiceCreateResult:
         if echo_mode is not None and echo_mode not in {"headphones", "speakers"}:
             raise ValueError("echo_mode must be headphones or speakers.")
+        settings = validate_engine_settings(engine_settings)
         with self._lock:
             session_id = session_id or uuid.uuid4().hex
             if session_id in self._sessions:
@@ -317,13 +342,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             else:
                 tape = None
             state = _GeminiState(session_id, session, None, tape,
-                                 deque(maxlen=self.descriptor.bounds.max_events))
+                                 deque(maxlen=self.descriptor.bounds.max_events), settings)
             self._sessions[session_id] = state
             try:
-                state.engine = self._engine_factory(
-                    session_id, lambda update: self.publish_update(session_id, update),
-                    lambda **usage: self.record_engine_call(session_id, **usage),
-                )
+                factory_args = (session_id, lambda update: self.publish_update(session_id, update),
+                                lambda **usage: self.record_engine_call(session_id, **usage))
+                state.engine = (self._engine_factory(*factory_args, settings) if engine_settings is not None
+                                else self._engine_factory(*factory_args))
             except BaseException:
                 self._sessions.pop(session_id)
                 if tape is not None:
@@ -431,13 +456,22 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     self._observe_voiceprints(state, update.segments)
                 elif isinstance(update, GeminiRelabel):
                     _register_speakers(session, update.segments)
+                    lane = update.segments[0].source_lane if update.segments else None
+                    speakerless = sum(1 for row in session.snapshot().effective_transcript
+                                      if row.authority == "rolling" and row.canonical_speaker is None
+                                      and row.source_lane == lane
+                                      and row.start_sample >= update.start_sample
+                                      and row.end_sample <= update.end_sample)
                     outcome = session.revise_rolling_interval(
                         start_sample=update.start_sample, end_sample=update.end_sample,
                         base_text_revision_version=session.snapshot().text_revision_version,
                         segments=_surface_segments(update.segments, "rolling"),
+                        source_lane=lane,
                     )
                     if not outcome.applied:
-                        raise ValueError(f"rolling relabel refused: {outcome.refusal}")
+                        state.f13_relabel_refused += 1
+                        return
+                    state.f13_relabels += speakerless
                     kind = "label_revision_applied"
                 elif isinstance(update, GeminiTurnBridge):
                     outcome = session.bridge_rolling_turn(
@@ -469,9 +503,12 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         repaired_words: int = 0,
         acoustic_gate_dropped_words: int = 0,
         text_guard_dropped_words: int = 0,
+        mic_echo_dropped_by_voice: int = 0,
+        veto_fired: int = 0,
         chunked: bool = False,
         audio_seconds_sent: float = 0.0,
         cost_usd: float = 0.0,
+        output_cost_estimate_usd: float = 0.0,
         count_call: bool = True,
         cost_basis: str = "provider_usage",
         skipped_window_ticks: int = 0,
@@ -489,9 +526,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks,
                              preview_stall_restarts, coverage_retry, coverage_preview_fallbacks,
                              terminal_coverage_fallbacks,
-                             acoustic_gate_dropped_words, text_guard_dropped_words)):
+                             acoustic_gate_dropped_words, text_guard_dropped_words,
+                             mic_echo_dropped_by_voice, veto_fired)):
             raise ValueError("word-timing anomaly counts must be nonnegative integers.")
-        if any(not math.isfinite(value) or value < 0 for value in (audio_seconds_sent, cost_usd)):
+        if any(not math.isfinite(value) or value < 0 for value in
+               (audio_seconds_sent, cost_usd, output_cost_estimate_usd)):
             raise ValueError("engine audio seconds and cost must be finite and nonnegative.")
         if (not isinstance(count_call, bool) or not isinstance(chunked, bool)
                 or cost_basis not in {"provider_usage", "list_price_estimate"}):
@@ -509,6 +548,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.repaired_words += repaired_words
             state.mic_words_dropped_by_acoustic_gate += acoustic_gate_dropped_words
             state.mic_words_dropped_by_text_guard += text_guard_dropped_words
+            state.mic_echo_dropped_by_voice += mic_echo_dropped_by_voice
+            state.veto_fired += veto_fired
             state.chunked = state.chunked or chunked
             state.skipped_window_ticks += skipped_window_ticks
             state.preview_stall_restarts += preview_stall_restarts
@@ -517,6 +558,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.terminal_coverage_fallbacks += terminal_coverage_fallbacks
             state.audio_seconds_sent += audio_seconds_sent
             state.cost_usd += cost_usd
+            state.output_cost_estimate_usd += output_cost_estimate_usd
             if cost_basis == "list_price_estimate":
                 state.live_list_price_estimate_usd += cost_usd
             lane, separator, lane_kind = kind.partition("_")
@@ -527,7 +569,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "repaired_words": 0, "chunked": False,
                     "mic_words_dropped_by_acoustic_gate": 0,
                     "mic_words_dropped_by_text_guard": 0,
+                    "mic_echo_dropped_by_voice": 0, "veto_fired": 0,
                     "audio_seconds_sent": 0.0, "cost_usd": 0.0,
+                    "output_cost_estimate_usd": 0.0,
                     "skipped_window_ticks": 0})
                 totals.setdefault("preview_stall_restarts", 0)
                 totals.setdefault("coverage_retries", 0)
@@ -546,9 +590,12 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["repaired_words"] += repaired_words
                 totals["mic_words_dropped_by_acoustic_gate"] += acoustic_gate_dropped_words
                 totals["mic_words_dropped_by_text_guard"] += text_guard_dropped_words
+                totals["mic_echo_dropped_by_voice"] += mic_echo_dropped_by_voice
+                totals["veto_fired"] += veto_fired
                 totals["chunked"] = totals["chunked"] or chunked
                 totals["audio_seconds_sent"] += audio_seconds_sent
                 totals["cost_usd"] += cost_usd
+                totals["output_cost_estimate_usd"] += output_cost_estimate_usd
                 totals["skipped_window_ticks"] += skipped_window_ticks
                 totals["preview_stall_restarts"] += preview_stall_restarts
                 totals["coverage_retries"] += coverage_retry
@@ -561,6 +608,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         with self._lock:
             state = self._get(session_id)
             return {
+                "engine_settings": dict(state.engine_settings),
                 "calls_by_kind": dict(state.calls_by_kind),
                 "errors_by_code": dict(state.errors_by_code),
                 "retries_by_code": dict(state.retries_by_code),
@@ -568,9 +616,12 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "repaired_words": state.repaired_words,
                 "mic_words_dropped_by_acoustic_gate": state.mic_words_dropped_by_acoustic_gate,
                 "mic_words_dropped_by_text_guard": state.mic_words_dropped_by_text_guard,
+                "mic_echo_dropped_by_voice": state.mic_echo_dropped_by_voice,
+                "veto_fired": state.veto_fired,
                 "chunked": state.chunked,
                 "audio_seconds_sent": state.audio_seconds_sent,
                 "cost_usd": state.cost_usd,
+                "output_cost_estimate_usd": state.output_cost_estimate_usd,
                 "cost_usd_basis": ("provider_usage_plus_live_list_price_estimate"
                                    if state.live_list_price_estimate_usd else "provider_usage"),
                 "live_list_price_estimate_usd": state.live_list_price_estimate_usd,
@@ -583,6 +634,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "window_lag_seconds": _lag_summary(state.window_lag_samples),
                 "preview_lag_seconds": _lag_summary(state.preview_lag_samples),
                 "voiceprint_errors": state.voiceprint_errors,
+                "f13_relabels": state.f13_relabels,
+                "f13_relabel_refused": state.f13_relabel_refused,
                 "lanes": {lane: {
                     key: (dict(value) if isinstance(value, dict) else value)
                     for key, value in totals.items()}
@@ -702,12 +755,36 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 )
                 if not outcome.submitted:
                     raise ValueError(f"stop tail refused: {outcome.refusal}")
+        await self._final_relabel_speakerless(state)
         await state.session.stop(1.0)
         with self._lock:
             self._record_event(state, "session_closed", {
                 "accepted_samples": state.session.snapshot().accepted_samples,
             })
-            if state.tape is None or not state.tape.taping or not state.tape.accounting(
+            if (not state.engine_settings["cleanup_after_stop"] and
+                    state.session.snapshot().accepted_samples > 0):
+                before = state.session.snapshot()
+                outcome = state.session.apply_text_revision(TextRevisionProposal(
+                    epoch=state.session.epoch,
+                    base_text_revision_version=before.text_revision_version,
+                    source="terminal", start_sample=0,
+                    end_sample=before.committed_samples,
+                    segments=tuple(replace(row, authority="terminal")
+                                   for row in before.effective_transcript),
+                ))
+                if not outcome.applied:
+                    raise ValueError(f"live final revision refused: {outcome.refusal}")
+                self._record_event(state, "text_revision_applied", {
+                    "source": "live", "start_sample": 0,
+                    "end_sample": before.committed_samples,
+                    "finalization_status": "final",
+                })
+                self._record_event(state, "terminal_finalization_completed", {"outcome": "final"})
+                closer = getattr(state.engine, "close", None)
+                if callable(closer):
+                    closer()
+                self._release_tape(state)
+            elif state.tape is None or not state.tape.taping or not state.tape.accounting(
                 through_sample=state.session.snapshot().accepted_samples
             ).complete:
                 state.session.note_finalization("unavailable")
@@ -724,6 +801,42 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 self._record_event(state, "terminal_finalization_started", {})
                 state.terminal_task = asyncio.create_task(self._run_terminal(state))
             return self._snapshot(state)
+
+    async def _final_relabel_speakerless(self, state: _GeminiState) -> None:
+        """Use the saved lane audio for rows that the final live window could not name."""
+        if self._voiceprint_encoder is None or state.tape is None or not state.voice_observations:
+            return
+        from .gemini_continuity_registry import _cosine
+        rows = tuple(row for row in state.session.snapshot().effective_transcript
+                     if row.authority == "rolling" and row.canonical_speaker is None)
+        lane_tape = getattr(state.engine, "lane_tape", None)
+        for row in rows:
+            candidates = ((speaker, observation.centroid)
+                          for speaker, observation in state.voice_observations.items()
+                          if (row.source_lane is None or
+                              (row.source_lane == "microphone") ==
+                              (speaker.startswith("local-") or speaker == "speaker-microphone")))
+            try:
+                tape = lane_tape(row.source_lane) if callable(lane_tape) and row.source_lane else state.tape
+                pcm = tape.read(start_sample=row.start_sample, end_sample=row.end_sample)
+                with tempfile.NamedTemporaryFile(suffix=".wav") as wav_file:
+                    with wave.open(wav_file.name, "wb") as wav:
+                        wav.setnchannels(1)
+                        wav.setsampwidth(2)
+                        wav.setframerate(LIVE_SAMPLE_RATE)
+                        wav.writeframes(pcm)
+                    vector = await asyncio.to_thread(
+                        self._voiceprint_encoder.embed, wav_file.name,
+                        [(0.0, (row.end_sample - row.start_sample) / LIVE_SAMPLE_RATE)])
+                cosine, speaker = max(((_cosine(vector, centroid), speaker)
+                                       for speaker, centroid in candidates), default=(-1.0, None))
+                if cosine >= .46 and speaker is not None:
+                    self.publish_update(state.session_id, GeminiRelabel(
+                        row.start_sample, row.end_sample,
+                        (GeminiSegment(row.start_sample, row.end_sample, row.text,
+                                       speaker, row.source_lane),)))
+            except Exception:
+                state.voiceprint_errors += 1
 
     async def _run_terminal(self, state: _GeminiState) -> None:
         assert state.tape is not None

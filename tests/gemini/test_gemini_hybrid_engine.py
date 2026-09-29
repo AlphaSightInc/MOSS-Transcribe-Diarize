@@ -3,7 +3,7 @@ import threading
 from types import SimpleNamespace
 
 from moss_transcribe_diarize.app.gemini_hybrid_engine import FixedWindowScheduler, GrowingContextWindowScheduler, GeminiHybridEngine, OverlapRegistry
-from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment
+from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiRelabel, GeminiSegment
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord, GeminiWords
 from moss_transcribe_diarize.app.gemini_continuity_registry import ContinuityRegistry
 from moss_transcribe_diarize.app.live_tape import CompleteMixedTape
@@ -154,6 +154,69 @@ def test_overlap_registry_keeps_id_when_local_label_changes():
     one, _ = registry.observe_window(0, (GeminiWord("a", "spk:0", 0, 32000),))
     two, _ = registry.observe_window(1, (GeminiWord("a", "spk:9", 16000, 48000),))
     assert one["spk:0"] == two["spk:9"] == "speaker-0001"
+
+
+def test_later_window_relabels_short_committed_speakerless_row():
+    updates = []
+    registry = ContinuityRegistry(embedding_threshold=.46, within_window_threshold=.60,
+                                  birth_min_seconds=2)
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=90, stride_seconds=15),
+        registry=registry, diarizer=FakeDiarizer(), terminal=FakeTerminal())
+    engine._publish_window(0, 2*16000, bytes(2*32000),
+                           (GeminiWord("brief", "A", 0, 16000),))
+    assert [row.speaker for update in updates if isinstance(update, GeminiRolling)
+            for row in update.segments] == [None]
+    engine._publish_window(0, 4*16000, bytes(4*32000),
+                           (GeminiWord("brief", "B", 0, 16000),
+                            GeminiWord("continued", "B", 2*16000, 4*16000)))
+    relabels = [update for update in updates if isinstance(update, GeminiRelabel)]
+    assert len(relabels) == 1
+    assert (relabels[0].start_sample, relabels[0].end_sample,
+            relabels[0].segments[0].text, relabels[0].segments[0].speaker) == (
+                0, 16000, "brief", "speaker-0001")
+    engine.close()
+
+
+def test_speakerless_turns_do_not_bridge_across_frontier():
+    from moss_transcribe_diarize.app.gemini_live_runtime import GeminiTurnBridge
+    updates = []
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=90, stride_seconds=15),
+        registry=ContinuityRegistry(embedding_threshold=.46, within_window_threshold=.60,
+                                    birth_min_seconds=2),
+        diarizer=FakeDiarizer(), terminal=FakeTerminal())
+    S = 16000
+    engine._publish_window(0, 15*S, bytes(15*32000),
+                           (GeminiWord("first", "A", 14*S, round(14.5*S)),))
+    engine._publish_window(0, 30*S, bytes(30*32000),
+                           (GeminiWord("second", "B", 16*S, round(16.4*S)),))
+    assert not [row for row in updates if isinstance(row, GeminiTurnBridge)]
+    engine.close()
+
+
+def test_hybrid_reports_registry_veto_count():
+    usage = []
+    vectors = {"A": ((1., 0.), 3.), "B": ((0., 1.), 3.)}
+    engine = GeminiHybridEngine(
+        lambda _update: None, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=90, stride_seconds=15),
+        registry=ContinuityRegistry(embedding_threshold=.46,
+                                    within_window_threshold=.60, birth_min_seconds=2),
+        diarizer=FakeDiarizer(), terminal=FakeTerminal(),
+        embedding_source=lambda _pcm, _start, _words: vectors,
+        report_usage=lambda **row: usage.append(row))
+    engine._publish_window(0, 6*16000, bytes(6*32000),
+                           (GeminiWord("a", "A", 0, 3*16000),
+                            GeminiWord("b", "B", 3*16000, 6*16000)))
+    vectors = {"X": ((0., 1.), 3.), "Y": ((1., 0.), 3.)}
+    engine._publish_window(0, 6*16000, bytes(6*32000),
+                           (GeminiWord("a", "X", 0, 3*16000),
+                            GeminiWord("b", "Y", 3*16000, 6*16000)))
+    assert sum(row.get("veto_fired", 0) for row in usage) == 1
+    engine.close()
 
 
 def test_rolling_turns_keep_annotation_order_after_timestamp_repair():

@@ -339,17 +339,18 @@ def make_app(
     control_socket: Path | None = None,
     decoder_factory=Decoder,
     identity_factory=Identity,
+    live_runtime_factory=None,
 ):
     return create_phase2_app(
         database_path=database,
-        live_runtime_factory=lambda: make_runtime(
+        live_runtime_factory=live_runtime_factory or (lambda: make_runtime(
             speech=speech,
             terminal_text=terminal_text,
             terminal_scheduler=terminal_scheduler,
             max_tape_bytes=max_tape_bytes,
             decoder_factory=decoder_factory,
             identity_factory=identity_factory,
-        ),
+        )),
         live_helper_lease_seconds=lease_seconds,
         meeting_audio_root=database.parent / "meetings",
         file_audio_archive=audio_archive,
@@ -485,6 +486,50 @@ def feed_two_lane_pairs(client: TestClient, meeting_id: str, sequences: range) -
     for sequence in sequences:
         assert client.post(url, json=v2_frame(sequence, "system")).status_code == 200
         assert client.post(url, json=v2_frame(sequence, "microphone")).status_code == 200
+
+
+def test_gemini_live_settings_validate_at_http_boundary_and_moss_ignores_them(tmp_path):
+    from moss_transcribe_diarize.app.gemini_live_runtime import (
+        GeminiLiveRuntime, ScriptedGeminiEngine)
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    seen = []
+    gemini_descriptor = LiveServiceDescriptor(
+        source_revision="test", provider_name="gemini", provider_revision="test",
+        provider_manifest_hash="0" * 64,
+        config_hashes=LiveServiceConfigHashes.from_parts(
+            endpoint_config={}, identity_config={}, decoder_config={}),
+        bounds=LiveServiceBounds(max_frame_samples=16000, max_queue_depth=4,
+                                 max_retained_samples=32000, max_identity_speakers=8,
+                                 max_events=64, max_tape_bytes=64000),
+        engine_options={"speaker_windows": ["balanced", "economy", "max"],
+                        "default_speaker_window": "balanced",
+                        "cleanup_after_stop": {"available": True, "default": False}},
+    )
+    runtime = GeminiLiveRuntime(
+        descriptor=gemini_descriptor, tape_storage_root=tmp_path / "tapes",
+        engine_factory=lambda _id, publish, _usage, settings: (
+            seen.append(settings) or ScriptedGeminiEngine(publish, batches=[], terminal=())))
+    app = make_app(database, live_runtime_factory=lambda: runtime)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        assert client.get("/api/live/descriptor").json()["descriptor"]["engine_options"] == gemini_descriptor.engine_options
+        for invalid in ({"speaker_window": "bad"}, {"other": 1},
+                        {"cleanup_after_stop": "false"}):
+            response = client.post("/api/live/sessions", json={"engine_settings": invalid})
+            assert response.status_code == 422
+        created = client.post("/api/live/sessions", json={"engine_settings": {
+            "speaker_window": "economy", "cleanup_after_stop": True}})
+        assert created.status_code == 201
+        assert seen == [{"speaker_window": "economy", "cleanup_after_stop": True}]
+        assert created.json()["snapshot"]["engine_diagnostics"]["engine_settings"] == seen[0]
+    # The self-hosted runtime accepts the same payload without exposing Gemini options.
+    moss_database = tmp_path / "moss-only.sqlite3"
+    moss_sessions = asyncio.run(provision(moss_database))
+    with TestClient(make_app(moss_database), base_url="https://moss.test") as client:
+        session(client, moss_sessions["a"])
+        assert "engine_options" not in client.get("/api/live/descriptor").json()["descriptor"]
+        assert client.post("/api/live/sessions", json={"engine_settings": {"other": 1}}).status_code == 201
 
 
 def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durable(

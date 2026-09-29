@@ -1,9 +1,12 @@
 import asyncio
+from concurrent.futures import ThreadPoolExecutor
+import threading
 from array import array
 
 from moss_transcribe_diarize.app.gemini_lane_engine import (LaneGeminiEngine, TextEchoGuard,
-    SystemWordLedger, VoicedLiveWords, AcousticEchoGuard, MicrophoneWordGate)
-from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiRolling, GeminiSegment, GeminiTurnBridge
+    SystemWordLedger, VoicedLiveWords, AcousticEchoGuard, MicrophoneWordGate,
+    SerializedDiarizer)
+from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiRolling, GeminiRelabel, GeminiSegment, GeminiTurnBridge
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord
 
 
@@ -49,6 +52,52 @@ def test_two_lane_engines_publish_one_overlapping_forward_revision(tmp_path):
     engine.close()
 
 
+def test_system_and_microphone_batch_calls_overlap_but_each_lane_serializes():
+    from moss_transcribe_diarize.app.phase2_web_cli import _serialize_gemini_lanes
+    active = 0
+    peak = 0
+    lock = threading.Lock()
+    both_started = threading.Barrier(2)
+
+    class SlowProvider:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            both_started.wait(timeout=1)
+            with lock:
+                active -= 1
+            return ()
+
+    system, microphone = _serialize_gemini_lanes(SlowProvider(), SlowProvider())
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        left = pool.submit(system.diarize, b"", deadline=1, kind="rolling")
+        right = pool.submit(microphone.diarize, b"", deadline=1, kind="rolling")
+        left.result()
+        right.result()
+    assert peak == 2
+
+    lane_peak = 0
+    lane_active = 0
+    class OneLane:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            nonlocal lane_peak, lane_active
+            with lock:
+                lane_active += 1
+                lane_peak = max(lane_peak, lane_active)
+            threading.Event().wait(.02)
+            with lock:
+                lane_active -= 1
+            return ()
+    one = SerializedDiarizer(OneLane())
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        calls = [pool.submit(one.diarize, b"", deadline=1, kind="rolling") for _ in range(2)]
+        for call in calls:
+            call.result()
+    assert lane_peak == 1
+
+
 def test_lane_engine_forwards_system_turn_bridge_after_both_lanes_commit(tmp_path):
     updates = []
     class FakeLane:
@@ -73,6 +122,28 @@ def test_lane_engine_forwards_system_turn_bridge_after_both_lanes_commit(tmp_pat
     engine.close()
 
 
+def test_relabel_updates_only_the_originating_lane(tmp_path):
+    updates = []
+    class FakeLane:
+        def __init__(self, publish): pass
+        def push_audio(self, start_sample, pcm16): pass
+        async def drain_tail(self, deadline): return True
+        async def finish(self, tape): return ()
+        def close(self): pass
+    engine = LaneGeminiEngine(updates.append, system_factory=FakeLane,
+                              microphone_factory=FakeLane, tape_root=tmp_path)
+    system = GeminiSegment(0, 8000, "remote", None, "system")
+    mic = GeminiSegment(0, 8000, "local", "local-0001", "microphone")
+    engine._on_update("system", GeminiRolling(0, 16000, (system,)))
+    engine._on_update("microphone", GeminiRolling(0, 16000, (mic,)))
+    known = GeminiSegment(0, 8000, "remote", "speaker-0001", "system")
+    engine._on_update("system", GeminiRelabel(0, 8000, (known,)))
+    relabel = [row for row in updates if isinstance(row, GeminiRelabel)]
+    assert len(relabel) == 1
+    assert relabel[0].segments == (known,)
+    engine.close()
+
+
 def test_lane_turn_bridge_waits_when_microphone_frontier_lags(tmp_path):
     updates = []
     class FakeLane:
@@ -90,9 +161,11 @@ def test_lane_turn_bridge_waits_when_microphone_frontier_lags(tmp_path):
     engine._on_update("system", GeminiTurnBridge(0, 9*16000, 10*16000, "system"))
     engine._on_update("microphone", GeminiRolling(0, 10*16000, ()))
     first = next(row for row in updates if isinstance(row, GeminiRolling))
+    assert first.end_sample == 10*16000
     assert first.segments == (prior,)
     assert not any(isinstance(row, GeminiTurnBridge) for row in updates)
     engine._on_update("microphone", GeminiRolling(10*16000, 20*16000, ()))
+    assert [row.end_sample for row in updates if isinstance(row, GeminiRolling)][-1] == 20*16000
     assert sum(isinstance(row, GeminiTurnBridge) for row in updates) == 1
     engine.close()
 

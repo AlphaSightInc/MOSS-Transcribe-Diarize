@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
-import threading
 from dataclasses import replace
 from pathlib import Path
 from typing import Sequence
@@ -141,7 +140,7 @@ def _build_live_runtime_factory(args: argparse.Namespace, file_runner: object):
     )
 
 
-GEMINI_WINDOW_LMAX_SECONDS = 180
+GEMINI_WINDOW_LMAX_SECONDS = 90
 GEMINI_WINDOW_STRIDE_SECONDS = 15
 GEMINI_MIC_WINDOW_SECONDS = 30
 GEMINI_MIC_WINDOW_STRIDE_SECONDS = 15
@@ -149,6 +148,11 @@ GEMINI_CONTINUITY_E = 0.46
 GEMINI_CONTINUITY_W = 0.60
 GEMINI_BIRTH_MIN_SECONDS = 2
 GEMINI_EMBEDDING_INTERVAL_WORKERS = 3
+
+
+def _serialize_gemini_lanes(system_diarizer, microphone_diarizer):
+    from .gemini_lane_engine import SerializedDiarizer
+    return SerializedDiarizer(system_diarizer), SerializedDiarizer(microphone_diarizer)
 
 
 def _gemini_http_options():
@@ -204,12 +208,13 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     from .gemini_continuity_registry import ContinuityRegistry
     from .gemini_lane_engine import (AcousticEchoGuard, ConditionalMicrophoneTerminal, LaneGeminiEngine,
                                      VoicedLiveWords, MicrophoneWordGate,
-                                     SerializedDiarizer, SystemWordLedger,
+                                     SystemWordLedger,
                                      WebRtcSpeechDetector)
     from .gemini_live_words import GeminiLiveWordSource
     from .gemini_final_policy import FinalWordPolicy, WebRtcWordGate
     from .gemini_long_final import LongFinalStitcher
-    from .gemini_live_runtime import GeminiLiveRuntime
+    from .gemini_live_runtime import (GeminiLiveRuntime, GEMINI_SPEAKER_WINDOW_PRESETS,
+                                      GEMINI_DEFAULT_ENGINE_SETTINGS)
     from .gemini_provider import WindowDiarizer, TerminalTranscriber
     from .live_provider_bundle import LiveProviderBundleConfig, _bounds, _identity_encoder
     from .live_service_runtime import LiveServiceConfigHashes, LiveServiceDescriptor
@@ -257,19 +262,23 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
         ),
         bounds=bounds,
         frame_samples=int(config.bounds_config.get("frame_samples", bounds.max_frame_samples)),
+        engine_options={"speaker_windows": list(GEMINI_SPEAKER_WINDOW_PRESETS),
+                        "default_speaker_window": "balanced",
+                        "cleanup_after_stop": {"available": True, "default": False}},
     )
     client = _gemini_client(key)
 
     def factory():
-        def engine_factory(_sid, publish, report_usage):
+        def engine_factory(_sid, publish, report_usage, settings=None):
+            settings = settings or GEMINI_DEFAULT_ENGINE_SETTINGS
+            stride, length = GEMINI_SPEAKER_WINDOW_PRESETS[settings["speaker_window"]]
             def lane_report(lane):
                 def report(**usage):
                     report_usage(**{**usage, "kind": f"{lane}_{usage['kind']}"})
                 return report
             system_report, mic_report = lane_report("system"), lane_report("microphone")
-            batch_lock = threading.Lock()
-            system_diarizer = SerializedDiarizer(WindowDiarizer(client, system_report), batch_lock)
-            mic_diarizer = SerializedDiarizer(WindowDiarizer(client, mic_report), batch_lock)
+            system_diarizer, mic_diarizer = _serialize_gemini_lanes(
+                WindowDiarizer(client, system_report), WindowDiarizer(client, mic_report))
             system_words = SystemWordLedger()
             system_gate = WebRtcWordGate()
             mic_gate = WebRtcWordGate()
@@ -306,8 +315,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                 return GeminiHybridEngine(
                     lane_publish, word_source=system_source,
                     window_scheduler=GrowingContextWindowScheduler(
-                        max_seconds=GEMINI_WINDOW_LMAX_SECONDS,
-                        stride_seconds=GEMINI_WINDOW_STRIDE_SECONDS),
+                        max_seconds=length, stride_seconds=stride),
                     registry=ContinuityRegistry(
                         embedding_threshold=GEMINI_CONTINUITY_E,
                         within_window_threshold=GEMINI_CONTINUITY_W,

@@ -11,7 +11,7 @@ from typing import Callable, Protocol, Sequence
 
 from scipy.optimize import linear_sum_assignment
 
-from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
+from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRelabel, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
 from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
@@ -232,6 +232,7 @@ class GeminiHybridEngine:
         self._committed = 0
         self._rolling_frontier = 0
         self._last_rolling_turn: GeminiSegment | None = None
+        self._speakerless_rows: list[GeminiSegment] = []
         self._last_window_end = 0
         self._last_preview_end = 0
         self._fast_words: list[GeminiWord] = []
@@ -420,9 +421,13 @@ class GeminiHybridEngine:
             self.word_observer(absolute, frontier)
         embeddings = (self.embedding_source(pcm, start, absolute)
                       if self.embedding_source is not None else {})
+        prior_vetoes = getattr(self.registry, "veto_fired", 0)
         mapping, relabels = self.registry.observe_window(
             start / LIVE_SAMPLE_RATE, absolute, embeddings,
             committed_through_sample=frontier)
+        vetoes = getattr(self.registry, "veto_fired", 0) - prior_vetoes
+        if vetoes and self.report_usage is not None:
+            self.report_usage(kind="rolling", count_call=False, veto_fired=vetoes)
         observations = ()
         if self.encoder_spec is not None:
             spec = self.encoder_spec
@@ -457,7 +462,8 @@ class GeminiHybridEngine:
                                                  if obs.speaker_label in visible),
                                            (self.source_lane,) if self.source_lane else ()))
                 prior = self._last_rolling_turn
-                if (prior is not None and rows and prior.speaker == rows[0].speaker
+                if (prior is not None and rows and prior.speaker is not None
+                        and prior.speaker == rows[0].speaker
                         and prior.source_lane == rows[0].source_lane
                         and 0 < rows[0].start_sample - prior.end_sample <= round(1.5 * LIVE_SAMPLE_RATE)):
                     self.publish(GeminiTurnBridge(prior.start_sample, prior.end_sample,
@@ -467,6 +473,21 @@ class GeminiHybridEngine:
                 self._rolling_frontier = frontier
                 self._live_finals = [w for w in self._live_finals if w.end_sample > self._committed]
                 self._fast_words = [w for w in self._fast_words if w.end_sample > self._committed]
+            remaining = []
+            for row in self._speakerless_rows:
+                candidates = [(min(row.end_sample, word.end_sample)
+                               - max(row.start_sample, word.start_sample), mapping[word.speaker])
+                              for word in absolute if mapping[word.speaker] is not None]
+                overlap, speaker = max(candidates, default=(0, None))
+                if overlap > 0:
+                    revised = GeminiSegment(row.start_sample, row.end_sample, row.text,
+                                            speaker, row.source_lane)
+                    self.publish(GeminiRelabel(row.start_sample, row.end_sample, (revised,)))
+                else:
+                    remaining.append(row)
+            self._speakerless_rows = remaining
+            if frontier > old:
+                self._speakerless_rows.extend(row for row in rows if row.speaker is None)
             for update in relabels:
                 self.publish(update)
 

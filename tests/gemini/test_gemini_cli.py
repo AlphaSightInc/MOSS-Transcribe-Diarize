@@ -9,15 +9,21 @@ def test_c4_system_and_mic_window_defaults_at_composition_root():
         GEMINI_WINDOW_LMAX_SECONDS, GEMINI_WINDOW_STRIDE_SECONDS,
         GEMINI_MIC_WINDOW_SECONDS, GEMINI_MIC_WINDOW_STRIDE_SECONDS,
         GEMINI_CONTINUITY_E, GEMINI_CONTINUITY_W, GEMINI_BIRTH_MIN_SECONDS)
-    assert (GEMINI_WINDOW_STRIDE_SECONDS, GEMINI_WINDOW_LMAX_SECONDS) == (15, 180)
+    assert (GEMINI_WINDOW_STRIDE_SECONDS, GEMINI_WINDOW_LMAX_SECONDS) == (15, 90)
     assert (GEMINI_MIC_WINDOW_STRIDE_SECONDS, GEMINI_MIC_WINDOW_SECONDS) == (15, 30)
     assert (GEMINI_CONTINUITY_E, GEMINI_CONTINUITY_W, GEMINI_BIRTH_MIN_SECONDS) == (.46, .60, 2)
     system = GrowingContextWindowScheduler(
         max_seconds=GEMINI_WINDOW_LMAX_SECONDS, stride_seconds=GEMINI_WINDOW_STRIDE_SECONDS)
     microphone = GrowingContextWindowScheduler(
         max_seconds=GEMINI_MIC_WINDOW_SECONDS, stride_seconds=GEMINI_MIC_WINDOW_STRIDE_SECONDS)
-    assert system.next_window(195*16000, 180*16000) == (15*16000, 195*16000, 195*16000)
+    assert system.next_window(195*16000, 180*16000) == (105*16000, 195*16000, 195*16000)
     assert microphone.next_window(195*16000, 180*16000) == (165*16000, 195*16000, 195*16000)
+
+
+def test_speaker_window_presets_have_frozen_stride_and_context():
+    from moss_transcribe_diarize.app.gemini_live_runtime import GEMINI_SPEAKER_WINDOW_PRESETS
+    assert GEMINI_SPEAKER_WINDOW_PRESETS == {
+        "balanced": (15, 90), "economy": (30, 90), "max": (15, 180)}
 
 
 def test_gemini_client_options_leave_retries_to_the_counted_adapter():

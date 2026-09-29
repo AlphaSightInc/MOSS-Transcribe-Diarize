@@ -259,6 +259,7 @@ class WindowDiarizer:
                 self.report_usage(kind=kind, clamped_words=parsed.clamped, dropped_words=parsed.dropped,
                                   repaired_words=repaired,
                                   audio_seconds_sent=audio_seconds,
+                                  output_cost_estimate_usd=audio_seconds / 60 * .002,
                                   cost_usd=_usage_cost(data.get("usage") or {}))
                 return parsed
             except Exception as exc:
@@ -266,7 +267,8 @@ class WindowDiarizer:
                 transient = code in {"429", "timeout"} or (code.isdigit() and 500 <= int(code) < 600)
                 retry = transient and attempt + 1 < self.max_attempts
                 self.report_usage(kind=kind, error_code=code, retry_code=code if retry else None,
-                                  audio_seconds_sent=audio_seconds)
+                                  audio_seconds_sent=audio_seconds,
+                                  output_cost_estimate_usd=audio_seconds / 60 * .002)
                 if not retry:
                     raise
                 pause = min(2 ** attempt + random.random(), max(0.0, deadline - time.monotonic()))

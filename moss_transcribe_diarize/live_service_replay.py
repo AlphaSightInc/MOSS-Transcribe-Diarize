@@ -862,6 +862,7 @@ def _descriptor_from_dict(payload: dict[str, Any]) -> LiveServiceDescriptor:
         sample_rate=int(payload.get("sample_rate", LIVE_SAMPLE_RATE)),
         frame_samples=int(payload.get("frame_samples", LIVE_SAMPLE_RATE)),
         feature_enabled=bool(payload.get("feature_enabled", True)),
+        engine_options=payload.get("engine_options"),
     )
 
 

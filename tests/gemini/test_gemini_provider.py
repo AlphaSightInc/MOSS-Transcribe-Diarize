@@ -49,6 +49,7 @@ def test_window_request_repairs_invalid_offsets_and_reports_every_attempt():
     assert usage[1]["clamped_words"] == usage[1]["dropped_words"] == 1
     assert sum(row["audio_seconds_sent"] for row in usage) == 2
     assert usage[1]["cost_usd"] == pytest.approx(0.00032)
+    assert sum(row["output_cost_estimate_usd"] for row in usage) == pytest.approx(2 / 60 * .002)
 
 
 @pytest.mark.parametrize("kind", ["rolling", "terminal"])
