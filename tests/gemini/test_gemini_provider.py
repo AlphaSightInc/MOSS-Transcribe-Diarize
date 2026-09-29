@@ -80,6 +80,24 @@ def test_terminal_overlap_maps_local_labels_and_keeps_one_owner(tmp_path):
     tape.release()
 
 
+def test_terminal_interval_sends_only_uncovered_tail_and_offsets_rows(tmp_path):
+    seen = []
+    class Diarizer:
+        def diarize(self, pcm, *, deadline, kind, diarize=True):
+            seen.append(len(pcm)//2)
+            return GeminiWords((GeminiWord("tail", "spk:0", 16000, 32000),))
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=20*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(20*32000))
+    terminal = TerminalTranscriber(Diarizer(), source_lane="system")
+    rows = terminal.transcribe_interval(tape, 10*16000, 20*16000)
+    assert seen == [10*16000]
+    assert [(row.text, row.start_sample, row.end_sample, row.source_lane)
+            for row in rows] == [("tail", 11*16000, 12*16000, "system")]
+    assert [(row.start_sample, row.end_sample) for row in terminal.last_words] == [
+        (11*16000, 12*16000)]
+    tape.release()
+
+
 def test_terminal_publishes_speaker_turns_with_1_5_second_gap_limit(tmp_path):
     fake = FakeInteractions([response(
         word("a", "spk:0", 0, 1), word("b", "spk:0", 1.4, 2),

@@ -13,7 +13,11 @@ after Stop, and provider spend. The self-hosted MOSS engine has a separate ident
 
 - **Live surface:** the versioned transcript committed by rolling Gemini windows. It is
   the word and speaker evidence the user has already seen.
-- **Stop drain:** one last window covers the accepted suffix. Later windows repair
+- **Stop drain:** the browser may stop waiting while a separate server task drains
+  for up to 60 s. If rolling coverage still misses accepted audio, the terminal
+  transcriber reads only that uncovered tail. A failed tail recovery saves the
+  meeting as incomplete/needs review; it never marks the partial transcript final.
+  Later windows repair
   speaker-less committed rows; a remaining row may use a saved-audio fingerprint only
   when its best existing speaker cosine is at least .46. Otherwise it stays unattributed.
 - **Orphan resolution:** before a Gemini live-only final revision, a canonical ID with

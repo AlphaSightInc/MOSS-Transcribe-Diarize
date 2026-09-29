@@ -308,6 +308,27 @@ class TerminalTranscriber:
     def set_witness(self, rows: Sequence[GeminiSegment]) -> None:
         self._witness = tuple(rows)
 
+    def transcribe_interval(self, tape: CompleteMixedTape, start_sample: int,
+                            end_sample: int) -> tuple[GeminiSegment, ...]:
+        """Run the existing terminal path on only one uncovered accepted interval."""
+        if not 0 <= start_sample < end_sample <= tape.sample_count:
+            raise ValueError("terminal interval is outside accepted audio")
+        class IntervalTape:
+            sample_count = end_sample - start_sample
+            sample_offset = start_sample
+            def read(self, *, start_sample: int = 0, end_sample: int | None = None) -> bytes:
+                stop = self.sample_count if end_sample is None else end_sample
+                if not 0 <= start_sample < stop <= self.sample_count:
+                    raise ValueError("terminal interval read is out of bounds")
+                return tape.read(start_sample=start_sample + self.sample_offset,
+                                 end_sample=stop + self.sample_offset)
+        rows = self.transcribe(IntervalTape())
+        self.coverage_gaps = tuple((start + start_sample, end + start_sample)
+                                   for start, end in self.coverage_gaps)
+        return tuple(GeminiSegment(row.start_sample + start_sample,
+                                   row.end_sample + start_sample, row.text,
+                                   row.speaker, row.source_lane) for row in rows)
+
     def transcribe(self, tape: CompleteMixedTape) -> tuple[GeminiSegment, ...]:
         self.coverage_gaps = ()
         end = tape.sample_count
@@ -407,12 +428,18 @@ class TerminalTranscriber:
                 all_words = list(self.identity_policy.remap(all_words, pcm))
             if self.word_gate is not None:
                 all_words = list(self.word_gate.filter(pcm, all_words))
+        offset = getattr(tape, "sample_offset", 0)
         if self.word_filter is not None:
-            all_words = list(self.word_filter(all_words))
+            absolute = [GeminiWord(w.text, w.speaker, w.start_sample + offset,
+                                   w.end_sample + offset) for w in all_words]
+            all_words = [GeminiWord(w.text, w.speaker, w.start_sample - offset,
+                                    w.end_sample - offset)
+                         for w in self.word_filter(absolute)]
         if self.fixed_speaker is not None:
             all_words = [GeminiWord(w.text, self.fixed_speaker, w.start_sample, w.end_sample)
                          for w in all_words]
-        self.last_words = tuple(all_words)
+        self.last_words = tuple(GeminiWord(w.text, w.speaker, w.start_sample + offset,
+                                           w.end_sample + offset) for w in all_words)
         return speaker_turns(ordered_segments(
             tuple(GeminiSegment(w.start_sample, max(w.end_sample, w.start_sample + 1),
                                 w.text, w.speaker, self.source_lane) for w in all_words),

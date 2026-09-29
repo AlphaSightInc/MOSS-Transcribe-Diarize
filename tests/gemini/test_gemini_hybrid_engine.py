@@ -73,6 +73,51 @@ def test_stop_drain_requests_and_publishes_remaining_rolling_window():
     engine.close()
 
 
+def test_terminal_recovery_merges_only_uncovered_rolling_tail(tmp_path):
+    updates = []
+    seen = []
+    class TailTerminal:
+        def transcribe_interval(self, tape, start, end):
+            seen.append((start, end, len(tape.read(start_sample=start, end_sample=end))))
+            return (GeminiSegment(12*16000, 13*16000, "tail", "terminal-0001", "system"),)
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(), window_scheduler=FixedWindowScheduler(),
+        registry=OverlapRegistry(), diarizer=FakeDiarizer(), terminal=TailTerminal(),
+        source_lane="system")
+    with engine._lock:
+        engine._accepted = 20*16000
+        engine._committed = 10*16000
+        engine._rolling_frontier = 10*16000
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=20*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(20*32000))
+    assert asyncio.run(engine.recover_tail(tape, 1.0))
+    assert seen == [(10*16000, 20*16000, 10*32000)]
+    rolls = [u for u in updates if isinstance(u, GeminiRolling)]
+    assert [(u.start_sample, u.end_sample) for u in rolls] == [(10*16000, 20*16000)]
+    assert [(r.text, r.start_sample, r.end_sample) for r in rolls[0].segments] == [
+        ("tail", 12*16000, 13*16000)]
+    engine.close()
+    tape.release()
+
+
+def test_terminal_recovery_empty_voiced_tail_does_not_claim_coverage(tmp_path):
+    class EmptyTerminal:
+        coverage_gaps = ()
+        def transcribe_interval(self, tape, start, end): return ()
+    engine = GeminiHybridEngine(
+        lambda update: None, word_source=FakeWords(),
+        window_scheduler=FixedWindowScheduler(), registry=OverlapRegistry(),
+        diarizer=FakeDiarizer(), terminal=EmptyTerminal(), voiced_audio=lambda pcm: True)
+    with engine._lock:
+        engine._accepted = 16000
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(32000))
+    assert not asyncio.run(engine.recover_tail(tape, 1.0))
+    assert engine._rolling_frontier == 0
+    engine.close()
+    tape.release()
+
+
 def test_music_shaped_window_without_preview_words_advances_without_retry():
     from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
     import wave

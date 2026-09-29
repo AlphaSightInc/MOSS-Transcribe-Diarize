@@ -739,7 +739,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 self._raise_terminal(state)
                 if state.stop_task is None:
                     self._record_event(state, "stop_requested", {})
-                    state.stop_task = asyncio.create_task(self._finish_stop(state, deadline))
+                    state.stop_task = asyncio.create_task(self._finish_stop(state))
                 task = state.stop_task
         try:
             return await asyncio.wait_for(asyncio.shield(task), timeout=max(0.0, deadline))
@@ -748,15 +748,30 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 return task.result()
             raise LiveServiceStopPending("live service stop deadline expired; drain continues on the server.") from exc
 
-    async def _finish_stop(self, state: _GeminiState, deadline: float) -> LiveServiceSnapshot:
+    async def _finish_stop(self, state: _GeminiState) -> LiveServiceSnapshot:
+        server_drain_seconds = 60.0
         drained = False
-        if state.engine is not None and deadline > 0:
+        if state.engine is not None:
             try:
-                drained = await asyncio.wait_for(state.engine.drain_tail(deadline), timeout=deadline)
+                drained = await asyncio.wait_for(state.engine.drain_tail(server_drain_seconds),
+                                                 timeout=server_drain_seconds)
             except Exception:
-                pass  # Preserve the existing empty-base Stop fallback.
+                pass
         with self._lock:
-            self._record_event(state, "stop_tail_drain", {"drained": drained})
+            accepted = state.session.snapshot().accepted_samples
+            covered = state.rolling_frontier >= accepted
+        if not covered and not state.engine_settings["cleanup_after_stop"]:
+            recover = getattr(state.engine, "recover_tail", None)
+            if callable(recover):
+                try:
+                    await asyncio.wait_for(recover(240.0), timeout=240.0)
+                except Exception:
+                    pass
+            with self._lock:
+                covered = state.rolling_frontier >= accepted
+        with self._lock:
+            self._record_event(state, "stop_tail_drain", {"drained": drained,
+                                                          "covered": covered})
             snapshot = state.session.snapshot()
             if snapshot.accepted_samples > snapshot.committed_samples:
                 span = state.session.freeze_until(snapshot.accepted_samples, reason="stop_flush")
@@ -774,7 +789,15 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             self._record_event(state, "session_closed", {
                 "accepted_samples": state.session.snapshot().accepted_samples,
             })
-            if (not state.engine_settings["cleanup_after_stop"] and
+            if (not state.engine_settings["cleanup_after_stop"] and not covered):
+                state.session.note_finalization("unavailable")
+                self._record_event(state, "terminal_finalization_unavailable", {
+                    "outcome": "unavailable", "reason": "tail_uncovered"})
+                closer = getattr(state.engine, "close", None)
+                if callable(closer):
+                    closer()
+                self._release_tape(state)
+            elif (not state.engine_settings["cleanup_after_stop"] and
                     state.session.snapshot().accepted_samples > 0):
                 before = state.session.snapshot()
                 outcome = state.session.apply_text_revision(TextRevisionProposal(
