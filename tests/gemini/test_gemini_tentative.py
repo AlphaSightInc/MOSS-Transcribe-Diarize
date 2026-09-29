@@ -83,12 +83,25 @@ def test_tentative_spans_are_snapshot_only_and_outside_durable_document():
     epoch, generation, start = session.begin_provisional()
     spans = ({"start_sample": 8000, "end_sample": RATE,
               "source_lane": "system", "speaker": "speaker-0001"},)
+    segments = ({"start_sample": 8000, "end_sample": RATE, "text": "hello",
+                 "source_lane": "system", "tentative_speaker": "speaker-0001"},)
     assert session.publish_provisional(epoch=epoch, generation=generation,
         start_sample=start, end_sample=RATE, transcript="[0][S00]hello[1]",
-        tentative_spans=spans)
+        tentative_spans=spans, segments=segments)
     snapshot = session.snapshot()
     assert asdict(snapshot.provisional)["tentative_spans"] == spans
+    assert asdict(snapshot.provisional)["segments"] == segments
     document = _transcript_document(SimpleNamespace(
         session=snapshot, descriptor=SimpleNamespace(sample_rate=RATE)))
     assert "tentative" not in str(document)
     assert "speaker-0001" not in str(document)
+
+
+def test_one_lane_cannot_guess_from_the_other_lanes_centroids():
+    encoder = Encoder()
+    labeler = GeminiTentativeLabeler(encoder, voiced_audio=lambda _pcm: True)
+    labeler.observe((observation("speaker-remote", (1.0, 0.0)),), lane="system")
+    labeler.accept_audio("microphone", 0, b"\x01\x00" * RATE)
+    assert labeler.spans("microphone", 0, RATE) == ()
+    assert encoder.calls == 0
+    labeler.close()

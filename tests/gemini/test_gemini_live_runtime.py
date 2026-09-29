@@ -1075,3 +1075,44 @@ def test_skipped_window_ticks_are_per_session_content_free_diagnostics(tmp_path)
     with pytest.raises(ValueError):
         rt.record_engine_call("one", kind="rolling", count_call=False,
                               skipped_window_ticks=-1)
+
+
+def test_preview_snapshot_keeps_lane_and_tentative_identity_outside_transcript(tmp_path):
+    scripts = {"one": ([()], ())}
+    rt = runtime(tmp_path, scripts)
+    rt.create(session_id="one")
+
+    class Guesses:
+        def __init__(self):
+            self.audio = []
+        def accept_audio(self, lane, start, pcm):
+            self.audio.append((lane, start, len(pcm)))
+        def spans(self, lane, start, end):
+            if lane != "system":
+                return ()
+            return ({"start_sample": 8000, "end_sample": 16000,
+                     "source_lane": "system", "speaker": "speaker-0001"},)
+        def diagnostics(self):
+            return {"tentative_shown_s": .5, "tentative_abstained_s": 0.0,
+                    "tentative_embed_p50_ms": 12.0, "tentative_embed_p95_ms": 12.0,
+                    "tentative_busy_ticks": 0}
+
+    guesses = Guesses()
+    rt._sessions["one"].tentative = guesses
+    rt.accept_frame("one", AudioFrame(0, bytes(32000), 16000,
+        lane_pcm=(("system", bytes(32000)), ("microphone", bytes(32000)))))
+    rt.publish_update("one", GeminiPreview(16000, (
+        GeminiSegment(8000, 16000, "hello", source_lane="system"),
+        GeminiSegment(8000, 16000, "local", source_lane="microphone"))))
+    snapshot = rt.snapshot("one").to_dict()
+    provisional = snapshot["session"]["provisional"]
+    assert provisional["segments"] == [
+        {"start_sample": 8000, "end_sample": 16000, "text": "hello",
+         "source_lane": "system", "tentative_speaker": "speaker-0001"},
+        {"start_sample": 8000, "end_sample": 16000, "text": "local",
+         "source_lane": "microphone", "tentative_speaker": None},
+    ]
+    assert "speaker-0001" not in provisional["transcript"]
+    assert guesses.audio == [("system", 0, 32000), ("microphone", 0, 32000)]
+    assert snapshot["engine_diagnostics"]["tentative_shown_s"] == .5
+    assert all("speaker-0001" not in str(event.payload) for event in rt.events("one"))

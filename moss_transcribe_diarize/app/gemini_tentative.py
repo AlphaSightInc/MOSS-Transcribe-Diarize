@@ -41,7 +41,7 @@ class GeminiTentativeLabeler:
     def __init__(self, encoder: object, *, voiced_audio: Callable[[bytes], bool] | None = None):
         self.encoder = encoder
         self._voiced_audio = voiced_audio or _webrtc_voiced
-        self._centroids: dict[str, tuple[float, ...]] = {}
+        self._centroids: dict[str, dict[str, tuple[float, ...]]] = {}
         self._lanes: dict[str, _Lane] = {}
         self._lock = threading.RLock()
         self._worker = ThreadPoolExecutor(max_workers=1, thread_name_prefix="gemini-tentative")
@@ -51,8 +51,9 @@ class GeminiTentativeLabeler:
         self._abstained_ticks = 0
         self._busy_ticks = 0
 
-    def observe(self, observations: Sequence[object]) -> None:
+    def observe(self, observations: Sequence[object], *, lane: str = "system") -> None:
         with self._lock:
+            centroids = self._centroids.setdefault(lane, {})
             for item in observations:
                 if (getattr(item, "provisional", True) or
                     getattr(item, "sample_seconds", 0) < 2.0):
@@ -61,8 +62,8 @@ class GeminiTentativeLabeler:
                 vector = _unit(getattr(item, "centroid", ()))
                 if not speaker or not vector:
                     continue
-                old = self._centroids.get(speaker)
-                self._centroids[speaker] = (vector if old is None else _unit(
+                old = centroids.get(speaker)
+                centroids[speaker] = (vector if old is None else _unit(
                     tuple(.8 * left + .2 * right for left, right in zip(old, vector))))
 
     def accept_audio(self, lane: str, start_sample: int, pcm16: bytes) -> None:
@@ -84,7 +85,7 @@ class GeminiTentativeLabeler:
                     continue
                 tick = state.next_tick
                 state.next_tick += _STEP
-                if len(state.audio) < _SNIPPET * 2 or not self._centroids:
+                if len(state.audio) < _SNIPPET * 2 or not self._centroids.get(lane):
                     continue
                 if not self._voiced_audio(bytes(state.audio[-_STEP * 2:])):
                     continue
@@ -94,7 +95,7 @@ class GeminiTentativeLabeler:
                     self._busy_ticks += 1
                     continue
                 snippet = bytes(state.audio)
-                centroids = dict(self._centroids)
+                centroids = dict(self._centroids[lane])
                 self._pending = self._worker.submit(self._embed, snippet, centroids)
                 self._pending.add_done_callback(
                     lambda future, lane=lane, tick=tick: self._finish(lane, tick, future))
