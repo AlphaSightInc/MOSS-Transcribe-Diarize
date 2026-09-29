@@ -25,7 +25,7 @@ from moss_transcribe_diarize.live_service_replay import run_service_replay
 
 
 def population():
-    """Plan §2 population; sparse references stay visible as diagnostics."""
+    """Plan §2 population, including partial-reference clips in the predicate."""
     selected = []
     for clip in clips():
         if (clip.tier == "accept6"
@@ -34,6 +34,24 @@ def population():
                 or clip.tier == "gold9" and clip.clip_id.startswith("calibration:")):
             selected.append(clip)
     return selected
+
+
+def referenced_intervals(reference):
+    """Union timed reference coverage, including overlapping speakers once."""
+    covered = []
+    for start, end in sorted((float(r["start"]), float(r["end"])) for r in reference):
+        if covered and start <= covered[-1][1]:
+            covered[-1] = (covered[-1][0], max(covered[-1][1], end))
+        else:
+            covered.append((start, end))
+    return covered
+
+
+def referenced_hypothesis(hypothesis, covered):
+    return [{**row, "start": max(float(row["start"]), start),
+             "end": min(float(row["end"]), end)}
+            for row in hypothesis for start, end in covered
+            if min(float(row["end"]), end) > max(float(row["start"]), start)]
 
 
 def run_arm(base_url: str, clip, cleanup: bool, out: Path, surface):
@@ -57,17 +75,23 @@ def run_arm(base_url: str, clip, cleanup: bool, out: Path, surface):
                            expect_config_hash=identity[2], finalization_deadline=600.0)
         final = capture.captures["post_stop_final"]["snapshot"]
         rows = surface.transcript_rows(final, duration)
-        meeting_id = next(iter(adapter._frame_samples))
+        # Stop releases the adapter's frame registry; the replay trace retains its ID.
+        with (out / "replay/run-001/trace.jsonl").open(encoding="utf-8") as stream:
+            meeting_id = json.loads(stream.readline())["session_id"]
         raw = adapter._json("GET", f"/api/live/sessions/{adapter._quoted(meeting_id)}/snapshot")
         diagnostics = raw.get("snapshot", {}).get("engine_diagnostics") or {}
         reference = clip.reference_segments()
+        covered = referenced_intervals(reference)
+        scored_rows = referenced_hypothesis(rows, covered)
         result = {"clip_id": clip.clip_id, "tier": clip.tier, "cleanup_after_stop": cleanup,
                   "duration_seconds": duration, "reference_segments": len(reference),
-                  "reference_covered_seconds": sum(float(r["end"])-float(r["start"]) for r in reference),
-                  "score": score(reference, rows),
-                  "canonical_ids": len({row.get("canonical_speaker") for row in
-                                        final["session"]["effective_transcript"]
-                                        if row.get("canonical_speaker") and row.get("text", "").strip()}),
+                  "reference_covered_seconds": sum(end-start for start, end in covered),
+                  "partial_reference": sum(end-start for start, end in covered) < duration,
+                  "score_scope": "referenced_time_only",
+                  "score": score(reference, scored_rows, with_text=False),
+                  "canonical_ids": len({row["speaker"] for row in scored_rows
+                                        if row.get("speaker") not in {None, "S00", "Speaker TBD"}
+                                        and row.get("text", "").strip()}),
                   "cost_usd": diagnostics.get("cost_usd"),
                   "output_cost_estimate_usd": diagnostics.get("output_cost_estimate_usd"),
                   "descriptor_revision": identity[0],
@@ -111,6 +135,8 @@ def main():
         row = {"clip_id": clip.clip_id, "tier": clip.tier, "true_speakers": true,
                "reference_covered_seconds": left["reference_covered_seconds"],
                "duration_seconds": left["duration_seconds"],
+               "partial_reference": left["partial_reference"],
+               "score_scope": "referenced_time_only",
                "live_only": left, "cleanup_on": right, "passes_plan_predicate": verdict}
         results.append(row)
         write_json(args.out / "q-ind.json", {"schema": "q-ind.v1", "cases": results})

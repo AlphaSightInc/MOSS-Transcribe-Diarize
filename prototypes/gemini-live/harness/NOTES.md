@@ -1,5 +1,9 @@
 # P6.2 quality harness prototype
 
+## R2 Q-IND reference scope probe (2026-09-29)
+
+**Question.** Can both paired arms be scored on exactly the same timed reference region without counting unreferenced speech as false alarms? **Primitives.** Union of timed reference intervals and intersection of each hypothesis interval with that union. **Invariant.** Overlapping reference speakers do not duplicate scored hypothesis time. **Unknown.** Real partial-reference DER until the paid run. **Falsifier/tool.** The one-command throwaway `qind_reference_probe.py` used reference [0,2], [4,6], [5,6] and hypothesis [0,6]; it printed clipped spans [0,2], [4,6], PASS. The function was absorbed into `run_independent.py` and the probe removed. All fourteen clips remain in the predicate; receipts flag partial reference coverage and print the scored seconds.
+
 ## R2 tentative-guess metric probe (2026-09-29)
 
 **Structural question.** How much currently unattributed provisional speech gets a displayed speaker guess, and how often does that guessed canonical identity agree with complete timed truth?
