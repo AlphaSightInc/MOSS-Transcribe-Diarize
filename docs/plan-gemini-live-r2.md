@@ -69,8 +69,9 @@ WP5 builds against §4 with mocked responses and integrates last.
 - **Descriptor** `GET /api/live/descriptor` adds `engine_options: {"speaker_windows": ["balanced","economy","max"],
   "default_speaker_window": "balanced", "cleanup_after_stop": {"available": true, "default": false}}` (Gemini only; absent on MOSS).
 - **Preset table**: balanced S15/L90, economy S30/L90, max S15/L180 (growing window, H0). Mic lane always 30 s window / 15 s stride.
-- **Guesses**: snapshot `session.provisional.tentative_spans: [{start_sample, end_sample, source_lane, speaker}]` where
-  `speaker` is a canonical meeting speaker ID; display-only; never in saved transcripts, exports, or events that persist.
+- **Guesses** (amended 2026-09-29): snapshot `session.provisional.segments: [{start_sample, end_sample, text, source_lane,
+  tentative_speaker|null}]` (display-only; `tentative_speaker` is a canonical meeting speaker ID); the provisional transcript string
+  is unchanged. Never in saved transcripts, exports, or events that persist.
 - **Local IDs**: mic-lane canonical IDs `local-0001`, …; default display label "Local 01", … (server default label and frontend map).
 - **Summaries** (owner-bound: `require_account` → Account workspace `open meeting` handle; wrong owner → 404; no `account_id`):
   - `POST /api/meetings/{meeting_id}/summary/live` body `{model?, language?, prompt?}` → current live effective transcript of an
