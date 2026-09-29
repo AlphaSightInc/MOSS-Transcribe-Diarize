@@ -112,3 +112,16 @@ WP5 builds against §4 with mocked responses and integrates last.
 ## 7. Out of scope
 
 CRE Studio sign-in and server-side settings (G11), removing MOSS code, push/merge/PR, private or operator audio.
+
+## 8. Decisions after qualification (2026-09-29, user)
+
+- **D20 = O1 (async):** clean-up after Stop is **ON by default**, but asynchronous. At Stop the meeting completes immediately from the
+  drained live transcript (browse, rename, summary, History, new meeting all work). The whole-recording clean-up runs in the
+  background and commits an improved transcript as a new version; speaker names carry over by speaker ID. While it runs, **Export
+  transcript, Export audio and passage corrections are disabled** and a badge shows "Improving transcript…"; the final summary
+  regenerates on the improved version. Failure or restart keeps the live version with a notice. Evidence: Q-IND 10/14 (3 of 12
+  independent meetings materially worse without clean-up: long60 .175 vs .034, Adam .140 vs .026, Shapiro .062 vs .017).
+- **D21 = Balanced 15 s / 90 s stays the default** (latency first). With clean-up on, saved long60 accuracy is .034 at Balanced, the
+  same as Max; the live view on long meetings may mis-group speakers until clean-up lands (live draws .165–.296; Gemini output is not
+  deterministic on identical requests — only 28/60 windows matched on a byte-identical replay).
+- Q-IND is no longer a default-gate (clean-up is on); Q-LIVE's long60 settled DER is a documented live-view limitation.
