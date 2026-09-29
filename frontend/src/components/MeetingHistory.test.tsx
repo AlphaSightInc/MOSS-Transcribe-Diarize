@@ -167,6 +167,38 @@ describe("MeetingHistory", () => {
     expect(transcript.value.map(row => row.text)).toEqual(["Improved words"]);
   });
 
+  it("polls an unselected refining meeting and updates its saved built-in summary", async () => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    const running = meeting({ id: "refining", refinement_state: "running" });
+    const done = meeting({ ...running, refinement_state: "done", transcript_version: 2,
+      transcript: { segments: [{ id: "improved", start: 0, end: 1, speaker: "Alex", text: "Improved words" }] } });
+    const other = meeting({ id: "other", title: "Other meeting" });
+    const oldSummary = { state: "current", attempt_id: "old", source_version: 1,
+      artifact_version: 1, error_code: null, document: { summary: "Old summary", topics: [],
+        details: [], speaker_background: [], data_references: [] } };
+    let refined = false;
+    const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url === "/api/meetings") return response({ meetings: [refined ? done : running, other] });
+      if (url === "/api/meetings/refining") { refined = true; return response(done); }
+      if (url === "/api/meetings/other") return response(other);
+      if (url === "/api/meetings/refining/summary") return response({ summary: oldSummary });
+      if (url === "/api/meetings/refining/summary/server" && init?.method === "POST")
+        return response({ ...oldSummary, source_version: 2, attempt_id: "new" });
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetcher);
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="other"]')).not.toBeNull());
+    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="other"]')!.click());
+    await vi.waitFor(() => expect(selectedSummaryMeeting.value?.id).toBe("other"));
+    await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+    expect(root.querySelector('[data-meeting-card="refining"]')?.textContent).toContain("Improved words");
+    expect(selectedSummaryMeeting.value?.id).toBe("other");
+    const posts = fetcher.mock.calls.filter(([url, init]) => url.endsWith("/summary/server") && init?.method === "POST");
+    expect(posts).toHaveLength(1);
+    expect(JSON.parse(posts[0][1]!.body as string).source_version).toBe(2);
+  });
+
   it("keeps rename available but holds History audio download during improvement", async () => {
     const running = meeting({ refinement_state: "running", audio: {
       state: "available", relative_path: "meeting.mp3", byte_count: 100, duration_ms: 1000,

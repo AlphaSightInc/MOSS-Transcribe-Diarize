@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => {
   };
   return {
     poller,
+    exportDownload: vi.fn(),
     pollerOptions: null as { onTerminal?: (message: string) => void; onError?: (message: string) => void; onRecovered?: () => void } | null,
     createMossSessionPoller: vi.fn((options: { onTerminal?: (message: string) => void; onError?: (message: string) => void; onRecovered?: () => void }) => {
       mocks.pollerOptions = options;
@@ -36,6 +37,10 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("../api/mossPoller", () => ({
   createMossSessionPoller: mocks.createMossSessionPoller
+}));
+vi.mock("../lib/transcriptExport", async importOriginal => ({
+  ...await importOriginal<typeof import("../lib/transcriptExport")>(),
+  triggerTranscriptExportDownload: mocks.exportDownload
 }));
 
 vi.mock("../capture/captureClient", () => ({
@@ -93,6 +98,7 @@ describe("ControlPanel reattach", () => {
     act(() => render(null, root));
     resetSessionState();
     selectedSummaryMeeting.value = null;
+    vi.unstubAllGlobals();
     root.remove();
     workletMeta.remove();
   });
@@ -117,6 +123,30 @@ describe("ControlPanel reattach", () => {
     act(() => { selectedSummaryMeeting.value = { ...meeting, refinement_state: "done", transcript_version: 2 }; });
     expect(format.disabled).toBe(false);
     expect(save.disabled).toBe(false);
+  });
+
+  it.each([1, 2])("exports transcript version 2 with summary version %i only when matching", async sourceVersion => {
+    const meeting = { id: "export", mode: "live" as const, title: "Meeting", title_source: "automatic" as const,
+      status: "completed" as const, created_at_ms: Date.now(), transcript_version: 2,
+      refinement_state: "done" as const, transcript: { segments: [] }, audio: null };
+    const artifact = { state: "current", attempt_id: "saved", source_version: sourceVersion,
+      artifact_version: 1, error_code: null, document: { summary: "Saved summary", topics: [],
+        details: [], speaker_background: [], data_references: [] } };
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ summary: artifact }) })));
+    act(() => {
+      sessionId.value = meeting.id;
+      sessionStatus.value = "closed";
+      selectedSummaryMeeting.value = meeting;
+      replaceTranscript([{ start: 0, end: 1, text: "Improved words", speaker: "S01", speaker_entity_id: "S01",
+        display_name: "Alex", state: "final" }]);
+      render(<ControlPanel />, root);
+    });
+    await act(async () => root.querySelector<HTMLButtonElement>(".controls-export button")!.click());
+    await vi.waitFor(() => expect(mocks.exportDownload).toHaveBeenCalledOnce());
+    const content = mocks.exportDownload.mock.calls[0][0].content as string;
+    expect(content).toContain("Improved words");
+    expect(content.includes("Saved summary")).toBe(sourceVersion === 2);
+    expect(content.includes("summary is being updated")).toBe(sourceVersion !== 2);
   });
 
   it("reattaches read-only with only the Account Meeting ID", async () => {
