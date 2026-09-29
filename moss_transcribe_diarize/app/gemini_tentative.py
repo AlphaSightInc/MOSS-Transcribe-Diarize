@@ -145,6 +145,7 @@ class GeminiTentativeLabeler:
                     "tentative_abstained_s": self._abstained_ticks * .5,
                     "tentative_embed_p50_ms": percentile(.50),
                     "tentative_embed_p95_ms": percentile(.95),
+                    "tentative_embed_wall_s": sum(times) / 1000,
                     "tentative_busy_ticks": self._busy_ticks}
 
     def wait_idle(self, timeout: float) -> bool:

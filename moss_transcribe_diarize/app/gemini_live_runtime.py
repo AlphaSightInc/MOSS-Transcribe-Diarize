@@ -649,7 +649,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 **(state.tentative.diagnostics() if state.tentative is not None else {
                     "tentative_shown_s": 0.0, "tentative_abstained_s": 0.0,
                     "tentative_embed_p50_ms": None, "tentative_embed_p95_ms": None,
-                    "tentative_busy_ticks": 0}),
+                    "tentative_embed_wall_s": 0.0, "tentative_busy_ticks": 0}),
                 "calls_by_kind": dict(state.calls_by_kind),
                 "errors_by_code": dict(state.errors_by_code),
                 "retries_by_code": dict(state.retries_by_code),
