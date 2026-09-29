@@ -3853,8 +3853,8 @@ button.legend-chip:disabled {
 .tentative-card { opacity: .64; }
 .tentative-card .utt-speaker-label, .tentative-card .utt-text { font-style: italic; }
 .tentative-card .utt-speaker { cursor: default; }
-.phase2-workspace .topbar { position: relative; z-index: 2; }
-.phase2-workspace .top-right { justify-self: end; }
+.phase2-workspace .topbar { position: relative; }
+.phase2-workspace .top-right { position: relative; z-index: 2; justify-self: end; }
 .tr-body-wrap .tr-floating-tools { position: relative; top: auto; right: auto; align-self: flex-end; margin: 12px 26px 0; }
 .tr-body-wrap .tr-find { position: relative; top: auto; left: auto; width: auto; margin: 8px 32px 0; }
 @media (max-width: 1024px) {
