@@ -66,6 +66,7 @@ include = ["moss_transcribe_diarize*"]
 [tool.setuptools.package-data]
 "moss_transcribe_diarize" = ["build_candidate.json"]
 "moss_transcribe_diarize.app" = [
+  "final_summary_prompt.txt",
   "frontend_assets/*",
   "frontend_assets/fonts/*",
   "frontend_assets/worklets/*",
