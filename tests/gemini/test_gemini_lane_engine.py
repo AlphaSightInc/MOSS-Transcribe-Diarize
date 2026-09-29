@@ -7,6 +7,7 @@ from moss_transcribe_diarize.app.gemini_lane_engine import (LaneGeminiEngine, Te
     SystemWordLedger, VoicedLiveWords, AcousticEchoGuard, MicrophoneWordGate,
     SerializedDiarizer)
 from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiRolling, GeminiRelabel, GeminiSegment, GeminiTurnBridge
+from moss_transcribe_diarize.app.gemini_live_runtime import GeminiPreview
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord
 
 
@@ -49,6 +50,28 @@ def test_two_lane_engines_publish_one_overlapping_forward_revision(tmp_path):
     assert asyncio.run(engine.finish(None)) == ()
     assert engine.terminal_coverage_gaps == (("system", 12000, 14000),
                                              ("microphone", 12000, 14000))
+    engine.close()
+
+
+def test_lag_fallback_commits_current_preview_words_from_both_lanes(tmp_path):
+    updates = []
+    class StalledLane:
+        def __init__(self, publish): self.publish = publish
+        def push_audio(self, start_sample, pcm16): pass
+        def close(self): pass
+    engine = LaneGeminiEngine(updates.append, system_factory=StalledLane,
+                              microphone_factory=StalledLane, tape_root=tmp_path)
+    engine._on_update("system", GeminiPreview(10*16000, (
+        GeminiSegment(2*16000, 3*16000, "remote words", source_lane="system"),)))
+    engine._on_update("microphone", GeminiPreview(10*16000, (
+        GeminiSegment(4*16000, 5*16000, "local words", source_lane="microphone"),)))
+    for second in range(46):
+        engine.push_lanes(second*16000,
+            (("system", bytes(32000)), ("microphone", bytes(32000))))
+    degraded = [row for row in updates if isinstance(row, GeminiBase) and row.degraded]
+    assert len(degraded) == 1
+    assert [(row.text, row.source_lane, row.speaker) for row in degraded[0].segments] == [
+        ("remote words", "system", None), ("local words", "microphone", None)]
     engine.close()
 
 

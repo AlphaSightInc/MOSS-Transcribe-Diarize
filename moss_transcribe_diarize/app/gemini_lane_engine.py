@@ -374,7 +374,8 @@ class LaneGeminiEngine:
         with self._lock:
             if self._accepted - self._base_committed > 45 * LIVE_SAMPLE_RATE:
                 through = max(self._base_committed, self._accepted - 40 * LIVE_SAMPLE_RATE)
-                self.publish(GeminiBase(through, (), degraded=True))
+                self.publish(GeminiBase(through,
+                    self._preview_rows(self._base_committed, through), degraded=True))
                 self._base_committed = through
 
     def push_lanes(self, start_sample: int,
@@ -389,28 +390,9 @@ class LaneGeminiEngine:
             if isinstance(update, GeminiPreview):
                 self._previews[lane] = update
                 end = max(p.end_sample for p in self._previews.values() if p is not None)
-                segments: list[GeminiSegment] = []
-                for lane_name in self.LANES:
-                    preview = self._previews[lane_name]
-                    if preview is None:
-                        continue
-                    for row in preview.segments:
-                        if row.end_sample <= self._base_committed:
-                            continue
-                        current = GeminiSegment(max(row.start_sample, self._base_committed),
-                                                row.end_sample, row.text, row.speaker, lane_name)
-                        segments = [prior for prior in segments
-                                    if prior.source_lane != lane_name
-                                    or prior.end_sample <= current.start_sample
-                                    or prior.start_sample >= current.end_sample]
-                        segments.append(current)
-                system = [row for row in segments if row.source_lane == "system"]
-                unique = [row for row in segments
-                          if row.source_lane == "system" or not _echoed_preview(row, system)]
                 if end > self._base_committed:
-                    self.publish(GeminiPreview(end, tuple(sorted(
-                        unique, key=lambda row: (row.start_sample,
-                                                 self.LANES.index(row.source_lane))))))
+                    self.publish(GeminiPreview(end,
+                        self._preview_rows(self._base_committed, end)))
             elif isinstance(update, GeminiBase):
                 # Inner engines account locally. The public base advances only when
                 # both lane windows are ready, except for the bounded lag fallback.
@@ -432,6 +414,28 @@ class LaneGeminiEngine:
             elif isinstance(update, GeminiTurnBridge):
                 self._pending_turn_bridges.append(update)
                 self._publish_turn_bridges()
+
+    def _preview_rows(self, start: int, end: int) -> tuple[GeminiSegment, ...]:
+        segments: list[GeminiSegment] = []
+        for lane_name in self.LANES:
+            preview = self._previews[lane_name]
+            if preview is None:
+                continue
+            for row in preview.segments:
+                if row.end_sample <= start or row.start_sample >= end:
+                    continue
+                current = GeminiSegment(max(row.start_sample, start),
+                                        min(row.end_sample, end), row.text, None, lane_name)
+                segments = [prior for prior in segments
+                            if prior.source_lane != lane_name
+                            or prior.end_sample <= current.start_sample
+                            or prior.start_sample >= current.end_sample]
+                segments.append(current)
+        system = [row for row in segments if row.source_lane == "system"]
+        unique = [row for row in segments
+                  if row.source_lane == "system" or not _echoed_preview(row, system)]
+        return tuple(sorted(unique, key=lambda row: (row.start_sample,
+                         self.LANES.index(row.source_lane))))
 
     def _rows_in(self, start: int, end: int) -> tuple[GeminiSegment, ...]:
         return tuple(sorted((row for lane in self.LANES for row in self._rows[lane]
