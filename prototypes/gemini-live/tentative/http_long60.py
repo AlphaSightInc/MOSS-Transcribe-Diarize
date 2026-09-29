@@ -26,11 +26,14 @@ if (not Path(wp6_quality.__file__).resolve().is_relative_to(ROOT)
 
 
 def _wp6_adapter(**kwargs):
-    expected = {"speaker_window": "balanced", "cleanup_after_stop": False}
+    allowed = ({"speaker_window": "balanced", "cleanup_after_stop": False},
+               {"speaker_window": "max", "cleanup_after_stop": False})
     supplied = kwargs.pop("engine_settings", None)
-    if supplied not in (None, expected):
-        raise ValueError("WP4 long60 must use balanced and clean-up OFF")
-    return wp6_quality.SettingsReplayService(**kwargs, engine_settings=expected)
+    if supplied is None:
+        supplied = allowed[0]
+    if supplied not in allowed:
+        raise ValueError("WP4 long60 requires balanced or max and clean-up OFF")
+    return wp6_quality.SettingsReplayService(**kwargs, engine_settings=supplied)
 
 
 run_long60.SettingsReplayService = _wp6_adapter
