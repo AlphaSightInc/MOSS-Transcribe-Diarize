@@ -340,6 +340,16 @@ class GeminiHybridEngine:
         self._live_finals = [w for w in self._live_finals if w.end_sample > through]
 
     def _work(self) -> None:
+        # A worker exception otherwise stays inside the Future and labels silently stop advancing.
+        try:
+            self._work_loop()
+        except Exception as exc:
+            if self.report_usage is not None:
+                self.report_usage(kind="rolling", count_call=False,
+                                  error_code=f"worker_{type(exc).__name__}"[:64])
+            raise
+
+    def _work_loop(self) -> None:
         # Every loop inspects the latest accepted position. Slow calls are coalesced, not queued.
         while True:
             with self._lock:

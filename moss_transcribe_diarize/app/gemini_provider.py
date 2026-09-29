@@ -128,7 +128,8 @@ def ordered_segments(rows: Sequence[GeminiSegment], *, start_sample: int,
             if result:
                 prior = result[-1]
                 result[-1] = GeminiSegment(prior.start_sample, prior.end_sample,
-                                            prior.text + " " + row.text, prior.speaker)
+                                            prior.text + " " + row.text, prior.speaker,
+                                            prior.source_lane)
             continue
         end = min(end_sample, max(start + 1, row.end_sample))
         result.append(GeminiSegment(start, end, row.text, row.speaker, row.source_lane))
