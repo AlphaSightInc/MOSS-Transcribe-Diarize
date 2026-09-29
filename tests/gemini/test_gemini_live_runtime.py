@@ -12,6 +12,7 @@ from moss_transcribe_diarize.app.gemini_live_runtime import (
     GeminiRolling,
     GeminiRelabel,
     GeminiSegment,
+    GeminiTurnBridge,
     ScriptedGeminiEngine,
 )
 from moss_transcribe_diarize.app.live_service_runtime import (
@@ -303,6 +304,44 @@ def test_f13_relabel_keeps_overlapping_other_lane_row(tmp_path):
     assert [(row.text, row.canonical_speaker) for row in
             rt.snapshot("one").session.effective_transcript] == [
                 ("remote", "speaker-0001"), ("local", "local-0001")]
+
+
+def test_refused_stale_f13_relabel_does_not_fail_live_meeting(tmp_path):
+    first = GeminiSegment(0, 4000, "first", None)
+    second = GeminiSegment(6000, 8000, "second", None)
+    known = GeminiSegment(0, 4000, "first", "speaker-0001")
+    rt = runtime(tmp_path, {"one": ([(GeminiBase(16000, ()),
+        GeminiRolling(0, 16000, (first, second)),
+        GeminiTurnBridge(0, 4000, 6000), GeminiRelabel(0, 4000, (known,)))], ())})
+    rt.create(session_id="one")
+    rt.accept_frame("one", frame(0))
+    assert rt.snapshot("one").session.status == "active"
+    assert rt.snapshot("one").session.effective_transcript[0].canonical_speaker is None
+    diagnostic = rt.engine_diagnostics("one")
+    assert diagnostic["f13_relabel_refused"] == 1
+    assert diagnostic["f13_relabels"] == 0
+
+
+def test_refused_stale_f13_relabel_during_stop_still_finalizes(tmp_path):
+    first = GeminiSegment(0, 4000, "first", None)
+    second = GeminiSegment(6000, 8000, "second", None)
+    known = GeminiSegment(0, 4000, "first", "speaker-0001")
+    class TailEngine(ScriptedGeminiEngine):
+        async def drain_tail(self, deadline):
+            self._publish(GeminiRelabel(0, 4000, (known,)))
+            return True
+    rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage, _settings: TailEngine(publish,
+            batches=[(GeminiBase(16000, ()), GeminiRolling(0, 16000, (first, second)),
+                      GeminiTurnBridge(0, 4000, 6000))], terminal=()))
+    rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+    rt.accept_frame("one", frame(0))
+    async def finish():
+        await rt.stop("one", 1.0)
+        await rt.wait_terminal("one")
+    asyncio.run(finish())
+    assert rt.snapshot("one").session.finalization_status == "final"
+    assert rt.engine_diagnostics("one")["f13_relabel_refused"] == 1
 
 
 @pytest.mark.parametrize("vector,expected", [((1., 0.), "speaker-0001"), ((0., 1.), None)])

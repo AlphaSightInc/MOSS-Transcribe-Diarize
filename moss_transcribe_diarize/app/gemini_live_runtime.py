@@ -260,6 +260,7 @@ class _GeminiState:
     voice_observations: dict[str, object] = field(default_factory=dict)
     voiceprint_errors: int = 0
     f13_relabels: int = 0
+    f13_relabel_refused: int = 0
     lane_counters: dict[str, dict[str, object]] = field(default_factory=dict)
 
 
@@ -465,7 +466,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         source_lane=lane,
                     )
                     if not outcome.applied:
-                        raise ValueError(f"rolling relabel refused: {outcome.refusal}")
+                        state.f13_relabel_refused += 1
+                        return
                     state.f13_relabels += speakerless
                     kind = "label_revision_applied"
                 elif isinstance(update, GeminiTurnBridge):
@@ -614,6 +616,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "preview_lag_seconds": _lag_summary(state.preview_lag_samples),
                 "voiceprint_errors": state.voiceprint_errors,
                 "f13_relabels": state.f13_relabels,
+                "f13_relabel_refused": state.f13_relabel_refused,
                 "lanes": {lane: {
                     key: (dict(value) if isinstance(value, dict) else value)
                     for key, value in totals.items()}

@@ -458,7 +458,8 @@ class GeminiHybridEngine:
                                                  if obs.speaker_label in visible),
                                            (self.source_lane,) if self.source_lane else ()))
                 prior = self._last_rolling_turn
-                if (prior is not None and rows and prior.speaker == rows[0].speaker
+                if (prior is not None and rows and prior.speaker is not None
+                        and prior.speaker == rows[0].speaker
                         and prior.source_lane == rows[0].source_lane
                         and 0 < rows[0].start_sample - prior.end_sample <= round(1.5 * LIVE_SAMPLE_RATE)):
                     self.publish(GeminiTurnBridge(prior.start_sample, prior.end_sample,

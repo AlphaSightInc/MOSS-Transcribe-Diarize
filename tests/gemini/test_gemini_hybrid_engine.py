@@ -179,6 +179,24 @@ def test_later_window_relabels_short_committed_speakerless_row():
     engine.close()
 
 
+def test_speakerless_turns_do_not_bridge_across_frontier():
+    from moss_transcribe_diarize.app.gemini_live_runtime import GeminiTurnBridge
+    updates = []
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=90, stride_seconds=15),
+        registry=ContinuityRegistry(embedding_threshold=.46, within_window_threshold=.60,
+                                    birth_min_seconds=2),
+        diarizer=FakeDiarizer(), terminal=FakeTerminal())
+    S = 16000
+    engine._publish_window(0, 15*S, bytes(15*32000),
+                           (GeminiWord("first", "A", 14*S, round(14.5*S)),))
+    engine._publish_window(0, 30*S, bytes(30*32000),
+                           (GeminiWord("second", "B", 16*S, round(16.4*S)),))
+    assert not [row for row in updates if isinstance(row, GeminiTurnBridge)]
+    engine.close()
+
+
 def test_rolling_turns_keep_annotation_order_after_timestamp_repair():
     updates = []
     engine = make_engine(updates)
