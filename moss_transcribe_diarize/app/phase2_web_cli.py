@@ -167,6 +167,35 @@ def _gemini_client(api_key: str):
     return client
 
 
+def _gemini_key() -> str:
+    key_path = Path(__file__).resolve().parents[2] / ".env.local"
+    if key_path.exists():
+        for line in key_path.read_text().splitlines():
+            if line.startswith("GEMINI_API_KEY="):
+                key = line.partition("=")[2].strip()
+                if key:
+                    return key
+    key = os.environ.get("MOSS_GEMINI_API_KEY")
+    if not key:
+        raise SystemExit("Gemini key missing from .env.local or MOSS_GEMINI_API_KEY")
+    return key
+
+
+def _build_gemini_file_runner(args: argparse.Namespace):
+    from .file_identity_album import AlbumIdentityResolver
+    from .gemini_file_runner import GeminiFileRunner
+    from .gemini_provider import WindowDiarizer
+    from .live_provider_bundle import LiveProviderBundleConfig, _identity_encoder
+
+    config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
+    encoder = _identity_encoder(config, interval_workers=GEMINI_EMBEDDING_INTERVAL_WORKERS)
+    return GeminiFileRunner(
+        WindowDiarizer(_gemini_client(_gemini_key()), lambda **_usage: None),
+        encoder,
+        identity_resolver=AlbumIdentityResolver(config=config, encoder=encoder),
+    )
+
+
 def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     """Load the provider key only here; MOSS model/GPU construction stays outside this path."""
     from .gemini_hybrid_engine import (GrowingContextWindowScheduler,
@@ -186,16 +215,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     from .live_service_runtime import LiveServiceConfigHashes, LiveServiceDescriptor
     from .live_service_runtime import hash_config
 
-    key = None
-    key_path = Path(__file__).resolve().parents[2] / ".env.local"
-    if key_path.exists():
-        for line in key_path.read_text().splitlines():
-            if line.startswith("GEMINI_API_KEY="):
-                key = line.partition("=")[2].strip()
-                break
-    key = key or os.environ.get("MOSS_GEMINI_API_KEY")
-    if not key:
-        raise SystemExit("Gemini key missing from .env.local or MOSS_GEMINI_API_KEY")
+    key = _gemini_key()
     config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
     bounds = replace(_bounds(config.bounds_config),
                      max_tape_bytes=max(int(config.bounds_config["max_tape_bytes"]),
@@ -342,7 +362,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     from .phase2_operator import configure_operator_journal
 
     configure_operator_journal()
-    file_runner = _build_file_runner(args) if args.live_engine == "moss" else None
+    file_runner = (_build_file_runner(args) if args.live_engine == "moss"
+                   else _build_gemini_file_runner(args))
     live_runtime_factory = _build_live_runtime_factory(args, file_runner)
     app = create_phase2_app(
         database_path=Path(args.database).expanduser(),
