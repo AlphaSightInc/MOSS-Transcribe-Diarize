@@ -36,7 +36,7 @@ def display_speaker_label(canonical_speaker: str, canonical_speakers: Sequence[s
 def published_speaker_label(
     canonical_speaker: str | None, canonical_speakers: Sequence[str]
 ) -> str:
-    """The `Sxx` a *surface* segment is shown and exported as. Total, never raises.
+    """The default label a *surface* segment is shown and exported as. Total, never raises.
 
     `display_speaker_label` is the strict primitive: it answers only for a speaker this
     session established, and refuses otherwise so a writer cannot invent a name. A reader of
@@ -46,6 +46,7 @@ def published_speaker_label(
     payload. Neither may be rendered as a guess, so both read as the honest
     `UNATTRIBUTED_SPEAKER`.
 
+    Local IDs display as `Local NN`; other canonical speakers retain their `Sxx` label.
     It is total because two readers depend on it -- the browser render and the export -- and a
     transcript whose screen and whose file disagree about who spoke is worse than either being
     wrong alone.
@@ -54,9 +55,12 @@ def published_speaker_label(
     if canonical_speaker is None:
         return UNATTRIBUTED_SPEAKER
     try:
-        return display_speaker_label(canonical_speaker, canonical_speakers)
+        label = display_speaker_label(canonical_speaker, canonical_speakers)
     except ValueError:
         return UNATTRIBUTED_SPEAKER
+    if canonical_speaker.startswith("local-") and canonical_speaker[6:].isdigit():
+        return f"Local {int(canonical_speaker[6:]):02d}"
+    return label
 
 
 __all__ = ["UNATTRIBUTED_SPEAKER", "display_speaker_label", "published_speaker_label"]

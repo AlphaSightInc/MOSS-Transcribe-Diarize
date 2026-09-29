@@ -204,18 +204,18 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     """Load the provider key only here; MOSS model/GPU construction stays outside this path."""
     from .gemini_hybrid_engine import (GrowingContextWindowScheduler,
                                        GeminiHybridEngine,
-                                       SingleMicrophoneRegistry, WeSpeakerWindowEmbeddings)
+                                       WeSpeakerWindowEmbeddings)
     from .gemini_continuity_registry import ContinuityRegistry
     from .gemini_lane_engine import (AcousticEchoGuard, ConditionalMicrophoneTerminal, LaneGeminiEngine,
                                      VoicedLiveWords, MicrophoneWordGate,
-                                     SystemWordLedger,
+                                     SystemWordLedger, CrossLaneVoiceEchoGuard,
                                      WebRtcSpeechDetector)
     from .gemini_live_words import GeminiLiveWordSource
     from .gemini_final_policy import FinalWordPolicy, WebRtcWordGate
     from .gemini_long_final import LongFinalStitcher
     from .gemini_live_runtime import (GeminiLiveRuntime, GEMINI_SPEAKER_WINDOW_PRESETS,
                                       GEMINI_DEFAULT_ENGINE_SETTINGS)
-    from .gemini_provider import WindowDiarizer, TerminalTranscriber
+    from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber
     from .live_provider_bundle import LiveProviderBundleConfig, _bounds, _identity_encoder
     from .live_service_runtime import LiveServiceConfigHashes, LiveServiceDescriptor
     from .live_service_runtime import hash_config
@@ -241,8 +241,8 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
               "birth_min_seconds": GEMINI_BIRTH_MIN_SECONDS,
               "terminal_merge_cosine": 0.65, "terminal_converse_gap_seconds": 2,
               "word_gate": "webrtc-mode1-10ms-pad200ms",
-              "capture_lanes": "system_diarized_microphone_single_speaker",
-              "microphone_echo_guard": "text_midpoint_1p5s_and_system_vad_rms_lag100ms_minus15db"}
+              "capture_lanes": "system_and_microphone_diarized",
+              "microphone_echo_guard": "text_acoustic_and_voice_cosine_0p60_overlap_400ms"}
     identity_policy = {
         "registry": "word-time-overlap-hungarian",
         "voiceprint": f"{encoder.spec.provider}:{encoder.spec.revision}",
@@ -280,6 +280,14 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
             system_diarizer, mic_diarizer = _serialize_gemini_lanes(
                 WindowDiarizer(client, system_report), WindowDiarizer(client, mic_report))
             system_words = SystemWordLedger()
+            voice_echo = CrossLaneVoiceEchoGuard(threshold=.60)
+            system_embeddings = WeSpeakerWindowEmbeddings(encoder)
+            mic_embeddings = WeSpeakerWindowEmbeddings(encoder)
+            mic_registry = ContinuityRegistry(
+                embedding_threshold=GEMINI_CONTINUITY_E,
+                within_window_threshold=GEMINI_CONTINUITY_W,
+                birth_min_seconds=GEMINI_BIRTH_MIN_SECONDS,
+                id_prefix="local")
             system_gate = WebRtcWordGate()
             mic_gate = WebRtcWordGate()
             system_preview_detector = WebRtcSpeechDetector()
@@ -292,18 +300,27 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                     start_sample=start, end_sample=end))
             mic_word_gate = MicrophoneWordGate(
                 mic_gate, system_words, acoustic_guard,
-                lambda counts: mic_report(kind="gate", count_call=False, **counts))
+                lambda counts: mic_report(kind="gate", count_call=False, **counts),
+                voice_guard=voice_echo, embedding_source=mic_embeddings)
             system_terminal = TerminalTranscriber(
                 system_diarizer, identity_policy=FinalWordPolicy(encoder),
                 stitcher=LongFinalStitcher(encoder), report_usage=system_report,
                 word_gate=system_gate, source_lane="system",
                 voiced_audio=system_batch_detector)
+            def mic_terminal_filter(words):
+                mic_pcm = lane_engine.lane_tape("microphone").read()
+                filtered = mic_word_gate.filter_terminal(
+                    mic_pcm, words, system_terminal.last_words,
+                    system_pcm16=lane_engine.lane_tape("system").read())
+                vectors = mic_embeddings(mic_pcm, 0, filtered)
+                mapping, _ = mic_registry.observe_window(0, filtered, vectors)
+                return tuple(GeminiWord(word.text, mapping[word.speaker],
+                                        word.start_sample, word.end_sample)
+                             for word in filtered)
             mic_terminal = TerminalTranscriber(
-                mic_diarizer, diarize=False, word_gate=mic_gate,
-                word_filter=lambda words: mic_word_gate.filter_terminal(
-                    lane_engine.lane_tape("microphone").read(),
-                    words, system_terminal.last_words),
-                source_lane="microphone", fixed_speaker="speaker-microphone",
+                mic_diarizer, diarize=True, identity_policy=FinalWordPolicy(encoder),
+                word_gate=mic_gate, word_filter=mic_terminal_filter,
+                source_lane="microphone",
                 report_usage=mic_report, voiced_audio=mic_batch_detector)
             system_source = VoicedLiveWords(
                 lambda: GeminiLiveWordSource(client, system_report),
@@ -312,6 +329,11 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                 lambda: GeminiLiveWordSource(client, mic_report),
                 voiced_audio=mic_preview_detector)
             def system_factory(lane_publish):
+                def observed_system_embeddings(pcm, start, words):
+                    vectors = system_embeddings(pcm, start, words)
+                    voice_echo.observe_system(words, vectors,
+                                              frontier=start + len(pcm) // 2)
+                    return vectors
                 return GeminiHybridEngine(
                     lane_publish, word_source=system_source,
                     window_scheduler=GrowingContextWindowScheduler(
@@ -322,7 +344,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                         birth_min_seconds=GEMINI_BIRTH_MIN_SECONDS),
                     diarizer=system_diarizer,
                     terminal=system_terminal,
-                    embedding_source=WeSpeakerWindowEmbeddings(encoder),
+                    embedding_source=observed_system_embeddings,
                     encoder_spec=encoder.spec, word_gate=system_gate,
                     report_usage=system_report, source_lane="system",
                     voiced_audio=system_batch_detector,
@@ -333,13 +355,13 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                     window_scheduler=GrowingContextWindowScheduler(
                         max_seconds=GEMINI_MIC_WINDOW_SECONDS,
                         stride_seconds=GEMINI_MIC_WINDOW_STRIDE_SECONDS),
-                    registry=SingleMicrophoneRegistry(), diarizer=mic_diarizer,
+                    registry=mic_registry, diarizer=mic_diarizer,
                     terminal=ConditionalMicrophoneTerminal(mic_source, mic_terminal),
-                    embedding_source=WeSpeakerWindowEmbeddings(encoder),
+                    embedding_source=mic_embeddings,
                     encoder_spec=encoder.spec,
                     word_gate=mic_word_gate,
                     report_usage=mic_report, source_lane="microphone",
-                    voiced_audio=mic_batch_detector, diarize_windows=False)
+                    voiced_audio=mic_batch_detector, diarize_windows=True)
             lane_engine = LaneGeminiEngine(
                 publish, system_factory=system_factory,
                 microphone_factory=microphone_factory,

@@ -287,6 +287,33 @@ def test_silent_microphone_skips_batch_calls_then_births_one_local_speaker():
     engine.close()
 
 
+def test_diarized_microphone_window_births_two_local_ids():
+    from moss_transcribe_diarize.app.gemini_continuity_registry import ContinuityRegistry
+    calls = []
+    updates = []
+    class MicDiarizer:
+        def diarize(self, pcm, *, deadline, kind, diarize=True):
+            calls.append(diarize)
+            return GeminiWords((
+                GeminiWord("first", "C", 0, 3*16000),
+                GeminiWord("second", "D", 4*16000, 7*16000)))
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=30, stride_seconds=15),
+        registry=ContinuityRegistry(embedding_threshold=.46,
+                                    within_window_threshold=.60,
+                                    birth_min_seconds=2, id_prefix="local"),
+        diarizer=MicDiarizer(), terminal=FakeTerminal(),
+        source_lane="microphone", voiced_audio=lambda pcm: any(pcm),
+        diarize_windows=True)
+    engine.push_audio(0, b"\x01\x00" * (15*16000))
+    engine._future.result(timeout=5)
+    assert calls == [True]
+    assert {row.speaker for update in updates if isinstance(update, GeminiRolling)
+            for row in update.segments} == {"local-0001", "local-0002"}
+    engine.close()
+
+
 def test_silent_system_window_advances_frontier_without_gemini_call():
     from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
     updates = []
