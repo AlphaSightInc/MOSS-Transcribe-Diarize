@@ -57,6 +57,13 @@ describe("Account Meeting API", () => {
     expect(await listMeetings(fetcher)).toEqual([mixed]);
     expect((await listMeetings(fetcher))[0].transcript?.segments[1]).not.toHaveProperty("speaker_entity_id");
   });
+
+  it("reads the content-free refinement state on list and detail", async () => {
+    const running = { ...payload, status: "completed", refinement_state: "running" };
+    const fetcher = vi.fn().mockResolvedValueOnce(response({ meetings: [running] })).mockResolvedValueOnce(response(running));
+    expect((await listMeetings(fetcher))[0].refinement_state).toBe("running");
+    expect((await openMeeting(running.id, fetcher)).refinement_state).toBe("running");
+  });
 });
 
 function response(body: unknown, status = 200): Response {

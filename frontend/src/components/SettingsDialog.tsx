@@ -48,8 +48,7 @@ export function SettingsDialog() {
               {WINDOW_CHOICES.map(choice => <option key={choice.value} value={choice.value}>{choice.label}</option>)}</select></label>
             <p className="hint">{WINDOW_CHOICES.find(choice => choice.value === settings.speakerWindow)?.tradeoff}</p>
             <label className="settings-checkbox"><input type="checkbox" checked={settings.cleanupAfterStop}
-              onChange={event => update({ cleanupAfterStop: event.currentTarget.checked })} /> Clean-up after Stop</label>
-            <p className="hint">Reprocess the whole recording after Stop. Off by default.</p>
+              onChange={event => update({ cleanupAfterStop: event.currentTarget.checked })} /> Improve transcript after Stop (runs in the background; export waits for it)</label>
           </section>}
           <section aria-label="Summary settings"><h3>Summary</h3>
             <label>Provider<select aria-label="Summary provider" value={settings.summary.provider}

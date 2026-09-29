@@ -24,7 +24,7 @@ export const SETTINGS_CHANGED = "moss:settings-changed";
 export const BUILT_IN_MODELS = ["gemini-3.5-flash-lite", "gemini-3.5-flash", "gemini-3.8-flash"] as const;
 
 export function defaultAppSettings(): AppSettings {
-  return { speakerWindow: "balanced", cleanupAfterStop: false, summary: {
+  return { speakerWindow: "balanced", cleanupAfterStop: true, summary: {
     provider: "built-in", model: BUILT_IN_MODELS[0], externalUrl: "", externalModel: "",
     externalApiKey: "", language: "", intervalSeconds: 60, timeoutSeconds: 120, prompt: defaultPrompt
   } };

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { openMeeting, type Meeting } from "../api/meetings";
 import { summaryApi, SUMMARY_CHANGED, type SummaryArtifact, type SummaryDocument } from "../lib/finalSummary";
 import { finalizeMeetingSummary, requestLiveSummary, type LiveSummaryResponse } from "../lib/summaryRequests";
@@ -16,6 +16,7 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [settings, setSettings] = useState(loadAppSettings);
+  const improvementRequested = useRef<string | null>(null);
   useEffect(() => {
     const changed = () => setSettings(loadAppSettings());
     document.addEventListener(SETTINGS_CHANGED, changed);
@@ -62,6 +63,17 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
     return () => { disposed = true; clearInterval(timer); document.removeEventListener(SUMMARY_CHANGED, changed); };
   }, [id, active]);
 
+  const summaryStale = meeting?.refinement_state === "done" && artifact?.state === "current" &&
+    artifact.source_version < meeting.transcript_version;
+  useEffect(() => {
+    if (!meeting || !summaryStale || settings.summary.provider !== "built-in") return;
+    const key = `${meeting.id}:${meeting.transcript_version}`;
+    if (improvementRequested.current === key) return;
+    improvementRequested.current = key;
+    void finalizeMeetingSummary(meeting, settings).catch(cause =>
+      setError(cause instanceof Error ? cause.message : "Summary update unavailable."));
+  }, [meeting?.id, meeting?.transcript_version, summaryStale, settings.summary.provider]);
+
   async function refreshFinal() {
     if (!id || busy) return;
     setBusy(true); setError("");
@@ -83,7 +95,8 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
           : artifact?.state === "current" ? "Summary ready" : artifact ? `Summary ${artifact.state.replaceAll("_", " ")}` : "No saved summary yet"}</p></div>
         <button type="button" className="btn" data-summary-refresh disabled={busy || settings.summary.provider === "off"}
           onClick={() => void (active ? refreshLive() : refreshFinal())}>{busy ? "Refreshing…"
-            : !active && (error || artifact?.state === "failed") ? "Retry" : "Refresh"}</button></div>
+            : !active && (error || artifact?.state === "failed") ? "Retry"
+            : !active && summaryStale && settings.summary.provider === "external" ? "Update summary" : "Refresh"}</button></div>
       {error && (active ? <p className="summary-notice" role="status">
         {rolling ? "Latest update failed; showing the last summary." : "Summary update failed."}
         {interval ? " Retrying at the next interval." : " Use Refresh to retry."}

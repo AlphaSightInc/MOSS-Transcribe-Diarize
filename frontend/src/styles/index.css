@@ -2008,6 +2008,7 @@ button.legend-chip:disabled {
 .utt-reassign { position: absolute; top: 0; right: -25px; display: grid; place-items: center; width: 34px; height: 34px; padding: 5px; appearance: none; border: 0; border-radius: 8px; background: transparent; color: var(--muted); opacity: .28; }
 .utt-reassign svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .utt:hover .utt-reassign, .utt-reassign:hover, .utt-reassign:focus-visible { opacity: 1; color: var(--ink); }
+.utt-reassign:disabled, .utt:hover .utt-reassign:disabled { opacity: .25; color: var(--muted); cursor: not-allowed; }
 .utt-reassign:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 .utt-text .prov {
@@ -3838,6 +3839,7 @@ button.legend-chip:disabled {
 .summary-status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--line); }
 .summary-status-row p { margin: 4px 0 0; }
 .summary-notice { margin: 12px 0 0; padding: 8px 10px; border-left: 2px solid #b98334; background: #fff9ec; color: #694e24; font-size: 12px; line-height: 1.45; }
+.transcript-refinement { margin: 10px 24px 0; padding: 8px 10px; border-left: 2px solid #6278bd; background: #f1f4ff; color: #354572; font-size: 12px; line-height: 1.45; }
 .summary-content { padding: 28px 0; }
 .summary-content > h3 { font: 600 24px/1.3 var(--f-display); margin: 4px 0 22px; }
 .summary-content section { padding: 18px 0; border-top: 1px solid var(--line); }

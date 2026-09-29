@@ -14,6 +14,7 @@ import { summaryApi } from "../lib/finalSummary";
 import { openMeeting } from "../api/meetings";
 import { loadAppSettings } from "../lib/settings";
 import { sessionId, sessionNeedsReview, sessionStatus, transcript, liveLabelPolicy } from "../state/session";
+import { selectedSummaryMeeting } from "../state/ui";
 import { watchMeetingSummary } from "../lib/summaryRequests";
 import {
   clearSessionReattach,
@@ -372,6 +373,7 @@ export function ControlPanel() {
   async function saveExport(): Promise<void> {
     const id = sessionId.value;
     if (!id) return;
+    if (selectedSummaryMeeting.value?.id === id && selectedSummaryMeeting.value.refinement_state === "running") return;
     setExportError("");
     if (exportFormat === "audio") {
       try {
@@ -394,6 +396,7 @@ export function ControlPanel() {
       try { const artifact = await summaryApi(id); summary = artifact?.state === "current" ? artifact.document : null; }
       catch { /* A transcript remains exportable when its optional summary cannot be fetched. */ }
     }
+    if (selectedSummaryMeeting.value?.id === id && selectedSummaryMeeting.value.refinement_state === "running") return;
     triggerTranscriptExportDownload(serializeTranscriptExport(exportFormat, turns,
       turn => /^local-\d+$/.test(turn.speaker_entity_id) &&
         (!turn.display_name || turn.display_name === turn.speaker_entity_id || /^Speaker \d+$/.test(turn.display_name))
@@ -421,6 +424,8 @@ export function ControlPanel() {
 
   const modeLocked = phase === "active" || phase === "stopping" || phase === "viewing" || phase === "configuring" || sessionStatus.value === "active" || sessionStatus.value === "closing";
   const exportReady = sessionId.value !== null && (exportFormat === "audio" || transcript.value.length > 0);
+  const refinementRunning = selectedSummaryMeeting.value?.id === sessionId.value &&
+    selectedSummaryMeeting.value.refinement_state === "running";
 
   return (
     <section className="control-section controls-workspace" data-mode={mode}>
@@ -524,12 +529,13 @@ export function ControlPanel() {
       </form>}
       </div>
       <div className="controls-block controls-export"><label className="field-label" htmlFor="meeting-export-format">Export</label>
-        <div className="controls-export-row"><select id="meeting-export-format" aria-label="Export format" value={exportFormat}
+        <div className="controls-export-row"><select id="meeting-export-format" aria-label="Export format" value={exportFormat} disabled={refinementRunning}
           onChange={event => setExportFormat(event.currentTarget.value as TranscriptExportFormat | "audio")}>
           <option value="md">Markdown (.md)</option><option value="txt">Plain text (.txt)</option>
           <option value="srt">SRT (.srt)</option><option value="vtt">VTT (.vtt)</option>
           <option value="json">JSON (.json)</option><option value="audio">Audio (.mp3)</option>
-        </select><button type="button" className="btn" disabled={!exportReady} onClick={() => void saveExport()}>Save</button></div>
+        </select><button type="button" className="btn" disabled={!exportReady || refinementRunning} onClick={() => void saveExport()}>Save</button></div>
+        {refinementRunning ? <p className="hint" role="status">Export waits for transcript improvement.</p> : null}
         {exportError && <p role="alert">{exportError}</p>}
       </div>
     </section>

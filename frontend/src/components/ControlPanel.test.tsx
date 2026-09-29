@@ -3,7 +3,8 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { storageKeys } from "../lib/persistence";
-import { captureMeetingId } from "../state/session";
+import { captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus } from "../state/session";
+import { selectedSummaryMeeting } from "../state/ui";
 
 const mocks = vi.hoisted(() => {
   const poller = {
@@ -90,8 +91,32 @@ describe("ControlPanel reattach", () => {
 
   afterEach(() => {
     act(() => render(null, root));
+    resetSessionState();
+    selectedSummaryMeeting.value = null;
     root.remove();
     workletMeta.remove();
+  });
+
+  it("holds transcript and audio export while refinement runs, then restores Save", async () => {
+    const meeting = { id: "refining", mode: "live" as const, title: "Meeting", title_source: "automatic" as const,
+      status: "completed" as const, created_at_ms: Date.now(), transcript_version: 1,
+      refinement_state: "running" as const, transcript: { segments: [] }, audio: null };
+    act(() => {
+      sessionId.value = meeting.id;
+      sessionStatus.value = "closed";
+      selectedSummaryMeeting.value = meeting;
+      replaceTranscript([{ start: 0, end: 1, text: "Live words", speaker: "S01", speaker_entity_id: "S01",
+        display_name: "Alex", state: "final" }]);
+      render(<ControlPanel />, root);
+    });
+    const format = root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!;
+    const save = root.querySelector<HTMLButtonElement>(".controls-export button")!;
+    expect(format.disabled).toBe(true);
+    expect(save.disabled).toBe(true);
+    expect(root.textContent).toContain("Export waits for transcript improvement.");
+    act(() => { selectedSummaryMeeting.value = { ...meeting, refinement_state: "done", transcript_version: 2 }; });
+    expect(format.disabled).toBe(false);
+    expect(save.disabled).toBe(false);
   });
 
   it("reattaches read-only with only the Account Meeting ID", async () => {

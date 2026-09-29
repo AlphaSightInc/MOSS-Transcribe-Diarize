@@ -100,6 +100,28 @@ export function MeetingHistory() {
   }, []);
 
   useEffect(() => {
+    if (selected?.refinement_state !== "running") return;
+    const id = selected.id;
+    let disposed = false;
+    let reading = false;
+    const timer = setInterval(async () => {
+      if (reading) return;
+      reading = true;
+      try {
+        const next = await openMeeting(id);
+        if (disposed || selectedRef.current?.id !== id) return;
+        if (selectedRef.current.refinement_state === next.refinement_state &&
+            selectedRef.current.transcript_version === next.transcript_version) return;
+        setMeetings(current => current.map(meeting => meeting.id === id ? next : meeting));
+        replaceSelection(next);
+        if (sessionId.value === id) publishMeeting(next, false);
+      } catch { /* Keep the last durable version and try again at the next interval. */ }
+      finally { reading = false; }
+    }, 5000);
+    return () => { disposed = true; clearInterval(timer); };
+  }, [selected?.id, selected?.refinement_state]);
+
+  useEffect(() => {
     if (!renameTarget) return;
     const dialog = renameDialogRef.current;
     if (!dialog) return;
@@ -283,7 +305,9 @@ export function MeetingHistory() {
                       >
                         Rename
                       </button>
-                      {meeting.audio?.state === "available" || meeting.audio?.state === "partial" ? (
+                      {meeting.refinement_state === "running" && (meeting.audio?.state === "available" || meeting.audio?.state === "partial") ? (
+                        <span className="history-audio-unavailable">Audio export waits for transcript improvement.</span>
+                      ) : meeting.audio?.state === "available" || meeting.audio?.state === "partial" ? (
                         <a
                           className="history-action-btn"
                           data-audio-download

@@ -12,7 +12,7 @@ beforeEach(() => {
 
 describe("browser settings", () => {
   it("starts with Gemini summaries and balanced windows, then persists one browser choice", () => {
-    expect(loadAppSettings()).toMatchObject({ speakerWindow: "balanced", cleanupAfterStop: false,
+    expect(loadAppSettings()).toMatchObject({ speakerWindow: "balanced", cleanupAfterStop: true,
       summary: { provider: "built-in", model: "gemini-3.5-flash-lite", intervalSeconds: 60 } });
     saveAppSettings({ ...defaultAppSettings(), speakerWindow: "economy", summary: { ...defaultAppSettings().summary, provider: "off" } });
     expect(loadAppSettings().speakerWindow).toBe("economy");

@@ -4,7 +4,7 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { applySessionStateEvent, captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus } from "../state/session";
-import { autoscroll } from "../state/ui";
+import { autoscroll, selectedSummaryMeeting } from "../state/ui";
 import { TranscriptPane } from "./TranscriptPane";
 import { dispatchWsEvent } from "../api/ws";
 
@@ -14,6 +14,7 @@ describe("TranscriptPane", () => {
   beforeEach(() => {
     resetSessionState();
     autoscroll.value = false;
+    selectedSummaryMeeting.value = null;
     root = document.createElement("div");
     document.body.appendChild(root);
   });
@@ -25,6 +26,7 @@ describe("TranscriptPane", () => {
     root.remove();
     resetSessionState();
     autoscroll.value = false;
+    selectedSummaryMeeting.value = null;
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     vi.useRealTimers();
@@ -34,6 +36,32 @@ describe("TranscriptPane", () => {
     act(() => render(<TranscriptPane />, root));
     expect(root.querySelector(".tr-title")?.textContent).toContain("MOSS");
     expect(root.querySelector(".tr-title")?.textContent).not.toContain("LiveTranscribe");
+  });
+
+  it("shows refinement progress while naming stays available and passage correction waits", () => {
+    const meeting = { id: "refining", mode: "live" as const, title: "Meeting", title_source: "automatic" as const,
+      status: "completed" as const, created_at_ms: Date.now(), transcript_version: 1,
+      refinement_state: "running" as const, transcript: { segments: [] }, audio: null };
+    act(() => {
+      sessionId.value = meeting.id;
+      sessionStatus.value = "closed";
+      selectedSummaryMeeting.value = meeting;
+      replaceTranscript([{ start: 0, end: 1, text: "Live words", speaker: "speaker-0001",
+        speaker_entity_id: "speaker-0001", display_name: "Alex", state: "final", segment_id: "seg-1" }]);
+      render(<TranscriptPane />, root);
+    });
+    expect(root.textContent).toContain("Improving transcript…");
+    expect(root.textContent).toContain("Passage corrections wait until improvement finishes.");
+    expect(root.querySelectorAll("[data-reassign-passage]")).toHaveLength(1);
+    expect(root.querySelector<HTMLButtonElement>("[data-reassign-passage]")?.disabled).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>("button.utt-speaker")?.disabled).toBe(false);
+    act(() => { selectedSummaryMeeting.value = { ...meeting, refinement_state: "done", transcript_version: 2 }; });
+    expect(root.textContent).toContain("Transcript improved");
+    expect(root.querySelectorAll("[data-reassign-passage]")).toHaveLength(1);
+    expect(root.querySelector<HTMLButtonElement>("[data-reassign-passage]")?.disabled).toBe(false);
+    act(() => { selectedSummaryMeeting.value = { ...meeting, refinement_state: "failed",
+      notice: "Improvement unavailable — the live transcript was kept" }; });
+    expect(root.textContent).toContain("Improvement unavailable — the live transcript was kept");
   });
 
   it("renders display names and a provisional row without exposing canonical IDs", () => {

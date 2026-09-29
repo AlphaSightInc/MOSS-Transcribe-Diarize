@@ -8,10 +8,10 @@ import {
   OPEN_MEETING_EVENT,
   MEETING_HISTORY_REFRESH_EVENT
 } from "../lib/meetingEvents";
-import { replaceTranscript, resetSessionState, sessionTitle, sessionId, sessionMode, sessionNeedsReview, sessionStatus, transcript } from "../state/session";
+import { replaceTranscript, resetSessionState, sessionTitle, sessionId, sessionMode, sessionNeedsReview, sessionStatus, sessionTranscriptItems, transcript } from "../state/session";
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
-import { resetUiState } from "../state/ui";
+import { resetUiState, selectedSummaryMeeting } from "../state/ui";
 
 // These fixtures script history requests; model discovery is covered in FinalSummary.test.tsx.
 vi.mock("../lib/finalSummary", async importOriginal => ({
@@ -139,6 +139,45 @@ describe("MeetingHistory", () => {
     expect(transcript.value.map(row => row.text)).toEqual(["kept words"]);
     expect(root.textContent).toContain("Needs review.");
     expect(lists).toBe(2);
+  });
+
+  it("polls a refining meeting and replaces the selected transcript when improvement completes", async () => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    const running = meeting({ id: "refining", refinement_state: "running",
+      transcript: { segments: [{ id: "first", start: 0, end: 1, speaker: "Alex", text: "Live words" }] } });
+    const done = meeting({ ...running, refinement_state: "done", transcript_version: 2,
+      transcript: { segments: [{ id: "second", start: 0, end: 1, speaker: "Named Alex", text: "Improved words" }] } });
+    let detailReads = 0;
+    const fetcher = vi.fn(async (url: string) => url === "/api/meetings"
+      ? response({ meetings: [running] })
+      : response(detailReads++ < 2 ? running : done));
+    vi.stubGlobal("fetch", fetcher);
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="refining"]')).not.toBeNull());
+    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="refining"]')!.click());
+    await vi.waitFor(() => expect(selectedSummaryMeeting.value?.id).toBe("refining"));
+    expect(selectedSummaryMeeting.value?.refinement_state).toBe("running");
+    expect(transcript.value.map(row => row.text)).toEqual(["Live words"]);
+    act(() => { sessionTranscriptItems.value = sessionTranscriptItems.value.map(row => ({ ...row, display_name: "Named Alex" })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+    expect(transcript.value[0].display_name).toBe("Named Alex");
+    await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+    expect(fetcher.mock.calls.filter(([url]) => url === "/api/meetings/refining")).toHaveLength(3);
+    expect(selectedSummaryMeeting.value?.refinement_state).toBe("done");
+    expect(transcript.value.map(row => row.text)).toEqual(["Improved words"]);
+  });
+
+  it("keeps rename available but holds History audio download during improvement", async () => {
+    const running = meeting({ refinement_state: "running", audio: {
+      state: "available", relative_path: "meeting.mp3", byte_count: 100, duration_ms: 1000,
+      format: "mp3", sample_rate_hz: 16000, channels: 1, bit_rate_bps: 48000
+    } });
+    vi.stubGlobal("fetch", vi.fn(async () => response({ meetings: [running] })));
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector('[data-meeting-card="meeting-a"]')).not.toBeNull());
+    expect(root.querySelector("[data-audio-download]")).toBeNull();
+    expect(root.textContent).toContain("Audio export waits for transcript improvement.");
+    expect(root.querySelector<HTMLButtonElement>(".history-action-btn")?.disabled).toBe(false);
   });
 
   it("brings an explicitly opened import into view but leaves background refresh in place", async () => {

@@ -115,3 +115,50 @@ it("does not carry a rolling failure into a successful final summary", async () 
   expect(root.querySelectorAll(".summary-notice, [role='alert']")).toHaveLength(0);
   expect(root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")?.textContent).toBe("Refresh");
 });
+
+it("regenerates an existing built-in summary when refinement raises the transcript version", async () => {
+  const document = (summary: string) => ({ summary, topics: [], details: [], speaker_background: [], data_references: [] });
+  const old = { state: "current", attempt_id: "old", source_version: 1, artifact_version: 1,
+    error_code: null, document: document("Old summary") };
+  const improved = { ...old, attempt_id: "improved", source_version: 2, artifact_version: 2,
+    document: document("Improved summary") };
+  const fetcher = vi.fn(async (url: string, init?: RequestInit) => url.endsWith("/summary/server")
+    ? { ok: true, json: async () => improved }
+    : { ok: true, json: async () => ({ summary: old }) });
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "closed";
+  selectedSummaryMeeting.value = { id: "m", mode: "live", title: "Meeting", title_source: "automatic",
+    status: "completed", created_at_ms: Date.now(), transcript_version: 1, refinement_state: "running",
+    transcript: { segments: [] }, audio: null };
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await vi.waitFor(() => expect(root.textContent).toContain("Old summary"));
+  await act(async () => { selectedSummaryMeeting.value = { ...selectedSummaryMeeting.value!,
+    transcript_version: 2, refinement_state: "done" }; });
+  await vi.waitFor(() => expect(fetcher.mock.calls.some(([url]) => url.endsWith("/summary/server"))).toBe(true));
+  const body = JSON.parse(fetcher.mock.calls.find(([url]) => url.endsWith("/summary/server"))![1]!.body as string);
+  expect(body.source_version).toBe(2);
+  await vi.waitFor(() => expect(root.textContent).toContain("Improved summary"));
+  expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/summary/server"))).toHaveLength(1);
+});
+
+it("offers Update summary for a stale external artifact without sending automatically", async () => {
+  const { defaultAppSettings, saveAppSettings } = await import("../lib/settings");
+  const values = new Map<string, string>();
+  vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) });
+  const settings = defaultAppSettings();
+  saveAppSettings({ ...settings, summary: { ...settings.summary, provider: "external" } });
+  const old = { state: "current", attempt_id: "old", source_version: 1, artifact_version: 1,
+    error_code: null, document: { summary: "Older summary", topics: [], details: [],
+      speaker_background: [], data_references: [] } };
+  const fetcher = vi.fn(async (_url: string) => ({ ok: true, json: async () => ({ summary: old }) }));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "closed";
+  selectedSummaryMeeting.value = { id: "m", mode: "live", title: "Meeting", title_source: "automatic",
+    status: "completed", created_at_ms: Date.now(), transcript_version: 2, refinement_state: "done",
+    transcript: { segments: [] }, audio: null };
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await vi.waitFor(() => expect(root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")?.textContent).toBe("Update summary"));
+  expect(fetcher.mock.calls.some(([url]) => url.endsWith("/summary/server"))).toBe(false);
+  localStorage.removeItem("moss.settings.v1");
+});

@@ -26,7 +26,7 @@ import {
   transcript,
   transcriptSearchQuery
 } from "../state/session";
-import { autoscroll } from "../state/ui";
+import { autoscroll, selectedSummaryMeeting } from "../state/ui";
 import { TranscriptCards } from "./TranscriptCards";
 import { projectTentativeSegments } from "../lib/tentative";
 import { SummaryPane } from "./SummaryPane";
@@ -138,6 +138,10 @@ export function TranscriptPane() {
   const tentativeBlocks = projectTentativeSegments(provisionalSegments.value, speakerLabels);
   const transcriptAvailable = allTurns.length > 0 || tentativeBlocks.length > 0;
   const activeSessionId = sessionId.value;
+  const selectedMeeting = selectedSummaryMeeting.value?.id === activeSessionId
+    ? selectedSummaryMeeting.value : null;
+  const refinementState = selectedMeeting?.refinement_state;
+  const refinementRunning = refinementState === "running";
   const canNameSpeakers = activeSessionId !== null;
   const legendEntries = buildLegendEntries(
     fullTranscriptItems,
@@ -150,7 +154,7 @@ export function TranscriptPane() {
   const canCorrectPassages =
     activeSessionId !== null &&
     ["closed", "failed", "aborted"].includes(sessionStatus.value) &&
-    !automaticProcessingRunning;
+    !automaticProcessingRunning && !refinementRunning;
   const settlingVisible = transcriptAvailable && !finalized &&
     allTurns.some(turn => !isSettledTurn(turn, finalized));
 
@@ -265,7 +269,7 @@ export function TranscriptPane() {
 
   async function savePassageCorrection(event: Event): Promise<void> {
     event.preventDefault();
-    if (!correctionTarget || !activeSessionId || savingCorrection) return;
+    if (!correctionTarget || !activeSessionId || savingCorrection || refinementRunning) return;
     const meetingId = correctionTarget.meetingId;
     if (activeSessionId !== meetingId) {
       setCorrectionTarget(null);
@@ -437,6 +441,10 @@ export function TranscriptPane() {
             aria-selected={view.value === "summary"} onClick={() => { view.value = "summary"; }}>Summary</button>
         </div></div>
       </div>
+
+      {refinementRunning ? <p className="transcript-refinement" role="status"><strong>Improving transcript…</strong> Passage corrections wait until improvement finishes.</p>
+        : refinementState === "done" ? <p className="transcript-refinement" role="status">Transcript improved</p>
+        : refinementState === "failed" ? <p className="transcript-refinement" role="status">{selectedMeeting?.notice || "Improvement unavailable — the live transcript was kept"}</p> : null}
 
       {namingMessage ? <p className="hint" role="status">{namingMessage}</p> : null}
       {sessionNeedsReview.value ? <p className="hint" role="status"><strong>Needs review.</strong> Check passages marked Speaker TBD or a partial processing notice.</p> : null}
@@ -612,7 +620,7 @@ export function TranscriptPane() {
         <div ref={transcriptScrollRef} className="tr-body" id="tr-body">
           {transcriptAvailable ? (
             <TranscriptCards searchTurns={tentativeBlocks.length ? searchResults.turns.filter(item => item.turn.state !== "provisional") : searchResults.turns} activeMatchId={activeSearchMatchId}
-              finalized={finalized} canCorrectPassages={canCorrectPassages}
+              finalized={finalized} canCorrectPassages={canCorrectPassages} correctionWaiting={refinementRunning}
               speakerColorMap={speakerColorMap}
               onSpeakerClick={(id) => openSpeakerName(legendEntries.find(entry => entry.speakerId === id))}
               onPassageCorrection={openPassageCorrection} />
