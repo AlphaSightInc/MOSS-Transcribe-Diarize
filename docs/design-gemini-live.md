@@ -135,9 +135,10 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
 - **Cost meter**: usage reports metered input, `metered_output_usd`, and a Google-rate output estimate ($0.002/min Transcribe,
   $0.004/min Live) separately; File/URL cost is an estimate from the terminal chunk plan (`prototypes/gemini-live/qfile/NOTES.md`;
   retries unmeasured). Whether Google bills Transcribe output tokens (usage reports 0) is unconfirmed (A5).
-- **Open:** a paced long60 run on an intermediate branch stopped labelling at 750 s while all 173 system windows were decoded; fake
-  slow/raising diarizers do not reproduce it (`prototypes/gemini-live/long-silent-lane/NOTES.md`). F1's Stop recovery bounds its
-  effect on the saved transcript; root cause under investigation with cached real responses.
+- **Fixed (S1):** a paced long60 run stopped labelling at 750 s while all 173 system windows decoded. Cause: `ordered_segments`
+  dropped `source_lane` when merging a fully-overlapped tail word, and the two-lane combiner raised on every later publication
+  (reproduced $0 with cached real responses, `prototypes/gemini-live/s1-cached/NOTES.md`; fixed replay labels through 2579.9 s).
+  Engine worker exceptions are now counted as `errors_by_code["worker_<Exception>"]` instead of staying silent.
 
 ## Measured envelope and custody
 
