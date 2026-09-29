@@ -1234,3 +1234,33 @@ def test_new_settled_speaker_seeds_tentative_centroid_in_its_first_window(tmp_pa
     assert set(state.voice_observations) == {"speaker-0001", "speaker-0002"}
     assert set(state.tentative._centroids["system"]) == {"speaker-0001", "speaker-0002"}
     state.tentative.close()
+
+
+def test_failing_tentative_labeler_disables_guesses_but_never_fails_the_meeting(tmp_path):
+    scripts = {"one": ([()], ())}
+    rt = runtime(tmp_path, scripts)
+    rt.create(session_id="one")
+
+    class Broken:
+        closed = False
+        def accept_audio(self, lane, start, pcm):
+            raise ValueError("tentative lane audio is not contiguous")
+        def spans(self, lane, start, end):
+            raise RuntimeError("spans")
+        def observe(self, observations, *, lane="system"):
+            raise RuntimeError("observe")
+        def diagnostics(self):
+            raise RuntimeError("diagnostics")
+        def close(self):
+            Broken.closed = True
+
+    rt._sessions["one"].tentative = Broken()
+    rt.accept_frame("one", AudioFrame(0, bytes(32000), 16000))
+    rt.accept_frame("one", AudioFrame(1, bytes(32000), 16000))
+    rt.publish_update("one", GeminiPreview(32000, (GeminiSegment(8000, 16000, "hello", source_lane="system"),)))
+    snapshot = rt.snapshot("one").to_dict()
+    assert snapshot["session"]["status"] == "active"
+    assert snapshot.get("terminal_failure") is None
+    assert snapshot["session"]["provisional"]["segments"][0]["tentative_speaker"] is None
+    assert snapshot["engine_diagnostics"]["tentative_errors"] == 1
+    assert Broken.closed and rt._sessions["one"].tentative is None

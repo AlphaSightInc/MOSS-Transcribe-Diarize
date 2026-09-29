@@ -234,6 +234,7 @@ class _GeminiState:
     engine_settings: dict[str, object] = field(default_factory=dict)
     tentative: GeminiTentativeLabeler | None = None
     tentative_closed: bool = False
+    tentative_errors: int = 0
     ingress_lock: threading.RLock = field(default_factory=threading.RLock)
     next_event_seq: int = 0
     terminal_failure: LiveServiceFailureRecord | None = None
@@ -398,9 +399,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "end_sample": ack.end_sample, "queued_item_ids": (),
                 })
             try:
-                if state.tentative is not None:
-                    for lane, pcm in (frame.lane_pcm or (("system", frame.pcm),)):
-                        state.tentative.accept_audio(lane, ack.start_sample, pcm)
+                for lane, pcm in (frame.lane_pcm or (("system", frame.pcm),)):
+                    self._tentative_call(state, "accept_audio", lane, ack.start_sample, pcm)
                 assert state.engine is not None
                 push_lanes = getattr(state.engine, "push_lanes", None)
                 if frame.lane_pcm and callable(push_lanes):
@@ -430,11 +430,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     segments = _trim_committed_preview(
                         update.segments, session.snapshot().effective_transcript)
                     transcript = _unlabelled_transcript(segments, start)
-                    spans = ()
-                    if state.tentative is not None:
-                        spans = tuple(span for lane in dict.fromkeys(
-                            row.source_lane or "system" for row in segments)
-                            for span in state.tentative.spans(lane, start, update.end_sample))
+                    spans = tuple(span for lane in dict.fromkeys(
+                        row.source_lane or "system" for row in segments)
+                        for span in self._tentative_call(state, "spans", lane, start, update.end_sample))
                     preview_segments = tuple({
                         "start_sample": row.start_sample, "end_sample": row.end_sample,
                         "text": row.text, "source_lane": row.source_lane or "system",
@@ -484,17 +482,15 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     state.window_lag_samples.append(max(0, session.snapshot().accepted_samples - state.rolling_frontier))
                     for observation in update.observations:
                         state.voice_observations.setdefault(observation.speaker_label, observation)
-                    if state.tentative is not None:
-                        lanes_by_speaker = {row.speaker: row.source_lane or "system"
-                                            for row in update.segments if row.speaker is not None}
-                        for observation in update.observations:
-                            lane = lanes_by_speaker.get(observation.speaker_label)
-                            if lane is not None:
-                                state.tentative.observe((observation,), lane=lane)
+                    lanes_by_speaker = {row.speaker: row.source_lane or "system"
+                                        for row in update.segments if row.speaker is not None}
+                    for observation in update.observations:
+                        lane = lanes_by_speaker.get(observation.speaker_label)
+                        if lane is not None:
+                            self._tentative_call(state, "observe", (observation,), lane=lane)
                     new_voiceprints = self._observe_voiceprints(state, update.segments)
-                    if state.tentative is not None:
-                        for lane, observation in new_voiceprints:
-                            state.tentative.observe((observation,), lane=lane)
+                    for lane, observation in new_voiceprints:
+                        self._tentative_call(state, "observe", (observation,), lane=lane)
                 elif isinstance(update, GeminiRelabel):
                     _register_speakers(session, update.segments)
                     lane = update.segments[0].source_lane if update.segments else None
@@ -514,9 +510,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         return
                     state.f13_relabels += speakerless
                     new_voiceprints = self._observe_voiceprints(state, update.segments)
-                    if state.tentative is not None:
-                        for lane, observation in new_voiceprints:
-                            state.tentative.observe((observation,), lane=lane)
+                    for lane, observation in new_voiceprints:
+                        self._tentative_call(state, "observe", (observation,), lane=lane)
                     kind = "label_revision_applied"
                 elif isinstance(update, GeminiTurnBridge):
                     outcome = session.bridge_rolling_turn(
@@ -658,10 +653,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state = self._get(session_id)
             return {
                 "engine_settings": dict(state.engine_settings),
-                **(state.tentative.diagnostics() if state.tentative is not None else {
-                    "tentative_shown_s": 0.0, "tentative_abstained_s": 0.0,
+                **({"tentative_shown_s": 0.0, "tentative_abstained_s": 0.0,
                     "tentative_embed_p50_ms": None, "tentative_embed_p95_ms": None,
-                    "tentative_embed_wall_s": 0.0, "tentative_busy_ticks": 0}),
+                    "tentative_embed_wall_s": 0.0, "tentative_busy_ticks": 0}
+                   | self._tentative_call(state, "diagnostics", default={})),
+                "tentative_errors": state.tentative_errors,
                 "calls_by_kind": dict(state.calls_by_kind),
                 "errors_by_code": dict(state.errors_by_code),
                 "retries_by_code": dict(state.retries_by_code),
@@ -1106,6 +1102,23 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         if callable(close):
             close()
         self._release_tape(state)
+
+    def _tentative_call(self, state: _GeminiState, method: str, *args, default=(), **kwargs):
+        # Guesses are display-only: a labeler failure turns them off for this meeting and is
+        # counted, but never fails the meeting's audio ingress or publication.
+        labeler = state.tentative
+        if labeler is None:
+            return default
+        try:
+            return getattr(labeler, method)(*args, **kwargs)
+        except Exception:
+            state.tentative_errors += 1
+            state.tentative = None
+            try:
+                labeler.close()
+            except Exception:
+                pass
+            return default
 
     def _raise_terminal(self, state: _GeminiState) -> None:
         if state.terminal_failure is not None:
