@@ -1,0 +1,31 @@
+{
+  "summary": {
+    "summary": "The speaker contrasts the stock market's short-term behavior as a speculative voting machine with its long-term function as an accurate weighing machine that reveals true value.",
+    "topics": [
+      {
+        "title": "Short-Term vs. Long-Term Market Behavior",
+        "description": "S01 argues that the short-term stock market acts as a voting machine driven by speculative interests and supply and demand, whereas the long-term market acts as a weighing machine that accurately reveals an asset's true worth, allowing investors who understand this value to take advantage of the market."
+      }
+    ],
+    "details": [
+      {
+        "title": "The Voting Machine vs. Weighing Machine Metaphor",
+        "description": "S01 outlines the distinction between short-term speculative pricing and long-term value assessment as the core message of the book.",
+        "timestamp": "00:00:00"
+      }
+    ],
+    "speaker_background": [],
+    "data_references": []
+  },
+  "source": {
+    "committed_samples": 480000,
+    "text_revision_version": 2
+  },
+  "generated_at_ms": 1790723761864,
+  "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1961,
+    "output_tokens": 234,
+    "cost_usd": 0.0011733
+  }
+}

@@ -7,6 +7,8 @@ import { sessionId, sessionStatus } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
 const root = document.createElement("div"); document.body.append(root);
+const rollingDocument = (summary: string) => ({ summary, topics: [], details: [],
+  speaker_background: [], data_references: [] });
 afterEach(() => { render(null, root); sessionId.value = null; sessionStatus.value = "idle"; selectedSummaryMeeting.value = null; vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 it("renders a rolling summary from the frozen live response", async () => {
@@ -170,7 +172,7 @@ it("drops a late rolling response after switching meetings", async () => {
   let finishOld!: (response: unknown) => void;
   const oldResponse = new Promise(resolve => { finishOld = resolve; });
   const fetcher = vi.fn((url: string) => url.includes("/old/") ? oldResponse : Promise.resolve({
-    ok: true, json: async () => ({ summary: "New meeting summary", generated_at_ms: Date.now(),
+    ok: true, json: async () => ({ summary: rollingDocument("New meeting summary"), generated_at_ms: Date.now(),
       source: { committed_samples: 1, text_revision_version: 1 } })
   }));
   vi.stubGlobal("fetch", fetcher);
@@ -180,7 +182,7 @@ it("drops a late rolling response after switching meetings", async () => {
   await act(async () => { sessionId.value = "new"; });
   await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
   await vi.waitFor(() => expect(root.textContent).toContain("New meeting summary"));
-  await act(async () => finishOld({ ok: true, json: async () => ({ summary: "Old meeting summary",
+  await act(async () => finishOld({ ok: true, json: async () => ({ summary: rollingDocument("Old meeting summary"),
     generated_at_ms: Date.now(), source: { committed_samples: 1, text_revision_version: 1 } }) }));
   expect(root.textContent).toContain("New meeting summary");
   expect(root.textContent).not.toContain("Old meeting summary");
@@ -193,7 +195,7 @@ it("reads rolling model, prompt, and language at call time with an unchanged int
   vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value),
     removeItem: (key: string) => values.delete(key) });
-  const fetcher = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ summary: "Updated",
+  const fetcher = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ summary: rollingDocument("Updated"),
     generated_at_ms: Date.now(), source: { committed_samples: 1, text_revision_version: 1 } }) }));
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "m"; sessionStatus.value = "active";
