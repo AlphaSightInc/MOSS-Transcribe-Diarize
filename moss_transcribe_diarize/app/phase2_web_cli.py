@@ -9,7 +9,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
-import threading
 from dataclasses import replace
 from pathlib import Path
 from typing import Sequence
@@ -151,6 +150,11 @@ GEMINI_BIRTH_MIN_SECONDS = 2
 GEMINI_EMBEDDING_INTERVAL_WORKERS = 3
 
 
+def _serialize_gemini_lanes(system_diarizer, microphone_diarizer):
+    from .gemini_lane_engine import SerializedDiarizer
+    return SerializedDiarizer(system_diarizer), SerializedDiarizer(microphone_diarizer)
+
+
 def _gemini_http_options():
     from google.genai import types
     return types.HttpOptions(timeout=120_000,
@@ -175,7 +179,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     from .gemini_continuity_registry import ContinuityRegistry
     from .gemini_lane_engine import (AcousticEchoGuard, ConditionalMicrophoneTerminal, LaneGeminiEngine,
                                      VoicedLiveWords, MicrophoneWordGate,
-                                     SerializedDiarizer, SystemWordLedger,
+                                     SystemWordLedger,
                                      WebRtcSpeechDetector)
     from .gemini_live_words import GeminiLiveWordSource
     from .gemini_final_policy import FinalWordPolicy, WebRtcWordGate
@@ -247,9 +251,8 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                     report_usage(**{**usage, "kind": f"{lane}_{usage['kind']}"})
                 return report
             system_report, mic_report = lane_report("system"), lane_report("microphone")
-            batch_lock = threading.Lock()
-            system_diarizer = SerializedDiarizer(WindowDiarizer(client, system_report), batch_lock)
-            mic_diarizer = SerializedDiarizer(WindowDiarizer(client, mic_report), batch_lock)
+            system_diarizer, mic_diarizer = _serialize_gemini_lanes(
+                WindowDiarizer(client, system_report), WindowDiarizer(client, mic_report))
             system_words = SystemWordLedger()
             system_gate = WebRtcWordGate()
             mic_gate = WebRtcWordGate()
