@@ -66,3 +66,30 @@ identity count, or rolling-window behavior. Its full results are retained in
 `evidence/P66/wp2/echo-gate-ablation.json` and `e1-gate-ablation.json`.
 The accepted policy is now in the live gate. This prototype consumed one new
 E1 Gemini call ($0.015102); prior variant probes consumed $0.045006.
+
+## Paced HTTP verdict (2026-09-29)
+
+All Q-MIC variants used the real loopback HTTPS API, the 1.0× two-lane feeder,
+Balanced speaker windows, and cleanup off. Each ran once for 300 s. The
+scorer's C/D and echo word counts use the interpolated reference timing
+described above; they are reproducible proxies, not exact word timestamps.
+
+| Variant | Local IDs | System-born IDs | C/D words retained | Echo words rejected | Voice-drop decisions | Cost |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Headphones | 2 | 0 | 320/336 (95.2%) | n/a | unreported on pre-counter build | $0.153578 |
+| Speakers −20 dB | 2 | 0 | 316/336 (94.0%) | 575/576 (99.8%) | 0 | $0.153578 |
+| Speakers −10 dB | 2 | 0 | 313/336 (93.2%) | 574/576 (99.7%) | 757 | $0.158080 |
+
+**Q-MIC passes** all three variants. The 757 voice-drop count includes
+repeated rolling-window decisions; it is not a count of unique final words.
+The two echo runs use the counter-enabled WP1 base `010ed63b`; the headphone
+run used the preceding WP1 base `f0a3fe54`, with the same Balanced/off settings
+and WP2 gate code. Per-run receipts and replay manifests are in
+`/Users/gao/Documents/Codex/2026-09-28/moss-gemini/evidence/P66/wp2/`.
+
+The separate 302 s public E1 two-lane HTTP replay **fails** its ≤4 labels at
+Stop gate: five IDs appear (four system, one Local). System `speaker-0003`
+has one 0.2 s “Yeah.” row at 211.0–211.2 s. E1 cost $0.158413. This is a
+system-lane continuity result and remains open with WP1/lead. The direct E1
+text-gate prototype's stray-mic-word check (0→0) addresses a different
+falsifier and does not override this Stop-label failure.
