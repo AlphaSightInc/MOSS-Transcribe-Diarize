@@ -3682,7 +3682,7 @@ button.legend-chip:disabled {
     min-height: 0;
   }
 
-  .phase2-workspace [data-file-upload="form"] .field:has(input[type="file"]) .field-label,
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="form"] .field:has(input[type="file"]) .field-label,
   .workspace-nav,
   .phase2-workspace [data-workspace="account"] > h1,
   .phase2-workspace-heading,
@@ -3706,7 +3706,7 @@ button.legend-chip:disabled {
     min-height: 0;
   }
 
-  .phase2-workspace [data-file-upload="form"] {
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="form"] {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -3716,46 +3716,46 @@ button.legend-chip:disabled {
     max-width: none !important;
   }
 
-  .phase2-workspace [data-file-upload="form"] .field {
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="form"] .field {
     display: inline-flex;
     align-items: center;
     flex: 1 1 0;
     min-width: 0;
   }
 
-  .phase2-workspace [data-file-upload="form"] .field:has(textarea[name="urls"]) {
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="form"] .field:has(textarea[name="urls"]) {
     gap: 8px;
   }
 
-  .phase2-workspace [data-file-upload="form"] .field:has(textarea[name="urls"]) .field-label {
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="form"] .field:has(textarea[name="urls"]) .field-label {
     flex: 0 0 auto;
     letter-spacing: 0.06em;
     text-transform: none;
     white-space: nowrap;
   }
 
-  .phase2-workspace [data-file-upload="form"] input,
-  .phase2-workspace [data-file-upload="form"] textarea {
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="form"] input,
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="form"] textarea {
     min-width: 0;
     min-height: 34px;
     height: 34px;
     padding: 4px 8px;
   }
 
-  .phase2-workspace [data-file-upload="form"] textarea {
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="form"] textarea {
     resize: none;
     white-space: pre;
     overflow-x: auto;
     overflow-y: auto;
   }
 
-  .phase2-workspace [data-file-upload="form"] button {
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="form"] button {
     flex: 0 0 auto;
     white-space: nowrap;
   }
 
-  .phase2-workspace [data-file-upload="status"],
-  .phase2-workspace [data-file-upload="results"] {
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="status"],
+  .phase2-workspace [data-workspace-section="file"] [data-file-upload="results"] {
     margin-block: 0;
   }
 }
@@ -3848,3 +3848,11 @@ button.legend-chip:disabled {
   .tr-legend { flex-wrap: wrap; }
   .tr-legend-right { width: 100%; margin-left: 0; }
 }
+.tentative-card { opacity: .64; }
+.tentative-card .utt-speaker-label, .tentative-card .utt-text { font-style: italic; }
+.tentative-card .utt-speaker { cursor: default; }
+.phase2-workspace .settings-trigger { position: fixed; top: 20px; right: 28px; z-index: 80; }
+@media (max-width: 768px) { .phase2-workspace .settings-trigger { top: 12px; right: 12px; } }
+
+.settings-body label.settings-checkbox { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
+.settings-body .settings-checkbox input[type="checkbox"] { flex: 0 0 18px; width: 18px; height: 18px; margin: 0; }

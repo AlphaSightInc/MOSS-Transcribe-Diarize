@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { applySessionStateEvent, captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus } from "../state/session";
 import { autoscroll } from "../state/ui";
 import { TranscriptPane } from "./TranscriptPane";
+import { dispatchWsEvent } from "../api/ws";
 
 describe("TranscriptPane", () => {
   let root: HTMLDivElement;
@@ -302,7 +303,7 @@ describe("TranscriptPane", () => {
       await vi.waitFor(() => expect(root.querySelector("[role='alert']")?.textContent).toBe("Meeting Speaker not found."));
       expect(root.querySelector<HTMLInputElement>("#speaker-name-input")?.value).toBe("Alex");
     } else {
-      await vi.waitFor(() => expect(root.textContent).toContain("before Stop"));
+      await vi.waitFor(() => expect(root.textContent).toContain("after recording finishes"));
     }
   });
 
@@ -366,6 +367,23 @@ describe("TranscriptPane", () => {
 
     expect(root.querySelector(".tr-find-meta")?.textContent).toBe("2 of 2 matches");
     expect(root.querySelector(".tr-search-match.is-active")?.getAttribute("data-search-match-id")).toBe("1");
+  });
+
+  it("shows lane-bound preview guesses as grey tentative blocks without duplicate preview rows", () => {
+    act(() => {
+      sessionId.value = "m"; sessionStatus.value = "active";
+      render(<TranscriptPane />, root);
+      dispatchWsEvent({ type: "transcript_update", session_id: "m", seq: 1,
+        timestamp: new Date().toISOString(), items: [{ start: 0, end: 1, text: "hello", speaker: "UNKNOWN",
+          speaker_entity_id: "UNKNOWN", display_name: "Speaker TBD", state: "provisional" }],
+        provisional_segments: [{ start_sample: 0, end_sample: 8000, text: "hello", source_lane: "microphone", tentative_speaker: "local-0001" },
+          { start_sample: 8000, end_sample: 16000, text: "again", source_lane: "microphone", tentative_speaker: "local-0001" },
+          { start_sample: 16000, end_sample: 24000, text: "wait", source_lane: "microphone", tentative_speaker: null }] });
+    });
+    expect(root.querySelectorAll("[data-tentative-block]")).toHaveLength(2);
+    expect(root.querySelector("[data-tentative-block]")?.textContent).toContain("Local 01?");
+    expect(root.querySelector("[data-tentative-block]")?.textContent).toContain("hello again");
+    expect(root.querySelectorAll(".transcript-card:not([data-tentative-block])")).toHaveLength(0);
   });
 
   it("keeps summary in the centre card and leaves export to Controls", () => {

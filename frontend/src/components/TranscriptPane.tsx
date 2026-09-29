@@ -18,6 +18,7 @@ import {
   liveLabelPolicy,
   sessionId,
   sessionNeedsReview,
+  provisionalSegments,
   sessionMode,
   sessionStatus,
   sessionTitle,
@@ -27,6 +28,7 @@ import {
 } from "../state/session";
 import { autoscroll } from "../state/ui";
 import { TranscriptCards } from "./TranscriptCards";
+import { projectTentativeSegments } from "../lib/tentative";
 import { SummaryPane } from "./SummaryPane";
 import { view } from "../state/ui";
 
@@ -122,7 +124,15 @@ export function TranscriptPane() {
     searchResults.matchCount > 0
       ? Math.min(activeSearchMatchIndex, searchResults.matchCount - 1)
       : -1;
-  const transcriptAvailable = allTurns.length > 0;
+  const speakerLabels: Record<string, string> = {};
+  for (const item of fullTranscriptItems) speakerLabels[item.speaker_entity_id] = speakerLabel(item);
+  for (const segment of provisionalSegments.value) {
+    const id = segment.tentative_speaker;
+    if (id && !speakerLabels[id]) speakerLabels[id] = /^local-\d+$/.test(id)
+      ? `Local ${String(Number(id.slice(6))).padStart(2, "0")}` : id;
+  }
+  const tentativeBlocks = projectTentativeSegments(provisionalSegments.value, speakerLabels);
+  const transcriptAvailable = allTurns.length > 0 || tentativeBlocks.length > 0;
   const activeSessionId = sessionId.value;
   const canNameSpeakers = activeSessionId !== null;
   const legendEntries = buildLegendEntries(
@@ -225,10 +235,10 @@ export function TranscriptPane() {
         : result.enrollment === "not_requested"
         ? `Saved ${result.label}. Voiceprint not saved.`
         : result.enrollment === "unavailable"
-        ? `Saved ${result.label}. Voiceprint not saved: at least 2 seconds of finished, clear speech is needed.`
+        ? `Saved ${result.label}. Voiceprint not saved: eligible audio was unavailable for this speaker.`
         : result.enrollment === "enrolled"
         ? `Saved ${result.label}. Voiceprint saved privately in this browser workspace.`
-        : `Saved ${result.label}. Voiceprint will save when at least 2 seconds of finished, clear speech is available before Stop.`);
+        : `Saved ${result.label}. Voiceprint will be saved after recording finishes if eligible audio is available.`);
       setNamingTarget(null);
     } catch (error) {
       if (sessionId.value === meetingId) {
@@ -597,16 +607,26 @@ export function TranscriptPane() {
         </p> : null}
         <div ref={transcriptScrollRef} className="tr-body" id="tr-body">
           {transcriptAvailable ? (
-            <TranscriptCards searchTurns={searchResults.turns} activeMatchId={activeSearchMatchId}
+            <TranscriptCards searchTurns={tentativeBlocks.length ? searchResults.turns.filter(item => item.turn.state !== "provisional") : searchResults.turns} activeMatchId={activeSearchMatchId}
               finalized={finalized} canCorrectPassages={canCorrectPassages}
               speakerColorMap={speakerColorMap}
               onSpeakerClick={(id) => openSpeakerName(legendEntries.find(entry => entry.speakerId === id))}
               onPassageCorrection={openPassageCorrection} />
-          ) : (
+          ) : null}
+          <div className="transcript-cards" data-tentative-blocks="true">{tentativeBlocks.map((block, index) => <article key={`${block.lane}:${block.start}:${index}`}
+            className="utt transcript-card tentative-card" data-tentative-block="true" data-state="provisional"
+            data-source-lane={block.lane} data-turn-start={block.start} data-turn-end={block.end}
+            data-target-keys={`tentative:${block.lane}:${block.start}`} data-segments={JSON.stringify([{ start: block.start, end: block.end, text: block.text }])}>
+            <div className="utt-meta"><span className="utt-speaker" data-speaker-id={block.speakerId ?? "S00"}>
+              <span className="utt-speaker-label">{block.label}</span></span>
+              <span className="utt-lane">{block.lane === "microphone" ? "Microphone" : block.lane === "system" ? "Shared audio" : block.lane}</span></div>
+            <div className="transcript-card-fragments"><div className="utt-content" data-text-status="unsettled"><p className="utt-text">{block.text}</p></div></div>
+          </article>)}</div>
+          {!transcriptAvailable ? (
             <p className="empty-state transcript-empty-state">
               Transcript will appear here when a session starts.
             </p>
-          )}
+          ) : null}
         </div>
         <div className="tr-fade" aria-hidden="true" />
       </div>

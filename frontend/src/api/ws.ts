@@ -2,6 +2,7 @@ import type { WsEvent } from "./types";
 import {
   applySessionStateEvent,
   applyTranscriptUpdate,
+  provisionalSegments,
   replaceTranscript
 } from "../state/session";
 
@@ -15,6 +16,7 @@ export function dispatchWsEvent(event: WsEvent): void {
       applySessionStateEvent(event);
       return;
     case "transcript_update":
+      if (event.provisional_segments !== undefined) provisionalSegments.value = event.provisional_segments;
       if (event.metadata?.operation === "snapshot") {
         replaceTranscript(event.items);
       } else {

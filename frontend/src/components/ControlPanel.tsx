@@ -395,7 +395,10 @@ export function ControlPanel() {
       catch { /* A transcript remains exportable when its optional summary cannot be fetched. */ }
     }
     triggerTranscriptExportDownload(serializeTranscriptExport(exportFormat, turns,
-      turn => transcriptCardSpeakerLabel(turn, numbers, liveLabelPolicy.value, finalized),
+      turn => /^local-\d+$/.test(turn.speaker_entity_id) &&
+        (!turn.display_name || turn.display_name === turn.speaker_entity_id || /^Speaker \d+$/.test(turn.display_name))
+        ? `Local ${String(Number(turn.speaker_entity_id.slice(6))).padStart(2, "0")}`
+        : transcriptCardSpeakerLabel(turn, numbers, liveLabelPolicy.value, finalized),
       { sessionId: id, exportedAt: new Date() }, { needsReview: sessionNeedsReview.value }, summary));
   }
 
@@ -416,8 +419,8 @@ export function ControlPanel() {
             ? "Next: play sound in the shared tab. Your microphone is receiving sound."
             : "Both sources are receiving sound. Start capture when ready.";
 
-  const modeLocked = phase === "active" || phase === "stopping" || phase === "viewing" || phase === "configuring";
-  const exportReady = sessionId.value !== null && transcript.value.length > 0;
+  const modeLocked = phase === "active" || phase === "stopping" || phase === "viewing" || phase === "configuring" || sessionStatus.value === "active" || sessionStatus.value === "closing";
+  const exportReady = sessionId.value !== null && (exportFormat === "audio" || transcript.value.length > 0);
 
   return (
     <section className="control-section controls-workspace" data-mode={mode}>

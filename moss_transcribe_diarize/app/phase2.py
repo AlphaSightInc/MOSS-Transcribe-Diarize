@@ -2722,12 +2722,6 @@ const status = document.querySelector('[data-workspace-status]');
   location.replace('/');
 })().catch(error => { status.textContent = error.message; });
 </script>"""
-    file_fallback = "" if live_enabled else (
-        '<section id="workspace-file" data-workspace-section="file"><h2 class="phase2-workspace-heading">File transcription</h2>'
-        '<form data-file-upload="form" class="control-section"><label class="field"><span class="field-label">Audio or video files</span><input name="file" type="file" multiple></label>'
-        '<label class="field"><span class="field-label">Media URLs, one per line</span><textarea name="urls"></textarea></label>'
-        '<button type="submit" class="btn btn-primary">Transcribe files and URLs</button></form><p data-file-upload="status" role="status"></p><ul data-file-upload="results"></ul></section>'
-    )
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MOSS</title></head>
 <body><main data-auth-state="bootstrap"><h1>MOSS</h1><p data-workspace-status>{message}</p>
@@ -2754,6 +2748,12 @@ def _workspace_html(
         '<meta name="moss-authority" content="account">'
         f'{worklet_head}'
         f'<link rel="stylesheet" href="{styles_url}">'
+    )
+    file_fallback = "" if live_enabled else (
+        '<section id="workspace-file" data-workspace-section="file"><h2 class="phase2-workspace-heading">File transcription</h2>'
+        '<form data-file-upload="form" class="control-section"><label class="field"><span class="field-label">Audio or video files</span><input name="file" type="file" multiple></label>'
+        '<label class="field"><span class="field-label">Media URLs, one per line</span><textarea name="urls"></textarea></label>'
+        '<button type="submit" class="btn btn-primary">Transcribe files and URLs</button></form><p data-file-upload="status" role="status"></p><ul data-file-upload="results"></ul></section>'
     )
     live_body = (
         '<section id="workspace-live" data-workspace-section="live" data-live-capture="account">'
