@@ -1,5 +1,17 @@
 # P6.2 quality harness prototype
 
+## R2 tentative-guess metric probe (2026-09-29)
+
+**Structural question.** How much currently unattributed provisional speech gets a displayed speaker guess, and how often does that guessed canonical identity agree with complete timed truth?
+
+**Minimum primitives.** A provisional text interval defines the Speaker-TBD denominator; a `tentative_spans` interval with its canonical speaker defines the display numerator; the final canonical transcript and the production diarization assignment map opaque meeting IDs to reference speakers. None can be removed without changing the question.
+
+**Invariants.** A repeated 250 ms snapshot of one preview does not enlarge the denominator. Guesses never enter the saved transcript. Accuracy counts only guessed time overlapping timed reference speech; the receipt prints that denominator separately. The first observed guess for one exact span is scored so a later change cannot erase a wrong first display.
+
+**Assumptions/unknowns.** The probe assumes previews use the production transcript grammar. Real WP4 output is not yet available; accuracy and coverage on long60 remain UNMEASURED. An exact boundary sweep unions overlapping preview revisions, and an added overlapping synthetic interval still yields 2/4 s coverage; real changed spans are the next falsifier.
+
+**Falsifier/tool decision.** Run `PYTHONDONTWRITEBYTECODE=1 <venv>/bin/python prototypes/gemini-live/harness/tentative_probe.py`. It prints full synthetic state. If one correct 2 s guess across 4 s TBD does not yield coverage 0.5 and accuracy 1.0, the metric cannot be integrated. The probe passed with production mapping `person-A -> a`, `person-B -> b`, 2/4 s coverage and 2/2 s correct reference-overlap. The real long60 run must attack repeated/changed preview spans before a Q-SPEED verdict.
+
 ## Structural question
 
 Can a local, GPU-free live stack be measured on the exact H1 six-case, two-pass, three-surface population using H1's replay and scorer, while measuring UI-visible latency at actual audio pace?

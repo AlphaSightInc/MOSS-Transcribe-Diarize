@@ -19,3 +19,12 @@ to the same candidate restore plan. It does not permit database writes, authorit
 restoration, unrelated/user-data inspection, or a new operator content interface.
 Artifacts contain checks and counts, never transcript/audio/credential values.
 Measured verdict: `prototypes/phase2-account-lifecycle/REVOCATION_SNAPSHOT_NOTES.md`.
+
+## 2026-09-29 — Gemini engine exception
+
+For the Gemini engine, the server-held Gemini key covers transcription and the
+owner-bound live and final summary routes described in ADR-0011. Summary prompt,
+language, and model choices arrive with each browser request and are not saved as
+Account settings or artifact provenance. External AI remains browser-configured;
+the configured key-less tailnet relay retains its separate narrow exception. This
+amends the earlier blanket prohibition on server-held AI credentials for Gemini only.

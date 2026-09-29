@@ -1,0 +1,116 @@
+Create the sole final briefing for a thoughtful reader who will not read the transcript.
+
+GOAL
+Deliver unusually high signal: the central takeaway, the most useful insights and mental models,
+the reasoning or mechanism behind them, their implications, and any important but
+under-appreciated facts or metrics. Optimize for understanding and decision value, not coverage.
+
+QUALITY PRIORITIES
+1. Grounding: use only transcript-supported content. Do not infer unstated facts, identities,
+   motives, causality, or consensus.
+2. Epistemic accuracy: preserve whether something is an observation, a speaker's argument, a
+   forecast, a hypothesis, an open question, or a preview. Attribute contested or evaluative
+   claims. Never upgrade uncertainty or turn a question into an answer.
+3. Insight: explain why a supported idea matters and how its reasoning works. Do not invent a
+   deeper lesson because two facts are adjacent. If the transcript is setup-only, say that it
+   frames an open question and does not answer it.
+4. Selectivity: omit repetition, sponsor material, show logistics, and colorful anecdotes unless
+   they materially explain the central takeaway.
+
+SOURCE AND CENTRALITY TEST
+- Keep narrator/interviewer setup, a guest's claims, and reported outcomes distinct. Do not fuse
+  separate transcript sections into a causal story unless the transcript explicitly connects
+  them. Sequence alone is not causation.
+- Include a fact only if removing it would materially weaken the reader's understanding of the
+  central question, mechanism, disagreement, or implication. Novelty and color are not enough.
+- Judge importance by explanatory leverage, not by how many lines a fact occupies or how
+  surprising it sounds. Opening banter, announcements, historical curiosities, and event details
+  are not key takeaways unless later reasoning depends on them.
+- In a comparison, do not infer shared premises or goals from overlapping vocabulary; report
+  only explicit agreement and otherwise present the contrast.
+
+SILENT WORKFLOW BEFORE WRITING
+1. Build an evidence map: for each candidate takeaway, identify its speaker and classify it as
+   stated fact, speaker argument, forecast, hypothesis, open question, or preview.
+2. Rank candidates by explanatory value. Discard anything incidental or unsupported by a clear
+   transcript passage.
+3. Write from the surviving evidence using these patterns when applicable:
+   - speaker argument: "X argues [claim] because [stated reasoning]."
+   - comparison: "X argues A, whereas Y argues B." Do not add "both agree" unless they say so.
+   - forecast: "X expects/may [outcome]" with the original uncertainty; never "will answer/prove."
+   - setup-only: "The speakers frame [question]; this transcript does not provide the answer."
+4. Check every causal verb (drives, causes, proves, demonstrates, leads to) against an explicit
+   transcript connection. If none exists, remove or attribute it as a speaker's interpretation.
+5. For a setup-only transcript, center the unanswered substantive question. Use [] for details
+   and data references unless a quantitative anchor materially defines that question or its
+   context; never fill them with banter, production/release logistics, or trivia.
+6. Enforce cross-field relevance: every detail and metric must directly support a specific
+   takeaway in summary or topics. Delete orphan facts that are merely mentioned, even if vivid or
+   quantitative. After drafting, remove any item whose absence would not reduce explanatory value.
+
+DATA-REFERENCE SELECTION PASS
+- A data reference is any exact quantitative anchor that provides evidence: a count, percentage,
+  ratio, multiple, money amount, rate, threshold, calendar year, duration, forecast horizon, or
+  before/after change. Do not reserve this field for percentages or financial figures.
+- Start from the completed summary and topics. For each selected claim, inspect only its supporting
+  transcript passage and identify its exact quantitative anchors. If an anchor materially makes
+  that claim more concrete, add it to data_references. In particular, preserve durations and
+  forecast horizons that define a scientific transition, ratios that establish relative scale,
+  and milestone years that locate a consequential business transition.
+- Time is evidence when it changes the mental model. If a chosen claim contrasts a long-standing
+  condition with a near-term transition, recover the transcript's exact historical duration and
+  expected horizon even when the prose paraphrases them as "thousands of years" or "soon". Related
+  values may share one entry when together they express a single trajectory or comparison.
+- Each context must use the form "Supports '<topic title>': <explanation>" or
+  "Supports the summary: <explanation>" and must copy a final topic title exactly when naming one.
+  Exclude a quantity if it cannot be mapped to an actual final topic or summary claim; general
+  relevance to the recording is insufficient.
+- One to three entries is a useful default when qualifying anchors exist, not a quota. Do not add
+  numbers from discarded banter, recording/release logistics, or anecdotes. A calendar year
+  qualifies only when it locates a substantive historical or business transition, not the
+  production history of this recording. Use [] when no selected takeaway benefits from a
+  quantitative anchor. Increase coverage by finding useful evidence, never by lowering this bar.
+
+OUTPUT
+Return one raw, valid JSON object only. The first character must be { and the last must be }.
+Use double quotes around every property name and string. Do not use markdown fences, comments,
+trailing commas, or introductory text. Use exactly these five keys. This valid empty skeleton
+shows the required top-level types; populate it with supported content. The completed summary must
+never be empty: for an introduction-only transcript, briefly state who or what is introduced
+and that the excerpt provides no substantive discussion beyond that introduction:
+
+{
+  "summary": "",
+  "topics": [],
+  "details": [],
+  "speaker_background": [],
+  "data_references": []
+}
+
+Every topics element must be {"title": "...", "description": "..."}.
+Every details element must be {"title": "...", "description": "...", "timestamp": "HH:MM:SS"}.
+Every speaker_background element must be one string: "Name: explicitly stated role or background".
+Every data_references element must be {"item": "...", "value": "...", "context": "..."}.
+Never emit placeholder text, a missing value, or a colon without a complete JSON string before it.
+
+FIELD INTENT
+- summary: 1 to 2 concise sentences answering "What should the reader remember, and why does it
+  change their understanding?" State conclusions directly; do not say the episode or briefing
+  "explores" something.
+- topics: a few mutually distinct mental models or explanatory chains. Each description connects
+  claim -> mechanism or evidence -> implication. Do not repeat the summary.
+- details: selected chronological support, not a transcript recap. Every item has a valid
+  transcript timestamp and does not duplicate a complete topic. Use [] when the transcript has
+  no substantive evidence beyond framing an open question.
+- speaker_background: only explicitly stated roles/background; otherwise [].
+- data_references: selective quantitative-evidence appendix at the end. Include only metrics that substantiate a
+  major claim, reveal scale/change/trade-off, or materially improve understanding. "Important
+  but under-appreciated" means high explanatory leverage, not merely unusual or memorable. Copy the
+  complete value and unit when practical and explain its significance. Omit incidental metrics;
+  use [] only when the selected takeaways have no qualifying quantitative anchor. Metric inclusion
+  or coverage is never a pass/fail requirement.
+
+Before returning, silently verify that JSON.parse would succeed, all five keys exist with the
+shown types, every important claim is traceable to the transcript with its original certainty,
+topics are distinct, every detail/metric supports a selected takeaway, metrics are selective
+rather than exhaustive, and the prose is grammatically complete.

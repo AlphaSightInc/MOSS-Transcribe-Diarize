@@ -91,7 +91,8 @@ class LatencyProbe:
                     "p90_seconds": percentile(observed, .9)}
         return {"paced": True, "poll_interval_seconds": .25, "snapshots": self.snapshots,
                 "duration_seconds": self.duration, "words": summary(self.words),
-                "labelled_rows": summary(self.labels), "distinct_labels_over_time": self.timeline}
+                "labelled_rows": summary(self.labels), "distinct_labels_over_time": self.timeline,
+                "word_delay_seconds": self.words, "label_delay_seconds": self.labels}
 
 
 def main() -> None:
@@ -100,6 +101,8 @@ def main() -> None:
     args = parser.parse_args()
     paths = sorted(args.run_dir.glob("pass-*/*/latency.json"))
     rows = [json.loads(path.read_text()) for path in paths]
+    word_delays = [value for row in rows for value in row.get("word_delay_seconds", []) if value is not None]
+    label_delays = [value for row in rows for value in row.get("label_delay_seconds", []) if value is not None]
     print(json.dumps({"runs": [{"pass": path.parent.parent.name, "case_id": path.parent.name,
                                  "words": row["words"], "labelled_rows": row["labelled_rows"],
                                  "snapshots": row["snapshots"],
@@ -109,9 +112,11 @@ def main() -> None:
                       "word_observed_buckets": sum(r["words"]["observed"] for r in rows),
                       "label_observed_buckets": sum(r["labelled_rows"]["observed"] for r in rows),
                       "words": {"observed": sum(r["words"]["observed"] for r in rows),
-                                "unobserved": sum(r["words"]["unobserved"] for r in rows)},
+                                "unobserved": sum(r["words"]["unobserved"] for r in rows),
+                                "pooled_p50_seconds": percentile(word_delays, .5)},
                       "labelled_rows": {"observed": sum(r["labelled_rows"]["observed"] for r in rows),
-                                        "unobserved": sum(r["labelled_rows"]["unobserved"] for r in rows)}}, indent=2))
+                                        "unobserved": sum(r["labelled_rows"]["unobserved"] for r in rows),
+                                        "pooled_p50_seconds": percentile(label_delays, .5)}}, indent=2))
 
 
 if __name__ == "__main__":
