@@ -1,10 +1,11 @@
-"""Owner-bound final results, never provider configuration or inference."""
+"""Owner-bound final artifacts and transient server Gemini summaries."""
 from __future__ import annotations
 
 import json
 import math
 import re
 import secrets
+from pathlib import Path
 from typing import Any
 from starlette.requests import Request
 
@@ -12,6 +13,26 @@ from .phase2 import AccountRevoked, MeetingHandle, _now_ms
 
 ACTIVE = {"queued", "generating", "retry_wait"}
 ERRORS = {"delivery_failed", "invalid_output", "request_rejected", "browser_worker_lost", "server_restarted"}
+# Standard paid text rates in USD per 1M tokens: https://ai.google.dev/gemini-api/docs/pricing
+# The 3.8 Flash introductory rates apply through 2026-12-31.
+SUMMARY_PRICES = {
+    "gemini-3.5-flash-lite": (0.30, 2.50),
+    "gemini-3.5-flash": (1.50, 9.00),
+    "gemini-3.8-flash": (0.75, 3.75),
+}
+SUMMARY_MODELS = frozenset(SUMMARY_PRICES)
+DEFAULT_SUMMARY_MODEL = "gemini-3.5-flash-lite"
+DEFAULT_SUMMARY_PROMPT = Path(__file__).with_name("final_summary_prompt.txt").read_text(encoding="utf-8")
+SUMMARY_ATTEMPTS = 3
+
+
+def _add_usage(total, usage):
+    if usage is None:
+        return total
+    if total is None:
+        return dict(usage)
+    return {"model": usage["model"],
+            **{key: total[key] + usage[key] for key in ("input_tokens", "output_tokens", "cost_usd")}}
 
 
 class SummaryConflict(ValueError):
@@ -97,6 +118,10 @@ class MeetingSummaries:
         )
 
     async def start(self, source_version: int):
+        value, _ = await self.start_server(source_version)
+        return value
+
+    async def start_server(self, source_version: int):
         async with self.store._mutation():
             source = await self._source()
             if source["status"] != "completed" or source["version"] != source_version or not source["document_json"]:
@@ -111,7 +136,7 @@ class MeetingSummaries:
                      "source_version": source_version, "artifact_version": 1 if previous is None else previous["artifact_version"] + 1,
                      "error_code": None}
             await self._write(value)
-            return value
+            return value, document
 
     async def update(self, attempt_id: str, state: str, *, document=None, error_code=None):
         async with self.store._mutation():
@@ -166,8 +191,12 @@ async def recover_summaries(store):
             )
 
 
-def attach_summary_routes(app, require_account):
+def attach_summary_routes(app, require_account, generator=None):
     from fastapi import HTTPException
+    from .phase2_live import LiveMeetingNotFound, _transcript_document
+
+    app.state.summary_generator = generator
+    app.state.summary_inflight = set()
 
     async def summary_handle(request, meeting_id):
         account = await require_account(request)
@@ -175,6 +204,134 @@ def attach_summary_routes(app, require_account):
         if handle is None:
             raise HTTPException(404, "Meeting not found.")
         return MeetingSummaries(handle)
+
+    async def options(request, *, final=False):
+        try:
+            body = await request.json()
+        except (ValueError, UnicodeDecodeError):
+            raise HTTPException(400, "Invalid summary request.") from None
+        allowed = {"model", "language", "prompt", "source_version"} if final else {"model", "language", "prompt"}
+        if (not isinstance(body, dict) or set(body) - allowed
+                or any(not isinstance(body[key], str) for key in ("model", "language", "prompt") if key in body)
+                or body.get("model", DEFAULT_SUMMARY_MODEL) not in SUMMARY_MODELS
+                or (final and (type(body.get("source_version")) is not int))):
+            raise HTTPException(400, "Invalid summary options or model.")
+        return body
+
+    async def generate(request, document, body):
+        # Flash-lite occasionally returns malformed or out-of-contract JSON (long60: 1 of 2 calls);
+        # like LiveTranscribe, retry a bounded number of times and report the summed usage.
+        service = request.app.state.summary_generator
+        if service is None:
+            raise HTTPException(503, {"code": "summary_unavailable"})
+        duration = max((float(row["end"]) for row in document["segments"]), default=0)
+        spent = None
+        for _attempt in range(SUMMARY_ATTEMPTS):
+            try:
+                result, usage = await service(document, model=body.get("model", DEFAULT_SUMMARY_MODEL),
+                                              language=body.get("language", ""),
+                                              prompt=body.get("prompt", DEFAULT_SUMMARY_PROMPT))
+            except TimeoutError:
+                raise HTTPException(504, {"code": "summary_timeout"}) from None
+            except ValueError as exc:
+                spent = _add_usage(spent, getattr(exc, "usage", None))
+                continue
+            except Exception:
+                raise HTTPException(502, {"code": "summary_provider_error"}) from None
+            spent = _add_usage(spent, usage)
+            try:
+                return validate_summary(result, duration), spent
+            except ValueError:
+                continue
+        raise HTTPException(502, {"code": "invalid_summary"})
+
+    def claim(request, meeting_id):
+        inflight = request.app.state.summary_inflight
+        if meeting_id in inflight:
+            raise HTTPException(429, {"code": "summary_in_flight"})
+        inflight.add(meeting_id)
+
+    @app.post("/api/meetings/{meeting_id}/summary/live")
+    async def live_summary(meeting_id: str, request: Request):
+        await summary_handle(request, meeting_id)
+        body = await options(request)
+        live = getattr(request.app.state, "phase2_live", None)
+        if live is None:
+            raise HTTPException(409, "No active live transcript.")
+        account = await require_account(request)
+        try:
+            binding = live.open(account, "", meeting_id, mutation=False)
+        except LiveMeetingNotFound:
+            raise HTTPException(409, "No active live transcript.") from None
+        snapshot = binding.public_snapshot
+        if snapshot is None or snapshot.session.status != "active":
+            raise HTTPException(409, "No active live transcript.")
+        document = _transcript_document(snapshot, binding.speaker_labels)
+        if len(" ".join(str(row["text"]) for row in document["segments"]).split()) < 40:
+            raise HTTPException(409, "At least 40 transcript words are required.")
+        claim(request, meeting_id)
+        try:
+            result, usage = await generate(request, document, body)
+            duration = max((float(row["end"]) for row in document["segments"]), default=0)
+            try:
+                result = validate_summary(result, duration)
+            except ValueError:
+                raise HTTPException(502, {"code": "invalid_summary"}) from None
+            return {"summary": result, "source": {
+                "committed_samples": snapshot.session.committed_samples,
+                "text_revision_version": snapshot.session.text_revision_version},
+                "generated_at_ms": _now_ms(), "usage": usage}
+        finally:
+            request.app.state.summary_inflight.discard(meeting_id)
+
+    @app.post("/api/meetings/{meeting_id}/summary/server")
+    async def server_summary(meeting_id: str, request: Request):
+        summary = await summary_handle(request, meeting_id)
+        body = await options(request, final=True)
+        if request.app.state.summary_generator is None:
+            raise HTTPException(503, {"code": "summary_unavailable"})
+        claim(request, meeting_id)
+        try:
+            async def attempt_conflict(attempt_id):
+                current = await summary.read()
+                code = ("summary_cancelled" if current is not None
+                        and current["attempt_id"] == attempt_id and current["state"] == "cancelled"
+                        else "summary_conflict")
+                raise HTTPException(409, {"code": code})
+
+            try:
+                attempt, document = await summary.start_server(body["source_version"])
+            except SummaryConflict as exc:
+                if "already active" in str(exc):
+                    raise HTTPException(429, {"code": "summary_in_flight"}) from exc
+                raise HTTPException(409, str(exc)) from exc
+            attempt_id = attempt["attempt_id"]
+            try:
+                await summary.update(attempt_id, "generating")
+            except SummaryConflict:
+                await attempt_conflict(attempt_id)
+            try:
+                result, usage = await generate(request, document, body)
+            except HTTPException as exc:
+                code = "invalid_output" if exc.status_code == 502 and exc.detail == {"code": "invalid_summary"} else "delivery_failed"
+                try:
+                    await summary.update(attempt_id, "failed", error_code=code)
+                except SummaryConflict:
+                    await attempt_conflict(attempt_id)
+                raise
+            try:
+                artifact = await summary.update(attempt_id, "current", document=result)
+            except SummaryConflict:
+                await attempt_conflict(attempt_id)
+            except ValueError:
+                try:
+                    await summary.update(attempt_id, "failed", error_code="invalid_output")
+                except SummaryConflict:
+                    await attempt_conflict(attempt_id)
+                raise HTTPException(502, {"code": "invalid_summary"}) from None
+            return {**artifact, "usage": usage}
+        finally:
+            request.app.state.summary_inflight.discard(meeting_id)
 
     @app.get("/api/meetings/{meeting_id}/summary")
     async def read_summary(meeting_id: str, request: Request):

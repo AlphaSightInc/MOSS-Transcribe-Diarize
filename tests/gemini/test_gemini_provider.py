@@ -413,3 +413,12 @@ def test_terminal_applies_selected_identity_and_word_gate_before_turns(tmp_path)
     assert [(r.text, r.speaker) for r in rows] == [("a", "one")]
     assert len(fake.requests) == 1
     tape.release()
+
+
+def test_fully_overlapping_tail_word_keeps_the_lane_of_the_row_it_joins():
+    from moss_transcribe_diarize.app.gemini_live_runtime import GeminiSegment
+    from moss_transcribe_diarize.app.gemini_provider import ordered_segments
+    rows = ordered_segments((GeminiSegment(0, 10, "whole", "S1", "system"),
+                             GeminiSegment(4, 6, "inside", "S1", "system")),
+                            start_sample=0, end_sample=10)
+    assert [(row.text, row.source_lane) for row in rows] == [("whole inside", "system")]

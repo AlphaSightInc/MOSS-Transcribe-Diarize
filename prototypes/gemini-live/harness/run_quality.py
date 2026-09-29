@@ -28,6 +28,7 @@ sys.path.insert(0, str(ROOT / "prototypes/gemini-live/common"))
 
 from corpus import clips
 from latency_probe import LatencyProbe
+from tentative_probe import TentativeProbe
 from moss_transcribe_diarize.phase2_acceptance import QUALITY_CASE_IDS
 from moss_transcribe_diarize.phase2_acceptance_external import (
     ExternalMeasurementError, _load_surface_harness, _quality_projection, _quality_speaker_intervals,
@@ -50,7 +51,27 @@ def wav_pcm(path: Path) -> bytes:
         return source.readframes(source.getnframes())
 
 
-class MicReplayService(AccountCookieLiveReplayService):
+class SettingsReplayService(AccountCookieLiveReplayService):
+    def __init__(self, *args, engine_settings: dict | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.engine_settings = engine_settings
+
+    def create(self):
+        if self.engine_settings is None:
+            return super().create()
+        payload = self._json("POST", "/api/live/sessions", {
+            "echo_mode": "speakers", "engine_settings": self.engine_settings})
+        from moss_transcribe_diarize.phase2_acceptance_replay import _descriptor_from_dict, _snapshot_from_dict
+        from moss_transcribe_diarize.app.live_service_runtime import LiveServiceCreateResult
+        descriptor = _descriptor_from_dict(payload["descriptor"])
+        session_id = str(payload["id"])
+        self._frame_samples[session_id] = descriptor.frame_samples
+        self._start_helper(session_id)
+        return LiveServiceCreateResult(session_id=session_id, descriptor=descriptor,
+                                       snapshot=_snapshot_from_dict(payload["snapshot"]))
+
+
+class MicReplayService(SettingsReplayService):
     def __init__(self, *args, mic_pcm: bytes, **kwargs):
         super().__init__(*args, **kwargs)
         self.mic_pcm = mic_pcm
@@ -82,9 +103,11 @@ class MicReplayService(AccountCookieLiveReplayService):
 class TimedSurfaceCapture:
     """Compose H1's capture with a reader-cadence public snapshot observer."""
 
-    def __init__(self, inner, duration: float):
+    def __init__(self, inner, duration: float, session_id_file: Path | None = None):
         self.inner = inner
+        self.session_id_file = session_id_file
         self.probe = LatencyProbe(duration)
+        self.tentative = TentativeProbe()
         self._done = threading.Event()
         self._thread = None
         self._session_id = None
@@ -94,6 +117,9 @@ class TimedSurfaceCapture:
     def create(self):
         result = self.inner.create()
         self._session_id = result.session_id
+        if self.session_id_file is not None:
+            self.session_id_file.parent.mkdir(parents=True, exist_ok=True)
+            self.session_id_file.write_text(result.session_id + "\n", encoding="utf-8")
         return result
 
     def accept_frame(self, session_id, frame):
@@ -113,7 +139,9 @@ class TimedSurfaceCapture:
             try:
                 snap = self.inner.inner.snapshot(self._session_id)
                 if snap is not None and snap.session.status == "active":
-                    self.probe.observe(snap.to_dict(), time.monotonic() - self._started)
+                    payload = snap.to_dict()
+                    self.probe.observe(payload, time.monotonic() - self._started)
+                    self.tentative.observe(payload)
             except Exception as exc:
                 self._error = exc
                 self._done.set()
@@ -171,11 +199,17 @@ def main() -> None:
     parser.add_argument("--corpus", type=Path, default=CORPUS,
                         help="frozen manifest-matching corpus root; default is worktree corpus")
     parser.add_argument("--mic", type=Path)
+    parser.add_argument("--engine-settings", type=json.loads,
+                        help='JSON object sent with each live start, e.g. {"cleanup_after_stop":false}')
+    parser.add_argument("--enroll-after-stop", action="store_true",
+                        help="name one final speaker and check the owner voiceprint bank")
     parser.add_argument("--case", choices=sorted(QUALITY_CASE_IDS))
     parser.add_argument("--passes", type=int, choices=(1, 2), default=2)
     parser.add_argument("--pass-number", type=int, choices=(1, 2), default=1,
                         help="first pass number; standalone pass 2 runs in reverse order")
     args = parser.parse_args()
+    if args.engine_settings is not None and not isinstance(args.engine_settings, dict):
+        parser.error("--engine-settings must be a JSON object")
     if not args.base_url.startswith("https://127.0.0.1:"):
         parser.error("local HTTPS 127.0.0.1 stack required")
     if args.mic is not None:
@@ -217,15 +251,17 @@ def main() -> None:
                 mic_pcm = wav_pcm(args.mic) if args.mic else None
                 if mic_pcm is not None and len(mic_pcm) < len(wav_pcm(audio)):
                     raise ValueError("--mic WAV must cover the case duration")
-                adapter = (AccountCookieLiveReplayService(
-                    base_url=args.base_url, cookie_file=cookie, timeout_seconds=300)
+                adapter = (SettingsReplayService(
+                    base_url=args.base_url, cookie_file=cookie, timeout_seconds=300,
+                    engine_settings=args.engine_settings)
                     if mic_pcm is None else MicReplayService(
                         base_url=args.base_url, cookie_file=cookie,
-                        timeout_seconds=300, mic_pcm=mic_pcm))
+                        timeout_seconds=300, mic_pcm=mic_pcm,
+                        engine_settings=args.engine_settings))
                 descriptor = adapter.descriptor()
-                captured = surface.SurfaceCaptureService(adapter, settle_timeout=30.0, poll_seconds=.25)
-                timed = TimedSurfaceCapture(captured, duration)
                 run_dir = args.out / f"pass-{pass_number}" / case_id
+                captured = surface.SurfaceCaptureService(adapter, settle_timeout=30.0, poll_seconds=.25)
+                timed = TimedSurfaceCapture(captured, duration, run_dir / "session-id.txt")
                 identity = (descriptor.source_revision, descriptor.provider_manifest_hash,
                             descriptor.config_hashes.combined_config_hash)
                 if descriptor_identity is None:
@@ -242,6 +278,21 @@ def main() -> None:
                     raw_snapshot = adapter._json(
                         "GET", f"/api/live/sessions/{adapter._quoted(timed._session_id)}/snapshot"
                     )["snapshot"]
+                    if args.enroll_after_stop:
+                        meeting = adapter._json("GET", f"/api/meetings/{adapter._quoted(timed._session_id)}")
+                        speaker_id = next((row.get("speaker_entity_id") for row in
+                                           (meeting.get("transcript") or {}).get("segments", [])
+                                           if row.get("speaker_entity_id") and row.get("text", "").strip()), None)
+                        if speaker_id is None:
+                            enrollment = {"status": "UNMEASURED", "reason": "no attributed final speaker"}
+                        else:
+                            named = adapter._json("PUT", f"/api/meetings/{adapter._quoted(timed._session_id)}/speakers/{adapter._quoted(speaker_id)}/name",
+                                                  {"label": "Q-LIVE public speaker", "save_voiceprint": True})
+                            bank = adapter._json("GET", "/api/voiceprints")
+                            enrollment = {"status": named.get("enrollment"),
+                                          "voiceprint_count": len(bank.get("voiceprints", [])),
+                                          "speaker_id": speaker_id}
+                        write_json(run_dir / "enrollment.json", enrollment)
                 finally:
                     timed.finish()
                     adapter.close()
@@ -301,6 +352,9 @@ def main() -> None:
                     })
                 timed_case = {"case_id": case_id, "pass": pass_number,
                               "reference": reference_rows, "surfaces": surface_rows}
+                tentative = timed.tentative.result(reference_rows,
+                    captured.captures["post_stop_final"]["snapshot"])
+                write_json(run_dir / "tentative.json", tentative)
                 write_json(run_dir / "timed-segments.json", timed_case)
                 timed_cases.append(timed_case)
                 write_json(args.out / "h1-timed-segments.json", {
@@ -315,6 +369,7 @@ def main() -> None:
                 labels_at_stop = len({row.get("canonical_speaker") for row in at_stop
                                       if row.get("canonical_speaker") is not None and row.get("text", "").strip()})
                 engine_cases.append({"case_id": case_id, "pass": pass_number,
+                                     "engine_settings": args.engine_settings,
                                      "labels_at_stop": labels_at_stop,
                                      "engine_diagnostics": diagnostics})
                 write_json(args.out / "engine-diagnostics.json", {"cases": engine_cases})

@@ -20,10 +20,9 @@ sys.path.insert(0, str(ROOT / "prototypes/gemini-live/common"))
 
 from corpus import clips  # noqa: E402
 from latency_probe import percentile  # noqa: E402
-from run_quality import TimedSurfaceCapture, write_json, wav_pcm  # noqa: E402
+from run_quality import SettingsReplayService, TimedSurfaceCapture, write_json, wav_pcm  # noqa: E402
 from score import score  # noqa: E402
 from moss_transcribe_diarize.phase2_acceptance_external import _load_surface_harness  # noqa: E402
-from moss_transcribe_diarize.phase2_acceptance_replay import AccountCookieLiveReplayService  # noqa: E402
 from moss_transcribe_diarize.live_service_replay import run_service_replay  # noqa: E402
 
 
@@ -84,6 +83,8 @@ def main() -> None:
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--status", type=Path)
+    parser.add_argument("--engine-settings", type=json.loads,
+                        default={"speaker_window": "balanced", "cleanup_after_stop": False})
     args = parser.parse_args()
     if not args.base_url.startswith("https://127.0.0.1:"):
         parser.error("local HTTPS loopback stack required")
@@ -100,8 +101,8 @@ def main() -> None:
     cookie = args.out / "cookie.txt"
     cookie.write_text("local-open-workspace\n", encoding="utf-8")
     cookie.chmod(0o600)
-    adapter = AccountCookieLiveReplayService(base_url=args.base_url, cookie_file=cookie,
-                                             timeout_seconds=300)
+    adapter = SettingsReplayService(base_url=args.base_url, cookie_file=cookie,
+                                    timeout_seconds=300, engine_settings=args.engine_settings)
     surface = _load_surface_harness(ROOT)
     capture = surface.SurfaceCaptureService(adapter, settle_timeout=120.0, poll_seconds=.25)
     timed = ProgressCapture(capture, duration, args.out, args.status)
@@ -142,6 +143,8 @@ def main() -> None:
         write_json(args.out / "timed-segments.json", {"reference": reference,
                    "surfaces": surfaces})
         write_json(args.out / "label-bucket-delays.json", {"seconds": timed.probe.labels})
+        tentative = timed.tentative.result(reference, capture.captures["post_stop_final"]["snapshot"])
+        write_json(args.out / "tentative.json", tentative)
         lag = {"first_5m": lag_window(timed.probe.labels, 0, 300),
                "last_5m": lag_window(timed.probe.labels,
                                       timed.probe.bucket_count - 300, timed.probe.bucket_count)}
@@ -152,12 +155,14 @@ def main() -> None:
         live_retries = (diagnostics.get("lanes") or {}).get("system", {}).get(
             "retries_by_code", {})
         result = {"schema": "gemini-long60-live.v1", "clip_id": clip.clip_id,
+                  "engine_settings": args.engine_settings,
                   "duration_seconds": duration, "true_speakers": clip.true_speakers,
                   "reference_segments": len(reference), "labels_at_stop": speaker_count(
                       capture.captures["pre_stop_immediate"]["snapshot"]),
                   "labels_pre_stop_settled": speaker_count(
                       capture.captures["pre_stop_settled"]["snapshot"]),
                   "score": scored, "label_lag": lag, "snapshot_count": timed.probe.snapshots,
+                  "tentative": tentative,
                   "reconnects": {"system_live_preview_connection_attempts": live_calls,
                                  "attempts_after_initial": max(0, live_calls - 1),
                                  "errors_by_code": live_errors, "retries_by_code": live_retries,

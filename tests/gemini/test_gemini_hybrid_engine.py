@@ -332,6 +332,33 @@ def test_silent_microphone_skips_batch_calls_then_births_one_local_speaker():
     engine.close()
 
 
+def test_diarized_microphone_window_births_two_local_ids():
+    from moss_transcribe_diarize.app.gemini_continuity_registry import ContinuityRegistry
+    calls = []
+    updates = []
+    class MicDiarizer:
+        def diarize(self, pcm, *, deadline, kind, diarize=True):
+            calls.append(diarize)
+            return GeminiWords((
+                GeminiWord("first", "C", 0, 3*16000),
+                GeminiWord("second", "D", 4*16000, 7*16000)))
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=30, stride_seconds=15),
+        registry=ContinuityRegistry(embedding_threshold=.46,
+                                    within_window_threshold=.60,
+                                    birth_min_seconds=2, id_prefix="local"),
+        diarizer=MicDiarizer(), terminal=FakeTerminal(),
+        source_lane="microphone", voiced_audio=lambda pcm: any(pcm),
+        diarize_windows=True)
+    engine.push_audio(0, b"\x01\x00" * (15*16000))
+    engine._future.result(timeout=5)
+    assert calls == [True]
+    assert {row.speaker for update in updates if isinstance(update, GeminiRolling)
+            for row in update.segments} == {"local-0001", "local-0002"}
+    engine.close()
+
+
 def test_silent_system_window_advances_frontier_without_gemini_call():
     from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
     updates = []
@@ -698,4 +725,24 @@ def test_idle_window_counts_ticks_skipped_while_prior_call_was_busy():
     engine._future.result(timeout=5)
     assert engine._rolling_frontier == 35*16000
     assert usage == [{"kind": "rolling", "count_call": False, "skipped_window_ticks": 1}]
+    engine.close()
+
+
+def test_worker_exception_is_counted_instead_of_silently_stopping_labels():
+    class Broken:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            raise RuntimeError("window failed")
+    usage, updates = [], []
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(), window_scheduler=FixedWindowScheduler(),
+        registry=OverlapRegistry(), diarizer=Broken(), terminal=FakeTerminal(),
+        report_usage=lambda **row: usage.append(row))
+    for second in range(25):  # FixedWindowScheduler opens its first window at 20 s
+        engine.push_audio(second*16000, bytes(32000))
+        try:
+            engine._future.result(timeout=5)
+        except RuntimeError:
+            pass
+    assert any(row.get("error_code") == "worker_RuntimeError" and row.get("count_call") is False
+               for row in usage)
     engine.close()

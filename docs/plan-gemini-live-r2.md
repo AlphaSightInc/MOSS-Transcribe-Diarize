@@ -17,7 +17,7 @@ Prototype evidence behind each item: `prototypes/gemini-live/{schedule,guard,ten
 | F12 | Mic and meeting-audio lanes call Gemini in parallel (remove the shared batch lock). |
 | F13 | Rows committed with no speaker are re-labelled by later windows instead of staying "Speaker TBD". |
 | G10 O1 + P4 + P5 | Speaker-window presets: **Balanced 15 s / 90 s (default)**, Economy 30 s / 90 s, Max context 15 s / 3 min; 60 s rejected (P5). P4 fingerprint veto (T .46, margin .20) in the continuity registry. |
-| G2 O3 + G9 O1 | Local fingerprint guesses on preview words (1.0 s snippet, T .40, EMA centroids, every 0.5 s per voiced lane, 4 ONNX threads), shown greyed "Ben?"; display-only, never saved or exported. On confirmation, consecutive same-speaker text on the same lane with no other speaker between renders as ONE block. |
+| G2 O3 + G9 O1 | Local fingerprint guesses on preview words (1.0 s snippet, T .40, EMA centroids, every 0.5 s per voiced lane, single-thread ONNX per the embedder invariant), shown greyed "Ben?"; display-only, never saved or exported. On confirmation, consecutive same-speaker text on the same lane with no other speaker between renders as ONE block. |
 | P2 | After-Stop clean-up is a setting, **default OFF** for Gemini (user decision; see R-A1 for the evidence gate). |
 | G3 O3 | All settings live in the browser and are sent with each meeting start / summary request; the server stores none. |
 | G4 O1 | Summaries use the server's Gemini key by default, model `gemini-3.5-flash-lite` (dev/test). |
@@ -69,8 +69,9 @@ WP5 builds against §4 with mocked responses and integrates last.
 - **Descriptor** `GET /api/live/descriptor` adds `engine_options: {"speaker_windows": ["balanced","economy","max"],
   "default_speaker_window": "balanced", "cleanup_after_stop": {"available": true, "default": false}}` (Gemini only; absent on MOSS).
 - **Preset table**: balanced S15/L90, economy S30/L90, max S15/L180 (growing window, H0). Mic lane always 30 s window / 15 s stride.
-- **Guesses**: snapshot `session.provisional.tentative_spans: [{start_sample, end_sample, source_lane, speaker}]` where
-  `speaker` is a canonical meeting speaker ID; display-only; never in saved transcripts, exports, or events that persist.
+- **Guesses** (amended 2026-09-29): snapshot `session.provisional.segments: [{start_sample, end_sample, text, source_lane,
+  tentative_speaker|null}]` (display-only; `tentative_speaker` is a canonical meeting speaker ID); the provisional transcript string
+  is unchanged. Never in saved transcripts, exports, or events that persist.
 - **Local IDs**: mic-lane canonical IDs `local-0001`, …; default display label "Local 01", … (server default label and frontend map).
 - **Summaries** (owner-bound: `require_account` → Account workspace `open meeting` handle; wrong owner → 404; no `account_id`):
   - `POST /api/meetings/{meeting_id}/summary/live` body `{model?, language?, prompt?}` → current live effective transcript of an
@@ -87,7 +88,7 @@ WP5 builds against §4 with mocked responses and integrates last.
 ## 5. Acceptance gates (integration head, real HTTP API, public audio only)
 
 1. Backend + frontend suites, typecheck, build green; MOSS-engine tests green (D19).
-2. **Q-LIVE** (clean-up OFF, Balanced): accept6 ×2 settled DER ≤ .110; E1 two-lane labels at Stop ≤ 4; long60 IDs ≤ 6 and
+2. **Q-LIVE** (clean-up OFF, Balanced): accept6 ×2 settled DER ≤ .110; E1 two-lane labels at Stop ≤ 5 (D6: true 4 + 1; corrected 2026-09-29 from a mistaken ≤ 4); long60 IDs ≤ 6 and
    DER ≤ .08; 0 dropped passages; speaker-less speech at Stop ≤ 0.5 % of speech time and no single speaker-less run > 2 s (F13;
    a voice with < 2 s in the whole meeting may legitimately stay "Speaker TBD").
 3. **Q-IND** (R-A1) as defined in §2.
@@ -111,3 +112,16 @@ WP5 builds against §4 with mocked responses and integrates last.
 ## 7. Out of scope
 
 CRE Studio sign-in and server-side settings (G11), removing MOSS code, push/merge/PR, private or operator audio.
+
+## 8. Decisions after qualification (2026-09-29, user)
+
+- **D20 = O1 (async):** clean-up after Stop is **ON by default**, but asynchronous. At Stop the meeting completes immediately from the
+  drained live transcript (browse, rename, summary, History, new meeting all work). The whole-recording clean-up runs in the
+  background and commits an improved transcript as a new version; speaker names carry over by speaker ID. While it runs, **Export
+  transcript, Export audio and passage corrections are disabled** and a badge shows "Improving transcript…"; the final summary
+  regenerates on the improved version. Failure or restart keeps the live version with a notice. Evidence: Q-IND 10/14 (3 of 12
+  independent meetings materially worse without clean-up: long60 .175 vs .034, Adam .140 vs .026, Shapiro .062 vs .017).
+- **D21 = Balanced 15 s / 90 s stays the default** (latency first). With clean-up on, saved long60 accuracy is .034 at Balanced, the
+  same as Max; the live view on long meetings may mis-group speakers until clean-up lands (live draws .165–.296; Gemini output is not
+  deterministic on identical requests — only 28/60 windows matched on a byte-identical replay).
+- Q-IND is no longer a default-gate (clean-up is on); Q-LIVE's long60 settled DER is a documented live-view limitation.

@@ -40,7 +40,7 @@ def _echoed_preview(row: GeminiSegment, system: Sequence[GeminiSegment]) -> bool
 
 
 class TextEchoGuard:
-    """Drop an exact normalized mic token near a system token in audio time."""
+    """Drop timed echo phrases, or single matches without a usable mic voice."""
 
     _TOLERANCE = 3 * LIVE_SAMPLE_RATE // 2
 
@@ -56,6 +56,32 @@ class TextEchoGuard:
                 continue
             kept.append(word)
         return tuple(kept)
+
+    def filter_voice_aware(self, microphone: Sequence[GeminiWord],
+                           system: Sequence[GeminiWord], embeddings
+                           ) -> tuple[GeminiWord, ...]:
+        mic_tokens = [_token(word.text) for word in microphone]
+        sys_tokens = [_token(word.text) for word in system]
+        phrase = set()
+        for i in range(len(microphone)-1):
+            if (microphone[i].speaker != microphone[i+1].speaker
+                    or not mic_tokens[i] or not mic_tokens[i+1]):
+                continue
+            for j in range(len(system)-1):
+                if (system[j].speaker != system[j+1].speaker
+                        or mic_tokens[i] != sys_tokens[j]
+                        or mic_tokens[i+1] != sys_tokens[j+1]):
+                    continue
+                if all(abs((microphone[i+k].start_sample + microphone[i+k].end_sample)//2
+                           - (system[j+k].start_sample + system[j+k].end_sample)//2)
+                       <= self._TOLERANCE for k in (0, 1)):
+                    phrase.update((i, i+1))
+        vectorless = tuple(word for i, word in enumerate(microphone)
+                           if i not in phrase and word.speaker not in embeddings)
+        fallback_kept = {id(word) for word in self.filter(vectorless, system)}
+        return tuple(word for i, word in enumerate(microphone)
+                     if i not in phrase and (word.speaker in embeddings
+                                             or id(word) in fallback_kept))
 
 
 class SystemWordLedger:
@@ -77,9 +103,69 @@ class SystemWordLedger:
 
     def filter_mic(self, words: Sequence[GeminiWord], *,
                    through_sample: int) -> tuple[GeminiWord, ...]:
+        return self._guard.filter(words, self.words_through(through_sample))
+
+    def words_through(self, through_sample: int) -> tuple[GeminiWord, ...]:
         with self._ready:
             self._ready.wait_for(lambda: self._frontier >= through_sample, timeout=30)
-            return self._guard.filter(words, self._words)
+            return tuple(self._words)
+
+
+class CrossLaneVoiceEchoGuard:
+    """Reject mic words only when their voice and time match system speech."""
+
+    _TOLERANCE = round(.4 * LIVE_SAMPLE_RATE)
+
+    def __init__(self, *, threshold: float):
+        self.threshold = threshold
+        self.dropped = 0
+        self._ready = threading.Condition()
+        self._frontier = 0
+        self._system: list[tuple[GeminiWord, tuple[float, ...]]] = []
+
+    def observe_system(self, words: Sequence[GeminiWord], embeddings, *, frontier: int) -> None:
+        with self._ready:
+            self._system.extend((word, tuple(embeddings[word.speaker][0]))
+                                for word in words if word.speaker in embeddings)
+            self._frontier = max(self._frontier, frontier)
+            self._system = [(word, vector) for word, vector in self._system
+                            if word.end_sample >= self._frontier - 305 * LIVE_SAMPLE_RATE]
+            self._ready.notify_all()
+
+    def _filter(self, words: Sequence[GeminiWord], embeddings,
+                system: Sequence[tuple[GeminiWord, tuple[float, ...]]]) -> tuple[GeminiWord, ...]:
+        kept = []
+        for word in words:
+            entry = embeddings.get(word.speaker)
+            vector = tuple(entry[0]) if entry is not None else None
+            if vector is not None and any(
+                other.start_sample <= word.end_sample + self._TOLERANCE
+                and word.start_sample <= other.end_sample + self._TOLERANCE
+                and self._cosine(vector, other_vector) >= self.threshold
+                for other, other_vector in system):
+                self.dropped += 1
+            else:
+                kept.append(word)
+        return tuple(kept)
+
+    @staticmethod
+    def _cosine(left: Sequence[float], right: Sequence[float]) -> float:
+        dot = sum(a*b for a, b in zip(left, right))
+        norm = math.sqrt(sum(a*a for a in left) * sum(b*b for b in right))
+        return dot / norm if norm else -1.0
+
+    def filter_mic(self, words: Sequence[GeminiWord], embeddings, *,
+                   through_sample: int) -> tuple[GeminiWord, ...]:
+        with self._ready:
+            self._ready.wait_for(lambda: self._frontier >= through_sample, timeout=30)
+            return self._filter(words, embeddings, self._system)
+
+    def filter_terminal(self, words: Sequence[GeminiWord], embeddings,
+                        system_words: Sequence[GeminiWord], system_embeddings
+                        ) -> tuple[GeminiWord, ...]:
+        system = [(word, tuple(system_embeddings[word.speaker][0]))
+                  for word in system_words if word.speaker in system_embeddings]
+        return self._filter(words, embeddings, system)
 
 
 class AcousticEchoGuard:
@@ -136,16 +222,24 @@ class AcousticEchoGuard:
 
 class MicrophoneWordGate:
     def __init__(self, webrtc_gate, system_words: SystemWordLedger,
-                 acoustic_gate=None, report_drops=None):
+                 acoustic_gate=None, report_drops=None,
+                 voice_guard: CrossLaneVoiceEchoGuard | None = None,
+                 embedding_source=None):
         self.webrtc_gate = webrtc_gate
         self.system_words = system_words
         self.acoustic_gate = acoustic_gate
         self.report_drops = report_drops
+        self.voice_guard = voice_guard
+        self.embedding_source = embedding_source
 
-    def _record(self, before: int, acoustic: int, after: int) -> None:
+    def _record(self, before: int, acoustic: int, after_voice: int,
+                after_text: int) -> None:
         if self.report_drops is not None:
-            self.report_drops({"acoustic_gate_dropped_words": before-acoustic,
-                               "text_guard_dropped_words": acoustic-after})
+            counts = {"acoustic_gate_dropped_words": before-acoustic,
+                      "text_guard_dropped_words": after_voice-after_text}
+            if self.voice_guard is not None and acoustic > after_voice:
+                counts["mic_echo_dropped_by_voice"] = acoustic-after_voice
+            self.report_drops(counts)
 
     def filter(self, pcm16: bytes, words: Sequence[GeminiWord], *,
                offset_sample: int = 0) -> tuple[GeminiWord, ...]:
@@ -154,18 +248,39 @@ class MicrophoneWordGate:
             return ()
         acoustic = (self.acoustic_gate.filter(pcm16, voiced, offset_sample=offset_sample)
                     if self.acoustic_gate is not None else voiced)
-        kept = self.system_words.filter_mic(
-            acoustic, through_sample=offset_sample + len(pcm16) // 2)
-        self._record(len(voiced), len(acoustic), len(kept))
+        through_sample = offset_sample + len(pcm16) // 2
+        system = self.system_words.words_through(through_sample)
+        kept = acoustic
+        if self.voice_guard is not None and kept:
+            vectors = self.embedding_source(pcm16, offset_sample, kept)
+            kept = self.voice_guard.filter_mic(
+                kept, vectors, through_sample=through_sample)
+            after_voice = len(kept)
+            kept = TextEchoGuard().filter_voice_aware(kept, system, vectors)
+        else:
+            after_voice = len(kept)
+            kept = TextEchoGuard().filter(kept, system)
+        self._record(len(voiced), len(acoustic), after_voice, len(kept))
         return kept
 
     def filter_terminal(self, mic_pcm16: bytes, words: Sequence[GeminiWord],
-                        system_words: Sequence[GeminiWord]) -> tuple[GeminiWord, ...]:
+                        system_words: Sequence[GeminiWord], *,
+                        system_pcm16: bytes | None = None) -> tuple[GeminiWord, ...]:
         # TerminalTranscriber has already applied the mic WebRTC word gate.
         acoustic = (self.acoustic_gate.filter(mic_pcm16, words)
                     if self.acoustic_gate is not None else tuple(words))
-        kept = TextEchoGuard().filter(acoustic, system_words)
-        self._record(len(words), len(acoustic), len(kept))
+        kept = acoustic
+        if self.voice_guard is not None and kept and system_pcm16 is not None:
+            mic_vectors = self.embedding_source(mic_pcm16, 0, kept)
+            system_vectors = self.embedding_source(system_pcm16, 0, system_words)
+            kept = self.voice_guard.filter_terminal(
+                kept, mic_vectors, system_words, system_vectors)
+            after_voice = len(kept)
+            kept = TextEchoGuard().filter_voice_aware(kept, system_words, mic_vectors)
+        else:
+            after_voice = len(kept)
+            kept = TextEchoGuard().filter(kept, system_words)
+        self._record(len(words), len(acoustic), after_voice, len(kept))
         return kept
 
 
