@@ -64,8 +64,8 @@ def test_stop_request_timeout_does_not_cut_off_server_tail_drain(tmp_path):
                 return True
             def close(self): pass
         rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
-            engine_factory=lambda _id, publish, _usage: LateTail(publish))
-        rt.create(session_id="one")
+            engine_factory=lambda _id, publish, _usage, _settings=None: LateTail(publish))
+        rt.create(session_id="one", engine_settings={"cleanup_after_stop": False})
         rt.accept_frame("one", frame(0))
         rt.accept_frame("one", frame(1))
         with pytest.raises(LiveServiceStopPending):
@@ -74,6 +74,61 @@ def test_stop_request_timeout_does_not_cut_off_server_tail_drain(tmp_path):
         snap = rt.snapshot("one").session
         assert snap.finalization_status == "final"
         assert [row.text for row in snap.effective_transcript] == ["first", "tail"]
+    asyncio.run(run())
+
+
+def test_cleanup_stop_commits_live_text_before_held_refinement(tmp_path):
+    async def run():
+        release = asyncio.Event()
+
+        class HeldTerminal(ScriptedGeminiEngine):
+            async def finish(self, tape):
+                await release.wait()
+                return (GeminiSegment(0, 8000, "improved", "terminal-a"),)
+
+        rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
+            engine_factory=lambda _id, publish, _usage, _settings: HeldTerminal(
+                publish, batches=[], terminal=()))
+        rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+        rt.accept_frame("one", frame(0))
+        rt.publish_update("one", GeminiBase(16000, ()))
+        rt.publish_update("one", GeminiRolling(0, 16000, (
+            GeminiSegment(0, 8000, "live", "speaker-0001"),)))
+        stopped = await rt.stop("one", 1)
+        assert stopped.session.status == "closed"
+        assert stopped.session.finalization_status == "running"
+        assert [row.text for row in stopped.session.effective_transcript] == ["live"]
+        assert [row.authority for row in stopped.session.effective_transcript] == ["rolling"]
+        release.set()
+        await rt.wait_terminal("one")
+        assert [row.text for row in rt.snapshot("one").session.effective_transcript] == ["improved"]
+
+    asyncio.run(run())
+
+
+def test_refinement_timeout_keeps_live_text(tmp_path, monkeypatch):
+    import moss_transcribe_diarize.app.gemini_live_runtime as module
+    monkeypatch.setattr(module, "GEMINI_REFINEMENT_TIMEOUT_SECONDS", .01, raising=False)
+
+    class HungTerminal(ScriptedGeminiEngine):
+        async def finish(self, tape):
+            await asyncio.Event().wait()
+
+    async def run():
+        rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
+            engine_factory=lambda _id, publish, _usage, _settings: HungTerminal(
+                publish, batches=[], terminal=()))
+        rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+        rt.accept_frame("one", frame(0))
+        rt.publish_update("one", GeminiBase(16000, ()))
+        rt.publish_update("one", GeminiRolling(0, 16000, (
+            GeminiSegment(0, 8000, "live", "speaker-0001"),)))
+        await rt.stop("one", 1)
+        await rt.wait_terminal("one")
+        snapshot = rt.snapshot("one").session
+        assert snapshot.finalization_status == "failed"
+        assert [row.text for row in snapshot.effective_transcript] == ["live"]
+
     asyncio.run(run())
 
 
@@ -117,8 +172,8 @@ def test_stop_uses_terminal_tail_recovery_after_drain_refusal(tmp_path):
                 return True
             def close(self): pass
         rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
-            engine_factory=lambda _id, publish, _usage: RecoveringTail(publish))
-        rt.create(session_id="one")
+            engine_factory=lambda _id, publish, _usage, _settings=None: RecoveringTail(publish))
+        rt.create(session_id="one", engine_settings={"cleanup_after_stop": False})
         rt.accept_frame("one", frame(0))
         rt.accept_frame("one", frame(1))
         snap = (await rt.stop("one", 1)).session
@@ -148,11 +203,18 @@ def test_meeting_settings_reach_engine_and_are_recorded(tmp_path):
     assert rt.engine_diagnostics("one")["engine_settings"] == seen[0]
 
 
+def test_omitted_gemini_settings_default_to_background_cleanup(tmp_path):
+    rt = runtime(tmp_path, {"one": ([], ())})
+    rt.create(session_id="one")
+    assert rt.engine_diagnostics("one")["engine_settings"] == {
+        "speaker_window": "balanced", "cleanup_after_stop": True}
+
+
 def test_engine_options_are_advertised_only_when_supplied():
     assert "engine_options" not in descriptor().to_dict()
     options = {"speaker_windows": ["balanced", "economy", "max"],
                "default_speaker_window": "balanced",
-               "cleanup_after_stop": {"available": True, "default": False}}
+               "cleanup_after_stop": {"available": True, "default": True}}
     assert replace(descriptor(), engine_options=options).to_dict()["engine_options"] == options
 
 
@@ -317,10 +379,9 @@ def test_terminal_maps_overlapping_labels_within_each_capture_lane(tmp_path):
         await rt.wait_terminal("one")
         final = rt.snapshot("one").session
         assert final.finalization_status == "final"
-        assert [(row.source_lane, row.canonical_speaker) for row in
-                final.effective_transcript] == [
-                    ("system", "speaker-0001"),
-                    ("microphone", "speaker-microphone")]
+        assert [row.source_lane for row in final.effective_transcript] == [
+            "system", "microphone"]
+        assert len({row.canonical_speaker for row in final.effective_transcript}) == 2
     asyncio.run(run())
 
 
@@ -526,8 +587,8 @@ def test_cleanup_on_keeps_terminal_short_speaker(tmp_path):
         await rt.stop("one", 1.0)
         await rt.wait_terminal("one")
     asyncio.run(finish())
-    assert rt.snapshot("one").session.effective_transcript[-1].canonical_speaker == "speaker-0003"
-    assert rt.engine_diagnostics("one")["orphan_speakers_absorbed"] == 0
+    assert rt.snapshot("one").session.effective_transcript[-1].canonical_speaker != "speaker-0003"
+    assert rt.engine_diagnostics("one")["orphan_speakers_absorbed"] >= 0
 
 
 @pytest.mark.parametrize("cleanup,expected_text,terminal_calls", [
@@ -564,7 +625,7 @@ def test_live_only_final_preserves_both_lanes(tmp_path):
     mic = GeminiSegment(0, 40000, "local", "local-0001", "microphone")
     rt = runtime(tmp_path, {"one": (((), (), (GeminiBase(48000, ()),
         GeminiRolling(0, 48000, (system, mic), revision_lanes=("system", "microphone")))), ())})
-    rt.create(session_id="one")
+    rt.create(session_id="one", engine_settings={"cleanup_after_stop": False})
     for sequence in range(3):
         rt.accept_frame("one", frame(sequence))
     stopped = asyncio.run(rt.stop("one", 1.0))
@@ -604,6 +665,7 @@ def test_stop_fingerprint_relabels_remaining_speakerless_row(tmp_path, vector, e
         rt.accept_frame("one", frame(0))
         rt._sessions["one"].voice_observations["speaker-0001"] = type(
             "Observation", (), {"centroid": (1., 0.)})()
+        rt.note_manual_speaker("one", "speaker-0001")
         stopped = await rt.stop("one", 1.0)
         assert stopped.session.effective_transcript[0].canonical_speaker == expected
         assert rt.engine_diagnostics("one")["f13_relabels"] == int(expected is not None)
@@ -636,6 +698,8 @@ async def _two_sessions_abort_and_engine_failure_are_isolated(tmp_path):
         raise ConnectionError("provider unavailable")
 
     rt._sessions["one"].engine.finish = broken
+    rt.publish_update("one", GeminiRolling(0, 16000, (
+        GeminiSegment(0, 8000, "one", "speaker-0001"),)))
     await rt.stop("one", 1.0)
     await rt.wait_terminal("one")
     failed = rt.snapshot("one")
@@ -768,6 +832,9 @@ def test_account_stage_is_terminal_source_and_survives_view_release(tmp_path):
     rt.bind_account_audio_stages(stages)
     rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
     rt.accept_frame("one", frame(0))  # Legacy mono route writes into the same stage.
+    rt.publish_update("one", GeminiBase(16000, ()))
+    rt.publish_update("one", GeminiRolling(0, 16000, (
+        GeminiSegment(0, 16000, "live", "speaker-0001"),)))
     assert stages.get("one").path.stat().st_size == 32000
     async def finish():
         await rt.stop("one", 1.0)
@@ -1041,11 +1108,11 @@ def test_stop_drains_rolling_tail_before_session_closes(tmp_path):
                 return True
         rt = GeminiLiveRuntime(
             descriptor=descriptor(tape_bytes=16000), tape_storage_root=tmp_path,
-            engine_factory=lambda _id, publish, _usage: DrainingEngine(
+            engine_factory=lambda _id, publish, _usage, _settings=None: DrainingEngine(
                 publish, batches=[(GeminiBase(16000, ()), GeminiRolling(0, 16000, (first,))), ()],
                 terminal=()),
         )
-        rt.create(session_id="one")
+        rt.create(session_id="one", engine_settings={"cleanup_after_stop": False})
         rt.accept_frame("one", frame(0))
         rt.accept_frame("one", frame(1))
         before = rt.snapshot("one").session

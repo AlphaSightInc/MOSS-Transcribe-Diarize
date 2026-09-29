@@ -504,7 +504,7 @@ def test_gemini_live_settings_validate_at_http_boundary_and_moss_ignores_them(tm
                                  max_events=64, max_tape_bytes=64000),
         engine_options={"speaker_windows": ["balanced", "economy", "max"],
                         "default_speaker_window": "balanced",
-                        "cleanup_after_stop": {"available": True, "default": False}},
+                        "cleanup_after_stop": {"available": True, "default": True}},
     )
     runtime = GeminiLiveRuntime(
         descriptor=gemini_descriptor, tape_storage_root=tmp_path / "tapes",
@@ -530,6 +530,123 @@ def test_gemini_live_settings_validate_at_http_boundary_and_moss_ignores_them(tm
         session(client, moss_sessions["a"])
         assert "engine_options" not in client.get("/api/live/descriptor").json()["descriptor"]
         assert client.post("/api/live/sessions", json={"engine_settings": {"other": 1}}).status_code == 201
+
+
+@pytest.mark.parametrize("terminal_outcome", ["done", "failed", "restart"])
+def test_gemini_cleanup_stop_saves_completed_live_version_while_improvement_runs(
+    tmp_path, terminal_outcome,
+):
+    from moss_transcribe_diarize.app.gemini_live_runtime import (
+        GeminiBase, GeminiLiveRuntime, GeminiRolling, GeminiSegment, ScriptedGeminiEngine)
+
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    release = asyncio.Event()
+
+    class HeldTerminal(ScriptedGeminiEngine):
+        def push_audio(self, start_sample, pcm16):
+            self.end_sample = start_sample + len(pcm16) // 2
+
+        async def drain_tail(self, deadline):
+            self._publish(GeminiBase(self.end_sample, ()))
+            self._publish(GeminiRolling(0, self.end_sample, (
+                GeminiSegment(0, self.end_sample, "live", "speaker-0001", "system"),),
+                revision_lanes=("system",)))
+            return True
+
+        async def finish(self, tape):
+            await release.wait()
+            if terminal_outcome == "failed":
+                raise RuntimeError("terminal decode refused")
+            return (GeminiSegment(0, self.end_sample, "improved", "terminal-a", "system"),)
+
+    descriptor = LiveServiceDescriptor(
+        source_revision="test", provider_name="gemini", provider_revision="test",
+        provider_manifest_hash="0" * 64,
+        config_hashes=LiveServiceConfigHashes.from_parts(
+            endpoint_config={}, identity_config={}, decoder_config={}),
+        bounds=LiveServiceBounds(max_frame_samples=16000, max_queue_depth=4,
+                                 max_retained_samples=32000, max_identity_speakers=8,
+                                 max_events=64, max_tape_bytes=160000), frame_samples=16000,
+    )
+    runtime = GeminiLiveRuntime(descriptor=descriptor, tape_storage_root=tmp_path / "tapes",
+        engine_factory=lambda _id, publish, _usage, _settings: HeldTerminal(
+            publish, batches=[], terminal=()))
+    app = make_app(database, live_runtime_factory=lambda: runtime)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions").json()["id"]
+        for sequence in range(3):
+            for lane in ("system", "microphone"):
+                payload = {
+                    "lane": lane, "sequence": sequence,
+                    "capture_timestamp_ns": sequence * 1_000_000_000,
+                    "device_epoch": 0,
+                    "pcm_base64": base64.b64encode(
+                        (b"\x01\x00" if lane == "system" else b"\0\0") * 16000
+                    ).decode("ascii"),
+                    "sample_count": 16000, "sample_rate": LIVE_SAMPLE_RATE,
+                    "silent": False, "discontinuity": False,
+                }
+                assert client.post(f"/api/live/sessions/{meeting_id}/frames", json=payload).status_code == 200
+        stopped = client.post(f"/api/live/sessions/{meeting_id}/stop", json={"deadline": 2})
+        assert stopped.status_code in {200, 202}
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            detail = client.get(f"/api/meetings/{meeting_id}").json()
+            if detail["status"] == "completed":
+                break
+            time.sleep(.01)
+        assert detail["status"] == "completed"
+        assert detail["refinement_state"] == "running", detail
+        stage_path = app.state.phase2_live.audio_stages.path(
+            app.state.phase2_live._bindings[meeting_id].owner_key[0], meeting_id)
+        assert stage_path.exists()
+        live_version = detail["transcript_version"]
+        assert live_version >= 1
+        assert [row["text"] for row in detail["transcript"]["segments"]] == ["live"]
+        assert client.get("/api/meetings").json()["meetings"][0]["refinement_state"] == "running"
+        audio_blocked = client.get(f"/api/meetings/{meeting_id}/audio/download")
+        assert audio_blocked.status_code == 409
+        assert audio_blocked.json() == {"code": "refinement_running"}
+        passage_blocked = client.put(f"/api/meetings/{meeting_id}/passages/speaker", json={
+            "segment_ids": ["seg_0001"], "label": "Someone"})
+        assert passage_blocked.status_code == 409
+        assert passage_blocked.json() == {"code": "refinement_running"}
+        named = client.put(f"/api/meetings/{meeting_id}/speakers/speaker-0001/name", json={
+            "label": "Alex", "save_voiceprint": True})
+        assert named.status_code == 200, named.text
+        named_version = named.json()["transcript_version"]
+        assert named_version == live_version + 1
+        if terminal_outcome != "restart":
+            client.portal.call(release.set)
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline:
+                detail = client.get(f"/api/meetings/{meeting_id}").json()
+                if detail["refinement_state"] in {"done", "failed"}:
+                    break
+                time.sleep(.01)
+            assert detail["refinement_state"] == terminal_outcome, detail
+            assert detail["transcript_version"] == named_version + (terminal_outcome == "done")
+            assert [row["text"] for row in detail["transcript"]["segments"]] == [
+                "live" if terminal_outcome == "failed" else "improved"]
+            assert [row["speaker"] for row in detail["transcript"]["segments"]] == ["Alex"]
+            if terminal_outcome == "failed":
+                assert detail["notice"] == "Improvement unavailable — the live transcript was kept."
+            assert not stage_path.exists()
+    if terminal_outcome == "restart":
+        restarted = make_app(database, live_runtime_factory=lambda: GeminiLiveRuntime(
+            descriptor=descriptor, tape_storage_root=tmp_path / "restarted-tapes",
+            engine_factory=lambda _id, publish, _usage, _settings: ScriptedGeminiEngine(
+                publish, batches=[], terminal=())))
+        with TestClient(restarted, base_url="https://moss.test") as client:
+            session(client, sessions["a"])
+            detail = client.get(f"/api/meetings/{meeting_id}").json()
+            assert detail["status"] == "completed"
+            assert detail["refinement_state"] == "failed"
+            assert detail["transcript_version"] == named_version
+            assert [row["text"] for row in detail["transcript"]["segments"]] == ["live"]
+            assert detail["notice"] == "Improvement unavailable — the live transcript was kept."
 
 
 def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durable(
