@@ -217,7 +217,9 @@ describe("MOSS session poller", () => {
               provisional: {
                 generation: provisionalGeneration,
                 start_sample: 48_000,
-                transcript: "[0][S01]Still speaking[0.5]"
+                transcript: "[0][S01]Still speaking[0.5]",
+                tentative_spans: [{ start_sample: 48_000, end_sample: 56_000,
+                  source_lane: "system", speaker: "speaker-0001" }]
               }
             }
           },
@@ -280,6 +282,9 @@ describe("MOSS session poller", () => {
         })
       ])
     );
+    expect(dispatched.find((event) => event.type === "transcript_update"))
+      .toHaveProperty("tentative_spans", [{ start_sample: 48_000, end_sample: 56_000,
+        source_lane: "system", speaker: "speaker-0001" }]);
     expect(dispatched.map((event) => event.type)).toEqual([
       "session_state",
       "transcript_update",

@@ -7,6 +7,7 @@ import type {
   WsEvent
 } from "./types";
 import { SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
+import type { TentativeSpan } from "../lib/tentative";
 import { dispatchWsEvent } from "./ws";
 
 const CAPTURING_POLL_DELAY_MS = 100;
@@ -38,6 +39,7 @@ interface MossProvisionalSuffix {
   generation: number;
   startSample: number;
   transcript: string;
+  tentativeSpans: TentativeSpan[];
 }
 
 interface MossSnapshot {
@@ -484,6 +486,7 @@ function renderSnapshot(
       seq: sequence,
       timestamp: new Date().toISOString(),
       items,
+      tentative_spans: provisional?.tentativeSpans ?? [],
       metadata: { operation: "snapshot" }
     },
     relabelEvent: relabeled
@@ -815,7 +818,18 @@ function parseProvisionalSuffix(value: unknown): MossProvisionalSuffix {
   return {
     generation: requiredNonNegativeNumber(provisional.generation, "provisional generation"),
     startSample: requiredNonNegativeNumber(provisional.start_sample, "provisional start_sample"),
-    transcript: requiredTextField(provisional.transcript, "provisional transcript")
+    transcript: requiredTextField(provisional.transcript, "provisional transcript"),
+    tentativeSpans: Array.isArray(provisional.tentative_spans)
+      ? provisional.tentative_spans.map((value) => {
+          const span = record(value, "tentative span");
+          return {
+            start_sample: requiredNonNegativeNumber(span.start_sample, "tentative start_sample"),
+            end_sample: requiredNonNegativeNumber(span.end_sample, "tentative end_sample"),
+            source_lane: requiredTextField(span.source_lane, "tentative source_lane"),
+            speaker: requiredTextField(span.speaker, "tentative speaker")
+          };
+        })
+      : []
   };
 }
 

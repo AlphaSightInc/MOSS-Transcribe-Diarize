@@ -23,6 +23,17 @@ describe("Q5 transcript cards", () => {
       .toEqual(source.map(row => row.target_segment_keys[0]).sort());
   });
 
+  it("renders distant consecutive confirmed Ben rows as one card after Ben? settles", () => {
+    const confirmed = [turn(0, 1, "system", "speaker-ben", "first", true),
+      turn(12, 13, "system", "speaker-ben", "second", true)];
+    expect(projectTranscriptCards(confirmed)).toHaveLength(1);
+    expect(projectTranscriptCards(confirmed)[0]?.rows.map(row => row.text))
+      .toEqual(["first", "second"]);
+    const pending = { ...confirmed[1]!, state: "provisional" as const, speaker: "S00",
+      speaker_entity_id: "S00", display_name: "Ben?" };
+    expect(projectTranscriptCards([confirmed[0]!, pending])).toHaveLength(2);
+  });
+
   it("keeps an S00 header and does not absorb a long interjection", () => {
     const source = [turn(0, 1, "system", "S00", "one"),
       turn(1, 6, "microphone", "speaker-b", "long"),
