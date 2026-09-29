@@ -141,6 +141,68 @@ it("regenerates an existing built-in summary when refinement raises the transcri
   expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/summary/server"))).toHaveLength(1);
 });
 
+it.each([
+  { state: "failed", error_code: "delivery_failed" },
+  { state: "failed", error_code: "source_changed" },
+  { state: "cancelled", error_code: null }
+])("regenerates an older terminal $state artifact ($error_code) after refinement", async ({ state, error_code }) => {
+  const old = { state, attempt_id: "old", source_version: 1, artifact_version: 1,
+    error_code, document: null };
+  const improved = { ...old, state: "current", source_version: 2,
+    document: { summary: "Improved summary", topics: [], details: [], speaker_background: [], data_references: [] } };
+  const fetcher = vi.fn(async (url: string) => url.endsWith("/summary/server")
+    ? { ok: true, json: async () => improved }
+    : { ok: true, json: async () => ({ summary: old }) });
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "closed";
+  selectedSummaryMeeting.value = { id: "m", mode: "live", title: "Meeting", title_source: "automatic",
+    status: "completed", created_at_ms: Date.now(), transcript_version: 2, refinement_state: "done",
+    transcript: { segments: [] }, audio: null };
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await vi.waitFor(() => expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/summary/server"))).toHaveLength(1));
+  await vi.waitFor(() => expect(root.textContent).toContain("Improved summary"));
+});
+
+it("drops a late rolling response after switching meetings", async () => {
+  let finishOld!: (response: unknown) => void;
+  const oldResponse = new Promise(resolve => { finishOld = resolve; });
+  const fetcher = vi.fn((url: string) => url.includes("/old/") ? oldResponse : Promise.resolve({
+    ok: true, json: async () => ({ summary: "New meeting summary", generated_at_ms: Date.now(),
+      source: { committed_samples: 1, text_revision_version: 1 } })
+  }));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "old"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
+  await act(async () => { sessionId.value = "new"; });
+  await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
+  await vi.waitFor(() => expect(root.textContent).toContain("New meeting summary"));
+  await act(async () => finishOld({ ok: true, json: async () => ({ summary: "Old meeting summary",
+    generated_at_ms: Date.now(), source: { committed_samples: 1, text_revision_version: 1 } }) }));
+  expect(root.textContent).toContain("New meeting summary");
+  expect(root.textContent).not.toContain("Old meeting summary");
+});
+
+it("reads rolling model, prompt, and language at call time with an unchanged interval", async () => {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+  const { defaultAppSettings, saveAppSettings } = await import("../lib/settings");
+  const values = new Map<string, string>();
+  vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key) });
+  const fetcher = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ summary: "Updated",
+    generated_at_ms: Date.now(), source: { committed_samples: 1, text_revision_version: 1 } }) }));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  const settings = defaultAppSettings();
+  await act(async () => saveAppSettings({ ...settings, summary: { ...settings.summary,
+    model: "gemini-3.5-flash", prompt: "New prompt", language: "French" } }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+  const body = JSON.parse(fetcher.mock.calls[0][1]!.body as string);
+  expect(body).toEqual({ model: "gemini-3.5-flash", prompt: "New prompt", language: "French" });
+});
+
 it("offers Update summary for a stale external artifact without sending automatically", async () => {
   const { defaultAppSettings, saveAppSettings } = await import("../lib/settings");
   const values = new Map<string, string>();

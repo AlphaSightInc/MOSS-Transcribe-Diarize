@@ -392,8 +392,15 @@ export function ControlPanel() {
     const finalized = sessionStatus.value !== "active" && sessionStatus.value !== "closing";
     const numbers = settledSpeakerNumbers(turns, finalized);
     let summary = null;
+    let summaryUpdating = false;
     if (exportFormat === "md" && finalized) {
-      try { const artifact = await summaryApi(id); summary = artifact?.state === "current" ? artifact.document : null; }
+      try {
+        const version = selectedSummaryMeeting.value?.id === id
+          ? selectedSummaryMeeting.value.transcript_version : (await openMeeting(id)).transcript_version;
+        const artifact = await summaryApi(id);
+        summary = artifact?.state === "current" && artifact.source_version === version ? artifact.document : null;
+        summaryUpdating = artifact != null && artifact.source_version !== version;
+      }
       catch { /* A transcript remains exportable when its optional summary cannot be fetched. */ }
     }
     if (selectedSummaryMeeting.value?.id === id && selectedSummaryMeeting.value.refinement_state === "running") return;
@@ -402,7 +409,7 @@ export function ControlPanel() {
         (!turn.display_name || turn.display_name === turn.speaker_entity_id || /^Speaker \d+$/.test(turn.display_name))
         ? `Local ${String(Number(turn.speaker_entity_id.slice(6))).padStart(2, "0")}`
         : transcriptCardSpeakerLabel(turn, numbers, liveLabelPolicy.value, finalized),
-      { sessionId: id, exportedAt: new Date() }, { needsReview: sessionNeedsReview.value }, summary));
+      { sessionId: id, exportedAt: new Date() }, { needsReview: sessionNeedsReview.value }, summary, summaryUpdating));
   }
 
   const configured = clientRef.current !== null;

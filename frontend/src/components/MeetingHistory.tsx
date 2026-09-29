@@ -21,6 +21,9 @@ import {
   OPEN_MEETING_EVENT,
   MEETING_HISTORY_REFRESH_EVENT
 } from "../lib/meetingEvents";
+import { summaryApi } from "../lib/finalSummary";
+import { loadAppSettings } from "../lib/settings";
+import { finalizeMeetingSummary } from "../lib/summaryRequests";
 import {
   resetSessionState,
   sessionId,
@@ -42,6 +45,7 @@ export function MeetingHistory() {
   const [renaming, setRenaming] = useState(false);
   const selectedRef = useRef<Meeting | null>(null);
   const refreshGenerationRef = useRef(0);
+  const summaryRegenerated = useRef(new Set<string>());
   const renameDialogRef = useRef<HTMLDialogElement | null>(null);
   const renameInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -99,27 +103,46 @@ export function MeetingHistory() {
     };
   }, []);
 
+  const refiningIds = meetings.filter(meeting => meeting.refinement_state === "running")
+    .map(meeting => meeting.id).join("\n");
   useEffect(() => {
-    if (selected?.refinement_state !== "running") return;
-    const id = selected.id;
+    if (!refiningIds) return;
+    const ids = refiningIds.split("\n");
     let disposed = false;
     let reading = false;
     const timer = setInterval(async () => {
       if (reading) return;
       reading = true;
       try {
-        const next = await openMeeting(id);
-        if (disposed || selectedRef.current?.id !== id) return;
-        if (selectedRef.current.refinement_state === next.refinement_state &&
-            selectedRef.current.transcript_version === next.transcript_version) return;
-        setMeetings(current => current.map(meeting => meeting.id === id ? next : meeting));
-        replaceSelection(next);
-        if (sessionId.value === id) publishMeeting(next, false);
-      } catch { /* Keep the last durable version and try again at the next interval. */ }
+        await Promise.all(ids.map(async id => {
+          try {
+            const next = await openMeeting(id);
+            if (disposed) return;
+            const previous = selectedRef.current?.id === id
+              ? selectedRef.current : meetings.find(meeting => meeting.id === id);
+            if (previous && previous.refinement_state === next.refinement_state &&
+                previous.transcript_version === next.transcript_version) return;
+            setMeetings(current => current.map(meeting => meeting.id === id ? next : meeting));
+            if (selectedRef.current?.id === id) {
+              replaceSelection(next);
+              if (sessionId.value === id) publishMeeting(next, false);
+            } else if (next.refinement_state === "done") {
+              const key = `${id}:${next.transcript_version}`;
+              if (summaryRegenerated.current.has(key)) return;
+              summaryRegenerated.current.add(key);
+              const artifact = await summaryApi(id);
+              if (artifact && artifact.source_version < next.transcript_version &&
+                  loadAppSettings().summary.provider === "built-in") {
+                await finalizeMeetingSummary(next);
+              }
+            }
+          } catch { /* Keep the last durable version and try again at the next interval. */ }
+        }));
+      }
       finally { reading = false; }
     }, 5000);
     return () => { disposed = true; clearInterval(timer); };
-  }, [selected?.id, selected?.refinement_state]);
+  }, [refiningIds]);
 
   useEffect(() => {
     if (!renameTarget) return;

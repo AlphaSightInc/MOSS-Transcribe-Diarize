@@ -17,6 +17,9 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
   const [now, setNow] = useState(Date.now());
   const [settings, setSettings] = useState(loadAppSettings);
   const improvementRequested = useRef<string | null>(null);
+  const liveRequestToken = useRef(0);
+  const liveMeetingId = useRef(id);
+  liveMeetingId.current = id;
   useEffect(() => {
     const changed = () => setSettings(loadAppSettings());
     document.addEventListener(SETTINGS_CHANGED, changed);
@@ -25,15 +28,25 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
   const interval = settings.summary.provider === "built-in" ? settings.summary.intervalSeconds : 0;
 
   async function refreshLive() {
-    if (!id || !active || settings.summary.provider !== "built-in") return;
+    const currentSettings = loadAppSettings();
+    if (!id || !active || currentSettings.summary.provider !== "built-in") return;
+    const token = ++liveRequestToken.current;
     setBusy(true); setError("");
-    try { setRolling(await requestLiveSummary(id, settings)); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "Live summary unavailable."); }
-    finally { setBusy(false); }
+    try {
+      const next = await requestLiveSummary(id, currentSettings);
+      if (liveMeetingId.current === id && liveRequestToken.current === token) setRolling(next);
+    } catch (cause) {
+      if (liveMeetingId.current === id && liveRequestToken.current === token)
+        setError(cause instanceof Error ? cause.message : "Live summary unavailable.");
+    } finally {
+      if (liveMeetingId.current === id && liveRequestToken.current === token) setBusy(false);
+    }
   }
 
   useEffect(() => {
+    liveRequestToken.current += 1;
     setRolling(null); setArtifact(null); setError("");
+    setBusy(false);
   }, [id, active]);
   useEffect(() => {
     if (!id || !active || interval === 0) return;
@@ -63,7 +76,8 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
     return () => { disposed = true; clearInterval(timer); document.removeEventListener(SUMMARY_CHANGED, changed); };
   }, [id, active]);
 
-  const summaryStale = meeting?.refinement_state === "done" && artifact?.state === "current" &&
+  const summaryStale = meeting?.refinement_state === "done" && artifact != null &&
+    ["current", "failed", "cancelled"].includes(artifact.state) &&
     artifact.source_version < meeting.transcript_version;
   useEffect(() => {
     if (!meeting || !summaryStale || settings.summary.provider !== "built-in") return;
