@@ -21,6 +21,12 @@ PYTHON = Path("/Users/gao/Desktop/AI_Projects/Github_Projects/MOSS-Transcribe-Di
 DEFAULT_MANIFEST = Path.home() / ".local/share/moss-transcribe-diarize/live/live-provider-manifest.json"
 ACCEPT6_BOUND = 0.110
 LONG60_BOUND = 0.06
+# TerminalTranscriber defaults at this pinned source: 900 s chunks / 30 s overlap.
+TERMINAL_CHUNK_SAMPLES = 900 * 16000
+TERMINAL_OVERLAP_SAMPLES = 30 * 16000
+# Gemini 3.5 Transcribe standard list-price estimates, USD per audio minute.
+TRANSCRIBE_INPUT_USD_PER_MINUTE = 0.003
+TRANSCRIBE_OUTPUT_USD_PER_MINUTE = 0.002
 
 
 def now_utc() -> str:
@@ -128,6 +134,41 @@ def pick_speaker(rows: list[dict]) -> tuple[str | None, float]:
     return (max(duration, key=duration.get), max(duration.values())) if duration else (None, 0.0)
 
 
+def terminal_cost_estimate(audio_path: Path) -> dict:
+    """Estimate one terminal pass from its voiced 900/30 chunk schedule."""
+    from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
+
+    voiced_audio = WebRtcSpeechDetector()
+    chunks = []
+    sent_samples = 0
+    with wave.open(str(audio_path), "rb") as audio:
+        end = audio.getnframes()
+        start = 0
+        while start < end:
+            stop = min(end, start + TERMINAL_CHUNK_SAMPLES)
+            audio.setpos(start)
+            sent = voiced_audio(audio.readframes(stop - start))
+            chunks.append({"start_seconds": start / 16000, "end_seconds": stop / 16000,
+                           "sent_estimate": sent})
+            if sent:
+                sent_samples += stop - start
+            if stop == end:
+                break
+            start = stop - TERMINAL_OVERLAP_SAMPLES
+    sent_seconds = sent_samples / 16000
+    input_usd = sent_seconds / 60 * TRANSCRIBE_INPUT_USD_PER_MINUTE
+    output_usd = sent_seconds / 60 * TRANSCRIBE_OUTPUT_USD_PER_MINUTE
+    return {
+        "status": "ESTIMATE", "basis": "one_voiced_terminal_pass_no_retries",
+        "model": "gemini-3.5-transcribe", "chunks": chunks,
+        "audio_seconds_sent_estimate": sent_seconds,
+        "input_usd_per_minute": TRANSCRIBE_INPUT_USD_PER_MINUTE,
+        "output_usd_per_minute": TRANSCRIBE_OUTPUT_USD_PER_MINUTE,
+        "input_usd": round(input_usd, 9), "output_usd": round(output_usd, 9),
+        "total_usd": round(input_usd + output_usd, 9),
+    }
+
+
 def run_clip(client: httpx.Client, clip, score_case, score, wait_seconds: float) -> dict:
     started = time.monotonic()
     result = {
@@ -138,6 +179,7 @@ def run_clip(client: httpx.Client, clip, score_case, score, wait_seconds: float)
         "metrics": None, "transcription_wall_seconds": None, "wall_seconds": None,
         "enrollment": None, "named_speaker_seconds": None, "voiceprint_id_present": None,
         "engine_diagnostics": None, "usage_cost_usd": None, "usage_cost_status": "UNMEASURED",
+        "cost_estimate": None,
         "failure": None,
     }
     with wave.open(str(clip.audio), "rb") as audio:
@@ -170,6 +212,7 @@ def run_clip(client: httpx.Client, clip, score_case, score, wait_seconds: float)
             result["failure"] = {"type": "meeting_outcome", "code": meeting.get("failure_code"),
                                  "reason": meeting.get("failure_reason")}
             return result
+        result["cost_estimate"] = terminal_cost_estimate(clip.audio)
         rows = (meeting.get("transcript") or {}).get("segments") or []
         result["transcript_rows"] = len(rows)
         result["speaker_count"] = len({row["speaker"] for row in rows if row.get("speaker") not in (None, "S00")})
@@ -226,6 +269,9 @@ def aggregate(selected: list[str], results: list[dict]) -> dict:
             "enrolled": sum(row["enrollment"] == "enrolled" for row in results),
             "measured_cost_usd": sum(row["usage_cost_usd"] or 0 for row in results),
             "unmeasured_cost_cases": sum(row["usage_cost_status"] == "UNMEASURED" for row in results),
+            "estimated_cost_usd": round(sum((row.get("cost_estimate") or {}).get("total_usd", 0)
+                                            for row in results), 9),
+            "estimated_cost_cases": sum(row.get("cost_estimate") is not None for row in results),
             "qfile_gate": gate}
 
 
