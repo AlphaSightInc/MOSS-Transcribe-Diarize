@@ -128,8 +128,12 @@ export function TranscriptPane() {
   for (const item of fullTranscriptItems) speakerLabels[item.speaker_entity_id] = speakerLabel(item);
   for (const segment of provisionalSegments.value) {
     const id = segment.tentative_speaker;
-    if (id && !speakerLabels[id]) speakerLabels[id] = /^local-\d+$/.test(id)
-      ? `Local ${String(Number(id.slice(6))).padStart(2, "0")}` : id;
+    if (!id || speakerLabels[id]) continue;
+    const numberedSpeaker = /^speaker-(\d+)$/.exec(id);
+    speakerLabels[id] = /^local-\d+$/.test(id)
+      ? `Local ${String(Number(id.slice(6))).padStart(2, "0")}`
+      : numberedSpeaker ? `S${String(Number(numberedSpeaker[1])).padStart(2, "0")}`
+      : "Speaker TBD";
   }
   const tentativeBlocks = projectTentativeSegments(provisionalSegments.value, speakerLabels);
   const transcriptAvailable = allTurns.length > 0 || tentativeBlocks.length > 0;

@@ -386,6 +386,23 @@ describe("TranscriptPane", () => {
     expect(root.querySelectorAll(".transcript-card:not([data-tentative-block])")).toHaveLength(0);
   });
 
+  it("uses display names and numbered defaults for tentative canonical speakers", () => {
+    act(() => {
+      sessionId.value = "m"; sessionStatus.value = "active";
+      render(<TranscriptPane />, root);
+      dispatchWsEvent({ type: "transcript_update", session_id: "m", seq: 1,
+        timestamp: new Date().toISOString(), items: [{ start: 0, end: 1, text: "known", speaker: "S01",
+          speaker_entity_id: "speaker-0001", display_name: "Alex", state: "confirmed" }],
+        provisional_segments: [
+          { start_sample: 0, end_sample: 8000, text: "known", source_lane: "microphone", tentative_speaker: "speaker-0001" },
+          { start_sample: 8000, end_sample: 16000, text: "new", source_lane: "microphone", tentative_speaker: "speaker-0002" }
+        ] });
+    });
+    expect([...root.querySelectorAll("[data-tentative-block] .utt-speaker-label")].map(node => node.textContent))
+      .toEqual(["Alex?", "S02?"]);
+    expect(root.textContent).not.toContain("speaker-0002?");
+  });
+
   it("keeps summary in the centre card and leaves export to Controls", () => {
     act(() => render(<TranscriptPane />, root));
     expect(root.querySelector('[aria-label="Meeting views"]')).not.toBeNull();
