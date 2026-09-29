@@ -16,6 +16,11 @@ after Stop, and provider spend. The self-hosted MOSS engine has a separate ident
 - **Stop drain:** one last window covers the accepted suffix. Later windows repair
   speaker-less committed rows; a remaining row may use a saved-audio fingerprint only
   when its best existing speaker cosine is at least .46. Otherwise it stays unattributed.
+- **Orphan resolution:** before a Gemini live-only final revision, a canonical ID with
+  under 2 s total committed speech is removed unless the user manually named it.
+  Its rows use a same-lane established speaker only at cosine ≥ .46; otherwise their
+  words remain with Speaker TBD. A public E1 0.2 s stray had best witness cosine .3083
+  and therefore supports abstention (`prototypes/streaming-diarization/orphan-stop/NOTES.md`).
 - **Final revision:** after Stop, the drained effective live surface is saved as the
   authoritative final transcript. The user's `cleanup_after_stop=true` setting instead
   runs the existing whole-recording terminal pass.

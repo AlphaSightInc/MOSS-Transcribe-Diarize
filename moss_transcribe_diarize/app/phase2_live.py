@@ -573,6 +573,9 @@ class Phase2LiveMeetings:
             binding.speaker_label_revision += 1
             binding.durable_document = mutation.document
             binding.durable_version = mutation.transcript_version
+            note_manual = getattr(self.runtime, "note_manual_speaker", None)
+            if callable(note_manual):
+                note_manual(handle.meeting_id, speaker_id)
             async with binding.changed:
                 binding.changed.notify_all()
 

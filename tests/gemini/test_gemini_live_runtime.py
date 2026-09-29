@@ -1,6 +1,7 @@
 import asyncio
 import hashlib
 import time
+import wave
 from dataclasses import replace
 
 import pytest
@@ -225,7 +226,7 @@ def test_terminal_maps_overlapping_labels_within_each_capture_lane(tmp_path):
                                            GeminiRolling(0, 16000, (system, microphone),
                                                revision_lanes=("system", "microphone")))],
                                  terminal)})
-        rt.create(session_id="one")
+        rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
         rt.accept_frame("one", frame(0))
         await rt.stop("one", 1.0)
         await rt.wait_terminal("one")
@@ -360,6 +361,90 @@ def test_refused_stale_f13_relabel_during_stop_still_finalizes(tmp_path):
     assert rt.engine_diagnostics("one")["f13_relabel_refused"] == 1
 
 
+def _orphan_stop_runtime(tmp_path, *, orphan_audio: int, cleanup: bool = False,
+                         second_lane: str = "system"):
+    class Encoder:
+        spec = type("Spec", (), {"provider": "fake", "revision": "one",
+                                "embedding_dimension": 2, "state_sha256": "0" * 64})()
+        def embed(self, path, intervals):
+            with wave.open(path, "rb") as source:
+                value = int.from_bytes(source.readframes(1), "little", signed=True)
+            return {1: (1., 0.), 2: (0., 1.), 3: (-1., 0.)}[value]
+    second_id = "speaker-0002" if second_lane == "system" else "local-0001"
+    rows = (GeminiSegment(0, 40000, "first", "speaker-0001", "system"),
+            GeminiSegment(48000, 88000, "second", second_id, second_lane),
+            GeminiSegment(88000, 91200, "yeah", "speaker-0003", "system"))
+    batches = [()] * 5 + [(GeminiBase(96000, ()),
+                           GeminiRolling(0, 96000, rows,
+                                         revision_lanes=tuple(dict.fromkeys(r.source_lane for r in rows))))]
+    rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage, _settings: ScriptedGeminiEngine(
+            publish, batches=batches, terminal=rows), voiceprint_encoder=Encoder())
+    rt.create(session_id="one", engine_settings={"cleanup_after_stop": cleanup})
+    for sequence in range(6):
+        if sequence == 5:
+            pcm = b"\x02\x00" * 8000 + orphan_audio.to_bytes(2, "little") * 8000
+        else:
+            pcm = (1 if sequence < 3 else 2).to_bytes(2, "little") * 16000
+        rt.accept_frame("one", AudioFrame(sequence=sequence, pcm=pcm, sample_count=16000))
+    return rt
+
+
+def test_stop_absorbs_short_orphan_into_nearest_same_lane_speaker(tmp_path):
+    rt = _orphan_stop_runtime(tmp_path, orphan_audio=2)
+    stopped = asyncio.run(rt.stop("one", 1.0))
+    rows = stopped.session.effective_transcript
+    assert [(row.text, row.canonical_speaker) for row in rows] == [
+        ("first", "speaker-0001"), ("second", "speaker-0002"),
+        ("yeah", "speaker-0002")]
+    assert rt.engine_diagnostics("one")["orphan_speakers_absorbed"] == 1
+
+
+def test_stop_orphan_without_fingerprint_match_becomes_tbd(tmp_path):
+    rt = _orphan_stop_runtime(tmp_path, orphan_audio=3)
+    stopped = asyncio.run(rt.stop("one", 1.0))
+    assert stopped.session.effective_transcript[-1].canonical_speaker is None
+    assert stopped.session.effective_transcript[-1].text == "yeah"
+    assert rt.engine_diagnostics("one")["orphan_speakers_absorbed"] == 0
+
+
+def test_stop_does_not_absorb_orphan_into_other_lane(tmp_path):
+    rt = _orphan_stop_runtime(tmp_path, orphan_audio=2, second_lane="microphone")
+    stopped = asyncio.run(rt.stop("one", 1.0))
+    assert stopped.session.effective_transcript[-1].canonical_speaker is None
+    assert rt.engine_diagnostics("one")["orphan_speakers_absorbed"] == 0
+
+
+def test_refused_orphan_relabel_is_counted_without_failing_stop(tmp_path, monkeypatch):
+    rt = _orphan_stop_runtime(tmp_path, orphan_audio=2)
+    session = rt._sessions["one"].session
+    monkeypatch.setattr(session, "revise_rolling_interval", lambda **_kwargs:
+                        session._text_revision_outcome(
+                            applied=False, refusal="rolling_interval_not_owned"))
+    stopped = asyncio.run(rt.stop("one", 1.0))
+    assert stopped.session.finalization_status == "final"
+    assert stopped.session.effective_transcript[-1].canonical_speaker == "speaker-0003"
+    assert rt.engine_diagnostics("one")["orphan_relabel_refused"] == 1
+
+
+def test_stop_keeps_manually_named_short_speaker(tmp_path):
+    rt = _orphan_stop_runtime(tmp_path, orphan_audio=2)
+    rt.note_manual_speaker("one", "speaker-0003")
+    stopped = asyncio.run(rt.stop("one", 1.0))
+    assert stopped.session.effective_transcript[-1].canonical_speaker == "speaker-0003"
+    assert rt.engine_diagnostics("one")["orphan_speakers_absorbed"] == 0
+
+
+def test_cleanup_on_keeps_terminal_short_speaker(tmp_path):
+    rt = _orphan_stop_runtime(tmp_path, orphan_audio=2, cleanup=True)
+    async def finish():
+        await rt.stop("one", 1.0)
+        await rt.wait_terminal("one")
+    asyncio.run(finish())
+    assert rt.snapshot("one").session.effective_transcript[-1].canonical_speaker == "speaker-0003"
+    assert rt.engine_diagnostics("one")["orphan_speakers_absorbed"] == 0
+
+
 @pytest.mark.parametrize("cleanup,expected_text,terminal_calls", [
     (False, "live words", 0), (True, "terminal words", 1)])
 def test_stop_cleanup_setting_controls_terminal_pass(tmp_path, cleanup, expected_text,
@@ -390,12 +475,13 @@ def test_stop_cleanup_setting_controls_terminal_pass(tmp_path, cleanup, expected
 
 
 def test_live_only_final_preserves_both_lanes(tmp_path):
-    system = GeminiSegment(0, 8000, "remote", "speaker-0001", "system")
-    mic = GeminiSegment(0, 8000, "local", "local-0001", "microphone")
-    rt = runtime(tmp_path, {"one": ([(GeminiBase(16000, ()),
-        GeminiRolling(0, 16000, (system, mic), revision_lanes=("system", "microphone")))], ())})
+    system = GeminiSegment(0, 40000, "remote", "speaker-0001", "system")
+    mic = GeminiSegment(0, 40000, "local", "local-0001", "microphone")
+    rt = runtime(tmp_path, {"one": (((), (), (GeminiBase(48000, ()),
+        GeminiRolling(0, 48000, (system, mic), revision_lanes=("system", "microphone")))), ())})
     rt.create(session_id="one")
-    rt.accept_frame("one", frame(0))
+    for sequence in range(3):
+        rt.accept_frame("one", frame(sequence))
     stopped = asyncio.run(rt.stop("one", 1.0))
     assert stopped.session.finalization_status == "final"
     assert [(row.source_lane, row.text, row.canonical_speaker) for row in
@@ -426,10 +512,10 @@ def test_stop_fingerprint_relabels_remaining_speakerless_row(tmp_path, vector, e
     async def run():
         engines = []
         rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
-            engine_factory=lambda _id, publish, _usage: (
+            engine_factory=lambda _id, publish, _usage, _settings: (
                 engines.append(WaitingEngine(publish)) or engines[-1]),
             voiceprint_encoder=Encoder())
-        rt.create(session_id="one")
+        rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
         rt.accept_frame("one", frame(0))
         rt._sessions["one"].voice_observations["speaker-0001"] = type(
             "Observation", (), {"centroid": (1., 0.)})()

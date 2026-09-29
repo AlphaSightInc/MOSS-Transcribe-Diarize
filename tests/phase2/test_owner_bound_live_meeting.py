@@ -801,6 +801,9 @@ def test_manual_speaker_name_route_relabels_and_enrolls_only_the_owner_voiceprin
     app = make_app(database, identity_factory=EligibleIdentity)
 
     with TestClient(app, base_url="https://moss.test") as client:
+        noted = []
+        app.state.phase2_live.runtime.note_manual_speaker = (
+            lambda meeting_id, speaker_id: noted.append((meeting_id, speaker_id)))
         session(client, sessions["a"])
         meeting_id = client.post("/api/live/sessions").json()["id"]
         assert client.post(
@@ -824,6 +827,7 @@ def test_manual_speaker_name_route_relabels_and_enrolls_only_the_owner_voiceprin
             "transcript_version": 2,
         }
         assert isinstance(named.json()["voiceprint_id"], str)
+        assert noted == [(meeting_id, "speaker-0001")]
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["transcript"]["segments"][0]["speaker"] == "Alex"
         assert meeting["transcript"]["segments"][0]["speaker_entity_id"] == "speaker-0001"
