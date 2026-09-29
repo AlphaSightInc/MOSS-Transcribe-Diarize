@@ -87,9 +87,22 @@ run used the preceding WP1 base `f0a3fe54`, with the same Balanced/off settings
 and WP2 gate code. Per-run receipts and replay manifests are in
 `/Users/gao/Documents/Codex/2026-09-28/moss-gemini/evidence/P66/wp2/`.
 
-The separate 302 s public E1 two-lane HTTP replay **fails** its ≤4 labels at
-Stop gate: five IDs appear (four system, one Local). System `speaker-0003`
+The initial separate 302 s public E1 two-lane HTTP replay **failed** its ≤4
+labels at Stop gate: five IDs appeared (four system, one Local). System `speaker-0003`
 has one 0.2 s “Yeah.” row at 211.0–211.2 s. E1 cost $0.158413. This is a
-system-lane continuity result and remains open with WP1/lead. The direct E1
-text-gate prototype's stray-mic-word check (0→0) addresses a different
-falsifier and does not override this Stop-label failure.
+system-lane continuity result. The direct E1 text-gate prototype's
+stray-mic-word check (0→0) addressed a different falsifier.
+
+After WP1's Stop-time orphan resolution at `353468f4`, a new paced E1 HTTP
+run **passed** with four Stop labels (three system, one Local), cost $0.155409.
+The 211.0–211.2 s “Yeah.” remained with its timing and text, assigned to an
+existing speaker in the new run. `orphan_speakers_absorbed=0` and
+`orphan_relabel_refused=0`: provider variation meant this HTTP run did not
+exercise orphan resolution. WP1's focused unit tests and public-audio encoder
+probe provide direct evidence for that branch; the original five-label E1
+failure remains in the receipts. Both E1 receipts are in the evidence folder
+above.
+
+Total WP2 measured provider spend: **$1.079334** across the earlier headphone
+smoke replay, three acceptance variants, two E1 HTTP replays, and the direct
+Gemini text-gate probes. This remains below the $5 work-package cap.
