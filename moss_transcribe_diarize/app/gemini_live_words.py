@@ -140,7 +140,8 @@ class _LiveCore:
         self.sent_samples = max(self.sent_samples, end_sample)
         seconds = len(pcm16) / (2 * LIVE_SAMPLE_RATE)
         self.report(kind="live_preview", count_call=False, audio_seconds_sent=seconds,
-                    cost_usd=seconds * 0.005 / 60, cost_basis="list_price_estimate")
+                    cost_usd=seconds * 0.005 / 60, cost_basis="list_price_estimate",
+                    output_cost_estimate_usd=seconds * .004 / 60)
         await self.session.send_realtime_input(
             audio=types.Blob(data=pcm16, mime_type="audio/pcm;rate=16000"))
 

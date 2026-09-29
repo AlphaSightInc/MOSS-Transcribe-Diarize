@@ -411,6 +411,9 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
     file_runner = object()
     live_runtime_factory = object()
     app = object()
+    summary_generator = object()
+    from moss_transcribe_diarize.app.phase2_llm import GeminiSummaryGenerator
+    monkeypatch.setattr(GeminiSummaryGenerator, "from_local_key", lambda: summary_generator)
 
     monkeypatch.setattr(phase2_web_cli, "_build_file_runner", lambda args: file_runner)
     monkeypatch.setattr(
@@ -477,6 +480,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
 
     app_arguments = dict(seen["app"])
     inference_scheduler = app_arguments.pop("inference_scheduler")
+    assert app_arguments.pop("summary_generator") is summary_generator
     from moss_transcribe_diarize.app.inference_scheduler import InferenceDispatchScheduler
 
     assert isinstance(inference_scheduler, InferenceDispatchScheduler)

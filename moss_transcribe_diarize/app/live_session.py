@@ -723,6 +723,7 @@ class LiveSession:
         end_sample: int,
         base_text_revision_version: int,
         segments: Sequence[EffectiveTranscriptSegment],
+        source_lane: str | None = None,
     ) -> TextRevisionOutcome:
         """Repair rolling speaker attribution, preserving every published word exactly.
 
@@ -745,10 +746,12 @@ class LiveSession:
         indices = [
             index for index, row in enumerate(old)
             if row.start_sample < end_sample and row.end_sample > start_sample
+            and (source_lane is None or row.source_lane == source_lane)
         ]
-        if not indices or indices != list(range(indices[0], indices[-1] + 1)):
+        if not indices or (source_lane is None and
+                           indices != list(range(indices[0], indices[-1] + 1))):
             return refuse("rolling_interval_not_owned")
-        selected = old[indices[0]:indices[-1] + 1]
+        selected = tuple(old[index] for index in indices)
         if (selected[0].start_sample, selected[-1].end_sample) != (start_sample, end_sample):
             return refuse("rolling_interval_not_owned")
         replacement = tuple(segments)
@@ -769,7 +772,14 @@ class LiveSession:
             if row.canonical_speaker is not None and row.canonical_speaker not in speakers:
                 return refuse("unknown_canonical_speaker")
             previous_end = row.end_sample
-        self._revision_segments = old[:indices[0]] + replacement + old[indices[-1] + 1:]
+        if source_lane is None:
+            self._revision_segments = old[:indices[0]] + replacement + old[indices[-1] + 1:]
+        else:
+            selected_indices = set(indices)
+            retained = (row for index, row in enumerate(old) if index not in selected_indices)
+            lane_order = {None: 0, "system": 0, "microphone": 1}
+            self._revision_segments = tuple(sorted((*retained, *replacement),
+                key=lambda row: (row.start_sample, lane_order[row.source_lane], row.end_sample)))
         self._text_revision_version += 1
         self._label_revision_version += 1
         self._surface_version += 1

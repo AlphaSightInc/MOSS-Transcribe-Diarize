@@ -11,7 +11,7 @@ from typing import Callable, Protocol, Sequence
 
 from scipy.optimize import linear_sum_assignment
 
-from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
+from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRelabel, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
 from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
@@ -232,12 +232,14 @@ class GeminiHybridEngine:
         self._committed = 0
         self._rolling_frontier = 0
         self._last_rolling_turn: GeminiSegment | None = None
+        self._speakerless_rows: list[GeminiSegment] = []
         self._last_window_end = 0
         self._last_preview_end = 0
         self._fast_words: list[GeminiWord] = []
         self._live_finals: list[GeminiWord] = []
         self._live_interim: GeminiWord | None = None
         self._stopping = False
+        self._tail_recovery_started = False
         self._closed = False
         self._last_ingress_at = 0.0
         self._idle_timer: threading.Timer | None = None
@@ -338,6 +340,16 @@ class GeminiHybridEngine:
         self._live_finals = [w for w in self._live_finals if w.end_sample > through]
 
     def _work(self) -> None:
+        # A worker exception otherwise stays inside the Future and labels silently stop advancing.
+        try:
+            self._work_loop()
+        except Exception as exc:
+            if self.report_usage is not None:
+                self.report_usage(kind="rolling", count_call=False,
+                                  error_code=f"worker_{type(exc).__name__}"[:64])
+            raise
+
+    def _work_loop(self) -> None:
         # Every loop inspects the latest accepted position. Slow calls are coalesced, not queued.
         while True:
             with self._lock:
@@ -371,6 +383,8 @@ class GeminiHybridEngine:
                 words, fallback = self._decode_covered_window(
                     pcm, start, voice_start, deadline=time.monotonic() + 120)
                 with self._lock:
+                    if self._tail_recovery_started:
+                        return
                     if (self._stopping or self._idle_due) and end == self._accepted:
                         # This in-flight call already spans the Stop suffix.
                         # Publish its held-back ten seconds instead of making
@@ -408,10 +422,11 @@ class GeminiHybridEngine:
 
     def _publish_window(self, start: int, frontier: int, pcm: bytes,
                         words: Sequence[GeminiWord],
-                        fallback: Sequence[GeminiWord] = ()) -> None:
+                        fallback: Sequence[GeminiWord] = (), *,
+                        gate_words: bool = True) -> None:
         absolute = tuple(GeminiWord(w.text, w.speaker, w.start_sample + start,
                                      w.end_sample + start) for w in words)
-        if self.word_gate is not None:
+        if gate_words and self.word_gate is not None:
             absolute = self.word_gate.filter(pcm, absolute, offset_sample=start)
         observe_batch = getattr(self.word_source, "observe_batch_words", None)
         if callable(observe_batch):
@@ -420,9 +435,13 @@ class GeminiHybridEngine:
             self.word_observer(absolute, frontier)
         embeddings = (self.embedding_source(pcm, start, absolute)
                       if self.embedding_source is not None else {})
+        prior_vetoes = getattr(self.registry, "veto_fired", 0)
         mapping, relabels = self.registry.observe_window(
             start / LIVE_SAMPLE_RATE, absolute, embeddings,
             committed_through_sample=frontier)
+        vetoes = getattr(self.registry, "veto_fired", 0) - prior_vetoes
+        if vetoes and self.report_usage is not None:
+            self.report_usage(kind="rolling", count_call=False, veto_fired=vetoes)
         observations = ()
         if self.encoder_spec is not None:
             spec = self.encoder_spec
@@ -434,6 +453,8 @@ class GeminiHybridEngine:
             ) for local, (vector, seconds) in embeddings.items()
               if mapping.get(local) is not None)
         with self._lock:
+            if self._tail_recovery_started and gate_words:
+                return
             old = self._rolling_frontier
             if frontier > old:
                 if frontier > self._committed:
@@ -457,7 +478,8 @@ class GeminiHybridEngine:
                                                  if obs.speaker_label in visible),
                                            (self.source_lane,) if self.source_lane else ()))
                 prior = self._last_rolling_turn
-                if (prior is not None and rows and prior.speaker == rows[0].speaker
+                if (prior is not None and rows and prior.speaker is not None
+                        and prior.speaker == rows[0].speaker
                         and prior.source_lane == rows[0].source_lane
                         and 0 < rows[0].start_sample - prior.end_sample <= round(1.5 * LIVE_SAMPLE_RATE)):
                     self.publish(GeminiTurnBridge(prior.start_sample, prior.end_sample,
@@ -467,6 +489,21 @@ class GeminiHybridEngine:
                 self._rolling_frontier = frontier
                 self._live_finals = [w for w in self._live_finals if w.end_sample > self._committed]
                 self._fast_words = [w for w in self._fast_words if w.end_sample > self._committed]
+            remaining = []
+            for row in self._speakerless_rows:
+                candidates = [(min(row.end_sample, word.end_sample)
+                               - max(row.start_sample, word.start_sample), mapping[word.speaker])
+                              for word in absolute if mapping[word.speaker] is not None]
+                overlap, speaker = max(candidates, default=(0, None))
+                if overlap > 0:
+                    revised = GeminiSegment(row.start_sample, row.end_sample, row.text,
+                                            speaker, row.source_lane)
+                    self.publish(GeminiRelabel(row.start_sample, row.end_sample, (revised,)))
+                else:
+                    remaining.append(row)
+            self._speakerless_rows = remaining
+            if frontier > old:
+                self._speakerless_rows.extend(row for row in rows if row.speaker is None)
             for update in relabels:
                 self.publish(update)
 
@@ -499,6 +536,24 @@ class GeminiHybridEngine:
         except Exception:
             return False
         self._publish_window(start, accepted, pcm, words, fallback)
+        return self._rolling_frontier >= accepted
+
+    async def recover_tail(self, tape: CompleteMixedTape, deadline: float) -> bool:
+        with self._lock:
+            self._tail_recovery_started = True
+            start, accepted = self._rolling_frontier, self._accepted
+        if start >= accepted:
+            return True
+        pcm = tape.read(start_sample=start, end_sample=accepted)
+        rows = await asyncio.wait_for(asyncio.to_thread(
+            self.terminal.transcribe_interval, tape, start, accepted), timeout=deadline)
+        if (getattr(self.terminal, "coverage_gaps", ()) or
+                not rows and self.voiced_audio is not None and self.voiced_audio(pcm)):
+            return False
+        words = tuple(GeminiWord(row.text, row.speaker or "spk:?",
+                                 row.start_sample - start, row.end_sample - start)
+                      for row in rows)
+        self._publish_window(start, accepted, pcm, words, gate_words=False)
         return self._rolling_frontier >= accepted
 
     async def finish(self, tape: CompleteMixedTape) -> Sequence[GeminiSegment]:

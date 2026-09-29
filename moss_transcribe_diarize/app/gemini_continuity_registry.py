@@ -9,6 +9,8 @@ from scipy.optimize import linear_sum_assignment
 from .gemini_provider import GeminiWord
 from .live_span_bounds import LIVE_SAMPLE_RATE
 
+VETO_MARGIN = .20
+
 
 def _cosine(left: Sequence[float], right: Sequence[float]) -> float:
     norm = math.sqrt(sum(x*x for x in left) * sum(x*x for x in right))
@@ -19,11 +21,14 @@ class ContinuityRegistry:
     """One session's overlap evidence and visible-birth state."""
 
     def __init__(self, *, embedding_threshold: float, within_window_threshold: float,
-                 birth_min_seconds: float, min_overlap_seconds: float = .3):
+                 birth_min_seconds: float, min_overlap_seconds: float = .3,
+                 id_prefix: str = "speaker"):
         self.embedding_threshold = embedding_threshold
         self.within_window_threshold = within_window_threshold
         self.birth_min_samples = round(birth_min_seconds * LIVE_SAMPLE_RATE)
         self.min_overlap_samples = round(min_overlap_seconds * LIVE_SAMPLE_RATE)
+        self.id_prefix = id_prefix
+        self.veto_fired = 0
         self._previous: list[GeminiWord] = []
         self._centroids: dict[str, tuple[float, ...]] = {}
         self._next_id = 1
@@ -90,13 +95,38 @@ class ContinuityRegistry:
             for row, column in zip(rows, columns, strict=True):
                 if column < len(old_ids) and weights[row][column] > 0:
                     mapped_groups[representatives[row]] = old_ids[column]
+            contested = False
+            for label, assigned in mapped_groups.items():
+                if label not in group_vectors or assigned not in self._centroids:
+                    continue
+                assigned_cos = _cosine(group_vectors[label], self._centroids[assigned])
+                if any(mid != assigned and mid in self._centroids and
+                       (cos := _cosine(group_vectors[label], self._centroids[mid]))
+                       >= self.embedding_threshold and cos - assigned_cos >= VETO_MARGIN
+                       for mid in old_ids):
+                    contested = True
+                    break
+            if contested:
+                self.veto_fired += 1
+                revised = [[(_cosine(group_vectors[label], self._centroids[mid])
+                             if mid in self._centroids and
+                             _cosine(group_vectors[label], self._centroids[mid]) >= self.embedding_threshold
+                             else 0)
+                            for mid in old_ids] + [0] * len(representatives)
+                           if label in group_vectors else weights[i]
+                           for i, label in enumerate(representatives)]
+                rows, columns = linear_sum_assignment([[-value for value in row] for row in revised])
+                mapped_groups.clear()
+                for row, column in zip(rows, columns, strict=True):
+                    if column < len(old_ids) and revised[row][column] > 0:
+                        mapped_groups[representatives[row]] = old_ids[column]
         for label in representatives:
             if label in mapped_groups:
                 continue
             speech = sum(max(0, word.end_sample - word.start_sample)
                          for word in words if group_by_label[word.speaker] == label)
             if speech >= self.birth_min_samples:
-                mapped_groups[label] = f"speaker-{self._next_id:04d}"
+                mapped_groups[label] = f"{self.id_prefix}-{self._next_id:04d}"
                 self._next_id += 1
             else:
                 closest = max(((support[(label, mid)], mid) for mid in old_ids),

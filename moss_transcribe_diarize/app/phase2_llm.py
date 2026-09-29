@@ -12,12 +12,82 @@ import ipaddress
 import json
 import math
 import os
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
 import httpx
 from fastapi import HTTPException
 from starlette.requests import Request
+
+
+class InvalidSummaryOutput(ValueError):
+    """The provider answered, but not with parseable JSON; usage was still incurred."""
+
+    def __init__(self, usage):
+        super().__init__("Gemini summary output is not valid JSON.")
+        self.usage = usage
+
+
+class GeminiSummaryGenerator:
+    """Generate a transcript-only JSON briefing with the server's Gemini key."""
+
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+
+    @classmethod
+    def from_local_key(cls):
+        key_path = Path(__file__).resolve().parents[2] / ".env.local"
+        key = None
+        if key_path.exists():
+            for line in key_path.read_text(encoding="utf-8").splitlines():
+                if line.startswith("GEMINI_API_KEY="):
+                    key = line.partition("=")[2].strip()
+                    break
+        key = key or os.environ.get("MOSS_GEMINI_API_KEY")
+        return cls(key) if key else None
+
+    async def __call__(self, document, *, model: str, language: str, prompt: str):
+        from google import genai
+        from google.genai import types
+        from .phase2_summary import SUMMARY_PRICES
+
+        def timestamp(seconds):
+            whole = math.floor(float(seconds))
+            return f"{whole // 3600:02d}:{whole // 60 % 60:02d}:{whole % 60:02d}"
+
+        rows = sorted(document["segments"], key=lambda row: (row["start"], row["end"]))
+        source = {"segments": [
+            {**({"source_lane": row["source_lane"]} if row.get("source_lane") else {}),
+             "start": timestamp(row["start"]), "end": timestamp(row["end"]),
+             "speaker": row["speaker"], "text": row["text"]}
+            for row in rows]}
+        instruction = f"{prompt}{f'\nWrite the final briefing in {language.strip()}.' if language.strip() else ''}"
+        client = genai.Client(api_key=self.api_key)
+        try:
+            response = await wait_for(client.aio.models.generate_content(
+                model=model, contents=json.dumps(source, ensure_ascii=False),
+                config=types.GenerateContentConfig(system_instruction=instruction,
+                                                   response_mime_type="application/json", temperature=0),
+            ), timeout=180)
+        finally:
+            await client.aio.aclose()
+        metadata = response.usage_metadata
+        input_tokens = metadata.prompt_token_count
+        candidate_tokens = metadata.candidates_token_count
+        thought_tokens = metadata.thoughts_token_count or 0
+        if (type(input_tokens) is not int or input_tokens < 0
+                or type(candidate_tokens) is not int or candidate_tokens < 0
+                or type(thought_tokens) is not int or thought_tokens < 0):
+            raise ValueError("Gemini usage metadata is incomplete.")
+        output_tokens = candidate_tokens + thought_tokens
+        input_rate, output_rate = SUMMARY_PRICES[model]
+        usage = {"model": model, "input_tokens": input_tokens, "output_tokens": output_tokens,
+                 "cost_usd": round((input_tokens * input_rate + output_tokens * output_rate) / 1_000_000, 9)}
+        try:
+            return json.loads(response.text or ""), usage
+        except ValueError as exc:
+            raise InvalidSummaryOutput(usage) from exc
 
 
 @dataclass(frozen=True)

@@ -49,6 +49,9 @@ def test_window_request_repairs_invalid_offsets_and_reports_every_attempt():
     assert usage[1]["clamped_words"] == usage[1]["dropped_words"] == 1
     assert sum(row["audio_seconds_sent"] for row in usage) == 2
     assert usage[1]["cost_usd"] == pytest.approx(0.00032)
+    assert usage[1]["metered_output_usd"] == pytest.approx(0.00012)
+    assert usage[1]["cost_usd"] - usage[1]["metered_output_usd"] == pytest.approx(0.00020)
+    assert sum(row["output_cost_estimate_usd"] for row in usage) == pytest.approx(2 / 60 * .002)
 
 
 @pytest.mark.parametrize("kind", ["rolling", "terminal"])
@@ -76,6 +79,24 @@ def test_terminal_overlap_maps_local_labels_and_keeps_one_owner(tmp_path):
     assert [row.text for row in rows] == ["a", "b c"]
     assert len({row.speaker for row in rows}) == 1
     assert [row.start_sample for row in rows] == [0, 48000]
+    tape.release()
+
+
+def test_terminal_interval_sends_only_uncovered_tail_and_offsets_rows(tmp_path):
+    seen = []
+    class Diarizer:
+        def diarize(self, pcm, *, deadline, kind, diarize=True):
+            seen.append(len(pcm)//2)
+            return GeminiWords((GeminiWord("tail", "spk:0", 16000, 32000),))
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=20*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(20*32000))
+    terminal = TerminalTranscriber(Diarizer(), source_lane="system")
+    rows = terminal.transcribe_interval(tape, 10*16000, 20*16000)
+    assert seen == [10*16000]
+    assert [(row.text, row.start_sample, row.end_sample, row.source_lane)
+            for row in rows] == [("tail", 11*16000, 12*16000, "system")]
+    assert [(row.start_sample, row.end_sample) for row in terminal.last_words] == [
+        (11*16000, 12*16000)]
     tape.release()
 
 
@@ -392,3 +413,12 @@ def test_terminal_applies_selected_identity_and_word_gate_before_turns(tmp_path)
     assert [(r.text, r.speaker) for r in rows] == [("a", "one")]
     assert len(fake.requests) == 1
     tape.release()
+
+
+def test_fully_overlapping_tail_word_keeps_the_lane_of_the_row_it_joins():
+    from moss_transcribe_diarize.app.gemini_live_runtime import GeminiSegment
+    from moss_transcribe_diarize.app.gemini_provider import ordered_segments
+    rows = ordered_segments((GeminiSegment(0, 10, "whole", "S1", "system"),
+                             GeminiSegment(4, 6, "inside", "S1", "system")),
+                            start_sample=0, end_sample=10)
+    assert [(row.text, row.source_lane) for row in rows] == [("whole inside", "system")]
