@@ -7,6 +7,7 @@ import type {
   WsEvent
 } from "./types";
 import { SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
+import type { ProvisionalDisplaySegment, TentativeSpan } from "../lib/tentative";
 import { dispatchWsEvent } from "./ws";
 
 const CAPTURING_POLL_DELAY_MS = 100;
@@ -38,6 +39,8 @@ interface MossProvisionalSuffix {
   generation: number;
   startSample: number;
   transcript: string;
+  tentativeSpans: TentativeSpan[];
+  segments: ProvisionalDisplaySegment[];
 }
 
 interface MossSnapshot {
@@ -484,6 +487,8 @@ function renderSnapshot(
       seq: sequence,
       timestamp: new Date().toISOString(),
       items,
+      tentative_spans: provisional?.tentativeSpans ?? [],
+      provisional_segments: provisional?.segments ?? [],
       metadata: { operation: "snapshot" }
     },
     relabelEvent: relabeled
@@ -815,7 +820,30 @@ function parseProvisionalSuffix(value: unknown): MossProvisionalSuffix {
   return {
     generation: requiredNonNegativeNumber(provisional.generation, "provisional generation"),
     startSample: requiredNonNegativeNumber(provisional.start_sample, "provisional start_sample"),
-    transcript: requiredTextField(provisional.transcript, "provisional transcript")
+    transcript: requiredTextField(provisional.transcript, "provisional transcript"),
+    tentativeSpans: Array.isArray(provisional.tentative_spans)
+      ? provisional.tentative_spans.map((value) => {
+          const span = record(value, "tentative span");
+          return {
+            start_sample: requiredNonNegativeNumber(span.start_sample, "tentative start_sample"),
+            end_sample: requiredNonNegativeNumber(span.end_sample, "tentative end_sample"),
+            source_lane: requiredTextField(span.source_lane, "tentative source_lane"),
+            speaker: requiredTextField(span.speaker, "tentative speaker")
+          };
+        })
+      : [],
+    segments: Array.isArray(provisional.segments)
+      ? provisional.segments.map((value) => {
+          const segment = record(value, "provisional segment");
+          return {
+            start_sample: requiredNonNegativeNumber(segment.start_sample, "provisional segment start_sample"),
+            end_sample: requiredNonNegativeNumber(segment.end_sample, "provisional segment end_sample"),
+            text: requiredTextField(segment.text, "provisional segment text"),
+            source_lane: requiredTextField(segment.source_lane, "provisional segment source_lane"),
+            tentative_speaker: optionalString(segment.tentative_speaker)
+          };
+        })
+      : []
   };
 }
 
