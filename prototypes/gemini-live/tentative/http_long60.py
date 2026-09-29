@@ -12,9 +12,33 @@ from pathlib import Path
 import sys
 import time
 
-HARNESS = Path(__file__).resolve().parents[1] / "harness"
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT))
+import moss_transcribe_diarize  # noqa: E402
+
+# Reuse WP6's read-only HTTP client, snapshot cadence, and tentative scorer.
+# Preloading the package above keeps client-side snapshot parsing on this WP4 tree.
+WP6_HARNESS = Path("/Users/gao/Desktop/AI_Projects/Github_Projects/"
+                   "MOSS-Transcribe-Diarize-wt-r2-int/prototypes/gemini-live/harness")
+sys.path.insert(0, str(WP6_HARNESS))
+import run_quality as wp6_quality  # noqa: E402
+HARNESS = ROOT / "prototypes/gemini-live/harness"
 sys.path.insert(0, str(HARNESS))
 import run_long60  # noqa: E402
+
+if not Path(moss_transcribe_diarize.__file__).resolve().is_relative_to(ROOT):
+    raise RuntimeError("long60 HTTP client must parse snapshots with the WP4 package")
+if not issubclass(run_long60.ProgressCapture, wp6_quality.TimedSurfaceCapture):
+    raise RuntimeError("long60 capture did not bind the WP6 snapshot client")
+
+
+def _wp6_adapter(**kwargs):
+    return wp6_quality.SettingsReplayService(
+        **kwargs, engine_settings={"speaker_window": "balanced",
+                                   "cleanup_after_stop": False})
+
+
+run_long60.AccountCookieLiveReplayService = _wp6_adapter
 
 
 def _poll_with_guesses(self):
@@ -34,6 +58,7 @@ def _poll_with_guesses(self):
                 if raw["session"]["status"] == "active":
                     wall = time.monotonic() - self._started
                     self.probe.observe(raw, wall)
+                    self.tentative.observe(raw)
                     provisional = raw["session"].get("provisional") or {}
                     for row in provisional.get("segments", ()):
                         key = (row["start_sample"], row["end_sample"], row["source_lane"])
@@ -54,5 +79,19 @@ def _poll_with_guesses(self):
             tick += 1
 
 
+_wp6_finish = run_long60.ProgressCapture.finish
+
+
+def _finish_with_wp6_tentative(self):
+    _wp6_finish(self)
+    final = self.inner.captures.get("post_stop_final")
+    if final is not None:
+        from corpus import clips
+        clip, = clips("long60")
+        run_long60.write_json(self.out / "tentative-wp6.json",
+            self.tentative.result(clip.reference_segments(), final["snapshot"]))
+
+
 run_long60.ProgressCapture._poll = _poll_with_guesses
+run_long60.ProgressCapture.finish = _finish_with_wp6_tentative
 run_long60.main()
