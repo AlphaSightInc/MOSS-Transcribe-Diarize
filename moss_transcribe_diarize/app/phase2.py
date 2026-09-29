@@ -1975,6 +1975,7 @@ def create_phase2_app(
     file_audio_archive: Any | None = None,
     control_socket_path: str | Path | None = None,
     llm_upstreams: str | None = None,
+    summary_generator: Any | None = None,
     open_workspace: bool = False,
     inference_scheduler: Any | None = None,
 ):
@@ -2109,6 +2110,7 @@ def create_phase2_app(
                 store, phase2_live,
                 file_evidence=getattr(getattr(file_runner, "identity_resolver", None),
                                       "enrollment_observation", None),
+                live_evidence=getattr(file_runner, "live_enrollment_observation", None),
                 audio_archive=audio_archive,
             )
             app.state.phase2_speaker_identity = speaker_identity
@@ -2287,7 +2289,7 @@ def create_phase2_app(
         )
 
     from .phase2_summary import attach_summary_routes
-    attach_summary_routes(app, require_account)
+    attach_summary_routes(app, require_account, summary_generator)
     from .phase2_llm import attach_llm_routes
     attach_llm_routes(app, require_account, llm_upstreams)
 

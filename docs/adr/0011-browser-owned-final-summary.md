@@ -76,3 +76,19 @@ remain untouched: choose **Restore default prompt**, then **Save on this browser
 to adopt the clarification after deployment. Existing user-customized prompts
 retain their own output-quality risks. Evidence and limitations:
 `docs/audits/relay-thinking-models-20260911.md`.
+
+## 2026-09-29 — Server Gemini summaries for the Gemini engine
+
+The Gemini engine may use the server's Gemini key for summary inference. An owner-bound
+`/summary/live` request reads the current effective live transcript, requires at least
+40 words, and returns a five-field briefing with its source revision; it never writes an
+artifact. The browser may request one about every 60 seconds. `/summary/server` reads
+the completed Meeting's authoritative transcript at the requested exact version, applies
+the existing five-field validation, and saves the same `final_summary` artifact and
+automatic title as the browser worker. Only one generation per Meeting may be active.
+
+The V15 prompt is the default for both paths. The browser may send prompt, language,
+and an allow-listed Gemini model with each request. Those settings remain transient.
+The existing browser-owned External path and configured key-less relay remain available;
+their credentials and settings do not move to the server. Server output quality and
+rolling cadence require the round-2 Q-SUM qualification evidence before product claims.

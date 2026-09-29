@@ -73,6 +73,51 @@ def test_stop_drain_requests_and_publishes_remaining_rolling_window():
     engine.close()
 
 
+def test_terminal_recovery_merges_only_uncovered_rolling_tail(tmp_path):
+    updates = []
+    seen = []
+    class TailTerminal:
+        def transcribe_interval(self, tape, start, end):
+            seen.append((start, end, len(tape.read(start_sample=start, end_sample=end))))
+            return (GeminiSegment(12*16000, 13*16000, "tail", "terminal-0001", "system"),)
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(), window_scheduler=FixedWindowScheduler(),
+        registry=OverlapRegistry(), diarizer=FakeDiarizer(), terminal=TailTerminal(),
+        source_lane="system")
+    with engine._lock:
+        engine._accepted = 20*16000
+        engine._committed = 10*16000
+        engine._rolling_frontier = 10*16000
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=20*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(20*32000))
+    assert asyncio.run(engine.recover_tail(tape, 1.0))
+    assert seen == [(10*16000, 20*16000, 10*32000)]
+    rolls = [u for u in updates if isinstance(u, GeminiRolling)]
+    assert [(u.start_sample, u.end_sample) for u in rolls] == [(10*16000, 20*16000)]
+    assert [(r.text, r.start_sample, r.end_sample) for r in rolls[0].segments] == [
+        ("tail", 12*16000, 13*16000)]
+    engine.close()
+    tape.release()
+
+
+def test_terminal_recovery_empty_voiced_tail_does_not_claim_coverage(tmp_path):
+    class EmptyTerminal:
+        coverage_gaps = ()
+        def transcribe_interval(self, tape, start, end): return ()
+    engine = GeminiHybridEngine(
+        lambda update: None, word_source=FakeWords(),
+        window_scheduler=FixedWindowScheduler(), registry=OverlapRegistry(),
+        diarizer=FakeDiarizer(), terminal=EmptyTerminal(), voiced_audio=lambda pcm: True)
+    with engine._lock:
+        engine._accepted = 16000
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(32000))
+    assert not asyncio.run(engine.recover_tail(tape, 1.0))
+    assert engine._rolling_frontier == 0
+    engine.close()
+    tape.release()
+
+
 def test_music_shaped_window_without_preview_words_advances_without_retry():
     from moss_transcribe_diarize.app.gemini_lane_engine import WebRtcSpeechDetector
     import wave
@@ -284,6 +329,33 @@ def test_silent_microphone_skips_batch_calls_then_births_one_local_speaker():
            for row in update.segments]
     assert [(row.text, row.speaker, row.source_lane) for row in mic] == [
         ("local", "speaker-microphone", "microphone")]
+    engine.close()
+
+
+def test_diarized_microphone_window_births_two_local_ids():
+    from moss_transcribe_diarize.app.gemini_continuity_registry import ContinuityRegistry
+    calls = []
+    updates = []
+    class MicDiarizer:
+        def diarize(self, pcm, *, deadline, kind, diarize=True):
+            calls.append(diarize)
+            return GeminiWords((
+                GeminiWord("first", "C", 0, 3*16000),
+                GeminiWord("second", "D", 4*16000, 7*16000)))
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=30, stride_seconds=15),
+        registry=ContinuityRegistry(embedding_threshold=.46,
+                                    within_window_threshold=.60,
+                                    birth_min_seconds=2, id_prefix="local"),
+        diarizer=MicDiarizer(), terminal=FakeTerminal(),
+        source_lane="microphone", voiced_audio=lambda pcm: any(pcm),
+        diarize_windows=True)
+    engine.push_audio(0, b"\x01\x00" * (15*16000))
+    engine._future.result(timeout=5)
+    assert calls == [True]
+    assert {row.speaker for update in updates if isinstance(update, GeminiRolling)
+            for row in update.segments} == {"local-0001", "local-0002"}
     engine.close()
 
 
