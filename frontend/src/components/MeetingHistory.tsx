@@ -10,6 +10,7 @@ import type { SessionLifecycle, TranscriptItem } from "../api/types";
 import { dispatchWsEvent } from "../api/ws";
 import {
   filterMeetings,
+  formatMeetingDuration,
   formatMeetingTimestamp,
   groupMeetings,
   meetingTitle,
@@ -229,7 +230,6 @@ export function MeetingHistory() {
 
         {historyView.value === "sessions" ? <>
         {error ? <p className="history-state-card is-error" role="alert">{error}</p> : null}
-        {selected ? <p className="hint" role="status">Selected: {meetingTitle(selected)}. <a href="#transcript-panel">View selected transcript and export</a></p> : null}
         {selected && (selected.failure_reason || selected.notice) && <p role="status">{selected.failure_reason || selected.notice}</p>}
         {loading && meetings.length === 0 ? (
           <p className="history-state-card" role="status">Loading meetings…</p>
@@ -269,7 +269,7 @@ export function MeetingHistory() {
                             {meeting.failure_reason || meeting.notice || meetingPreview(meeting)}
                           </span>
                         </span>
-                        <span className="history-count-chip">v{meeting.transcript_version}</span>
+                        {formatMeetingDuration(meeting) ? <span className="history-duration-chip">{formatMeetingDuration(meeting)}</span> : null}
                       </span>
                     </button>
                     <div className="history-card-actions">

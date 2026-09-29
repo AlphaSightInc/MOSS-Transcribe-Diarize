@@ -153,7 +153,7 @@ describe("MeetingHistory", () => {
     await act(async () => render(<MeetingHistory />, history));
     await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: "imported" } })); });
     await vi.waitFor(() => expect(scroll).toHaveBeenCalledOnce());
-    expect(history.textContent).toContain("Selected: Imported review");
+    expect(history.querySelector('[data-open-meeting="imported"]')?.getAttribute("aria-pressed")).toBe("true");
     await act(async () => { document.dispatchEvent(new Event(MEETING_HISTORY_REFRESH_EVENT)); });
     expect(scroll).toHaveBeenCalledOnce();
     sessionId.value = "new-live";
@@ -295,7 +295,7 @@ describe("MeetingHistory", () => {
       expect(root.querySelector("#tr-body")?.textContent).toContain("first words")
     );
 
-    expect(root.querySelector('a[href="#transcript-panel"]')?.textContent).toBe("View selected transcript and export");
+    expect(root.querySelector('[data-open-meeting="export-meeting"]')?.getAttribute("aria-pressed")).toBe("true");
     expect(root.querySelector("#transcript-panel")).not.toBeNull();
     for (const format of ["md", "txt", "json"]) {
       act(() => { root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!.value = format;

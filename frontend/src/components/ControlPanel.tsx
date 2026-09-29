@@ -424,6 +424,7 @@ export function ControlPanel() {
 
   return (
     <section className="control-section controls-workspace" data-mode={mode}>
+      <div className="controls-scroll">
       <div className="controls-block"><span className="field-label">Mode</span>
         <div className="seg mode-tabs" role="group" aria-label="Mode">
           {(["live", "file", "url"] as const).map(choice => <button key={choice} type="button"
@@ -433,9 +434,12 @@ export function ControlPanel() {
       </div>
       {mode === "live" ? <>
       <div className="controls-primary">
-        {phase === "ready" ? <button type="button" className="record-btn" disabled={!canStart} onClick={() => void startCapture()}>Start recording</button> : null}
-        {phase === "active" ? <button type="button" className="record-btn" data-action="stop" onClick={() => void stopCapture()}>Stop and finalize</button> : null}
-          {phase === "idle" || phase === "configuring" ? <button type="button" className="record-btn" disabled>Start recording</button> : null}
+        {phase === "active" ? <button type="button" className="record-btn" data-action="stop" onClick={() => void stopCapture()}>Stop and finalize</button>
+          : phase === "stopping" ? <button type="button" className="record-btn" disabled>Finalizing…</button>
+          : phase === "viewing" || phase === "terminal" || phase === "error" ? null
+          : !connected.microphone ? <button type="button" className="record-btn" disabled={phase === "configuring"} onClick={() => void configureMicrophone()}>{phase === "configuring" ? "Connecting microphone…" : "Enable microphone"}</button>
+          : !connected.system ? <button type="button" className="record-btn" onClick={() => void shareAudio()}>Share audio</button>
+          : <button type="button" className="record-btn" disabled={!canStart} onClick={() => void startCapture()}>Start recording</button>}
       </div>
       <div className="controls-block live-mode-section">
       <div
@@ -445,8 +449,7 @@ export function ControlPanel() {
       data-observer-mode={reattached ? "read-only" : "none"}
     >
       <div className="label">Capture · Microphone + shared audio</div>
-      <p className="hint">Both sources are required to start. Microphone-only capture is not available.</p>
-      <p className="capture-security-note">Private to this browser; no sign-in or capture key is needed.</p>
+      <p className="hint">Microphone and shared audio are required. Private to this browser.</p>
 
       <label className="field-label" htmlFor="audio-route">Listening setup</label>
       <div className="field">
@@ -462,7 +465,7 @@ export function ControlPanel() {
         </select>
       </div>
       <p className="hint">
-        How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
+        Speakers cancel echo; headphones preserve microphone audio.
       </p>
 
       <label className="field-label" htmlFor="microphone-select">Microphone</label>
@@ -485,34 +488,13 @@ export function ControlPanel() {
         <p className="hint" data-capture-readiness>{readiness}</p>
       ) : null}
 
-      {!configured && !reattached ? (
-        <button
-          type="button"
-          className="record-btn"
-          onClick={() => void configureMicrophone()}
-        >
-          <span>Enable microphone</span>
-        </button>
-      ) : null}
-
-      {configured && (phase === "configuring" || canReplace) ? (
+      {phase === "configuring" || phase === "terminal" || phase === "error" ? <button type="button" className="btn" onClick={() => void resetCapture()}>Reset capture</button> : null}
+      {phase === "viewing" ? <button type="button" className="btn" onClick={() => void resetCapture()}>Detach transcript</button> : null}
+      {configured && connected.microphone && (phase === "configuring" || canReplace) ? (
         <div className="btn-row">
-          <button type="button" className="btn" onClick={() => void switchMicrophone()}>
-            Switch mic
-          </button>
-          <button type="button" className="btn" onClick={() => void shareAudio()}>
-            {connected.system ? "Reshare audio" : "Share audio"}
-          </button>
+          <button type="button" className="btn" onClick={() => void switchMicrophone()}>Switch mic</button>
+          {connected.system ? <button type="button" className="btn" onClick={() => void shareAudio()}>Reshare audio</button> : null}
         </div>
-      ) : null}
-
-      {phase === "viewing" ? (
-        <button type="button" className="btn" onClick={() => void resetCapture()}>
-          Detach transcript
-        </button>
-      ) : null}
-      {phase === "terminal" || phase === "error" ? (
-        <button type="button" className="btn" onClick={() => void resetCapture()}>Reset capture</button>
       ) : null}
 
       <p className="capture-status" role="status">{
@@ -540,6 +522,7 @@ export function ControlPanel() {
           <p data-file-upload="status" role="status" /><ul data-file-upload="results" />
         </div>
       </form>}
+      </div>
       <div className="controls-block controls-export"><label className="field-label" htmlFor="meeting-export-format">Export</label>
         <div className="controls-export-row"><select id="meeting-export-format" aria-label="Export format" value={exportFormat}
           onChange={event => setExportFormat(event.currentTarget.value as TranscriptExportFormat | "audio")}>

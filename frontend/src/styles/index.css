@@ -3801,20 +3801,22 @@ button.legend-chip:disabled {
 }
 
 /* Round-2 workspace controls, settings, and in-card summary. */
-.controls-workspace { display: flex; flex-direction: column; min-height: 100%; gap: 0; }
+.control-panel .panel-body { overflow: hidden; }
+.controls-workspace { display: flex; flex-direction: column; height: 100%; min-height: 0; gap: 0; }
+.controls-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .controls-block { padding: 18px 0; border-bottom: 1px solid var(--line); }
 .controls-block:first-child { padding-top: 0; }
 .mode-tabs, .transcript-tabs { display: flex; width: 100%; }
 .mode-tabs .seg-btn, .transcript-tabs .seg-btn { flex: 1; }
-.controls-primary { padding: 20px 0 4px; }
+.controls-primary { padding: 16px 0 4px; }
 .controls-primary .record-btn, .controls-mode-form > .record-btn { width: 100%; }
-.live-mode-section { border-bottom: 0; }
-.live-mode-section .capture-supervisor { display: grid; gap: 10px; }
+.live-mode-section { border-bottom: 0; padding-top: 14px; }
+.live-mode-section .capture-supervisor { display: grid; gap: 8px; }
 .controls-mode-form { display: flex; flex-direction: column; }
 .controls-mode-form .controls-block { display: grid; gap: 8px; }
 .controls-mode-form input[type="url"], .controls-mode-form input[type="file"] { width: 100%; min-width: 0; }
 .controls-mode-form [data-file-upload="results"] { padding-left: 18px; overflow-wrap: anywhere; }
-.controls-export { margin-top: auto; border-top: 1px solid var(--line); border-bottom: 0; }
+.controls-export { flex: none; margin-top: 0; border-top: 1px solid var(--line); border-bottom: 0; padding: 12px 0 0; }
 .controls-export-row { display: flex; gap: 6px; }
 .controls-export-row select { flex: 1; min-width: 0; }
 .settings-trigger { border: 1px solid var(--line); border-radius: 9px; background: var(--surface); padding: 7px 10px; font-size: 18px; cursor: pointer; }
@@ -3851,8 +3853,15 @@ button.legend-chip:disabled {
 .tentative-card { opacity: .64; }
 .tentative-card .utt-speaker-label, .tentative-card .utt-text { font-style: italic; }
 .tentative-card .utt-speaker { cursor: default; }
-.phase2-workspace .settings-trigger { position: fixed; top: 20px; right: 28px; z-index: 80; }
-@media (max-width: 768px) { .phase2-workspace .settings-trigger { top: 12px; right: 12px; } }
+.phase2-workspace .topbar { position: relative; z-index: 2; }
+.phase2-workspace .top-right { justify-self: end; }
+.tr-body-wrap .tr-floating-tools { position: relative; top: auto; right: auto; align-self: flex-end; margin: 12px 26px 0; }
+.tr-body-wrap .tr-find { position: relative; top: auto; left: auto; width: auto; margin: 8px 32px 0; }
+@media (max-width: 1024px) {
+  .control-panel .panel-body { overflow: visible; }
+  .controls-workspace { height: auto; }
+  .controls-scroll { overflow: visible; }
+}
 
 .settings-body label.settings-checkbox { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
 .settings-body .settings-checkbox input[type="checkbox"] { flex: 0 0 18px; width: 18px; height: 18px; margin: 0; }
