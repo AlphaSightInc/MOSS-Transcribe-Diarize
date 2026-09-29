@@ -1,5 +1,5 @@
 import type { SourceLane } from "../lib/transcriptOrder";
-import type { TentativeSpan } from "../lib/tentative";
+import type { ProvisionalDisplaySegment, TentativeSpan } from "../lib/tentative";
 export type SessionMode = "live" | "file";
 
 export type SessionLifecycle = "idle" | "active" | "closing" | "closed" | "failed" | "aborted";
@@ -62,6 +62,7 @@ export type WsEvent =
       timestamp: string;
       items: TranscriptItem[];
       tentative_spans?: TentativeSpan[];
+      provisional_segments?: ProvisionalDisplaySegment[];
       metadata?: TranscriptUpdateMetadata;
     }
   | {

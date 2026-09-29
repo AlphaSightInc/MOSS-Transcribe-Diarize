@@ -51,3 +51,34 @@ export function projectTentativeBlocks(
   }
   return blocks;
 }
+
+export interface ProvisionalDisplaySegment {
+  start_sample: number;
+  end_sample: number;
+  text: string;
+  source_lane: string;
+  tentative_speaker: string | null;
+}
+
+/** Use the lane-bearing Gemini preview surface when two voices speak at once. */
+export function projectTentativeSegments(
+  segments: readonly ProvisionalDisplaySegment[],
+  speakerLabels: Readonly<Record<string, string>>
+): TentativeBlock[] {
+  const blocks: TentativeBlock[] = [];
+  for (const segment of segments) {
+    const speakerId = segment.tentative_speaker;
+    const lane = segment.source_lane;
+    const prior = blocks.at(-1);
+    const text = segment.text.trim();
+    if (prior && prior.lane === lane && prior.speakerId === speakerId) {
+      prior.end = Math.max(prior.end, segment.end_sample / SAMPLE_RATE);
+      prior.text = `${prior.text} ${text}`.trim();
+    } else {
+      blocks.push({ speakerId, label: speakerId ? `${speakerLabels[speakerId] || speakerId}?` : "Speaker TBD",
+        tentative: speakerId !== null, lane,
+        start: segment.start_sample / SAMPLE_RATE, end: segment.end_sample / SAMPLE_RATE, text });
+    }
+  }
+  return blocks;
+}
