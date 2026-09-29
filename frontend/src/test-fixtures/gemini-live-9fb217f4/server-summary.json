@@ -1,0 +1,40 @@
+{
+  "state": "current",
+  "document": {
+    "summary": "The speakers distinguish short-term market speculation from long-term investing by comparing the market to a voting machine versus a weighing machine.",
+    "topics": [
+      {
+        "title": "Short-Term Voting Machine vs Long-Term Weighing Machine",
+        "description": "S01 argues that the short-term stock market acts as a voting machine driven by speculative interests and supply and demand, whereas in the long term it acts as a weighing machine that accurately reveals intrinsic worth, allowing investors to take advantage of the market."
+      },
+      {
+        "title": "Speculation versus Investing",
+        "description": "S02 and S01 link speculation to short-term trading behaviors—such as trading crypto without regard for intrinsic value—noting that market participants during bubbles often act as pure speculators who buy assets without knowing what they are worth."
+      }
+    ],
+    "details": [
+      {
+        "title": "Market as a Voting vs Weighing Machine",
+        "description": "S01 introduces the distinction that the market represents short-term speculative supply and demand like a voting machine, but reveals true worth over the long term like a weighing machine.",
+        "timestamp": "00:00:00"
+      },
+      {
+        "title": "Bubble Participants as Pure Speculators",
+        "description": "S01 points out that many investors caught in a bubble leading into a crash were pure speculators who lacked knowledge of intrinsic value.",
+        "timestamp": "00:00:42"
+      }
+    ],
+    "speaker_background": [],
+    "data_references": []
+  },
+  "attempt_id": "YBgAH-NALDVDOISjVbPFTgXT",
+  "source_version": 6,
+  "artifact_version": 1,
+  "error_code": null,
+  "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 2205,
+    "output_tokens": 365,
+    "cost_usd": 0.001574
+  }
+}

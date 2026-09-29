@@ -19,7 +19,7 @@ export function SettingsDialog() {
     let cancelled = false;
     void fetch("/api/live/descriptor?client_min_protocol_version=2&client_max_protocol_version=2", { credentials: "same-origin" })
       .then(response => response.ok ? response.json() : null)
-      .then(payload => { if (!cancelled) setEngineOptions(Boolean(payload?.engine_options)); })
+      .then(payload => { if (!cancelled) setEngineOptions(Boolean(payload?.descriptor?.engine_options)); })
       .catch(() => undefined);
     return () => { cancelled = true; };
   }, [open]);

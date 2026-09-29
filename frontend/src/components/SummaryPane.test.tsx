@@ -7,10 +7,13 @@ import { sessionId, sessionStatus } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
 const root = document.createElement("div"); document.body.append(root);
+const rollingDocument = (summary: string) => ({ summary, topics: [], details: [],
+  speaker_background: [], data_references: [] });
 afterEach(() => { render(null, root); sessionId.value = null; sessionStatus.value = "idle"; selectedSummaryMeeting.value = null; vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 it("renders a rolling summary from the frozen live response", async () => {
-  const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ summary: "The team agreed.",
+  const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ summary: {
+    summary: "The team agreed.", topics: [], details: [], speaker_background: [], data_references: [] },
     source: { committed_samples: 48000, text_revision_version: 4 }, generated_at_ms: Date.now() }) });
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "m"; sessionStatus.value = "active";
@@ -38,9 +41,11 @@ it("applies a changed summary provider without reopening the meeting", async () 
 
 it("keeps the last rolling summary through a 502 and retries at the next interval", async () => {
   vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
-  const first = { summary: "The first good update.",
+  const first = { summary: { summary: "The first good update.", topics: [], details: [],
+    speaker_background: [], data_references: [] },
     source: { committed_samples: 48000, text_revision_version: 4 }, generated_at_ms: Date.now() };
-  const second = { ...first, summary: "The recovered update.", generated_at_ms: Date.now() + 120_000 };
+  const second = { ...first, summary: { ...first.summary, summary: "The recovered update." },
+    generated_at_ms: Date.now() + 120_000 };
   const fetcher = vi.fn()
     .mockResolvedValueOnce({ ok: true, json: async () => first })
     .mockResolvedValueOnce({ ok: false, status: 502 })
@@ -50,21 +55,21 @@ it("keeps the last rolling summary through a 502 and retries at the next interva
   sessionId.value = "m"; sessionStatus.value = "active";
   await act(async () => render(<SummaryPane hidden={false} />, root));
   await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
-  await vi.waitFor(() => expect(root.textContent).toContain(first.summary));
+  await vi.waitFor(() => expect(root.textContent).toContain(first.summary.summary));
 
   await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
-  expect(root.textContent).toContain(first.summary);
+  expect(root.textContent).toContain(first.summary.summary);
   expect(root.querySelectorAll(".summary-notice")).toHaveLength(1);
   expect(root.querySelectorAll('[role="alert"]')).toHaveLength(0);
   expect(root.textContent).toContain("Retrying at the next interval.");
   expect(root.textContent).not.toContain("next in 0s");
 
   await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
-  expect(root.textContent).toContain(first.summary);
+  expect(root.textContent).toContain(first.summary.summary);
   expect(root.querySelectorAll(".summary-notice")).toHaveLength(1);
   await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
   expect(fetcher).toHaveBeenCalledTimes(4);
-  expect(root.textContent).toContain(second.summary);
+  expect(root.textContent).toContain(second.summary.summary);
   expect(root.querySelectorAll(".summary-notice")).toHaveLength(0);
 });
 
@@ -139,6 +144,68 @@ it("regenerates an existing built-in summary when refinement raises the transcri
   expect(body.source_version).toBe(2);
   await vi.waitFor(() => expect(root.textContent).toContain("Improved summary"));
   expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/summary/server"))).toHaveLength(1);
+});
+
+it.each([
+  { state: "failed", error_code: "delivery_failed" },
+  { state: "failed", error_code: "source_changed" },
+  { state: "cancelled", error_code: null }
+])("regenerates an older terminal $state artifact ($error_code) after refinement", async ({ state, error_code }) => {
+  const old = { state, attempt_id: "old", source_version: 1, artifact_version: 1,
+    error_code, document: null };
+  const improved = { ...old, state: "current", source_version: 2,
+    document: { summary: "Improved summary", topics: [], details: [], speaker_background: [], data_references: [] } };
+  const fetcher = vi.fn(async (url: string) => url.endsWith("/summary/server")
+    ? { ok: true, json: async () => improved }
+    : { ok: true, json: async () => ({ summary: old }) });
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "closed";
+  selectedSummaryMeeting.value = { id: "m", mode: "live", title: "Meeting", title_source: "automatic",
+    status: "completed", created_at_ms: Date.now(), transcript_version: 2, refinement_state: "done",
+    transcript: { segments: [] }, audio: null };
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await vi.waitFor(() => expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/summary/server"))).toHaveLength(1));
+  await vi.waitFor(() => expect(root.textContent).toContain("Improved summary"));
+});
+
+it("drops a late rolling response after switching meetings", async () => {
+  let finishOld!: (response: unknown) => void;
+  const oldResponse = new Promise(resolve => { finishOld = resolve; });
+  const fetcher = vi.fn((url: string) => url.includes("/old/") ? oldResponse : Promise.resolve({
+    ok: true, json: async () => ({ summary: rollingDocument("New meeting summary"), generated_at_ms: Date.now(),
+      source: { committed_samples: 1, text_revision_version: 1 } })
+  }));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "old"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
+  await act(async () => { sessionId.value = "new"; });
+  await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
+  await vi.waitFor(() => expect(root.textContent).toContain("New meeting summary"));
+  await act(async () => finishOld({ ok: true, json: async () => ({ summary: rollingDocument("Old meeting summary"),
+    generated_at_ms: Date.now(), source: { committed_samples: 1, text_revision_version: 1 } }) }));
+  expect(root.textContent).toContain("New meeting summary");
+  expect(root.textContent).not.toContain("Old meeting summary");
+});
+
+it("reads rolling model, prompt, and language at call time with an unchanged interval", async () => {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+  const { defaultAppSettings, saveAppSettings } = await import("../lib/settings");
+  const values = new Map<string, string>();
+  vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key) });
+  const fetcher = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ summary: rollingDocument("Updated"),
+    generated_at_ms: Date.now(), source: { committed_samples: 1, text_revision_version: 1 } }) }));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  const settings = defaultAppSettings();
+  await act(async () => saveAppSettings({ ...settings, summary: { ...settings.summary,
+    model: "gemini-3.5-flash", prompt: "New prompt", language: "French" } }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+  const body = JSON.parse(fetcher.mock.calls[0][1]!.body as string);
+  expect(body).toEqual({ model: "gemini-3.5-flash", prompt: "New prompt", language: "French" });
 });
 
 it("offers Update summary for a stale external artifact without sending automatically", async () => {

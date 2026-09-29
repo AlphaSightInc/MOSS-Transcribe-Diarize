@@ -1,0 +1,59 @@
+{
+  "descriptor": {
+    "source_revision": "29681e0479305449bb40caa49154fe4b1ae85eea",
+    "provider_name": "gemini-3.5-transcribe",
+    "provider_revision": "hybrid-w3-mic-short-v8",
+    "provider_manifest_hash": "e301eaff81033749f3a7c697d885ad3d7e0e1eed35453c7f299da749b1511727",
+    "config_hashes": {
+      "endpoint_config_hash": "ae9ef340c13f60ddb47b34a0be8dccf94ca55ed8f1d300db3bcbe2918a2ecce9",
+      "identity_config_hash": "cf868a57c139eff56738eab6868509b83ddbdd3a5fdeb708885a61501f56cd00",
+      "decoder_config_hash": "b8451d2d8930dee02ba280372624c646c71588620649531479671375e0a63a4c",
+      "combined_config_hash": "81e2815f1d842e8755667484ae34921974769a0be3e0b0dce033f92275b36852"
+    },
+    "bounds": {
+      "max_frame_samples": 16000,
+      "max_queue_depth": 16,
+      "max_retained_samples": 960000,
+      "max_identity_speakers": 16,
+      "max_events": 1000,
+      "hard_cap_samples": 40000,
+      "stop_drain_deadline_seconds": 5.0,
+      "max_tape_bytes": 115200000
+    },
+    "schema_version": 1,
+    "live_protocol_version": "moss-live-service.v1",
+    "live_protocol": {
+      "protocol": "moss-live-service.v2",
+      "min_protocol_version": 2,
+      "max_protocol_version": 2,
+      "capabilities": {
+        "lanes": true,
+        "binary": false,
+        "idempotent_frames": true,
+        "resumable": true
+      }
+    },
+    "sample_rate": 16000,
+    "frame_samples": 8000,
+    "feature_enabled": true,
+    "engine_options": {
+      "speaker_windows": [
+        "balanced",
+        "economy",
+        "max"
+      ],
+      "default_speaker_window": "balanced",
+      "cleanup_after_stop": {
+        "available": true,
+        "default": true
+      }
+    }
+  },
+  "preflight_status_lines": {
+    "browser_microphone_silent": "No microphone sound was detected. In Chrome, open Settings > Privacy and security > Site settings > Microphone and select the correct default input."
+  },
+  "negotiation": {
+    "protocol": "moss-live-service.v2",
+    "selected_protocol_version": 2
+  }
+}

@@ -77,7 +77,8 @@ export function serializeTranscriptExport(
   resolveLabel: (turn: TranscriptTurn) => string,
   identity: TranscriptExportIdentity,
   review: TranscriptExportReview = { needsReview: false },
-  summary?: SummaryDocument | null
+  summary?: SummaryDocument | null,
+  summaryUpdating = false
 ): TranscriptExportFile {
   turns = [...turns].sort(compareTranscriptOrder);
   const rows = buildExportRows(turns, resolveLabel);
@@ -101,7 +102,7 @@ export function serializeTranscriptExport(
   if (format === "md") {
     return {
       content: prependNotice(prependProvisionalAttributionCaveat(
-        `${summary ? `${formatSummaryMarkdown(summary)}\n\n# Transcript\n\n` : ""}${rows.map((row) => `## [${row.clockTime}] ${row.label}\n\n${row.text}`).join("\n\n")}`,
+        `${summary ? `${formatSummaryMarkdown(summary)}\n\n# Transcript\n\n` : ""}${summaryUpdating ? "> summary is being updated\n\n" : ""}${rows.map((row) => `## [${row.clockTime}] ${row.label}\n\n${row.text}`).join("\n\n")}`,
         MARKDOWN_PROVISIONAL_ATTRIBUTION_CAVEAT,
         provisionalAttribution
       ), MARKDOWN_NEEDS_REVIEW_NOTICE, review.needsReview),

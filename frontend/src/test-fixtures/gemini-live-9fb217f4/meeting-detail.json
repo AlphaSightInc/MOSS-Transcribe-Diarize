@@ -1,0 +1,70 @@
+{
+  "id": "ACm0wIWKU4Q5tG99YguN6wKi",
+  "mode": "live",
+  "title": null,
+  "title_source": "automatic",
+  "status": "completed",
+  "created_at_ms": 1790723718081,
+  "transcript": {
+    "segments": [
+      {
+        "id": "seg_0001",
+        "start": 0.6,
+        "end": 29.2,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "to figure out what something's worth. And you have to kind of weigh it. He talked about the difference between, you know, said the stock market in the short term is a voting machine. It represents speculative interests, you know, supply and demand of people in the short term. But in the long term, it's the stock market's a weighing machine. You know, much more accurate. It's going to tell you what something is worth. And so if you can divine what something's worth, then you can really take advantage of the market because it's really here to to help you. And that's kind of the message of the book.",
+        "source_lane": "system"
+      },
+      {
+        "id": "seg_0002",
+        "start": 29.7,
+        "end": 33.7,
+        "speaker_entity_id": "speaker-0002",
+        "speaker": "S02",
+        "text": "In that same way, there's a kind of difference between speculation and investing.",
+        "source_lane": "system"
+      },
+      {
+        "id": "seg_0003",
+        "start": 34.0,
+        "end": 40.4,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "Yeah. Speculation is just it's a bit like buying trading crypto. Right? You're",
+        "source_lane": "system"
+      },
+      {
+        "id": "seg_0004",
+        "start": 40.7,
+        "end": 41.4,
+        "speaker_entity_id": "speaker-0002",
+        "speaker": "S02",
+        "text": "Strong words.",
+        "source_lane": "system"
+      },
+      {
+        "id": "seg_0005",
+        "start": 42.3,
+        "end": 60.0,
+        "speaker_entity_id": "speaker-0001",
+        "speaker": "S01",
+        "text": "Well, short-term trading crypto. Maybe in the long run, there's intrinsic value, but the you know, it's many investors, you know, in a bubble going into the you know, the the crash were really just pure speculators. They didn't know what things were worth. They just knew they were",
+        "source_lane": "system"
+      }
+    ]
+  },
+  "transcript_version": 6,
+  "audio": {
+    "state": "available",
+    "relative_path": "__moss_open_workspace__/ACm0wIWKU4Q5tG99YguN6wKi/audio.mp3",
+    "byte_count": 396837,
+    "duration_ms": 66000,
+    "format": "mp3",
+    "sample_rate_hz": 16000,
+    "channels": 1,
+    "bit_rate_bps": 48000
+  },
+  "needs_review": false,
+  "refinement_state": "done"
+}

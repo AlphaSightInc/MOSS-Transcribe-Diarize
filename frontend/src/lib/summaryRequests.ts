@@ -1,10 +1,10 @@
 import { openMeeting, type Meeting } from "../api/meetings";
-import { finalSummaryWorker, SUMMARY_CHANGED, type SummaryArtifact, type SummarySettings } from "./finalSummary";
+import { finalSummaryWorker, SUMMARY_CHANGED, type SummaryArtifact, type SummaryDocument, type SummarySettings } from "./finalSummary";
 import { loadAppSettings, type AppSettings } from "./settings";
 import { requestMeetingHistoryRefresh } from "./meetingEvents";
 
 export interface LiveSummaryResponse {
-  summary: string;
+  summary: SummaryDocument;
   source: { committed_samples: number; text_revision_version: number };
   generated_at_ms: number;
 }
