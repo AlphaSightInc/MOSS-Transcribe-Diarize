@@ -726,3 +726,23 @@ def test_idle_window_counts_ticks_skipped_while_prior_call_was_busy():
     assert engine._rolling_frontier == 35*16000
     assert usage == [{"kind": "rolling", "count_call": False, "skipped_window_ticks": 1}]
     engine.close()
+
+
+def test_worker_exception_is_counted_instead_of_silently_stopping_labels():
+    class Broken:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            raise RuntimeError("window failed")
+    usage, updates = [], []
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(), window_scheduler=FixedWindowScheduler(),
+        registry=OverlapRegistry(), diarizer=Broken(), terminal=FakeTerminal(),
+        report_usage=lambda **row: usage.append(row))
+    for second in range(25):  # FixedWindowScheduler opens its first window at 20 s
+        engine.push_audio(second*16000, bytes(32000))
+        try:
+            engine._future.result(timeout=5)
+        except RuntimeError:
+            pass
+    assert any(row.get("error_code") == "worker_RuntimeError" and row.get("count_call") is False
+               for row in usage)
+    engine.close()
