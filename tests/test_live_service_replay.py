@@ -898,6 +898,8 @@ def _rich_service_snapshot() -> LiveServiceSnapshot:
                 resumable=False,
             )
         ),
+        engine_options={"speaker_windows": ["balanced"],
+                        "default_speaker_window": "balanced"},
     )
     session = LiveSnapshot(
         status="closed",
