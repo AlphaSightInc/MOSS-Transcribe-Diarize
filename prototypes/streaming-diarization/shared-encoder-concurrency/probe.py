@@ -40,7 +40,7 @@ def main() -> None:
     assert len(chosen) == 5, chosen
     pcm, rate = sf.read(AUDIO, dtype="float32")
     assert rate == 16000 and pcm.ndim == 1
-    encoder = _OnnxWeSpeakerEmbedder(MODEL, device="cpu", interval_workers=1)
+    encoder = _OnnxWeSpeakerEmbedder(MODEL, device="cpu", interval_workers=3)
     encoder.load()  # Product has already loaded the encoder before both workers overlap.
     with tempfile.TemporaryDirectory(prefix="moss-shared-encoder-") as scratch:
         paths = {}
