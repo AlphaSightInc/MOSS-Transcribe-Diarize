@@ -101,7 +101,7 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
         {rolling ? "Latest update failed; showing the last summary." : "Summary update failed."}
         {interval ? " Retrying at the next interval." : " Use Refresh to retry."}
       </p> : <p role="alert">{error}</p>)}
-      {active ? rolling ? <div className="summary-content"><h3>Theme</h3><p>{rolling.summary}</p></div>
+      {active ? rolling ? <div className="summary-content"><h3>Theme</h3><p>{rolling.summary.summary}</p></div>
         : <p className="empty-state">Summary will appear when enough finished speech is available.</p>
         : finalDocument ? <SummaryDocumentView document={finalDocument} />
         : <p className="empty-state">{artifact?.state === "failed" || error

@@ -10,7 +10,8 @@ const root = document.createElement("div"); document.body.append(root);
 afterEach(() => { render(null, root); sessionId.value = null; sessionStatus.value = "idle"; selectedSummaryMeeting.value = null; vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 it("renders a rolling summary from the frozen live response", async () => {
-  const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ summary: "The team agreed.",
+  const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ summary: {
+    summary: "The team agreed.", topics: [], details: [], speaker_background: [], data_references: [] },
     source: { committed_samples: 48000, text_revision_version: 4 }, generated_at_ms: Date.now() }) });
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "m"; sessionStatus.value = "active";
@@ -38,9 +39,11 @@ it("applies a changed summary provider without reopening the meeting", async () 
 
 it("keeps the last rolling summary through a 502 and retries at the next interval", async () => {
   vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
-  const first = { summary: "The first good update.",
+  const first = { summary: { summary: "The first good update.", topics: [], details: [],
+    speaker_background: [], data_references: [] },
     source: { committed_samples: 48000, text_revision_version: 4 }, generated_at_ms: Date.now() };
-  const second = { ...first, summary: "The recovered update.", generated_at_ms: Date.now() + 120_000 };
+  const second = { ...first, summary: { ...first.summary, summary: "The recovered update." },
+    generated_at_ms: Date.now() + 120_000 };
   const fetcher = vi.fn()
     .mockResolvedValueOnce({ ok: true, json: async () => first })
     .mockResolvedValueOnce({ ok: false, status: 502 })
@@ -50,21 +53,21 @@ it("keeps the last rolling summary through a 502 and retries at the next interva
   sessionId.value = "m"; sessionStatus.value = "active";
   await act(async () => render(<SummaryPane hidden={false} />, root));
   await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
-  await vi.waitFor(() => expect(root.textContent).toContain(first.summary));
+  await vi.waitFor(() => expect(root.textContent).toContain(first.summary.summary));
 
   await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
-  expect(root.textContent).toContain(first.summary);
+  expect(root.textContent).toContain(first.summary.summary);
   expect(root.querySelectorAll(".summary-notice")).toHaveLength(1);
   expect(root.querySelectorAll('[role="alert"]')).toHaveLength(0);
   expect(root.textContent).toContain("Retrying at the next interval.");
   expect(root.textContent).not.toContain("next in 0s");
 
   await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
-  expect(root.textContent).toContain(first.summary);
+  expect(root.textContent).toContain(first.summary.summary);
   expect(root.querySelectorAll(".summary-notice")).toHaveLength(1);
   await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
   expect(fetcher).toHaveBeenCalledTimes(4);
-  expect(root.textContent).toContain(second.summary);
+  expect(root.textContent).toContain(second.summary.summary);
   expect(root.querySelectorAll(".summary-notice")).toHaveLength(0);
 });
 
