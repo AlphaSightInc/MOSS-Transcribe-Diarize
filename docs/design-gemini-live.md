@@ -126,6 +126,10 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
 - **Tentative names** (`app/gemini_tentative.py`): per-lane EMA centroids of settled canonical speakers; every 0.5 s of voiced
   audio the trailing 1.0 s is embedded (single-thread pinned encoder) and assigned at cosine ≥ .40, else abstain; display-only
   `provisional.segments[].tentative_speaker`, never saved or exported (`prototypes/gemini-live/tentative/NOTES.md`).
+  The S1-fixed, paced public long60 product run showed 96.36% first-visible guess coverage but only 91.89% accuracy
+  (≥95% gate failed), despite full audio settlement; embed p95 was 213 ms. The final settled transcript conflated Javier
+  with Lex under one canonical ID and split Bill/Lex across IDs. The earlier 98.98% five-clean-ID offline result was
+  conditional and does not establish product acceptance. See the WP4 NOTES verdict and P66/wp4/long60-fixed receipt.
 - **After-Stop voiceprints** (D17): naming a completed Live meeting's speaker fingerprints that speaker's rows in the saved
   recording minus intervals overlapped by any other row (either lane), ≥ 2 s (3/3 cases: 3.0 s eligible, 1.0 s refused;
   `prototypes/gemini-live/wp3-overlap/NOTES.md`).
@@ -135,9 +139,9 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
 - **Cost meter**: usage reports metered input, `metered_output_usd`, and a Google-rate output estimate ($0.002/min Transcribe,
   $0.004/min Live) separately; File/URL cost is an estimate from the terminal chunk plan (`prototypes/gemini-live/qfile/NOTES.md`;
   retries unmeasured). Whether Google bills Transcribe output tokens (usage reports 0) is unconfirmed (A5).
-- **Open:** a paced long60 run on an intermediate branch stopped labelling at 750 s while all 173 system windows were decoded; fake
-  slow/raising diarizers do not reproduce it (`prototypes/gemini-live/long-silent-lane/NOTES.md`). F1's Stop recovery bounds its
-  effect on the saved transcript; root cause under investigation with cached real responses.
+- **S1 label stall resolved:** a fully overlapped tail word lost `source_lane` during `ordered_segments` reconstruction,
+  causing the two-lane publisher to raise after 750 s (`prototypes/gemini-live/s1-cached/NOTES.md`). The fixed paced
+  long60 run published labels through the final meeting and settled all 2,586 s. Identity quality remains open as noted above.
 
 ## Measured envelope and custody
 
