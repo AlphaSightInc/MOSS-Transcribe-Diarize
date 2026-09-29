@@ -48,10 +48,14 @@ def main():
     parser.add_argument("--base-url", required=True)
     parser.add_argument("--foreign-base-url", help="private-workspace stack sharing this meeting store")
     parser.add_argument("--cookie-file", type=Path, help="mode-0600 owner session value used by the replay")
-    parser.add_argument("--meeting-id", required=True)
-    parser.add_argument("--case", choices=("e1", "long60"), required=True)
+    meeting = parser.add_mutually_exclusive_group(required=True)
+    meeting.add_argument("--meeting-id")
+    meeting.add_argument("--meeting-id-file", type=Path, help="wait for the replay's session-id.txt")
+    parser.add_argument("--case", choices=("e1", "long60", "smoke"), required=True)
+    parser.add_argument("--source-clip-id", help="public clip ID for a one-clip smoke run")
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--rolling-until-terminal", action="store_true")
+    parser.add_argument("--final-after-terminal", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     if not args.base_url.startswith("https://127.0.0.1:"):
@@ -61,6 +65,16 @@ def main():
     if args.out.exists():
         parser.error("--out must be new")
     args.out.mkdir(parents=True)
+    meeting_id = args.meeting_id
+    if args.meeting_id_file:
+        deadline = time.monotonic() + 120
+        while not args.meeting_id_file.is_file() and time.monotonic() < deadline:
+            time.sleep(.25)
+        if not args.meeting_id_file.is_file():
+            raise TimeoutError("Replay did not publish a meeting ID.")
+        meeting_id = args.meeting_id_file.read_text(encoding="utf-8").strip()
+    if not meeting_id:
+        parser.error("meeting ID is empty")
     with httpx.Client(base_url=args.base_url, verify=False, follow_redirects=False, timeout=210) as client:
         if args.cookie_file:
             if args.cookie_file.stat().st_mode & 0o777 != 0o600:
@@ -76,28 +90,33 @@ def main():
             while True:
                 time.sleep(max(0, next_call - time.monotonic()))
                 next_call += 60
-                meeting = client.get(f"/api/meetings/{args.meeting_id}")
+                meeting = client.get(f"/api/meetings/{meeting_id}")
                 meeting.raise_for_status()
                 if meeting.json()["status"] != "active":
                     break
                 try:
-                    checks.append(summary_check(client, args.meeting_id, live=True))
+                    checks.append(summary_check(client, meeting_id, live=True))
+                    next_call = time.monotonic() + 60
                 except httpx.HTTPStatusError as exc:
                     if exc.response.status_code != 409:
                         raise
+                    next_call = time.monotonic() + 2
         else:
-            checks.append(summary_check(client, args.meeting_id, live=args.live))
+            checks.append(summary_check(client, meeting_id, live=args.live))
+        if args.final_after_terminal:
+            checks.append(summary_check(client, meeting_id, live=False))
         foreign = httpx.Client(base_url=args.foreign_base_url or args.base_url,
                                verify=False, follow_redirects=False, timeout=30)
         try:
             foreign.post("/api/workspace/bootstrap").raise_for_status()
-            wrong_owner = foreign.post(f"/api/meetings/{args.meeting_id}/summary/{'live' if args.live else 'server'}",
+            wrong_owner = foreign.post(f"/api/meetings/{meeting_id}/summary/{'live' if args.live else 'server'}",
                                        json={} if args.live else {"source_version": 1}).status_code
         finally:
             foreign.close()
-    times = [row["requested_at_ms"] for row in checks]
+    times = [row["requested_at_ms"] for row in checks if row["live"]]
     intervals = [b - a for a, b in zip(times, times[1:])]
     result = {"schema": "q-sum.v1", "case": args.case,
+              "source_clip_id": args.source_clip_id,
               "checked_at_utc": datetime.now(timezone.utc).isoformat(),
               "checks": checks, "rolling_intervals_ms": intervals,
               "wrong_owner_status": wrong_owner,

@@ -103,8 +103,9 @@ class MicReplayService(SettingsReplayService):
 class TimedSurfaceCapture:
     """Compose H1's capture with a reader-cadence public snapshot observer."""
 
-    def __init__(self, inner, duration: float):
+    def __init__(self, inner, duration: float, session_id_file: Path | None = None):
         self.inner = inner
+        self.session_id_file = session_id_file
         self.probe = LatencyProbe(duration)
         self.tentative = TentativeProbe()
         self._done = threading.Event()
@@ -116,6 +117,9 @@ class TimedSurfaceCapture:
     def create(self):
         result = self.inner.create()
         self._session_id = result.session_id
+        if self.session_id_file is not None:
+            self.session_id_file.parent.mkdir(parents=True, exist_ok=True)
+            self.session_id_file.write_text(result.session_id + "\n", encoding="utf-8")
         return result
 
     def accept_frame(self, session_id, frame):
@@ -255,9 +259,9 @@ def main() -> None:
                         timeout_seconds=300, mic_pcm=mic_pcm,
                         engine_settings=args.engine_settings))
                 descriptor = adapter.descriptor()
-                captured = surface.SurfaceCaptureService(adapter, settle_timeout=30.0, poll_seconds=.25)
-                timed = TimedSurfaceCapture(captured, duration)
                 run_dir = args.out / f"pass-{pass_number}" / case_id
+                captured = surface.SurfaceCaptureService(adapter, settle_timeout=30.0, poll_seconds=.25)
+                timed = TimedSurfaceCapture(captured, duration, run_dir / "session-id.txt")
                 identity = (descriptor.source_revision, descriptor.provider_manifest_hash,
                             descriptor.config_hashes.combined_config_hash)
                 if descriptor_identity is None:

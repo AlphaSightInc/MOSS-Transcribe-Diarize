@@ -115,8 +115,10 @@ def main():
     qind = {"status": "UNMEASURED", "cases": len(ind_cases), "expected_cases": len(IND_CASES),
             "passed_cases": sum(bool(c.get("passes_plan_predicate")) for c in ind_cases),
             "source": str(args.ind) if args.ind else None,
-            "note": "RTFL and sparse calibration eligibility awaits lead ruling"}
-    if len(ind_cases) == len(IND_CASES) and {c.get("clip_id") for c in ind_cases} == IND_CASES:
+            "partial_reference_cases": [c.get("clip_id") for c in ind_cases if c.get("partial_reference")],
+            "note": "All fourteen cases, including partial references, use paired referenced-time scores"}
+    if (len(ind_cases) == len(IND_CASES) and {c.get("clip_id") for c in ind_cases} == IND_CASES
+            and all(c.get("score_scope") == "referenced_time_only" for c in ind_cases)):
         qind["status"] = "PASS" if qind["passed_cases"] == len(IND_CASES) else "FAIL"
 
     latency_paths = sorted(args.quality.glob("pass-*/*/latency.json")) if args.quality else []
@@ -211,6 +213,18 @@ def main():
     for name, gate in gates.items():
         detail = ", ".join(f"{key}={value['value']} ({value['status']})" for key,value in gate.items() if isinstance(value, dict) and "value" in value)
         lines.append(f"| {name} | {gate['status']} | {detail or gate.get('source', '')} |")
+    if ind_cases:
+        lines.extend(["", "## Q-IND paired cases", "",
+                      "| Case | Reference scope | Referenced / audio s | OFF IDs / DER | ON DER | Predicate |",
+                      "|---|---|---:|---:|---:|---|"])
+        for case in ind_cases:
+            off, on = case["live_only"], case["cleanup_on"]
+            scope = "partial-reference" if case.get("partial_reference") else "full-reference"
+            lines.append(f"| {case['clip_id']} | {scope} | "
+                         f"{case['reference_covered_seconds']:.3f} / {case['duration_seconds']:.3f} | "
+                         f"{off['canonical_ids']} / {off['score']['der']:.6f} | "
+                         f"{on['score']['der']:.6f} | "
+                         f"{'PASS' if case['passes_plan_predicate'] else 'FAIL'} |")
     lines.extend(["", "UNMEASURED means the required exact population or receipt is absent. OBSERVED requires human review against the plan's qualitative cadence/UI wording."])
     (args.out / "scorecard.md").write_text("\n".join(lines) + "\n")
     print(json.dumps({key: value["status"] for key, value in gates.items()}, indent=2))
