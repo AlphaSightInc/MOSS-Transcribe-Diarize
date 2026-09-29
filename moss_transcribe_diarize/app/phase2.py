@@ -2109,6 +2109,7 @@ def create_phase2_app(
                 store, phase2_live,
                 file_evidence=getattr(getattr(file_runner, "identity_resolver", None),
                                       "enrollment_observation", None),
+                live_evidence=getattr(file_runner, "live_enrollment_observation", None),
                 audio_archive=audio_archive,
             )
             app.state.phase2_speaker_identity = speaker_identity
