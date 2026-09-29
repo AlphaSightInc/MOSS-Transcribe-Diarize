@@ -30,7 +30,8 @@ from .live_transport import (
     LiveTransportSnapshotView,
     attach_live_routes,
 )
-from .phase2 import Account, AccountRevoked, SESSION_COOKIE, _meeting_needs_review
+from .phase2 import (Account, AccountRevoked, REFINEMENT_RUNNING_MARKER,
+                     SESSION_COOKIE, _meeting_needs_review)
 
 
 _LOG = logging.getLogger("moss_transcribe_diarize.phase2.speaker_identity")
@@ -90,6 +91,7 @@ class _LiveBinding:
     public_event_high_water: int = -1
     raw_event_high_water: int = -1
     terminal_persisted: bool = False
+    refinement_running: bool = False
     authority_closing: bool = False
     publication_fenced: bool = False
     capture_fenced: bool = False
@@ -156,6 +158,10 @@ class Phase2LiveMeetings:
             raise RuntimeError("Account Speaker Identity is already bound.")
         self._speaker_identity = identity
 
+    def refinement_running(self, meeting_id: str) -> bool:
+        binding = self._bindings.get(meeting_id)
+        return bool(binding is not None and binding.refinement_running)
+
     def unbind_speaker_identity(self, identity: Any) -> None:
         if self._speaker_identity is not identity:
             raise RuntimeError("Account Speaker Identity binding does not match.")
@@ -200,6 +206,18 @@ class Phase2LiveMeetings:
         for binding in tuple(self._bindings.values()):
             if not binding.terminal_persisted:
                 await self._fence(binding, "service shutdown")
+            elif binding.refinement_running:
+                cancel = getattr(self.runtime, "cancel_refinement", None)
+                if callable(cancel):
+                    cancel(binding.handle.meeting_id)
+                wait = getattr(self.runtime, "wait_terminal", None)
+                if callable(wait):
+                    try:
+                        await wait(binding.handle.meeting_id)
+                    except asyncio.CancelledError:
+                        pass
+                await asyncio.to_thread(self.audio_stages.discard,
+                                        binding.owner_key[0], binding.handle.meeting_id)
         self.runtime._unbind_publication_observer(self._publication_observer)
         self._accepting_publications = False
         self._loop = None
@@ -622,6 +640,10 @@ class Phase2LiveMeetings:
                 return
             if binding.publication_fenced or binding.capture_fenced:
                 continue
+            if binding.terminal_persisted:
+                if binding.refinement_running:
+                    await self._settle_refinement_publication(binding, publication)
+                continue
             if _terminal_finalization_not_started(
                 publication.snapshot,
                 finalizer_configured=self.runtime._terminal_finalizer is not None,
@@ -633,6 +655,8 @@ class Phase2LiveMeetings:
             terminal = _durable_terminal_status(
                 publication.snapshot,
                 finalizer_configured=self.runtime._terminal_finalizer is not None,
+                async_refinement=bool(getattr(self.runtime, "refinement_running", lambda _id: False)(
+                    binding.handle.meeting_id)),
             )
             if terminal is None:
                 await self._observe_speaker_identity(binding, publication.album_observations)
@@ -731,6 +755,7 @@ class Phase2LiveMeetings:
         snapshot: LiveServiceSnapshot,
         *,
         complete_eligible: bool,
+        keep_stage: bool = False,
     ) -> None:
         account_id = binding.owner_key[0]
         prefix = await asyncio.to_thread(
@@ -748,11 +773,12 @@ class Phase2LiveMeetings:
                 partial=not complete_eligible or not prefix.complete,
                 raw_pcm=True,
             )
-        await asyncio.to_thread(
-            self.audio_stages.discard,
-            account_id,
-            binding.handle.meeting_id,
-        )
+        if not keep_stage:
+            await asyncio.to_thread(
+                self.audio_stages.discard,
+                account_id,
+                binding.handle.meeting_id,
+            )
 
     async def _settle_terminal(
         self,
@@ -793,6 +819,8 @@ class Phase2LiveMeetings:
                     binding,
                     terminal_snapshot,
                     complete_eligible=status == "completed",
+                    keep_stage=(status == "completed" and
+                                terminal_snapshot.session.finalization_status == "running"),
                 )
             except AccountRevoked:
                 await self._complete_revoked_terminal_locked(
@@ -822,6 +850,8 @@ class Phase2LiveMeetings:
                     terminal_snapshot,
                     self.runtime.events(binding.handle.meeting_id),
                 )
+                if status == "completed" and terminal_snapshot.session.finalization_status == "running":
+                    notice = REFINEMENT_RUNNING_MARKER
                 await self._finish_terminal(binding, document, status, notice=notice)
             except AccountRevoked:
                 await self._complete_revoked_terminal_locked(
@@ -842,6 +872,7 @@ class Phase2LiveMeetings:
                 )
                 return
 
+            binding.refinement_running = notice == REFINEMENT_RUNNING_MARKER
             await self._publish_terminal_locked(
                 binding,
                 terminal_snapshot,
@@ -849,6 +880,44 @@ class Phase2LiveMeetings:
                 reason=reason,
                 project_public=project_public,
             )
+            if binding.refinement_running:
+                release = getattr(self.runtime, "release_refinement", None)
+                if callable(release):
+                    release(binding.handle.meeting_id)
+
+    async def _settle_refinement_publication(
+        self, binding: _LiveBinding, publication: _RawPublication,
+    ) -> None:
+        status = publication.snapshot.session.finalization_status
+        if status not in {"final", "failed", "unavailable"}:
+            return
+        document = (_transcript_document(publication.snapshot, binding.speaker_labels)
+                    if status == "final" else None)
+        try:
+            binding.durable_version = await binding.handle.settle_refinement(document)
+            meeting = await binding.handle.snapshot()
+        except Exception:
+            # The running marker is durable and projects a failure after restart.
+            binding.refinement_running = False
+            try:
+                await asyncio.to_thread(self.audio_stages.discard,
+                                        binding.owner_key[0], binding.handle.meeting_id)
+            except Exception:
+                _LOG.warning("refinement stage cleanup failed", exc_info=True)
+            return
+        binding.durable_document = meeting.transcript or {"segments": []}
+        binding.durable_needs_review = meeting.needs_review
+        binding.refinement_running = False
+        binding.public_snapshot = publication.snapshot
+        binding.public_events = publication.events
+        binding.public_event_high_water = publication.event_high_water
+        async with binding.changed:
+            binding.changed.notify_all()
+        try:
+            await asyncio.to_thread(self.audio_stages.discard,
+                                    binding.owner_key[0], binding.handle.meeting_id)
+        except Exception:
+            _LOG.warning("refinement stage cleanup failed", exc_info=True)
 
     async def _finish_terminal(
         self,
@@ -1360,6 +1429,7 @@ def _durable_terminal_status(
     snapshot: LiveServiceSnapshot,
     *,
     finalizer_configured: bool,
+    async_refinement: bool = False,
 ) -> str | None:
     if snapshot.terminal_failure is not None or snapshot.session.status in {"aborted", "failed"}:
         return "interrupted"
@@ -1368,6 +1438,8 @@ def _durable_terminal_status(
         "failed",
         "unavailable",
     }:
+        return "completed"
+    if async_refinement and snapshot.session.status == "closed" and snapshot.session.finalization_status == "running":
         return "completed"
     if (
         snapshot.session.status == "closed"

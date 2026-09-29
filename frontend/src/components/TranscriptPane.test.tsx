@@ -261,7 +261,7 @@ describe("TranscriptPane", () => {
       .toBe("Settled remote");
   });
 
-  it("keeps headers on later cards after a long same-speaker gap and an S00 split", () => {
+  it("keeps one confirmed speaker card across a long gap but splits S00", () => {
     act(() => {
       render(<TranscriptPane />, root);
       applySessionStateEvent({ type: "session_state", session_id: "q5-split", mode: "live",
@@ -278,10 +278,11 @@ describe("TranscriptPane", () => {
       ]);
     });
     const cards = [...root.querySelectorAll<HTMLElement>(".transcript-card")];
-    expect(cards).toHaveLength(4);
-    expect(cards.map(card => card.dataset.continuation)).toEqual(["false", "false", "false", "false"]);
+    expect(cards).toHaveLength(3);
+    expect(cards.map(card => card.dataset.continuation)).toEqual(["false", "false", "false"]);
     expect(cards.map(card => card.querySelector(".utt-meta .utt-speaker-label")?.textContent))
-      .toEqual(["Speaker 1", "Remote", "Speaker TBD", "Speaker TBD"]);
+      .toEqual(["Speaker 1", "Speaker TBD", "Speaker TBD"]);
+    expect(cards[0]?.querySelectorAll(".utt-text")).toHaveLength(2);
   });
 
   it("follows new text only while Auto-scroll is on and Find is closed", () => {

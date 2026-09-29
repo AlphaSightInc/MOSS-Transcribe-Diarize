@@ -197,6 +197,8 @@ class ProvisionalSuffix:
     start_sample: int
     end_sample: int
     transcript: str
+    tentative_spans: tuple[dict[str, object], ...] = ()
+    segments: tuple[dict[str, object], ...] = ()
 
 
 # ------------------------------------------------------------------------------------------
@@ -456,6 +458,8 @@ class LiveSession:
         start_sample: int,
         end_sample: int,
         transcript: str,
+        tentative_spans: tuple[dict[str, object], ...] = (),
+        segments: tuple[dict[str, object], ...] = (),
     ) -> bool:
         if epoch != self._epoch or generation != self._provisional_generation:
             return False
@@ -464,7 +468,8 @@ class LiveSession:
             raise ValueError("provisional suffix must start at the committed prefix.")
         if end_sample < start_sample or end_sample > self._accepted_samples:
             raise ValueError("provisional suffix must stay within accepted audio.")
-        self._provisional = ProvisionalSuffix(generation, start_sample, end_sample, transcript)
+        self._provisional = ProvisionalSuffix(generation, start_sample, end_sample,
+                                              transcript, tentative_spans, segments)
         self._bump()
         return True
 

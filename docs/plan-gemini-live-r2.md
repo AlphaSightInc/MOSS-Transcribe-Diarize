@@ -18,7 +18,7 @@ Prototype evidence behind each item: `prototypes/gemini-live/{schedule,guard,ten
 | F13 | Rows committed with no speaker are re-labelled by later windows instead of staying "Speaker TBD". |
 | G10 O1 + P4 + P5 | Speaker-window presets: **Balanced 15 s / 90 s (default)**, Economy 30 s / 90 s, Max context 15 s / 3 min; 60 s rejected (P5). P4 fingerprint veto (T .46, margin .20) in the continuity registry. |
 | G2 O3 + G9 O1 | Local fingerprint guesses on preview words (1.0 s snippet, T .40, EMA centroids, every 0.5 s per voiced lane, single-thread ONNX per the embedder invariant), shown greyed "Ben?"; display-only, never saved or exported. On confirmation, consecutive same-speaker text on the same lane with no other speaker between renders as ONE block. |
-| P2 | After-Stop clean-up is a setting, **default OFF** for Gemini (user decision; see R-A1 for the evidence gate). |
+| P2 → D20 | After-Stop clean-up is a setting, **default ON, running in the background** (D20, 2026-09-29, after Q-IND failed; originally default OFF). |
 | G3 O3 | All settings live in the browser and are sent with each meeting start / summary request; the server stores none. |
 | G4 O1 | Summaries use the server's Gemini key by default, model `gemini-3.5-flash-lite` (dev/test). |
 | G5 O1 | "Transcript | Summary" tab in the centre card; rolling summary every 60 s while live, final at Stop, Refresh; the finished meeting is auto-selected. |
@@ -65,9 +65,9 @@ WP5 builds against §4 with mocked responses and integrates last.
 ## 4. Interfaces (frozen before workers start; changes only through the lead)
 
 - **Start a live meeting** `POST /api/live/sessions`: optional `engine_settings: {"speaker_window": "balanced"|"economy"|"max",
-  "cleanup_after_stop": bool}`; unknown keys/values → 422; defaults balanced / false. MOSS engine ignores the field.
+  "cleanup_after_stop": bool}`; unknown keys/values → 422; defaults balanced / true (D20). MOSS engine ignores the field.
 - **Descriptor** `GET /api/live/descriptor` adds `engine_options: {"speaker_windows": ["balanced","economy","max"],
-  "default_speaker_window": "balanced", "cleanup_after_stop": {"available": true, "default": false}}` (Gemini only; absent on MOSS).
+  "default_speaker_window": "balanced", "cleanup_after_stop": {"available": true, "default": true}}` (Gemini only; absent on MOSS).
 - **Preset table**: balanced S15/L90, economy S30/L90, max S15/L180 (growing window, H0). Mic lane always 30 s window / 15 s stride.
 - **Guesses** (amended 2026-09-29): snapshot `session.provisional.segments: [{start_sample, end_sample, text, source_lane,
   tentative_speaker|null}]` (display-only; `tentative_speaker` is a canonical meeting speaker ID); the provisional transcript string
