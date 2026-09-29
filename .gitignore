@@ -127,3 +127,4 @@ prototypes/streaming-diarization/data
 prototypes/gemini-live/.cache/
 prototypes/gemini-live/.ledger/
 prototypes/gemini-live/**/out/
+prototypes/gemini-live/.cache-draw*/
