@@ -59,14 +59,14 @@ All product defaults live in `app/phase2_web_cli.py`; the selected word source i
 
 | Component | Selected behavior |
 | --- | --- |
-| System rolling | Growing context `[max(0,t-180 s),t]` every 15 s; holdback H=0; at most one batch call in flight per meeting; a late call coalesces ticks and increments `skipped_window_ticks` |
-| Microphone rolling | Fixed recent 30 s window every 15 s, Gemini diarization off; open batch windows only for newly covered WebRTC-voiced audio; one local identity `speaker-microphone` |
+| System rolling | Per-meeting preset (round 2): **Balanced** growing context `[max(0,t-90 s),t]` every 15 s (default), Economy 90 s every 30 s, Max context 180 s every 15 s; holdback H=0; at most one batch call in flight **per lane** (lanes run in parallel); a late call coalesces ticks and increments `skipped_window_ticks` |
+| Microphone rolling | Fixed recent 30 s window every 15 s, **Gemini diarization on** (round 2); its own continuity registry with IDs `local-NNNN` shown as `Local NN`; open batch windows only for newly covered WebRTC-voiced audio |
 | W3 preview | `gemini-3.5-transcribe-live`, TEXT transcription, automatic VAD silence 500 ms, 2 s tail flush, 5 s replay after bounded GoAway reconnect; each lane opens only on WebRTC voice and closes after 60 s quiet |
 | Continuity | One-to-one Hungarian word-time overlap with committed rows, minimum 0.3 s; cross-window WeSpeaker cosine E=0.46; within-window local-label merge W=0.60 when words overlap by no more than 0.15 s; an unmatched label needs 2 s Gemini-attributed speech before a displayed ID is born |
 | Embeddings | Up to three continuous attributed spans of 2–10 s per local label, joined across gaps ≤0.6 s; production pinned WeSpeaker, three interval workers; measured vectors unchanged from serial encoding |
-| Retention and idle | 60 s retained-sample bound; at >45 s accepted-minus-committed lag, publish degraded S00 base accounting; after 15 s without ingress, drain the unrevised accepted suffix; Stop drain uses its 5 s configured deadline |
+| Retention and idle | 60 s retained-sample bound; at >45 s accepted-minus-committed lag, publish a degraded base that **carries both lanes' preview words as unlabelled rows** (round 2 S2); after 15 s without ingress, drain the unrevised accepted suffix; Stop returns within the browser's deadline while the server keeps draining up to 60 s, then decodes any still-uncovered tail with the terminal transcriber, else saves with an `unavailable` (needs-review) outcome — never a silent `final` (round 2 F1) |
 | Batch requests | `gemini-3.5-transcribe` verbatim word timestamps and speaker labels for system; app retries 429, 5xx, timeout up to three attempts with bounded backoff; SDK internal retry disabled so physical attempts match counters |
-| Terminal | One call through 900 s; above 900 s, 900 s chunks with 30 s overlap, at most three concurrent final calls, midpoint word-core ownership and seam/cosine stitch; skip any WebRTC-unvoiced final chunk |
+| Terminal | **Optional per meeting** (`cleanup_after_stop`, default off for Gemini — ADR-0017). One call through 900 s; above 900 s, 900 s chunks with 30 s overlap, at most three concurrent final calls, midpoint word-core ownership and seam/cosine stitch; skip any WebRTC-unvoiced final chunk. The same pipeline serves File and URL meetings (`app/gemini_file_runner.py`) |
 
 Pilot guards use cross-pass transcript witnesses, since WebRTC can mark music
 as voiced. W3 rotates with its existing 5 s replay only after batch words cover
@@ -104,6 +104,40 @@ The pinned WeSpeaker observations for Gemini-attributed meeting IDs flow through
 `_identity_observations` and `_identity_match_observations` to Account's existing
 name/enroll route and Voiceprint bank. Compatible encoder identity and vector
 dimension are required; Gemini never assigns cross-meeting names by itself.
+
+## Round 2 additions (2026-09-29, plan `docs/plan-gemini-live-r2.md`)
+
+- **Fingerprint veto** (`ContinuityRegistry.observe_window`): after overlap-first Hungarian matching, a label is contested when
+  another meeting ID's centroid cosine is ≥ .46 and beats the assigned ID by ≥ .20; a contested window is re-solved with
+  fingerprint weights. Measured: fixes 6/6 cached identity collapses (e.g. S30/L90 Bill30m DER .487 → .051, long60 .350 → .046)
+  with no passing-case regression beyond +1 ID (`prototypes/gemini-live/guard/NOTES.md`). Evidence covers one voice pair.
+- **Schedule presets** (`prototypes/gemini-live/schedule/NOTES.md`): S15/L90 halves re-sent audio (11.6× → 5.9×) and lowers label
+  lag (p50 17.5 → 13.3 s on long60) at equal long-form DER; 60 s context is rejected (P5: over-splitting even with the veto).
+- **Speaker-less rows (F13)** are relabelled by later windows; at Stop a remaining row takes the best same-lane fingerprint at
+  cosine ≥ .46, else stays Speaker TBD. Refused relabels are counted (`f13_relabel_refused`), never fatal; speaker-less turns are
+  never bridged. **Orphans:** an ID with < 2 s total committed speech (not user-named) is absorbed the same way at Stop
+  (`orphan_speakers_absorbed`).
+- **Clean-up after Stop off by default** (ADR-0017): the drained live surface is saved as final; P2 evidence
+  (`evidence/P65/p2-cleanup-skip.md`) and the Q-IND gate.
+- **Microphone lane** (G1 O2): diarized 30 s windows; cross-lane voice echo guard drops a mic word whose voice matches overlapping
+  (±0.4 s) system speech at cosine ≥ .60; the token echo guard keeps multi-token matches and requires voice corroboration for single
+  tokens (measured: headphones retention 320/336, speakers −20/−10 dB echo rejected 575/576 and 574/576, 2 Local IDs, 0
+  system-born; `prototypes/gemini-live/micfixture/NOTES.md`).
+- **Tentative names** (`app/gemini_tentative.py`): per-lane EMA centroids of settled canonical speakers; every 0.5 s of voiced
+  audio the trailing 1.0 s is embedded (single-thread pinned encoder) and assigned at cosine ≥ .40, else abstain; display-only
+  `provisional.segments[].tentative_speaker`, never saved or exported (`prototypes/gemini-live/tentative/NOTES.md`).
+- **After-Stop voiceprints** (D17): naming a completed Live meeting's speaker fingerprints that speaker's rows in the saved
+  recording minus intervals overlapped by any other row (either lane), ≥ 2 s (3/3 cases: 3.0 s eligible, 1.0 s refused;
+  `prototypes/gemini-live/wp3-overlap/NOTES.md`).
+- **Server summaries** (ADR-0011/0013 amendments): `POST /api/meetings/{id}/summary/live` (ephemeral, owner-bound live transcript)
+  and `/summary/server` (completed transcript at `source_version`, stored as `final_summary`), default `gemini-3.5-flash-lite`,
+  content-free `usage` in both responses.
+- **Cost meter**: usage reports metered input, `metered_output_usd`, and a Google-rate output estimate ($0.002/min Transcribe,
+  $0.004/min Live) separately; File/URL cost is an estimate from the terminal chunk plan (`prototypes/gemini-live/qfile/NOTES.md`;
+  retries unmeasured). Whether Google bills Transcribe output tokens (usage reports 0) is unconfirmed (A5).
+- **Open:** a paced long60 run on an intermediate branch stopped labelling at 750 s while all 173 system windows were decoded; fake
+  slow/raising diarizers do not reproduce it (`prototypes/gemini-live/long-silent-lane/NOTES.md`). F1's Stop recovery bounds its
+  effect on the saved transcript; root cause under investigation with cached real responses.
 
 ## Measured envelope and custody
 
