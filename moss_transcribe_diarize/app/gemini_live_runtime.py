@@ -259,6 +259,7 @@ class _GeminiState:
     rolling_frontier: int = 0
     voice_observations: dict[str, object] = field(default_factory=dict)
     voiceprint_errors: int = 0
+    f13_relabels: int = 0
     lane_counters: dict[str, dict[str, object]] = field(default_factory=dict)
 
 
@@ -451,13 +452,21 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     self._observe_voiceprints(state, update.segments)
                 elif isinstance(update, GeminiRelabel):
                     _register_speakers(session, update.segments)
+                    lane = update.segments[0].source_lane if update.segments else None
+                    speakerless = sum(1 for row in session.snapshot().effective_transcript
+                                      if row.authority == "rolling" and row.canonical_speaker is None
+                                      and row.source_lane == lane
+                                      and row.start_sample >= update.start_sample
+                                      and row.end_sample <= update.end_sample)
                     outcome = session.revise_rolling_interval(
                         start_sample=update.start_sample, end_sample=update.end_sample,
                         base_text_revision_version=session.snapshot().text_revision_version,
                         segments=_surface_segments(update.segments, "rolling"),
+                        source_lane=lane,
                     )
                     if not outcome.applied:
                         raise ValueError(f"rolling relabel refused: {outcome.refusal}")
+                    state.f13_relabels += speakerless
                     kind = "label_revision_applied"
                 elif isinstance(update, GeminiTurnBridge):
                     outcome = session.bridge_rolling_turn(
@@ -604,6 +613,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "window_lag_seconds": _lag_summary(state.window_lag_samples),
                 "preview_lag_seconds": _lag_summary(state.preview_lag_samples),
                 "voiceprint_errors": state.voiceprint_errors,
+                "f13_relabels": state.f13_relabels,
                 "lanes": {lane: {
                     key: (dict(value) if isinstance(value, dict) else value)
                     for key, value in totals.items()}
@@ -723,6 +733,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 )
                 if not outcome.submitted:
                     raise ValueError(f"stop tail refused: {outcome.refusal}")
+        await self._final_relabel_speakerless(state)
         await state.session.stop(1.0)
         with self._lock:
             self._record_event(state, "session_closed", {
@@ -745,6 +756,42 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 self._record_event(state, "terminal_finalization_started", {})
                 state.terminal_task = asyncio.create_task(self._run_terminal(state))
             return self._snapshot(state)
+
+    async def _final_relabel_speakerless(self, state: _GeminiState) -> None:
+        """Use the saved lane audio for rows that the final live window could not name."""
+        if self._voiceprint_encoder is None or state.tape is None or not state.voice_observations:
+            return
+        from .gemini_continuity_registry import _cosine
+        rows = tuple(row for row in state.session.snapshot().effective_transcript
+                     if row.authority == "rolling" and row.canonical_speaker is None)
+        lane_tape = getattr(state.engine, "lane_tape", None)
+        for row in rows:
+            candidates = ((speaker, observation.centroid)
+                          for speaker, observation in state.voice_observations.items()
+                          if (row.source_lane is None or
+                              (row.source_lane == "microphone") ==
+                              (speaker.startswith("local-") or speaker == "speaker-microphone")))
+            try:
+                tape = lane_tape(row.source_lane) if callable(lane_tape) and row.source_lane else state.tape
+                pcm = tape.read(start_sample=row.start_sample, end_sample=row.end_sample)
+                with tempfile.NamedTemporaryFile(suffix=".wav") as wav_file:
+                    with wave.open(wav_file.name, "wb") as wav:
+                        wav.setnchannels(1)
+                        wav.setsampwidth(2)
+                        wav.setframerate(LIVE_SAMPLE_RATE)
+                        wav.writeframes(pcm)
+                    vector = await asyncio.to_thread(
+                        self._voiceprint_encoder.embed, wav_file.name,
+                        [(0.0, (row.end_sample - row.start_sample) / LIVE_SAMPLE_RATE)])
+                cosine, speaker = max(((_cosine(vector, centroid), speaker)
+                                       for speaker, centroid in candidates), default=(-1.0, None))
+                if cosine >= .46 and speaker is not None:
+                    self.publish_update(state.session_id, GeminiRelabel(
+                        row.start_sample, row.end_sample,
+                        (GeminiSegment(row.start_sample, row.end_sample, row.text,
+                                       speaker, row.source_lane),)))
+            except Exception:
+                state.voiceprint_errors += 1
 
     async def _run_terminal(self, state: _GeminiState) -> None:
         assert state.tape is not None

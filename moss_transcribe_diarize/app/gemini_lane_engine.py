@@ -426,7 +426,8 @@ class LaneGeminiEngine:
                                     if row.end_sample <= update.start_sample
                                     or row.start_sample >= update.end_sample] + list(update.segments)
                 if update.end_sample <= self._frontier:
-                    rows = self._rows_in(update.start_sample, update.end_sample)
+                    rows = tuple(row for row in self._rows_in(update.start_sample, update.end_sample)
+                                 if row.source_lane == lane)
                     self.publish(GeminiRelabel(update.start_sample, update.end_sample, rows))
             elif isinstance(update, GeminiTurnBridge):
                 self._pending_turn_bridges.append(update)

@@ -11,7 +11,7 @@ from typing import Callable, Protocol, Sequence
 
 from scipy.optimize import linear_sum_assignment
 
-from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
+from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRelabel, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
 from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
@@ -232,6 +232,7 @@ class GeminiHybridEngine:
         self._committed = 0
         self._rolling_frontier = 0
         self._last_rolling_turn: GeminiSegment | None = None
+        self._speakerless_rows: list[GeminiSegment] = []
         self._last_window_end = 0
         self._last_preview_end = 0
         self._fast_words: list[GeminiWord] = []
@@ -467,6 +468,21 @@ class GeminiHybridEngine:
                 self._rolling_frontier = frontier
                 self._live_finals = [w for w in self._live_finals if w.end_sample > self._committed]
                 self._fast_words = [w for w in self._fast_words if w.end_sample > self._committed]
+            remaining = []
+            for row in self._speakerless_rows:
+                candidates = [(min(row.end_sample, word.end_sample)
+                               - max(row.start_sample, word.start_sample), mapping[word.speaker])
+                              for word in absolute if mapping[word.speaker] is not None]
+                overlap, speaker = max(candidates, default=(0, None))
+                if overlap > 0:
+                    revised = GeminiSegment(row.start_sample, row.end_sample, row.text,
+                                            speaker, row.source_lane)
+                    self.publish(GeminiRelabel(row.start_sample, row.end_sample, (revised,)))
+                else:
+                    remaining.append(row)
+            self._speakerless_rows = remaining
+            if frontier > old:
+                self._speakerless_rows.extend(row for row in rows if row.speaker is None)
             for update in relabels:
                 self.publish(update)
 

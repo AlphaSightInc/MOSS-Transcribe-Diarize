@@ -3,7 +3,7 @@ import threading
 from types import SimpleNamespace
 
 from moss_transcribe_diarize.app.gemini_hybrid_engine import FixedWindowScheduler, GrowingContextWindowScheduler, GeminiHybridEngine, OverlapRegistry
-from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiSegment
+from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRolling, GeminiRelabel, GeminiSegment
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord, GeminiWords
 from moss_transcribe_diarize.app.gemini_continuity_registry import ContinuityRegistry
 from moss_transcribe_diarize.app.live_tape import CompleteMixedTape
@@ -154,6 +154,29 @@ def test_overlap_registry_keeps_id_when_local_label_changes():
     one, _ = registry.observe_window(0, (GeminiWord("a", "spk:0", 0, 32000),))
     two, _ = registry.observe_window(1, (GeminiWord("a", "spk:9", 16000, 48000),))
     assert one["spk:0"] == two["spk:9"] == "speaker-0001"
+
+
+def test_later_window_relabels_short_committed_speakerless_row():
+    updates = []
+    registry = ContinuityRegistry(embedding_threshold=.46, within_window_threshold=.60,
+                                  birth_min_seconds=2)
+    engine = GeminiHybridEngine(
+        updates.append, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=90, stride_seconds=15),
+        registry=registry, diarizer=FakeDiarizer(), terminal=FakeTerminal())
+    engine._publish_window(0, 2*16000, bytes(2*32000),
+                           (GeminiWord("brief", "A", 0, 16000),))
+    assert [row.speaker for update in updates if isinstance(update, GeminiRolling)
+            for row in update.segments] == [None]
+    engine._publish_window(0, 4*16000, bytes(4*32000),
+                           (GeminiWord("brief", "B", 0, 16000),
+                            GeminiWord("continued", "B", 2*16000, 4*16000)))
+    relabels = [update for update in updates if isinstance(update, GeminiRelabel)]
+    assert len(relabels) == 1
+    assert (relabels[0].start_sample, relabels[0].end_sample,
+            relabels[0].segments[0].text, relabels[0].segments[0].speaker) == (
+                0, 16000, "brief", "speaker-0001")
+    engine.close()
 
 
 def test_rolling_turns_keep_annotation_order_after_timestamp_repair():

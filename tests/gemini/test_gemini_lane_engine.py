@@ -6,7 +6,7 @@ from array import array
 from moss_transcribe_diarize.app.gemini_lane_engine import (LaneGeminiEngine, TextEchoGuard,
     SystemWordLedger, VoicedLiveWords, AcousticEchoGuard, MicrophoneWordGate,
     SerializedDiarizer)
-from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiRolling, GeminiSegment, GeminiTurnBridge
+from moss_transcribe_diarize.app.gemini_live_runtime import GeminiBase, GeminiRolling, GeminiRelabel, GeminiSegment, GeminiTurnBridge
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord
 
 
@@ -119,6 +119,28 @@ def test_lane_engine_forwards_system_turn_bridge_after_both_lanes_commit(tmp_pat
     assert not any(isinstance(row, GeminiTurnBridge) for row in updates)
     engine._on_update("microphone", GeminiRolling(10*16000, 20*16000, ()))
     assert [row for row in updates if isinstance(row, GeminiTurnBridge)] == [bridge]
+    engine.close()
+
+
+def test_relabel_updates_only_the_originating_lane(tmp_path):
+    updates = []
+    class FakeLane:
+        def __init__(self, publish): pass
+        def push_audio(self, start_sample, pcm16): pass
+        async def drain_tail(self, deadline): return True
+        async def finish(self, tape): return ()
+        def close(self): pass
+    engine = LaneGeminiEngine(updates.append, system_factory=FakeLane,
+                              microphone_factory=FakeLane, tape_root=tmp_path)
+    system = GeminiSegment(0, 8000, "remote", None, "system")
+    mic = GeminiSegment(0, 8000, "local", "local-0001", "microphone")
+    engine._on_update("system", GeminiRolling(0, 16000, (system,)))
+    engine._on_update("microphone", GeminiRolling(0, 16000, (mic,)))
+    known = GeminiSegment(0, 8000, "remote", "speaker-0001", "system")
+    engine._on_update("system", GeminiRelabel(0, 8000, (known,)))
+    relabel = [row for row in updates if isinstance(row, GeminiRelabel)]
+    assert len(relabel) == 1
+    assert relabel[0].segments == (known,)
     engine.close()
 
 

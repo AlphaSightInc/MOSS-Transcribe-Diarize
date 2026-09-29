@@ -279,6 +279,69 @@ async def _relabel_and_terminal_revision_replace_visible_rows(tmp_path):
     assert {key: terminal_events[0].payload[key] for key in ("start_sample", "end_sample", "finalization_status")} == {"start_sample": 0, "end_sample": 16000, "finalization_status": "final"}
 
 
+def test_f13_relabel_counts_only_previously_speakerless_rows(tmp_path):
+    unknown = GeminiSegment(0, 8000, "brief", None)
+    known = GeminiSegment(0, 8000, "brief", "speaker-0001")
+    rt = runtime(tmp_path, {"one": ([(GeminiBase(16000, ()),
+                                      GeminiRolling(0, 16000, (unknown,)),
+                                      GeminiRelabel(0, 8000, (known,)))], ())})
+    rt.create(session_id="one")
+    rt.accept_frame("one", frame(0))
+    assert rt.snapshot("one").session.effective_transcript[0].canonical_speaker == "speaker-0001"
+    assert rt.engine_diagnostics("one")["f13_relabels"] == 1
+
+
+def test_f13_relabel_keeps_overlapping_other_lane_row(tmp_path):
+    system = GeminiSegment(0, 8000, "remote", None, "system")
+    mic = GeminiSegment(0, 8000, "local", "local-0001", "microphone")
+    known = GeminiSegment(0, 8000, "remote", "speaker-0001", "system")
+    rt = runtime(tmp_path, {"one": ([(GeminiBase(16000, ()),
+        GeminiRolling(0, 16000, (system, mic), revision_lanes=("system", "microphone")),
+        GeminiRelabel(0, 8000, (known,)))], ())})
+    rt.create(session_id="one")
+    rt.accept_frame("one", frame(0))
+    assert [(row.text, row.canonical_speaker) for row in
+            rt.snapshot("one").session.effective_transcript] == [
+                ("remote", "speaker-0001"), ("local", "local-0001")]
+
+
+@pytest.mark.parametrize("vector,expected", [((1., 0.), "speaker-0001"), ((0., 1.), None)])
+def test_stop_fingerprint_relabels_remaining_speakerless_row(tmp_path, vector, expected):
+    class Encoder:
+        spec = type("Spec", (), {"provider": "fake", "revision": "one",
+                                 "embedding_dimension": 2, "state_sha256": "0" * 64})()
+        def embed(self, path, intervals):
+            assert intervals == [(0.0, .5)]
+            return vector
+    class WaitingEngine(ScriptedGeminiEngine):
+        def __init__(self, publish):
+            super().__init__(publish, batches=[(GeminiBase(16000, ()),
+                                                GeminiRolling(0, 16000,
+                                                    (GeminiSegment(0, 8000, "brief", None),)))],
+                             terminal=())
+            self.release = asyncio.Event()
+        async def drain_tail(self, deadline): return True
+        async def finish(self, tape):
+            await self.release.wait()
+            return ()
+    async def run():
+        engines = []
+        rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
+            engine_factory=lambda _id, publish, _usage: (
+                engines.append(WaitingEngine(publish)) or engines[-1]),
+            voiceprint_encoder=Encoder())
+        rt.create(session_id="one")
+        rt.accept_frame("one", frame(0))
+        rt._sessions["one"].voice_observations["speaker-0001"] = type(
+            "Observation", (), {"centroid": (1., 0.)})()
+        stopped = await rt.stop("one", 1.0)
+        assert stopped.session.effective_transcript[0].canonical_speaker == expected
+        assert rt.engine_diagnostics("one")["f13_relabels"] == int(expected is not None)
+        engines[0].release.set()
+        await rt.wait_terminal("one")
+    asyncio.run(run())
+
+
 def test_two_sessions_abort_and_engine_failure_are_isolated(tmp_path):
     asyncio.run(_two_sessions_abort_and_engine_failure_are_isolated(tmp_path))
 
