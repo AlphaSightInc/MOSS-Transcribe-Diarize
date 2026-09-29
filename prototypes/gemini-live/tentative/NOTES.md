@@ -75,3 +75,17 @@ Recommended: W1.0 s snippet, T .40, EMA centroids from canonical >= 2 s spans, 4
 show greyed tentative name; abstain below T; unknown voices stay "Speaker TBD" until the canonical lane births them.
 Weak spots: first ~2 s of a new turn (.78), crosstalk (abstains), unmeasured on conference-compressed audio, similar voices,
 mic-lane echo and several local people (no public corpus).
+
+## R2 product-path paced HTTP check (WP4)
+
+**Structural question.** Do display-only guesses survive the actual Account HTTP snapshot path, with the system and microphone lanes kept distinct, and cover at least 70% of visible Speaker-TBD reference-speech time at at least 95% accuracy on public long60?
+
+**Minimum primitives.** The existing 1.0x long60 replay and public reference, the first observed provisional segment with its source lane and tentative canonical ID, the pre-Stop settled canonical-to-reference mapping, and the product `engine_diagnostics`. The capture never uses future labels to make a guess; the reference mapping is retrospective scoring only.
+
+**Invariants.** Only `common/corpus.py` long60 audio is sent; no private/operator audio. Port 18740 and the WP4 worktree only. No retry after an accuracy failure. `provisional.segments` and `tentative_spans` stay out of the durable transcript and events. The original transcript string is unchanged. Cumulative embed wall time / paced audio duration is reported as a wall-share proxy, not a per-core CPU percentage.
+
+**Assumptions / unknowns.** First observed `(start_sample,end_sample,lane)` represents a preview word once; revisions at the same interval count at first visibility. The denominator is reference-speech overlap of first-seen provisional system segments, not all elapsed audio or silent Speaker-TBD intervals. Overlapping reference speakers contribute their overlapped speech time. This population may differ from the prototype's half-second voiced-tick denominator and is reported separately.
+
+**Falsifier.** Coverage below .70 or correct time below .95 of shown time fails the WP4 target on this denominator; absent snapshot rows or unsupported reference mapping makes the result `UNMEASURED`. A lane collision in the snapshot violates the interface regardless of aggregate accuracy.
+
+**Tool decision.** `http_long60.py` reuses the existing `harness/run_long60.py` replay and only captures the first-seen lane-bearing provisional rows at its existing 250 ms poll. `score_http.py` applies duration overlap to those rows and the existing pre-Stop settled snapshot. These tools answer whether to keep, revise, or park the live guess path; they make no Gemini calls of their own.
