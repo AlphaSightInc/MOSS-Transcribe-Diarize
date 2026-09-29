@@ -38,18 +38,27 @@ def execute_submission_script(workspace_html: str) -> dict[str, object]:
             page.route('**/*', route)
             page.goto('http://upload.test')
             page.locator('[data-history-boot="ready"]').wait_for()
+            page.get_by_role('button', name='File', exact=True).click()
             page.locator('input[name="file"]').set_input_files([
                 {'name': 'one.wav', 'mimeType': 'audio/wav', 'buffer': b'one'},
                 {'name': 'two.wav', 'mimeType': 'audio/wav', 'buffer': b'two'},
             ])
-            page.locator('textarea[name="urls"]').fill('https://media.test/http-failure\nhttps://media.test/good')
-            page.get_by_role('button', name='Transcribe files and URLs', exact=True).click()
-            expect(page.locator('[data-file-upload="status"]')).to_contain_text('2 accepted; 2 need attention.')
-            expect(page.locator('[data-file-upload="results"] li')).to_have_count(4)
+            page.get_by_role('button', name='Start file transcription', exact=True).click()
+            expect(page.locator('[data-file-upload="status"]')).to_contain_text('1 accepted; 1 need attention.')
+            expect(page.locator('[data-file-upload="results"] li')).to_have_count(2)
+            file_status = page.locator('[data-file-upload="status"]').inner_text()
+            page.get_by_role('button', name='URL', exact=True).click()
+            url = page.locator('input[name="urls"]')
+            url.fill('https://media.test/http-failure')
+            page.get_by_role('button', name='Start URL transcription', exact=True).click()
             expect(page.locator('[data-file-upload="results"]')).to_contain_text('Unsupported media URL')
-            expect(page.locator('[data-file-upload="results"]')).to_contain_text('history before retrying')
+            expect(page.locator('[data-file-upload="results"]')).to_contain_text('before submitting it again')
+            url.fill('https://media.test/good')
+            page.get_by_role('button', name='Start URL transcription', exact=True).click()
+            expect(page.locator('[data-file-upload="status"]')).to_contain_text('1 accepted; 0 need attention.')
             return {'calls': calls, 'created': page.evaluate('window.created'),
-                    'status': page.locator('[data-file-upload="status"]').inner_text()}
+                    'file_status': file_status,
+                    'url_status': page.locator('[data-file-upload="status"]').inner_text()}
         finally:
             browser.close()
 
@@ -63,6 +72,7 @@ def test_mixed_file_url_form_reports_each_result_and_created_event():
             "/api/meetings/url",
             "/api/meetings/url",
         ],
-        "status": "2 accepted; 2 need attention. Accepted work continues on the server.",
+        "file_status": "1 accepted; 1 need attention. Accepted work continues on the server.",
+        "url_status": "1 accepted; 0 need attention. Accepted work continues on the server.",
         "created": ["accepted-1", "accepted-4"],
     }

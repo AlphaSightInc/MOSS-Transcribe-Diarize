@@ -3,7 +3,8 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { storageKeys } from "../lib/persistence";
-import { captureMeetingId } from "../state/session";
+import { captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus } from "../state/session";
+import { selectedSummaryMeeting } from "../state/ui";
 
 const mocks = vi.hoisted(() => {
   const poller = {
@@ -90,8 +91,32 @@ describe("ControlPanel reattach", () => {
 
   afterEach(() => {
     act(() => render(null, root));
+    resetSessionState();
+    selectedSummaryMeeting.value = null;
     root.remove();
     workletMeta.remove();
+  });
+
+  it("holds transcript and audio export while refinement runs, then restores Save", async () => {
+    const meeting = { id: "refining", mode: "live" as const, title: "Meeting", title_source: "automatic" as const,
+      status: "completed" as const, created_at_ms: Date.now(), transcript_version: 1,
+      refinement_state: "running" as const, transcript: { segments: [] }, audio: null };
+    act(() => {
+      sessionId.value = meeting.id;
+      sessionStatus.value = "closed";
+      selectedSummaryMeeting.value = meeting;
+      replaceTranscript([{ start: 0, end: 1, text: "Live words", speaker: "S01", speaker_entity_id: "S01",
+        display_name: "Alex", state: "final" }]);
+      render(<ControlPanel />, root);
+    });
+    const format = root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!;
+    const save = root.querySelector<HTMLButtonElement>(".controls-export button")!;
+    expect(format.disabled).toBe(true);
+    expect(save.disabled).toBe(true);
+    expect(root.textContent).toContain("Export waits for transcript improvement.");
+    act(() => { selectedSummaryMeeting.value = { ...meeting, refinement_state: "done", transcript_version: 2 }; });
+    expect(format.disabled).toBe(false);
+    expect(save.disabled).toBe(false);
   });
 
   it("reattaches read-only with only the Account Meeting ID", async () => {
@@ -145,21 +170,22 @@ describe("ControlPanel reattach", () => {
   it("distinguishes connections from sound and never enables microphone-only Start", async () => {
     await act(async () => render(<ControlPanel />, root));
     const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
-    expect(root.textContent).toContain("Microphone-only capture is not available");
+    expect(root.textContent).toContain("Microphone and shared audio are required");
     expect(root.textContent).toContain("Not connected");
     await act(async () => button("Enable microphone")!.click());
     await vi.waitFor(() => expect(root.textContent).toContain("Connected · receiving sound"));
     expect(root.querySelector('[data-capture-readiness]')?.textContent).toContain("Share audio");
-    expect(button("Start capture")).toBeUndefined();
+    expect(button("Start recording")).toBeUndefined();
+    expect(button("Share audio")?.classList.contains("record-btn")).toBe(true);
     act(() => mocks.captureOptions!.onMeter!("microphone", 0));
     expect(root.textContent).toContain("Connected · quiet");
     await act(async () => button("Share audio")!.click());
     await vi.waitFor(() => expect(root.querySelector('[data-capture-readiness]')?.textContent).toContain("speak into your microphone"));
-    expect(button("Start capture")).toBeUndefined();
+    expect(button("Start recording")!.disabled).toBe(true);
     act(() => mocks.captureOptions!.onMeter!("microphone", .5));
-    expect(button("Start capture")!.disabled).toBe(false);
+    expect(button("Start recording")!.disabled).toBe(false);
     act(() => mocks.captureOptions!.onMeter!("system", 0));
-    expect(button("Start capture")!.disabled).toBe(true);
+    expect(button("Start recording")!.disabled).toBe(true);
     expect(root.querySelector('[data-capture-readiness]')?.textContent).toContain("play sound in the shared tab");
     await act(async () => button("Reshare audio")!.click());
     expect(mocks.replaceLane).toHaveBeenCalledWith("system", expect.anything(), expect.any(Array));
@@ -241,8 +267,10 @@ describe("ControlPanel reattach", () => {
     await act(async () => { render(<ControlPanel />, root); });
     const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
     await act(async () => button("Enable microphone")?.click());
+    await vi.waitFor(() => expect(button("Share audio")).toBeTruthy());
     await act(async () => button("Share audio")?.click());
-    await act(async () => button("Start capture")?.click());
+    await vi.waitFor(() => expect(button("Start recording")?.disabled).toBe(false));
+    await act(async () => button("Start recording")?.click());
     act(() => {
       mocks.captureOptions?.onTransportError?.("frame", new TypeError("Failed to fetch"));
       mocks.pollerOptions?.onError?.("Failed to fetch");
@@ -262,8 +290,10 @@ describe("ControlPanel reattach", () => {
     await act(async () => { render(<ControlPanel />, root); });
     const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
     await act(async () => button("Enable microphone")?.click());
+    await vi.waitFor(() => expect(button("Share audio")).toBeTruthy());
     await act(async () => button("Share audio")?.click());
-    await act(async () => button("Start capture")?.click());
+    await vi.waitFor(() => expect(button("Start recording")?.disabled).toBe(false));
+    await act(async () => button("Start recording")?.click());
     await act(async () => button("Stop and finalize")?.click());
     expect(mocks.captureStop).toHaveBeenCalledWith(5);
     expect(root.querySelector('[data-capture-phase="stopping"]')).not.toBeNull();
@@ -283,8 +313,10 @@ describe("ControlPanel reattach", () => {
       );
 
     await act(async () => button("Enable microphone")?.click());
+    await vi.waitFor(() => expect(button("Share audio")).toBeTruthy());
     await act(async () => button("Share audio")?.click());
-    await act(async () => button("Start capture")?.click());
+    await vi.waitFor(() => expect(button("Start recording")?.disabled).toBe(false));
+    await act(async () => button("Start recording")?.click());
     expect(root.querySelector('[data-capture-phase="active"]')).not.toBeNull();
     expect(captureMeetingId.value).toBe("account-live-meeting");
     expect(mocks.poller.start).toHaveBeenCalledOnce();

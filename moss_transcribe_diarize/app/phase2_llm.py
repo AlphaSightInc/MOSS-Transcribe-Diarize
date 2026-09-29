@@ -21,6 +21,14 @@ from fastapi import HTTPException
 from starlette.requests import Request
 
 
+class InvalidSummaryOutput(ValueError):
+    """The provider answered, but not with parseable JSON; usage was still incurred."""
+
+    def __init__(self, usage):
+        super().__init__("Gemini summary output is not valid JSON.")
+        self.usage = usage
+
+
 class GeminiSummaryGenerator:
     """Generate a transcript-only JSON briefing with the server's Gemini key."""
 
@@ -76,7 +84,10 @@ class GeminiSummaryGenerator:
         input_rate, output_rate = SUMMARY_PRICES[model]
         usage = {"model": model, "input_tokens": input_tokens, "output_tokens": output_tokens,
                  "cost_usd": round((input_tokens * input_rate + output_tokens * output_rate) / 1_000_000, 9)}
-        return json.loads(response.text or ""), usage
+        try:
+            return json.loads(response.text or ""), usage
+        except ValueError as exc:
+            raise InvalidSummaryOutput(usage) from exc
 
 
 @dataclass(frozen=True)

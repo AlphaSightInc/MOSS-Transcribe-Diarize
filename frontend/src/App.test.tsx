@@ -29,7 +29,7 @@ describe("Account application shell", () => {
     expect(root.querySelector("#transcript-panel")).not.toBeNull();
     expect(root.querySelector('[aria-label="Listening setup"]')).not.toBeNull();
     expect(root.textContent).toContain("Enable microphone");
-    expect(root.querySelector('[role="tab"]')).toBeNull();
+    expect(root.querySelectorAll('[aria-label="Meeting views"] [role="tab"]')).toHaveLength(2);
     expect(root.querySelector('input[type="password"]')).toBeNull();
     expect(root.querySelector('input[type="file"]')).toBeNull();
     expect(root.querySelector('.history-panel')).toBeNull();

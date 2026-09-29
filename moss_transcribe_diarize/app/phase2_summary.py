@@ -23,6 +23,16 @@ SUMMARY_PRICES = {
 SUMMARY_MODELS = frozenset(SUMMARY_PRICES)
 DEFAULT_SUMMARY_MODEL = "gemini-3.5-flash-lite"
 DEFAULT_SUMMARY_PROMPT = Path(__file__).with_name("final_summary_prompt.txt").read_text(encoding="utf-8")
+SUMMARY_ATTEMPTS = 3
+
+
+def _add_usage(total, usage):
+    if usage is None:
+        return total
+    if total is None:
+        return dict(usage)
+    return {"model": usage["model"],
+            **{key: total[key] + usage[key] for key in ("input_tokens", "output_tokens", "cost_usd")}}
 
 
 class SummaryConflict(ValueError):
@@ -209,19 +219,31 @@ def attach_summary_routes(app, require_account, generator=None):
         return body
 
     async def generate(request, document, body):
+        # Flash-lite occasionally returns malformed or out-of-contract JSON (long60: 1 of 2 calls);
+        # like LiveTranscribe, retry a bounded number of times and report the summed usage.
         service = request.app.state.summary_generator
         if service is None:
             raise HTTPException(503, {"code": "summary_unavailable"})
-        try:
-            return await service(document, model=body.get("model", DEFAULT_SUMMARY_MODEL),
-                                 language=body.get("language", ""),
-                                 prompt=body.get("prompt", DEFAULT_SUMMARY_PROMPT))
-        except TimeoutError:
-            raise HTTPException(504, {"code": "summary_timeout"}) from None
-        except ValueError:
-            raise HTTPException(502, {"code": "invalid_summary"}) from None
-        except Exception:
-            raise HTTPException(502, {"code": "summary_provider_error"}) from None
+        duration = max((float(row["end"]) for row in document["segments"]), default=0)
+        spent = None
+        for _attempt in range(SUMMARY_ATTEMPTS):
+            try:
+                result, usage = await service(document, model=body.get("model", DEFAULT_SUMMARY_MODEL),
+                                              language=body.get("language", ""),
+                                              prompt=body.get("prompt", DEFAULT_SUMMARY_PROMPT))
+            except TimeoutError:
+                raise HTTPException(504, {"code": "summary_timeout"}) from None
+            except ValueError as exc:
+                spent = _add_usage(spent, getattr(exc, "usage", None))
+                continue
+            except Exception:
+                raise HTTPException(502, {"code": "summary_provider_error"}) from None
+            spent = _add_usage(spent, usage)
+            try:
+                return validate_summary(result, duration), spent
+            except ValueError:
+                continue
+        raise HTTPException(502, {"code": "invalid_summary"})
 
     def claim(request, meeting_id):
         inflight = request.app.state.summary_inflight

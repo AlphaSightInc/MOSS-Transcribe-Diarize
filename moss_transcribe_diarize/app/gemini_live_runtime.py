@@ -162,7 +162,8 @@ class GeminiTurnBridge:
 
 GeminiUpdate = GeminiPreview | GeminiBase | GeminiRolling | GeminiRelabel | GeminiTurnBridge
 
-GEMINI_DEFAULT_ENGINE_SETTINGS = {"speaker_window": "balanced", "cleanup_after_stop": False}
+GEMINI_DEFAULT_ENGINE_SETTINGS = {"speaker_window": "balanced", "cleanup_after_stop": True}
+GEMINI_REFINEMENT_TIMEOUT_SECONDS = 3600.0
 GEMINI_SPEAKER_WINDOW_PRESETS = {"balanced": (15, 90), "economy": (30, 90),
                                  "max": (15, 180)}
 
@@ -234,11 +235,13 @@ class _GeminiState:
     engine_settings: dict[str, object] = field(default_factory=dict)
     tentative: GeminiTentativeLabeler | None = None
     tentative_closed: bool = False
+    tentative_errors: int = 0
     ingress_lock: threading.RLock = field(default_factory=threading.RLock)
     next_event_seq: int = 0
     terminal_failure: LiveServiceFailureRecord | None = None
     stop_task: asyncio.Task[LiveServiceSnapshot] | None = None
     terminal_task: asyncio.Task[None] | None = None
+    refinement_gate: asyncio.Event | None = None
     calls_by_kind: dict[str, int] = field(default_factory=dict)
     errors_by_code: dict[str, int] = field(default_factory=dict)
     retries_by_code: dict[str, int] = field(default_factory=dict)
@@ -334,6 +337,24 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             if state is not None:
                 state.manually_named_speakers.add(speaker_id)
 
+    def refinement_running(self, session_id: str) -> bool:
+        with self._lock:
+            state = self._sessions.get(session_id)
+            return bool(state is not None and state.engine_settings["cleanup_after_stop"]
+                        and state.session.snapshot().finalization_status == "running")
+
+    def release_refinement(self, session_id: str) -> None:
+        with self._lock:
+            gate = self._get(session_id).refinement_gate
+            if gate is not None:
+                gate.set()
+
+    def cancel_refinement(self, session_id: str) -> None:
+        with self._lock:
+            state = self._sessions.get(session_id)
+            if state is not None and state.terminal_task is not None:
+                state.terminal_task.cancel()
+
     def create(self, *, echo_mode: str | None = None, session_id: str | None = None,
                engine_settings: object = None) -> LiveServiceCreateResult:
         if echo_mode is not None and echo_mode not in {"headphones", "speakers"}:
@@ -398,9 +419,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "end_sample": ack.end_sample, "queued_item_ids": (),
                 })
             try:
-                if state.tentative is not None:
-                    for lane, pcm in (frame.lane_pcm or (("system", frame.pcm),)):
-                        state.tentative.accept_audio(lane, ack.start_sample, pcm)
+                for lane, pcm in (frame.lane_pcm or (("system", frame.pcm),)):
+                    self._tentative_call(state, "accept_audio", lane, ack.start_sample, pcm)
                 assert state.engine is not None
                 push_lanes = getattr(state.engine, "push_lanes", None)
                 if frame.lane_pcm and callable(push_lanes):
@@ -430,11 +450,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     segments = _trim_committed_preview(
                         update.segments, session.snapshot().effective_transcript)
                     transcript = _unlabelled_transcript(segments, start)
-                    spans = ()
-                    if state.tentative is not None:
-                        spans = tuple(span for lane in dict.fromkeys(
-                            row.source_lane or "system" for row in segments)
-                            for span in state.tentative.spans(lane, start, update.end_sample))
+                    spans = tuple(span for lane in dict.fromkeys(
+                        row.source_lane or "system" for row in segments)
+                        for span in self._tentative_call(state, "spans", lane, start, update.end_sample))
                     preview_segments = tuple({
                         "start_sample": row.start_sample, "end_sample": row.end_sample,
                         "text": row.text, "source_lane": row.source_lane or "system",
@@ -484,17 +502,15 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     state.window_lag_samples.append(max(0, session.snapshot().accepted_samples - state.rolling_frontier))
                     for observation in update.observations:
                         state.voice_observations.setdefault(observation.speaker_label, observation)
-                    if state.tentative is not None:
-                        lanes_by_speaker = {row.speaker: row.source_lane or "system"
-                                            for row in update.segments if row.speaker is not None}
-                        for observation in update.observations:
-                            lane = lanes_by_speaker.get(observation.speaker_label)
-                            if lane is not None:
-                                state.tentative.observe((observation,), lane=lane)
+                    lanes_by_speaker = {row.speaker: row.source_lane or "system"
+                                        for row in update.segments if row.speaker is not None}
+                    for observation in update.observations:
+                        lane = lanes_by_speaker.get(observation.speaker_label)
+                        if lane is not None:
+                            self._tentative_call(state, "observe", (observation,), lane=lane)
                     new_voiceprints = self._observe_voiceprints(state, update.segments)
-                    if state.tentative is not None:
-                        for lane, observation in new_voiceprints:
-                            state.tentative.observe((observation,), lane=lane)
+                    for lane, observation in new_voiceprints:
+                        self._tentative_call(state, "observe", (observation,), lane=lane)
                 elif isinstance(update, GeminiRelabel):
                     _register_speakers(session, update.segments)
                     lane = update.segments[0].source_lane if update.segments else None
@@ -514,9 +530,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         return
                     state.f13_relabels += speakerless
                     new_voiceprints = self._observe_voiceprints(state, update.segments)
-                    if state.tentative is not None:
-                        for lane, observation in new_voiceprints:
-                            state.tentative.observe((observation,), lane=lane)
+                    for lane, observation in new_voiceprints:
+                        self._tentative_call(state, "observe", (observation,), lane=lane)
                     kind = "label_revision_applied"
                 elif isinstance(update, GeminiTurnBridge):
                     outcome = session.bridge_rolling_turn(
@@ -658,10 +673,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state = self._get(session_id)
             return {
                 "engine_settings": dict(state.engine_settings),
-                **(state.tentative.diagnostics() if state.tentative is not None else {
-                    "tentative_shown_s": 0.0, "tentative_abstained_s": 0.0,
+                **({"tentative_shown_s": 0.0, "tentative_abstained_s": 0.0,
                     "tentative_embed_p50_ms": None, "tentative_embed_p95_ms": None,
-                    "tentative_embed_wall_s": 0.0, "tentative_busy_ticks": 0}),
+                    "tentative_embed_wall_s": 0.0, "tentative_busy_ticks": 0}
+                   | self._tentative_call(state, "diagnostics", default={})),
+                "tentative_errors": state.tentative_errors,
                 "calls_by_kind": dict(state.calls_by_kind),
                 "errors_by_code": dict(state.errors_by_code),
                 "retries_by_code": dict(state.retries_by_code),
@@ -811,7 +827,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         with self._lock:
             accepted = state.session.snapshot().accepted_samples
             covered = state.rolling_frontier >= accepted
-        if not covered and not state.engine_settings["cleanup_after_stop"]:
+        if not covered:
             recover = getattr(state.engine, "recover_tail", None)
             if callable(recover):
                 try:
@@ -833,14 +849,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 if not outcome.submitted:
                     raise ValueError(f"stop tail refused: {outcome.refusal}")
         await self._final_relabel_speakerless(state)
-        if not state.engine_settings["cleanup_after_stop"]:
-            await self._absorb_orphan_speakers(state)
+        await self._absorb_orphan_speakers(state)
         await state.session.stop(1.0)
         with self._lock:
             self._record_event(state, "session_closed", {
                 "accepted_samples": state.session.snapshot().accepted_samples,
             })
-            if (not state.engine_settings["cleanup_after_stop"] and not covered):
+            if not covered:
                 state.session.note_finalization("unavailable")
                 self._record_event(state, "terminal_finalization_unavailable", {
                     "outcome": "unavailable", "reason": "tail_uncovered"})
@@ -848,45 +863,47 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 if callable(closer):
                     closer()
                 self._release_tape(state)
-            elif (not state.engine_settings["cleanup_after_stop"] and
-                    state.session.snapshot().accepted_samples > 0):
-                before = state.session.snapshot()
-                outcome = state.session.apply_text_revision(TextRevisionProposal(
-                    epoch=state.session.epoch,
-                    base_text_revision_version=before.text_revision_version,
-                    source="terminal", start_sample=0,
-                    end_sample=before.committed_samples,
-                    segments=tuple(replace(row, authority="terminal")
-                                   for row in before.effective_transcript),
-                ))
-                if not outcome.applied:
-                    raise ValueError(f"live final revision refused: {outcome.refusal}")
-                self._record_event(state, "text_revision_applied", {
-                    "source": "live", "start_sample": 0,
-                    "end_sample": before.committed_samples,
-                    "finalization_status": "final",
-                })
-                self._record_event(state, "terminal_finalization_completed", {"outcome": "final"})
-                closer = getattr(state.engine, "close", None)
-                if callable(closer):
-                    closer()
-                self._release_tape(state)
-            elif state.tape is None or not state.tape.taping or not state.tape.accounting(
-                through_sample=state.session.snapshot().accepted_samples
-            ).complete:
-                state.session.note_finalization("unavailable")
-                self._record_event(state, "terminal_finalization_unavailable", {
-                    "outcome": "unavailable", "reason": "complete_tape_unavailable"})
-                self._release_tape(state)
-            elif state.session.snapshot().accepted_samples == 0:
+            elif state.session.snapshot().accepted_samples > 0:
+                if not state.engine_settings["cleanup_after_stop"]:
+                    before = state.session.snapshot()
+                    outcome = state.session.apply_text_revision(TextRevisionProposal(
+                        epoch=state.session.epoch,
+                        base_text_revision_version=before.text_revision_version,
+                        source="terminal", start_sample=0,
+                        end_sample=before.committed_samples,
+                        segments=tuple(replace(row, authority="terminal")
+                                       for row in before.effective_transcript),
+                    ))
+                    if not outcome.applied:
+                        raise ValueError(f"live final revision refused: {outcome.refusal}")
+                    self._record_event(state, "text_revision_applied", {
+                        "source": "live", "start_sample": 0,
+                        "end_sample": before.committed_samples,
+                        "finalization_status": "final",
+                    })
+                    self._record_event(state, "terminal_finalization_completed", {"outcome": "final"})
+                    closer = getattr(state.engine, "close", None)
+                    if callable(closer):
+                        closer()
+                    self._release_tape(state)
+                elif state.tape is None or not state.tape.taping or not state.tape.accounting(
+                    through_sample=state.session.snapshot().accepted_samples
+                ).complete:
+                    state.session.note_finalization("unavailable")
+                    self._record_event(state, "terminal_finalization_unavailable", {
+                        "outcome": "unavailable", "reason": "complete_tape_unavailable"})
+                    self._release_tape(state)
+                else:
+                    state.session.note_finalization("running")
+                    self._record_event(state, "terminal_finalization_started", {})
+                    if self._publication_observer is not None:
+                        state.refinement_gate = asyncio.Event()
+                    state.terminal_task = asyncio.create_task(self._run_terminal(state))
+            else:
                 state.session.note_finalization("unavailable")
                 self._record_event(state, "terminal_finalization_unavailable", {
                     "outcome": "no_transcript", "reason": "digital_silence"})
                 self._release_tape(state)
-            else:
-                state.session.note_finalization("running")
-                self._record_event(state, "terminal_finalization_started", {})
-                state.terminal_task = asyncio.create_task(self._run_terminal(state))
             return self._snapshot(state)
 
     async def _final_relabel_speakerless(self, state: _GeminiState) -> None:
@@ -981,7 +998,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         assert state.tape is not None
         assert state.engine is not None
         try:
-            rows = tuple(await state.engine.finish(state.tape))
+            if state.refinement_gate is not None:
+                await state.refinement_gate.wait()
+            rows = tuple(await asyncio.wait_for(
+                state.engine.finish(state.tape), timeout=GEMINI_REFINEMENT_TIMEOUT_SECONDS))
             with self._lock:
                 from .live_transcript_convergence import terminal_speaker_mapping
                 before = state.session.snapshot()
@@ -1106,6 +1126,23 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         if callable(close):
             close()
         self._release_tape(state)
+
+    def _tentative_call(self, state: _GeminiState, method: str, *args, default=(), **kwargs):
+        # Guesses are display-only: a labeler failure turns them off for this meeting and is
+        # counted, but never fails the meeting's audio ingress or publication.
+        labeler = state.tentative
+        if labeler is None:
+            return default
+        try:
+            return getattr(labeler, method)(*args, **kwargs)
+        except Exception:
+            state.tentative_errors += 1
+            state.tentative = None
+            try:
+                labeler.close()
+            except Exception:
+                pass
+            return default
 
     def _raise_terminal(self, state: _GeminiState) -> None:
         if state.terminal_failure is not None:

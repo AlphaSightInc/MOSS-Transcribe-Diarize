@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { createPortal } from "preact/compat";
-import { FinalSummary, FinalSummarySettings } from "./FinalSummary";
 import {
   listMeetings,
   openMeeting,
@@ -12,6 +10,7 @@ import type { SessionLifecycle, TranscriptItem } from "../api/types";
 import { dispatchWsEvent } from "../api/ws";
 import {
   filterMeetings,
+  formatMeetingDuration,
   formatMeetingTimestamp,
   groupMeetings,
   meetingTitle,
@@ -30,7 +29,7 @@ import {
   sessionStatus,
   sessionTitle
 } from "../state/session";
-import { historyView, selectedSummaryMeeting, summaryPageOpen } from "../state/ui";
+import { historyView, selectedSummaryMeeting } from "../state/ui";
 
 export function MeetingHistory() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -45,10 +44,6 @@ export function MeetingHistory() {
   const refreshGenerationRef = useRef(0);
   const renameDialogRef = useRef<HTMLDialogElement | null>(null);
   const renameInputRef = useRef<HTMLInputElement | null>(null);
-  const summaryButtonRef = useRef<HTMLButtonElement | null>(null);
-  const backButtonRef = useRef<HTMLButtonElement | null>(null);
-  const summaryMeeting = selectedSummaryMeeting.value;
-  const summaryOpen = summaryPageOpen.value && summaryMeeting !== null;
 
   const groups = useMemo(
     () => groupMeetings(filterMeetings(meetings, query)),
@@ -56,9 +51,6 @@ export function MeetingHistory() {
   );
 
   const replaceSelection = (meeting: Meeting | null) => {
-    if (selectedRef.current?.id !== meeting?.id || meeting?.status !== "completed") {
-      summaryPageOpen.value = false;
-    }
     selectedRef.current = meeting;
     setSelected(meeting);
     selectedSummaryMeeting.value = meeting?.status === "completed" ? meeting : null;
@@ -79,8 +71,8 @@ export function MeetingHistory() {
       if (repaired && sessionId.value === repaired.id) {
         publishMeeting(repaired, false);
       } else if (currentSession && currentSession.status !== "active") {
-        // Stop completes through the Live poller, not a manual History selection. Hydrate
-        // its durable notice/review projection as soon as the terminal row is visible.
+        // Stop completes through the Live poller; select its durable Meeting automatically.
+        replaceSelection(currentSession);
         publishMeeting(currentSession, false);
       } else if (!repaired && previous && sessionId.value === previous.id) {
         resetSessionState();
@@ -104,9 +96,30 @@ export function MeetingHistory() {
     return () => {
       document.removeEventListener(MEETING_HISTORY_REFRESH_EVENT, handleRefresh);
       selectedSummaryMeeting.value = null;
-      summaryPageOpen.value = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (selected?.refinement_state !== "running") return;
+    const id = selected.id;
+    let disposed = false;
+    let reading = false;
+    const timer = setInterval(async () => {
+      if (reading) return;
+      reading = true;
+      try {
+        const next = await openMeeting(id);
+        if (disposed || selectedRef.current?.id !== id) return;
+        if (selectedRef.current.refinement_state === next.refinement_state &&
+            selectedRef.current.transcript_version === next.transcript_version) return;
+        setMeetings(current => current.map(meeting => meeting.id === id ? next : meeting));
+        replaceSelection(next);
+        if (sessionId.value === id) publishMeeting(next, false);
+      } catch { /* Keep the last durable version and try again at the next interval. */ }
+      finally { reading = false; }
+    }, 5000);
+    return () => { disposed = true; clearInterval(timer); };
+  }, [selected?.id, selected?.refinement_state]);
 
   useEffect(() => {
     if (!renameTarget) return;
@@ -132,17 +145,6 @@ export function MeetingHistory() {
     };
   }, [renameTarget]);
 
-  useEffect(() => {
-    if (summaryOpen) backButtonRef.current?.focus();
-    else if (summaryMeeting) summaryButtonRef.current?.focus();
-    if (!summaryOpen) return;
-    const workspace = document.querySelector<HTMLElement>('main[data-auth-state="signed-in"]');
-    const wasInert = workspace?.hasAttribute("inert") ?? false;
-    workspace?.setAttribute("inert", "");
-    return () => {
-      if (!wasInert) workspace?.removeAttribute("inert");
-    };
-  }, [summaryOpen]);
 
   const selectMeeting = async (meetingId: string) => {
     if (
@@ -206,11 +208,6 @@ export function MeetingHistory() {
   return (<>
     <section className="panel history-panel account-history-panel" aria-label="Meeting history">
       <div className="panel-body">
-        <div className="summary-entry-row">
-          <button ref={summaryButtonRef} type="button" className="summary-page-entry"
-            aria-label="Open summary" aria-expanded={summaryOpen} disabled={!summaryMeeting || summaryOpen}
-            onClick={() => { summaryPageOpen.value = true; }}>Summary ↗</button>
-        </div>
         <div className="seg history-tabs" role="tablist" aria-label="History views">
           <button
             type="button"
@@ -255,7 +252,6 @@ export function MeetingHistory() {
 
         {historyView.value === "sessions" ? <>
         {error ? <p className="history-state-card is-error" role="alert">{error}</p> : null}
-        {selected ? <p className="hint" role="status">Selected: {meetingTitle(selected)}. <a href="#transcript-panel">View selected transcript and export</a></p> : null}
         {selected && (selected.failure_reason || selected.notice) && <p role="status">{selected.failure_reason || selected.notice}</p>}
         {loading && meetings.length === 0 ? (
           <p className="history-state-card" role="status">Loading meetings…</p>
@@ -295,7 +291,7 @@ export function MeetingHistory() {
                             {meeting.failure_reason || meeting.notice || meetingPreview(meeting)}
                           </span>
                         </span>
-                        <span className="history-count-chip">v{meeting.transcript_version}</span>
+                        {formatMeetingDuration(meeting) ? <span className="history-duration-chip">{formatMeetingDuration(meeting)}</span> : null}
                       </span>
                     </button>
                     <div className="history-card-actions">
@@ -309,7 +305,9 @@ export function MeetingHistory() {
                       >
                         Rename
                       </button>
-                      {meeting.audio?.state === "available" || meeting.audio?.state === "partial" ? (
+                      {meeting.refinement_state === "running" && (meeting.audio?.state === "available" || meeting.audio?.state === "partial") ? (
+                        <span className="history-audio-unavailable">Audio export waits for transcript improvement.</span>
+                      ) : meeting.audio?.state === "available" || meeting.audio?.state === "partial" ? (
                         <a
                           className="history-action-btn"
                           data-audio-download
@@ -377,18 +375,6 @@ export function MeetingHistory() {
         </dialog>
       ) : null}
     </section>
-    {summaryOpen && summaryMeeting && createPortal(
-      <main className="summary-page" aria-label="Summary view">
-        <div className="summary-page-head">
-          <button ref={backButtonRef} type="button" className="history-action-btn"
-            onClick={() => { summaryPageOpen.value = false; }}>← Back to meeting</button>
-          <div><span className="eyebrow">Completed meeting</span><h2>{meetingTitle(summaryMeeting)}</h2></div>
-        </div>
-        <div className="summary-page-body">
-          <FinalSummarySettings />
-          <FinalSummary key={summaryMeeting.id} meeting={summaryMeeting} />
-        </div>
-      </main>, document.body)}
   </>);
 }
 

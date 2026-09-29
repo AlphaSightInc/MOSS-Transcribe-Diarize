@@ -1,4 +1,5 @@
 import { computed, signal } from "@preact/signals";
+import type { ProvisionalDisplaySegment } from "../lib/tentative";
 import type {
   SessionLifecycle,
   SessionMode,
@@ -9,6 +10,7 @@ import type {
 import { type MergedTranscriptItem, upsertTranscriptItems } from "../lib/mergeTranscript";
 
 export const sessionTranscriptItems = signal<MergedTranscriptItem[]>([]);
+export const provisionalSegments = signal<ProvisionalDisplaySegment[]>([]);
 export const transcriptSearchQuery = signal("");
 export const transcript = computed(() => sessionTranscriptItems.value);
 export const sessionId = signal<string | null>(null);
@@ -30,6 +32,7 @@ export function applySessionStateEvent(
   event: Extract<WsEvent, { type: "session_state" }>
 ): void {
   const previousSessionId = sessionId.value;
+  if (previousSessionId !== event.session_id) provisionalSegments.value = [];
   sessionId.value = event.session_id;
   sessionMode.value = event.mode;
   sessionState.value = event.state;
@@ -56,6 +59,7 @@ export function replaceTranscript(items: TranscriptItem[]): void {
 export function clearSessionDisplay(): void {
   transcriptSearchQuery.value = "";
   sessionTranscriptItems.value = [];
+  provisionalSegments.value = [];
 }
 
 export function resetSessionState(): void {

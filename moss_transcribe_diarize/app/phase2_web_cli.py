@@ -264,7 +264,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
         frame_samples=int(config.bounds_config.get("frame_samples", bounds.max_frame_samples)),
         engine_options={"speaker_windows": list(GEMINI_SPEAKER_WINDOW_PRESETS),
                         "default_speaker_window": "balanced",
-                        "cleanup_after_stop": {"available": True, "default": False}},
+                        "cleanup_after_stop": {"available": True, "default": True}},
     )
     client = _gemini_client(key)
 

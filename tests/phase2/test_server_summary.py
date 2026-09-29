@@ -304,3 +304,58 @@ def test_server_cancel_between_start_and_generating_is_controlled(tmp_path: Path
         assert response.status_code == 409
         assert response.json()["detail"] == {"code": "summary_cancelled"}
         assert client.get(path).json()["summary"]["state"] == "cancelled"
+
+
+def test_server_retries_malformed_json_and_reports_summed_usage(tmp_path: Path):
+    from moss_transcribe_diarize.app.phase2_llm import InvalidSummaryOutput
+    calls = []
+
+    async def flaky(_document, *, model, language, prompt):
+        calls.append(model)
+        if len(calls) == 1:
+            raise InvalidSummaryOutput(USAGE)
+        if len(calls) == 2:
+            return {"summary": "missing four fields"}, USAGE
+        return RESULT, USAGE
+
+    app = create_phase2_app(database_path=tmp_path / "db", summary_generator=flaky)
+    with TestClient(app, base_url="https://moss.test") as client:
+        client.post("/api/workspace/bootstrap")
+        credential = client.cookies.get("__Host-moss_session")
+
+        async def seed():
+            store = app.state.phase2_store
+            account = await store.account_for_session(credential)
+            handle = await store.workspace(account).create_meeting("file")
+            await handle.commit_transcript(TRANSCRIPT, terminal=True)
+            return handle.meeting_id
+
+        meeting_id = client.portal.call(seed)
+        response = client.post(f"/api/meetings/{meeting_id}/summary/server", json={"source_version": 1})
+        assert response.status_code == 200, response.text
+        assert len(calls) == 3
+        assert response.json()["document"] == RESULT
+        assert response.json()["usage"] == {"model": USAGE["model"], "input_tokens": 300,
+                                             "output_tokens": 75, "cost_usd": pytest.approx(3 * USAGE["cost_usd"])}
+
+
+def test_gemini_generator_raises_invalid_output_with_usage_on_malformed_json(monkeypatch):
+    from moss_transcribe_diarize.app.phase2_llm import InvalidSummaryOutput
+
+    class Models:
+        async def generate_content(self, **_kwargs):
+            return SimpleNamespace(text='{"summary": "cut', usage_metadata=SimpleNamespace(
+                prompt_token_count=100, candidates_token_count=25, thoughts_token_count=0))
+
+    class Client:
+        def __init__(self, **_kwargs):
+            self.aio = SimpleNamespace(models=Models(), aclose=self.aclose)
+
+        async def aclose(self):
+            pass
+
+    monkeypatch.setattr("google.genai.Client", Client)
+    with pytest.raises(InvalidSummaryOutput) as caught:
+        asyncio.run(GeminiSummaryGenerator("test-key")(TRANSCRIPT, model="gemini-3.5-flash-lite",
+                                                        language="", prompt="P"))
+    assert caught.value.usage["input_tokens"] == 100

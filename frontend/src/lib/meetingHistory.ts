@@ -77,6 +77,21 @@ export function meetingDayBucket(createdAtMs: number, now: Date = new Date()): T
   return "earlier";
 }
 
+export function formatMeetingDuration(meeting: Pick<Meeting, "audio" | "transcript">): string | null {
+  const audioSeconds = meeting.audio?.duration_ms != null && meeting.audio.duration_ms > 0
+    ? meeting.audio.duration_ms / 1000 : null;
+  const transcriptSeconds = meeting.transcript?.segments.reduce(
+    (latest, segment) => Math.max(latest, segment.end), 0
+  ) ?? 0;
+  const duration = audioSeconds ?? transcriptSeconds;
+  if (!(duration > 0) || !Number.isFinite(duration)) return null;
+  const seconds = Math.ceil(duration);
+  const minutes = Math.floor(seconds / 60);
+  const remainder = String(seconds % 60).padStart(2, "0");
+  return minutes < 60 ? `${minutes}:${remainder}`
+    : `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, "0")}:${remainder}`;
+}
+
 export function formatMeetingTimestamp(createdAtMs: number, now: Date = new Date()): string {
   const date = new Date(createdAtMs);
   const bucket = meetingDayBucket(createdAtMs, now);

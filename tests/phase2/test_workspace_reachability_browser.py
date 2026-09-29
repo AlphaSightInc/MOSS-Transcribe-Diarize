@@ -328,8 +328,8 @@ def test_real_bundle_same_workspace_views_converge_and_remain_read_only(
             )
         )
         assert measured["distinct_sessions"] is False
-        assert measured["desktop_order"] == ["file", "live", "history", "voiceprints"]
-        assert measured["mobile_order"] == ["file", "live", "history", "voiceprints"]
+        assert measured["desktop_order"] == ["live", "history", "voiceprints"]
+        assert measured["mobile_order"] == ["live", "history", "voiceprints"]
         assert measured["desktop_history_visible"] is True
         assert measured["mobile_history_visible"] is True
         assert measured["mobile_inner_width"] <= 768
@@ -468,7 +468,7 @@ async def _exercise_two_browsers(
         )
         await first.wait(renamed)
         await second.evaluate(
-            "[...document.querySelectorAll('button')].find(button => button.textContent.trim() === 'Refresh').click()"
+            "document.querySelector('.history-panel-actions button').click()"
         )
         await second.wait(renamed)
 

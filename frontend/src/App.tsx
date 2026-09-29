@@ -1,3 +1,4 @@
+import { SettingsDialog } from "./components/SettingsDialog";
 import { ControlPanel } from "./components/ControlPanel";
 import { TranscriptPane } from "./components/TranscriptPane";
 import { sessionStatus, sessionStatusLine, sessionTitle, sessionMode } from "./state/session";
@@ -28,7 +29,7 @@ export function App() {
           <span className="session-chip">{sessionMode.value === "live" ? "Live" : "File / URL"}</span>
         </div>
 
-        <div className="top-right" />
+        <div className="top-right"><SettingsDialog /></div>
       </header>
 
       <main className="main" id="main" data-left-collapsed="false" data-right-collapsed="true">

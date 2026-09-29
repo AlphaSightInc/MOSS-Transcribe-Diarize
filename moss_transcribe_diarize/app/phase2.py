@@ -118,6 +118,11 @@ def _unavailable_meeting_audio() -> MeetingAudio:
     )
 
 
+REFINEMENT_RUNNING_MARKER = "moss:refinement:running"
+REFINEMENT_DONE_MARKER = "moss:refinement:done"
+REFINEMENT_FAILED_NOTICE = "Improvement unavailable — the live transcript was kept."
+
+
 @dataclass(frozen=True, slots=True)
 class Meeting:
     meeting_id: str
@@ -133,6 +138,7 @@ class Meeting:
     failure_reason: str | None = None
     notice: str | None = None
     needs_review: bool = False
+    refinement_state: str = "none"
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -148,6 +154,7 @@ class Meeting:
             **({"failure_code": self.failure_code, "failure_reason": self.failure_reason} if self.failure_code else {}),
             **({"notice": self.notice} if self.notice else {}),
             "needs_review": self.needs_review,
+            "refinement_state": self.refinement_state,
         }
 
 
@@ -1414,6 +1421,73 @@ class Phase2Store:
             await version_cursor.close()
             return int(row["version"])
 
+    async def _settle_refinement(
+        self, account_id: str, authority_generation: int, meeting_id: str,
+        document: Mapping[str, object] | None,
+    ) -> int:
+        """Replace completed live text once, using speaker names current at commit."""
+        now = _now_ms()
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                """SELECT t.document_json, t.version FROM meetings m
+                   JOIN accounts a ON a.account_id = m.account_id
+                     AND a.enabled = 1 AND a.authority_generation = ?
+                   JOIN meeting_transcripts t ON t.account_id = m.account_id
+                     AND t.meeting_id = m.meeting_id
+                   JOIN meeting_outcomes o ON o.account_id = m.account_id
+                     AND o.meeting_id = m.meeting_id
+                   WHERE m.account_id = ? AND m.meeting_id = ?
+                     AND m.status = 'completed' AND o.notice = ?""",
+                (authority_generation, account_id, meeting_id, REFINEMENT_RUNNING_MARKER),
+            )
+            current = await cursor.fetchone()
+            await cursor.close()
+            if current is None:
+                raise AccountRevoked("Meeting refinement authority is unavailable.")
+            version = int(current["version"])
+            if document is not None:
+                updated = json.loads(json.dumps(document, ensure_ascii=False))
+                current_document = json.loads(current["document_json"])
+                labels = {
+                    segment["speaker_entity_id"]: segment["speaker"]
+                    for segment in current_document.get("segments", [])
+                    if isinstance(segment, dict)
+                    and isinstance(segment.get("speaker_entity_id"), str)
+                    and isinstance(segment.get("speaker"), str)
+                }
+                cursor = await self._connection.execute(
+                    """SELECT speaker_id, label FROM meeting_speakers
+                       WHERE account_id = ? AND meeting_id = ?""",
+                    (account_id, meeting_id),
+                )
+                for row in await cursor.fetchall():
+                    labels[str(row["speaker_id"])] = str(row["label"])
+                await cursor.close()
+                for segment in updated.get("segments", []):
+                    speaker_id = segment.get("speaker_entity_id")
+                    if speaker_id in labels:
+                        segment["speaker"] = labels[speaker_id]
+                await self._connection.execute(
+                    """UPDATE meeting_transcripts SET document_json = ?,
+                       version = version + 1, updated_at_ms = ?
+                       WHERE account_id = ? AND meeting_id = ?""",
+                    (json.dumps(updated, ensure_ascii=False, separators=(",", ":")),
+                     now, account_id, meeting_id),
+                )
+                version += 1
+            await self._connection.execute(
+                """UPDATE meeting_outcomes SET notice = ?
+                   WHERE account_id = ? AND meeting_id = ?""",
+                (REFINEMENT_DONE_MARKER if document is not None else REFINEMENT_FAILED_NOTICE,
+                 account_id, meeting_id),
+            )
+            await self._connection.execute(
+                """UPDATE meetings SET updated_at_ms = ?
+                   WHERE account_id = ? AND meeting_id = ?""",
+                (now, account_id, meeting_id),
+            )
+            return version
+
     async def _record_terminal_failure(
         self,
         account_id: str,
@@ -1730,6 +1804,11 @@ class MeetingHandle:
             document,
             status,
             **({"notice": notice} if notice else {}),
+        )
+
+    async def settle_refinement(self, document: Mapping[str, object] | None) -> int:
+        return await self._store._settle_refinement(
+            self._account_id, self._authority_generation, self.meeting_id, document,
         )
 
     async def publish_audio(
@@ -2271,6 +2350,16 @@ def create_phase2_app(
             raise HTTPException(status_code=401, detail="Workspace credential is unavailable.")
         return account
 
+    def meeting_response(meeting: Meeting) -> dict[str, object]:
+        result = meeting.to_dict()
+        if (meeting.status == "completed" and phase2_live is not None
+                and phase2_live.refinement_running(meeting.meeting_id)):
+            result["refinement_state"] = "running"
+            result.pop("notice", None)
+            result["needs_review"] = _meeting_needs_review(
+                meeting.status, meeting.transcript, meeting.failure_code, None)
+        return result
+
     def set_session_cookie(response: Response, session_id: str) -> Response:
         response.set_cookie(
             SESSION_COOKIE,
@@ -2351,7 +2440,7 @@ def create_phase2_app(
         account = await require_account(request)
         workspace = request.app.state.phase2_store.workspace(account)
         meetings = await workspace.list_meetings()
-        return {"meetings": [meeting.to_dict() for meeting in meetings]}
+        return {"meetings": [meeting_response(meeting) for meeting in meetings]}
 
     @app.post("/api/meetings/file/admission", status_code=204)
     async def preflight_file_meeting(request: Request):
@@ -2440,7 +2529,7 @@ def create_phase2_app(
         handle = await request.app.state.phase2_store.workspace(account).open_meeting(meeting_id)
         if handle is None:
             raise HTTPException(status_code=404, detail="Meeting not found.")
-        return (await handle.snapshot()).to_dict()
+        return meeting_response(await handle.snapshot())
 
     @app.put("/api/meetings/{meeting_id}/title")
     async def rename_meeting(meeting_id: str, request: Request):
@@ -2492,6 +2581,8 @@ def create_phase2_app(
         handle = await request.app.state.phase2_store.workspace(account).open_meeting(meeting_id)
         if handle is None:
             raise HTTPException(status_code=404, detail="Meeting not found.")
+        if phase2_live is not None and phase2_live.refinement_running(meeting_id):
+            return JSONResponse({"code": "refinement_running"}, status_code=409)
         try:
             payload = await request.json()
             if not isinstance(payload, dict) or not isinstance(payload.get("segment_ids"), list):
@@ -2557,6 +2648,8 @@ def create_phase2_app(
         handle = await request.app.state.phase2_store.workspace(account).open_meeting(meeting_id)
         if handle is None:
             raise HTTPException(status_code=404, detail="Meeting not found.")
+        if phase2_live is not None and phase2_live.refinement_running(meeting_id):
+            return JSONResponse({"code": "refinement_running"}, status_code=409)
         audio = await handle.audio()
         if audio is None or audio.state not in {"available", "partial"}:
             raise HTTPException(status_code=404, detail="Meeting audio is unavailable.")
@@ -2656,8 +2749,14 @@ def _meeting_from_row(row: Any) -> Meeting:
     document_json = row["document_json"]
     status = str(row["status"])
     transcript = None if document_json is None else json.loads(document_json)
+    stored_notice = row["notice"]
+    refinement_state = ("failed" if stored_notice == REFINEMENT_RUNNING_MARKER else
+                        "done" if stored_notice == REFINEMENT_DONE_MARKER else
+                        "failed" if stored_notice == REFINEMENT_FAILED_NOTICE else "none")
+    notice = (REFINEMENT_FAILED_NOTICE if stored_notice == REFINEMENT_RUNNING_MARKER else
+              None if stored_notice == REFINEMENT_DONE_MARKER else stored_notice)
     needs_review = _meeting_needs_review(
-        status, transcript, row["failure_code"], row["notice"]
+        status, transcript, row["failure_code"], notice
     )
     if transcript is not None and status != "active":
         transcript = _settled_transcript(transcript)
@@ -2671,8 +2770,8 @@ def _meeting_from_row(row: Any) -> Meeting:
         transcript=transcript,
         transcript_version=0 if row["transcript_version"] is None else int(row["transcript_version"]),
         audio=_meeting_audio_from_row(row),
-        failure_code=row["failure_code"], failure_reason=row["failure_reason"], notice=row["notice"],
-        needs_review=needs_review,
+        failure_code=row["failure_code"], failure_reason=row["failure_reason"], notice=notice,
+        needs_review=needs_review, refinement_state=refinement_state,
     )
 
 
@@ -2751,6 +2850,12 @@ def _workspace_html(
         f'{worklet_head}'
         f'<link rel="stylesheet" href="{styles_url}">'
     )
+    file_fallback = "" if live_enabled else (
+        '<section id="workspace-file" data-workspace-section="file"><h2 class="phase2-workspace-heading">File transcription</h2>'
+        '<form data-file-upload="form" class="control-section"><label class="field"><span class="field-label">Audio or video files</span><input name="file" type="file" multiple></label>'
+        '<label class="field"><span class="field-label">Media URLs, one per line</span><textarea name="urls"></textarea></label>'
+        '<button type="submit" class="btn btn-primary">Transcribe files and URLs</button></form><p data-file-upload="status" role="status"></p><ul data-file-upload="results"></ul></section>'
+    )
     live_body = (
         '<section id="workspace-live" data-workspace-section="live" data-live-capture="account">'
         '<h2 class="phase2-workspace-heading">Live transcription</h2><div id="app"></div></section>'
@@ -2762,15 +2867,12 @@ def _workspace_html(
 <body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-workspace-name>{html.escape(account.display_name)}</span>
 <small style="color: var(--muted)">History stays with this browser profile. Clearing site data loses automatic access.</small></header>
 <nav class="workspace-nav" aria-label="Workspace">
-<a href="#workspace-file">Files &amp; URLs</a>
+{('<a href="#workspace-file">Files &amp; URLs</a>' if not live_enabled else '')}
 {('<a href="#workspace-live">Live / Transcript &amp; export</a>' if live_enabled else '')}
 <a href="#workspace-history">Meeting history</a><a href="#workspace-voiceprints">Voiceprints</a>
 </nav>
 <section data-workspace=\"account\"><h1>Your meetings</h1>
-<section id=\"workspace-file\" data-workspace-section=\"file\"><h2 class=\"phase2-workspace-heading\">File transcription</h2>
-<form data-file-upload=\"form\" class="control-section" style="max-width: 680px; gap: 16px"><label class="field"><span class="field-label">Audio or video files</span><input name=\"file\" type=\"file\" multiple></label>
-<label class="field"><span class="field-label">Media URLs, one per line</span><textarea name=\"urls\"></textarea></label>
-<button type=\"submit\" class="btn btn-primary" style="align-self: flex-start">Transcribe files and URLs</button></form><p data-file-upload=\"status\" role=\"status\"></p><ul data-file-upload=\"results\"></ul></section>
+{file_fallback}
 {live_body}
 <section id=\"workspace-history\" data-workspace-section=\"history\"><h2 class=\"phase2-workspace-heading\">Meeting history</h2>
 <div id=\"meeting-history-app\" data-history-root>{empty}{history}</div>

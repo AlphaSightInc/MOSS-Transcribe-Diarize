@@ -3,10 +3,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { requestMeetingHistoryRefresh, SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { nameMeetingSpeaker, reassignMeetingPassages, VoiceprintEvidenceNotAdmittedError } from "../api/speakers";
 import {
-  buildTranscriptExportText,
-  serializeTranscriptExport,
-  triggerTranscriptExportDownload,
-  type TranscriptExportFormat
+  buildTranscriptExportText
 } from "../lib/transcriptExport";
 import { groupSegmentsIntoTurns, type TranscriptTurn } from "../lib/mergeTranscript";
 import {
@@ -21,6 +18,7 @@ import {
   liveLabelPolicy,
   sessionId,
   sessionNeedsReview,
+  provisionalSegments,
   sessionMode,
   sessionStatus,
   sessionTitle,
@@ -28,8 +26,11 @@ import {
   transcript,
   transcriptSearchQuery
 } from "../state/session";
-import { autoscroll } from "../state/ui";
+import { autoscroll, selectedSummaryMeeting } from "../state/ui";
 import { TranscriptCards } from "./TranscriptCards";
+import { projectTentativeSegments } from "../lib/tentative";
+import { SummaryPane } from "./SummaryPane";
+import { view } from "../state/ui";
 
 interface TranscriptLegendEntry {
   colorToken: string;
@@ -78,7 +79,6 @@ async function copyTextToClipboard(text: string): Promise<void> {
 export function TranscriptPane() {
   const [findOpen, setFindOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [activeSearchMatchIndex, setActiveSearchMatchIndex] = useState(0);
   const transcriptFindRef = useRef<HTMLInputElement | null>(null);
   const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
@@ -108,8 +108,13 @@ export function TranscriptPane() {
     (sessionStatus.value === "closed" && allTurns.some(turn => turn.state !== "final"));
   const finalized = !automaticProcessingRunning;
   const speakerNumbers = settledSpeakerNumbers(allTurns, finalized);
-  const speakerLabel = (item: typeof allTurns[number]) =>
-    transcriptCardSpeakerLabel(item, speakerNumbers, liveLabelPolicy.value, finalized);
+  const speakerLabel = (item: Pick<typeof transcript.value[number], "speaker_entity_id" | "speaker" | "display_name" | "source_lane" | "settled" | "state">) => {
+    const id = item.speaker_entity_id || item.speaker;
+    if (/^local-\d+$/.test(id) && (!item.display_name || item.display_name === id || /^Speaker \d+$/.test(item.display_name))) {
+      return `Local ${String(Number(id.slice(6))).padStart(2, "0")}`;
+    }
+    return transcriptCardSpeakerLabel(item, speakerNumbers, liveLabelPolicy.value, finalized);
+  };
   const searchResults = buildTranscriptSearchResults(
     allTurns,
     searchQuery,
@@ -119,13 +124,28 @@ export function TranscriptPane() {
     searchResults.matchCount > 0
       ? Math.min(activeSearchMatchIndex, searchResults.matchCount - 1)
       : -1;
-  const transcriptAvailable = allTurns.length > 0;
+  const speakerLabels: Record<string, string> = {};
+  for (const item of fullTranscriptItems) speakerLabels[item.speaker_entity_id] = speakerLabel(item);
+  for (const segment of provisionalSegments.value) {
+    const id = segment.tentative_speaker;
+    if (!id || speakerLabels[id]) continue;
+    const numberedSpeaker = /^speaker-(\d+)$/.exec(id);
+    speakerLabels[id] = /^local-\d+$/.test(id)
+      ? `Local ${String(Number(id.slice(6))).padStart(2, "0")}`
+      : numberedSpeaker ? `S${String(Number(numberedSpeaker[1])).padStart(2, "0")}`
+      : "Speaker TBD";
+  }
+  const tentativeBlocks = projectTentativeSegments(provisionalSegments.value, speakerLabels);
+  const transcriptAvailable = allTurns.length > 0 || tentativeBlocks.length > 0;
   const activeSessionId = sessionId.value;
+  const selectedMeeting = selectedSummaryMeeting.value?.id === activeSessionId
+    ? selectedSummaryMeeting.value : null;
+  const refinementState = selectedMeeting?.refinement_state;
+  const refinementRunning = refinementState === "running";
   const canNameSpeakers = activeSessionId !== null;
-  const transcriptExportAvailable = transcriptAvailable && activeSessionId !== null;
   const legendEntries = buildLegendEntries(
     fullTranscriptItems,
-    (item) => transcriptCardSpeakerLabel(item, speakerNumbers, liveLabelPolicy.value, finalized),
+    speakerLabel,
     speakerColorMap
   );
   const correctionSpeakers = legendEntries.filter(
@@ -134,7 +154,7 @@ export function TranscriptPane() {
   const canCorrectPassages =
     activeSessionId !== null &&
     ["closed", "failed", "aborted"].includes(sessionStatus.value) &&
-    !automaticProcessingRunning;
+    !automaticProcessingRunning && !refinementRunning;
   const settlingVisible = transcriptAvailable && !finalized &&
     allTurns.some(turn => !isSettledTurn(turn, finalized));
 
@@ -223,10 +243,10 @@ export function TranscriptPane() {
         : result.enrollment === "not_requested"
         ? `Saved ${result.label}. Voiceprint not saved.`
         : result.enrollment === "unavailable"
-        ? `Saved ${result.label}. Voiceprint not saved: at least 2 seconds of finished, clear speech is needed.`
+        ? `Saved ${result.label}. Voiceprint not saved: eligible audio was unavailable for this speaker.`
         : result.enrollment === "enrolled"
         ? `Saved ${result.label}. Voiceprint saved privately in this browser workspace.`
-        : `Saved ${result.label}. Voiceprint will save when at least 2 seconds of finished, clear speech is available before Stop.`);
+        : `Saved ${result.label}. Voiceprint will be saved after recording finishes if eligible audio is available.`);
       setNamingTarget(null);
     } catch (error) {
       if (sessionId.value === meetingId) {
@@ -249,7 +269,7 @@ export function TranscriptPane() {
 
   async function savePassageCorrection(event: Event): Promise<void> {
     event.preventDefault();
-    if (!correctionTarget || !activeSessionId || savingCorrection) return;
+    if (!correctionTarget || !activeSessionId || savingCorrection || refinementRunning) return;
     const meetingId = correctionTarget.meetingId;
     if (activeSessionId !== meetingId) {
       setCorrectionTarget(null);
@@ -304,17 +324,16 @@ export function TranscriptPane() {
         return;
       }
 
-      if (event.key === "Escape" && (findOpen || exportMenuOpen)) {
+      if (event.key === "Escape" && findOpen) {
         event.preventDefault();
         setFindOpen(false);
-        setExportMenuOpen(false);
         transcriptSearchQuery.value = "";
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [exportMenuOpen, findOpen]);
+  }, [findOpen]);
 
   useEffect(() => {
     if (!findOpen || activeSearchMatchId < 0) {
@@ -371,18 +390,6 @@ export function TranscriptPane() {
     }
   }
 
-  function handleDownload(format: TranscriptExportFormat): void {
-    if (activeSessionId === null) {
-      return;
-    }
-    triggerTranscriptExportDownload(serializeTranscriptExport(
-      format,
-      allTurns,
-      speakerLabel,
-      { sessionId: activeSessionId, exportedAt: new Date() },
-      { needsReview: sessionNeedsReview.value }
-    ));
-  }
 
   return (
     <section className="transcript-pane">
@@ -427,13 +434,17 @@ export function TranscriptPane() {
           </button>
         ))}
 
-        {/* Holds the reference's Transcript|Summary toggle, which is a ruled Phase 2 deletion
-            (charter §5 exemption). The container stays: `margin-left: auto` is what right-aligns
-            this row, so removing it would move everything it anchors. */}
-        <div className="tr-legend-right" aria-hidden="true">
-          <div className="transcript-view-placeholder" />
-        </div>
+        <div className="tr-legend-right"><div className="seg transcript-tabs" role="tablist" aria-label="Meeting views">
+          <button type="button" role="tab" className={`seg-btn${view.value === "transcript" ? " is-active" : ""}`}
+            aria-selected={view.value === "transcript"} onClick={() => { view.value = "transcript"; }}>Transcript</button>
+          <button type="button" role="tab" className={`seg-btn${view.value === "summary" ? " is-active" : ""}`}
+            aria-selected={view.value === "summary"} onClick={() => { view.value = "summary"; }}>Summary</button>
+        </div></div>
       </div>
+
+      {refinementRunning ? <p className="transcript-refinement" role="status"><strong>Improving transcript…</strong> Passage corrections wait until improvement finishes.</p>
+        : refinementState === "done" ? <p className="transcript-refinement" role="status">Transcript improved</p>
+        : refinementState === "failed" ? <p className="transcript-refinement" role="status">{selectedMeeting?.notice || "Improvement unavailable — the live transcript was kept"}</p> : null}
 
       {namingMessage ? <p className="hint" role="status">{namingMessage}</p> : null}
       {sessionNeedsReview.value ? <p className="hint" role="status"><strong>Needs review.</strong> Check passages marked Speaker TBD or a partial processing notice.</p> : null}
@@ -487,7 +498,7 @@ export function TranscriptPane() {
         </dialog>
       ) : null}
 
-      <div className="tr-body-wrap">
+      <div className="tr-body-wrap" hidden={view.value === "summary"}>
         <div className="tr-floating-tools" id="tr-floating-tools">
           <button
             type="button"
@@ -528,46 +539,7 @@ export function TranscriptPane() {
           >
             Auto-scroll
           </button>
-          <div className="divider" aria-hidden="true" />
-          <button
-            type="button"
-            className="mini-switch transcript-export-trigger"
-            aria-haspopup="menu"
-            aria-expanded={exportMenuOpen}
-            title="Export transcript"
-            disabled={!transcriptExportAvailable}
-            onClick={() => setExportMenuOpen((open) => !open)}
-          >
-            <span className="mini-switch-track" aria-hidden="true">
-              <span className="mini-switch-thumb" />
-            </span>
-            <span className="mini-switch-label">Export transcript</span>
-          </button>
         </div>
-
-        {exportMenuOpen ? (
-          <div className="transcript-export-menu" role="menu" aria-label="Export transcript format">
-            {([
-              ["md", "Markdown (.md)"],
-              ["txt", "Plain text (.txt)"],
-              ["json", "JSON (.json)"],
-              ["srt", "SubRip (.srt)"],
-              ["vtt", "WebVTT (.vtt)"]
-            ] as const).map(([format, label]) => (
-              <button
-                key={format}
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setExportMenuOpen(false);
-                  handleDownload(format);
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        ) : null}
 
         {findOpen ? (
           <div className="tr-find">
@@ -647,19 +619,30 @@ export function TranscriptPane() {
         </p> : null}
         <div ref={transcriptScrollRef} className="tr-body" id="tr-body">
           {transcriptAvailable ? (
-            <TranscriptCards searchTurns={searchResults.turns} activeMatchId={activeSearchMatchId}
-              finalized={finalized} canCorrectPassages={canCorrectPassages}
+            <TranscriptCards searchTurns={tentativeBlocks.length ? searchResults.turns.filter(item => item.turn.state !== "provisional") : searchResults.turns} activeMatchId={activeSearchMatchId}
+              finalized={finalized} canCorrectPassages={canCorrectPassages} correctionWaiting={refinementRunning}
               speakerColorMap={speakerColorMap}
               onSpeakerClick={(id) => openSpeakerName(legendEntries.find(entry => entry.speakerId === id))}
               onPassageCorrection={openPassageCorrection} />
-          ) : (
+          ) : null}
+          <div className="transcript-cards" data-tentative-blocks="true">{tentativeBlocks.map((block, index) => <article key={`${block.lane}:${block.start}:${index}`}
+            className="utt transcript-card tentative-card" data-tentative-block="true" data-state="provisional"
+            data-source-lane={block.lane} data-turn-start={block.start} data-turn-end={block.end}
+            data-target-keys={`tentative:${block.lane}:${block.start}`} data-segments={JSON.stringify([{ start: block.start, end: block.end, text: block.text }])}>
+            <div className="utt-meta"><span className="utt-speaker" data-speaker-id={block.speakerId ?? "S00"}>
+              <span className="utt-speaker-label">{block.label}</span></span>
+              <span className="utt-lane">{block.lane === "microphone" ? "Microphone" : block.lane === "system" ? "Shared audio" : block.lane}</span></div>
+            <div className="transcript-card-fragments"><div className="utt-content" data-text-status="unsettled"><p className="utt-text">{block.text}</p></div></div>
+          </article>)}</div>
+          {!transcriptAvailable ? (
             <p className="empty-state transcript-empty-state">
               Transcript will appear here when a session starts.
             </p>
-          )}
+          ) : null}
         </div>
         <div className="tr-fade" aria-hidden="true" />
       </div>
+      <SummaryPane hidden={view.value !== "summary"} />
     </section>
   );
 }

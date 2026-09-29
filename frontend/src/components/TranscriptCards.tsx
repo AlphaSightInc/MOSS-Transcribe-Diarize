@@ -11,6 +11,7 @@ interface Props {
   activeMatchId: number;
   finalized: boolean;
   canCorrectPassages: boolean;
+  correctionWaiting?: boolean;
   speakerColorMap: ReadonlyMap<string, string>;
   onSpeakerClick: (id: string) => void;
   onPassageCorrection: (turn: TranscriptTurn) => void;
@@ -24,7 +25,7 @@ function searchParts(parts: readonly TranscriptSearchPart[], activeMatchId: numb
         data-search-match-id={part.matchId}>{part.text}</mark>);
 }
 
-export function TranscriptCards({ searchTurns, activeMatchId, finalized, canCorrectPassages,
+export function TranscriptCards({ searchTurns, activeMatchId, finalized, canCorrectPassages, correctionWaiting = false,
   speakerColorMap, onSpeakerClick, onPassageCorrection }: Props) {
   const cards = projectTranscriptCards(searchTurns.map(item => item.turn));
   const byTurn = new Map(searchTurns.map(item => [item.turn, item]));
@@ -72,9 +73,10 @@ export function TranscriptCards({ searchTurns, activeMatchId, finalized, canCorr
                       ? <span className="live-caret" aria-hidden="true" /> : null}</>
                   : found ? searchParts(found.textParts, activeMatchId) : row.text}
               </p>
-              {canCorrectPassages && row.segment_ids.length > 0 ? (
+              {(canCorrectPassages || correctionWaiting) && row.segment_ids.length > 0 ? (
                 <button type="button" className="utt-reassign" aria-label="Reassign passage"
-                  title="Reassign passage"
+                  title={correctionWaiting ? "Wait for transcript improvement" : "Reassign passage"}
+                  disabled={correctionWaiting}
                   data-reassign-passage={row.segment_ids.join(",")}
                   onClick={() => onPassageCorrection(row)}>
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Zm9-13 4 4" /></svg>

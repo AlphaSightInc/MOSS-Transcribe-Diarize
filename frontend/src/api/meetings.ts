@@ -2,6 +2,7 @@ import type { SourceLane } from "../lib/transcriptOrder";
 export type MeetingMode = "live" | "file";
 export type MeetingStatus = "active" | "completed" | "failed" | "interrupted";
 export type MeetingTitleSource = "automatic" | "manual";
+export type RefinementState = "none" | "running" | "done" | "failed";
 
 export interface MeetingSegment {
   source_lane?: SourceLane;
@@ -29,6 +30,7 @@ export interface Meeting {
   failure_reason?: string;
   notice?: string;
   needs_review?: boolean;
+  refinement_state?: RefinementState;
   id: string;
   mode: MeetingMode;
   title: string | null;
@@ -101,7 +103,8 @@ function parseMeeting(value: unknown): Meeting {
     (value.title_source !== "automatic" && value.title_source !== "manual") ||
     !isMeetingStatus(value.status) ||
     typeof value.created_at_ms !== "number" ||
-    typeof value.transcript_version !== "number"
+    typeof value.transcript_version !== "number" ||
+    (value.refinement_state !== undefined && !["none", "running", "done", "failed"].includes(value.refinement_state as string))
   ) {
     throw new Error("Meeting response is invalid.");
   }
@@ -111,6 +114,7 @@ function parseMeeting(value: unknown): Meeting {
     ...(typeof value.failure_reason === "string" ? { failure_reason: value.failure_reason } : {}),
     ...(typeof value.notice === "string" ? { notice: value.notice } : {}),
     ...(typeof value.needs_review === "boolean" ? { needs_review: value.needs_review } : {}),
+    ...(typeof value.refinement_state === "string" ? { refinement_state: value.refinement_state as RefinementState } : {}),
     mode: value.mode,
     title: value.title,
     title_source: value.title_source,
