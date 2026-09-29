@@ -33,7 +33,7 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
 
   useEffect(() => {
     setRolling(null); setArtifact(null); setError("");
-  }, [id]);
+  }, [id, active]);
   useEffect(() => {
     if (!id || !active || interval === 0) return;
     const timer = setInterval(() => void refreshLive(), interval * 1000);
@@ -47,7 +47,7 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
     if (!id || active) return;
     let disposed = false;
     const read = async () => {
-      try { const next = await summaryApi(id); if (!disposed) setArtifact(next); }
+      try { const next = await summaryApi(id); if (!disposed) { setArtifact(next); if (next?.state === "current") setError(""); } }
       catch (cause) { if (!disposed) setError(cause instanceof Error ? cause.message : "Summary unavailable."); }
     };
     void read();
@@ -79,15 +79,21 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
   return <section className="summary-pane" aria-label="Summary" hidden={hidden}>
     {!id ? <p className="empty-state">Open a meeting to see its summary.</p> : <>
       <div className="summary-status-row"><div><span className="eyebrow">{active ? "Rolling summary" : "Final summary"}</span>
-        <p role="status">{active ? rolling ? `Updated ${elapsed}s ago · next in ${next}s` : interval ? "Waiting for first update" : "Rolling summary is off"
+        <p role="status">{active ? rolling ? `Updated ${elapsed}s ago${interval && !error ? ` · next in ${next}s` : ""}` : interval ? "Waiting for first update" : "Rolling summary is off"
           : artifact?.state === "current" ? "Summary ready" : artifact ? `Summary ${artifact.state.replaceAll("_", " ")}` : "No saved summary yet"}</p></div>
         <button type="button" className="btn" data-summary-refresh disabled={busy || settings.summary.provider === "off"}
-          onClick={() => void (active ? refreshLive() : refreshFinal())}>{busy ? "Refreshing…" : "Refresh"}</button></div>
-      {error && <p role="alert">{error}</p>}
+          onClick={() => void (active ? refreshLive() : refreshFinal())}>{busy ? "Refreshing…"
+            : !active && (error || artifact?.state === "failed") ? "Retry" : "Refresh"}</button></div>
+      {error && (active ? <p className="summary-notice" role="status">
+        {rolling ? "Latest update failed; showing the last summary." : "Summary update failed."}
+        {interval ? " Retrying at the next interval." : " Use Refresh to retry."}
+      </p> : <p role="alert">{error}</p>)}
       {active ? rolling ? <div className="summary-content"><h3>Theme</h3><p>{rolling.summary}</p></div>
         : <p className="empty-state">Summary will appear when enough finished speech is available.</p>
         : finalDocument ? <SummaryDocumentView document={finalDocument} />
-        : <p className="empty-state">Finish transcription to generate a summary.</p>}
+        : <p className="empty-state">{artifact?.state === "failed" || error
+          ? "The summary is unavailable."
+          : "Finish transcription to generate a summary."}</p>}
     </>}
   </section>;
 }

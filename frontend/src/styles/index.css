@@ -3837,6 +3837,7 @@ button.legend-chip:disabled {
 .summary-pane[hidden], .tr-body-wrap[hidden] { display: none; }
 .summary-status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--line); }
 .summary-status-row p { margin: 4px 0 0; }
+.summary-notice { margin: 12px 0 0; padding: 8px 10px; border-left: 2px solid #b98334; background: #fff9ec; color: #694e24; font-size: 12px; line-height: 1.45; }
 .summary-content { padding: 28px 0; }
 .summary-content > h3 { font: 600 24px/1.3 var(--f-display); margin: 4px 0 22px; }
 .summary-content section { padding: 18px 0; border-top: 1px solid var(--line); }
