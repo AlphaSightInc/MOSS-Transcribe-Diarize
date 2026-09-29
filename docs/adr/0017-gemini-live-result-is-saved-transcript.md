@@ -1,6 +1,6 @@
-# ADR-0017: Gemini live result is the saved transcript by default
+# ADR-0017: Gemini saves the live result at Stop; clean-up improves it in the background
 
-- Status: **Draft** (2026-09-29). The lead owns the final decision after Q-IND.
+- Status: **Accepted** (2026-09-29; user decisions D20 = clean-up ON, asynchronous, and D21 = Balanced default).
 - Deciders: product owner and round-2 lead.
 
 ## Structural question
@@ -56,15 +56,19 @@ implementation and a candidate default; they do not by themselves qualify the pr
 
 ## Decision and falsifier
 
-For Gemini meetings, default `cleanup_after_stop` to false. Offer true per meeting.
-MOSS meetings ignore this setting and retain ADR-0002's path.
+For Gemini meetings the drained live surface is saved as the authoritative transcript **at Stop**, so the meeting is
+immediately usable (browse, rename, voiceprints, summaries, History, a new meeting). `cleanup_after_stop` now **defaults to
+true** and runs the whole-recording terminal pass **in the background**; on success it commits an improved version mapped to the
+live speaker IDs with the speaker labels current at commit time. While it runs, transcript export, audio export and passage
+corrections are disabled (server 409 `refinement_running`); a durable running marker makes a restart keep the live version with a
+notice. Setting it false keeps the live result only. MOSS meetings ignore the setting and retain ADR-0002's path.
 
-Q-IND is the decision gate: on every independent meeting with a complete reference,
-live-only must show at most true speaker count +1 ID and DER no more than clean-up-ON
-DER + .03. The lead compares accept6 ×6, bench5m lex ×3, Bill30m, long60, and gold9
-calibration clips. Any failure is escalated to the product owner with the case table;
-the default is not silently reversed. The gate and owned qualification run are in
-`docs/plan-gemini-live-r2.md` §2 and §5.
+Q-IND (plan §2 R-A1) was the decision gate and **failed**, which is why the default moved to ON: 10/14 paired cases passed; the four
+failures (3 independent — the two Adam cases share byte-identical audio) were long60 .175 vs .034, Adam .140 vs .026, and Lex/Shapiro
+.062 vs .017 (partial reference); RTFL crosstalk was the one case where live-only was better (.226 vs .302). Receipts:
+`evidence/P66/qual-f962d97d/{qind.json,scorecard.md}`. Live identity also varies between runs because Gemini 3.5 Transcribe is not
+deterministic on byte-identical requests (only 28/60 long60 windows matched; `prototypes/gemini-live/live-divergence/NOTES.md`), so
+the background whole-recording pass is the retrospective correction for the Gemini engine.
 
 The cached P2/P4/P5 receipts were reused because they test the specific cost and
 identity mechanisms without new provider calls. Q-IND requires fresh product-path

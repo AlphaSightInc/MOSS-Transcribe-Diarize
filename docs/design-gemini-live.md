@@ -66,7 +66,7 @@ All product defaults live in `app/phase2_web_cli.py`; the selected word source i
 | Embeddings | Up to three continuous attributed spans of 2–10 s per local label, joined across gaps ≤0.6 s; production pinned WeSpeaker, three interval workers; measured vectors unchanged from serial encoding |
 | Retention and idle | 60 s retained-sample bound; at >45 s accepted-minus-committed lag, publish a degraded base that **carries both lanes' preview words as unlabelled rows** (round 2 S2); after 15 s without ingress, drain the unrevised accepted suffix; Stop returns within the browser's deadline while the server keeps draining up to 60 s, then decodes any still-uncovered tail with the terminal transcriber, else saves with an `unavailable` (needs-review) outcome — never a silent `final` (round 2 F1) |
 | Batch requests | `gemini-3.5-transcribe` verbatim word timestamps and speaker labels for system; app retries 429, 5xx, timeout up to three attempts with bounded backoff; SDK internal retry disabled so physical attempts match counters |
-| Terminal | **Optional per meeting** (`cleanup_after_stop`, default off for Gemini — ADR-0017). One call through 900 s; above 900 s, 900 s chunks with 30 s overlap, at most three concurrent final calls, midpoint word-core ownership and seam/cosine stitch; skip any WebRTC-unvoiced final chunk. The same pipeline serves File and URL meetings (`app/gemini_file_runner.py`) |
+| Terminal | **Default on, in the background** (`cleanup_after_stop`, ADR-0017, D20): the live transcript is saved at Stop and the terminal pass commits an improved version later; export and passage corrections wait for it. One call through 900 s; above 900 s, 900 s chunks with 30 s overlap, at most three concurrent final calls, midpoint word-core ownership and seam/cosine stitch; skip any WebRTC-unvoiced final chunk. The same pipeline serves File and URL meetings (`app/gemini_file_runner.py`) |
 
 Pilot guards use cross-pass transcript witnesses, since WebRTC can mark music
 as voiced. W3 rotates with its existing 5 s replay only after batch words cover
@@ -117,8 +117,10 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   cosine ≥ .46, else stays Speaker TBD. Refused relabels are counted (`f13_relabel_refused`), never fatal; speaker-less turns are
   never bridged. **Orphans:** an ID with < 2 s total committed speech (not user-named) is absorbed the same way at Stop
   (`orphan_speakers_absorbed`).
-- **Clean-up after Stop off by default** (ADR-0017): the drained live surface is saved as final; P2 evidence
-  (`evidence/P65/p2-cleanup-skip.md`) and the Q-IND gate.
+- **Clean-up after Stop, in the background** (ADR-0017, D20): the drained live surface is saved as the final transcript at Stop;
+  the whole-recording pass then commits an improved version (`refinement_state` none/running/done/failed on meeting detail and
+  History; 409 `refinement_running` for passage corrections and audio download meanwhile). Q-IND showed live-only materially worse on
+  3 of 12 independent meetings (`evidence/P66/qual-f962d97d/qind.json`), so the default is on.
 - **Microphone lane** (G1 O2): diarized 30 s windows; cross-lane voice echo guard drops a mic word whose voice matches overlapping
   (±0.4 s) system speech at cosine ≥ .60; the token echo guard keeps multi-token matches and requires voice corroboration for single
   tokens (measured: headphones retention 320/336, speakers −20/−10 dB echo rejected 575/576 and 574/576, 2 Local IDs, 0
