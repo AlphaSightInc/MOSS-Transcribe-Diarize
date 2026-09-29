@@ -4,19 +4,20 @@ import { App } from "./App";
 import { VoiceprintBank } from "./components/VoiceprintBank";
 import { MeetingHistory } from "./components/MeetingHistory";
 import "./styles/index.css";
-import { MEETING_CREATED, watchCreatedMeeting } from "./lib/finalSummary";
+import { MEETING_CREATED } from "./lib/finalSummary";
+import { watchMeetingSummary } from "./lib/summaryRequests";
 
 document.addEventListener(MEETING_CREATED, event => {
   const id = (event as CustomEvent).detail?.meeting_id;
-  if (typeof id === "string") watchCreatedMeeting(id, true);
+  if (typeof id === "string") watchMeetingSummary(id);
 });
-
-bindFileUpload();
 
 const root = document.getElementById("app");
 
 if (root) {
   render(<App />, root);
+} else {
+  bindFileUpload();
 }
 
 const historyRoot = document.getElementById("meeting-history-app");

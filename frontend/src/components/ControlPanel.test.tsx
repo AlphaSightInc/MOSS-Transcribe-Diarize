@@ -150,16 +150,16 @@ describe("ControlPanel reattach", () => {
     await act(async () => button("Enable microphone")!.click());
     await vi.waitFor(() => expect(root.textContent).toContain("Connected · receiving sound"));
     expect(root.querySelector('[data-capture-readiness]')?.textContent).toContain("Share audio");
-    expect(button("Start capture")).toBeUndefined();
+    expect(button("Start recording")!.disabled).toBe(true);
     act(() => mocks.captureOptions!.onMeter!("microphone", 0));
     expect(root.textContent).toContain("Connected · quiet");
     await act(async () => button("Share audio")!.click());
     await vi.waitFor(() => expect(root.querySelector('[data-capture-readiness]')?.textContent).toContain("speak into your microphone"));
-    expect(button("Start capture")).toBeUndefined();
+    expect(button("Start recording")!.disabled).toBe(true);
     act(() => mocks.captureOptions!.onMeter!("microphone", .5));
-    expect(button("Start capture")!.disabled).toBe(false);
+    expect(button("Start recording")!.disabled).toBe(false);
     act(() => mocks.captureOptions!.onMeter!("system", 0));
-    expect(button("Start capture")!.disabled).toBe(true);
+    expect(button("Start recording")!.disabled).toBe(true);
     expect(root.querySelector('[data-capture-readiness]')?.textContent).toContain("play sound in the shared tab");
     await act(async () => button("Reshare audio")!.click());
     expect(mocks.replaceLane).toHaveBeenCalledWith("system", expect.anything(), expect.any(Array));
@@ -242,7 +242,7 @@ describe("ControlPanel reattach", () => {
     const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
     await act(async () => button("Enable microphone")?.click());
     await act(async () => button("Share audio")?.click());
-    await act(async () => button("Start capture")?.click());
+    await act(async () => button("Start recording")?.click());
     act(() => {
       mocks.captureOptions?.onTransportError?.("frame", new TypeError("Failed to fetch"));
       mocks.pollerOptions?.onError?.("Failed to fetch");
@@ -263,7 +263,7 @@ describe("ControlPanel reattach", () => {
     const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
     await act(async () => button("Enable microphone")?.click());
     await act(async () => button("Share audio")?.click());
-    await act(async () => button("Start capture")?.click());
+    await act(async () => button("Start recording")?.click());
     await act(async () => button("Stop and finalize")?.click());
     expect(mocks.captureStop).toHaveBeenCalledWith(5);
     expect(root.querySelector('[data-capture-phase="stopping"]')).not.toBeNull();
@@ -284,7 +284,7 @@ describe("ControlPanel reattach", () => {
 
     await act(async () => button("Enable microphone")?.click());
     await act(async () => button("Share audio")?.click());
-    await act(async () => button("Start capture")?.click());
+    await act(async () => button("Start recording")?.click());
     expect(root.querySelector('[data-capture-phase="active"]')).not.toBeNull();
     expect(captureMeetingId.value).toBe("account-live-meeting");
     expect(mocks.poller.start).toHaveBeenCalledOnce();

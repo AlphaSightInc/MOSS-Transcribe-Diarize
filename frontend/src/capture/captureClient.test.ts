@@ -413,6 +413,24 @@ describe("browser capture frame contract", () => {
     expect((fetchSpy.mock.calls[0][1] as RequestInit).headers).toBeUndefined();
   });
 
+  it("sends browser transcription settings when creating a Gemini session", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 201,
+      json: async () => ({ id: "account-meeting", descriptor: { sample_rate: 4, frame_samples: 2 } }) });
+    vi.stubGlobal("fetch", fetchSpy);
+    const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
+    const active = client as unknown as ActiveClient;
+    active.context = { sampleRate: 4 } as AudioContext;
+    active.descriptor = { sampleRate: 4, frameSamples: 2,
+      preflightStatusLines: { microphoneSilent: silentMicrophoneRemedy } };
+    active.lanes.set("microphone", testLaneState());
+    active.lanes.set("system", testLaneState());
+    active.onWorkletFrame("microphone", workletFrame(0));
+    active.onWorkletFrame("system", { ...workletFrame(0), lane: "system" });
+    await client.createSession({ speaker_window: "economy", cleanup_after_stop: true });
+    expect(fetchSpy.mock.calls[0][1]).toMatchObject({ headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ engine_settings: { speaker_window: "economy", cleanup_after_stop: true } }) });
+  });
+
   it("explains the typed live capacity refusal without retrying", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: false,

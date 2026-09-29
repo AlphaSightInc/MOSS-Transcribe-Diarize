@@ -368,78 +368,13 @@ describe("TranscriptPane", () => {
     expect(root.querySelector(".tr-search-match.is-active")?.getAttribute("data-search-match-id")).toBe("1");
   });
 
-  it("keeps export disabled until transcript state has a session id", () => {
-    act(() => {
-      render(<TranscriptPane />, root);
-      replaceTranscript([
-        {
-          start: 0,
-          end: 1,
-          text: "Transcript without session identity.",
-          speaker: "SPEAKER_01",
-          speaker_entity_id: "speaker-1",
-          display_name: "SPEAKER_01",
-          state: "final"
-        }
-      ]);
-    });
-
-    expect(root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.disabled).toBe(true);
-    act(() => {
-      sessionId.value = "empty-meeting";
-      replaceTranscript([]);
-    });
-    expect(root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.disabled).toBe(true);
+  it("keeps summary in the centre card and leaves export to Controls", () => {
+    act(() => render(<TranscriptPane />, root));
+    expect(root.querySelector('[aria-label="Meeting views"]')).not.toBeNull();
+    expect(root.querySelector("button[title='Export transcript']")).toBeNull();
+    act(() => root.querySelector<HTMLButtonElement>('[aria-label="Meeting views"] [role="tab"]:last-child')!.click());
+    expect(root.querySelector('[aria-label="Summary"]')).not.toBeNull();
+    expect(root.querySelector('.tr-body-wrap')?.hasAttribute('hidden')).toBe(true);
   });
 
-  it.each([
-    ["Markdown (.md)", "md"], ["Plain text (.txt)", "txt"], ["JSON (.json)", "json"],
-    ["SubRip (.srt)", "srt"], ["WebVTT (.vtt)", "vtt"]
-  ])("downloads %s with the active session id and ISO timestamp", (label, format) => {
-    const downloadedNames: string[] = [];
-    const createObjectUrl = vi.fn(() => "blob:transcript-export");
-    const revokeObjectUrl = vi.fn();
-    vi.stubGlobal("URL", { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl });
-    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
-      downloadedNames.push(this.download);
-    });
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-18T20:00:16.182Z"));
-
-    act(() => {
-      sessionId.value = "session-42";
-      render(<TranscriptPane />, root);
-      replaceTranscript([
-        {
-          start: 0,
-          end: 1,
-          text: "Ready to export.",
-          speaker: "SPEAKER_01",
-          speaker_entity_id: "speaker-1",
-          display_name: "SPEAKER_01",
-          state: "final"
-        }
-      ]);
-    });
-
-    const exportButton = root.querySelector<HTMLButtonElement>("button[title='Export transcript']");
-    if (!exportButton) {
-      throw new Error("Missing transcript export control");
-    }
-    act(() => {
-      exportButton.click();
-    });
-    const markdownItem = [...root.querySelectorAll<HTMLButtonElement>("[role='menuitem']")].find(item => item.textContent === label);
-    if (!markdownItem) {
-      throw new Error(`Missing ${label} export item`);
-    }
-    act(() => {
-      markdownItem.click();
-      vi.runAllTimers();
-    });
-
-    expect(downloadedNames).toEqual([`transcript-session-42-2026-08-18T20:00:16.182Z.${format}`]);
-    expect(createObjectUrl).toHaveBeenCalledOnce();
-    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:transcript-export");
-  });
 });

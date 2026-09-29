@@ -6,7 +6,15 @@ import {
   type PreSessionCaptureFailure
 } from "../capture/captureClient";
 import { captureMeetingId, resetSessionState, sessionTitle } from "../state/session";
-import { watchCreatedMeeting } from "../lib/finalSummary";
+import { bindFileUpload } from "../lib/fileUpload";
+import { groupSegmentsIntoTurns } from "../lib/mergeTranscript";
+import { settledSpeakerNumbers, transcriptCardSpeakerLabel } from "../lib/transcriptCards";
+import { serializeTranscriptExport, triggerTranscriptExportDownload, type TranscriptExportFormat } from "../lib/transcriptExport";
+import { summaryApi } from "../lib/finalSummary";
+import { openMeeting } from "../api/meetings";
+import { loadAppSettings } from "../lib/settings";
+import { sessionId, sessionNeedsReview, sessionStatus, transcript, liveLabelPolicy } from "../state/session";
+import { watchMeetingSummary } from "../lib/summaryRequests";
 import {
   clearSessionReattach,
   loadSessionReattach,
@@ -44,7 +52,15 @@ function workletUrl(): string {
 
 export function ControlPanel() {
   const recovering = useRef(new Set<"capture" | "transcript">());
+  const [mode, setMode] = useState<"live" | "file" | "url">("live");
+  const [fileQueue, setFileQueue] = useState<string[]>([]);
+  const [url, setUrl] = useState("");
+  const [exportFormat, setExportFormat] = useState<TranscriptExportFormat | "audio">("md");
+  const [exportError, setExportError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [audioRoute, setAudioRoute] = useState<AudioRoute>("speakers");
+  const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
+  const [microphoneId, setMicrophoneId] = useState("");
   const [phase, setPhase] = useState<CapturePhase>("idle");
   const [connected, setConnected] = useState({ microphone: false, system: false });
   const [meters, setMeters] = useState<LaneMeters>(EMPTY_METERS);
@@ -144,7 +160,8 @@ export function ControlPanel() {
     try {
       await client.prepare();
       if (clientRef.current !== client) { await client.close(); return; }
-      await client.startMicrophone(audioRoute === "speakers");
+      await client.startMicrophone(audioRoute === "speakers", microphoneId || undefined);
+      void refreshMicrophones();
       if (clientRef.current !== client) { await client.close(); return; }
       setConnected(current => ({ ...current, microphone: true }));
       setMessage("Microphone connected. Share a browser tab, window, or screen with audio.");
@@ -181,19 +198,29 @@ export function ControlPanel() {
     }
   };
 
-  const switchMicrophone = async () => {
+  const refreshMicrophones = async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices?.();
+      if (devices) setMicrophones(devices.filter(device => device.kind === "audioinput"));
+    } catch { /* Browser device labels may require microphone permission. */ }
+  };
+
+  const switchMicrophone = async (deviceId = microphoneId) => {
     const client = clientRef.current;
     if (!client || phase === "stopping") return;
     setMessage("Requesting a replacement microphone...");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: audioRoute === "speakers" },
+        audio: { echoCancellation: audioRoute === "speakers",
+          ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
         video: false
       });
       metersRef.current = { ...metersRef.current, microphone: 0 };
       setMeters(metersRef.current);
       await client.replaceLane("microphone", stream, stream.getTracks());
       setConnected(current => ({ ...current, microphone: true }));
+      setMicrophoneId(deviceId);
+      void refreshMicrophones();
       setMessage("Microphone replaced. Speak to check its sound level.");
     } catch (error) {
       setMessage(errorMessage(error));
@@ -210,8 +237,10 @@ export function ControlPanel() {
     resetSessionState();
     sessionTitle.value = "";
     try {
-      const session = await client.createSession();
-      watchCreatedMeeting(session.id);
+      const settings = loadAppSettings();
+      const session = await client.createSession({ speaker_window: settings.speakerWindow,
+        cleanup_after_stop: settings.cleanupAfterStop });
+      watchMeetingSummary(session.id);
       saveSessionReattach(sessionReattachStorage(), {
         sessionId: session.id
       });
@@ -335,6 +364,41 @@ export function ControlPanel() {
     };
   }, []);
 
+  useEffect(() => {
+    if (mode === "live") return;
+    return bindFileUpload();
+  }, [mode]);
+
+  async function saveExport(): Promise<void> {
+    const id = sessionId.value;
+    if (!id) return;
+    setExportError("");
+    if (exportFormat === "audio") {
+      try {
+        const meeting = await openMeeting(id);
+        if (meeting.audio?.state !== "available" && meeting.audio?.state !== "partial") {
+          setExportError("Audio is unavailable for this meeting."); return;
+        }
+        const anchor = document.createElement("a");
+        anchor.href = `/api/meetings/${encodeURIComponent(id)}/audio/download`;
+        anchor.download = `meeting-${id}.mp3`;
+        document.body.append(anchor); anchor.click(); anchor.remove();
+      } catch (error) { setExportError(error instanceof Error ? error.message : "Audio download unavailable."); }
+      return;
+    }
+    const turns = groupSegmentsIntoTurns(transcript.value);
+    const finalized = sessionStatus.value !== "active" && sessionStatus.value !== "closing";
+    const numbers = settledSpeakerNumbers(turns, finalized);
+    let summary = null;
+    if (exportFormat === "md" && finalized) {
+      try { const artifact = await summaryApi(id); summary = artifact?.state === "current" ? artifact.document : null; }
+      catch { /* A transcript remains exportable when its optional summary cannot be fetched. */ }
+    }
+    triggerTranscriptExportDownload(serializeTranscriptExport(exportFormat, turns,
+      turn => transcriptCardSpeakerLabel(turn, numbers, liveLabelPolicy.value, finalized),
+      { sessionId: id, exportedAt: new Date() }, { needsReview: sessionNeedsReview.value }, summary));
+  }
+
   const configured = clientRef.current !== null;
   const reattached = phase === "viewing";
   const canStart = phase === "ready" && meters.microphone > 0 && meters.system > 0;
@@ -352,9 +416,27 @@ export function ControlPanel() {
             ? "Next: play sound in the shared tab. Your microphone is receiving sound."
             : "Both sources are receiving sound. Start capture when ready.";
 
+  const modeLocked = phase === "active" || phase === "stopping" || phase === "viewing" || phase === "configuring";
+  const exportReady = sessionId.value !== null && transcript.value.length > 0;
+
   return (
-    <section
-      className="control-section capture-supervisor"
+    <section className="control-section controls-workspace" data-mode={mode}>
+      <div className="controls-block"><span className="field-label">Mode</span>
+        <div className="seg mode-tabs" role="group" aria-label="Mode">
+          {(["live", "file", "url"] as const).map(choice => <button key={choice} type="button"
+            className={`seg-btn${mode === choice ? " is-active" : ""}`} aria-pressed={mode === choice}
+            disabled={modeLocked} onClick={() => setMode(choice)}>{choice === "url" ? "URL" : choice === "file" ? "File" : "Live"}</button>)}
+        </div>
+      </div>
+      {mode === "live" ? <>
+      <div className="controls-primary">
+        {phase === "ready" ? <button type="button" className="record-btn" disabled={!canStart} onClick={() => void startCapture()}>Start recording</button> : null}
+        {phase === "active" ? <button type="button" className="record-btn" data-action="stop" onClick={() => void stopCapture()}>Stop and finalize</button> : null}
+          {phase === "idle" || phase === "configuring" ? <button type="button" className="record-btn" disabled>Start recording</button> : null}
+      </div>
+      <div className="controls-block live-mode-section">
+      <div
+      className="capture-supervisor"
       data-mode="live"
       data-capture-phase={phase}
       data-observer-mode={reattached ? "read-only" : "none"}
@@ -379,6 +461,17 @@ export function ControlPanel() {
       <p className="hint">
         How you listen, not what is recorded: speakers enable echo cancellation; headphones preserve the microphone signal.
       </p>
+
+      <label className="field-label" htmlFor="microphone-select">Microphone</label>
+      <select id="microphone-select" aria-label="Microphone" value={microphoneId}
+        disabled={reattached || phase === "stopping"}
+        onFocus={() => void refreshMicrophones()}
+        onChange={event => { const id = event.currentTarget.value; setMicrophoneId(id);
+          if (clientRef.current && connected.microphone) void switchMicrophone(id); }}>
+        <option value="">System default</option>
+        {microphones.map((device, index) => <option key={device.deviceId} value={device.deviceId}>
+          {device.label || `Microphone ${index + 1}`}</option>)}
+      </select>
 
       <div className="capture-meters" aria-label="Capture lane meters">
         <LaneMeter label="Microphone" value={meters.microphone} connected={connected.microphone} observer={reattached} />
@@ -410,22 +503,11 @@ export function ControlPanel() {
         </div>
       ) : null}
 
-      {phase === "ready" ? (
-        <button type="button" className="record-btn" disabled={!canStart} onClick={() => void startCapture()}>
-          <span>Start capture</span>
-        </button>
-      ) : null}
-      {phase === "active" ? (
-        <button type="button" className="record-btn" data-action="stop" onClick={() => void stopCapture()}>
-          <span>Stop and finalize</span>
-        </button>
-      ) : null}
       {phase === "viewing" ? (
         <button type="button" className="btn" onClick={() => void resetCapture()}>
           Detach transcript
         </button>
       ) : null}
-      {phase === "stopping" ? <button type="button" className="record-btn" disabled>Finalizing...</button> : null}
       {phase === "terminal" || phase === "error" ? (
         <button type="button" className="btn" onClick={() => void resetCapture()}>Reset capture</button>
       ) : null}
@@ -437,6 +519,33 @@ export function ControlPanel() {
               .filter(Boolean).join(". ") + ". Reset capture to try again."
           : message
       }</p>
+      </div></div></> :
+      <form data-file-upload="form" className="controls-mode-form" onSubmit={event => { if (mode === "url" && !url.startsWith("https://")) event.preventDefault(); }}>
+        <button type="submit" className="record-btn" disabled={mode === "file" ? fileQueue.length === 0 : !url.startsWith("https://")}>
+          {mode === "file" ? "Start file transcription" : "Start URL transcription"}</button>
+        <div className="controls-block">
+          {mode === "file" ? <><label className="field-label" htmlFor="meeting-files">Files</label>
+            <input ref={fileInputRef} id="meeting-files" name="file" type="file" multiple
+              onChange={event => setFileQueue(Array.from(event.currentTarget.files ?? []).map(file => file.name))} />
+            <button type="button" className="btn" disabled={!fileQueue.length} onClick={() => { if (fileInputRef.current) fileInputRef.current.value = ""; setFileQueue([]); }}>Clear queue</button>
+            {fileQueue.length ? <ul>{fileQueue.map((name, index) => <li key={`${name}-${index}`}>{name}</li>)}</ul> : <p className="hint">No files added yet.</p>}</> :
+            <><input name="file" type="file" multiple hidden /><label className="field-label" htmlFor="meeting-url">URL</label>
+              <input id="meeting-url" name="urls" type="url" value={url} placeholder="https://example.com/audio.mp3"
+                onInput={event => setUrl(event.currentTarget.value)} />
+              <p className="hint">Enter an exact https:// media URL.</p></>}
+          {mode === "file" && <input name="urls" value="" hidden readOnly />}
+          <p data-file-upload="status" role="status" /><ul data-file-upload="results" />
+        </div>
+      </form>}
+      <div className="controls-block controls-export"><label className="field-label" htmlFor="meeting-export-format">Export</label>
+        <div className="controls-export-row"><select id="meeting-export-format" aria-label="Export format" value={exportFormat}
+          onChange={event => setExportFormat(event.currentTarget.value as TranscriptExportFormat | "audio")}>
+          <option value="md">Markdown (.md)</option><option value="txt">Plain text (.txt)</option>
+          <option value="srt">SRT (.srt)</option><option value="vtt">VTT (.vtt)</option>
+          <option value="json">JSON (.json)</option><option value="audio">Audio (.mp3)</option>
+        </select><button type="button" className="btn" disabled={!exportReady} onClick={() => void saveExport()}>Save</button></div>
+        {exportError && <p role="alert">{exportError}</p>}
+      </div>
     </section>
   );
 }

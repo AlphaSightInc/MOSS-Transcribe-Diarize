@@ -2722,6 +2722,12 @@ const status = document.querySelector('[data-workspace-status]');
   location.replace('/');
 })().catch(error => { status.textContent = error.message; });
 </script>"""
+    file_fallback = "" if live_enabled else (
+        '<section id="workspace-file" data-workspace-section="file"><h2 class="phase2-workspace-heading">File transcription</h2>'
+        '<form data-file-upload="form" class="control-section"><label class="field"><span class="field-label">Audio or video files</span><input name="file" type="file" multiple></label>'
+        '<label class="field"><span class="field-label">Media URLs, one per line</span><textarea name="urls"></textarea></label>'
+        '<button type="submit" class="btn btn-primary">Transcribe files and URLs</button></form><p data-file-upload="status" role="status"></p><ul data-file-upload="results"></ul></section>'
+    )
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MOSS</title></head>
 <body><main data-auth-state="bootstrap"><h1>MOSS</h1><p data-workspace-status>{message}</p>
@@ -2760,15 +2766,12 @@ def _workspace_html(
 <body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-workspace-name>{html.escape(account.display_name)}</span>
 <small style="color: var(--muted)">History stays with this browser profile. Clearing site data loses automatic access.</small></header>
 <nav class="workspace-nav" aria-label="Workspace">
-<a href="#workspace-file">Files &amp; URLs</a>
+{('<a href="#workspace-file">Files &amp; URLs</a>' if not live_enabled else '')}
 {('<a href="#workspace-live">Live / Transcript &amp; export</a>' if live_enabled else '')}
 <a href="#workspace-history">Meeting history</a><a href="#workspace-voiceprints">Voiceprints</a>
 </nav>
 <section data-workspace=\"account\"><h1>Your meetings</h1>
-<section id=\"workspace-file\" data-workspace-section=\"file\"><h2 class=\"phase2-workspace-heading\">File transcription</h2>
-<form data-file-upload=\"form\" class="control-section" style="max-width: 680px; gap: 16px"><label class="field"><span class="field-label">Audio or video files</span><input name=\"file\" type=\"file\" multiple></label>
-<label class="field"><span class="field-label">Media URLs, one per line</span><textarea name=\"urls\"></textarea></label>
-<button type=\"submit\" class="btn btn-primary" style="align-self: flex-start">Transcribe files and URLs</button></form><p data-file-upload=\"status\" role=\"status\"></p><ul data-file-upload=\"results\"></ul></section>
+{file_fallback}
 {live_body}
 <section id=\"workspace-history\" data-workspace-section=\"history\"><h2 class=\"phase2-workspace-heading\">Meeting history</h2>
 <div id=\"meeting-history-app\" data-history-root>{empty}{history}</div>

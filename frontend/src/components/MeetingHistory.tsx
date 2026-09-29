@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { createPortal } from "preact/compat";
-import { FinalSummary, FinalSummarySettings } from "./FinalSummary";
 import {
   listMeetings,
   openMeeting,
@@ -30,7 +28,7 @@ import {
   sessionStatus,
   sessionTitle
 } from "../state/session";
-import { historyView, selectedSummaryMeeting, summaryPageOpen } from "../state/ui";
+import { historyView, selectedSummaryMeeting } from "../state/ui";
 
 export function MeetingHistory() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -45,10 +43,6 @@ export function MeetingHistory() {
   const refreshGenerationRef = useRef(0);
   const renameDialogRef = useRef<HTMLDialogElement | null>(null);
   const renameInputRef = useRef<HTMLInputElement | null>(null);
-  const summaryButtonRef = useRef<HTMLButtonElement | null>(null);
-  const backButtonRef = useRef<HTMLButtonElement | null>(null);
-  const summaryMeeting = selectedSummaryMeeting.value;
-  const summaryOpen = summaryPageOpen.value && summaryMeeting !== null;
 
   const groups = useMemo(
     () => groupMeetings(filterMeetings(meetings, query)),
@@ -56,9 +50,6 @@ export function MeetingHistory() {
   );
 
   const replaceSelection = (meeting: Meeting | null) => {
-    if (selectedRef.current?.id !== meeting?.id || meeting?.status !== "completed") {
-      summaryPageOpen.value = false;
-    }
     selectedRef.current = meeting;
     setSelected(meeting);
     selectedSummaryMeeting.value = meeting?.status === "completed" ? meeting : null;
@@ -79,8 +70,8 @@ export function MeetingHistory() {
       if (repaired && sessionId.value === repaired.id) {
         publishMeeting(repaired, false);
       } else if (currentSession && currentSession.status !== "active") {
-        // Stop completes through the Live poller, not a manual History selection. Hydrate
-        // its durable notice/review projection as soon as the terminal row is visible.
+        // Stop completes through the Live poller; select its durable Meeting automatically.
+        replaceSelection(currentSession);
         publishMeeting(currentSession, false);
       } else if (!repaired && previous && sessionId.value === previous.id) {
         resetSessionState();
@@ -104,7 +95,6 @@ export function MeetingHistory() {
     return () => {
       document.removeEventListener(MEETING_HISTORY_REFRESH_EVENT, handleRefresh);
       selectedSummaryMeeting.value = null;
-      summaryPageOpen.value = false;
     };
   }, []);
 
@@ -132,17 +122,6 @@ export function MeetingHistory() {
     };
   }, [renameTarget]);
 
-  useEffect(() => {
-    if (summaryOpen) backButtonRef.current?.focus();
-    else if (summaryMeeting) summaryButtonRef.current?.focus();
-    if (!summaryOpen) return;
-    const workspace = document.querySelector<HTMLElement>('main[data-auth-state="signed-in"]');
-    const wasInert = workspace?.hasAttribute("inert") ?? false;
-    workspace?.setAttribute("inert", "");
-    return () => {
-      if (!wasInert) workspace?.removeAttribute("inert");
-    };
-  }, [summaryOpen]);
 
   const selectMeeting = async (meetingId: string) => {
     if (
@@ -206,11 +185,6 @@ export function MeetingHistory() {
   return (<>
     <section className="panel history-panel account-history-panel" aria-label="Meeting history">
       <div className="panel-body">
-        <div className="summary-entry-row">
-          <button ref={summaryButtonRef} type="button" className="summary-page-entry"
-            aria-label="Open summary" aria-expanded={summaryOpen} disabled={!summaryMeeting || summaryOpen}
-            onClick={() => { summaryPageOpen.value = true; }}>Summary ↗</button>
-        </div>
         <div className="seg history-tabs" role="tablist" aria-label="History views">
           <button
             type="button"
@@ -377,18 +351,6 @@ export function MeetingHistory() {
         </dialog>
       ) : null}
     </section>
-    {summaryOpen && summaryMeeting && createPortal(
-      <main className="summary-page" aria-label="Summary view">
-        <div className="summary-page-head">
-          <button ref={backButtonRef} type="button" className="history-action-btn"
-            onClick={() => { summaryPageOpen.value = false; }}>← Back to meeting</button>
-          <div><span className="eyebrow">Completed meeting</span><h2>{meetingTitle(summaryMeeting)}</h2></div>
-        </div>
-        <div className="summary-page-body">
-          <FinalSummarySettings />
-          <FinalSummary key={summaryMeeting.id} meeting={summaryMeeting} />
-        </div>
-      </main>, document.body)}
   </>);
 }
 

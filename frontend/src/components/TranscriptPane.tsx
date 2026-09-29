@@ -3,10 +3,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { requestMeetingHistoryRefresh, SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { nameMeetingSpeaker, reassignMeetingPassages, VoiceprintEvidenceNotAdmittedError } from "../api/speakers";
 import {
-  buildTranscriptExportText,
-  serializeTranscriptExport,
-  triggerTranscriptExportDownload,
-  type TranscriptExportFormat
+  buildTranscriptExportText
 } from "../lib/transcriptExport";
 import { groupSegmentsIntoTurns, type TranscriptTurn } from "../lib/mergeTranscript";
 import {
@@ -30,6 +27,8 @@ import {
 } from "../state/session";
 import { autoscroll } from "../state/ui";
 import { TranscriptCards } from "./TranscriptCards";
+import { SummaryPane } from "./SummaryPane";
+import { view } from "../state/ui";
 
 interface TranscriptLegendEntry {
   colorToken: string;
@@ -78,7 +77,6 @@ async function copyTextToClipboard(text: string): Promise<void> {
 export function TranscriptPane() {
   const [findOpen, setFindOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [activeSearchMatchIndex, setActiveSearchMatchIndex] = useState(0);
   const transcriptFindRef = useRef<HTMLInputElement | null>(null);
   const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
@@ -108,8 +106,13 @@ export function TranscriptPane() {
     (sessionStatus.value === "closed" && allTurns.some(turn => turn.state !== "final"));
   const finalized = !automaticProcessingRunning;
   const speakerNumbers = settledSpeakerNumbers(allTurns, finalized);
-  const speakerLabel = (item: typeof allTurns[number]) =>
-    transcriptCardSpeakerLabel(item, speakerNumbers, liveLabelPolicy.value, finalized);
+  const speakerLabel = (item: Pick<typeof transcript.value[number], "speaker_entity_id" | "speaker" | "display_name" | "source_lane" | "settled" | "state">) => {
+    const id = item.speaker_entity_id || item.speaker;
+    if (/^local-\d+$/.test(id) && (!item.display_name || item.display_name === id || /^Speaker \d+$/.test(item.display_name))) {
+      return `Local ${String(Number(id.slice(6))).padStart(2, "0")}`;
+    }
+    return transcriptCardSpeakerLabel(item, speakerNumbers, liveLabelPolicy.value, finalized);
+  };
   const searchResults = buildTranscriptSearchResults(
     allTurns,
     searchQuery,
@@ -122,10 +125,9 @@ export function TranscriptPane() {
   const transcriptAvailable = allTurns.length > 0;
   const activeSessionId = sessionId.value;
   const canNameSpeakers = activeSessionId !== null;
-  const transcriptExportAvailable = transcriptAvailable && activeSessionId !== null;
   const legendEntries = buildLegendEntries(
     fullTranscriptItems,
-    (item) => transcriptCardSpeakerLabel(item, speakerNumbers, liveLabelPolicy.value, finalized),
+    speakerLabel,
     speakerColorMap
   );
   const correctionSpeakers = legendEntries.filter(
@@ -304,17 +306,16 @@ export function TranscriptPane() {
         return;
       }
 
-      if (event.key === "Escape" && (findOpen || exportMenuOpen)) {
+      if (event.key === "Escape" && findOpen) {
         event.preventDefault();
         setFindOpen(false);
-        setExportMenuOpen(false);
         transcriptSearchQuery.value = "";
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [exportMenuOpen, findOpen]);
+  }, [findOpen]);
 
   useEffect(() => {
     if (!findOpen || activeSearchMatchId < 0) {
@@ -371,18 +372,6 @@ export function TranscriptPane() {
     }
   }
 
-  function handleDownload(format: TranscriptExportFormat): void {
-    if (activeSessionId === null) {
-      return;
-    }
-    triggerTranscriptExportDownload(serializeTranscriptExport(
-      format,
-      allTurns,
-      speakerLabel,
-      { sessionId: activeSessionId, exportedAt: new Date() },
-      { needsReview: sessionNeedsReview.value }
-    ));
-  }
 
   return (
     <section className="transcript-pane">
@@ -427,12 +416,12 @@ export function TranscriptPane() {
           </button>
         ))}
 
-        {/* Holds the reference's Transcript|Summary toggle, which is a ruled Phase 2 deletion
-            (charter §5 exemption). The container stays: `margin-left: auto` is what right-aligns
-            this row, so removing it would move everything it anchors. */}
-        <div className="tr-legend-right" aria-hidden="true">
-          <div className="transcript-view-placeholder" />
-        </div>
+        <div className="tr-legend-right"><div className="seg transcript-tabs" role="tablist" aria-label="Meeting views">
+          <button type="button" role="tab" className={`seg-btn${view.value === "transcript" ? " is-active" : ""}`}
+            aria-selected={view.value === "transcript"} onClick={() => { view.value = "transcript"; }}>Transcript</button>
+          <button type="button" role="tab" className={`seg-btn${view.value === "summary" ? " is-active" : ""}`}
+            aria-selected={view.value === "summary"} onClick={() => { view.value = "summary"; }}>Summary</button>
+        </div></div>
       </div>
 
       {namingMessage ? <p className="hint" role="status">{namingMessage}</p> : null}
@@ -487,7 +476,7 @@ export function TranscriptPane() {
         </dialog>
       ) : null}
 
-      <div className="tr-body-wrap">
+      <div className="tr-body-wrap" hidden={view.value === "summary"}>
         <div className="tr-floating-tools" id="tr-floating-tools">
           <button
             type="button"
@@ -528,46 +517,7 @@ export function TranscriptPane() {
           >
             Auto-scroll
           </button>
-          <div className="divider" aria-hidden="true" />
-          <button
-            type="button"
-            className="mini-switch transcript-export-trigger"
-            aria-haspopup="menu"
-            aria-expanded={exportMenuOpen}
-            title="Export transcript"
-            disabled={!transcriptExportAvailable}
-            onClick={() => setExportMenuOpen((open) => !open)}
-          >
-            <span className="mini-switch-track" aria-hidden="true">
-              <span className="mini-switch-thumb" />
-            </span>
-            <span className="mini-switch-label">Export transcript</span>
-          </button>
         </div>
-
-        {exportMenuOpen ? (
-          <div className="transcript-export-menu" role="menu" aria-label="Export transcript format">
-            {([
-              ["md", "Markdown (.md)"],
-              ["txt", "Plain text (.txt)"],
-              ["json", "JSON (.json)"],
-              ["srt", "SubRip (.srt)"],
-              ["vtt", "WebVTT (.vtt)"]
-            ] as const).map(([format, label]) => (
-              <button
-                key={format}
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setExportMenuOpen(false);
-                  handleDownload(format);
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        ) : null}
 
         {findOpen ? (
           <div className="tr-find">
@@ -660,6 +610,7 @@ export function TranscriptPane() {
         </div>
         <div className="tr-fade" aria-hidden="true" />
       </div>
+      <SummaryPane hidden={view.value !== "summary"} />
     </section>
   );
 }

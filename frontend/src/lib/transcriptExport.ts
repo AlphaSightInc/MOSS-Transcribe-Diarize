@@ -1,5 +1,6 @@
 import { compareTranscriptOrder } from "./transcriptOrder.ts";
 import type { SourceLane } from "./transcriptOrder.ts";
+import type { SummaryDocument } from "./finalSummary";
 import type { TranscriptTurn } from "./mergeTranscript";
 import { isBackendUnknownSpeakerId, UNRESOLVED_SPEAKER_ID } from "./speakerMap.ts";
 
@@ -7,7 +8,7 @@ export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json", "srt", "vtt"] as 
 export type TranscriptExportFormat = (typeof TRANSCRIPT_EXPORT_FORMATS)[number];
 
 const PROVISIONAL_ATTRIBUTION_CAVEAT =
-  "Speaker attribution is provisional and may be revised by the retrospective sweep after the session ends.";
+  "Speaker attribution is provisional and may change before the meeting is finished.";
 const TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT =
   `Provisional attribution: ${PROVISIONAL_ATTRIBUTION_CAVEAT}`;
 const MARKDOWN_PROVISIONAL_ATTRIBUTION_CAVEAT =
@@ -75,7 +76,8 @@ export function serializeTranscriptExport(
   turns: readonly TranscriptTurn[],
   resolveLabel: (turn: TranscriptTurn) => string,
   identity: TranscriptExportIdentity,
-  review: TranscriptExportReview = { needsReview: false }
+  review: TranscriptExportReview = { needsReview: false },
+  summary?: SummaryDocument | null
 ): TranscriptExportFile {
   turns = [...turns].sort(compareTranscriptOrder);
   const rows = buildExportRows(turns, resolveLabel);
@@ -99,7 +101,7 @@ export function serializeTranscriptExport(
   if (format === "md") {
     return {
       content: prependNotice(prependProvisionalAttributionCaveat(
-        rows.map((row) => `## [${row.clockTime}] ${row.label}\n\n${row.text}`).join("\n\n"),
+        `${summary ? `${formatSummaryMarkdown(summary)}\n\n# Transcript\n\n` : ""}${rows.map((row) => `## [${row.clockTime}] ${row.label}\n\n${row.text}`).join("\n\n")}`,
         MARKDOWN_PROVISIONAL_ATTRIBUTION_CAVEAT,
         provisionalAttribution
       ), MARKDOWN_NEEDS_REVIEW_NOTICE, review.needsReview),
@@ -216,4 +218,15 @@ function subtitleText(text: string): string {
   // Blank lines delimit cues; escape markup so transcript words remain literal.
   return text.replace(/\r\n?/g, "\n").replace(/\n[ \t]*\n+/g, "\n")
     .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function formatSummaryMarkdown(document: SummaryDocument): string {
+  const sections = [`# Summary\n\n${document.summary}`];
+  for (const topic of document.topics) sections.push(`## ${topic.title}\n\n${topic.description}`);
+  if (document.details.length) sections.push(`## Supporting details\n\n${document.details.map(detail =>
+    `- ${detail.timestamp} · **${detail.title}** — ${detail.description}`).join("\n")}`);
+  if (document.speaker_background.length) sections.push(`## Speaker background\n\n${document.speaker_background.map(line => `- ${line}`).join("\n")}`);
+  if (document.data_references.length) sections.push(`## Data references\n\n${document.data_references.map(item =>
+    `- **${item.item}: ${item.value}** — ${item.context}`).join("\n")}`);
+  return sections.join("\n\n");
 }

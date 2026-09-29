@@ -86,43 +86,25 @@ describe("MeetingHistory", () => {
     expect(transcript.value.map(segment => segment.text)).toEqual(["first words"]);
   });
 
-  it("opens the browser-owned summary page for only the selected completed meeting", async () => {
+  it("opens the selected meeting summary in the centre card", async () => {
     const first = meeting({ id: "first", title: "First meeting" });
     const second = meeting({ id: "second", title: "Second meeting" });
-    const active = meeting({ id: "active", title: "In progress", status: "active" });
-    const meetings = [first, second, active];
+    const meetings = [first, second];
     vi.stubGlobal("fetch", vi.fn(async (url: string) => {
       if (url === "/api/meetings") return response({ meetings });
-      if (url === "/api/llm/models") return response({ data: [] });
       if (url.endsWith("/summary")) return response({ summary: null });
       return response(meetings.find(item => url.endsWith(`/${item.id}`)));
     }));
-
-    await act(async () => render(<MeetingHistory />, root));
+    await act(async () => render(<div><App /><MeetingHistory /></div>, root));
     await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="first"]')).not.toBeNull());
-    const entry = document.body.querySelector<HTMLButtonElement>('[aria-label="Open summary"]')!;
-    expect(entry.disabled).toBe(true);
-    expect(document.body.querySelector('[aria-label="Final summary"]')).toBeNull();
-
     await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="first"]')!.click());
-    await vi.waitFor(() => expect(entry.disabled).toBe(false));
-    act(() => entry.click());
-    expect(document.body.querySelector('[aria-label="Summary view"] h2')?.textContent).toBe("First meeting");
-    expect(document.body.querySelectorAll('[aria-label="Browser AI settings"]')).toHaveLength(1);
-    expect(document.body.querySelectorAll('[aria-label="Final summary"]')).toHaveLength(1);
-    expect(document.body.querySelectorAll('[data-testid="final-summary-generate"]')).toHaveLength(1);
-
-    act(() => document.body.querySelector<HTMLButtonElement>(".summary-page-head button")!.click());
-    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="second"]')!.click());
-    await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="second"]')?.getAttribute("aria-pressed")).toBe("true"));
-    act(() => entry.click());
-    expect(document.body.querySelector('[aria-label="Summary view"] h2')?.textContent).toBe("Second meeting");
-    act(() => document.body.querySelector<HTMLButtonElement>(".summary-page-head button")!.click());
+    await vi.waitFor(() => expect(sessionId.value).toBe("first"));
+    act(() => root.querySelector<HTMLButtonElement>('[aria-label="Meeting views"] [role="tab"]:last-child')!.click());
+    expect(root.querySelector('[aria-label="Summary"]')).not.toBeNull();
+    expect(sessionId.value).toBe("first");
     expect(document.body.querySelector('[aria-label="Summary view"]')).toBeNull();
-
-    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="active"]')!.click());
-    await vi.waitFor(() => expect(entry.disabled).toBe(true));
-    expect(document.body.querySelector('[aria-label="Final summary"]')).toBeNull();
+    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="second"]')!.click());
+    await vi.waitFor(() => expect(sessionId.value).toBe("second"));
   });
 
   it("hydrates saved review truth after Stop settles without a manual reopen", async () => {
@@ -315,14 +297,10 @@ describe("MeetingHistory", () => {
 
     expect(root.querySelector('a[href="#transcript-panel"]')?.textContent).toBe("View selected transcript and export");
     expect(root.querySelector("#transcript-panel")).not.toBeNull();
-    for (const label of ["Markdown (.md)", "Plain text (.txt)", "JSON (.json)"]) {
-      act(() => {
-        root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.click();
-      });
-      const item = [...root.querySelectorAll<HTMLButtonElement>("[role='menuitem']")]
-        .find((candidate) => candidate.textContent === label);
-      if (!item) throw new Error(`missing ${label} export`);
-      act(() => item.click());
+    for (const format of ["md", "txt", "json"]) {
+      act(() => { root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!.value = format;
+        root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!.dispatchEvent(new Event("change", { bubbles: true })); });
+      await act(async () => root.querySelector<HTMLButtonElement>(".controls-export button")!.click());
     }
 
     expect(downloads).toHaveLength(3);
@@ -381,20 +359,11 @@ describe("MeetingHistory", () => {
 
     expect(root.textContent).toContain("Needs review.");
     expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Speaker TBD");
-    for (const label of [
-      "Markdown (.md)",
-      "Plain text (.txt)",
-      "JSON (.json)",
-      "SubRip (.srt)",
-      "WebVTT (.vtt)"
-    ]) {
-      act(() => {
-        root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.click();
-      });
-      const item = [...root.querySelectorAll<HTMLButtonElement>("[role='menuitem']")]
-        .find(candidate => candidate.textContent === label);
-      if (!item) throw new Error(`missing ${label} export`);
-      act(() => item.click());
+    for (const [index, format] of ["md", "txt", "json", "srt", "vtt"].entries()) {
+      act(() => { const select = root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!;
+        select.value = format; select.dispatchEvent(new Event("change", { bubbles: true })); });
+      await act(async () => root.querySelector<HTMLButtonElement>(".controls-export button")!.click());
+      await vi.waitFor(() => expect(downloads).toHaveLength(index + 1));
     }
 
     expect(downloads.map(name => name.split(".").at(-1))).toEqual([
@@ -576,11 +545,9 @@ describe("MeetingHistory", () => {
     });
     expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Casey");
     expect(transcript.value.map(item => item.display_name)).toEqual(["Casey"]);
-    act(() => root.querySelector<HTMLButtonElement>("button[title='Export transcript']")!.click());
-    const textExport = [...root.querySelectorAll<HTMLButtonElement>("[role='menuitem']")]
-      .find(button => button.textContent === "Plain text (.txt)");
-    if (!textExport) throw new Error("missing plain text export");
-    act(() => textExport.click());
+    act(() => { const select = root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!;
+      select.value = "txt"; select.dispatchEvent(new Event("change", { bubbles: true })); });
+    await act(async () => root.querySelector<HTMLButtonElement>(".controls-export button")!.click());
     expect(await blobs[0].text()).toContain("Casey");
     expect(await blobs[0].text()).not.toContain("Alex");
   });
