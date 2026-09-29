@@ -88,7 +88,8 @@ WP5 builds against §4 with mocked responses and integrates last.
 
 1. Backend + frontend suites, typecheck, build green; MOSS-engine tests green (D19).
 2. **Q-LIVE** (clean-up OFF, Balanced): accept6 ×2 settled DER ≤ .110; E1 two-lane labels at Stop ≤ 4; long60 IDs ≤ 6 and
-   DER ≤ .08; 0 dropped passages; 0 speaker-less rows at Stop (F13).
+   DER ≤ .08; 0 dropped passages; speaker-less speech at Stop ≤ 0.5 % of speech time and no single speaker-less run > 2 s (F13;
+   a voice with < 2 s in the whole meeting may legitimately stay "Speaker TBD").
 3. **Q-IND** (R-A1) as defined in §2.
 4. **Q-SPEED**: words p50 ≤ 1 s; speaker names p50 ≤ 15 s; guesses on long60: coverage ≥ 70 % of Speaker-TBD time, accuracy ≥ 95 %.
 5. **Q-MIC** (R-A3): speakers variant — 0 local IDs born from system voices, ≥ 90 % of echoed system words dropped from the mic
