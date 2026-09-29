@@ -368,6 +368,11 @@ class ConditionalMicrophoneTerminal:
     def transcribe(self, tape) -> tuple[GeminiSegment, ...]:
         return self.terminal.transcribe(tape) if self.source.ever_voiced else ()
 
+    def transcribe_interval(self, tape, start_sample: int,
+                            end_sample: int) -> tuple[GeminiSegment, ...]:
+        return (self.terminal.transcribe_interval(tape, start_sample, end_sample)
+                if self.source.ever_voiced else ())
+
     def set_witness(self, rows: Sequence[GeminiSegment]) -> None:
         self.terminal.set_witness(rows)
 
@@ -586,6 +591,24 @@ class LaneGeminiEngine:
         for lane in self.LANES:
             remaining = deadline - (time.monotonic() - started)
             if remaining <= 0 or not await self._engines[lane].drain_tail(remaining):
+                return False
+        with self._lock:
+            return self._frontier >= self._accepted
+
+    async def recover_tail(self, deadline: float) -> bool:
+        started = time.monotonic()
+        for lane in self.LANES:
+            with self._lock:
+                missing = self._lane_frontiers[lane] < self._accepted
+            if not missing:
+                continue
+            remaining = deadline - (time.monotonic() - started)
+            if remaining <= 0:
+                return False
+            try:
+                if not await self._engines[lane].recover_tail(self._tapes[lane], remaining):
+                    return False
+            except Exception:
                 return False
         with self._lock:
             return self._frontier >= self._accepted

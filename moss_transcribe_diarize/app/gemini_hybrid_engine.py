@@ -239,6 +239,7 @@ class GeminiHybridEngine:
         self._live_finals: list[GeminiWord] = []
         self._live_interim: GeminiWord | None = None
         self._stopping = False
+        self._tail_recovery_started = False
         self._closed = False
         self._last_ingress_at = 0.0
         self._idle_timer: threading.Timer | None = None
@@ -372,6 +373,8 @@ class GeminiHybridEngine:
                 words, fallback = self._decode_covered_window(
                     pcm, start, voice_start, deadline=time.monotonic() + 120)
                 with self._lock:
+                    if self._tail_recovery_started:
+                        return
                     if (self._stopping or self._idle_due) and end == self._accepted:
                         # This in-flight call already spans the Stop suffix.
                         # Publish its held-back ten seconds instead of making
@@ -409,10 +412,11 @@ class GeminiHybridEngine:
 
     def _publish_window(self, start: int, frontier: int, pcm: bytes,
                         words: Sequence[GeminiWord],
-                        fallback: Sequence[GeminiWord] = ()) -> None:
+                        fallback: Sequence[GeminiWord] = (), *,
+                        gate_words: bool = True) -> None:
         absolute = tuple(GeminiWord(w.text, w.speaker, w.start_sample + start,
                                      w.end_sample + start) for w in words)
-        if self.word_gate is not None:
+        if gate_words and self.word_gate is not None:
             absolute = self.word_gate.filter(pcm, absolute, offset_sample=start)
         observe_batch = getattr(self.word_source, "observe_batch_words", None)
         if callable(observe_batch):
@@ -439,6 +443,8 @@ class GeminiHybridEngine:
             ) for local, (vector, seconds) in embeddings.items()
               if mapping.get(local) is not None)
         with self._lock:
+            if self._tail_recovery_started and gate_words:
+                return
             old = self._rolling_frontier
             if frontier > old:
                 if frontier > self._committed:
@@ -520,6 +526,24 @@ class GeminiHybridEngine:
         except Exception:
             return False
         self._publish_window(start, accepted, pcm, words, fallback)
+        return self._rolling_frontier >= accepted
+
+    async def recover_tail(self, tape: CompleteMixedTape, deadline: float) -> bool:
+        with self._lock:
+            self._tail_recovery_started = True
+            start, accepted = self._rolling_frontier, self._accepted
+        if start >= accepted:
+            return True
+        pcm = tape.read(start_sample=start, end_sample=accepted)
+        rows = await asyncio.wait_for(asyncio.to_thread(
+            self.terminal.transcribe_interval, tape, start, accepted), timeout=deadline)
+        if (getattr(self.terminal, "coverage_gaps", ()) or
+                not rows and self.voiced_audio is not None and self.voiced_audio(pcm)):
+            return False
+        words = tuple(GeminiWord(row.text, row.speaker or "spk:?",
+                                 row.start_sample - start, row.end_sample - start)
+                      for row in rows)
+        self._publish_window(start, accepted, pcm, words, gate_words=False)
         return self._rolling_frontier >= accepted
 
     async def finish(self, tape: CompleteMixedTape) -> Sequence[GeminiSegment]:
