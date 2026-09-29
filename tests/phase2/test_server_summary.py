@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from fastapi.testclient import TestClient
 import pytest
 
-from moss_transcribe_diarize.app.phase2 import create_phase2_app
+from moss_transcribe_diarize.app.phase2 import REFINEMENT_RUNNING_MARKER, create_phase2_app
 from moss_transcribe_diarize.app.phase2_summary import DEFAULT_SUMMARY_PROMPT, MeetingSummaries
 from moss_transcribe_diarize.app.phase2_llm import GeminiSummaryGenerator
 
@@ -272,6 +272,64 @@ def test_server_cancel_during_generation_keeps_cancelled_artifact(tmp_path: Path
         assert response.json()["detail"] == {"code": "summary_cancelled"}
         saved = client.get(path).json()["summary"]
         assert saved["state"] == "cancelled" and saved["document"] is None
+
+
+@pytest.mark.parametrize("start_next_while_held", [False, True])
+def test_refinement_supersedes_held_summary_and_next_version_succeeds(
+    tmp_path: Path, start_next_while_held: bool,
+):
+    entered, release = Event(), Event()
+    calls = []
+
+    async def generate(document, *, model, language, prompt):
+        calls.append(document)
+        if len(calls) == 1:
+            entered.set()
+            await asyncio.to_thread(release.wait, 5)
+        return RESULT, USAGE
+
+    app = create_phase2_app(database_path=tmp_path / "db", summary_generator=generate)
+    with TestClient(app, base_url="https://moss.test", raise_server_exceptions=False) as client:
+        client.post("/api/workspace/bootstrap")
+        credential = client.cookies.get("__Host-moss_session")
+
+        async def seed():
+            store = app.state.phase2_store
+            account = await store.account_for_session(credential)
+            handle = await store.workspace(account).create_meeting("live")
+            assert await handle.finish_with_transcript(
+                TRANSCRIPT, "completed", notice=REFINEMENT_RUNNING_MARKER) == 1
+            return handle
+
+        handle = client.portal.call(seed)
+        path = f"/api/meetings/{handle.meeting_id}/summary"
+        improved = {"segments": [{"start": 0, "end": 4, "speaker": "Alex",
+                                  "text": "Improved owner speech."}]}
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            pending = pool.submit(client.post, f"{path}/server", json={"source_version": 1})
+            try:
+                assert entered.wait(5)
+                assert client.get(path).json()["summary"]["state"] == "generating"
+                assert client.portal.call(handle.settle_refinement, improved) == 2
+                if start_next_while_held:
+                    next_response = client.post(f"{path}/server", json={"source_version": 2})
+                    assert next_response.status_code == 200, next_response.text
+            finally:
+                release.set()
+            response = pending.result(timeout=5)
+        assert response.status_code == 409
+        assert response.json() == {"code": "summary_source_changed"}
+        if not start_next_while_held:
+            stale = client.get(path).json()["summary"]
+            assert stale["state"] == "failed"
+            assert stale["error_code"] == "source_changed"
+            assert stale["source_version"] == 1
+            assert stale["document"] is None
+            next_response = client.post(f"{path}/server", json={"source_version": 2})
+        assert next_response.status_code == 200, next_response.text
+        assert next_response.json()["source_version"] == 2
+        assert next_response.json()["artifact_version"] == 2
+        assert calls == [TRANSCRIPT, improved]
 
 
 def test_server_cancel_between_start_and_generating_is_controlled(tmp_path: Path, monkeypatch):

@@ -121,6 +121,8 @@ CRE Studio sign-in and server-side settings (G11), removing MOSS code, push/merg
   transcript, Export audio and passage corrections are disabled** and a badge shows "Improving transcript…"; the final summary
   regenerates on the improved version. Failure or restart keeps the live version with a notice. Evidence: Q-IND 10/14 (3 of 12
   independent meetings materially worse without clean-up: long60 .175 vs .034, Adam .140 vs .026, Shapiro .062 vs .017).
+  An in-flight summary for the older transcript version ends `failed/source_changed`; a summary for the improved version can start
+  without cancelling the older attempt.
 - **D21 = Balanced 15 s / 90 s stays the default** (latency first). With clean-up on, saved long60 accuracy is .034 at Balanced, the
   same as Max; the live view on long meetings may mis-group speakers until clean-up lands (live draws .165–.296; Gemini output is not
   deterministic on identical requests — only 28/60 windows matched on a byte-identical replay).

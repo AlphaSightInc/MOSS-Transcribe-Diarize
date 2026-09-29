@@ -8,11 +8,12 @@ import secrets
 from pathlib import Path
 from typing import Any
 from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from .phase2 import AccountRevoked, MeetingHandle, _now_ms
 
 ACTIVE = {"queued", "generating", "retry_wait"}
-ERRORS = {"delivery_failed", "invalid_output", "request_rejected", "browser_worker_lost", "server_restarted"}
+ERRORS = {"delivery_failed", "invalid_output", "request_rejected", "browser_worker_lost", "server_restarted", "source_changed"}
 # Standard paid text rates in USD per 1M tokens: https://ai.google.dev/gemini-api/docs/pricing
 # The 3.8 Flash introductory rates apply through 2026-12-31.
 SUMMARY_PRICES = {
@@ -130,7 +131,8 @@ class MeetingSummaries:
             if not any(str(s.get("text", "")).strip() for s in document.get("segments", [])):
                 raise SummaryConflict("There is no finalized speech to summarize.")
             previous = await self._read()
-            if previous is not None and previous["state"] in ACTIVE:
+            if (previous is not None and previous["state"] in ACTIVE
+                    and previous["source_version"] >= source_version):
                 raise SummaryConflict("A summary attempt is already active. Cancel it before retrying.")
             value = {"state": "queued", "document": None, "attempt_id": secrets.token_urlsafe(18),
                      "source_version": source_version, "artifact_version": 1 if previous is None else previous["artifact_version"] + 1,
@@ -139,39 +141,45 @@ class MeetingSummaries:
             return value, document
 
     async def update(self, attempt_id: str, state: str, *, document=None, error_code=None):
+        source_changed = False
         async with self.store._mutation():
             source = await self._source()
             value = await self._read()
             if value is None or value["attempt_id"] != attempt_id or value["state"] not in ACTIVE:
                 raise SummaryConflict("Summary attempt is no longer active.")
             if source["status"] != "completed" or source["version"] != value["source_version"]:
-                raise SummaryConflict("Final transcript version changed.")
-            allowed = {"queued": {"generating", "failed", "cancelled"},
-                       "generating": {"retry_wait", "current", "failed", "cancelled"},
-                       "retry_wait": {"generating", "failed", "cancelled"}}
-            if state not in allowed[value["state"]]:
-                raise SummaryConflict("Invalid summary state transition.")
-            if state == "current":
-                segments = json.loads(source["document_json"]).get("segments", [])
-                ends = [float(s.get("end", 0)) for s in segments]
-                duration = max((n for n in ends if math.isfinite(n)), default=0)
-                value["document"] = validate_summary(document, duration)
-            elif document is not None:
-                raise ValueError("Only a current result may include a document.")
-            if state == "failed" and (not isinstance(error_code, str) or error_code not in ERRORS):
-                raise ValueError("A recognized failure code is required.")
-            if state != "failed" and error_code is not None:
-                raise ValueError("Failure codes belong only to failed attempts.")
-            value.update(state=state, error_code=error_code)
-            await self._write(value)
-            if state == "current" and value["document"]["topics"]:
-                title = value["document"]["topics"][0]["title"].strip()
-                if title:
-                    await self.store._connection.execute(
-                        "UPDATE meetings SET title=?,updated_at_ms=? WHERE account_id=? AND meeting_id=? AND title_source='automatic'",
-                        (title, _now_ms(), self.handle.owner_key[0], self.handle.meeting_id),
-                    )
-            return value
+                value.update(state="failed", error_code="source_changed")
+                await self._write(value)
+                source_changed = True
+            else:
+                allowed = {"queued": {"generating", "failed", "cancelled"},
+                           "generating": {"retry_wait", "current", "failed", "cancelled"},
+                           "retry_wait": {"generating", "failed", "cancelled"}}
+                if state not in allowed[value["state"]]:
+                    raise SummaryConflict("Invalid summary state transition.")
+                if state == "current":
+                    segments = json.loads(source["document_json"]).get("segments", [])
+                    ends = [float(s.get("end", 0)) for s in segments]
+                    duration = max((n for n in ends if math.isfinite(n)), default=0)
+                    value["document"] = validate_summary(document, duration)
+                elif document is not None:
+                    raise ValueError("Only a current result may include a document.")
+                if state == "failed" and (not isinstance(error_code, str) or error_code not in ERRORS):
+                    raise ValueError("A recognized failure code is required.")
+                if state != "failed" and error_code is not None:
+                    raise ValueError("Failure codes belong only to failed attempts.")
+                value.update(state=state, error_code=error_code)
+                await self._write(value)
+                if state == "current" and value["document"]["topics"]:
+                    title = value["document"]["topics"][0]["title"].strip()
+                    if title:
+                        await self.store._connection.execute(
+                            "UPDATE meetings SET title=?,updated_at_ms=? WHERE account_id=? AND meeting_id=? AND title_source='automatic'",
+                            (title, _now_ms(), self.handle.owner_key[0], self.handle.meeting_id),
+                        )
+                return value
+        if source_changed:
+            raise SummaryConflict("Final transcript version changed.")
 
 
 async def recover_summaries(store):
@@ -245,11 +253,16 @@ def attach_summary_routes(app, require_account, generator=None):
                 continue
         raise HTTPException(502, {"code": "invalid_summary"})
 
-    def claim(request, meeting_id):
+    def claim(request, meeting_id, source_version=None):
         inflight = request.app.state.summary_inflight
-        if meeting_id in inflight:
+        key = (meeting_id, source_version)
+        if any(existing_id == meeting_id and
+               (source_version is None or existing_version is None or
+                existing_version == source_version)
+               for existing_id, existing_version in inflight):
             raise HTTPException(429, {"code": "summary_in_flight"})
-        inflight.add(meeting_id)
+        inflight.add(key)
+        return key
 
     @app.post("/api/meetings/{meeting_id}/summary/live")
     async def live_summary(meeting_id: str, request: Request):
@@ -269,7 +282,7 @@ def attach_summary_routes(app, require_account, generator=None):
         document = _transcript_document(snapshot, binding.speaker_labels)
         if len(" ".join(str(row["text"]) for row in document["segments"]).split()) < 40:
             raise HTTPException(409, "At least 40 transcript words are required.")
-        claim(request, meeting_id)
+        claim_key = claim(request, meeting_id)
         try:
             result, usage = await generate(request, document, body)
             duration = max((float(row["end"]) for row in document["segments"]), default=0)
@@ -282,7 +295,7 @@ def attach_summary_routes(app, require_account, generator=None):
                 "text_revision_version": snapshot.session.text_revision_version},
                 "generated_at_ms": _now_ms(), "usage": usage}
         finally:
-            request.app.state.summary_inflight.discard(meeting_id)
+            request.app.state.summary_inflight.discard(claim_key)
 
     @app.post("/api/meetings/{meeting_id}/summary/server")
     async def server_summary(meeting_id: str, request: Request):
@@ -290,10 +303,15 @@ def attach_summary_routes(app, require_account, generator=None):
         body = await options(request, final=True)
         if request.app.state.summary_generator is None:
             raise HTTPException(503, {"code": "summary_unavailable"})
-        claim(request, meeting_id)
+        claim_key = claim(request, meeting_id, body["source_version"])
         try:
             async def attempt_conflict(attempt_id):
                 current = await summary.read()
+                if (current is not None and
+                        ((current["attempt_id"] == attempt_id and
+                          current["error_code"] == "source_changed") or
+                         current["source_version"] > attempt["source_version"])):
+                    return JSONResponse({"code": "summary_source_changed"}, status_code=409)
                 code = ("summary_cancelled" if current is not None
                         and current["attempt_id"] == attempt_id and current["state"] == "cancelled"
                         else "summary_conflict")
@@ -309,7 +327,7 @@ def attach_summary_routes(app, require_account, generator=None):
             try:
                 await summary.update(attempt_id, "generating")
             except SummaryConflict:
-                await attempt_conflict(attempt_id)
+                return await attempt_conflict(attempt_id)
             try:
                 result, usage = await generate(request, document, body)
             except HTTPException as exc:
@@ -317,21 +335,21 @@ def attach_summary_routes(app, require_account, generator=None):
                 try:
                     await summary.update(attempt_id, "failed", error_code=code)
                 except SummaryConflict:
-                    await attempt_conflict(attempt_id)
+                    return await attempt_conflict(attempt_id)
                 raise
             try:
                 artifact = await summary.update(attempt_id, "current", document=result)
             except SummaryConflict:
-                await attempt_conflict(attempt_id)
+                return await attempt_conflict(attempt_id)
             except ValueError:
                 try:
                     await summary.update(attempt_id, "failed", error_code="invalid_output")
                 except SummaryConflict:
-                    await attempt_conflict(attempt_id)
+                    return await attempt_conflict(attempt_id)
                 raise HTTPException(502, {"code": "invalid_summary"}) from None
             return {**artifact, "usage": usage}
         finally:
-            request.app.state.summary_inflight.discard(meeting_id)
+            request.app.state.summary_inflight.discard(claim_key)
 
     @app.get("/api/meetings/{meeting_id}/summary")
     async def read_summary(meeting_id: str, request: Request):
