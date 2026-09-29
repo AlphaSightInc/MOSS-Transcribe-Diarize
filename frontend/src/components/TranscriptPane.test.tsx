@@ -4,8 +4,9 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { applySessionStateEvent, captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionStatus } from "../state/session";
-import { autoscroll } from "../state/ui";
+import { autoscroll, selectedSummaryMeeting } from "../state/ui";
 import { TranscriptPane } from "./TranscriptPane";
+import { dispatchWsEvent } from "../api/ws";
 
 describe("TranscriptPane", () => {
   let root: HTMLDivElement;
@@ -13,6 +14,7 @@ describe("TranscriptPane", () => {
   beforeEach(() => {
     resetSessionState();
     autoscroll.value = false;
+    selectedSummaryMeeting.value = null;
     root = document.createElement("div");
     document.body.appendChild(root);
   });
@@ -24,6 +26,7 @@ describe("TranscriptPane", () => {
     root.remove();
     resetSessionState();
     autoscroll.value = false;
+    selectedSummaryMeeting.value = null;
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     vi.useRealTimers();
@@ -33,6 +36,32 @@ describe("TranscriptPane", () => {
     act(() => render(<TranscriptPane />, root));
     expect(root.querySelector(".tr-title")?.textContent).toContain("MOSS");
     expect(root.querySelector(".tr-title")?.textContent).not.toContain("LiveTranscribe");
+  });
+
+  it("shows refinement progress while naming stays available and passage correction waits", () => {
+    const meeting = { id: "refining", mode: "live" as const, title: "Meeting", title_source: "automatic" as const,
+      status: "completed" as const, created_at_ms: Date.now(), transcript_version: 1,
+      refinement_state: "running" as const, transcript: { segments: [] }, audio: null };
+    act(() => {
+      sessionId.value = meeting.id;
+      sessionStatus.value = "closed";
+      selectedSummaryMeeting.value = meeting;
+      replaceTranscript([{ start: 0, end: 1, text: "Live words", speaker: "speaker-0001",
+        speaker_entity_id: "speaker-0001", display_name: "Alex", state: "final", segment_id: "seg-1" }]);
+      render(<TranscriptPane />, root);
+    });
+    expect(root.textContent).toContain("Improving transcript…");
+    expect(root.textContent).toContain("Passage corrections wait until improvement finishes.");
+    expect(root.querySelectorAll("[data-reassign-passage]")).toHaveLength(1);
+    expect(root.querySelector<HTMLButtonElement>("[data-reassign-passage]")?.disabled).toBe(true);
+    expect(root.querySelector<HTMLButtonElement>("button.utt-speaker")?.disabled).toBe(false);
+    act(() => { selectedSummaryMeeting.value = { ...meeting, refinement_state: "done", transcript_version: 2 }; });
+    expect(root.textContent).toContain("Transcript improved");
+    expect(root.querySelectorAll("[data-reassign-passage]")).toHaveLength(1);
+    expect(root.querySelector<HTMLButtonElement>("[data-reassign-passage]")?.disabled).toBe(false);
+    act(() => { selectedSummaryMeeting.value = { ...meeting, refinement_state: "failed",
+      notice: "Improvement unavailable — the live transcript was kept" }; });
+    expect(root.textContent).toContain("Improvement unavailable — the live transcript was kept");
   });
 
   it("renders display names and a provisional row without exposing canonical IDs", () => {
@@ -303,7 +332,7 @@ describe("TranscriptPane", () => {
       await vi.waitFor(() => expect(root.querySelector("[role='alert']")?.textContent).toBe("Meeting Speaker not found."));
       expect(root.querySelector<HTMLInputElement>("#speaker-name-input")?.value).toBe("Alex");
     } else {
-      await vi.waitFor(() => expect(root.textContent).toContain("before Stop"));
+      await vi.waitFor(() => expect(root.textContent).toContain("after recording finishes"));
     }
   });
 
@@ -369,78 +398,47 @@ describe("TranscriptPane", () => {
     expect(root.querySelector(".tr-search-match.is-active")?.getAttribute("data-search-match-id")).toBe("1");
   });
 
-  it("keeps export disabled until transcript state has a session id", () => {
+  it("shows lane-bound preview guesses as grey tentative blocks without duplicate preview rows", () => {
     act(() => {
+      sessionId.value = "m"; sessionStatus.value = "active";
       render(<TranscriptPane />, root);
-      replaceTranscript([
-        {
-          start: 0,
-          end: 1,
-          text: "Transcript without session identity.",
-          speaker: "SPEAKER_01",
-          speaker_entity_id: "speaker-1",
-          display_name: "SPEAKER_01",
-          state: "final"
-        }
-      ]);
+      dispatchWsEvent({ type: "transcript_update", session_id: "m", seq: 1,
+        timestamp: new Date().toISOString(), items: [{ start: 0, end: 1, text: "hello", speaker: "UNKNOWN",
+          speaker_entity_id: "UNKNOWN", display_name: "Speaker TBD", state: "provisional" }],
+        provisional_segments: [{ start_sample: 0, end_sample: 8000, text: "hello", source_lane: "microphone", tentative_speaker: "local-0001" },
+          { start_sample: 8000, end_sample: 16000, text: "again", source_lane: "microphone", tentative_speaker: "local-0001" },
+          { start_sample: 16000, end_sample: 24000, text: "wait", source_lane: "microphone", tentative_speaker: null }] });
     });
-
-    expect(root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.disabled).toBe(true);
-    act(() => {
-      sessionId.value = "empty-meeting";
-      replaceTranscript([]);
-    });
-    expect(root.querySelector<HTMLButtonElement>("button[title='Export transcript']")?.disabled).toBe(true);
+    expect(root.querySelectorAll("[data-tentative-block]")).toHaveLength(2);
+    expect(root.querySelector("[data-tentative-block]")?.textContent).toContain("Local 01?");
+    expect(root.querySelector("[data-tentative-block]")?.textContent).toContain("hello again");
+    expect(root.querySelectorAll(".transcript-card:not([data-tentative-block])")).toHaveLength(0);
   });
 
-  it.each([
-    ["Markdown (.md)", "md"], ["Plain text (.txt)", "txt"], ["JSON (.json)", "json"],
-    ["SubRip (.srt)", "srt"], ["WebVTT (.vtt)", "vtt"]
-  ])("downloads %s with the active session id and ISO timestamp", (label, format) => {
-    const downloadedNames: string[] = [];
-    const createObjectUrl = vi.fn(() => "blob:transcript-export");
-    const revokeObjectUrl = vi.fn();
-    vi.stubGlobal("URL", { createObjectURL: createObjectUrl, revokeObjectURL: revokeObjectUrl });
-    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
-      downloadedNames.push(this.download);
-    });
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-18T20:00:16.182Z"));
-
+  it("uses display names and numbered defaults for tentative canonical speakers", () => {
     act(() => {
-      sessionId.value = "session-42";
+      sessionId.value = "m"; sessionStatus.value = "active";
       render(<TranscriptPane />, root);
-      replaceTranscript([
-        {
-          start: 0,
-          end: 1,
-          text: "Ready to export.",
-          speaker: "SPEAKER_01",
-          speaker_entity_id: "speaker-1",
-          display_name: "SPEAKER_01",
-          state: "final"
-        }
-      ]);
+      dispatchWsEvent({ type: "transcript_update", session_id: "m", seq: 1,
+        timestamp: new Date().toISOString(), items: [{ start: 0, end: 1, text: "known", speaker: "S01",
+          speaker_entity_id: "speaker-0001", display_name: "Alex", state: "confirmed" }],
+        provisional_segments: [
+          { start_sample: 0, end_sample: 8000, text: "known", source_lane: "microphone", tentative_speaker: "speaker-0001" },
+          { start_sample: 8000, end_sample: 16000, text: "new", source_lane: "microphone", tentative_speaker: "speaker-0002" }
+        ] });
     });
-
-    const exportButton = root.querySelector<HTMLButtonElement>("button[title='Export transcript']");
-    if (!exportButton) {
-      throw new Error("Missing transcript export control");
-    }
-    act(() => {
-      exportButton.click();
-    });
-    const markdownItem = [...root.querySelectorAll<HTMLButtonElement>("[role='menuitem']")].find(item => item.textContent === label);
-    if (!markdownItem) {
-      throw new Error(`Missing ${label} export item`);
-    }
-    act(() => {
-      markdownItem.click();
-      vi.runAllTimers();
-    });
-
-    expect(downloadedNames).toEqual([`transcript-session-42-2026-08-18T20:00:16.182Z.${format}`]);
-    expect(createObjectUrl).toHaveBeenCalledOnce();
-    expect(revokeObjectUrl).toHaveBeenCalledWith("blob:transcript-export");
+    expect([...root.querySelectorAll("[data-tentative-block] .utt-speaker-label")].map(node => node.textContent))
+      .toEqual(["Alex?", "S02?"]);
+    expect(root.textContent).not.toContain("speaker-0002?");
   });
+
+  it("keeps summary in the centre card and leaves export to Controls", () => {
+    act(() => render(<TranscriptPane />, root));
+    expect(root.querySelector('[aria-label="Meeting views"]')).not.toBeNull();
+    expect(root.querySelector("button[title='Export transcript']")).toBeNull();
+    act(() => root.querySelector<HTMLButtonElement>('[aria-label="Meeting views"] [role="tab"]:last-child')!.click());
+    expect(root.querySelector('[aria-label="Summary"]')).not.toBeNull();
+    expect(root.querySelector('.tr-body-wrap')?.hasAttribute('hidden')).toBe(true);
+  });
+
 });

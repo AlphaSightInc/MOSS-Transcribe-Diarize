@@ -191,35 +191,27 @@ async function assertReset() {
   expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
   expect(root.querySelector('[aria-label="Shared audio level 0%"]')).toBeTruthy();
 }
-it.each(["descriptor", "microphone"] as const)("early Share while %s pending retains explanation after success", async pending => {
+it.each(["descriptor", "microphone"] as const)("pending %s exposes only the next safe action", async pending => {
   const gate = deferred<Response | MediaStream>();
   if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
   else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
   await click("Enable microphone"); snapshot(`${pending} pending`);
-  await click("Share audio"); snapshot("early share rejected");
+  expect(button("Share audio")).toBeUndefined();
+  expect(button("Connecting microphone…")?.disabled).toBe(true);
   expect(vi.mocked(navigator.mediaDevices.getDisplayMedia)).not.toHaveBeenCalled();
   await settle(() => gate.resolve(pending === "descriptor"
     ? { ok: true, json: async () => ({ descriptor, preflight_status_lines: { browser_microphone_silent: "silent remedy" } }) } as Response : new FakeStream() as unknown as MediaStream));
-  snapshot("microphone succeeded");
-  expect(nodes.has("microphone")).toBe(true);
-  expect(status()).not.toContain("Microphone:");
-  expect(status()).toContain("start microphone before display capture");
-  expect(status()).toContain("Shared audio");
-  expect(status()).toContain("Reset capture");
-  await settle(() => feed("microphone", .02)); snapshot("late meter");
-  expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
-  await assertReset();
+  expect(button("Share audio")?.classList.contains("record-btn")).toBe(true);
+  expect(status()).toContain("Microphone connected");
 });
-it.each(["descriptor", "microphone"] as const)("early Share while %s pending retains both failures", async pending => {
+it.each(["descriptor", "microphone"] as const)("pending %s failure offers recovery", async pending => {
   const gate = deferred<Response | MediaStream>();
   if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
   else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
   await click("Enable microphone"); snapshot(`${pending} pending`);
-  await click("Share audio"); snapshot("early share rejected");
+  expect(button("Share audio")).toBeUndefined();
   await settle(() => gate.reject(new Error("microphone preparation denied"))); snapshot("microphone failed");
-  expect(status()).toContain("start microphone before display capture");
   expect(status()).toContain("microphone preparation denied");
-  expect(status()).toContain("Microphone"); expect(status()).toContain("Shared audio");
   expect(status()).toContain("Reset capture");
   await assertReset();
 });
@@ -227,7 +219,7 @@ it.each(["descriptor", "microphone"] as const)("Reset before pending %s resolves
   const gate = deferred<Response | MediaStream>();
   if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
   else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
-  await click("Enable microphone"); await click("Share audio");
+  await click("Enable microphone");
   await click("Reset capture"); snapshot("reset while pending");
   await settle(() => gate.resolve(pending === "descriptor"
     ? { ok: true, json: async () => ({ descriptor, preflight_status_lines: { browser_microphone_silent: "silent remedy" } }) } as Response : new FakeStream() as unknown as MediaStream)); snapshot("old setup settled");
@@ -265,7 +257,7 @@ it.each(["descriptor", "microphone"] as const)("old %s rejection after Reset can
   const gate = deferred<Response | MediaStream>();
   if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
   else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
-  await click("Enable microphone"); await click("Share audio"); await click("Reset capture");
+  await click("Enable microphone"); await click("Reset capture");
   await ready();
   await settle(() => gate.reject(new Error("old microphone denied"))); snapshot("retired rejection after fresh ready");
   expect(phase()).toBe("ready");

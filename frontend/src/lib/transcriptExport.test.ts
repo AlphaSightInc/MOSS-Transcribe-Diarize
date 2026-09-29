@@ -55,11 +55,21 @@ describe("transcriptExport", () => {
     });
   });
 
+  it("includes a saved summary in Markdown export", () => {
+    const file = serializeTranscriptExport("md", [makeTurn(0, "Jamie", "Hello")], () => "Jamie",
+      { sessionId: "m", exportedAt: new Date(0) }, { needsReview: false },
+      { summary: "Decision made.", topics: [{ title: "Schedule", description: "Next week." }],
+        details: [], speaker_background: [], data_references: [] });
+    expect(file.content).toContain("# Summary\n\nDecision made.");
+    expect(file.content).toContain("## Schedule\n\nNext week.");
+    expect(file.content).toContain("# Transcript\n\n## [00:00:00] Jamie");
+  });
+
   it.each(["confirmed", "provisional"] as const)(
     "marks %s exports in every format until finalization",
     (state) => {
       const turns = [makeTurn(36, "SPEAKER_02", "Second turn", { state })];
-      const caveat = "Speaker attribution is provisional and may be revised by the retrospective sweep after the session ends.";
+      const caveat = "Speaker attribution is provisional and may change before the meeting is finished.";
       const resolveLabel = () => "Jamie";
       const identity = {
         sessionId: "session-42",

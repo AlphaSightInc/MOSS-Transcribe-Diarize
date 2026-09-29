@@ -422,7 +422,7 @@ export class CaptureClient {
     return this.preparation;
   }
 
-  async startMicrophone(echoCancellation: boolean): Promise<void> {
+  async startMicrophone(echoCancellation: boolean, deviceId?: string): Promise<void> {
     if (this.lanes.has("microphone")) throw new Error("microphone lane is already active");
     const context = await this.prepare();
     await context.resume();
@@ -434,6 +434,7 @@ export class CaptureClient {
           echoCancellation,
           noiseSuppression: false,
           autoGainControl: false,
+          ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
         },
       });
     } catch (error) {
@@ -526,7 +527,7 @@ export class CaptureClient {
    * A terminal frame conflict clears only the delivery state, so callers can
    * invoke this again without rebuilding the browser's capture graph.
    */
-  async createSession(): Promise<CaptureSession> {
+  async createSession(engineSettings?: { speaker_window: "balanced" | "economy" | "max"; cleanup_after_stop: boolean }): Promise<CaptureSession> {
     if (this.session) return this.session;
     // A microphone that is silent RIGHT NOW is a health condition, not a precondition. The
     // precondition charter section 4 states is that both lanes have SHOWN non-zero signal, which is
@@ -542,6 +543,8 @@ export class CaptureClient {
       method: "POST",
       cache: "no-store",
       credentials: "same-origin",
+      ...(engineSettings ? { headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ engine_settings: engineSettings }) } : {}),
     });
     if (!response.ok) {
       const failure = response.status === 409

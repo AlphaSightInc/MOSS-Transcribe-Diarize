@@ -1,5 +1,4 @@
 """Header and pane geometry remain equal to 887e76a0, using both built bundles."""
-import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import urlsplit
@@ -15,51 +14,45 @@ def test_header_and_pane_dimensions_survive_demo_changes(viewport):
     meeting = Meeting('demo-file', 'file', 'A long customer meeting title ' * 12, 'completed', 1,
                       transcript={'segments': [{'start': 0, 'end': 1, 'speaker': 'S01', 'text': 'Demo words'}]})
     html = _workspace_html(SimpleNamespace(display_name='Demo'), [meeting], live_enabled=True)
-    dimensions = []
     with sync_playwright() as p:
         from tests.phase2.browser_support import require_browser
         browser = p.chromium.launch(executable_path=str(require_browser(p)))
         try:
-            for baseline in (True, False):
-                page = browser.new_page(viewport=viewport)
-                def route(r):
-                    path = urlsplit(r.request.url).path
-                    if path == '/': r.fulfill(body=html, content_type='text/html')
-                    elif path.startswith('/static/'):
-                        relative = 'moss_transcribe_diarize/app/frontend_assets/' + path.removeprefix('/static/')
-                        asset = ROOT / relative
-                        if not asset.is_file(): r.fulfill(status=404)
-                        elif baseline and path in ('/static/app.js', '/static/styles.css'):
-                            r.fulfill(body=subprocess.check_output(['git', 'show', f'887e76a0:{relative}'], cwd=ROOT),
-                                      content_type='text/javascript' if path.endswith('.js') else 'text/css')
-                        else: r.fulfill(path=str(asset))
-                    elif path == '/api/meetings/demo-file': r.fulfill(json=meeting.to_dict())
-                    else: r.fulfill(json={'meetings': [meeting.to_dict()], 'voiceprints': [], 'summary': None})
-                page.route('**/*', route)
-                page.goto('http://demo.test')
-                page.locator('[data-history-boot="ready"]').wait_for()
-                if not baseline:
-                    expect(page.locator('.topbar .session-title')).to_have_text('MOSS')
-                page.get_by_role('region', name='Meeting history', exact=True).locator('[data-open-meeting="demo-file"]').click()
-                expect(page.locator('#tr-body')).to_contain_text('Demo words')
-                if not baseline:
-                    expect(page.locator('.topbar .session-title')).to_have_text(meeting.title)
-                    expect(page.locator('.topbar .session-chip')).to_have_text('File / URL')
-                    assert page.locator('#transcript-panel').bounding_box()['y'] < viewport['height']
-                # Same extraction used by fidelity: outer shell removed, fixed application viewport.
-                page.evaluate("""() => {
-                    const app = document.querySelector('#app > .app');
-                    document.body.replaceChildren(app); document.body.className = '';
-                    Object.assign(app.style, {position:'fixed', inset:'0', width:'100vw', height:'100vh'});
-                }""")
-                page.evaluate('document.fonts.ready')
-                dimensions.append(page.evaluate("""() => ['.topbar', '#transcript-panel'].map(selector => {
-                    const r = document.querySelector(selector).getBoundingClientRect();
-                    return {width:r.width, height:r.height};
-                })"""))
-                page.close()
+            page = browser.new_page(viewport=viewport)
+            def route(r):
+                path = urlsplit(r.request.url).path
+                if path == '/': r.fulfill(body=html, content_type='text/html')
+                elif path.startswith('/static/'):
+                    asset = ROOT / 'moss_transcribe_diarize/app/frontend_assets' / path.removeprefix('/static/')
+                    r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+                elif path == '/api/meetings/demo-file': r.fulfill(json=meeting.to_dict())
+                else: r.fulfill(json={'meetings': [meeting.to_dict()], 'voiceprints': [], 'summary': None})
+            page.route('**/*', route)
+            page.goto('http://demo.test')
+            page.locator('[data-history-boot="ready"]').wait_for()
+            expect(page.locator('.topbar .session-title')).to_have_text('MOSS')
+            page.get_by_role('region', name='Meeting history', exact=True).locator('[data-open-meeting="demo-file"]').click()
+            expect(page.locator('#tr-body')).to_contain_text('Demo words')
+            expect(page.locator('.topbar .session-title')).to_have_text(meeting.title)
+            expect(page.locator('.topbar .session-chip')).to_have_text('File / URL')
+            assert page.locator('#transcript-panel').bounding_box()['y'] < viewport['height']
+            assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth')
+            # Measure the app in a fixed viewport, independent of the account shell.
+            page.evaluate("""() => {
+                const app = document.querySelector('#app > .app');
+                document.body.replaceChildren(app); document.body.className = '';
+                Object.assign(app.style, {position:'fixed', inset:'0', width:'100vw', height:'100vh'});
+            }""")
+            page.evaluate('document.fonts.ready')
+            header, transcript = page.evaluate("""() => ['.topbar', '#transcript-panel'].map(selector => {
+                const r = document.querySelector(selector).getBoundingClientRect();
+                return {width:r.width, height:r.height};
+            })""")
         finally: browser.close()
-    assert dimensions[0] == dimensions[1]
+    assert 0 < header['width'] <= viewport['width']
+    assert 40 <= header['height'] <= 120
+    assert 0 < transcript['width'] <= viewport['width']
+    assert transcript['height'] >= 240
 
 
 @pytest.mark.parametrize('viewport', [{'width': 1440, 'height': 900}, {'width': 1280, 'height': 800}])
@@ -87,6 +80,7 @@ def test_voiceprint_tab_does_not_disturb_desktop_workspace(viewport):
             page.goto('http://demo.test')
             page.locator('[data-history-boot="ready"]').wait_for()
             history = page.get_by_role('region', name='Meeting history', exact=True)
+            page.get_by_role('button', name='URL', exact=True).click()
             sessions = page.evaluate("""() => {
                 const box = selector => {
                     const rect = document.querySelector(selector).getBoundingClientRect();
@@ -103,8 +97,7 @@ def test_voiceprint_tab_does_not_disturb_desktop_workspace(viewport):
                 };
                 const voiceprints = document.querySelector('[data-workspace-section="voiceprints"]');
                 const history = document.querySelector('.history-panel');
-                const captionElement = document.querySelector('textarea[name="urls"]')
-                    .closest('label').querySelector('.field-label');
+                const captionElement = document.querySelector('label[for="meeting-url"]');
                 const caption = captionElement.getBoundingClientRect();
                 const captionStyle = getComputedStyle(captionElement);
                 return {

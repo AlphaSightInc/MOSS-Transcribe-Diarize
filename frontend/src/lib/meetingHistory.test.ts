@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Meeting } from "../api/meetings";
 import {
   filterMeetings,
+  formatMeetingDuration,
   groupMeetings,
   meetingDayBucket,
   reconcileSelectedMeeting
@@ -47,6 +48,17 @@ describe("Meeting history projection", () => {
       "Z-token",
       "-token"
     ]);
+  });
+
+  it("shows recorded duration first, then transcript extent, and leaves unknown blank", () => {
+    expect(formatMeetingDuration(meeting())).toBeNull();
+    expect(formatMeetingDuration(meeting({ transcript: { segments: [
+      { start: 0, end: 61, speaker: "S01", text: "hello" }
+    ] } }))).toBe("1:01");
+    expect(formatMeetingDuration(meeting({ audio: {
+      state: "available", relative_path: "meeting.mp3", byte_count: 1, duration_ms: 3_661_000,
+      format: "mp3", sample_rate_hz: 16_000, channels: 1, bit_rate_bps: 48_000
+    }, transcript: { segments: [{ start: 0, end: 12, speaker: "S01", text: "hello" }] } }))).toBe("1:01:01");
   });
 
   it("uses local calendar boundaries rather than elapsed 24-hour windows", () => {

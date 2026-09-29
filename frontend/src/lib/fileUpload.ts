@@ -78,7 +78,7 @@ export function bindFileUpload(): () => void {
     event.preventDefault();
     if (submit.disabled) return;
     const files = Array.from(form.querySelector<HTMLInputElement>('input[name="file"]')!.files ?? []);
-    const urls = form.querySelector<HTMLTextAreaElement>('textarea[name="urls"]')!.value
+    const urls = form.querySelector<HTMLTextAreaElement | HTMLInputElement>('[name="urls"]')!.value
       .split(/\r?\n/).map(value => value.trim()).filter(Boolean);
     if (!files.length && !urls.length) { status.textContent = "Choose a file or enter a media URL first."; return; }
     const current = ++generation;

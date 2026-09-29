@@ -71,7 +71,9 @@ def test_same_workspace_reads_converge_without_acquiring_capture(tmp_path):
         for reader in readers:
             reader.cookies.update(owner.cookies)
             html = reader.get('/').text
-            for section in ('file', 'live', 'history', 'voiceprints'):
+            assert 'id="workspace-file"' not in html
+            assert 'id="app"' in html
+            for section in ('live', 'history', 'voiceprints'):
                 assert f'id="workspace-{section}"' in html
                 assert f'href="#workspace-{section}"' in html
             assert 'data-auth-state="signed-in"' in html

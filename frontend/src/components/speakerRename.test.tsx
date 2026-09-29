@@ -72,7 +72,7 @@ it.each([
   };
   await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
   if (saveVoiceprint && status === "completed") {
-    expect(root.textContent).toContain("Voiceprint not saved: at least 2 seconds of finished, clear speech is needed.");
+    expect(root.textContent).toContain("Voiceprint not saved: eligible audio was unavailable for this speaker.");
   }
   assertNames();
   await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="m"]')!.click());
