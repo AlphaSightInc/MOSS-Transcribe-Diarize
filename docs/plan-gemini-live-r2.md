@@ -88,7 +88,7 @@ WP5 builds against §4 with mocked responses and integrates last.
 ## 5. Acceptance gates (integration head, real HTTP API, public audio only)
 
 1. Backend + frontend suites, typecheck, build green; MOSS-engine tests green (D19).
-2. **Q-LIVE** (clean-up OFF, Balanced): accept6 ×2 settled DER ≤ .110; E1 two-lane labels at Stop ≤ 4; long60 IDs ≤ 6 and
+2. **Q-LIVE** (clean-up OFF, Balanced): accept6 ×2 settled DER ≤ .110; E1 two-lane labels at Stop ≤ 5 (D6: true 4 + 1; corrected 2026-09-29 from a mistaken ≤ 4); long60 IDs ≤ 6 and
    DER ≤ .08; 0 dropped passages; speaker-less speech at Stop ≤ 0.5 % of speech time and no single speaker-less run > 2 s (F13;
    a voice with < 2 s in the whole meeting may legitimately stay "Speaker TBD").
 3. **Q-IND** (R-A1) as defined in §2.
