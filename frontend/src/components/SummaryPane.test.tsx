@@ -19,3 +19,19 @@ it("renders a rolling summary from the frozen live response", async () => {
   await vi.waitFor(() => expect(root.textContent).toContain("The team agreed."));
   expect(fetcher.mock.calls[0][0]).toBe("/api/meetings/m/summary/live");
 });
+
+it("applies a changed summary provider without reopening the meeting", async () => {
+  const { defaultAppSettings, saveAppSettings } = await import("../lib/settings");
+  const values = new Map<string, string>();
+  vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key) });
+  const settings = defaultAppSettings();
+  saveAppSettings({ ...settings, summary: { ...settings.summary, provider: "off" } });
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  expect(root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")?.disabled).toBe(true);
+  await act(async () => saveAppSettings(settings));
+  expect(root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")?.disabled).toBe(false);
+  localStorage.removeItem("moss.settings.v1");
+});

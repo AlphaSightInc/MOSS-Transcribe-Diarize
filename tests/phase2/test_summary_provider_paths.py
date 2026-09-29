@@ -26,8 +26,10 @@ async def open_selected_summary(page, context, app):
     await page.get_by_role("region", name="Meeting history", exact=True).get_by_role("button", name="Refresh", exact=True).click()
     await page.locator(f'[data-open-meeting="{handle.meeting_id}"]').click()
     await page.locator(f'[data-open-meeting="{handle.meeting_id}"][aria-pressed="true"]').wait_for()
-    await page.get_by_role("button", name="Open summary", exact=True).click()
-    await page.get_by_role("region", name="Browser AI settings", exact=True).wait_for()
+    await page.get_by_role("tab", name="Summary", exact=True).click()
+    await page.get_by_label("Summary", exact=True).wait_for()
+    await page.get_by_role("button", name="Settings", exact=True).click()
+    await page.get_by_role("dialog", name="Settings", exact=True).wait_for()
 
 
 def test_deployed_predicate_selects_external_when_relay_is_default(tmp_path):
@@ -40,16 +42,15 @@ def test_deployed_predicate_selects_external_when_relay_is_default(tmp_path):
                 await page.goto(origin)
                 await page.locator('[data-history-boot="ready"]').wait_for()
                 await open_selected_summary(page, context, app)
-                region = page.get_by_role("region", name="Browser AI settings", exact=True)
-                await region.get_by_role("button").click()
-                await async_expect(region.get_by_label("Provider", exact=True)).to_have_value("relay")
+                region = page.get_by_role("dialog", name="Settings", exact=True)
+                await async_expect(region.get_by_label("Summary provider", exact=True)).to_have_value("built-in")
                 assert await region.get_by_label("Provider HTTPS URL", exact=True).count() == 0
                 await probe.select_external_summary_provider(region)
                 await region.get_by_label("Provider HTTPS URL", exact=True).fill("https://example.test/v1")
-                await region.get_by_label("Model", exact=True).fill("external-test")
-                assert await region.get_by_label("Provider", exact=True).input_value() == "external"
+                await region.get_by_label("External model", exact=True).fill("external-test")
+                assert await region.get_by_label("Summary provider", exact=True).input_value() == "external"
                 assert await region.get_by_label("Provider HTTPS URL", exact=True).input_value() == "https://example.test/v1"
-                assert await region.get_by_label("Model", exact=True).input_value() == "external-test"
+                assert await region.get_by_label("External model", exact=True).input_value() == "external-test"
             finally:
                 await browser.close()
 
@@ -57,7 +58,7 @@ def test_deployed_predicate_selects_external_when_relay_is_default(tmp_path):
         async with async_playwright() as p:
             chrome = str(require_browser(p))
         config = json.dumps([{"name": "Test relay", "base_url": "http://127.0.0.1:1/v1", "models": ["test-model"]}])
-        async with probe.bench.running(tmp_path / "predicate.sqlite", llm_upstreams=config) as (app, port):
+        async with probe.running_summary_workspace(tmp_path / "predicate.sqlite", llm_upstreams=config) as (app, port):
             await browser_check(f"http://localhost:{port}", chrome, app)
     asyncio.run(run())
 
@@ -69,8 +70,8 @@ def test_real_browser_external_and_relay_paths_with_fake_upstreams(tmp_path):
         return await probe.run(tmp_path, chrome)
     result = asyncio.run(run())
     assert result["passed"] == result["total"]
-    assert result["relay"]["upstream_requests"] == 1
-    assert all(result["relay"]["checks"].values())
+    assert result["real_preflight_and_post"] is True
+    assert result["two_durable_results_no_provider_metadata"] is True
 
 
 def test_deterministic_probe_selection_with_relay_models_present(tmp_path):
@@ -78,21 +79,20 @@ def test_deterministic_probe_selection_with_relay_models_present(tmp_path):
         async with async_playwright() as p:
             chrome = str(require_browser(p))
             config = json.dumps([{"name": "Selection fixture", "base_url": "http://127.0.0.1:1/v1", "models": ["relay-model"]}])
-            async with probe.bench.running(tmp_path / "async-selection.sqlite", llm_upstreams=config) as (app, port):
+            async with probe.running_summary_workspace(tmp_path / "async-selection.sqlite", llm_upstreams=config) as (app, port):
                 browser = await p.chromium.launch(executable_path=chrome, headless=True)
                 try:
                     page = await browser.new_page()
                     await page.goto(f"http://localhost:{port}")
                     await page.locator('[data-history-boot="ready"]').wait_for()
                     await open_selected_summary(page, page.context, app)
-                    region = page.get_by_role("region", name="Browser AI settings", exact=True)
-                    await region.get_by_role("button").click()
-                    await async_expect(region.get_by_label("Provider", exact=True)).to_have_value("relay")
+                    region = page.get_by_role("dialog", name="Settings", exact=True)
+                    await async_expect(region.get_by_label("Summary provider", exact=True)).to_have_value("built-in")
                     assert await region.get_by_label("Provider HTTPS URL", exact=True).count() == 0
                     # Invoke the exact helper imported by the deterministic probe.
                     await probe.select_external_summary_provider(region)
                     await region.get_by_label("Provider HTTPS URL", exact=True).fill("https://example.test/v1")
-                    assert await region.get_by_label("Provider", exact=True).input_value() == "external"
+                    assert await region.get_by_label("Summary provider", exact=True).input_value() == "external"
                     assert await region.get_by_label("Provider HTTPS URL", exact=True).input_value() == "https://example.test/v1"
                 finally:
                     await browser.close()

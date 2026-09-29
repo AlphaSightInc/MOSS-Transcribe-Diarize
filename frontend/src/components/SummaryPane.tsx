@@ -2,7 +2,7 @@ import { useEffect, useState } from "preact/hooks";
 import { openMeeting, type Meeting } from "../api/meetings";
 import { summaryApi, SUMMARY_CHANGED, type SummaryArtifact, type SummaryDocument } from "../lib/finalSummary";
 import { finalizeMeetingSummary, requestLiveSummary, type LiveSummaryResponse } from "../lib/summaryRequests";
-import { loadAppSettings } from "../lib/settings";
+import { loadAppSettings, SETTINGS_CHANGED } from "../lib/settings";
 import { sessionId, sessionStatus } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
@@ -15,7 +15,12 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(Date.now());
-  const settings = loadAppSettings();
+  const [settings, setSettings] = useState(loadAppSettings);
+  useEffect(() => {
+    const changed = () => setSettings(loadAppSettings());
+    document.addEventListener(SETTINGS_CHANGED, changed);
+    return () => document.removeEventListener(SETTINGS_CHANGED, changed);
+  }, []);
   const interval = settings.summary.provider === "built-in" ? settings.summary.intervalSeconds : 0;
 
   async function refreshLive() {

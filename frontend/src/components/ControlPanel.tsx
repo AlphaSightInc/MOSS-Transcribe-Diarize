@@ -428,7 +428,7 @@ export function ControlPanel() {
         <div className="seg mode-tabs" role="group" aria-label="Mode">
           {(["live", "file", "url"] as const).map(choice => <button key={choice} type="button"
             className={`seg-btn${mode === choice ? " is-active" : ""}`} aria-pressed={mode === choice}
-            disabled={modeLocked} onClick={() => setMode(choice)}>{choice === "url" ? "URL" : choice === "file" ? "File" : "Live"}</button>)}
+            disabled={modeLocked} onClick={() => { if (choice !== mode) setFileQueue([]); setMode(choice); }}>{choice === "url" ? "URL" : choice === "file" ? "File" : "Live"}</button>)}
         </div>
       </div>
       {mode === "live" ? <>
@@ -523,7 +523,7 @@ export function ControlPanel() {
           : message
       }</p>
       </div></div></> :
-      <form data-file-upload="form" className="controls-mode-form" onSubmit={event => { if (mode === "url" && !url.startsWith("https://")) event.preventDefault(); }}>
+      <form key={mode} data-file-upload="form" className="controls-mode-form" onSubmit={event => { if (mode === "url" && !url.startsWith("https://")) event.preventDefault(); }}>
         <button type="submit" className="record-btn" disabled={mode === "file" ? fileQueue.length === 0 : !url.startsWith("https://")}>
           {mode === "file" ? "Start file transcription" : "Start URL transcription"}</button>
         <div className="controls-block">
