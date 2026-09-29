@@ -191,15 +191,27 @@ def main():
     meter = (diagnostics or {}).get("cases", [])
     cost_rows = [r.get("engine_diagnostics", {}) for r in meter]
     cost_usd = sum(r["cost_usd"] for r in cost_rows if isinstance(r.get("cost_usd"), (int,float)))
-    output_usd = sum(r["output_cost_estimate_usd"] for r in cost_rows if isinstance(r.get("output_cost_estimate_usd"), (int,float)))
+    metered_outputs = [r["metered_output_usd"] for r in cost_rows
+                       if isinstance(r.get("metered_output_usd"), (int, float))]
+    metered_output_usd = sum(metered_outputs)
+    metered_input_usd = cost_usd - metered_output_usd
+    estimates = [r["output_cost_estimate_usd"] for r in cost_rows
+                 if isinstance(r.get("output_cost_estimate_usd"), (int, float))]
+    output_usd = sum(estimates)
     duration_h = sum(float(r["duration_seconds"]) for r in cases)/3600 if complete_h1 else None
     spend = read(args.spend)
     qcost = {"status": "UNMEASURED", "metered_usd": cost_usd if cost_rows else None,
+             "metered_input_usd": metered_input_usd if cost_rows else None,
+             "metered_output_usd": metered_output_usd if cost_rows else None,
+             "metered_output_status": ("MEASURED" if cost_rows and len(metered_outputs) == len(cost_rows)
+                                       else "ASSUMED_ZERO" if cost_rows else "UNMEASURED"),
+             "metered_output_assumed_zero_cases": len(cost_rows) - len(metered_outputs),
              "summary_usage_usd": qsum["usage_total_usd"],
-             "output_estimate_usd": output_usd if any("output_cost_estimate_usd" in r for r in cost_rows) else None,
+             "output_estimate_usd": output_usd if estimates else None,
              "meeting_hours": duration_h,
              "metered_usd_per_meeting_hour": cost_usd/duration_h if duration_h else None,
-             "with_output_estimate_usd_per_meeting_hour": (cost_usd+output_usd)/duration_h if duration_h and any("output_cost_estimate_usd" in r for r in cost_rows) else None,
+             "metered_input_usd_per_meeting_hour": metered_input_usd/duration_h if duration_h else None,
+             "with_output_estimate_usd_per_meeting_hour": (metered_input_usd+output_usd)/duration_h if duration_h and cost_rows and len(estimates) == len(cost_rows) else None,
              "round2_spend_usd": (spend or {}).get("round2_spend_usd"),
              "qualification_spend_usd": (spend or {}).get("qualification_spend_usd")}
     if qcost["with_output_estimate_usd_per_meeting_hour"] is not None and qcost["round2_spend_usd"] is not None:
@@ -213,6 +225,12 @@ def main():
     for name, gate in gates.items():
         detail = ", ".join(f"{key}={value['value']} ({value['status']})" for key,value in gate.items() if isinstance(value, dict) and "value" in value)
         lines.append(f"| {name} | {gate['status']} | {detail or gate.get('source', '')} |")
+    if cost_rows:
+        lines.extend(["", "## Cost basis", "",
+                      f"Metered total: ${cost_usd:.6f}; metered input: ${metered_input_usd:.6f}; "
+                      f"metered output: ${metered_output_usd:.6f} ({qcost['metered_output_status']}).",
+                      f"Missing metered-output fields treated as $0: {qcost['metered_output_assumed_zero_cases']}/{len(cost_rows)} cases.",
+                      f"Output estimate: {qcost['output_estimate_usd']}; with-output estimate uses metered input + output estimate."])
     if ind_cases:
         lines.extend(["", "## Q-IND paired cases", "",
                       "| Case | Reference scope | Referenced / audio s | OFF IDs / DER | ON DER | Predicate |",

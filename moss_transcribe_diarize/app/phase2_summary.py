@@ -270,24 +270,44 @@ def attach_summary_routes(app, require_account, generator=None):
             raise HTTPException(503, {"code": "summary_unavailable"})
         claim(request, meeting_id)
         try:
+            async def attempt_conflict(attempt_id):
+                current = await summary.read()
+                code = ("summary_cancelled" if current is not None
+                        and current["attempt_id"] == attempt_id and current["state"] == "cancelled"
+                        else "summary_conflict")
+                raise HTTPException(409, {"code": code})
+
             try:
                 attempt, document = await summary.start_server(body["source_version"])
             except SummaryConflict as exc:
                 if "already active" in str(exc):
                     raise HTTPException(429, {"code": "summary_in_flight"}) from exc
                 raise HTTPException(409, str(exc)) from exc
-            await summary.update(attempt["attempt_id"], "generating")
+            attempt_id = attempt["attempt_id"]
+            try:
+                await summary.update(attempt_id, "generating")
+            except SummaryConflict:
+                await attempt_conflict(attempt_id)
             try:
                 result, usage = await generate(request, document, body)
-                artifact = await summary.update(attempt["attempt_id"], "current", document=result)
-                return {**artifact, "usage": usage}
             except HTTPException as exc:
                 code = "invalid_output" if exc.status_code == 502 and exc.detail == {"code": "invalid_summary"} else "delivery_failed"
-                await summary.update(attempt["attempt_id"], "failed", error_code=code)
+                try:
+                    await summary.update(attempt_id, "failed", error_code=code)
+                except SummaryConflict:
+                    await attempt_conflict(attempt_id)
                 raise
+            try:
+                artifact = await summary.update(attempt_id, "current", document=result)
+            except SummaryConflict:
+                await attempt_conflict(attempt_id)
             except ValueError:
-                await summary.update(attempt["attempt_id"], "failed", error_code="invalid_output")
+                try:
+                    await summary.update(attempt_id, "failed", error_code="invalid_output")
+                except SummaryConflict:
+                    await attempt_conflict(attempt_id)
                 raise HTTPException(502, {"code": "invalid_summary"}) from None
+            return {**artifact, "usage": usage}
         finally:
             request.app.state.summary_inflight.discard(meeting_id)
 

@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from moss_transcribe_diarize.app.phase2 import create_phase2_app
-from moss_transcribe_diarize.app.phase2_summary import DEFAULT_SUMMARY_PROMPT
+from moss_transcribe_diarize.app.phase2_summary import DEFAULT_SUMMARY_PROMPT, MeetingSummaries
 from moss_transcribe_diarize.app.phase2_llm import GeminiSummaryGenerator
 
 
@@ -230,3 +230,77 @@ def test_server_maps_generation_failure_to_content_free_error(tmp_path: Path, fa
         assert "transcript must not appear" not in response.text
         saved = client.get(path).json()["summary"]
         assert saved["state"] == "failed" and saved["document"] is None
+
+
+@pytest.mark.parametrize("outcome", ["success", "provider_error", "invalid_result"])
+def test_server_cancel_during_generation_keeps_cancelled_artifact(tmp_path: Path, outcome):
+    entered, release = Event(), Event()
+
+    async def generate(_document, *, model, language, prompt):
+        entered.set()
+        await asyncio.to_thread(release.wait, 5)
+        if outcome == "provider_error":
+            raise RuntimeError("private transcript text")
+        if outcome == "invalid_result":
+            return {"summary": "missing fields"}, USAGE
+        return RESULT, USAGE
+
+    app = create_phase2_app(database_path=tmp_path / "db", summary_generator=generate)
+    with TestClient(app, base_url="https://moss.test", raise_server_exceptions=False) as client:
+        client.post("/api/workspace/bootstrap")
+        credential = client.cookies.get("__Host-moss_session")
+
+        async def seed():
+            store = app.state.phase2_store
+            account = await store.account_for_session(credential)
+            handle = await store.workspace(account).create_meeting("file")
+            await handle.commit_transcript(TRANSCRIPT, terminal=True)
+            return handle.meeting_id
+
+        meeting_id = client.portal.call(seed)
+        path = f"/api/meetings/{meeting_id}/summary"
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            pending = pool.submit(client.post, f"{path}/server", json={"source_version": 1})
+            assert entered.wait(5)
+            attempt = client.get(path).json()["summary"]
+            assert attempt["state"] == "generating"
+            cancelled = client.put(f"{path}/{attempt['attempt_id']}", json={"state": "cancelled"})
+            assert cancelled.status_code == 200
+            release.set()
+            response = pending.result(timeout=5)
+        assert response.status_code == 409
+        assert response.json()["detail"] == {"code": "summary_cancelled"}
+        saved = client.get(path).json()["summary"]
+        assert saved["state"] == "cancelled" and saved["document"] is None
+
+
+def test_server_cancel_between_start_and_generating_is_controlled(tmp_path: Path, monkeypatch):
+    async def generate(_document, *, model, language, prompt):
+        raise AssertionError("generator should not start after cancellation")
+
+    original_update = MeetingSummaries.update
+
+    async def cancel_before_generating(self, attempt_id, state, **kwargs):
+        if state == "generating":
+            await original_update(self, attempt_id, "cancelled")
+        return await original_update(self, attempt_id, state, **kwargs)
+
+    monkeypatch.setattr(MeetingSummaries, "update", cancel_before_generating)
+    app = create_phase2_app(database_path=tmp_path / "db", summary_generator=generate)
+    with TestClient(app, base_url="https://moss.test", raise_server_exceptions=False) as client:
+        client.post("/api/workspace/bootstrap")
+        credential = client.cookies.get("__Host-moss_session")
+
+        async def seed():
+            store = app.state.phase2_store
+            account = await store.account_for_session(credential)
+            handle = await store.workspace(account).create_meeting("file")
+            await handle.commit_transcript(TRANSCRIPT, terminal=True)
+            return handle.meeting_id
+
+        meeting_id = client.portal.call(seed)
+        path = f"/api/meetings/{meeting_id}/summary"
+        response = client.post(f"{path}/server", json={"source_version": 1})
+        assert response.status_code == 409
+        assert response.json()["detail"] == {"code": "summary_cancelled"}
+        assert client.get(path).json()["summary"]["state"] == "cancelled"
