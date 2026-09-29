@@ -82,6 +82,22 @@ def test_meeting_settings_reject_unknown_keys_and_values(tmp_path, settings):
         rt.create(session_id="one", engine_settings=settings)
 
 
+def test_cost_and_veto_counters_are_content_free_and_per_lane(tmp_path):
+    rt = runtime(tmp_path, {"one": ([], ())})
+    rt.create(session_id="one")
+    rt.record_engine_call("one", kind="system_rolling", audio_seconds_sent=90,
+                          cost_usd=.01, output_cost_estimate_usd=.003, veto_fired=2)
+    rt.record_engine_call("one", kind="microphone_gate", count_call=False,
+                          mic_echo_dropped_by_voice=3)
+    diagnostic = rt.engine_diagnostics("one")
+    assert diagnostic["cost_usd"] == .01
+    assert diagnostic["output_cost_estimate_usd"] == .003
+    assert diagnostic["veto_fired"] == 2
+    assert diagnostic["mic_echo_dropped_by_voice"] == 3
+    assert diagnostic["lanes"]["system"]["veto_fired"] == 2
+    assert diagnostic["lanes"]["microphone"]["mic_echo_dropped_by_voice"] == 3
+
+
 def test_create_frame_preview_and_diarized_commit_are_poller_shaped(tmp_path):
     row = GeminiSegment(0, 8000, "hello", "speaker-0001")
     scripts = {"one": ([

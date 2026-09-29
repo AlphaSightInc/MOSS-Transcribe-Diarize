@@ -244,9 +244,12 @@ class _GeminiState:
     repaired_words: int = 0
     mic_words_dropped_by_acoustic_gate: int = 0
     mic_words_dropped_by_text_guard: int = 0
+    mic_echo_dropped_by_voice: int = 0
+    veto_fired: int = 0
     chunked: bool = False
     audio_seconds_sent: float = 0.0
     cost_usd: float = 0.0
+    output_cost_estimate_usd: float = 0.0
     live_list_price_estimate_usd: float = 0.0
     skipped_window_ticks: int = 0
     preview_stall_restarts: int = 0
@@ -500,9 +503,12 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         repaired_words: int = 0,
         acoustic_gate_dropped_words: int = 0,
         text_guard_dropped_words: int = 0,
+        mic_echo_dropped_by_voice: int = 0,
+        veto_fired: int = 0,
         chunked: bool = False,
         audio_seconds_sent: float = 0.0,
         cost_usd: float = 0.0,
+        output_cost_estimate_usd: float = 0.0,
         count_call: bool = True,
         cost_basis: str = "provider_usage",
         skipped_window_ticks: int = 0,
@@ -520,9 +526,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks,
                              preview_stall_restarts, coverage_retry, coverage_preview_fallbacks,
                              terminal_coverage_fallbacks,
-                             acoustic_gate_dropped_words, text_guard_dropped_words)):
+                             acoustic_gate_dropped_words, text_guard_dropped_words,
+                             mic_echo_dropped_by_voice, veto_fired)):
             raise ValueError("word-timing anomaly counts must be nonnegative integers.")
-        if any(not math.isfinite(value) or value < 0 for value in (audio_seconds_sent, cost_usd)):
+        if any(not math.isfinite(value) or value < 0 for value in
+               (audio_seconds_sent, cost_usd, output_cost_estimate_usd)):
             raise ValueError("engine audio seconds and cost must be finite and nonnegative.")
         if (not isinstance(count_call, bool) or not isinstance(chunked, bool)
                 or cost_basis not in {"provider_usage", "list_price_estimate"}):
@@ -540,6 +548,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.repaired_words += repaired_words
             state.mic_words_dropped_by_acoustic_gate += acoustic_gate_dropped_words
             state.mic_words_dropped_by_text_guard += text_guard_dropped_words
+            state.mic_echo_dropped_by_voice += mic_echo_dropped_by_voice
+            state.veto_fired += veto_fired
             state.chunked = state.chunked or chunked
             state.skipped_window_ticks += skipped_window_ticks
             state.preview_stall_restarts += preview_stall_restarts
@@ -548,6 +558,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.terminal_coverage_fallbacks += terminal_coverage_fallbacks
             state.audio_seconds_sent += audio_seconds_sent
             state.cost_usd += cost_usd
+            state.output_cost_estimate_usd += output_cost_estimate_usd
             if cost_basis == "list_price_estimate":
                 state.live_list_price_estimate_usd += cost_usd
             lane, separator, lane_kind = kind.partition("_")
@@ -558,7 +569,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "repaired_words": 0, "chunked": False,
                     "mic_words_dropped_by_acoustic_gate": 0,
                     "mic_words_dropped_by_text_guard": 0,
+                    "mic_echo_dropped_by_voice": 0, "veto_fired": 0,
                     "audio_seconds_sent": 0.0, "cost_usd": 0.0,
+                    "output_cost_estimate_usd": 0.0,
                     "skipped_window_ticks": 0})
                 totals.setdefault("preview_stall_restarts", 0)
                 totals.setdefault("coverage_retries", 0)
@@ -577,9 +590,12 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["repaired_words"] += repaired_words
                 totals["mic_words_dropped_by_acoustic_gate"] += acoustic_gate_dropped_words
                 totals["mic_words_dropped_by_text_guard"] += text_guard_dropped_words
+                totals["mic_echo_dropped_by_voice"] += mic_echo_dropped_by_voice
+                totals["veto_fired"] += veto_fired
                 totals["chunked"] = totals["chunked"] or chunked
                 totals["audio_seconds_sent"] += audio_seconds_sent
                 totals["cost_usd"] += cost_usd
+                totals["output_cost_estimate_usd"] += output_cost_estimate_usd
                 totals["skipped_window_ticks"] += skipped_window_ticks
                 totals["preview_stall_restarts"] += preview_stall_restarts
                 totals["coverage_retries"] += coverage_retry
@@ -600,9 +616,12 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "repaired_words": state.repaired_words,
                 "mic_words_dropped_by_acoustic_gate": state.mic_words_dropped_by_acoustic_gate,
                 "mic_words_dropped_by_text_guard": state.mic_words_dropped_by_text_guard,
+                "mic_echo_dropped_by_voice": state.mic_echo_dropped_by_voice,
+                "veto_fired": state.veto_fired,
                 "chunked": state.chunked,
                 "audio_seconds_sent": state.audio_seconds_sent,
                 "cost_usd": state.cost_usd,
+                "output_cost_estimate_usd": state.output_cost_estimate_usd,
                 "cost_usd_basis": ("provider_usage_plus_live_list_price_estimate"
                                    if state.live_list_price_estimate_usd else "provider_usage"),
                 "live_list_price_estimate_usd": state.live_list_price_estimate_usd,

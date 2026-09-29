@@ -421,9 +421,13 @@ class GeminiHybridEngine:
             self.word_observer(absolute, frontier)
         embeddings = (self.embedding_source(pcm, start, absolute)
                       if self.embedding_source is not None else {})
+        prior_vetoes = getattr(self.registry, "veto_fired", 0)
         mapping, relabels = self.registry.observe_window(
             start / LIVE_SAMPLE_RATE, absolute, embeddings,
             committed_through_sample=frontier)
+        vetoes = getattr(self.registry, "veto_fired", 0) - prior_vetoes
+        if vetoes and self.report_usage is not None:
+            self.report_usage(kind="rolling", count_call=False, veto_fired=vetoes)
         observations = ()
         if self.encoder_spec is not None:
             spec = self.encoder_spec

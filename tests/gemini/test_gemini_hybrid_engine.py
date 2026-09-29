@@ -197,6 +197,28 @@ def test_speakerless_turns_do_not_bridge_across_frontier():
     engine.close()
 
 
+def test_hybrid_reports_registry_veto_count():
+    usage = []
+    vectors = {"A": ((1., 0.), 3.), "B": ((0., 1.), 3.)}
+    engine = GeminiHybridEngine(
+        lambda _update: None, word_source=FakeWords(),
+        window_scheduler=GrowingContextWindowScheduler(max_seconds=90, stride_seconds=15),
+        registry=ContinuityRegistry(embedding_threshold=.46,
+                                    within_window_threshold=.60, birth_min_seconds=2),
+        diarizer=FakeDiarizer(), terminal=FakeTerminal(),
+        embedding_source=lambda _pcm, _start, _words: vectors,
+        report_usage=lambda **row: usage.append(row))
+    engine._publish_window(0, 6*16000, bytes(6*32000),
+                           (GeminiWord("a", "A", 0, 3*16000),
+                            GeminiWord("b", "B", 3*16000, 6*16000)))
+    vectors = {"X": ((0., 1.), 3.), "Y": ((1., 0.), 3.)}
+    engine._publish_window(0, 6*16000, bytes(6*32000),
+                           (GeminiWord("a", "X", 0, 3*16000),
+                            GeminiWord("b", "Y", 3*16000, 6*16000)))
+    assert sum(row.get("veto_fired", 0) for row in usage) == 1
+    engine.close()
+
+
 def test_rolling_turns_keep_annotation_order_after_timestamp_repair():
     updates = []
     engine = make_engine(updates)

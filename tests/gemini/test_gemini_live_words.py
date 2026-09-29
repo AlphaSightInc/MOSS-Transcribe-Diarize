@@ -4,6 +4,7 @@ import time
 import wave
 from pathlib import Path
 from types import SimpleNamespace
+import pytest
 
 from moss_transcribe_diarize.app.gemini_live_words import GeminiLiveWordSource
 
@@ -215,9 +216,11 @@ def test_live_words_publish_interim_and_count_list_price_audio():
     assert live.sessions[0].stream_ends == 1
     sent = sum(row.get("audio_seconds_sent", 0) for row in usage)
     estimate = sum(row.get("cost_usd", 0) for row in usage)
+    output_estimate = sum(row.get("output_cost_estimate_usd", 0) for row in usage)
     assert sent == 2.5
     assert abs(estimate - 2.5 * 0.005 / 60) < 1e-10
     assert all("cost_basis" not in row or row["cost_basis"] == "list_price_estimate" for row in usage)
+    assert output_estimate == pytest.approx(sent / 60 * .004)
 
 
 def test_slow_live_socket_bounds_preview_backlog_without_blocking_capture():
