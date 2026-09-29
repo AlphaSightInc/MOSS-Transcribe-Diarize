@@ -264,6 +264,9 @@ class _GeminiState:
     voiceprint_errors: int = 0
     f13_relabels: int = 0
     f13_relabel_refused: int = 0
+    orphan_speakers_absorbed: int = 0
+    orphan_relabel_refused: int = 0
+    manually_named_speakers: set[str] = field(default_factory=set)
     lane_counters: dict[str, dict[str, object]] = field(default_factory=dict)
 
 
@@ -320,6 +323,12 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         if self._sessions:
             raise RuntimeError("Account audio stages must bind before meeting creation")
         self._account_audio_stages = stages
+
+    def note_manual_speaker(self, session_id: str, speaker_id: str) -> None:
+        with self._lock:
+            state = self._sessions.get(session_id)
+            if state is not None:
+                state.manually_named_speakers.add(speaker_id)
 
     def create(self, *, echo_mode: str | None = None, session_id: str | None = None,
                engine_settings: object = None) -> LiveServiceCreateResult:
@@ -636,6 +645,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "voiceprint_errors": state.voiceprint_errors,
                 "f13_relabels": state.f13_relabels,
                 "f13_relabel_refused": state.f13_relabel_refused,
+                "orphan_speakers_absorbed": state.orphan_speakers_absorbed,
+                "orphan_relabel_refused": state.orphan_relabel_refused,
                 "lanes": {lane: {
                     key: (dict(value) if isinstance(value, dict) else value)
                     for key, value in totals.items()}
@@ -756,6 +767,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 if not outcome.submitted:
                     raise ValueError(f"stop tail refused: {outcome.refusal}")
         await self._final_relabel_speakerless(state)
+        if not state.engine_settings["cleanup_after_stop"]:
+            await self._absorb_orphan_speakers(state)
         await state.session.stop(1.0)
         with self._lock:
             self._record_event(state, "session_closed", {
@@ -809,7 +822,6 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         from .gemini_continuity_registry import _cosine
         rows = tuple(row for row in state.session.snapshot().effective_transcript
                      if row.authority == "rolling" and row.canonical_speaker is None)
-        lane_tape = getattr(state.engine, "lane_tape", None)
         for row in rows:
             candidates = ((speaker, observation.centroid)
                           for speaker, observation in state.voice_observations.items()
@@ -817,17 +829,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                               (row.source_lane == "microphone") ==
                               (speaker.startswith("local-") or speaker == "speaker-microphone")))
             try:
-                tape = lane_tape(row.source_lane) if callable(lane_tape) and row.source_lane else state.tape
-                pcm = tape.read(start_sample=row.start_sample, end_sample=row.end_sample)
-                with tempfile.NamedTemporaryFile(suffix=".wav") as wav_file:
-                    with wave.open(wav_file.name, "wb") as wav:
-                        wav.setnchannels(1)
-                        wav.setsampwidth(2)
-                        wav.setframerate(LIVE_SAMPLE_RATE)
-                        wav.writeframes(pcm)
-                    vector = await asyncio.to_thread(
-                        self._voiceprint_encoder.embed, wav_file.name,
-                        [(0.0, (row.end_sample - row.start_sample) / LIVE_SAMPLE_RATE)])
+                vector = await self._fingerprint_row(state, row)
                 cosine, speaker = max(((_cosine(vector, centroid), speaker)
                                        for speaker, centroid in candidates), default=(-1.0, None))
                 if cosine >= .46 and speaker is not None:
@@ -837,6 +839,69 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                                        speaker, row.source_lane),)))
             except Exception:
                 state.voiceprint_errors += 1
+
+    async def _fingerprint_row(self, state: _GeminiState,
+                               row: EffectiveTranscriptSegment) -> Sequence[float]:
+        if self._voiceprint_encoder is None or state.tape is None:
+            raise ValueError("saved-audio fingerprint unavailable")
+        lane_tape = getattr(state.engine, "lane_tape", None)
+        tape = lane_tape(row.source_lane) if callable(lane_tape) and row.source_lane else state.tape
+        pcm = tape.read(start_sample=row.start_sample, end_sample=row.end_sample)
+        with tempfile.NamedTemporaryFile(suffix=".wav") as wav_file:
+            with wave.open(wav_file.name, "wb") as wav:
+                wav.setnchannels(1)
+                wav.setsampwidth(2)
+                wav.setframerate(LIVE_SAMPLE_RATE)
+                wav.writeframes(pcm)
+            return await asyncio.to_thread(
+                self._voiceprint_encoder.embed, wav_file.name,
+                [(0.0, (row.end_sample - row.start_sample) / LIVE_SAMPLE_RATE)])
+
+    async def _absorb_orphan_speakers(self, state: _GeminiState) -> None:
+        """Resolve short, unnamed canonical IDs before saving the live transcript."""
+        from .gemini_continuity_registry import _cosine
+        rows = tuple(row for row in state.session.snapshot().effective_transcript
+                     if row.authority == "rolling" and row.canonical_speaker is not None)
+        totals: dict[str, int] = {}
+        lanes: dict[str, set[str | None]] = {}
+        for row in rows:
+            speaker = row.canonical_speaker
+            assert speaker is not None
+            totals[speaker] = totals.get(speaker, 0) + row.end_sample - row.start_sample
+            lanes.setdefault(speaker, set()).add(row.source_lane)
+        minimum = 2 * LIVE_SAMPLE_RATE
+        established = {speaker for speaker, samples in totals.items() if samples >= minimum}
+        orphans = {speaker for speaker, samples in totals.items()
+                   if samples < minimum and speaker not in state.manually_named_speakers}
+        for orphan in sorted(orphans):
+            matched = False
+            for row in (row for row in rows if row.canonical_speaker == orphan):
+                target = None
+                candidates = ((speaker, state.voice_observations[speaker].centroid)
+                              for speaker in established if row.source_lane in lanes[speaker]
+                              and speaker in state.voice_observations)
+                try:
+                    vector = await self._fingerprint_row(state, row)
+                    cosine, nearest = max(((_cosine(vector, centroid), speaker)
+                                           for speaker, centroid in candidates),
+                                          default=(-1.0, None))
+                    if cosine >= .46:
+                        target = nearest
+                except Exception:
+                    state.voiceprint_errors += 1
+                refused_before = state.f13_relabel_refused
+                self.publish_update(state.session_id, GeminiRelabel(
+                    row.start_sample, row.end_sample,
+                    (GeminiSegment(row.start_sample, row.end_sample, row.text,
+                                   target, row.source_lane),)))
+                if state.f13_relabel_refused > refused_before:
+                    state.orphan_relabel_refused += 1
+                elif target is not None:
+                    matched = True
+            remaining = any(row.canonical_speaker == orphan
+                            for row in state.session.snapshot().effective_transcript)
+            if matched and not remaining:
+                state.orphan_speakers_absorbed += 1
 
     async def _run_terminal(self, state: _GeminiState) -> None:
         assert state.tape is not None
