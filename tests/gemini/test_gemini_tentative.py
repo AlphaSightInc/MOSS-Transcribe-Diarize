@@ -105,3 +105,17 @@ def test_one_lane_cannot_guess_from_the_other_lanes_centroids():
     assert labeler.spans("microphone", 0, RATE) == ()
     assert encoder.calls == 0
     labeler.close()
+
+
+def test_embed_failure_abstains_without_raising_into_audio_ingress():
+    class FailingEncoder:
+        def embed(self, path, intervals):
+            raise RuntimeError("encoder failure")
+
+    labeler = GeminiTentativeLabeler(FailingEncoder(), voiced_audio=lambda _pcm: True)
+    labeler.observe((observation("speaker-0001", (1.0, 0.0)),), lane="microphone")
+    labeler.accept_audio("microphone", 0, b"\x01\x00" * RATE)
+    assert not labeler.wait_idle(2)  # The worker failed; ingress and callbacks stayed alive.
+    assert labeler.spans("microphone", 0, RATE) == ()
+    assert labeler.diagnostics()["tentative_abstained_s"] == .5
+    labeler.close()

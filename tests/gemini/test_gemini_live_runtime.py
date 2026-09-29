@@ -1116,3 +1116,36 @@ def test_preview_snapshot_keeps_lane_and_tentative_identity_outside_transcript(t
     assert guesses.audio == [("system", 0, 32000), ("microphone", 0, 32000)]
     assert snapshot["engine_diagnostics"]["tentative_shown_s"] == .5
     assert all("speaker-0001" not in str(event.payload) for event in rt.events("one"))
+
+
+def test_new_settled_speaker_seeds_tentative_centroid_in_its_first_window(tmp_path):
+    from moss_transcribe_diarize.app.live_provider_bundle import LiveSpeakerJournalObservation
+
+    class Encoder:
+        spec = type("Spec", (), {"provider": "fake", "revision": "one",
+                                 "embedding_dimension": 2, "state_sha256": "0" * 64})()
+        def embed(self, path, intervals):
+            return (0.0, 1.0)
+
+    first = LiveSpeakerJournalObservation(
+        speaker_label="speaker-0001", centroid=(1.0, 0.0), sample_seconds=2.0,
+        exemplar_count=1, provisional=False, embedder_id="fake:one",
+        embedder_state_sha="0" * 64)
+    rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage: ScriptedGeminiEngine(
+            publish, batches=[], terminal=()), voiceprint_encoder=Encoder())
+    rt.create(session_id="one")
+    for sequence in range(4):
+        rt.accept_frame("one", AudioFrame(sequence, b"\x01\x00" * 16000, 16000))
+    rt.publish_update("one", GeminiBase(2 * 16000, ()))
+    rt.publish_update("one", GeminiRolling(0, 2 * 16000,
+        (GeminiSegment(0, 2 * 16000, "first", "speaker-0001", "system"),),
+        (first,), ("system",)))
+    rt.publish_update("one", GeminiBase(4 * 16000, ()))
+    rt.publish_update("one", GeminiRolling(2 * 16000, 4 * 16000,
+        (GeminiSegment(2 * 16000, 4 * 16000, "second", "speaker-0002", "system"),),
+        (), ("system",)))
+    state = rt._sessions["one"]
+    assert set(state.voice_observations) == {"speaker-0001", "speaker-0002"}
+    assert set(state.tentative._centroids["system"]) == {"speaker-0001", "speaker-0002"}
+    state.tentative.close()

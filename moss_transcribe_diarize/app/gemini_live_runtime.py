@@ -490,7 +490,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                             lane = lanes_by_speaker.get(observation.speaker_label)
                             if lane is not None:
                                 state.tentative.observe((observation,), lane=lane)
-                    self._observe_voiceprints(state, update.segments)
+                    new_voiceprints = self._observe_voiceprints(state, update.segments)
+                    if state.tentative is not None:
+                        for lane, observation in new_voiceprints:
+                            state.tentative.observe((observation,), lane=lane)
                 elif isinstance(update, GeminiRelabel):
                     _register_speakers(session, update.segments)
                     lane = update.segments[0].source_lane if update.segments else None
@@ -509,6 +512,10 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         state.f13_relabel_refused += 1
                         return
                     state.f13_relabels += speakerless
+                    new_voiceprints = self._observe_voiceprints(state, update.segments)
+                    if state.tentative is not None:
+                        for lane, observation in new_voiceprints:
+                            state.tentative.observe((observation,), lane=lane)
                     kind = "label_revision_applied"
                 elif isinstance(update, GeminiTurnBridge):
                     outcome = session.bridge_rolling_turn(
@@ -710,13 +717,16 @@ class GeminiLiveRuntime(LiveServiceRuntime):
     def _identity_match_observations(self, session_id: str) -> tuple[object, ...]:
         return self._identity_observations(session_id)
 
-    def _observe_voiceprints(self, state: _GeminiState, segments: Sequence[GeminiSegment]) -> None:
+    def _observe_voiceprints(
+        self, state: _GeminiState, segments: Sequence[GeminiSegment]
+    ) -> tuple[tuple[str, object], ...]:
         encoder = self._voiceprint_encoder
         tape = state.tape
         if encoder is None or tape is None:
-            return
+            return ()
         from .live_provider_bundle import LiveSpeakerJournalObservation
         spec = encoder.spec
+        seeded: list[tuple[str, object]] = []
         grouped: dict[str, list[GeminiSegment]] = {}
         for row in segments:
             if row.speaker is not None and row.end_sample > row.start_sample:
@@ -746,15 +756,18 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         wav.name, [(0.0, (end - start) / LIVE_SAMPLE_RATE)]))
                 if len(vector) != spec.embedding_dimension or any(not math.isfinite(v) for v in vector):
                     raise ValueError("voiceprint encoder returned invalid vector")
-                state.voice_observations[speaker] = LiveSpeakerJournalObservation(
+                observation = LiveSpeakerJournalObservation(
                     speaker_label=speaker, centroid=vector,
                     sample_seconds=(end - start) / LIVE_SAMPLE_RATE,
                     exemplar_count=1, provisional=False,
                     embedder_id=f"{spec.provider}:{spec.revision}",
                     embedder_state_sha=spec.state_sha256,
                 )
+                state.voice_observations[speaker] = observation
+                seeded.append((rows[0].source_lane or "system", observation))
             except Exception:
                 state.voiceprint_errors += 1
+        return tuple(seeded)
 
     def _operator_queue_snapshot(self) -> dict[str, int | bool]:
         with self._lock:
