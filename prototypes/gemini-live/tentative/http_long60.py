@@ -74,5 +74,45 @@ def _poll_with_guesses(self):
             tick += 1
 
 
+_base_accept_frame = run_long60.ProgressCapture.accept_frame
+
+
+def _accept_with_frontier_receipt(self, session_id, frame):
+    result = _base_accept_frame(self, session_id, frame)
+    if frame.sequence % 600 == 599:
+        try:
+            raw = self.inner.inner._json(
+                "GET", f"/api/live/sessions/{self.inner.inner._quoted(session_id)}/snapshot"
+            )["snapshot"]
+            session = raw["session"]
+            rows = session["effective_transcript"]
+            last_labelled = {
+                lane: max((row["end_sample"] for row in rows
+                           if row.get("source_lane", "system") == lane
+                           and row.get("canonical_speaker") is not None
+                           and row.get("text", "").strip()), default=0) / 16000
+                for lane in ("system", "microphone")
+            }
+            diagnostic = raw.get("engine_diagnostics") or {}
+            receipt = {
+                "audio_seconds_accepted": session["accepted_samples"] / 16000,
+                "committed_seconds": session["committed_samples"] / 16000,
+                "last_labelled_end_seconds_by_lane": last_labelled,
+                "public_rolling_publications": (diagnostic.get("window_lag_seconds") or {}).get("count"),
+                "text_revision_version": session["text_revision_version"],
+                "canonical_speaker_count": len(session["identity_snapshot"]["canonical_speakers"]),
+            }
+            with (self.out / "frontier-progress.jsonl").open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps(receipt, sort_keys=True) + "\n")
+            if self.status is not None:
+                with self.status.open("a", encoding="utf-8") as stream:
+                    stream.write("long60 frontier " + json.dumps(receipt, sort_keys=True) + "\n")
+        except Exception as exc:
+            with (self.out / "frontier-progress.jsonl").open("a", encoding="utf-8") as stream:
+                stream.write(json.dumps({"frontier_observation_error": type(exc).__name__}) + "\n")
+    return result
+
+
 run_long60.ProgressCapture._poll = _poll_with_guesses
+run_long60.ProgressCapture.accept_frame = _accept_with_frontier_receipt
 run_long60.main()
