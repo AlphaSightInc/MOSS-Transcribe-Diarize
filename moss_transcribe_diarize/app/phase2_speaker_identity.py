@@ -82,10 +82,12 @@ class _PendingEnrollment:
 class AccountSpeakerIdentity:
     """One deep module for owner-bound naming, private listing, and pending enrollment."""
 
-    def __init__(self, store: Any, active_meetings: Any, *, file_evidence=None, audio_archive=None):
+    def __init__(self, store: Any, active_meetings: Any, *, file_evidence=None,
+                 live_evidence=None, audio_archive=None):
         self._store = store
         self._active_meetings = active_meetings
         self._file_evidence = file_evidence
+        self._live_evidence = live_evidence
         self._audio_archive = audio_archive
         self._pending: dict[tuple[str, int, str, str], _PendingEnrollment] = {}
         self._lock = asyncio.Lock()
@@ -248,12 +250,20 @@ class AccountSpeakerIdentity:
             for segment in addressed:
                 segment["speaker"] = normalized
             evidence = None
-            if save_voiceprint and meeting.mode == 'file' and self._file_evidence is not None:
+            evidence_provider = (self._file_evidence if meeting.mode == 'file' else
+                                 self._live_evidence if meeting.mode == 'live'
+                                 and meeting.status == 'completed' else None)
+            if save_voiceprint and evidence_provider is not None:
                 audio = await handle.audio()
                 path = None if audio is None else handle.resolve_audio(self._audio_archive, audio)
                 if path is not None:
-                    observation = await asyncio.to_thread(self._file_evidence, path, addressed)
-                    evidence = _eligible_evidence(observation)
+                    intervals = (addressed if meeting.mode == 'file' else
+                                 _unoverlapped_speaker_rows(segments, speaker_id))
+                    if meeting.mode == 'file' or sum(
+                        row['end'] - row['start'] for row in intervals
+                    ) >= VOICEPRINT_ENROLLMENT_SECONDS:
+                        observation = await asyncio.to_thread(evidence_provider, path, intervals)
+                        evidence = _eligible_evidence(observation)
             live_naming = False
             voiceprint_id, transcript_version, was_linked = await self._persist_manual_name(
                 owner_key, handle.meeting_id, speaker_id, normalized, document, evidence,
@@ -830,6 +840,32 @@ class AccountVoiceprintBank:
 
     async def delete_voiceprint(self, voiceprint_id: str):
         return await self._identity._change_voiceprint(self._owner_key, voiceprint_id, None)
+
+
+def _unoverlapped_speaker_rows(segments: Sequence[Mapping[str, object]],
+                                speaker_id: str) -> list[dict[str, float]]:
+    """Use only saved row time owned by this speaker, across both capture lanes."""
+    owned = sorted((float(row['start']), float(row['end'])) for row in segments
+                   if row.get('speaker_entity_id') == speaker_id)
+    competing = sorted((float(row['start']), float(row['end'])) for row in segments
+                       if row.get('speaker_entity_id') != speaker_id)
+    selected: list[tuple[float, float]] = []
+    for start, end in owned:
+        pieces = [(start, end)]
+        for cut_start, cut_end in competing:
+            pieces = [(lo, hi) for left, right in pieces
+                      for lo, hi in ((left, min(right, cut_start)),
+                                     (max(left, cut_end), right)) if hi > lo]
+            if not pieces:
+                break
+        selected.extend(pieces)
+    merged: list[tuple[float, float]] = []
+    for start, end in sorted(selected):
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(end, merged[-1][1]))
+        else:
+            merged.append((start, end))
+    return [{'start': start, 'end': end} for start, end in merged]
 
 
 def _eligible_evidence(observation: object | None) -> _EligibleEvidence | None:
