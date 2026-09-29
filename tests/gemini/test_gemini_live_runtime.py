@@ -265,9 +265,9 @@ def test_engine_diagnostics_exposes_content_free_per_lane_totals(tmp_path):
     rt = runtime(tmp_path, {"one": ([], ())})
     rt.create(session_id="one")
     rt.record_engine_call("one", kind="system_rolling", audio_seconds_sent=30,
-                          cost_usd=.01, clamped_words=1)
+                          cost_usd=.01, metered_output_usd=.003, clamped_words=1)
     rt.record_engine_call("one", kind="microphone_rolling", audio_seconds_sent=30,
-                          cost_usd=.01, dropped_words=2)
+                          cost_usd=.01, metered_output_usd=.002, dropped_words=2)
     rt.record_engine_call("one", kind="microphone_rolling", count_call=False,
                           skipped_window_ticks=1)
     lanes = rt.snapshot("one").to_dict()["engine_diagnostics"]["lanes"]
@@ -279,6 +279,9 @@ def test_engine_diagnostics_exposes_content_free_per_lane_totals(tmp_path):
     assert lanes["microphone"]["skipped_window_ticks"] == 1
     assert lanes["microphone"]["audio_seconds_sent"] == 30
     assert lanes["microphone"]["cost_usd"] == .01
+    assert lanes["microphone"]["metered_output_usd"] == .002
+    assert lanes["system"]["metered_output_usd"] == .003
+    assert rt.engine_diagnostics("one")["metered_output_usd"] == .005
 
 
 def test_engine_diagnostics_records_repaired_words_and_chunked_terminal(tmp_path):

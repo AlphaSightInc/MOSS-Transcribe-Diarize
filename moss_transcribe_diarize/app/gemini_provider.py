@@ -194,7 +194,7 @@ def parse_words(response: dict, *, audio_samples: int) -> GeminiWords:
     return GeminiWords(tuple(words), clamped, dropped)
 
 
-def _usage_cost(usage: dict) -> float:
+def _usage_cost_parts(usage: dict) -> tuple[float, float]:
     audio_in = text_in = 0
     for row in usage.get("input_tokens_by_modality") or ():
         tokens = int(row.get("tokens") or 0)
@@ -203,7 +203,11 @@ def _usage_cost(usage: dict) -> float:
         else:
             text_in += tokens
     out = int(usage.get("total_output_tokens") or 0) + int(usage.get("total_thought_tokens") or 0)
-    return (2 * audio_in + 2 * text_in + 12 * out) / 1_000_000
+    return (2 * (audio_in + text_in) / 1_000_000, 12 * out / 1_000_000)
+
+
+def _usage_cost(usage: dict) -> float:
+    return sum(_usage_cost_parts(usage))
 
 
 def _error_code(exc: Exception) -> str:
@@ -256,11 +260,13 @@ class WindowDiarizer:
                 if kind in {"rolling", "terminal"}:
                     fixed, repaired = repair_word_timestamps(parsed.words, len(pcm16) // 2)
                     parsed = GeminiWords(fixed, parsed.clamped, parsed.dropped)
+                metered_input, metered_output = _usage_cost_parts(data.get("usage") or {})
                 self.report_usage(kind=kind, clamped_words=parsed.clamped, dropped_words=parsed.dropped,
                                   repaired_words=repaired,
                                   audio_seconds_sent=audio_seconds,
                                   output_cost_estimate_usd=audio_seconds / 60 * .002,
-                                  cost_usd=_usage_cost(data.get("usage") or {}))
+                                  cost_usd=metered_input + metered_output,
+                                  metered_output_usd=metered_output)
                 return parsed
             except Exception as exc:
                 code = _error_code(exc)
