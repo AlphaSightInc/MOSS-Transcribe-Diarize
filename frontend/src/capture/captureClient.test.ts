@@ -1587,3 +1587,63 @@ describe("microphone mute", () => {
     expect([...replacement.port.postMessage.mock.calls[0][0].samples]).toEqual([0, 0]);
   });
 });
+
+describe("microphone device request (issue #2)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    FakeAudioWorkletNode.created = [];
+  });
+
+  type IdleClient = Pick<CaptureClient, "startMicrophone"> & { lanes: Map<CaptureLane, TestLaneState> };
+  function idleClient(): IdleClient {
+    vi.stubGlobal("AudioWorkletNode", FakeAudioWorkletNode);
+    const node = { connect: (target: unknown) => target, disconnect: vi.fn() };
+    const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
+    Object.assign(client, {
+      context: Object.assign(new EventTarget(), {
+        state: "running", sampleRate: 4, destination: {}, resume: vi.fn().mockResolvedValue(undefined),
+        createMediaStreamSource: () => node, createGain: () => ({ ...node, gain: { value: 1 } }),
+      }),
+      descriptor: { sampleRate: 4, frameSamples: 2 },
+    });
+    return client as unknown as IdleClient;
+  }
+  const requestedDevices = (getUserMedia: ReturnType<typeof vi.fn>) =>
+    getUserMedia.mock.calls.map(([constraints]) => (constraints as MediaStreamConstraints & {
+      audio: MediaTrackConstraints }).audio.deviceId);
+
+  it("reveals the devices with Chrome's default alias, then opens the named choice, never an iPhone default", async () => {
+    let granted = false;
+    const permissionTrack = fakeTrack();
+    const laneTrack = fakeTrack();
+    const getUserMedia = vi.fn(async () => {
+      const track = granted ? laneTrack : permissionTrack;
+      granted = true;
+      return { getTracks: () => [track] } as unknown as MediaStream;
+    });
+    // Chrome before permission: one audio input with empty id, group and label (measured, Chrome 154).
+    const enumerateDevices = vi.fn(async () => granted ? [
+      { kind: "audioinput", deviceId: "default", groupId: "g-phone", label: "Default - Gao’s iPhone Microphone" },
+      { kind: "audioinput", deviceId: "phone", groupId: "g-phone", label: "Gao’s iPhone Microphone" },
+      { kind: "audioinput", deviceId: "builtin", groupId: "g-mac", label: "MacBook Pro Microphone (Built-in)" },
+    ] : [{ kind: "audioinput", deviceId: "", groupId: "", label: "" }]);
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia, enumerateDevices } });
+    const client = idleClient();
+
+    await expect(client.startMicrophone(true)).resolves.toBe("builtin");
+    expect(requestedDevices(getUserMedia)).toEqual([{ exact: "default" }, { exact: "builtin" }]);
+    expect(permissionTrack.stop).toHaveBeenCalledOnce();
+    expect(client.lanes.get("microphone")?.tracks).toEqual([laneTrack]);
+    expect(laneTrack.stop).not.toHaveBeenCalled();
+  });
+
+  it("opens a named device directly, with no request that leaves Chrome to choose", async () => {
+    const getUserMedia = vi.fn(async () => ({ getTracks: () => [fakeTrack()] }) as unknown as MediaStream);
+    const enumerateDevices = vi.fn();
+    vi.stubGlobal("navigator", { mediaDevices: { getUserMedia, enumerateDevices } });
+
+    await expect(idleClient().startMicrophone(false, "phone")).resolves.toBe("phone");
+    expect(requestedDevices(getUserMedia)).toEqual([{ exact: "phone" }]);
+    expect(enumerateDevices).not.toHaveBeenCalled();
+  });
+});

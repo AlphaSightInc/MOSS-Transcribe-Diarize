@@ -10,7 +10,7 @@
  *
  *   const client = new CaptureClient({ helperVersion, workletUrl, onMeter, ... });
  *   await client.prepare();                      // descriptor + AudioContext + worklet
- *   await client.startMicrophone(useEchoCancel); // speakers -> true, headphones -> false
+ *   await client.startMicrophone(useEchoCancel, deviceId); // speakers -> true, headphones -> false
  *   // ... in the display button's own click handler, with no await before it:
  *   const stream = await client.requestDisplayMedia();
  *   await client.attachDisplayMedia(stream);
@@ -49,6 +49,7 @@
  */
 import type { EngineSettingsWire } from "../lib/settings";
 import { displaySurfaceOf, rememberCaptureSurface, type CaptureSurface } from "../lib/captureSurface";
+import { chooseMicrophone, DEFAULT_MICROPHONE_ID } from "./microphoneChoice";
 
 export const V2_FRAME_KEYS = [
   "lane",
@@ -272,15 +273,16 @@ function record(value: unknown, field: string): Record<string, unknown> {
 /**
  * The one microphone request, for the first acquisition and for every device switch: echo
  * cancellation follows the listening route; the browser's noise suppression and gain control
- * stay off so both lanes reach the server unprocessed.
+ * stay off so both lanes reach the server unprocessed. It always names its device exactly:
+ * left to choose, Chrome follows its own device ranking and wakes a nearby iPhone (issue #2).
  */
-export function microphoneConstraints(echoCancellation: boolean, deviceId?: string): MediaStreamConstraints {
+export function microphoneConstraints(echoCancellation: boolean, deviceId: string): MediaStreamConstraints {
   return {
     audio: {
       echoCancellation,
       noiseSuppression: false,
       autoGainControl: false,
-      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+      deviceId: { exact: deviceId },
     },
     video: false,
   };
@@ -446,19 +448,34 @@ export class CaptureClient {
     return this.preparation;
   }
 
-  async startMicrophone(echoCancellation: boolean, deviceId?: string): Promise<void> {
+  /**
+   * Open the microphone lane on `deviceId` and resolve with the device id it opened.
+   *
+   * With no `deviceId` the caller could not name one because Chrome still hides the devices.
+   * Opening Chrome's default alias once grants the permission that reveals them; the lane then
+   * opens the device `chooseMicrophone` names, so an iPhone default is skipped from the start.
+   */
+  async startMicrophone(echoCancellation: boolean, deviceId?: string): Promise<string> {
     if (this.lanes.has("microphone")) throw new Error("microphone lane is already active");
     const context = await this.prepare();
     await context.resume();
     if (context.state !== "running") throw new Error("capture AudioContext did not start");
     let stream: MediaStream;
+    let opened = deviceId;
     try {
-      stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints(echoCancellation, deviceId));
+      if (!opened) {
+        const permission = await navigator.mediaDevices.getUserMedia(
+          microphoneConstraints(echoCancellation, DEFAULT_MICROPHONE_ID));
+        permission.getTracks().forEach(track => track.stop());
+        opened = chooseMicrophone(await navigator.mediaDevices.enumerateDevices()) ?? DEFAULT_MICROPHONE_ID;
+      }
+      stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints(echoCancellation, opened));
     } catch (error) {
       await this.failBeforeSession("microphone", "browser_microphone_permission_denied");
       throw error;
     }
     await this.attachLane("microphone", stream, stream.getTracks());
+    return opened;
   }
 
   /**
