@@ -84,6 +84,21 @@ def test_browser_http_bootstrap_is_explicit_private_and_same_origin(tmp_path: Pa
         assert "Workspace unavailable" in client.get("/").text
 
 
+def test_page_shell_uses_product_name_and_keeps_only_actionable_copy(tmp_path: Path):
+    # J7 + Q6: the tab title and loading page say "aiSight - LiveTranscribe"; the browser-profile
+    # storage notices are gone from both server-rendered pages.
+    app = create_phase2_app(database_path=tmp_path / "browser.sqlite3")
+    with TestClient(app, base_url="https://moss.test") as client:
+        loading = client.get("/").text
+        assert client.post("/api/workspace/bootstrap").status_code == 200
+        workspace = client.get("/").text
+    for page in (loading, workspace):
+        assert "<title>aiSight - LiveTranscribe</title>" in page
+        assert "MOSS</" not in page
+        assert "Clearing site data" not in page
+    assert "<h1>aiSight - LiveTranscribe</h1>" in loading
+
+
 def test_open_workspace_binds_independent_clients_to_shared_history(tmp_path: Path):
     database = tmp_path / "open.sqlite3"
     first_app = create_phase2_app(database_path=database, open_workspace=True)

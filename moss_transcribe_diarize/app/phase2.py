@@ -2799,10 +2799,13 @@ def _meeting_audio_from_row(row: Any) -> MeetingAudio | None:
     )
 
 
+PRODUCT_NAME = "aiSight - LiveTranscribe"
+
+
 def _bootstrap_html(*, unavailable: bool) -> str:
     message = (
-        "Workspace unavailable. Existing work has not been reassigned. Contact the operator."
-        if unavailable else "Opening this browser's workspace…"
+        "Workspace unavailable — contact the operator."
+        if unavailable else "Loading…"
     )
     script = "" if unavailable else """
 <script>
@@ -2813,21 +2816,20 @@ const status = document.querySelector('[data-workspace-status]');
     const current = await fetch('/api/auth/session', {cache: 'no-store'});
     if (current.status === 401) {
       const created = await fetch('/api/workspace/bootstrap', {method: 'POST'});
-      if (!created.ok) throw new Error('Workspace unavailable. Contact the operator.');
+      if (!created.ok) throw new Error('Workspace unavailable — contact the operator.');
       const verified = await fetch('/api/auth/session', {cache: 'no-store'});
       if (!verified.ok) throw new Error('Allow cookies for this site, then reload.');
     } else if (!current.ok) {
-      throw new Error('Workspace unavailable. Reload when the server is ready.');
+      throw new Error('Server not ready — reload in a moment.');
     }
   });
   location.replace('/');
 })().catch(error => { status.textContent = error.message; });
 </script>"""
     return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MOSS</title></head>
-<body><main data-auth-state="bootstrap"><h1>MOSS</h1><p data-workspace-status>{message}</p>
-<p>History belongs to this browser profile. Clearing site data loses automatic access.</p>
-<noscript>Enable JavaScript to open this browser's workspace.</noscript></main>{script}</body></html>"""
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{PRODUCT_NAME}</title></head>
+<body><main data-auth-state="bootstrap"><h1>{PRODUCT_NAME}</h1><p data-workspace-status>{message}</p>
+<noscript>Enable JavaScript.</noscript></main>{script}</body></html>"""
 
 
 def _workspace_html(
@@ -2863,12 +2865,11 @@ def _workspace_html(
         else ""
     )
     return f"""<!doctype html>
-<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>MOSS</title>{live_head}</head>
-<body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-workspace-name>{html.escape(account.display_name)}</span>
-<small style="color: var(--muted)">History stays with this browser profile. Clearing site data loses automatic access.</small></header>
+<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{PRODUCT_NAME}</title>{live_head}</head>
+<body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-workspace-name>{html.escape(account.display_name)}</span></header>
 <nav class="workspace-nav" aria-label="Workspace">
 {('<a href="#workspace-file">Files &amp; URLs</a>' if not live_enabled else '')}
-{('<a href="#workspace-live">Live / Transcript &amp; export</a>' if live_enabled else '')}
+{('<a href="#workspace-live">Live</a>' if live_enabled else '')}
 <a href="#workspace-history">Meeting history</a><a href="#workspace-voiceprints">Voiceprints</a>
 </nav>
 <section data-workspace=\"account\"><h1>Your meetings</h1>
@@ -2876,7 +2877,7 @@ def _workspace_html(
 {live_body}
 <section id=\"workspace-history\" data-workspace-section=\"history\"><h2 class=\"phase2-workspace-heading\">Meeting history</h2>
 <div id=\"meeting-history-app\" data-history-root>{empty}{history}</div>
-<section id="workspace-voiceprints" data-workspace-section="voiceprints"><h2 class="phase2-workspace-heading">Private voice bank</h2><div id="voiceprint-bank-app"></div></section></section>
+<section id="workspace-voiceprints" data-workspace-section="voiceprints"><h2 class="phase2-workspace-heading">Voiceprints</h2><div id="voiceprint-bank-app"></div></section></section>
 </section></main>
 <script type="module" src="{app_url}"></script>
 </body></html>"""
