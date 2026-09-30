@@ -1,0 +1,340 @@
+{
+ "label": "early-zh-before-lite",
+ "model": "gemini-3.5-flash-lite",
+ "language": "",
+ "carry": false,
+ "rows": [
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 20.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 1,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 393,
+    "output_tokens": 211,
+    "cost_usd": 0.0006454
+   },
+   "latency_s": 1.65,
+   "document": {
+    "summary": "Speaker 1 introduces a conversation with Ji Keiyu, an economist at the London School of Economics who specializes in the Chinese economy and has written a well-received book about China. This matters because it sets the stage for expert insights on global trade and macroeconomic policy.",
+    "topics": [
+     {
+      "title": "嘉宾介绍",
+      "description": "Speaker 1介绍了金刻羽的学术背景及其在研究中国经济和全球贸易方面的著作。"
+     }
+    ],
+    "details": [
+     {
+      "title": "介绍金刻羽的背景",
+      "description": "Speaker 1介绍了金刻羽作为伦敦政治经济学院经济学家的身份及其研究领域。",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: 主持人或对话者",
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学》"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.332,
+    "lang_match": false,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 287,
+    "visible_chars_full": 460,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 35.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 3,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 432,
+    "output_tokens": 251,
+    "cost_usd": 0.0007571
+   },
+   "latency_s": 1.75,
+   "document": {
+    "summary": "Lex Fridman introduces his conversation with Jin Keyu, an economist at the London School of Economics who specializes in the Chinese economy and has written a book clarifying Western misunderstandings of China's economic transition from 1978 to today.",
+    "topics": [
+     {
+      "title": "Introduction to Jin Keyu and Her Work",
+      "description": "Lex Fridman introduces Jin Keyu, highlighting her background as an economist at the London School of Economics and her book on China's economic transition."
+     }
+    ],
+    "details": [
+     {
+      "title": "Introduction of Jin Keyu",
+      "description": "Lex Fridman introduces Jin Keyu as an economist at the London School of Economics specializing in the Chinese economy, international macroeconomics, global trade imbalances, and financial policy.",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策"
+    ],
+    "data_references": [
+     {
+      "item": "中国经济转型起始年份",
+      "value": "1978年",
+      "context": "详细讲述了从1978年到今天中国的经济转型"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.111,
+    "lang_match": false,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 251,
+    "visible_chars_full": 752,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 50.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 4,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 474,
+    "output_tokens": 369,
+    "cost_usd": 0.0010647
+   },
+   "latency_s": 1.83,
+   "document": {
+    "summary": "Lex Fridman introduces his guest, economist Keyu Jin from the London School of Economics, who specializes in the Chinese economy and discusses her book on China's economic transformation.",
+    "topics": [
+     {
+      "title": "Guest Introduction",
+      "description": "Lex Fridman introduces Keyu Jin, an economist at the London School of Economics, highlighting her expertise in the Chinese economy, global trade imbalances, and financial policy."
+     },
+     {
+      "title": "Book Overview",
+      "description": "Keyu Jin's book, The New China Playbook: Beyond Socialism and Capitalism, details China's economic transition from 1978 to the present and clarifies Western misconceptions."
+     }
+    ],
+    "details": [
+     {
+      "title": "Introduction of Keyu Jin",
+      "description": "Lex Fridman introduces Keyu Jin and her academic background at the London School of Economics.",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: Lex Fridman, podcast host",
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": [
+     {
+      "item": "中国经济转型起始年份",
+      "value": "1978年",
+      "context": "详细讲述了从1978年到今天中国的经济转型"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.129,
+    "lang_match": false,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 187,
+    "visible_chars_full": 839,
+    "topics": 2,
+    "details": 1,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 20.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 417,
+    "output_tokens": 146,
+    "cost_usd": 0.0004901
+   },
+   "latency_s": 1.35,
+   "document": {
+    "summary": "Speaker 1 discusses the distinction between a madman and a genius, while Speaker 2 introduces an upcoming conversation with Argentine President Javier Milei.",
+    "topics": [
+     {
+      "title": "疯狂与天才的区别",
+      "description": "Speaker 1 提出疯子和天才之间的区别在于是否成功。"
+     }
+    ],
+    "details": [
+     {
+      "title": "对话阿根廷总统",
+      "description": "Speaker 2 介绍了即将与阿根廷总统哈维尔·米莱进行的对话，并提及他的政治立场。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: 采访者或主持人"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.315,
+    "lang_match": false,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 157,
+    "visible_chars_full": 267,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 35.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 464,
+    "output_tokens": 317,
+    "cost_usd": 0.0009317
+   },
+   "latency_s": 1.69,
+   "document": {
+    "summary": "Speaker 2 introduces a conversation with Javier Milei, the libertarian and anarchist-capitalist President of Argentina who used a chainsaw symbol in his campaign. This matters because it sets up the discussion with a leader who took power during hyperinflation.",
+    "topics": [
+     {
+      "title": "疯子与天才的区别",
+      "description": "Speaker 1提出疯子和天才之间的区别在于是否成功。"
+     },
+     {
+      "title": "阿根廷总统米莱的背景",
+      "description": "Speaker 2介绍了阿根廷总统哈维尔·米莱的身份，包括他是自由意志主义者、无政府资本主义者以及经济学家，并提及他用电锯象征砍掉国家官僚机构的承诺和一年前上任时的恶性通货膨胀背景。"
+     }
+    ],
+    "details": [
+     {
+      "title": "疯子与天才的定义",
+      "description": "Speaker 1讨论了疯子与天才之间的区别是成功。",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "介绍阿根廷总统哈维尔·米莱",
+      "description": "Speaker 2开始讲述与阿根廷总统哈维尔·米莱的对话及其次政背景。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [],
+    "data_references": [
+     {
+      "item": "就任总统时间",
+      "value": "一年",
+      "context": "一年前他就任总统时，这个国家正处在恶性通货膨胀"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.452,
+    "lang_match": false,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 261,
+    "visible_chars_full": 522,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 50.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 507,
+    "output_tokens": 346,
+    "cost_usd": 0.0010171
+   },
+   "latency_s": 1.97,
+   "document": {
+    "summary": "Speaker 2 introduces a conversation with Argentine President Javier Milei, a libertarian economist who used a chainsaw symbol in his campaign to promise cuts to the state bureaucracy. Milei took office amidst severe inflation, debt, and poverty, applying pure free-market principles to reform the economy.",
+    "topics": [
+     {
+      "title": "疯子与天才的区别",
+      "description": "Speaker 1 states that the difference between a madman and a genius is success."
+     },
+     {
+      "title": "阿根廷总统哈维尔·米莱的背景与危机应对",
+      "description": "Speaker 2 introduces Javier Milei as a libertarian, anarcho-capitalist, and economist who campaigned with a chainsaw to fight state bureaucracy and tackled severe inflation, debt, and poverty upon taking office."
+     }
+    ],
+    "details": [
+     {
+      "title": "讨论疯子与天才的区别",
+      "description": "Speaker 1 notes that success is the difference between a madman and a genius.",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "介绍阿根廷总统哈维尔·米莱",
+      "description": "Speaker 2 shares a conversation with Javier Milei, detailing his background and his efforts to reform Argentina's economy using free-market principles.",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.066,
+    "lang_match": false,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 305,
+    "visible_chars_full": 880,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 0
+   }
+  }
+ ]
+}

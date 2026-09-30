@@ -26,7 +26,7 @@ describe("I-1 schema", () => {
   it("defaults to Gemini for both tabs with the documented seconds", () => {
     expect(loadAppSettings()).toEqual({
       transcription: { vendor: "gemini", url: "", model: "gemini-3.5-transcribe", apiKey: "", refreshSeconds: 15, contextSeconds: 90 },
-      summary: { vendor: "gemini", url: "", model: "gemini-3.8-flash", apiKey: "", rolling: true, waitSeconds: 60,
+      summary: { vendor: "gemini", url: "", model: "gemini-3.8-flash", apiKey: "", rolling: true, waitSeconds: 20,
         language: "", timeoutSeconds: 120, prompt: DEFAULT_SUMMARY_PROMPT },
       general: { cleanupAfterStop: true }
     });
@@ -43,6 +43,17 @@ describe("I-1 schema", () => {
       summary: { vendor: "off", waitSeconds: 0, prompt: DEFAULT_SUMMARY_PROMPT } });
     saveAppSettings(settingsWith(s => { s.summary.prompt = "Custom"; }));
     expect(loadAppSettings().summary.prompt).toBe("Custom");
+  });
+
+  it("moves a wait left at the old 60 s default to 20 s, but keeps chosen waits (#10)", () => {
+    const saved = (summary: Record<string, unknown>) => values.set("moss.settings.v2", JSON.stringify(
+      { ...defaultAppSettings(), summary: { ...defaultAppSettings().summary, prompt: "", ...summary } }));
+    saved({ waitSeconds: 60 });
+    expect(loadAppSettings().summary.waitSeconds).toBe(20);
+    saved({ waitSeconds: 45 });
+    expect(loadAppSettings().summary.waitSeconds).toBe(45);
+    saveAppSettings(settingsWith(s => { s.summary.waitSeconds = 60; }));
+    expect(loadAppSettings().summary.waitSeconds).toBe(60);
   });
 
   it("falls back per field on malformed values", () => {
@@ -73,7 +84,7 @@ describe("migration to v2", () => {
     values.set("moss.settings.v1", v1({}, { provider: "external", externalUrl: "https://example.com/v1", externalModel: "m",
       externalApiKey: "k", intervalSeconds: 0, prompt: "Custom prompt" }));
     expect(loadAppSettings().summary).toEqual({ vendor: "openai_compatible", url: "https://example.com/v1", model: "m",
-      apiKey: "k", rolling: false, waitSeconds: 60, language: "French", timeoutSeconds: 90, prompt: "Custom prompt" });
+      apiKey: "k", rolling: false, waitSeconds: 20, language: "French", timeoutSeconds: 90, prompt: "Custom prompt" });
   });
 
   it("keeps summaries off", () => {

@@ -15,7 +15,7 @@ Base: `gemini/r2-integration` @ `1dee41cb`. Integration branch `gemini/r3-ui`. L
 | Q6 | Text rule: a string stays only if it tells the user to do something or explains why a control will not work. Keep list K1–K9 below; everything else removed. States show on the control (Export Save reads "Improving…" and is disabled; top pill "Recording 12:34" / "Stopping"). |
 | Q7 | Stress-test budget: real Gemini ≤ **$5** (public audio only). |
 | J2 | Speaker window = two integer fields: **Refresh every** 5–60 s (default 15) and **Context** 90–300 s (default 90); refresh ≤ context. Presets removed. The 90 s floor is measured (P5: 60 s merged/split speakers). |
-| J3 | Rolling summary: checkbox **Rolling summary** + **Wait after each summary (s)** timed from the END of the previous request; 0 = start the next immediately; requests never overlap. Default 60. |
+| J3 | Rolling summary: checkbox **Rolling summary** + **Wait after each summary (s)** timed from the END of the previous request; 0 = start the next immediately; requests never overlap. Default 60 (round 4 #10: 20). |
 | J4 | Default summary prompt shortened to a few lines, same five JSON sections. |
 | J5 | Shared-lane source label from Chrome's share choice (`displaySurface` of the display-media video track): `browser`→**Browser**, `window`→**Window**, `monitor`→**Screen**; microphone lane → **Mic**. Stored per meeting id in browser storage (History is per-browser, ADR-0006). |
 | J6 | Transcript rows copy LiveTranscribe: left meta column (speaker name, source, time), text right; speaker colours `--sp-1…8`; floating glass Find / Copy / Auto-scroll toolbar and glass find bar. Fonts and tokens from LiveTranscribe. |
@@ -52,7 +52,7 @@ interface AppSettings {
                    refreshSeconds: number; contextSeconds: number };        // 15 / 90
   summary: { vendor: Vendor | "off"; url: string; model: string; apiKey: string;
              rolling: boolean; waitSeconds: number; language: string;
-             timeoutSeconds: number; prompt: string };                     // gemini-3.5-flash-lite, true, 60
+             timeoutSeconds: number; prompt: string };                     // gemini-3.5-flash-lite, true, 60 (r4: 20)
   general: { cleanupAfterStop: boolean };                                   // true
 }
 ```

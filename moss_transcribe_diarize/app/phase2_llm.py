@@ -31,6 +31,19 @@ class InvalidSummaryOutput(ValueError):
         self.usage = usage
 
 
+def summary_language_rule(language: str) -> str:
+    """Settings > Language, or (Auto) the transcript's own language.
+
+    Without the Auto rule the English prompt pulls Chinese transcripts into English, most often
+    early in a meeting (prototypes/gemini-live/live-summary/NOTES.md: 3.8-flash 3 of 12 Chinese
+    snapshots, all ≤ 50 s; with the rule 0 of 12). The browser OpenAI-compatible path
+    (frontend finalSummary.ts) sends the same sentence.
+    """
+    target = language.strip()
+    return (f"Write the final briefing in {target}." if target else
+            "Write every string value in the transcript's dominant language; do not translate it.")
+
+
 class GeminiSummaryGenerator:
     """Generate a transcript-only JSON briefing with the requesting user's Gemini key."""
 
@@ -49,7 +62,7 @@ class GeminiSummaryGenerator:
              "start": timestamp(row["start"]), "end": timestamp(row["end"]),
              "speaker": row["speaker"], "text": row["text"]}
             for row in rows]}
-        instruction = f"{prompt}{f'\nWrite the final briefing in {language.strip()}.' if language.strip() else ''}"
+        instruction = f"{prompt}\n{summary_language_rule(language)}"
         client = genai.Client(api_key=api_key)
         try:
             response = await wait_for(client.aio.models.generate_content(

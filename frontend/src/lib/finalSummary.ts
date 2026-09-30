@@ -111,10 +111,17 @@ export function validateSummary(value: unknown, duration: number): SummaryDocume
   return value as unknown as SummaryDocument;
 }
 
+/** Settings > Language, or (Auto) the transcript's own language; the server's Gemini path sends the same sentence. */
+export function summaryLanguageRule(language: string): string {
+  const target = language.trim();
+  return target ? `Write the final briefing in ${target}.`
+    : "Write every string value in the transcript's dominant language; do not translate it.";
+}
+
 export function providerBody(meeting: Meeting, settings: SummarySettings): string {
   if (meeting.status !== "completed" || !meeting.transcript?.segments.some(s => s.text.trim())) throw new Error("Finalized speech is required.");
   return JSON.stringify({ model: settings.model, max_tokens: 2048, ...(settings.endpoint === RELAY_ENDPOINT ? {} : { stream: false, response_format: { type: "json_object" } }), messages: [
-    { role: "system", content: `${settings.prompt}${settings.language.trim() ? `\nWrite the final briefing in ${settings.language.trim()}.` : ""}` },
+    { role: "system", content: `${settings.prompt}\n${summaryLanguageRule(settings.language)}` },
     { role: "user", content: JSON.stringify({ segments: [...meeting.transcript.segments].sort(compareTranscriptOrder).map(s => ({ ...(s.source_lane ? { source_lane: s.source_lane } : {}), start: summaryTimestamp(s.start), end: summaryTimestamp(s.end), speaker: s.speaker, text: s.text })) }) }
   ] });
 }

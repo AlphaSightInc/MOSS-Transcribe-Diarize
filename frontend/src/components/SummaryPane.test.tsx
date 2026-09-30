@@ -47,6 +47,22 @@ it("renders a rolling summary from the frozen live response with only 'Updated N
   expect(root.querySelector('[role="status"]')?.textContent).toMatch(/^Updated \d+s ago$/);
 });
 
+it("shows the whole rolling document while live, not only its theme (#6)", async () => {
+  const summary = { summary: "Theme line.", topics: [{ title: "Pricing", description: "Price is what you pay." }],
+    details: [{ title: "Graham", description: "The first book.", timestamp: "00:01:00" }],
+    speaker_background: ["Speaker 2: investor"], data_references: [{ item: "Coupon", value: "5%", context: "A bond." }] };
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ summary,
+    source: { committed_samples: 48000, text_revision_version: 4 }, generated_at_ms: Date.now() }) }));
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await act(async () => refresh().click());
+  await vi.waitFor(() => expect(root.textContent).toContain("Theme line."));
+  for (const text of ["Pricing", "Price is what you pay.", "00:01:00 · Graham", "Speaker 2: investor", "Coupon: 5%"])
+    expect(root.textContent).toContain(text);
+  // Only the saved final summary carries the final marker.
+  expect(root.querySelector("[data-final-summary]")).toBeNull();
+});
+
 it("allows a blank browser key to use the server summary fallback", async () => {
   configure(settings => { settings.summary.apiKey = ""; });
   const fetcher = vi.fn().mockResolvedValue(live("never"));
@@ -80,16 +96,17 @@ it("waits after each request finishes, shows 'Summary failed' + Retry, and keeps
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "m"; sessionStatus.value = "active";
   await act(async () => render(<SummaryPane hidden={false} />, root));
-  await act(async () => { await vi.advanceTimersByTimeAsync(59_999); });
+  // Default wait: 20 s after the previous request settles (#10).
+  await act(async () => { await vi.advanceTimersByTimeAsync(19_999); });
   expect(fetcher).not.toHaveBeenCalled();
   await act(async () => { await vi.advanceTimersByTimeAsync(1); });
   expect(root.textContent).toContain("The first good update.");
-  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+  await act(async () => { await vi.advanceTimersByTimeAsync(20_000); });
   expect(fetcher).toHaveBeenCalledTimes(2);
   expect(root.textContent).toContain("The first good update.");
   expect(root.querySelector('[role="alert"]')?.textContent).toBe("Summary failed — the model provider returned an error.");
   expect(refresh().textContent).toBe("Retry");
-  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+  await act(async () => { await vi.advanceTimersByTimeAsync(20_000); });
   expect(fetcher).toHaveBeenCalledTimes(3);
   expect(root.textContent).toContain("The recovered update.");
   expect(root.querySelector('[role="alert"]')).toBeNull();

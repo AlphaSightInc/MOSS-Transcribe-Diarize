@@ -92,7 +92,7 @@ describe("three tabs", () => {
     expect(field("Summary model")!.value).toBe("gemini-3.8-flash");
     expect(field("Summary URL")).toBeNull();
     expect(field("Rolling summary")!.checked).toBe(true);
-    expect(field("Wait after each summary (s)")!.value).toBe("60");
+    expect(field("Wait after each summary (s)")!.value).toBe("20");
     expect(field<HTMLTextAreaElement>("Summary prompt")!.rows).toBe(4);
     await type("Summary API key", "k");
     await type("Wait after each summary (s)", "0");

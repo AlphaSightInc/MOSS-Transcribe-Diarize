@@ -36,7 +36,7 @@ it("keeps the documented fallback bounds for the captured round-2 descriptor (no
   expect(root.querySelector<HTMLInputElement>('[aria-label="Context (s)"]')?.value).toBe("90");
 });
 
-it("renders the captured live-summary document as visible theme text", async () => {
+it("renders the captured live-summary document with its theme", async () => {
   browserStorage();
   saveAppSettings({ ...defaultAppSettings(), summary: { ...defaultAppSettings().summary, apiKey: "key" } });
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => liveSummary }));
@@ -44,7 +44,7 @@ it("renders the captured live-summary document as visible theme text", async () 
   await act(async () => render(<SummaryPane hidden={false} />, root));
   await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
   await vi.waitFor(() => expect(root.textContent).toContain(liveSummary.summary.summary));
-  expect(root.querySelector(".summary-content p")?.textContent).toBe(liveSummary.summary.summary);
+  expect(root.querySelector(".summary-content h3")?.textContent).toBe(liveSummary.summary.summary);
 });
 
 it("parses the captured final-summary response at the saved version", async () => {
