@@ -3369,6 +3369,3 @@ textarea:focus {
 
 .settings-body label.settings-checkbox { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
 .settings-body .settings-checkbox input[type="checkbox"] { flex: 0 0 18px; width: 18px; height: 18px; margin: 0; }
-
-/* The transcript card title already names the meeting (or the product); the top-bar copy only repeated it. */
-.phase2-workspace .session-meta { display: none; }

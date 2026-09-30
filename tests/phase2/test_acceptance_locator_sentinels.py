@@ -62,8 +62,10 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
             page.get_by_role('tab', name='Transcript', exact=True).click()
             expect(page.get_by_label('Summary', exact=True)).to_be_hidden()
             page.get_by_role('region', name='Meeting history', exact=True).get_by_role('tab', name='Voiceprints', exact=True).click()
-            assert page.get_by_role('button', name='Refresh', exact=True).count() == 2
+            # Round 3: the meeting search and its Refresh belong to the Sessions tab only.
+            assert page.get_by_role('button', name='Refresh', exact=True).count() == 1
             history = page.get_by_role('region', name='Meeting history', exact=True)
+            history.get_by_role('tab', name='Sessions', exact=True).click()
             history.locator('.history-panel-actions').get_by_role('button', name='Refresh', exact=True).click()
 
             phone = browser.new_page(viewport={'width': 400, 'height': 900})

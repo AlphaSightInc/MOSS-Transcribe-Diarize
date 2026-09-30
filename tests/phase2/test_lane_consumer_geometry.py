@@ -38,7 +38,7 @@ def test_overlap_lane_badges_keep_chronology_and_fit_pane(width, tmp_path):
             assert page.locator('#tr-body .utt-source').all_text_contents() == ['Shared' if s['source_lane']=='system' else 'Mic' for s in FIXTURE['segments']]
             expect(page.locator('.legend-chip')).to_have_count(4)
             page.get_by_role('region', name='Meeting history', exact=True).get_by_role('tab', name='Voiceprints', exact=True).click()
-            expect(page.get_by_role('button', name='Refresh', exact=True)).to_have_count(2)
+            expect(page.get_by_role('button', name='Refresh', exact=True)).to_have_count(1)  # Sessions-only search/Refresh
             assert page.locator('#tr-body').evaluate('(e)=>e.scrollWidth<=e.clientWidth')
             for text in (s['text'] for s in FIXTURE['segments']): expect(page.locator('#tr-body')).to_contain_text(text)
             page.locator('#transcript-panel').scroll_into_view_if_needed()
