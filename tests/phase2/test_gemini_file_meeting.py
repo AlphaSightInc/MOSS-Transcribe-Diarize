@@ -1,4 +1,5 @@
 import asyncio
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -51,4 +52,10 @@ def test_file_meeting_completes_and_enrolls_after_name(tmp_path):
                          "api_key": "user-key"}]
         named = client.put(f"/api/meetings/{meeting['id']}/speakers/S01/name", json={"label": "Alex"})
         assert named.status_code == 200, named.text
-        assert named.json()["enrollment"] == "enrolled"
+        # The fingerprint runs after the name is saved (issue #15).
+        assert named.json()["enrollment"] == "pending"
+        deadline = time.monotonic() + 5
+        while not (voiceprints := client.get("/api/voiceprints").json()["voiceprints"]):
+            assert time.monotonic() < deadline, "voiceprint was not enrolled"
+            time.sleep(.02)
+        assert [(v["label"], v["sample_count"]) for v in voiceprints] == [("Alex", 1)]

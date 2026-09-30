@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import math
 import secrets
 import struct
@@ -17,6 +18,7 @@ from .phase2_voiceprint_match import VoiceprintProfile, match_voiceprint, normal
 
 # ADR-0009 fixes this floor from the measured production album. It is not inferred here.
 VOICEPRINT_ENROLLMENT_SECONDS = 2.0
+_LOG = logging.getLogger("moss_transcribe_diarize.phase2.speaker_identity")
 
 
 class SpeakerIdentityNotFound(KeyError):
@@ -92,6 +94,9 @@ class AccountSpeakerIdentity:
         self._pending: dict[tuple[str, int, str, str], _PendingEnrollment] = {}
         self._lock = asyncio.Lock()
         self._naming_tasks: set[asyncio.Task[ManualNameResult]] = set()
+        # Saved-audio fingerprints (issue #15): one at a time, never under the bank lock.
+        self._enrollment_lock = asyncio.Lock()
+        self._saved_enrollments: dict[tuple[str, int, str, str], asyncio.Task[None]] = {}
         # Prepared matches never survive process exit; startup interrupts Live.
         self._bank_revisions: dict[tuple[str, int], int] = {}
         self._manual_speakers: set[tuple[str, int, str, str]] = set()
@@ -209,6 +214,7 @@ class AccountSpeakerIdentity:
             raise SpeakerIdentityNotFound(speaker_id)
 
         live_naming = True
+        saved_enrollment = None
         try:
             if self._active_meetings is None:
                 raise SpeakerIdentityNotFound(speaker_id)
@@ -259,11 +265,13 @@ class AccountSpeakerIdentity:
                 if path is not None:
                     intervals = (addressed if meeting.mode == 'file' else
                                  _unoverlapped_speaker_rows(segments, speaker_id))
-                    if meeting.mode == 'file' or sum(
-                        row['end'] - row['start'] for row in intervals
-                    ) >= VOICEPRINT_ENROLLMENT_SECONDS:
-                        observation = await asyncio.to_thread(evidence_provider, path, intervals)
-                        evidence = _eligible_evidence(observation)
+                    # The floor is necessary for any admitted evidence, so refusing here
+                    # answers now what the fingerprint would answer minutes later.
+                    if sum(row['end'] - row['start'] for row in intervals
+                           ) >= VOICEPRINT_ENROLLMENT_SECONDS:
+                        # Fingerprinting costs ~3-4 s of CPU per minute of this speaker's
+                        # speech (issue #15), so it runs after the name is durable.
+                        saved_enrollment = (evidence_provider, path, intervals, meeting.status)
             live_naming = False
             voiceprint_id, transcript_version, was_linked = await self._persist_manual_name(
                 owner_key, handle.meeting_id, speaker_id, normalized, document, evidence,
@@ -274,7 +282,7 @@ class AccountSpeakerIdentity:
         if not save_voiceprint:
             self._pending.pop(key, None)
             enrollment = "not_requested"
-        elif not live_naming:
+        elif not live_naming and saved_enrollment is None:
             self._pending.pop(key, None)
             enrollment = "enrolled" if voiceprint_id is not None else "unavailable"
         elif evidence is None:
@@ -285,6 +293,13 @@ class AccountSpeakerIdentity:
                 label=normalized,
             )
             enrollment = "pending"
+            if saved_enrollment is not None and key not in self._saved_enrollments:
+                # A running fingerprint of this speaker completes the latest intent.
+                task = asyncio.create_task(self._enroll_saved(key, *saved_enrollment),
+                                           name="phase2-saved-voiceprint")
+                self._saved_enrollments[key] = task
+                self._naming_tasks.add(task)
+                task.add_done_callback(self._naming_done)
         else:
             self._pending.pop(key, None)
             enrollment = "enrolled"
@@ -300,6 +315,28 @@ class AccountSpeakerIdentity:
             enrollment=enrollment,
             transcript_version=transcript_version,
         )
+
+    async def _enroll_saved(self, key, provider, path, intervals, status) -> None:
+        """Fingerprint a saved meeting's speaker after naming returned; write under the bank lock."""
+        evidence = None
+        try:
+            async with self._enrollment_lock:
+                if key in self._pending:
+                    evidence = _eligible_evidence(await asyncio.to_thread(provider, path, intervals))
+        except Exception:
+            _LOG.warning("saved-meeting voiceprint fingerprint failed", exc_info=True)
+        async with self._lock:
+            self._saved_enrollments.pop(key, None)
+            # Renaming again updates this intent; naming without a voiceprint or deleting
+            # the linked voiceprint removes it. Only the name current at commit is used.
+            intent = self._pending.pop(key, None)
+            if intent is None or evidence is None:
+                return
+            try:
+                if await self._complete_pending(intent, evidence, status=status):
+                    self._advance_revision(intent.owner_key)
+            except Exception:
+                _LOG.warning("saved-meeting voiceprint enrollment failed", exc_info=True)
 
     async def _persist_manual_name(
         self,
@@ -425,6 +462,7 @@ class AccountSpeakerIdentity:
         self,
         intent: _PendingEnrollment,
         evidence: _EligibleEvidence,
+        *, status: str = "active",
     ) -> bool:
         account_id, authority_generation = intent.owner_key
         now = _now_ms()
@@ -432,7 +470,7 @@ class AccountSpeakerIdentity:
             meeting_cursor = await self._store._connection.execute(
                 """
                 SELECT 1 FROM meetings
-                WHERE account_id = ? AND meeting_id = ? AND status = 'active'
+                WHERE account_id = ? AND meeting_id = ? AND status = ?
                   AND EXISTS (
                     SELECT 1 FROM accounts
                     WHERE account_id = ? AND enabled = 1 AND authority_generation = ?
@@ -441,6 +479,7 @@ class AccountSpeakerIdentity:
                 (
                     account_id,
                     intent.meeting_id,
+                    status,
                     account_id,
                     authority_generation,
                 ),
