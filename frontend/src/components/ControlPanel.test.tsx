@@ -25,6 +25,8 @@ const mocks = vi.hoisted(() => {
     captureClose: vi.fn().mockResolvedValue(undefined),
     captureStop: vi.fn().mockResolvedValue(undefined),
     replaceLane: vi.fn().mockResolvedValue(undefined),
+    setMicrophoneMuted: vi.fn(),
+    startMicrophone: vi.fn(),
     createSession: vi.fn().mockResolvedValue({ id: "account-live-meeting" }),
     captureOptions: null as {
       workletUrl?: string;
@@ -52,7 +54,8 @@ vi.mock("../lib/transcriptExport", async importOriginal => ({
   triggerTranscriptExportDownload: mocks.exportDownload
 }));
 
-vi.mock("../capture/captureClient", () => ({
+vi.mock("../capture/captureClient", async importOriginal => ({
+  microphoneConstraints: (await importOriginal<typeof import("../capture/captureClient")>()).microphoneConstraints,
   CaptureClient: class {
     options: {
       workletUrl?: string;
@@ -74,10 +77,14 @@ vi.mock("../capture/captureClient", () => ({
     }
 
     prepare = vi.fn().mockResolvedValue(undefined);
-    startMicrophone = vi.fn(async () => this.options.onMeter?.("microphone", 0.5));
+    startMicrophone = vi.fn(async (...args: unknown[]) => {
+      mocks.startMicrophone(...args);
+      this.options.onMeter?.("microphone", 0.5);
+    });
     requestDisplayMedia = vi.fn().mockResolvedValue({ getTracks: () => [] });
     attachDisplayMedia = vi.fn(async () => this.options.onMeter?.("system", 0.5));
     replaceLane = mocks.replaceLane;
+    setMicrophoneMuted = mocks.setMicrophoneMuted;
     createSession = mocks.createSession;
     close = mocks.captureClose;
     stop = mocks.captureStop;
@@ -469,5 +476,119 @@ describe("ControlPanel reattach", () => {
     expect(root.querySelector('[role="status"]')?.textContent).toBe("Recording stopped: connection lost.");
     expect(button("Stop recording")).toBeUndefined();
     expect(button("Reset")).toBeTruthy();
+  });
+
+  describe("microphone dropdown and Mute mic", () => {
+    const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
+    const select = () => root.querySelector<HTMLSelectElement>("#microphone-select")!;
+    const choose = (deviceId: string) => act(async () => {
+      select().value = deviceId;
+      select().dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    const replacement = { getTracks: () => ["replacement-track"] };
+    let getUserMedia: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      getUserMedia = vi.fn(async () => replacement);
+      vi.stubGlobal("navigator", { mediaDevices: { getUserMedia, enumerateDevices: vi.fn(async () => [
+        { kind: "audioinput", deviceId: "desk", label: "Desk mic" },
+        { kind: "audioinput", deviceId: "usb", label: "USB mic" },
+        { kind: "videoinput", deviceId: "cam", label: "Camera" }
+      ]) } });
+    });
+
+    async function connectBoth() {
+      await act(async () => render(<ControlPanel />, root));
+      await act(async () => { select().dispatchEvent(new FocusEvent("focus")); });
+      await choose("desk");
+      await act(async () => button("Enable microphone")!.click());
+      await vi.waitFor(() => expect(button("Share audio")).toBeTruthy());
+      await act(async () => button("Share audio")!.click());
+      await vi.waitFor(() => expect(button("Start recording")?.disabled).toBe(false));
+    }
+
+    it("switches the microphone as soon as the dropdown changes, with no separate switch button", async () => {
+      await connectBoth();
+      // Before capture existed the choice only picked the device Enable microphone opened.
+      expect(mocks.startMicrophone).toHaveBeenCalledWith(true, "desk");
+      expect(getUserMedia).not.toHaveBeenCalled();
+      expect(button("Reconnect mic")).toBeUndefined();
+      expect(button("Switch mic")).toBeUndefined();
+
+      await choose("usb");
+      await vi.waitFor(() => expect(mocks.replaceLane).toHaveBeenCalledWith("microphone", replacement, ["replacement-track"]));
+      // The same request as the first microphone: only echo cancellation follows the route.
+      expect(getUserMedia).toHaveBeenCalledWith({ audio: { echoCancellation: true, noiseSuppression: false,
+        autoGainControl: false, deviceId: { exact: "usb" } }, video: false });
+      expect(select().value).toBe("usb");
+      expect(mocks.createSession).not.toHaveBeenCalled();
+    });
+
+    it("keeps the running microphone and its dropdown entry when a switch fails mid-recording", async () => {
+      await connectBoth();
+      await act(async () => button("Start recording")!.click());
+      getUserMedia.mockRejectedValueOnce(new DOMException("Requested device not found", "NotFoundError"));
+      await choose("usb");
+      await vi.waitFor(() => expect(select().value).toBe("desk"));
+      expect(mocks.replaceLane).not.toHaveBeenCalled();
+      expect(root.querySelector('[role="status"]')?.textContent)
+        .toBe("Could not switch the microphone — stop and start a new recording.");
+      expect(root.querySelector('[data-capture-phase="active"]')).not.toBeNull();
+    });
+
+    it("mutes without stopping the lane, empties the meter and names the muted microphone on Start (K6)", async () => {
+      await connectBoth();
+      const mute = button("Mute mic")!;
+      expect(mute.parentElement?.classList.contains("btn-row")).toBe(true);
+      expect(mute.className).toBe("btn ghost");
+      expect(mute.getAttribute("aria-pressed")).toBe("false");
+
+      await act(async () => mute.click());
+      expect(mocks.setMicrophoneMuted).toHaveBeenLastCalledWith(true);
+      const unmute = button("Unmute mic")!;
+      expect(unmute.getAttribute("aria-pressed")).toBe("true");
+      expect(unmute.classList.contains("is-active")).toBe(true);
+      // The worklet's last pre-mute frame may still carry a level; the meter shows none.
+      act(() => mocks.captureOptions!.onMeter!("microphone", .5));
+      expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
+      expect(button("Start recording")!.disabled).toBe(true);
+      expect(button("Start recording")!.title).toBe("Microphone is muted");
+      expect(root.querySelector('[role="status"]')).toBeNull();
+
+      await act(async () => unmute.click());
+      expect(mocks.setMicrophoneMuted).toHaveBeenLastCalledWith(false);
+      expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeNull();
+      expect(button("Start recording")!.disabled).toBe(false);
+      expect(button("Start recording")!.title).toBe("");
+
+      // During a recording Mute only flips the lane: no replacement, no restart, no new session.
+      await act(async () => button("Start recording")!.click());
+      await act(async () => button("Mute mic")!.click());
+      expect(mocks.setMicrophoneMuted).toHaveBeenLastCalledWith(true);
+      expect(button("Stop recording")).toBeTruthy();
+      expect(mocks.replaceLane).not.toHaveBeenCalled();
+      expect(mocks.captureStop).not.toHaveBeenCalled();
+      expect(mocks.createSession).toHaveBeenCalledOnce();
+
+      // A new capture after the meeting ends starts unmuted.
+      await act(async () => { sessionStatus.value = "failed"; sessionError.value = "lost";
+        mocks.pollerOptions?.onTerminal?.("lost"); });
+      await act(async () => button("Reset")!.click());
+      await act(async () => button("Enable microphone")!.click());
+      await vi.waitFor(() => expect(button("Mute mic")).toBeTruthy());
+      expect(button("Unmute mic")).toBeUndefined();
+    });
+
+    it("drops the silent-microphone remedy (K1) once the microphone is muted on purpose", async () => {
+      const remedy = "No microphone sound — check the input in Chrome site settings.";
+      await act(async () => render(<ControlPanel />, root));
+      await act(async () => button("Enable microphone")!.click());
+      await vi.waitFor(() => expect(button("Mute mic")).toBeTruthy());
+      act(() => mocks.captureOptions!.onMeter!("microphone", 0));
+      act(() => mocks.captureOptions!.onPreflightStatus!(remedy));
+      expect(root.querySelector('[role="status"]')?.textContent).toBe(remedy);
+      await act(async () => button("Mute mic")!.click());
+      expect(root.querySelector('[role="status"]')).toBeNull();
+    });
   });
 });

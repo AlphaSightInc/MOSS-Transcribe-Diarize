@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { createMossSessionPoller, type MossSessionPoller } from "../api/mossPoller";
 import {
   CaptureClient,
+  microphoneConstraints,
   type CaptureLane,
   type PreSessionCaptureFailure
 } from "../capture/captureClient";
@@ -47,6 +48,7 @@ export { LIVE_MEETING_OBSERVE_EVENT } from "../lib/meetingEvents";
 export const RECONNECTING_LINE = "Reconnecting — keep this tab open."; // K4
 export const CONNECTION_LOST_LINE = "Recording stopped: connection lost."; // K5
 export const GEMINI_KEY_LINE = "Enter your Gemini API key in Settings"; // K9
+export const MICROPHONE_MUTED_LINE = "Microphone is muted"; // K6
 
 function workletUrl(): string {
   const url = document.querySelector<HTMLMetaElement>(
@@ -67,6 +69,7 @@ export function ControlPanel() {
   const [audioRoute, setAudioRoute] = useState<AudioRoute>("speakers");
   const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
   const [microphoneId, setMicrophoneId] = useState("");
+  const [micMuted, setMicMuted] = useState(false);
   const [phase, setPhase] = useState<CapturePhase>("idle");
   const [connected, setConnected] = useState({ microphone: false, system: false });
   const [meters, setMeters] = useState<LaneMeters>(EMPTY_METERS);
@@ -143,6 +146,7 @@ export function ControlPanel() {
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
     setConnected({ microphone: false, system: false });
+    setMicMuted(false);
     transition("terminal");
     setMessage(normalClose ? "" : CONNECTION_LOST_LINE);
     requestMeetingHistoryRefresh();
@@ -152,6 +156,7 @@ export function ControlPanel() {
     if (clientRef.current) return;
     transition("configuring");
     setMessage("");
+    setMicMuted(false);
     const client = new CaptureClient({
       helperVersion: HELPER_VERSION,
       workletUrl: workletUrl(),
@@ -222,15 +227,14 @@ export function ControlPanel() {
     } catch { /* Browser device labels may require microphone permission. */ }
   };
 
-  const switchMicrophone = async (deviceId = microphoneId) => {
+  // A dropdown choice replaces the running microphone in place (same lane, next device epoch).
+  const switchMicrophone = async (deviceId: string) => {
     const client = clientRef.current;
     if (!client || phase === "stopping") return;
+    const previousId = microphoneId;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: audioRoute === "speakers",
-          ...(deviceId ? { deviceId: { exact: deviceId } } : {}) },
-        video: false
-      });
+      const stream = await navigator.mediaDevices.getUserMedia(
+        microphoneConstraints(audioRoute === "speakers", deviceId || undefined));
       metersRef.current = { ...metersRef.current, microphone: 0 };
       setMeters(metersRef.current);
       await client.replaceLane("microphone", stream, stream.getTracks());
@@ -240,11 +244,28 @@ export function ControlPanel() {
       if (phaseRef.current === "active") setMessage("");
     } catch (error) {
       if (phaseRef.current === "active") {
-        if (!chooserDismissed(error)) setMessage("Could not reconnect the microphone — stop and start a new recording.");
+        // The running microphone is untouched, so the dropdown goes back to it.
+        setMicrophoneId(previousId);
+        if (!chooserDismissed(error)) setMessage("Could not switch the microphone — stop and start a new recording.");
         return;
       }
       setMessage(laneFailedLine("microphone", error));
       transition("error");
+    }
+  };
+
+  // Muting keeps the lane running and sends silence; the server keeps accounting the time.
+  const toggleMicMute = () => {
+    const client = clientRef.current;
+    if (!client) return;
+    const next = !micMuted;
+    client.setMicrophoneMuted(next);
+    setMicMuted(next);
+    if (next && preflightLine.current) {
+      // "No microphone sound" (K1) is not the reason once the microphone is muted on purpose.
+      const stale = preflightLine.current;
+      preflightLine.current = null;
+      setMessage(current => current === stale ? "" : current);
     }
   };
 
@@ -320,6 +341,7 @@ export function ControlPanel() {
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
     setConnected({ microphone: false, system: false });
+    setMicMuted(false);
     resetSessionState();
     sessionTitle.value = "";
     transition("idle");
@@ -437,11 +459,13 @@ export function ControlPanel() {
 
   const configured = clientRef.current !== null;
   const reattached = phase === "viewing";
-  const canStart = phase === "ready" && meters.microphone > 0 && meters.system > 0;
+  const microphoneLevel = micMuted ? 0 : meters.microphone;
+  const canStart = phase === "ready" && !micMuted && meters.microphone > 0 && meters.system > 0;
   const canReplace = phase === "ready" || phase === "active";
   const keyMissing = missingGeminiKey(settings, "transcription");
-  // K6: a disabled Start names the source that has no sound yet.
-  const silentSources = meters.microphone <= 0 && meters.system <= 0
+  // K6: a disabled Start names the source that is muted or has no sound yet.
+  const silentSources = micMuted ? MICROPHONE_MUTED_LINE
+    : meters.microphone <= 0 && meters.system <= 0
     ? "Microphone and shared audio have no sound yet"
     : meters.microphone <= 0 ? "Microphone has no sound yet"
       : meters.system <= 0 ? "Shared audio has no sound yet" : undefined;
@@ -492,7 +516,8 @@ export function ControlPanel() {
             {phase === "viewing" ? <button type="button" className="btn" onClick={() => void resetCapture()}>Detach</button> : null}
             {configured && connected.microphone && (phase === "configuring" || canReplace) ? (
               <div className="btn-row">
-                <button type="button" className="btn" onClick={() => void switchMicrophone()}>Reconnect mic</button>
+                <button type="button" className={`btn ghost${micMuted ? " is-active" : ""}`} aria-pressed={micMuted}
+                  onClick={toggleMicMute}>{micMuted ? "Unmute mic" : "Mute mic"}</button>
                 {connected.system ? <button type="button" className="btn" onClick={() => void shareAudio()}>Share again</button> : null}
               </div>
             ) : null}
@@ -527,7 +552,7 @@ export function ControlPanel() {
             </div>
 
             <div className="capture-meters" aria-label="Capture lane meters">
-              <LaneMeter label="Microphone" value={meters.microphone} />
+              <LaneMeter label="Microphone" value={microphoneLevel} />
               <LaneMeter label="Shared audio" value={meters.system} />
             </div>
           </section>
