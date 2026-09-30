@@ -4,8 +4,9 @@
 # Opens https://127.0.0.1:<port>/ (self-signed certificate; accept it once in the browser).
 # Other machines (e.g. over the tailnet): MOSS_GEMINI_HOST=<this machine's tailnet IP>
 #   MOSS_GEMINI_TLS_SAN="DNS:<tailnet name>,IP:<tailnet IP>" — binds only that interface.
-# Needs: this worktree's venv (<worktree>.venv), GEMINI_API_KEY in <worktree>/.env.local,
-# built frontend assets, and the local live provider manifest (VAD + WeSpeaker settings).
+# Needs: this worktree's venv (<worktree>.venv), built frontend assets, and the local live
+# provider manifest (VAD + WeSpeaker settings). No server key: each user enters their own
+# Gemini API key in Settings; it is sent per meeting/job/request and never stored.
 # State (meetings, voiceprints, audio) persists in ~/.local/share/moss-gemini-live/state.
 set -euo pipefail
 wt="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -16,7 +17,6 @@ state="${MOSS_GEMINI_STATE:-$HOME/.local/share/moss-gemini-live/state}"
 manifest="${MOSS_LIVE_MANIFEST:-$HOME/.local/share/moss-transcribe-diarize/live/live-provider-manifest.json}"
 py="${wt}.venv/bin/python"
 [[ -x "$py" ]] || { echo "Missing venv: $py" >&2; exit 2; }
-grep -q '^GEMINI_API_KEY=.' "$wt/.env.local" 2>/dev/null || { echo "Put GEMINI_API_KEY=... in $wt/.env.local" >&2; exit 2; }
 [[ -f "$manifest" ]] || { echo "Missing live provider manifest: $manifest" >&2; exit 2; }
 for asset in app.js styles.css worklets/lane-framer.js; do
   [[ -f "$wt/moss_transcribe_diarize/app/frontend_assets/$asset" ]] || {

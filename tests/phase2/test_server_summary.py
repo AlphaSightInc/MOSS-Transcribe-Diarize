@@ -19,6 +19,7 @@ RESULT = {"summary": "A grounded result.", "topics": [{"title": "Useful title", 
 USAGE = {"model": "gemini-3.5-flash-lite", "input_tokens": 100, "output_tokens": 25,
          "cost_usd": 0.0000925}
 TRANSCRIPT = {"segments": [{"start": 0, "end": 4, "speaker": "Alex", "text": "Owner A only."}]}
+PROVIDER = {"vendor": "gemini", "model": "gemini-3.5-flash-lite", "api_key": "user-key"}
 
 
 def test_server_prompt_matches_browser_default():
@@ -51,8 +52,9 @@ def test_gemini_generator_sends_transcript_as_user_content_and_closes_client(mon
             seen["key_passed"] = api_key == "local-key"
 
     monkeypatch.setattr(genai, "Client", FakeClient)
-    result = asyncio.run(GeminiSummaryGenerator("local-key")(
-        TRANSCRIPT, model="gemini-3.5-flash-lite", language="French", prompt="Brief"))
+    result = asyncio.run(GeminiSummaryGenerator()(
+        TRANSCRIPT, model="gemini-3.5-flash-lite", language="French", prompt="Brief",
+        api_key="local-key"))
     assert result == (RESULT, USAGE)
     assert seen["key_passed"] and seen["closed"]
     assert "Owner A only." in seen["contents"]
@@ -62,7 +64,7 @@ def test_gemini_generator_sends_transcript_as_user_content_and_closes_client(mon
 def test_server_summary_generates_from_exact_final_version_and_saves(tmp_path: Path):
     calls = []
 
-    async def generate(document, *, model, language, prompt):
+    async def generate(document, *, model, language, prompt, api_key):
         calls.append((document, model, language, prompt))
         return RESULT, USAGE
 
@@ -80,8 +82,8 @@ def test_server_summary_generates_from_exact_final_version_and_saves(tmp_path: P
 
         meeting_id = client.portal.call(seed)
         path = f"/api/meetings/{meeting_id}/summary/server"
-        assert client.post(path, json={"source_version": 2}).status_code == 409
-        response = client.post(path, json={"source_version": 1})
+        assert client.post(path, json={"source_version": 2, "provider": PROVIDER}).status_code == 409
+        response = client.post(path, json={"source_version": 1, "provider": PROVIDER})
         assert response.status_code == 200, response.text
         assert response.json()["document"] == RESULT
         assert response.json()["usage"] == USAGE
@@ -97,8 +99,8 @@ def test_server_summary_options_owner_and_one_inflight(tmp_path: Path):
     entered, release = Event(), Event()
     calls = []
 
-    async def generate(document, *, model, language, prompt):
-        calls.append((model, language, prompt))
+    async def generate(document, *, model, language, prompt, api_key):
+        calls.append((model, language, prompt, api_key))
         if len(calls) == 2:
             entered.set()
             await asyncio.to_thread(release.wait, 5)
@@ -118,25 +120,36 @@ def test_server_summary_options_owner_and_one_inflight(tmp_path: Path):
 
         meeting_id = client.portal.call(seed)
         path = f"/api/meetings/{meeting_id}/summary/server"
-        assert client.post(path, json={"source_version": 1, "model": "unknown"}).status_code == 400
-        assert client.post(path, json={"source_version": 1, "api_key": "wrong"}).status_code == 400
-        assert client.post(path, json={"source_version": 1, "model": "gemini-3.8-flash", "language": "French", "prompt": "Brief"}).status_code == 200
-        assert calls[0] == ("gemini-3.8-flash", "French", "Brief")
+        assert client.post(path, json={"source_version": 1, "api_key": "wrong",
+                                       "provider": PROVIDER}).status_code == 400
+        assert client.post(path, json={"source_version": 1, "provider": {
+            **PROVIDER, "vendor": "openai_compatible"}}).status_code == 400
+        assert client.post(path, json={"source_version": 1, "provider": {
+            **PROVIDER, "extra": 1}}).status_code == 400
+        for missing in ({}, {"provider": {**PROVIDER, "api_key": ""}},
+                        {"provider": {"vendor": "gemini", "model": "gemini-3.8-flash"}}):
+            refused = client.post(path, json={"source_version": 1, **missing})
+            assert refused.status_code == 400
+            assert refused.json()["detail"] == {"code": "api_key_required"}
+        assert calls == []
+        assert client.post(path, json={"source_version": 1, "language": "French", "prompt": "Brief",
+                                       "provider": {**PROVIDER, "model": "gemini-3.8-flash"}}).status_code == 200
+        assert calls[0] == ("gemini-3.8-flash", "French", "Brief", "user-key")
         with ThreadPoolExecutor(max_workers=1) as pool:
-            first = pool.submit(client.post, path, json={"source_version": 1})
+            first = pool.submit(client.post, path, json={"source_version": 1, "provider": PROVIDER})
             assert entered.wait(5)
-            assert client.post(path, json={"source_version": 1}).status_code == 429
+            assert client.post(path, json={"source_version": 1, "provider": PROVIDER}).status_code == 429
             release.set()
             assert first.result(timeout=5).status_code == 200
         client.cookies.clear()
         client.post("/api/workspace/bootstrap")
-        assert client.post(path, json={"source_version": 1}).status_code == 404
+        assert client.post(path, json={"source_version": 1, "provider": PROVIDER}).status_code == 404
 
 
 def test_live_summary_is_ephemeral_and_requires_forty_words(tmp_path: Path):
     seen = []
 
-    async def generate(document, *, model, language, prompt):
+    async def generate(document, *, model, language, prompt, api_key):
         seen.append(document)
         return RESULT, USAGE
 
@@ -162,9 +175,9 @@ def test_live_summary_is_ephemeral_and_requires_forty_words(tmp_path: Path):
         binding = SimpleNamespace(public_snapshot=snapshot, speaker_labels={})
         app.state.phase2_live = SimpleNamespace(open=lambda *_args, **_kwargs: binding)
         path = f"/api/meetings/{meeting_id}/summary/live"
-        assert client.post(path, json={}).status_code == 409
+        assert client.post(path, json={"provider": PROVIDER}).status_code == 409
         row.text = words
-        response = client.post(path, json={})
+        response = client.post(path, json={"provider": PROVIDER})
         assert response.status_code == 200, response.text
         assert response.json()["summary"] == RESULT
         assert response.json()["usage"] == USAGE
@@ -173,11 +186,11 @@ def test_live_summary_is_ephemeral_and_requires_forty_words(tmp_path: Path):
         assert client.get(f"/api/meetings/{meeting_id}/summary").json() == {"summary": None}
         client.cookies.clear()
         client.post("/api/workspace/bootstrap")
-        assert client.post(path, json={}).status_code == 404
+        assert client.post(path, json={"provider": PROVIDER}).status_code == 404
 
 
 def test_server_rejects_invalid_model_result_without_persisting_it(tmp_path: Path):
-    async def invalid(_document, *, model, language, prompt):
+    async def invalid(_document, *, model, language, prompt, api_key):
         return {"summary": "missing four fields"}, USAGE
 
     app = create_phase2_app(database_path=tmp_path / "db", summary_generator=invalid)
@@ -194,7 +207,7 @@ def test_server_rejects_invalid_model_result_without_persisting_it(tmp_path: Pat
 
         meeting_id = client.portal.call(seed)
         path = f"/api/meetings/{meeting_id}/summary"
-        response = client.post(f"{path}/server", json={"source_version": 1})
+        response = client.post(f"{path}/server", json={"source_version": 1, "provider": PROVIDER})
         assert response.status_code == 502
         assert response.json()["detail"]["code"] == "invalid_summary"
         saved = client.get(path).json()["summary"]
@@ -207,7 +220,7 @@ def test_server_rejects_invalid_model_result_without_persisting_it(tmp_path: Pat
     (RuntimeError, 502, "summary_provider_error"),
 ])
 def test_server_maps_generation_failure_to_content_free_error(tmp_path: Path, failure, status, code):
-    async def fail(_document, *, model, language, prompt):
+    async def fail(_document, *, model, language, prompt, api_key):
         raise failure("transcript must not appear in response")
 
     app = create_phase2_app(database_path=tmp_path / "db", summary_generator=fail)
@@ -224,7 +237,7 @@ def test_server_maps_generation_failure_to_content_free_error(tmp_path: Path, fa
 
         meeting_id = client.portal.call(seed)
         path = f"/api/meetings/{meeting_id}/summary"
-        response = client.post(f"{path}/server", json={"source_version": 1})
+        response = client.post(f"{path}/server", json={"source_version": 1, "provider": PROVIDER})
         assert response.status_code == status
         assert response.json()["detail"] == {"code": code}
         assert "transcript must not appear" not in response.text
@@ -236,7 +249,7 @@ def test_server_maps_generation_failure_to_content_free_error(tmp_path: Path, fa
 def test_server_cancel_during_generation_keeps_cancelled_artifact(tmp_path: Path, outcome):
     entered, release = Event(), Event()
 
-    async def generate(_document, *, model, language, prompt):
+    async def generate(_document, *, model, language, prompt, api_key):
         entered.set()
         await asyncio.to_thread(release.wait, 5)
         if outcome == "provider_error":
@@ -260,7 +273,7 @@ def test_server_cancel_during_generation_keeps_cancelled_artifact(tmp_path: Path
         meeting_id = client.portal.call(seed)
         path = f"/api/meetings/{meeting_id}/summary"
         with ThreadPoolExecutor(max_workers=1) as pool:
-            pending = pool.submit(client.post, f"{path}/server", json={"source_version": 1})
+            pending = pool.submit(client.post, f"{path}/server", json={"source_version": 1, "provider": PROVIDER})
             assert entered.wait(5)
             attempt = client.get(path).json()["summary"]
             assert attempt["state"] == "generating"
@@ -281,7 +294,7 @@ def test_refinement_supersedes_held_summary_and_next_version_succeeds(
     entered, release = Event(), Event()
     calls = []
 
-    async def generate(document, *, model, language, prompt):
+    async def generate(document, *, model, language, prompt, api_key):
         calls.append(document)
         if len(calls) == 1:
             entered.set()
@@ -306,13 +319,13 @@ def test_refinement_supersedes_held_summary_and_next_version_succeeds(
         improved = {"segments": [{"start": 0, "end": 4, "speaker": "Alex",
                                   "text": "Improved owner speech."}]}
         with ThreadPoolExecutor(max_workers=1) as pool:
-            pending = pool.submit(client.post, f"{path}/server", json={"source_version": 1})
+            pending = pool.submit(client.post, f"{path}/server", json={"source_version": 1, "provider": PROVIDER})
             try:
                 assert entered.wait(5)
                 assert client.get(path).json()["summary"]["state"] == "generating"
                 assert client.portal.call(handle.settle_refinement, improved) == 2
                 if start_next_while_held:
-                    next_response = client.post(f"{path}/server", json={"source_version": 2})
+                    next_response = client.post(f"{path}/server", json={"source_version": 2, "provider": PROVIDER})
                     assert next_response.status_code == 200, next_response.text
             finally:
                 release.set()
@@ -325,7 +338,7 @@ def test_refinement_supersedes_held_summary_and_next_version_succeeds(
             assert stale["error_code"] == "source_changed"
             assert stale["source_version"] == 1
             assert stale["document"] is None
-            next_response = client.post(f"{path}/server", json={"source_version": 2})
+            next_response = client.post(f"{path}/server", json={"source_version": 2, "provider": PROVIDER})
         assert next_response.status_code == 200, next_response.text
         assert next_response.json()["source_version"] == 2
         assert next_response.json()["artifact_version"] == 2
@@ -333,7 +346,7 @@ def test_refinement_supersedes_held_summary_and_next_version_succeeds(
 
 
 def test_server_cancel_between_start_and_generating_is_controlled(tmp_path: Path, monkeypatch):
-    async def generate(_document, *, model, language, prompt):
+    async def generate(_document, *, model, language, prompt, api_key):
         raise AssertionError("generator should not start after cancellation")
 
     original_update = MeetingSummaries.update
@@ -358,7 +371,7 @@ def test_server_cancel_between_start_and_generating_is_controlled(tmp_path: Path
 
         meeting_id = client.portal.call(seed)
         path = f"/api/meetings/{meeting_id}/summary"
-        response = client.post(f"{path}/server", json={"source_version": 1})
+        response = client.post(f"{path}/server", json={"source_version": 1, "provider": PROVIDER})
         assert response.status_code == 409
         assert response.json()["detail"] == {"code": "summary_cancelled"}
         assert client.get(path).json()["summary"]["state"] == "cancelled"
@@ -368,7 +381,7 @@ def test_server_retries_malformed_json_and_reports_summed_usage(tmp_path: Path):
     from moss_transcribe_diarize.app.phase2_llm import InvalidSummaryOutput
     calls = []
 
-    async def flaky(_document, *, model, language, prompt):
+    async def flaky(_document, *, model, language, prompt, api_key):
         calls.append(model)
         if len(calls) == 1:
             raise InvalidSummaryOutput(USAGE)
@@ -389,7 +402,7 @@ def test_server_retries_malformed_json_and_reports_summed_usage(tmp_path: Path):
             return handle.meeting_id
 
         meeting_id = client.portal.call(seed)
-        response = client.post(f"/api/meetings/{meeting_id}/summary/server", json={"source_version": 1})
+        response = client.post(f"/api/meetings/{meeting_id}/summary/server", json={"source_version": 1, "provider": PROVIDER})
         assert response.status_code == 200, response.text
         assert len(calls) == 3
         assert response.json()["document"] == RESULT
@@ -414,6 +427,6 @@ def test_gemini_generator_raises_invalid_output_with_usage_on_malformed_json(mon
 
     monkeypatch.setattr("google.genai.Client", Client)
     with pytest.raises(InvalidSummaryOutput) as caught:
-        asyncio.run(GeminiSummaryGenerator("test-key")(TRANSCRIPT, model="gemini-3.5-flash-lite",
-                                                        language="", prompt="P"))
+        asyncio.run(GeminiSummaryGenerator()(TRANSCRIPT, model="gemini-3.5-flash-lite",
+                                              language="", prompt="P", api_key="test-key"))
     assert caught.value.usage["input_tokens"] == 100

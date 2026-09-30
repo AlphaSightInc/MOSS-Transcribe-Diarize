@@ -59,7 +59,7 @@ All product defaults live in `app/phase2_web_cli.py`; the selected word source i
 
 | Component | Selected behavior |
 | --- | --- |
-| System rolling | Per-meeting preset (round 2): **Balanced** growing context `[max(0,t-90 s),t]` every 15 s (default), Economy 90 s every 30 s, Max context 180 s every 15 s; holdback H=0; at most one batch call in flight **per lane** (lanes run in parallel); a late call coalesces ticks and increments `skipped_window_ticks` |
+| System rolling | Per-meeting seconds (round 3, J2): growing context `[max(0,t-C),t]` every R s, **Refresh** R 5–60 s (default 15) and **Context** C 90–300 s (default 90); holdback H=0; at most one batch call in flight **per lane** (lanes run in parallel); a late call coalesces ticks and increments `skipped_window_ticks` |
 | Microphone rolling | Fixed recent 30 s window every 15 s, **Gemini diarization on** (round 2); its own continuity registry with IDs `local-NNNN` shown as `Local NN`; open batch windows only for newly covered WebRTC-voiced audio |
 | W3 preview | `gemini-3.5-transcribe-live`, TEXT transcription, automatic VAD silence 500 ms, 2 s tail flush, 5 s replay after bounded GoAway reconnect; each lane opens only on WebRTC voice and closes after 60 s quiet |
 | Continuity | One-to-one Hungarian word-time overlap with committed rows, minimum 0.3 s; cross-window WeSpeaker cosine E=0.46; within-window local-label merge W=0.60 when words overlap by no more than 0.15 s; an unmatched label needs 2 s Gemini-attributed speech before a displayed ID is born |
@@ -149,6 +149,22 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   (reproduced $0 with cached real responses, `prototypes/gemini-live/s1-cached/NOTES.md`; fixed replay labels through 2579.9 s).
   Engine worker exceptions are now counted as `errors_by_code["worker_<Exception>"]` instead of staying silent.
   The fixed paced long60 run (WP4) published labels through the whole meeting and settled all 2,586 s.
+
+## Round 3: per-user providers (2026-09-29, plan `docs/plan-r3-ui.md` I-2/I-3, Q4)
+
+- **No server key.** The server starts without any provider key; `.env.local` is never read by the app. Each Live create,
+  File/URL upload, server summary and `POST /api/providers/test` carries the user's own key; a missing Gemini key is
+  400 `{"detail": {"code": "api_key_required"}}`. Clients are built per meeting/job/request from that key.
+- **Engine settings v3** (`validate_engine_settings`): `{"transcription": {"vendor", "url", "model", "api_key"},
+  "refresh_seconds", "context_seconds", "cleanup_after_stop"}`; presets removed; unknown keys and out-of-range values are
+  400 with a human `detail`. Rolling and clean-up use the settings model (default `gemini-3.5-transcribe`); instant words
+  stay `gemini-3.5-transcribe-live`. The microphone lane keeps 30 s context / 15 s refresh.
+- **OpenAI-compatible transcription** uses `OpenAICompatibleDiarizer` (`app/openai_compatible_provider.py`) for both lanes
+  and File jobs, with no instant words; clean-up after Stop is forced off. Real-model quality is unmeasured.
+- **Custody.** The key exists only in memory for the meeting, job or request: `engine_diagnostics.engine_settings` shows
+  `"api_key": "[redacted]"`, and nothing durable (SQLite, notices, failure reasons, logs, work directories) holds it
+  (`tests/phase2/test_user_provider_keys.py` sentinel test). A server restart cannot resume an in-flight clean-up (the live
+  version is kept) or File job (it fails), since the key is gone.
 
 ## Round 3 addition: OpenAI-compatible transcription (WP-F, plan `docs/plan-r3-ui.md` J1/I-5)
 

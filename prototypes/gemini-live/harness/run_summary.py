@@ -12,7 +12,9 @@ import httpx
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "prototypes/gemini-live/common"))
 from moss_transcribe_diarize.app.phase2_summary import validate_summary
+from gemini_common import load_key
 
 
 def summary_check(client: httpx.Client, meeting_id: str, *, live: bool):
@@ -22,7 +24,9 @@ def summary_check(client: httpx.Client, meeting_id: str, *, live: bool):
     source = meeting.json()
     body = {} if live else {"source_version": source["transcript_version"]}
     requested_at_ms = int(time.time() * 1000)
-    response = client.post(path, json=body, timeout=210)
+    # Round 3: the server holds no key; send the operator's own, never recorded.
+    provider = {"vendor": "gemini", "model": "gemini-3.5-flash-lite", "api_key": load_key()}
+    response = client.post(path, json={**body, "provider": provider}, timeout=210)
     response.raise_for_status()
     payload = response.json()
     usage = payload["usage"]

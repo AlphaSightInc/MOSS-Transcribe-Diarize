@@ -84,7 +84,8 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--status", type=Path)
     parser.add_argument("--engine-settings", type=json.loads,
-                        default={"speaker_window": "balanced", "cleanup_after_stop": False})
+                        default={"refresh_seconds": 15, "context_seconds": 90,
+                                 "cleanup_after_stop": False})
     args = parser.parse_args()
     if not args.base_url.startswith("https://127.0.0.1:"):
         parser.error("local HTTPS loopback stack required")

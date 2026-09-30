@@ -502,8 +502,10 @@ def test_gemini_live_settings_validate_at_http_boundary_and_moss_ignores_them(tm
         bounds=LiveServiceBounds(max_frame_samples=16000, max_queue_depth=4,
                                  max_retained_samples=32000, max_identity_speakers=8,
                                  max_events=64, max_tape_bytes=64000),
-        engine_options={"speaker_windows": ["balanced", "economy", "max"],
-                        "default_speaker_window": "balanced",
+        engine_options={"transcription_vendors": ["gemini", "openai_compatible"],
+                        "default_model": "gemini-3.5-transcribe",
+                        "refresh_seconds": {"min": 5, "max": 60, "default": 15},
+                        "context_seconds": {"min": 90, "max": 300, "default": 90},
                         "cleanup_after_stop": {"available": True, "default": True}},
     )
     runtime = GeminiLiveRuntime(
@@ -514,15 +516,29 @@ def test_gemini_live_settings_validate_at_http_boundary_and_moss_ignores_them(tm
     with TestClient(app, base_url="https://moss.test") as client:
         session(client, sessions["a"])
         assert client.get("/api/live/descriptor").json()["descriptor"]["engine_options"] == gemini_descriptor.engine_options
-        for invalid in ({"speaker_window": "bad"}, {"other": 1},
-                        {"cleanup_after_stop": "false"}):
+        key = {"transcription": {"vendor": "gemini", "api_key": "user-key"}}
+        for invalid in ({**key, "speaker_window": "bad"}, {**key, "other": 1},
+                        {**key, "cleanup_after_stop": "false"}, {**key, "refresh_seconds": 61},
+                        {**key, "context_seconds": 60}):
             response = client.post("/api/live/sessions", json={"engine_settings": invalid})
-            assert response.status_code == 422
+            assert response.status_code == 400
+            assert isinstance(response.json()["detail"], str)
+        # Start is blocked until the user's own Gemini key arrives (Q4/K9).
+        for keyless in (None, {}, {"transcription": {"vendor": "gemini", "api_key": ""}}):
+            response = client.post("/api/live/sessions", json=(
+                {} if keyless is None else {"engine_settings": keyless}))
+            assert response.status_code == 400
+            assert response.json()["detail"] == {"code": "api_key_required"}
+        assert seen == []
         created = client.post("/api/live/sessions", json={"engine_settings": {
-            "speaker_window": "economy", "cleanup_after_stop": True}})
+            **key, "refresh_seconds": 30, "context_seconds": 120, "cleanup_after_stop": True}})
         assert created.status_code == 201
-        assert seen == [{"speaker_window": "economy", "cleanup_after_stop": True}]
-        assert created.json()["snapshot"]["engine_diagnostics"]["engine_settings"] == seen[0]
+        assert seen == [{"transcription": {"vendor": "gemini", "url": None,
+                                           "model": "gemini-3.5-transcribe", "api_key": "user-key"},
+                         "refresh_seconds": 30, "context_seconds": 120, "cleanup_after_stop": True}]
+        diagnostics_settings = created.json()["snapshot"]["engine_diagnostics"]["engine_settings"]
+        assert diagnostics_settings["transcription"]["api_key"] == "[redacted]"
+        assert "user-key" not in created.text
     # The self-hosted runtime accepts the same payload without exposing Gemini options.
     moss_database = tmp_path / "moss-only.sqlite3"
     moss_sessions = asyncio.run(provision(moss_database))
@@ -575,7 +591,8 @@ def test_gemini_cleanup_stop_saves_completed_live_version_while_improvement_runs
     app = make_app(database, live_runtime_factory=lambda: runtime)
     with TestClient(app, base_url="https://moss.test") as client:
         session(client, sessions["a"])
-        meeting_id = client.post("/api/live/sessions").json()["id"]
+        meeting_id = client.post("/api/live/sessions", json={"engine_settings": {
+            "transcription": {"api_key": "user-key"}}}).json()["id"]
         for sequence in range(3):
             for lane in ("system", "microphone"):
                 payload = {

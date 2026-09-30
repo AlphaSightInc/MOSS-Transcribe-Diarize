@@ -20,10 +20,11 @@ def test_c4_system_and_mic_window_defaults_at_composition_root():
     assert microphone.next_window(195*16000, 180*16000) == (165*16000, 195*16000, 195*16000)
 
 
-def test_speaker_window_presets_have_frozen_stride_and_context():
-    from moss_transcribe_diarize.app.gemini_live_runtime import GEMINI_SPEAKER_WINDOW_PRESETS
-    assert GEMINI_SPEAKER_WINDOW_PRESETS == {
-        "balanced": (15, 90), "economy": (30, 90), "max": (15, 180)}
+def test_speaker_window_seconds_bounds_are_frozen():
+    from moss_transcribe_diarize.app.gemini_live_runtime import (
+        GEMINI_CONTEXT_SECONDS, GEMINI_REFRESH_SECONDS)
+    assert GEMINI_REFRESH_SECONDS == {"min": 5, "max": 60, "default": 15}
+    assert GEMINI_CONTEXT_SECONDS == {"min": 90, "max": 300, "default": 90}
 
 
 def test_gemini_client_options_leave_retries_to_the_counted_adapter():
@@ -67,11 +68,9 @@ def test_gemini_file_runner_uses_the_live_manifest_encoder(monkeypatch):
                         lambda _path: config)
     monkeypatch.setattr("moss_transcribe_diarize.app.live_provider_bundle._identity_encoder",
                         lambda actual, **_kwargs: encoder if actual is config else None)
-    monkeypatch.setattr(cli, "_gemini_key", lambda: "test-key")
-    monkeypatch.setattr(cli, "_gemini_client", lambda _key: object())
     args = parse_args(["--tls-certfile", "cert", "--tls-keyfile", "key",
                        "--live-provider-manifest", "manifest", "--live-helper-lease-seconds", "10",
                        "--live-engine", "gemini"])
     runner = cli._build_gemini_file_runner(args)
-    assert runner._terminal.identity_policy.encoder is encoder
+    assert runner._encoder is encoder
     assert runner.identity_resolver._encoder is encoder

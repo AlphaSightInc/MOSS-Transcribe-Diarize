@@ -562,7 +562,14 @@ class FileMeetingTasks:
                 owners.append((account_dir.name, owner_dir.name))
         return tuple(sorted(owners))
 
-    async def accept(self, workspace: Any, upload: Any) -> Any:
+    def transcription_settings(self, value: object) -> dict[str, object] | None:
+        """The runner's validated provider choice for one job; runners without one ignore it."""
+
+        prepare = getattr(self._runner, "transcription_settings", None)
+        return prepare(value) if callable(prepare) else None
+
+    async def accept(self, workspace: Any, upload: Any, *,
+                     transcription: dict[str, object] | None = None) -> Any:
         """Store a complete request body, then create exactly one File Meeting and start work."""
 
         filename = upload.filename if isinstance(upload.filename, str) else "input.media"
@@ -589,7 +596,7 @@ class FileMeetingTasks:
             handle = await workspace.create_meeting("file")
             input_path = self._retain_new_work(handle, staging_dir, input_path, ingress="file")
             started = asyncio.Event()
-            run = self._run(handle, input_path, started)
+            run = self._run(handle, input_path, started, transcription=transcription)
             try:
                 task = asyncio.create_task(run)
             except BaseException:
@@ -610,7 +617,8 @@ class FileMeetingTasks:
         await started.wait()
         return handle
 
-    async def accept_url(self, workspace: Any, source_url: str) -> Any:
+    async def accept_url(self, workspace: Any, source_url: str, *,
+                         transcription: dict[str, object] | None = None) -> Any:
         """Create one File Meeting and retain its bounded URL acquisition server-side."""
 
         source_url = validate_http_url(source_url)
@@ -625,7 +633,8 @@ class FileMeetingTasks:
             handle = await workspace.create_meeting("file")
             staging_dir = self._retain_new_directory(handle, staging_dir)
             started = asyncio.Event()
-            run = self._acquire_and_run(handle, source_url, staging_dir, started)
+            run = self._acquire_and_run(handle, source_url, staging_dir, started,
+                                        transcription)
             try:
                 task = asyncio.create_task(run)
             except BaseException:
@@ -1140,6 +1149,7 @@ class FileMeetingTasks:
         source_url: str,
         staging_dir: Path,
         started: asyncio.Event,
+        transcription: dict[str, object] | None = None,
     ) -> None:
         started.set()
         try:
@@ -1158,7 +1168,7 @@ class FileMeetingTasks:
             await self._mark_failed(handle)
             self._remove_terminal_work_dir(staging_dir)
             return
-        await self._run(handle, input_path, asyncio.Event())
+        await self._run(handle, input_path, asyncio.Event(), transcription=transcription)
 
     async def _run(
         self,
@@ -1168,9 +1178,13 @@ class FileMeetingTasks:
         *,
         resumed: bool = False,
         resume_source: _RetainedResumeSource | None = None,
+        transcription: dict[str, object] | None = None,
     ) -> None:
         loop = asyncio.get_running_loop()
         options = self._inference_options()
+        if transcription is not None:
+            # In memory for this job only; a restarted resume has none and fails plainly.
+            options["transcription"] = transcription
         if self._inference_scheduler is not None:
             options.update(
                 _dispatch_key=handle.meeting_id,

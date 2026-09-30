@@ -1,6 +1,7 @@
-"""Authenticated, config-only relay for key-less tailnet chat models.
+"""Authenticated, config-only relay for key-less tailnet chat models, plus the
+request-scoped Gemini summary and provider test calls made with the user's own key.
 
-Bodies are transient: never send prompts, responses, or upstream exception text to
+Bodies are transient: never send prompts, responses, keys, or upstream exception text to
 the operator journal. Browser-owned HTTPS providers bypass this relay entirely.
 """
 from __future__ import annotations
@@ -12,7 +13,6 @@ import ipaddress
 import json
 import math
 import os
-from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -30,24 +30,9 @@ class InvalidSummaryOutput(ValueError):
 
 
 class GeminiSummaryGenerator:
-    """Generate a transcript-only JSON briefing with the server's Gemini key."""
+    """Generate a transcript-only JSON briefing with the requesting user's Gemini key."""
 
-    def __init__(self, api_key: str):
-        self.api_key = api_key
-
-    @classmethod
-    def from_local_key(cls):
-        key_path = Path(__file__).resolve().parents[2] / ".env.local"
-        key = None
-        if key_path.exists():
-            for line in key_path.read_text(encoding="utf-8").splitlines():
-                if line.startswith("GEMINI_API_KEY="):
-                    key = line.partition("=")[2].strip()
-                    break
-        key = key or os.environ.get("MOSS_GEMINI_API_KEY")
-        return cls(key) if key else None
-
-    async def __call__(self, document, *, model: str, language: str, prompt: str):
+    async def __call__(self, document, *, model: str, language: str, prompt: str, api_key: str):
         from google import genai
         from google.genai import types
         from .phase2_summary import SUMMARY_PRICES
@@ -63,7 +48,7 @@ class GeminiSummaryGenerator:
              "speaker": row["speaker"], "text": row["text"]}
             for row in rows]}
         instruction = f"{prompt}{f'\nWrite the final briefing in {language.strip()}.' if language.strip() else ''}"
-        client = genai.Client(api_key=self.api_key)
+        client = genai.Client(api_key=api_key)
         try:
             response = await wait_for(client.aio.models.generate_content(
                 model=model, contents=json.dumps(source, ensure_ascii=False),
@@ -81,9 +66,11 @@ class GeminiSummaryGenerator:
                 or type(thought_tokens) is not int or thought_tokens < 0):
             raise ValueError("Gemini usage metadata is incomplete.")
         output_tokens = candidate_tokens + thought_tokens
-        input_rate, output_rate = SUMMARY_PRICES[model]
+        # A user-typed model without a known list price reports tokens but no cost.
+        rates = SUMMARY_PRICES.get(model)
         usage = {"model": model, "input_tokens": input_tokens, "output_tokens": output_tokens,
-                 "cost_usd": round((input_tokens * input_rate + output_tokens * output_rate) / 1_000_000, 9)}
+                 "cost_usd": None if rates is None else
+                 round((input_tokens * rates[0] + output_tokens * rates[1]) / 1_000_000, 9)}
         try:
             return json.loads(response.text or ""), usage
         except ValueError as exc:
@@ -203,9 +190,94 @@ class LlmRelay:
 
 
 
+PROVIDER_TEST_TIMEOUT_SECONDS = 15
+PROVIDER_DEFAULT_MODELS = {"transcription": "gemini-3.5-transcribe",
+                           "summary": "gemini-3.5-flash-lite"}
+
+
+def _provider_test_body(body: Any) -> dict[str, Any]:
+    if (not isinstance(body, dict) or body.keys() - {"purpose", "vendor", "url", "model", "api_key"}
+            or body.get("purpose") not in PROVIDER_DEFAULT_MODELS
+            or body.get("vendor") not in {"gemini", "openai_compatible"}
+            or any(body.get(key) is not None and not isinstance(body[key], str)
+                   for key in ("url", "model", "api_key"))):
+        raise HTTPException(400, "Invalid provider test request.")
+    return {**body, **{key: (body.get(key) or "").strip() for key in ("url", "model", "api_key")}}
+
+
+async def check_provider(body: dict[str, Any], *,
+                         transport: httpx.AsyncBaseTransport | None = None) -> dict[str, Any]:
+    """One cheap reachability call with the user's key; the key and reply are not kept."""
+    model, key = body["model"], body["api_key"]
+
+    def failed(detail: str) -> dict[str, Any]:
+        return {"ok": False, "detail": detail}
+
+    if body["vendor"] == "gemini":
+        if not key:
+            return failed("Enter your Gemini API key.")
+        model = model or PROVIDER_DEFAULT_MODELS[body["purpose"]]
+        from google import genai
+        from google.genai import errors
+        client = genai.Client(api_key=key)
+        try:
+            await wait_for(client.aio.models.get(model=model), timeout=PROVIDER_TEST_TIMEOUT_SECONDS)
+        except asyncio.TimeoutError:
+            return failed("Gemini did not answer in time.")
+        except errors.APIError as exc:
+            if exc.code == 404:
+                return failed(f"Gemini has no model named {model}.")
+            if exc.code in {400, 401, 403}:
+                return failed("Gemini rejected this API key.")
+            return failed(f"Gemini answered with an error ({exc.code}).")
+        except Exception:
+            return failed("Could not reach Gemini.")
+        finally:
+            await client.aio.aclose()
+        return {"ok": True}
+    url = urlsplit(body["url"])
+    if url.scheme not in {"http", "https"} or not url.netloc:
+        return failed("Enter the server URL (http or https).")
+    if not model:
+        return failed("Enter the model name.")
+    try:
+        async with httpx.AsyncClient(transport=transport, timeout=PROVIDER_TEST_TIMEOUT_SECONDS,
+                                     follow_redirects=False, trust_env=False) as client:
+            response = await client.get(f"{body['url'].rstrip('/')}/models",
+                                        headers={"Authorization": f"Bearer {key}"} if key else None)
+    except httpx.TimeoutException:
+        return failed("The server did not answer in time.")
+    except httpx.RequestError:
+        return failed("Could not reach the server.")
+    if response.status_code in {401, 403}:
+        return failed("The server rejected this API key.")
+    if not response.is_success:
+        return failed(f"The server answered {response.status_code} for {body['url'].rstrip('/')}/models.")
+    try:
+        listed = response.json().get("data")
+    except (ValueError, AttributeError):
+        listed = None
+    if isinstance(listed, list):
+        names = {item.get("id") for item in listed if isinstance(item, dict)}
+        if model not in names:
+            return failed(f"The server does not list a model named {model}.")
+    return {"ok": True}
+
+
 def attach_llm_routes(app: Any, require_account: Any, raw: str | None = None) -> None:
     relay = LlmRelay(parse_upstreams(os.environ.get("MOSS_LLM_UPSTREAMS") if raw is None else raw))
     app.state.llm_relay = relay
+    app.state.provider_test_transport = None
+
+    @app.post("/api/providers/test")
+    async def test_provider(request: Request):
+        await require_account(request)
+        try:
+            body = await request.json()
+        except (ValueError, UnicodeDecodeError):
+            raise HTTPException(400, "Invalid provider test request.") from None
+        return await check_provider(_provider_test_body(body),
+                                    transport=request.app.state.provider_test_transport)
 
     @app.get("/api/llm/models")
     async def models(request: Request):

@@ -2080,6 +2080,7 @@ def create_phase2_app(
         admit_file_upload,
         require_upload_capacity,
     )
+    from .gemini_live_runtime import ApiKeyRequired
     from .phase2_lifecycle import AccountLifecycleUnavailable
     from .phase2_speaker_identity import AccountSpeakerIdentity, SpeakerIdentityNotFound
 
@@ -2478,11 +2479,15 @@ def create_phase2_app(
                 upload = form.get("file")
                 if upload is None or not hasattr(upload, "read"):
                     raise ValueError("Missing upload file.")
+                transcription = file_tasks.transcription_settings(form.get("transcription"))
                 handle = await file_tasks.accept(
                     request.app.state.phase2_store.workspace(account),
                     upload,
+                    transcription=transcription,
                 )
             return (await handle.snapshot()).to_dict()
+        except ApiKeyRequired:
+            raise HTTPException(status_code=400, detail={"code": ApiKeyRequired.code}) from None
         except FileUploadRejected as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
         except FileUploadTimeout as exc:
@@ -2509,11 +2514,15 @@ def create_phase2_app(
                 source_url = payload.get("url") if isinstance(payload, dict) else None
                 if not isinstance(source_url, str):
                     raise ValueError("Missing media URL.")
-                handle = await request.app.state.phase2_file_tasks.accept_url(
+                file_tasks = request.app.state.phase2_file_tasks
+                handle = await file_tasks.accept_url(
                     request.app.state.phase2_store.workspace(account),
                     source_url,
+                    transcription=file_tasks.transcription_settings(payload.get("transcription")),
                 )
             return (await handle.snapshot()).to_dict()
+        except ApiKeyRequired:
+            raise HTTPException(status_code=400, detail={"code": ApiKeyRequired.code}) from None
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except AccountRevoked:
