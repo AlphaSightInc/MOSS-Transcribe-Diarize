@@ -562,7 +562,7 @@ export function ControlPanel() {
             {mode === "file" ? <><label className="label" htmlFor="meeting-files">Files</label>
               <input ref={fileInputRef} id="meeting-files" name="file" type="file" multiple
                 onChange={event => setFileQueue(Array.from(event.currentTarget.files ?? []).map(file => file.name))} />
-              <button type="button" className="btn" disabled={!fileQueue.length} onClick={() => { if (fileInputRef.current) fileInputRef.current.value = ""; setFileQueue([]); }}>Clear</button>
+              <div className="btn-row"><button type="button" className="btn ghost" disabled={!fileQueue.length} onClick={() => { if (fileInputRef.current) fileInputRef.current.value = ""; setFileQueue([]); }}>Clear</button></div>
               {fileQueue.length ? <ul className="controls-file-queue">{fileQueue.map((name, index) => <li key={`${name}-${index}`}>{name}</li>)}</ul> : null}
               <input name="urls" value="" hidden readOnly /></> :
               <><input name="file" type="file" multiple hidden /><label className="label" htmlFor="meeting-url">URL</label>

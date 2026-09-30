@@ -726,7 +726,8 @@ textarea:disabled {
   gap: 8px;
 }
 
-.control-section + .control-section {
+.control-section + .control-section,
+.control-section + .controls-mode-form > .control-section:first-child {
   margin-top: clamp(24px, 3vh, 40px);
   padding-top: clamp(24px, 3vh, 40px);
   border-top: 1px solid var(--line);
@@ -3319,13 +3320,18 @@ textarea:focus {
 /* Round-2 workspace controls, settings, and in-card summary. */
 .control-panel .panel-body { overflow: hidden; }
 .controls-workspace { display: flex; flex-direction: column; height: 100%; min-height: 0; gap: 0; }
-.controls-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.controls-scroll { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 20px; }
 .mode-tabs, .transcript-tabs { display: flex; width: 100%; }
 .mode-tabs .seg-btn, .transcript-tabs .seg-btn { flex: 1; }
 .controls-mode-form { display: flex; flex-direction: column; }
 .controls-mode-form input[type="url"], .controls-mode-form input[type="file"] { width: 100%; min-width: 0; }
 .controls-mode-form ul { margin: 0; padding-left: 18px; overflow-wrap: anywhere; }
 .controls-mode-form ul:empty, .controls-mode-form [data-file-upload="status"]:empty { display: none; }
+.controls-mode-form input[type="file"] { background: var(--surface); border-color: var(--line-2); box-shadow: var(--shadow-xs); padding: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.controls-mode-form input[type="file"]::file-selector-button { margin-right: 10px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-2); color: var(--ink-2); font: inherit; font-weight: 500; cursor: pointer; }
+.controls-mode-form [data-file-upload="results"] { display: grid; gap: 10px; margin-top: 4px; padding: 0; list-style: none; }
+.controls-mode-form [data-file-upload="results"] li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 13px; }
+.controls-mode-form [data-file-upload="results"] strong { flex: 1 0 100%; font-weight: 500; }
 .controls-export { flex: none; margin-top: 0; border-top: 1px solid var(--line); padding: 12px 0 0; }
 .voiceprint-list { list-style: none; margin: 12px 0 0; padding: 0; }
 .settings-dialog { width: min(760px, calc(100vw - 24px)); max-height: min(840px, calc(100dvh - 24px)); padding: 0; border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 18px 60px #0004; }

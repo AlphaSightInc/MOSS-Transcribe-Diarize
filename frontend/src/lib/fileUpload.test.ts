@@ -33,7 +33,7 @@ describe('account file/URL feedback', () => {
     document.addEventListener(OPEN_MEETING_EVENT, open);
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     await vi.waitFor(() => expect(document.body.textContent).toContain('Not accepted: Unsupported media URL'));
-    // Progress prose is gone (Q6); an accepted row carries only its "Open meeting" action.
+    // Old progress prose stays gone (Q6); an accepted row carries its stage and "Open meeting".
     for (const removed of ['Processing on the server', 'Submitting', 'Accepted', 'need attention']) {
       expect(document.body.textContent).not.toContain(removed);
     }
@@ -58,6 +58,7 @@ describe('account file/URL feedback', () => {
     form.dispatchEvent(new Event('submit', { cancelable: true }));
     expect(fetcher).toHaveBeenCalledOnce();
     expect(document.querySelector('strong')!.textContent).toBe('<sample>.wav');
+    expect(document.querySelector('[data-file-upload="results"] li span')!.textContent).toBe('Uploading…');
     reject(new Error('offline'));
     await vi.waitFor(() => expect(document.body.textContent).toContain('Not confirmed — check History before retrying.'));
     expect(document.querySelector('button')!.disabled).toBe(false);
@@ -65,6 +66,23 @@ describe('account file/URL feedback', () => {
   });
 });
 
+
+it('shows the server stage of an accepted URL until it is done (#13)', async () => {
+  vi.useFakeTimers();
+  const form = setup();
+  const reads = [{ ...meeting('active'), file_stage: 'downloading' }, { ...meeting('active'), file_stage: 'transcribing' },
+    meeting('completed')];
+  vi.stubGlobal('fetch', vi.fn(async (url: string) => response(url === '/api/meetings/url' ? meeting('active') : reads.shift())));
+  form.querySelector('textarea')!.value = 'https://www.youtube.com/watch?v=abc';
+  form.dispatchEvent(new Event('submit', { cancelable: true }));
+  const line = () => document.querySelector('[data-file-upload="results"] li span')!.textContent;
+  await vi.waitFor(() => expect(line()).toBe('Downloading audio…'));
+  await vi.advanceTimersByTimeAsync(1500);
+  expect(line()).toBe('Transcribing…');
+  await vi.advanceTimersByTimeAsync(1500);
+  expect(line()).toBe('Done');
+  expect(reads).toHaveLength(0);
+});
 
 it('shows the saved failure reason in the upload result row', async () => {
   const form = setup();

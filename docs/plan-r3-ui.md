@@ -33,6 +33,8 @@ Base: `gemini/r2-integration` @ `1dee41cb`. Integration branch `gemini/r3-ui`. L
 - K7 Two meetings are already recording — stop one first.
 - K8 Action failures with the reason: naming, correction, export, upload/URL, summary failed [Retry].
 - K9 Enter your Gemini API key in Settings.
+- K10 (round 4, #13) File/URL row stage, so a long job does not look dead: Uploading… (browser sending the file) /
+  Downloading audio… / Transcribing… (server `file_stage` on the active meeting) / Done.
 - Plus: top pill (Recording mm:ss / Stopping), Export Save "Improving…" (disabled), one line "Voiceprint not saved — not enough clear speech" when enrollment is refused.
 
 Removed (non-exhaustive): "Needs review…", "Identity settling…", "Transcript improved", "Improvement unavailable…" and its
