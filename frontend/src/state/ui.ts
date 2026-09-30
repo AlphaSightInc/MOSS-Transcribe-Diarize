@@ -20,7 +20,8 @@ export const displayMode = signal<DisplayMode>("formatted");
 export const controlPanelCollapsed = signal(false);
 export const historyPanelCollapsed = signal(false);
 export const historyView = signal<"sessions" | "voiceprints">("sessions");
-export const autoscroll = signal(false);
+// On by default: the transcript follows the newest words until the reader scrolls up.
+export const autoscroll = signal(true);
 export const llmModalOpen = signal(false);
 export const toastQueue = signal<ToastItem[]>([]);
 export const activeToast = computed(() => toastQueue.value[0] ?? null);
@@ -82,7 +83,7 @@ export function resetUiState(): void {
   controlPanelCollapsed.value = false;
   historyPanelCollapsed.value = false;
   historyView.value = "sessions";
-  autoscroll.value = false;
+  autoscroll.value = true;
   llmModalOpen.value = false;
   clearToasts();
 }
