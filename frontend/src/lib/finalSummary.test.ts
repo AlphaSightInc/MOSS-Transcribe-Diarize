@@ -66,6 +66,12 @@ it("sends only projected final transcript and browser parameters, never meeting 
   expect(() => providerBody({ ...meeting(), status: "active" }, settings())).toThrow();
 });
 
+it("asks for the transcript's own language when Language is Auto, else the chosen one", () => {
+  const system = (language: string) => JSON.parse(providerBody(meeting(), { ...settings(), language })).messages[0].content;
+  expect(system("")).toBe("MY PROMPT\nWrite every string value in the transcript's dominant language; do not translate it.");
+  expect(system(" French ")).toBe("MY PROMPT\nWrite the final briefing in French.");
+});
+
 it("formats every provider segment timestamp as floored HH:MM:SS, including hours", () => {
   const source = meeting();
   const segment = source.transcript!.segments[0];

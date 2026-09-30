@@ -1,0 +1,817 @@
+{
+ "label": "before-lite",
+ "model": "gemini-3.5-flash-lite",
+ "language": "",
+ "carry": false,
+ "rows": [
+  {
+   "case": "en_ackman_5m",
+   "at": 90,
+   "lang": "en",
+   "segments": 4,
+   "whitespace_words": 256,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 740,
+    "output_tokens": 325,
+    "cost_usd": 0.0010345
+   },
+   "latency_s": 2.06,
+   "document": {
+    "summary": "Bill Ackman discusses the formative impact of Benjamin Graham's book The Intelligent Investor and the fundamental difference between price and value. This conversation provides insight into the foundational philosophy of a prominent activist investor.",
+    "topics": [
+     {
+      "title": "Formative Investing Books",
+      "description": "Bill Ackman shares how Benjamin Graham's The Intelligent Investor served as the first investment book he read and inspired his career."
+     },
+     {
+      "title": "Price Versus Value",
+      "description": "Ackman highlights the core lesson from Graham that investors must understand the difference between what they pay as price and what they receive as value."
+     }
+    ],
+    "details": [
+     {
+      "title": "Introduction of Bill Ackman",
+      "description": "Lex Fridman introduces Bill Ackman as a legendary activist investor and vocal figure on social media.",
+      "timestamp": "00:00:06"
+     },
+     {
+      "title": "Discussion on The Intelligent Investor",
+      "description": "Bill Ackman explains the historical context and the primary lessons he learned from Benjamin Graham's book.",
+      "timestamp": "00:01:00"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: host of the Lex Fridman podcast",
+     "Bill Ackman: legendary activist investor"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 2,
+    "recall_pane_before": 1,
+    "recall_pane_full": 1,
+    "visible_chars_before": 251,
+    "visible_chars_full": 947,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "en_ackman_5m",
+   "at": 180,
+   "lang": "en",
+   "segments": 9,
+   "whitespace_words": 516,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1266,
+    "output_tokens": 271,
+    "cost_usd": 0.0010573
+   },
+   "latency_s": 1.92,
+   "document": {
+    "summary": "Bill Ackman discusses the foundational investing principles he learned from Benjamin Graham's The Intelligent Investor, emphasizing the distinction between price and value. Understanding these concepts helps investors navigate short-term market fluctuations and distinguish true investing from speculation.",
+    "topics": [
+     {
+      "title": "The Intelligent Investor",
+      "description": "Bill Ackman identifies Benjamin Graham's book as the inspiration for his career and outlines its core lessons on market psychology."
+     },
+     {
+      "title": "Price Versus Value",
+      "description": "Ackman explains Graham's view that the stock market acts as a voting machine in the short term and a weighing machine in the long term."
+     }
+    ],
+    "details": [
+     {
+      "title": "Discussion of Benjamin Graham",
+      "description": "Speaker 2 asks Bill Ackman about the key lessons he took away from The Intelligent Investor.",
+      "timestamp": "00:00:47"
+     },
+     {
+      "title": "Distinction Between Speculation and Investing",
+      "description": "Bill Ackman explains that speculation relies on prices going up without knowing intrinsic value, whereas investing requires doing homework on a business.",
+      "timestamp": "00:02:18"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: legendary activist investor who has been part of some of the biggest and at times, controversial trades in history"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 4,
+    "recall_pane_before": 2,
+    "recall_pane_full": 3,
+    "visible_chars_before": 306,
+    "visible_chars_full": 1067,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "en_ackman_5m",
+   "at": 300,
+   "lang": "en",
+   "segments": 12,
+   "whitespace_words": 923,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1866,
+    "output_tokens": 366,
+    "cost_usd": 0.0014748
+   },
+   "latency_s": 2.01,
+   "document": {
+    "summary": "Bill Ackman discusses the fundamentals of value investing, explaining how distinguishing between price and value is essential for successful investing. This matters because understanding these principles helps separate disciplined investing from short-term speculation.",
+    "topics": [
+     {
+      "title": "The Intelligent Investor",
+      "description": "Bill Ackman explains how Benjamin Graham's book shaped his career by teaching the difference between price and value."
+     },
+     {
+      "title": "Investing Versus Speculation",
+      "description": "Bill Ackman differentiates careful analysis of business cash flows from speculative short-term trading."
+     }
+    ],
+    "details": [
+     {
+      "title": "The Lessons of Benjamin Graham",
+      "description": "Bill Ackman discusses how The Intelligent Investor taught him that the market acts as a voting machine in the short term and a weighing machine in the long term.",
+      "timestamp": "00:01:00"
+     },
+     {
+      "title": "Valuing Securities",
+      "description": "Bill Ackman defines the value of a security as the present value of the cash you can take out of it over its life.",
+      "timestamp": "00:03:35"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: activist investor",
+     "Speaker 2: podcast host"
+    ],
+    "data_references": [
+     {
+      "item": "bond coupon",
+      "value": "5%",
+      "context": "A bond pays a 5% coupon or interest rate."
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 6,
+    "recall_pane_before": 2,
+    "recall_pane_full": 5,
+    "visible_chars_before": 269,
+    "visible_chars_full": 982,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "en_ackman_30m",
+   "at": 600,
+   "lang": "en",
+   "segments": 20,
+   "whitespace_words": 1799,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 3226,
+    "output_tokens": 415,
+    "cost_usd": 0.0020053
+   },
+   "latency_s": 2.16,
+   "document": {
+    "summary": "Activist investor Bill Ackman discusses fundamental investing principles, including Benjamin Graham's concept of price versus value and the importance of a margin of safety. He illustrates these strategies through his investment in Universal Music Group, emphasizing predictability and resilience against technological disruption.",
+    "topics": [
+     {
+      "title": "Price Versus Value in Investing",
+      "description": "Benjamin Graham's philosophy teaches that price is what you pay and value is what you get, with the stock market acting as a short-term voting machine and a long-term weighing machine."
+     },
+     {
+      "title": "Evaluating Long-Term Businesses",
+      "description": "Investing requires building a predictive model of a company's lifetime cash flows, focusing on non-disruptive businesses with high persistence like Universal Music Group."
+     }
+    ],
+    "details": [
+     {
+      "title": "Benjamin Graham's Influence",
+      "description": "Speaker 1 notes that The Intelligent Investor was the first investment book he read and the inspiration for his career.",
+      "timestamp": "00:01:00"
+     },
+     {
+      "title": "Universal Music Group Case Study",
+      "description": "Speaker 1 explains why Universal Music Group is a predictable, durable investment due to the timeless nature of music and streaming distribution models.",
+      "timestamp": "00:06:20"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: legendary activist investor",
+     "Speaker 2: podcast host"
+    ],
+    "data_references": [
+     {
+      "item": "bond coupon rate",
+      "value": "5%",
+      "context": "A bond pays a 5% coupon interest rate, serving as an easy baseline to explain predictable returns."
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 3,
+    "recall_pane_before": 2,
+    "recall_pane_full": 3,
+    "visible_chars_before": 330,
+    "visible_chars_full": 1266,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "en_ackman_30m",
+   "at": 1200,
+   "lang": "en",
+   "segments": 52,
+   "whitespace_words": 3540,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 6615,
+    "output_tokens": 431,
+    "cost_usd": 0.003062
+   },
+   "latency_s": 2.19,
+   "document": {
+    "summary": "Bill Ackman discusses his philosophy on value investing, emphasizing the importance of understanding intrinsic value, maintaining a margin of safety, and identifying resilient businesses with strong economic moats. This discussion offers foundational insights for investors looking to navigate market volatility and long-term company evaluation.",
+    "topics": [
+     {
+      "title": "Value Investing Fundamentals",
+      "description": "Bill Ackman explains Benjamin Graham's principles of distinguishing price from value, noting that the market acts as a voting machine in the short term and a weighing machine in the long term."
+     },
+     {
+      "title": "Analyzing Moats and Industries",
+      "description": "The discussion covers how to evaluate businesses like Universal Music Group and Chipotle by examining long-term consumer habits, competitive barriers, and handling corporate crises."
+     }
+    ],
+    "details": [
+     {
+      "title": "Discussion on Benjamin Graham",
+      "description": "Speaker 1 reflects on The Intelligent Investor as the inspiration for his career and outlines the concept of price versus value.",
+      "timestamp": "00:00:47"
+     },
+     {
+      "title": "Universal Music Group Analysis",
+      "description": "Speaker 1 explains why Universal Music Group represents a durable business model with long-term consumer demand and streaming predictability.",
+      "timestamp": "00:05:19"
+     },
+     {
+      "title": "Chipotle Investment Strategy",
+      "description": "Speaker 1 discusses how his firm approached investing in Chipotle after a food safety issue dropped its stock price by roughly 50%.",
+      "timestamp": "00:14:16"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: legendary activist investor",
+     "Speaker 2: podcast host"
+    ],
+    "data_references": [
+     {
+      "item": "coupon interest rate",
+      "value": "5%",
+      "context": "describing how a bond pays interest"
+     },
+     {
+      "item": "stock price drop",
+      "value": "50%",
+      "context": "describing the decline in Chipotle's stock price before their investment"
+     },
+     {
+      "item": "vintage business age",
+      "value": "75 years",
+      "context": "describing the age of companies like McDonald's relative to the present"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 6,
+    "recall_pane_before": 1,
+    "recall_pane_full": 5,
+    "visible_chars_before": 345,
+    "visible_chars_full": 1592,
+    "topics": 2,
+    "details": 3,
+    "data_refs": 3
+   }
+  },
+  {
+   "case": "en_ackman_30m",
+   "at": 1800,
+   "lang": "en",
+   "segments": 73,
+   "whitespace_words": 5350,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 9729,
+    "output_tokens": 541,
+    "cost_usd": 0.0042712
+   },
+   "latency_s": 2.77,
+   "document": {
+    "summary": "Bill Ackman discusses his philosophy on value investing, drawing lessons from Benjamin Graham to emphasize the difference between price and value while explaining how he identifies stable companies with strong economic moats. The conversation covers his strategic investments in companies like Universal Music Group, Chipotle, and Alphabet, highlighting the importance of thorough research and long-term prediction in navigating market disruptions.",
+    "topics": [
+     {
+      "title": "Value Investing and Benjamin Graham",
+      "description": "Bill Ackman shares how Benjamin Graham's book The Intelligent Investor shaped his career by teaching the difference between price and value, the concept of market mood swings, and the critical importance of a margin of safety."
+     },
+     {
+      "title": "Analyzing Economic Moats and Businesses",
+      "description": "The discussion explores the factors that make a company reliable over the long term, including strong brand presence, simple scalable systems, barriers to entry, and resilience against market disruptions such as artificial intelligence."
+     }
+    ],
+    "details": [
+     {
+      "title": "The Intelligent Investor lesson",
+      "description": "Bill Ackman explains the foundational investing concept that the stock market is a voting machine in the short term and a weighing machine in the long term.",
+      "timestamp": "00:01:44"
+     },
+     {
+      "title": "Universal Music Group investment thesis",
+      "description": "Bill Ackman details why Universal Music Group represents a durable business model supported by the enduring nature of music and predictable streaming revenues.",
+      "timestamp": "00:06:20"
+     },
+     {
+      "title": "Researching Chipotle after a crisis",
+      "description": "Bill Ackman describes how his firm evaluated Chipotle following a food safety crisis by reading SEC filings, analyzing conference call transcripts, and trusting the underlying strong concept.",
+      "timestamp": "00:15:14"
+     },
+     {
+      "title": "Alphabet investment analysis",
+      "description": "Bill Ackman explains why the market overreacted to early AI demonstrations and why Alphabet represents an attractively priced business with a dominant search franchise.",
+      "timestamp": "00:25:55"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: legendary activist investor",
+     "Speaker 2: podcast host"
+    ],
+    "data_references": [
+     {
+      "item": "bond interest rate",
+      "value": "5%",
+      "context": "describing the predictable coupon payment of a bond"
+     },
+     {
+      "item": "burger patty calories",
+      "value": "250 calories",
+      "context": "describing the nutritional content of a plain burger patty ordered while traveling"
+     },
+     {
+      "item": "Google price-to-earnings multiple",
+      "value": "15 times earnings",
+      "context": "describing the low valuation of Google stock following market reactions to AI advancements"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 8,
+    "recall_pane_before": 5,
+    "recall_pane_full": 7,
+    "visible_chars_before": 448,
+    "visible_chars_full": 2201,
+    "topics": 2,
+    "details": 4,
+    "data_refs": 3
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 90,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 5,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 596,
+    "output_tokens": 238,
+    "cost_usd": 0.0007738
+   },
+   "latency_s": 1.55,
+   "document": {
+    "summary": "Lex Fridman and economist Keyu Jin discuss the Chinese economy and its common misunderstandings in the West. This conversation is important because it clarifies how the Chinese economic system operates beyond simple Western stereotypes.",
+    "topics": [
+     {
+      "title": "Misunderstandings of the Chinese Economy",
+      "description": "Keyu Jin explains that the biggest Western misconception is that a single group or person controls the entire Chinese economy."
+     }
+    ],
+    "details": [
+     {
+      "title": "Discussion on Economic Control",
+      "description": "Keyu Jin states that despite centralized politics, the Chinese economy is actually extremely decentralized and driven by local officials.",
+      "timestamp": "00:00:52"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并写了一本关于中国的书《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": [
+     {
+      "item": "经济转型时间起点",
+      "value": "1978年",
+      "context": "详细讲述了从1978年到今天中国的经济转型"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.157,
+    "lang_match": false,
+    "facts_due": 2,
+    "recall_pane_before": 0,
+    "recall_pane_full": 2,
+    "visible_chars_before": 236,
+    "visible_chars_full": 695,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 180,
+   "lang": "zh",
+   "segments": 7,
+   "whitespace_words": 10,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1021,
+    "output_tokens": 549,
+    "cost_usd": 0.0016788
+   },
+   "latency_s": 2.48,
+   "document": {
+    "summary": "Economist Keyu Jin discusses Western misunderstandings of the Chinese economy with Lex Fridman, explaining that China's economy is actually decentralized and driven by entrepreneurial spirit rather than controlled by a single person or group. This conversation matters because it challenges common misconceptions about centralized control and blind obedience in China.",
+    "topics": [
+     {
+      "title": "Western Misunderstandings of China's Economy",
+      "description": "Speaker 2 states that the biggest misconception is the belief that a single person or small group controls the entire Chinese economy, noting that it is actually extremely decentralized and driven by local officials and a mayor-driven economy."
+     },
+     {
+      "title": "The Nature of Authority and Individual Freedom",
+      "description": "Speaker 2 explains that the relationship with authority in China involves a paternalistic dynamic rather than blind obedience, which coexists with a vibrant, self-driven entrepreneurial spirit."
+     }
+    ],
+    "details": [
+     {
+      "title": "Introduction of Keyu Jin",
+      "description": "Speaker 1 introduces Keyu Jin as an economist at the London School of Economics who studies the Chinese economy and authored the book The New China Playbook.",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "Discussion on Decentralization",
+      "description": "Speaker 2 explains the decentralized nature of the Chinese economy and the role of local officials, which she refers to as the mayor economy.",
+      "timestamp": "00:00:52"
+     },
+     {
+      "title": "Relationship with Authority",
+      "description": "Speaker 2 details how respect for authority is balanced with a subtle, paternalistic contract that has existed for thousands of years, trading a degree of compliance for stability and prosperity.",
+      "timestamp": "00:01:36"
+     }
+    ],
+    "speaker_background": [
+     "Keyu Jin: economist at the London School of Economics, specializing in the Chinese economy, international macroeconomics, global trade imbalances, and financial policies, and author of The New China Playbook"
+    ],
+    "data_references": [
+     {
+      "item": "Economic transition period starting year",
+      "value": "1978",
+      "context": "Speaker 1 mentions that Keyu Jin's book details China's economic transition from 1978 to today."
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": false,
+    "facts_due": 4,
+    "recall_pane_before": 1,
+    "recall_pane_full": 4,
+    "visible_chars_before": 368,
+    "visible_chars_full": 1828,
+    "topics": 2,
+    "details": 3,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 300,
+   "lang": "zh",
+   "segments": 10,
+   "whitespace_words": 13,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1470,
+    "output_tokens": 384,
+    "cost_usd": 0.001401
+   },
+   "latency_s": 1.98,
+   "document": {
+    "summary": "In this discussion, economist Keyu Jin explains the decentralized and highly competitive nature of the Chinese economy to Lex Fridman, correcting common Western misperceptions about central control and exploring the unique blend of capitalist drive and socialist social structures.",
+    "topics": [
+     {
+      "title": "Misconceptions of Central Control",
+      "description": "Jin explains that despite political centralization, the Chinese economy is actually extremely decentralized and driven by local officials and vibrant entrepreneurship."
+     },
+     {
+      "title": "Capitalist Drive and Socialist Structure",
+      "description": "Jin notes that from a purely economic perspective, China is intensely capitalist and competitive, while maintaining a socialist social structure and state-owned enterprise dominance."
+     }
+    ],
+    "details": [
+     {
+      "title": "Largest Misconception of the Chinese Economy",
+      "description": "Speaker 2 states that the biggest misconception is that a small group of people or even one person controls the entire Chinese economy.",
+      "timestamp": "00:00:52"
+     },
+     {
+      "title": "The Nature of Chinese Entrepreneurship",
+      "description": "Speaker 2 describes how millions of young people see opportunities in a country of over a billion consumers, driving local economic transformation.",
+      "timestamp": "00:03:02"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并写了一本关于中国的书《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": [
+     {
+      "item": "经济转型时间起点",
+      "value": "1978年",
+      "context": "详细讲述了从1978年到今天中国的经济转型"
+     },
+     {
+      "item": "消费者人口规模",
+      "value": "十亿",
+      "context": "看到一个有十亿消费者的国家，看到规模，看到速度"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.117,
+    "lang_match": false,
+    "facts_due": 6,
+    "recall_pane_before": 2,
+    "recall_pane_full": 5,
+    "visible_chars_before": 281,
+    "visible_chars_full": 1232,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 2
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 90,
+   "lang": "zh",
+   "segments": 3,
+   "whitespace_words": 3,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 648,
+    "output_tokens": 334,
+    "cost_usd": 0.0010294
+   },
+   "latency_s": 1.93,
+   "document": {
+    "summary": "Speaker 2 introduces a conversation with Argentine President Javier Milei, highlighting his use of free-market principles to combat economic crisis. This matters because Milei achieved a fiscal surplus and lowered inflation, representing a broader fight for freedom.",
+    "topics": [
+     {
+      "title": "Milei's Background and Campaign",
+      "description": "Speaker 2 describes Javier Milei as a libertarian, anarcho-capitalist, and economist who used a chainsaw during his campaign to symbolize cutting the corrupt state bureaucracy."
+     },
+     {
+      "title": "Economic Transformation in Argentina",
+      "description": "Speaker 2 notes that upon taking office amid hyperinflation risks, debt, and poverty, Milei implemented free-market reforms that achieved the first fiscal surplus in 16 years and reduced inflation to a three-year low."
+     }
+    ],
+    "details": [
+     {
+      "title": "Introduction of Javier Milei",
+      "description": "Speaker 2 poses a question about the difference between a madman and a genius, then introduces the conversation with Argentine President Javier Milei.",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "Discussion on Economic Reforms",
+      "description": "Speaker 2 discusses Milei's handling of the economic crisis and his deep understanding of economic principles and data.",
+      "timestamp": "00:01:02"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: economicist, libertarian, anarcho-capitalist, and president of Argentina"
+    ],
+    "data_references": [
+     {
+      "item": "fiscal surplus",
+      "value": "16年",
+      "context": "阿根廷16年来的第一次财政盈余"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.014,
+    "lang_match": false,
+    "facts_due": 3,
+    "recall_pane_before": 3,
+    "recall_pane_full": 3,
+    "visible_chars_before": 266,
+    "visible_chars_full": 1180,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 210,
+   "lang": "zh",
+   "segments": 4,
+   "whitespace_words": 14,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1037,
+    "output_tokens": 499,
+    "cost_usd": 0.0015586
+   },
+   "latency_s": 2.21,
+   "document": {
+    "summary": "Lex Fridman introduces his conversation with Argentine President Javier Milei, highlighting Milei's radical free-market reforms and the debate surrounding his presidency. This matters because Milei's efforts represent one of the most ambitious economic transformations in modern history.",
+    "topics": [
+     {
+      "title": "Argentina's Economic Crisis and Reform",
+      "description": "Speaker 2 describes how Javier Milei took office facing hyperinflation, debt, and poverty, and used pure free-market principles to achieve Argentina's first fiscal surplus in 16 years and lower inflation."
+     },
+     {
+      "title": "Future Interview Plans",
+      "description": "Speaker 2 outlines his goal to conduct lengthy discussions with other world leaders like Zelenskyy, Putin, Modi, and Xi Jinping to understand their thinking and visions."
+     }
+    ],
+    "details": [
+     {
+      "title": "Introduction of Javier Milei",
+      "description": "Speaker 2 introduces his interview with Argentine President Javier Milei, detailing his background as a libertarian, anarcho-capitalist, and economist.",
+      "timestamp": "00:00:10"
+     },
+     {
+      "title": "Podcast Format and Translation",
+      "description": "Speaker 2 explains the translation setup using ElevenLabs to provide English and Spanish audio and subtitles for the episode.",
+      "timestamp": "00:02:02"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: Host of the Lex Fridman podcast",
+     "哈维尔·米莱: President of Argentina, libertarian, anarcho-capitalist, and economist"
+    ],
+    "data_references": [
+     {
+      "item": "财政盈余时间跨度",
+      "value": "16年",
+      "context": "Speaker 2 states that Milei achieved Argentina's first fiscal surplus in 16 years."
+     },
+     {
+      "item": "通胀率水平",
+      "value": "三年来的最低水平",
+      "context": "Speaker 2 states that Milei brought the inflation rate down to the lowest level in three years."
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.023,
+    "lang_match": false,
+    "facts_due": 4,
+    "recall_pane_before": 1,
+    "recall_pane_full": 4,
+    "visible_chars_before": 287,
+    "visible_chars_full": 1391,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 2
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 300,
+   "lang": "zh",
+   "segments": 6,
+   "whitespace_words": 16,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1353,
+    "output_tokens": 540,
+    "cost_usd": 0.0017559
+   },
+   "latency_s": 2.32,
+   "document": {
+    "summary": "Lex Fridman introduces his interview with Argentine President Javier Milei, discussing Milei's radical free-market economic reforms and the philosophical value of freedom. Milei explains how his study of historical GDP growth and poverty reduction led him to reevaluate the contradictions in traditional economic theory regarding monopolies and human progress.",
+    "topics": [
+     {
+      "title": "Argentina's Economic Transformation",
+      "description": "Speaker 2 outlines Javier Milei's efforts to combat hyperinflation, debt, and poverty through pure free-market principles, achieving a fiscal surplus for the first time in sixteen years and lowering inflation to a three-year low."
+     },
+     {
+      "title": "Discovery of Economic Freedom",
+      "description": "Speaker 1 explains how studying historical GDP growth data between 2013 and 2014 revealed that capitalism and productivity drastically improved living standards and reduced extreme poverty."
+     }
+    ],
+    "details": [
+     {
+      "title": "Introduction of Javier Milei",
+      "description": "Speaker 2 introduces his interview with Argentine President Javier Milei, highlighting his background as a libertarian, anarcho-capitalist, and economist.",
+      "timestamp": "00:00:10"
+     },
+     {
+      "title": "Realization of Economic Freedom",
+      "description": "Speaker 1 describes realizing the value of economic freedom around 2013 to 2014 while researching economic growth and historical GDP hockey-stick curves.",
+      "timestamp": "00:03:33"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: host of the Lex Fridman Podcast",
+     "Speaker 1: Javier Milei, President of Argentina, libertarian, anarcho-capitalist, and economist"
+    ],
+    "data_references": [
+     {
+      "item": "fiscal surplus timeframe",
+      "value": "16 years",
+      "context": "Achieved Argentina's first fiscal surplus in 16 years within months of taking office."
+     },
+     {
+      "item": "historical extreme poverty rate reduction",
+      "value": "from 95% to less than 10%",
+      "context": "The proportion of the population in extreme poverty dropped from 95 percent to under 10 percent alongside rising living standards."
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": false,
+    "facts_due": 6,
+    "recall_pane_before": 1,
+    "recall_pane_full": 5,
+    "visible_chars_before": 360,
+    "visible_chars_full": 1674,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 2
+   }
+  }
+ ]
+}

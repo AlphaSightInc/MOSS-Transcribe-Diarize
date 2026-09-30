@@ -26,7 +26,7 @@ describe("I-1 schema", () => {
   it("defaults to Gemini for both tabs with the documented seconds", () => {
     expect(loadAppSettings()).toEqual({
       transcription: { vendor: "gemini", url: "", model: "gemini-3.5-transcribe", apiKey: "", refreshSeconds: 15, contextSeconds: 90 },
-      summary: { vendor: "gemini", url: "", model: "gemini-3.8-flash", apiKey: "", rolling: true, waitSeconds: 60,
+      summary: { vendor: "gemini", url: "", model: "gemini-3.8-flash", apiKey: "", rolling: true, waitSeconds: 20,
         language: "", timeoutSeconds: 120, prompt: DEFAULT_SUMMARY_PROMPT },
       general: { cleanupAfterStop: true }
     });
@@ -43,6 +43,34 @@ describe("I-1 schema", () => {
       summary: { vendor: "off", waitSeconds: 0, prompt: DEFAULT_SUMMARY_PROMPT } });
     saveAppSettings(settingsWith(s => { s.summary.prompt = "Custom"; }));
     expect(loadAppSettings().summary.prompt).toBe("Custom");
+  });
+
+  it("moves a wait left at the old 60 s default to 20 s, but keeps chosen waits (#10)", () => {
+    const saved = (summary: Record<string, unknown>) => values.set("moss.settings.v2", JSON.stringify(
+      { ...defaultAppSettings(), summary: { ...defaultAppSettings().summary, prompt: "", ...summary } }));
+    saved({ waitSeconds: 60 });
+    expect(loadAppSettings().summary.waitSeconds).toBe(20);
+    saved({ waitSeconds: 45 });
+    expect(loadAppSettings().summary.waitSeconds).toBe(45);
+    saveAppSettings(settingsWith(s => { s.summary.waitSeconds = 60; }));
+    expect(loadAppSettings().summary.waitSeconds).toBe(60);
+  });
+
+  it("moves a Gemini summary model left at the old flash-lite default to gemini-3.8-flash, but keeps choices", () => {
+    const saved = (summary: Record<string, unknown>, transcription: Record<string, unknown> = {}) =>
+      values.set("moss.settings.v2", JSON.stringify({ ...defaultAppSettings(),
+        transcription: { ...defaultAppSettings().transcription, ...transcription },
+        summary: { ...defaultAppSettings().summary, prompt: "", ...summary } }));
+    saved({ model: "gemini-3.5-flash-lite" }, { model: "my-transcribe" });
+    expect(loadAppSettings().summary.model).toBe("gemini-3.8-flash");
+    expect(loadAppSettings().transcription.model).toBe("my-transcribe");
+    saved({ model: "gemini-3.5-flash" });
+    expect(loadAppSettings().summary.model).toBe("gemini-3.5-flash");
+    saved({ vendor: "openai_compatible", url: "https://example.com/v1", model: "gemini-3.5-flash-lite" });
+    expect(loadAppSettings().summary.model).toBe("gemini-3.5-flash-lite");
+    // Chosen after the default changed: kept.
+    saveAppSettings(settingsWith(s => { s.summary.model = "gemini-3.5-flash-lite"; }));
+    expect(loadAppSettings().summary.model).toBe("gemini-3.5-flash-lite");
   });
 
   it("falls back per field on malformed values", () => {
@@ -73,7 +101,14 @@ describe("migration to v2", () => {
     values.set("moss.settings.v1", v1({}, { provider: "external", externalUrl: "https://example.com/v1", externalModel: "m",
       externalApiKey: "k", intervalSeconds: 0, prompt: "Custom prompt" }));
     expect(loadAppSettings().summary).toEqual({ vendor: "openai_compatible", url: "https://example.com/v1", model: "m",
-      apiKey: "k", rolling: false, waitSeconds: 60, language: "French", timeoutSeconds: 90, prompt: "Custom prompt" });
+      apiKey: "k", rolling: false, waitSeconds: 20, language: "French", timeoutSeconds: 90, prompt: "Custom prompt" });
+  });
+
+  it("moves v1's default flash-lite model and 60 s interval to today's defaults", () => {
+    values.set("moss.settings.v1", v1({}, { model: "gemini-3.5-flash-lite", intervalSeconds: 60 }));
+    expect(loadAppSettings().summary).toMatchObject({ vendor: "gemini", model: "gemini-3.8-flash", waitSeconds: 20 });
+    // The v2 record the migration wrote reads back the same.
+    expect(loadAppSettings().summary).toMatchObject({ model: "gemini-3.8-flash", waitSeconds: 20 });
   });
 
   it("keeps summaries off", () => {

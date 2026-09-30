@@ -1,0 +1,826 @@
+{
+ "label": "after-lite",
+ "model": "gemini-3.5-flash-lite",
+ "language": "",
+ "carry": false,
+ "rows": [
+  {
+   "case": "en_ackman_5m",
+   "at": 90,
+   "lang": "en",
+   "segments": 4,
+   "whitespace_words": 256,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 757,
+    "output_tokens": 275,
+    "cost_usd": 0.0009146
+   },
+   "latency_s": 1.81,
+   "document": {
+    "summary": "Lex Fridman introduces activist investor Bill Ackman on his podcast, where they discuss Ackman's formative reading and the fundamental concepts of investing. This conversation matters because it highlights the foundational principles that guided Ackman's legendary and often controversial career.",
+    "topics": [
+     {
+      "title": "Introduction of Bill Ackman",
+      "description": "Lex Fridman introduces Bill Ackman as a legendary activist investor known for vocal stances on X and involvement in high-profile controversies such as the resignation of Harvard University President Claudine Gay."
+     },
+     {
+      "title": "The Intelligent Investor",
+      "description": "Bill Ackman discusses Benjamin Graham's book as the inspiration for his career, emphasizing the distinction between price and value."
+     }
+    ],
+    "details": [
+     {
+      "title": "Introduction of Bill Ackman",
+      "description": "Lex Fridman introduces the podcast and guest Bill Ackman.",
+      "timestamp": "00:00:06"
+     },
+     {
+      "title": "Discussion on Benjamin Graham's Book",
+      "description": "Bill Ackman explains how The Intelligent Investor by Benjamin Graham influenced his career and taught him the difference between price and value.",
+      "timestamp": "00:00:47"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: host of the Lex Fridman podcast",
+     "Bill Ackman: legendary activist investor"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 2,
+    "recall_pane_before": 0,
+    "recall_pane_full": 2,
+    "visible_chars_before": 296,
+    "visible_chars_full": 1048,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "en_ackman_5m",
+   "at": 180,
+   "lang": "en",
+   "segments": 9,
+   "whitespace_words": 516,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1283,
+    "output_tokens": 224,
+    "cost_usd": 0.0009449
+   },
+   "latency_s": 1.65,
+   "document": {
+    "summary": "Lex Fridman introduces activist investor Bill Ackman on his podcast, where Ackman discusses foundational investment lessons from Benjamin Graham's book The Intelligent Investor. This conversation matters because it contrasts short-term market speculation with disciplined, value-based investing principles.",
+    "topics": [
+     {
+      "title": "Investing Lessons from Benjamin Graham",
+      "description": "Bill Ackman discusses how Benjamin Graham's book The Intelligent Investor shaped his career by teaching the difference between price and value. He highlights the metaphor of the stock market as a daily visitor making offers on a house."
+     }
+    ],
+    "details": [
+     {
+      "title": "Discussion on The Intelligent Investor",
+      "description": "Lex Fridman asks Bill Ackman about the key lessons he took away from Benjamin Graham's formative book on finance and investing.",
+      "timestamp": "00:00:47"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: legendary activist investor who has been part of some of the biggest and at times, controversial trades in history",
+     "Speaker 2: podcast host of the Lex Fridman podcast"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 4,
+    "recall_pane_before": 1,
+    "recall_pane_full": 2,
+    "visible_chars_before": 306,
+    "visible_chars_full": 925,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "en_ackman_5m",
+   "at": 300,
+   "lang": "en",
+   "segments": 12,
+   "whitespace_words": 923,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1883,
+    "output_tokens": 380,
+    "cost_usd": 0.0015149
+   },
+   "latency_s": 1.87,
+   "document": {
+    "summary": "Bill Ackman discusses foundational investment principles from Benjamin Graham's The Intelligent Investor, emphasizing the difference between short-term speculation and long-term value investing. This conversation matters because it outlines how professional investors evaluate business cash flows and determine intrinsic value.",
+    "topics": [
+     {
+      "title": "Price versus Value",
+      "description": "Benjamin Graham's concept teaches that market price differs from intrinsic value, and the stock market acts as a service provider offering opportunities to buy or sell."
+     },
+     {
+      "title": "Investing versus Speculation",
+      "description": "Speculation relies on short-term price movements without knowing intrinsic worth, whereas investing requires rigorous homework and modeling future cash flows."
+     }
+    ],
+    "details": [
+     {
+      "title": "Discussion of The Intelligent Investor",
+      "description": "Bill Ackman identifies Benjamin Graham's book as the inspiration for his career and explains the core message regarding price and value.",
+      "timestamp": "00:01:00"
+     },
+     {
+      "title": "Defining Business Value",
+      "description": "Bill Ackman defines the value of a security as the present value of the cash you can take out of it over its life.",
+      "timestamp": "00:03:35"
+     }
+    ],
+    "speaker_background": [
+     "Bill Ackman: legendary activist investor"
+    ],
+    "data_references": [
+     {
+      "item": "bond coupon rate",
+      "value": "5%",
+      "context": "A bond pays a coupon interest rate used as an example for predictability."
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 6,
+    "recall_pane_before": 3,
+    "recall_pane_full": 4,
+    "visible_chars_before": 327,
+    "visible_chars_full": 1153,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "en_ackman_30m",
+   "at": 600,
+   "lang": "en",
+   "segments": 20,
+   "whitespace_words": 1799,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 3243,
+    "output_tokens": 614,
+    "cost_usd": 0.0025079
+   },
+   "latency_s": 2.59,
+   "document": {
+    "summary": "Bill Ackman discusses fundamental investing principles, emphasizing the distinction between price and value based on Benjamin Graham's teachings. He explains how long-term value, predictable cash flows, and a margin of safety guide his investment decisions in enduring companies like Universal Music Group.",
+    "topics": [
+     {
+      "title": "Price versus Value in Investing",
+      "description": "Benjamin Graham's philosophy highlights that price is what you pay while value is what you get, and the stock market acts as a short-term voting machine and a long-term weighing machine."
+     },
+     {
+      "title": "Defining Investing versus Speculation",
+      "description": "Investing requires thorough research into a business, its competitive dynamics, and future cash flows, whereas speculation relies on short-term price movements without knowing intrinsic worth."
+     },
+     {
+      "title": "Evaluating Predictable Businesses",
+      "description": "Ackman looks for non-disruptable companies with high certainty of cash flows over a long horizon, citing Universal Music Group as an example due to the enduring nature of music and streaming economics."
+     }
+    ],
+    "details": [
+     {
+      "title": "Benjamin Graham and The Intelligent Investor",
+      "description": "Speaker 1 explains how The Intelligent Investor was formative for his career and introduced him to the difference between price and value.",
+      "timestamp": "00:00:47"
+     },
+     {
+      "title": "Valuation and Cash Flows",
+      "description": "Speaker 1 defines the value of a security as the present value of the cash you can take out of it over its life, comparing stocks to bonds.",
+      "timestamp": "00:03:35"
+     },
+     {
+      "title": "Universal Music Group Case Study",
+      "description": "Speaker 1 discusses investing in Universal Music Group, its dominant market share, and how it successfully navigated the shift to streaming.",
+      "timestamp": "00:05:19"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: Host of the Lex Fridman podcast",
+     "Speaker 1: Bill Ackman, a legendary activist investor"
+    ],
+    "data_references": [
+     {
+      "item": "bond coupon",
+      "value": "5%",
+      "context": "A bond pays a 5% coupon interest rate very predictably."
+     },
+     {
+      "item": "subscription price",
+      "value": "10 or 11 bucks a month",
+      "context": "Global penetration of smartphones and streaming subscriptions costing roughly 10 or 11 bucks a month helps model the music business."
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 3,
+    "recall_pane_before": 2,
+    "recall_pane_full": 3,
+    "visible_chars_before": 306,
+    "visible_chars_full": 1858,
+    "topics": 3,
+    "details": 3,
+    "data_refs": 2
+   }
+  },
+  {
+   "case": "en_ackman_30m",
+   "at": 1200,
+   "lang": "en",
+   "segments": 52,
+   "whitespace_words": 3540,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 6632,
+    "output_tokens": 491,
+    "cost_usd": 0.0032171
+   },
+   "latency_s": 2.71,
+   "document": {
+    "summary": "Bill Ackman discusses his investment philosophy, highlighting the importance of understanding price versus value, conducting deep fundamental research, and identifying businesses with strong moats. He explains how his firm looks for great companies that have hit temporary stumbling blocks to acquire them at a discount with a margin of safety.",
+    "topics": [
+     {
+      "title": "Value Investing Principles",
+      "description": "Bill Ackman explains Benjamin Graham's core lessons on distinguishing price from value and treating the stock market as a weighing machine over the long term."
+     },
+     {
+      "title": "Company Research and Moats",
+      "description": "The discussion covers how investors evaluate companies through public filings, expert networks, and industry analysis to find businesses with enduring advantages and predictable cash flows."
+     }
+    ],
+    "details": [
+     {
+      "title": "Discussing Benjamin Graham's book",
+      "description": "Speaker 2 asks about the key lessons Speaker 1 took away from Intelligent Investor by Benjamin Graham.",
+      "timestamp": "00:00:47"
+     },
+     {
+      "title": "Defining Investment vs Speculation",
+      "description": "Speaker 1 explains that speculation involves buying assets without knowing their intrinsic value, whereas investing requires building models of future cash flows.",
+      "timestamp": "00:02:18"
+     },
+     {
+      "title": "Universal Music Group Case Study",
+      "description": "Speaker 1 uses Universal Music Group as an example of a non-disruptable business with a strong market position and predictable streaming revenue.",
+      "timestamp": "00:05:19"
+     },
+     {
+      "title": "Chipotle Investment Strategy",
+      "description": "Speaker 1 details how his firm invested in Chipotle after its stock dropped significantly due to a temporary food safety issue.",
+      "timestamp": "00:14:16"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: legendary activist investor who has been part of some of the biggest and at times, controversial trades in history and is vocal on X",
+     "Speaker 2: podcast host"
+    ],
+    "data_references": [
+     {
+      "item": "bond coupon",
+      "value": "5%",
+      "context": "Speaker 1 describes a bond paying a 5 percent coupon interest rate as an example of a predictable cash flow asset."
+     },
+     {
+      "item": "stock price drop",
+      "value": "50%",
+      "context": "Speaker 1 notes that Chipotle's stock price dropped by about 50 percent prior to their investment evaluation."
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 6,
+    "recall_pane_before": 1,
+    "recall_pane_full": 5,
+    "visible_chars_before": 344,
+    "visible_chars_full": 1847,
+    "topics": 2,
+    "details": 4,
+    "data_refs": 2
+   }
+  },
+  {
+   "case": "en_ackman_30m",
+   "at": 1800,
+   "lang": "en",
+   "segments": 73,
+   "whitespace_words": 5350,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 9746,
+    "output_tokens": 596,
+    "cost_usd": 0.0044138
+   },
+   "latency_s": 2.82,
+   "document": {
+    "summary": "Bill Ackman discusses fundamental investing principles, including differentiating price from value, identifying wide economic moats, and analyzing companies like Universal Music Group, Chipotle, and Alphabet. He emphasizes the importance of a margin of safety and the value of predictable, long-term cash flows in building a successful investment portfolio.",
+    "topics": [
+     {
+      "title": "Value Investing and Benjamin Graham",
+      "description": "Bill Ackman explains how Benjamin Graham's principles from The Intelligent Investor, such as the distinction between price and value and the concept of a margin of safety, shaped his career. He highlights that the stock market acts as a short-term voting machine and a long-term weighing machine."
+     },
+     {
+      "title": "Evaluating Moats and Business Resilience",
+      "description": "The discussion focuses on how to identify durable businesses with strong barriers to entry that can withstand technological disruptions. Ackman uses examples like Universal Music Group, Chipotle, and Alphabet to illustrate how dominant market positions and predictable cash flows create long-term value."
+     }
+    ],
+    "details": [
+     {
+      "title": "Discussion on Benjamin Graham's philosophy",
+      "description": "Speaker 1 explains the core lessons of The Intelligent Investor, defining the difference between short-term speculation and long-term investing.",
+      "timestamp": "00:01:00"
+     },
+     {
+      "title": "Universal Music Group analysis",
+      "description": "Speaker 1 details why Universal Music Group represents a durable business with a strong moat built on forever assets like the Beatles and global streaming growth.",
+      "timestamp": "00:06:20"
+     },
+     {
+      "title": "Analyzing Alphabet and the AI market reaction",
+      "description": "Speaker 1 explains how a temporary market overreaction to early AI demonstrations created a compelling entry price for Alphabet stock.",
+      "timestamp": "00:24:53"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: Host of the Lex Fridman podcast",
+     "Speaker 1: Bill Ackman, a legendary activist investor"
+    ],
+    "data_references": [
+     {
+      "item": "Alphabet price-to-earnings multiple",
+      "value": "15 times earnings",
+      "context": "Speaker 1 notes the valuation level Alphabet dropped to during the AI scare."
+     },
+     {
+      "item": "Government bond interest rate",
+      "value": "4%",
+      "context": "Speaker 1 compares Alphabet's earnings yield to the yield earned by lending money to the government."
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.0,
+    "lang_match": true,
+    "facts_due": 8,
+    "recall_pane_before": 4,
+    "recall_pane_full": 7,
+    "visible_chars_before": 357,
+    "visible_chars_full": 1960,
+    "topics": 2,
+    "details": 3,
+    "data_refs": 2
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 90,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 5,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 613,
+    "output_tokens": 300,
+    "cost_usd": 0.0009339
+   },
+   "latency_s": 2.01,
+   "document": {
+    "summary": "Lex Fridman 与伦敦政治经济学院经济学家金刻羽探讨了中国经济转型及西方对其经济运行方式的误解。金刻羽指出，中国经济并非由少数人掌控，而是高度分散且依赖地方官员推动的复杂体系。",
+    "topics": [
+     {
+      "title": "中国经济转型的研究",
+      "description": "金刻羽介绍了她所著的书籍《新中国经济学：超越社会主义与资本主义》，该书详细阐述了1978年至今的中国经济转型并澄清了西方误解。"
+     }
+    ],
+    "details": [
+     {
+      "title": "讨论西方对中国经济的最大误解",
+      "description": "金刻羽指出西方认为中国经济由一人或一群人掌控的看法与现实不符，并强调中国经济比美国还要分散。",
+      "timestamp": "00:00:52"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: Lex Fridman 播客主持人",
+     "Speaker 2: 金刻羽：伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": [
+     {
+      "item": "中国经济转型的起始年份",
+      "value": "1978年",
+      "context": "详细讲述了从1978年到今天中国的经济转型"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.896,
+    "lang_match": true,
+    "facts_due": 2,
+    "recall_pane_before": 1,
+    "recall_pane_full": 2,
+    "visible_chars_before": 92,
+    "visible_chars_full": 378,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 180,
+   "lang": "zh",
+   "segments": 7,
+   "whitespace_words": 10,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1038,
+    "output_tokens": 435,
+    "cost_usd": 0.0013989
+   },
+   "latency_s": 2.06,
+   "document": {
+    "summary": "Lex Fridman 与伦敦政治经济学院经济学家金刻羽探讨了中国经济的独特性、西方对中国经济的误解以及中国人民与权威之间微妙的关系。这次对话帮助读者理解分散化的中国经济如何推动充满活力的创业精神。",
+    "topics": [
+     {
+      "title": "对中国经济的最大误解",
+      "description": "金刻羽指出西方认为少数人掌控整个中国经济是最大误解，实际上中国经济非常庞大且完全分散，由地方官员和市长经济推动。"
+     },
+     {
+      "title": "中国人和权威的关系",
+      "description": "金刻羽解释中国人和权威之间并非盲目服从，而是存在一种家长式的微妙关系，用一定的顺从换取稳定、安全与繁荣，同时平衡了个人自我驱动的创业精神。"
+     }
+    ],
+    "details": [
+     {
+      "title": "金刻羽谈中国经济的最大误解",
+      "description": "金刻羽表示，西方最大的误解是认为一群人或一个人在掌控整个中国经济，但现实中它比美国经济还要分散。",
+      "timestamp": "00:00:52"
+     },
+     {
+      "title": "金刻羽谈中国人的契约与顺从",
+      "description": "金刻羽提到几千年来隐含的契约是用一定的顺从换来稳定、安全、和平与繁荣，这与西方认为的盲目服从不同。",
+      "timestamp": "00:01:36"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: Lex Fridman 播客的主持人",
+     "Speaker 2: 金刻羽，伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": [
+     {
+      "item": "中国经济转型的时间起点",
+      "value": "1978年",
+      "context": "Speaker 1 提到金刻羽的书详细讲述了从1978年到今天中国的经济转型。"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.915,
+    "lang_match": true,
+    "facts_due": 4,
+    "recall_pane_before": 3,
+    "recall_pane_full": 4,
+    "visible_chars_before": 99,
+    "visible_chars_full": 543,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 300,
+   "lang": "zh",
+   "segments": 10,
+   "whitespace_words": 13,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1487,
+    "output_tokens": 477,
+    "cost_usd": 0.0016386
+   },
+   "latency_s": 2.48,
+   "document": {
+    "summary": "Lex Fridman与经济学家金刻羽探讨了中国经济的复杂运作、西方对其的种种误解以及中国经济中资本主义与社会主义的结合。这场对话帮助读者理解中国 decentralized 的经济结构和充满活力的创业精神。",
+    "topics": [
+     {
+      "title": "中国经济的最大误解",
+      "description": "金刻羽指出，最大的误解在于认为整个中国经济由极少数人甚至一个人掌控，但现实中它是一个高度分散且由地方官员推动的复杂经济体。"
+     },
+     {
+      "title": "中国社会的资本主义与社会主义特征",
+      "description": "金刻羽提到，从纯经济角度来看，中国社会极具资本主义特征，竞争异常激烈，而与此同时其社会结构又是高度社会主义的，国有企业主导许多行业并强调共同富裕。"
+     }
+    ],
+    "details": [
+     {
+      "title": "探讨中国经济最大误解",
+      "description": "金刻羽解释为什么中国经济不是由少数人掌控，而是比美国经济还要分散的市长经济。",
+      "timestamp": "00:00:52"
+     },
+     {
+      "title": "中国年轻人的创业梦想",
+      "description": "金刻羽讨论了中国数以百万计充满雄心壮志的年轻人如何看待本地经济中的创业机会。",
+      "timestamp": "00:03:02"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: Lex Fridman 播客主持人",
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，著有《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": [
+     {
+      "item": "1978年",
+      "value": "1978年",
+      "context": "金刻羽的书详细讲述了从1978年到今天中国的经济转型。"
+     },
+     {
+      "item": "十亿消费者",
+      "value": "十亿",
+      "context": "年轻人看到了一个有十亿消费者的国家和庞大的规模。"
+     },
+     {
+      "item": "50个有组织的社团",
+      "value": "50个",
+      "context": "在公园里每天都能看到至少50个有组织的社团在唱歌、跳舞、锻炼。"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.922,
+    "lang_match": true,
+    "facts_due": 6,
+    "recall_pane_before": 3,
+    "recall_pane_full": 5,
+    "visible_chars_before": 104,
+    "visible_chars_full": 586,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 3
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 90,
+   "lang": "zh",
+   "segments": 3,
+   "whitespace_words": 3,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 665,
+    "output_tokens": 283,
+    "cost_usd": 0.000907
+   },
+   "latency_s": 1.79,
+   "document": {
+    "summary": "Speaker 2 discusses a conversation with Argentine President Javier Milei regarding his radical economic reforms and efforts to combat government corruption using free-market principles. This matters because Milei achieved Argentina's first fiscal surplus in 16 years and lowered inflation within months of taking office.",
+    "topics": [
+     {
+      "title": "阿根廷的经济危机与改革",
+      "description": "Speaker 2介绍了哈维尔·米莱上任时阿根廷面临的恶性通货膨胀、债务、失业和贫困危机，以及他如何通过自由市场原则进行改造。"
+     }
+    ],
+    "details": [
+     {
+      "title": "与阿根廷总统哈维尔·米莱的对话",
+      "description": "Speaker 2介绍了对阿根廷总统哈维尔·米莱的采访，探讨了自由意志主义、经济转型中的成功与挑战，以及对经济学原理的理解。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [
+     "哈维尔·米莱: 阿根廷总统、自由意志主义者、无政府资本主义者、经济学家"
+    ],
+    "data_references": [
+     {
+      "item": "财政盈余",
+      "value": "16年来的第一次",
+      "context": "上任短短几个月，他就实现了阿根廷16年来的第一次财政盈余。"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.396,
+    "lang_match": false,
+    "facts_due": 3,
+    "recall_pane_before": 3,
+    "recall_pane_full": 3,
+    "visible_chars_before": 320,
+    "visible_chars_full": 555,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 210,
+   "lang": "zh",
+   "segments": 4,
+   "whitespace_words": 14,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1054,
+    "output_tokens": 534,
+    "cost_usd": 0.0016512
+   },
+   "latency_s": 2.51,
+   "document": {
+    "summary": "Lex Fridman introduces his conversation with Argentine President Javier Milei, discussing Milei's radical free-market economic reforms and the broader global fight for freedom. This interview matters as it explores one of modern history's most ambitious economic transformation attempts by a leader aiming to rescue Argentina from hyperinflation and heavy debt.",
+    "topics": [
+     {
+      "title": "阿根廷的经济危机与改革",
+      "description": "Speaker 2 介绍了哈维尔·米莱上任时阿根廷面临的恶性通货膨胀和严重贫困问题，以及他如何通过纯粹的自由市场原则实现财政盈余并降低通胀率。"
+     },
+     {
+      "title": "播客的多语言制作与未来计划",
+      "description": "Speaker 2 解释了本次采访使用同声传译和 ElevenLabs 配音技术的安排，并表达了未来希望与多位世界领导人进行深入对话的愿景。"
+     }
+    ],
+    "details": [
+     {
+      "title": "采访阿根廷总统哈维尔·米莱的背景",
+      "description": "Speaker 2 介绍了哈维尔·米莱的背景及其通过挥舞电锯象征砍掉国家官僚机构的竞选承诺。",
+      "timestamp": "00:00:10"
+     },
+     {
+      "title": "节目多语言发布说明",
+      "description": "Speaker 2 说明了如何在 YouTube、X 和 Spotify 等不同平台上切换或收听英语与西班牙语版本。",
+      "timestamp": "00:01:02"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: 未在访谈正文中明确给出具体背景",
+     "Speaker 2: Lex Fridman 播客的主持人"
+    ],
+    "data_references": [
+     {
+      "item": "财政盈余",
+      "value": "16年",
+      "context": "上任短短几个月，他就实现了阿根廷16年来的第一次财政盈余。"
+     },
+     {
+      "item": "通胀率",
+      "value": "三年",
+      "context": "不仅避免了恶性通胀，还把通胀率降到了三年来的最低水平。"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.434,
+    "lang_match": false,
+    "facts_due": 4,
+    "recall_pane_before": 2,
+    "recall_pane_full": 4,
+    "visible_chars_before": 361,
+    "visible_chars_full": 794,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 2
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 300,
+   "lang": "zh",
+   "segments": 6,
+   "whitespace_words": 16,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1370,
+    "output_tokens": 805,
+    "cost_usd": 0.0024235
+   },
+   "latency_s": 3.51,
+   "document": {
+    "summary": "Lex Fridman introduces his conversation with Argentine President Javier Milei, discussing his radical free-market economic reforms and the broader fight for liberty. Milei then explains how his study of economic growth between 2013 and 2014 led him to understand the value of freedom.",
+    "topics": [
+     {
+      "title": "阿根廷的经济转型",
+      "description": "Speaker 2 介绍了哈维尔·米莱如何运用自由市场原则应对阿根廷的恶性通货膨胀、债务和贫困危机，并在上任几个月内实现了财政盈余并降低了通胀率。"
+     },
+     {
+      "title": "自由价值的认知",
+      "description": "哈维尔·米莱阐述了他在2013至2014年间研究经济增长时，通过观察人均GDP的曲棍球棒式增长和极端贫困率的大幅下降，开始理解自由的理念。"
+     }
+    ],
+    "details": [
+     {
+      "title": "节目介绍与米莱背景",
+      "description": "Speaker 2 介绍了与阿根廷总统哈维尔·米莱的对话，提及米莱是一位自由意志主义者、无政府资本主义者和经济学家，并说明了本期节目的多语言配音与字幕安排。",
+      "timestamp": "00:00:10"
+     },
+     {
+      "title": "探讨自由的起点",
+      "description": "Speaker 2 提问哈维尔·米莱是什么时候第一次认识到自由尤其是经济自由的价值。",
+      "timestamp": "00:03:27"
+     },
+     {
+      "title": "经济增长与人均GDP数据",
+      "description": "Speaker 1 回忆自己在2013到2014年间研究经济增长时，发现公元纪年过去两千年的人均GDP在1800年左右呈曲棍球棒式急剧加速增长。",
+      "timestamp": "00:03:33"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: Lex Fridman 播客的主持人",
+     "Speaker 1: 阿根廷总统哈维尔·米莱，自由意志主义者、无政府资本主义者，也是一位经济学家"
+    ],
+    "data_references": [
+     {
+      "item": "财政盈余",
+      "value": "16年",
+      "context": "上任短短几个月，他就实现了阿根廷16年来的第一次财政盈余"
+     },
+     {
+      "item": "通胀率下降",
+      "value": "三年",
+      "context": "把通胀率降到了三年来的最低水平"
+     },
+     {
+      "item": "人口增长",
+      "value": "七倍",
+      "context": "在生产率和人均GDP惊人增长的同时，人口在之前的200年里增长了七倍"
+     },
+     {
+      "item": "极端贫困人口比例",
+      "value": "95%",
+      "context": "处于极端贫困的人口比例从95%降到了不到10%"
+     },
+     {
+      "item": "极端贫困人口比例",
+      "value": "10%",
+      "context": "处于极端贫困的人口比例从95%降到了不到10%"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.613,
+    "lang_match": false,
+    "facts_due": 6,
+    "recall_pane_before": 1,
+    "recall_pane_full": 5,
+    "visible_chars_before": 284,
+    "visible_chars_full": 930,
+    "topics": 2,
+    "details": 3,
+    "data_refs": 5
+   }
+  }
+ ]
+}

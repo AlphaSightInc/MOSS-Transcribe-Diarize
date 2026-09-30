@@ -38,6 +38,15 @@ def _add_usage(total, usage):
             **{key: total[key] + usage[key] for key in ("input_tokens", "output_tokens")}}
 
 
+# Chinese is written without spaces, so each ideograph counts as a word; split() made a 5-minute,
+# 10-row Chinese transcript 13 "words", below the live 40-word minimum.
+_WORD = re.compile(r"[\u3400-\u9fff]|[^\s\u3400-\u9fff]+")
+
+
+def transcript_words(document) -> int:
+    return sum(len(_WORD.findall(str(row["text"]))) for row in document["segments"])
+
+
 class SummaryConflict(ValueError):
     pass
 
@@ -298,7 +307,7 @@ def attach_summary_routes(app, require_account, generator=None):
         if snapshot is None or snapshot.session.status != "active":
             raise HTTPException(409, "No active live transcript.")
         document = _transcript_document(snapshot, binding.speaker_labels)
-        if len(" ".join(str(row["text"]) for row in document["segments"]).split()) < 40:
+        if transcript_words(document) < 40:
             raise HTTPException(409, "At least 40 transcript words are required.")
         claim_key = claim(request, meeting_id)
         try:

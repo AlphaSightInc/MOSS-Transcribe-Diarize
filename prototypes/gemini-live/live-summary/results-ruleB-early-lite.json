@@ -1,0 +1,340 @@
+{
+ "label": "ruleB-early-lite",
+ "model": "gemini-3.5-flash-lite",
+ "language": "",
+ "carry": false,
+ "rows": [
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 20.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 1,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 404,
+    "output_tokens": 218,
+    "cost_usd": 0.0006662
+   },
+   "latency_s": 1.87,
+   "document": {
+    "summary": "Speaker 1 introduces a conversation with Ji Keiyu, an economist at the London School of Economics who studies China's economy, global trade imbalances, and financial policy, and has written a well-received book titled \"New China Economics\".",
+    "topics": [
+     {
+      "title": "嘉宾介绍",
+      "description": "Speaker 1介绍了金刻羽的身份及其在伦敦政治经济学院的研究领域，并提及了她所著的书籍《新中国经济学》。"
+     }
+    ],
+    "details": [
+     {
+      "title": "介绍金刻羽的背景",
+      "description": "Speaker 1介绍了金刻羽作为伦敦政治经济学院经济学家的研究方向与著作。",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: 未知角色",
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学》一书"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.388,
+    "lang_match": false,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 240,
+    "visible_chars_full": 425,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 35.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 3,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 443,
+    "output_tokens": 298,
+    "cost_usd": 0.0008779
+   },
+   "latency_s": 1.68,
+   "document": {
+    "summary": "Lex Fridman 介绍了与伦敦政治经济学院经济学家金刻羽的对话，探讨了中国经济转型及西方对中国经济的误解。这有助于读者了解中国从 1978 年至今的经济发展历程。",
+    "topics": [
+     {
+      "title": "金刻羽的背景与著作",
+      "description": "金刻羽是伦敦政治经济学院的经济学家，专注于中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学：超越社会主义与资本主义一书。"
+     }
+    ],
+    "details": [
+     {
+      "title": "节目开场与嘉宾介绍",
+      "description": "主持人介绍了金刻羽的学术背景、研究领域及其关于中国经济转型的著作。",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "金刻羽: 伦敦政治经济学院的经济学家"
+    ],
+    "data_references": [
+     {
+      "item": "中国经济转型起始年份",
+      "value": "1978年",
+      "context": "详细讲述了从1978年到今天中国的经济转型"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.956,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 84,
+    "visible_chars_full": 267,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 50.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 4,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 485,
+    "output_tokens": 332,
+    "cost_usd": 0.0009755
+   },
+   "latency_s": 1.81,
+   "document": {
+    "summary": "Lex Fridman介绍了经济学家金刻羽及其关于中国经济转型的著作，探讨了西方对中国经济的理解。这一对话有助于读者了解中国从1978年至今的经济发展与现实。",
+    "topics": [
+     {
+      "title": "金刻羽的背景与著作",
+      "description": "介绍金刻羽作为伦敦政治经济学院经济学家的身份，及其著作《新中国经济学：超越社会主义与资本主义》的核心内容。"
+     }
+    ],
+    "details": [
+     {
+      "title": "节目开场与嘉宾介绍",
+      "description": "Lex Fridman介绍了本期嘉宾金刻羽及其研究领域和新书，并邀请她出场。",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: Lex Fridman 播客的主持人",
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": [
+     {
+      "item": "中国经济转型起始年份",
+      "value": "1978年",
+      "context": "详细讲述了从1978年到今天中国的经济转型"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.87,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 79,
+    "visible_chars_full": 332,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 20.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 428,
+    "output_tokens": 355,
+    "cost_usd": 0.0010159
+   },
+   "latency_s": 1.8,
+   "document": {
+    "summary": "Speaker 1提出疯子与天才的区别在于成功，随后Speaker 2引入了与阿根廷总统哈维尔·米莱的对话。这段简短的开场为后续关于自由意志主义和无政府资本主义的访谈奠定了基础。",
+    "topics": [
+     {
+      "title": "疯子与天才的区别",
+      "description": "Speaker 1认为疯子和天才之间的核心区别在于是否能够获得成功。"
+     },
+     {
+      "title": "阿根廷总统米莱的访谈引入",
+      "description": "Speaker 2简要介绍了阿根廷总统哈维尔·米莱的政治立场，包括他是一位自由意志主义者和无政府资本主义者。"
+     }
+    ],
+    "details": [
+     {
+      "title": "探讨疯子与天才的区别",
+      "description": "Speaker 1提出疯子和天才之间的区别是成功。",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "引入阿根廷总统哈维尔·米莱",
+      "description": "Speaker 2开始讲述与阿根廷总统哈维尔·米莱的对话，并提及他的政治倾向。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [
+     "哈维尔·米莱: 阿根廷总统、自由意志主义者、无政府资本主义者"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.852,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 89,
+    "visible_chars_full": 323,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 35.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 475,
+    "output_tokens": 312,
+    "cost_usd": 0.0009225
+   },
+   "latency_s": 1.82,
+   "document": {
+    "summary": "Speaker 2 introduces a conversation with Argentine President Javier Milei, a libertarian economist who campaigned with a chainsaw to dismantle government bureaucracy.",
+    "topics": [
+     {
+      "title": "疯子与天才的区别",
+      "description": "Speaker 1 提出疯子和天才之间的区别在于是否成功。"
+     },
+     {
+      "title": "哈维尔·米莱的背景与就任情况",
+      "description": "Speaker 2 介绍了阿根廷总统哈维尔·米莱的政治立场、竞选象征以及他一年前就任时国家面临的恶性通货膨胀危机。"
+     }
+    ],
+    "details": [
+     {
+      "title": "探讨疯子与天才的区别",
+      "description": "Speaker 1 指出疯子和天才的区别是成功。",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "介绍阿根廷总统哈维尔·米莱",
+      "description": "Speaker 2 描述了米莱的自由意志主义者、无政府资本主义者以及经济学家身份，并提到其标志性的电锯象征意义与一年前就任时的通货膨胀背景。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: 采访者或主持人，介绍了哈维尔·米莱的身份背景"
+    ],
+    "data_references": [
+     {
+      "item": "就任时间",
+      "value": "一年前",
+      "context": "哈维尔·米莱就任总统的时间"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.547,
+    "lang_match": false,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 166,
+    "visible_chars_full": 456,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 50.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 518,
+    "output_tokens": 204,
+    "cost_usd": 0.0006654
+   },
+   "latency_s": 1.44,
+   "document": {
+    "summary": "Speaker 2 introduces a conversation with Javier Milei, the libertarian and economist president of Argentina, who took office during a severe crisis and used free market principles to reform the economy.",
+    "topics": [
+     {
+      "title": "阿根廷总统哈维尔·米莱的改革",
+      "description": "Speaker 2介绍了阿根廷总统哈维尔·米莱的背景及其面对恶性通货膨胀和债务危机时，采取自由市场原则改造经济的举措。"
+     }
+    ],
+    "details": [
+     {
+      "title": "介绍与哈维尔·米莱的对话",
+      "description": "Speaker 2讲述了与阿根廷总统哈维尔·米莱的对话背景，并提及他竞选时挥舞电锯象征砍掉国家官僚机构的承诺。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: 采访者或主持人"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.39,
+    "lang_match": false,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 202,
+    "visible_chars_full": 365,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 0
+   }
+  }
+ ]
+}

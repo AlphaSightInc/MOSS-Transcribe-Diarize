@@ -134,14 +134,16 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
             : failed ? "Retry"
             : !active && summaryStale && settings.summary.vendor === "openai_compatible" ? "Update summary" : "Refresh"}</button></div>
       {failed && <p className="summary-notice" role="alert">Summary failed{reason ? ` — ${reason}` : ""}</p>}
-      {active ? rolling && <div className="summary-content"><h3>Theme</h3><p>{rolling.summary.summary}</p></div>
-        : finalDocument && <SummaryDocumentView document={finalDocument} />}
+      {/* The rolling pane shows the whole document, like the final one: its Theme line alone held about
+          half of the points the document made (prototypes/gemini-live/live-summary/NOTES.md). */}
+      {active ? rolling && <SummaryDocumentView document={rolling.summary} />
+        : finalDocument && <SummaryDocumentView document={finalDocument} final />}
     </>}
   </section>;
 }
 
-function SummaryDocumentView({ document }: { document: SummaryDocument }) {
-  return <div className="summary-content" data-final-summary>
+function SummaryDocumentView({ document, final = false }: { document: SummaryDocument; final?: boolean }) {
+  return <div className="summary-content" data-final-summary={final || undefined}>
     <span className="eyebrow">Theme</span><h3>{document.summary}</h3>
     {document.topics.length > 0 && <section><h4>Topics discussed</h4><ol>{document.topics.map((topic, index) =>
       <li key={index}><strong>{topic.title}</strong><p>{topic.description}</p></li>)}</ol></section>}

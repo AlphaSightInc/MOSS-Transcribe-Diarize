@@ -1,0 +1,327 @@
+{
+ "label": "early-zh-after",
+ "model": "gemini-3.8-flash",
+ "language": "",
+ "carry": false,
+ "rows": [
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 20.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 1,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.8-flash",
+    "input_tokens": 393,
+    "output_tokens": 624,
+    "cost_usd": 0.00263475
+   },
+   "latency_s": 3.2,
+   "document": {
+    "summary": "Speaker 1 介绍了对话嘉宾金刻羽的学术背景及其关于中国经济的著作。金刻羽是伦敦政治经济学院的经济学家，专注于中国经济、国际宏观经济等领域。",
+    "topics": [
+     {
+      "title": "嘉宾背景介绍",
+      "description": "Speaker 1 介绍了经济学家金刻羽的研究领域及其所著的书籍《新中国经济学》。"
+     }
+    ],
+    "details": [
+     {
+      "title": "介绍金刻羽及其著作",
+      "description": "Speaker 1 介绍金刻羽为伦敦政治经济学院经济学家，专长于中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学》。 ",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.902,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 73,
+    "visible_chars_full": 249,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 35.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 3,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.8-flash",
+    "input_tokens": 432,
+    "output_tokens": 242,
+    "cost_usd": 0.0012315
+   },
+   "latency_s": 2.79,
+   "document": {
+    "summary": "Speaker 1 介绍了伦敦政治经济学院经济学家金刻羽及其著作《新中国经济学：超越社会主义与资本主义》。该书讲述了1978年至今中国的经济转型，并旨在澄清西方对中国经济的误解。",
+    "topics": [
+     {
+      "title": "金刻羽的专业背景与著作介绍",
+      "description": "Speaker 1 介绍了经济学家金刻羽的研究领域，以及她撰写的关于中国从1978年至今经济转型与澄清西方误解的书籍。"
+     }
+    ],
+    "details": [
+     {
+      "title": "嘉宾与书籍介绍",
+      "description": "Speaker 1 表明本期对话嘉宾为金刻羽，并介绍其学术专长与著作《新中国经济学：超越社会主义与资本主义》的核心内容。",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，著有《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.919,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 89,
+    "visible_chars_full": 302,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 50.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 4,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.8-flash",
+    "input_tokens": 474,
+    "output_tokens": 1282,
+    "cost_usd": 0.005163
+   },
+   "latency_s": 6.73,
+   "document": {
+    "summary": "本期节目为 Lex Fridman 播客与伦敦政治经济学院经济学家金刻羽的对话开篇，重点介绍了金刻羽的研究方向及其著作《新中国经济学：超越社会主义与资本主义》对中国经济转型与西方误解的阐述。",
+    "topics": [
+     {
+      "title": "嘉宾背景与著作介绍",
+      "description": "主持人介绍了金刻羽的专业背景以及她撰写的关于中国从1978年至今经济转型、澄清西方误解的书籍。"
+     }
+    ],
+    "details": [
+     {
+      "title": "金刻羽出场介绍",
+      "description": "Speaker 1 介绍了经济学家金刻羽的研究领域、其代表作以及播客的基本信息，并引出关于西方对中国经济看法的对话。",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.928,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 95,
+    "visible_chars_full": 267,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 20.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.8-flash",
+    "input_tokens": 417,
+    "output_tokens": 2393,
+    "cost_usd": 0.0092865
+   },
+   "latency_s": 10.43,
+   "document": {
+    "summary": "Speaker 1 认为疯子和天才的区别在于成功，随后 Speaker 2 引出了与阿根廷总统哈维尔·米莱的对话，并介绍了其政治理念背景。",
+    "topics": [
+     {
+      "title": "疯子与天才的区别",
+      "description": "Speaker 1 指出疯子与天才之间的决定性区别在于是否获得成功。"
+     },
+     {
+      "title": "哈维尔·米莱对话介绍",
+      "description": "Speaker 2 介绍了即将展开的访谈对象阿根廷总统哈维尔·米莱，提及他是自由意志主义者和无政府资本主义者。"
+     }
+    ],
+    "details": [
+     {
+      "title": "探讨疯子与天才的区别",
+      "description": "Speaker 1 提出疯子和天才之间的区别是成功。",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "引出与哈维尔·米莱的对话",
+      "description": "Speaker 2 介绍与阿根廷总统哈维尔·米莱的对话，并说明其为自由意志主义者和无政府资本主义者。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [
+     "哈维尔·米莱: 阿根廷总统、自由意志主义者、无政府资本主义者"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.842,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 69,
+    "visible_chars_full": 313,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 35.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.8-flash",
+    "input_tokens": 464,
+    "output_tokens": 1551,
+    "cost_usd": 0.00616425
+   },
+   "latency_s": 7.06,
+   "document": {
+    "summary": "本段内容引介了对阿根廷总统哈维尔·米莱的专访背景。米莱作为持有无政府资本主义立场的经济学家就任总统，并承诺通过大刀阔斧的改革削减腐败的官僚机构以应对恶性通货膨胀。",
+    "topics": [
+     {
+      "title": "阿根廷总统哈维尔·米莱专访引言",
+      "description": "Speaker 2介绍了与阿根廷总统哈维尔·米莱的访谈，概述了米莱的政治经济理念及其竞选承诺与执政背景。"
+     }
+    ],
+    "details": [
+     {
+      "title": "疯子与天才的界限",
+      "description": "Speaker 1表示疯子与天才之间的区别在于是否取得成功。",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "米莱的身份与执政挑战",
+      "description": "Speaker 2介绍米莱为自由意志主义者、无政府资本主义者和经济学家，提到其以电锯象征削减官僚机构，并指出其一年前就任时阿根廷面临恶性通货膨胀。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [
+     "哈维尔·米莱: 阿根廷总统、自由意志主义者、无政府资本主义者、经济学家"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.925,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 81,
+    "visible_chars_full": 311,
+    "topics": 1,
+    "details": 2,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 50.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.8-flash",
+    "input_tokens": 507,
+    "output_tokens": 1499,
+    "cost_usd": 0.0060015
+   },
+   "latency_s": 8.25,
+   "document": {
+    "summary": "Speaker 2介绍了与阿根廷总统哈维尔·米莱的对话背景，指出米莱作为自由意志主义经济学家，在一年前国家面临恶性通货膨胀等危机时就任，并运用自由市场原则推行改革。",
+    "topics": [
+     {
+      "title": "哈维尔·米莱背景与改革举措",
+      "description": "Speaker 2介绍了阿根廷总统哈维尔·米莱的政治立场、执政背景以及应对国家经济危机的自由市场举措。"
+     }
+    ],
+    "details": [
+     {
+      "title": "天才与疯子的界限",
+      "description": "Speaker 1提出疯子和天才之间的区别在于是否成功。",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "米莱的总统背景与危机应对",
+      "description": "Speaker 2阐述哈维尔·米莱作为自由意志主义者和经济学家，在国家濒临恶性通胀时接任总统，并承诺通过削减腐败机构与推行自由市场原则重塑经济。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [
+     "哈维尔·米莱: 阿根廷总统、自由意志主义者、无政府资本主义者、经济学家"
+    ],
+    "data_references": [
+     {
+      "item": "就任总统时长",
+      "value": "1年",
+      "context": "Speaker 2提到哈维尔·米莱于一年前就任阿根廷总统"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.885,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 82,
+    "visible_chars_full": 347,
+    "topics": 1,
+    "details": 2,
+    "data_refs": 1
+   }
+  }
+ ]
+}

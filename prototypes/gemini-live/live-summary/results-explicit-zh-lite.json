@@ -1,0 +1,376 @@
+{
+ "label": "explicit-zh-lite",
+ "model": "gemini-3.5-flash-lite",
+ "language": "Chinese",
+ "carry": false,
+ "rows": [
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 20.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 1,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 383,
+    "output_tokens": 249,
+    "cost_usd": 0.0007374
+   },
+   "latency_s": 1.7,
+   "document": {
+    "summary": "Speaker 1介绍了与伦敦政治经济学院经济学家金刻羽的对话，金刻羽专注于中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有一本广受好评的关于中国经济的书籍。",
+    "topics": [
+     {
+      "title": "金刻羽的学术背景与研究领域",
+      "description": "Speaker 1介绍了金刻羽作为伦敦政治经济学院经济学家的身份，其研究领域涵盖中国经济、国际宏观经济、全球贸易失衡和金融政策。"
+     }
+    ],
+    "details": [
+     {
+      "title": "介绍对话嘉宾金刻羽",
+      "description": "Speaker 1在开场中介绍了金刻羽的背景、研究方向及其著作《新中国经济学》。",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: 主持人或对话发起人",
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并写了一本广受好评的关于中国的书《新中国经济学》"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.896,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 82,
+    "visible_chars_full": 305,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 50.0,
+   "lang": "zh",
+   "segments": 1,
+   "whitespace_words": 4,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 464,
+    "output_tokens": 351,
+    "cost_usd": 0.0010167
+   },
+   "latency_s": 1.81,
+   "document": {
+    "summary": "本次会议主要是Lex Fridman与伦敦政治经济学院经济学家金刻羽的对话，探讨了中国经济转型及西方对中国经济的理解。这对于理解中国自1978年以来的经济发展及其与西方的差异具有重要意义。",
+    "topics": [
+     {
+      "title": "金刻羽的研究与著作",
+      "description": "Speaker 1介绍了金刻羽的背景及其著作《新中国经济学：超越社会主义与资本主义》，该书阐述了1978年至今的中国经济转型并澄清了西方误解。"
+     }
+    ],
+    "details": [
+     {
+      "title": "节目开场与嘉宾介绍",
+      "description": "Speaker 1介绍了本期嘉宾金刻羽及其研究领域和播客支持信息。",
+      "timestamp": "00:00:00"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: Lex Fridman 播客的主持人",
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": [
+     {
+      "item": "中国经济转型起始年份",
+      "value": "1978年",
+      "context": "详细讲述了从1978年到今天中国的经济转型"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.866,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 94,
+    "visible_chars_full": 360,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 300.0,
+   "lang": "zh",
+   "segments": 10,
+   "whitespace_words": 13,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1477,
+    "output_tokens": 552,
+    "cost_usd": 0.0018231
+   },
+   "latency_s": 2.5,
+   "document": {
+    "summary": "伦敦政治经济学院经济学家金刻羽在访谈中澄清了西方对中国经济的误解，指出中国经济实际上高度分散且充满活力，并探讨了中国独特的资本主义与社会主义结合的社会结构。",
+    "topics": [
+     {
+      "title": "西方对中国经济的误解",
+      "description": "金刻羽指出，最大的误解是认为中国经济由少数人或一个人掌控，而现实中中国经济比美国还要分散，由地方官员和“市长经济”推动技术创新。"
+     },
+     {
+      "title": "中国年轻人与创业精神",
+      "description": "金刻羽提到中国有数以百万计的年轻人充满创业精神，他们利用十亿消费者的规模与数字化转型改造本地经济，这与硅谷式创新有所不同。"
+     }
+    ],
+    "details": [
+     {
+      "title": "探讨对中国经济最大的误解",
+      "description": "金刻羽解释中国经济的高度分散性以及中国人与权威之间微妙的关系。",
+      "timestamp": "00:00:52"
+     },
+     {
+      "title": "分析中国社会的资本主义与社会主义特质",
+      "description": "金刻羽表示中国经济极其资本主义且竞争激烈，同时社会结构又高度社会主义并包含国有企业主导。",
+      "timestamp": "00:03:54"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: Lex Fridman 播客主持人",
+     "Speaker 2: 金刻羽，伦敦政治经济学院的经济学家"
+    ],
+    "data_references": [
+     {
+      "item": "中国经济转型起始时间",
+      "value": "1978年",
+      "context": "金刻羽写的书详细讲述了从1978年到今天中国的经济转型。"
+     },
+     {
+      "item": "中国消费者数量",
+      "value": "十亿",
+      "context": "金刻羽提到年轻人看到一个有十亿消费者的国家和巨大的规模与速度。"
+     },
+     {
+      "item": "公园社团数量",
+      "value": "50个",
+      "context": "金刻羽描述在她父母公寓后面的公园散步时，每天都能看到至少50个有组织的社团。"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.949,
+    "lang_match": true,
+    "facts_due": 6,
+    "recall_pane_before": 3,
+    "recall_pane_full": 5,
+    "visible_chars_before": 78,
+    "visible_chars_full": 533,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 3
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 20.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 407,
+    "output_tokens": 177,
+    "cost_usd": 0.0005646
+   },
+   "latency_s": 1.39,
+   "document": {
+    "summary": "Speaker 2分享了与阿根廷总统哈维尔·米莱的对话，探讨了疯子与天才的区别在于成功。这为理解政治领导人的独特立场提供了背景。",
+    "topics": [
+     {
+      "title": "疯子与天才的区别",
+      "description": "Speaker 1提出疯子和天才之间的区别在于成功，引发了关于人物评价的讨论。"
+     }
+    ],
+    "details": [
+     {
+      "title": "对话阿根廷总统",
+      "description": "Speaker 2介绍了自己与阿根廷总统哈维尔·米莱的对话，并提及对方的政治立场。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [
+     "哈维尔·米莱: 阿根廷总统、自由意志主义者、无政府资本主义者"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.876,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 64,
+    "visible_chars_full": 194,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 50.0,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 2,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 497,
+    "output_tokens": 394,
+    "cost_usd": 0.0011341
+   },
+   "latency_s": 2.01,
+   "document": {
+    "summary": "演讲者介绍了与阿根廷总统哈维尔·米莱的对话，探讨了他如何运用自由市场原则应对国家的恶性通货膨胀和危机。这展示了将激进经济理论付诸实践以重塑国家经济的可能性。",
+    "topics": [
+     {
+      "title": "疯子与天才的区别",
+      "description": "演讲者以成功来定义疯子和天才的区别，引出对阿根廷总统哈维尔·米莱及其执政方式的讨论。"
+     },
+     {
+      "title": "阿根廷的经济危机与米莱的改革",
+      "description": "哈维尔·米莱是一位自由意志主义者、无政府资本主义者和经济学家，他在阿根廷面临恶性通货膨胀边缘时上任，并试图通过自由市场原则正面迎击危机。"
+     }
+    ],
+    "details": [
+     {
+      "title": "探讨疯子与天才的区别",
+      "description": "演讲者提出疯子和天才的区别在于成功。",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "介绍阿根廷总统哈维尔·米莱的背景与上任背景",
+      "description": "介绍米莱的政治经济立场及上任时阿根廷面临的恶性通货膨胀和债务危机。",
+      "timestamp": "00:00:10"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: 自由意志主义者、无政府资本主义者、经济学家、阿根廷总统哈维尔·米莱"
+    ],
+    "data_references": []
+   },
+   "score": {
+    "cjk_share": 0.978,
+    "lang_match": true,
+    "facts_due": 0,
+    "recall_pane_before": 0,
+    "recall_pane_full": 0,
+    "visible_chars_before": 78,
+    "visible_chars_full": 345,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 0
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 300.0,
+   "lang": "zh",
+   "segments": 6,
+   "whitespace_words": 16,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1360,
+    "output_tokens": 536,
+    "cost_usd": 0.001748
+   },
+   "latency_s": 2.54,
+   "document": {
+    "summary": "Lex Fridman 采访了阿根廷总统哈维尔·米莱，探讨了他如何运用自由市场原则应对阿根廷的经济危机及其对自由的追求。这次访谈不仅展示了阿根廷雄心勃勃的经济转型，还探讨了经济学原理与自由价值的关系。",
+    "topics": [
+     {
+      "title": "阿根廷的经济危机与转型",
+      "description": "Speaker 2 介绍了哈维尔·米莱上任后面临的恶性通胀和债务危机，以及他通过纯粹的自由市场原则在短时间内实现财政盈余和降低通胀的成就。"
+     },
+     {
+      "title": "自由理念与经济增长的发现",
+      "description": "Speaker 1（哈维尔·米莱）分享了他在2013至2014年间研究经济增长时，对人均GDP呈曲棍球棒式增长和人类摆脱贫困现象的观察与思考。"
+     }
+    ],
+    "details": [
+     {
+      "title": "介绍阿根廷总统米莱",
+      "description": "Speaker 2 介绍了采访阿根廷总统哈维尔·米莱的背景，以及他通过激进的自由市场政策应对国家危机的表现。",
+      "timestamp": "00:00:10"
+     },
+     {
+      "title": "探讨自由的价值与经济增长",
+      "description": "Speaker 2 询问米莱何时认识到自由的价值，米莱随后解释了工业革命后人均GDP增长与贫困率下降的经济学现象。",
+      "timestamp": "00:03:27"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: 阿根廷总统哈维尔·米莱，自由意志主义者、无政府资本主义者、经济学家",
+     "Speaker 2: Lex Fridman 播客的主持人"
+    ],
+    "data_references": [
+     {
+      "item": "财政盈余实现时间",
+      "value": "16年",
+      "context": "实现了阿根廷16年来的第一次财政盈余"
+     },
+     {
+      "item": "通胀率下降水平",
+      "value": "三年",
+      "context": "把通胀率降到了三年来的最低水平"
+     },
+     {
+      "item": "人口增长倍数",
+      "value": "七倍",
+      "context": "人口在之前的200年里增长了七倍"
+     },
+     {
+      "item": "极端贫困人口比例降幅",
+      "value": "不到10%",
+      "context": "处于极端贫困的人口比例从95%降到了不到10%"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.868,
+    "lang_match": true,
+    "facts_due": 6,
+    "recall_pane_before": 1,
+    "recall_pane_full": 5,
+    "visible_chars_before": 100,
+    "visible_chars_full": 605,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 4
+   }
+  }
+ ]
+}

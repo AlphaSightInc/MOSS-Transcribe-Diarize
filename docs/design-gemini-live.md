@@ -182,6 +182,21 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   json-only models (e.g. `gpt-4o-transcribe`) give one speaker per request and lose/duplicate up to 11%/13% of words at live
   refresh boundaries. A short-segment attach rule was rejected (≤ +1 point). Real model quality is unmeasured.
 
+## Round 4 addition: rolling summaries (#6, #10)
+
+- Live (`/summary/live`) and final (`/summary/server`) summaries share one generator, prompt, model and schema. The
+  rolling pane now renders the whole five-section document like the final pane (its Theme line alone carried 28/54 of
+  the facts the document carried 50/54 of; `prototypes/gemini-live/live-summary/NOTES.md`).
+- Language = Auto now asks for "the transcript's dominant language": gemini-3.8-flash answered English for 3/12 Chinese
+  snapshots before (all ≤ 50 s), 0/12 after. gemini-3.5-flash-lite stays unreliable under Auto (3/6); an explicit
+  Language works on it. A browser still holding the untouched old default `gemini-3.5-flash-lite` (saved before
+  round 4, or a v1 record) moves to `gemini-3.8-flash`; flash-lite chosen since is kept (saves record the defaults
+  they were made under). The transcription model is untouched.
+- The 40-word minimum counts each CJK ideograph as a word (a 5-minute Chinese transcript was 13 "words").
+- Default wait after each summary 20 s (was 60; a browser still holding the untouched 60 moves to 20): ≈ $1.73 per
+  meeting-hour with gemini-3.8-flash vs $0.70 at 60 s (measured usage, English). Previous-summary carry-forward
+  (LiveTranscribe) was measured unnecessary: facts lost between refreshes 1/26.
+
 ## Measured envelope and custody
 
 Figures below name their code/fixture population. They do not combine different

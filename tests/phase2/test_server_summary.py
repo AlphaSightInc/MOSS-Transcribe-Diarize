@@ -59,6 +59,11 @@ def test_gemini_generator_sends_transcript_as_user_content_and_closes_client(mon
     assert seen["key_passed"] and seen["closed"]
     assert "Owner A only." in seen["contents"]
     assert "Write the final briefing in French." in seen["config"].system_instruction
+    asyncio.run(GeminiSummaryGenerator()(
+        TRANSCRIPT, model="gemini-3.5-flash-lite", language=" ", prompt="Brief", api_key="local-key"))
+    # Auto (blank) language: answer in the transcript's language, not the English prompt's.
+    assert seen["config"].system_instruction == (
+        "Brief\nWrite every string value in the transcript's dominant language; do not translate it.")
 
 
 def test_server_summary_generates_from_exact_final_version_and_saves(tmp_path: Path):
@@ -183,6 +188,11 @@ def test_live_summary_is_ephemeral_and_requires_forty_words(tmp_path: Path):
         assert response.json()["usage"] == USAGE
         assert response.json()["source"] == {"committed_samples": 64000, "text_revision_version": 3}
         assert seen[0]["segments"][0]["text"] == words
+        # Chinese has no spaces: 40 ideographs are 40 words, not one.
+        row.text = "我们" * 19 + "好"
+        assert client.post(path, json={"provider": PROVIDER}).status_code == 409
+        row.text = "我们" * 20
+        assert client.post(path, json={"provider": PROVIDER}).status_code == 200
         assert client.get(f"/api/meetings/{meeting_id}/summary").json() == {"summary": None}
         client.cookies.clear()
         client.post("/api/workspace/bootstrap")

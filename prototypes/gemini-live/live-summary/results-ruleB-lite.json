@@ -1,0 +1,449 @@
+{
+ "label": "ruleB-lite",
+ "model": "gemini-3.5-flash-lite",
+ "language": "",
+ "carry": false,
+ "rows": [
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 90,
+   "lang": "zh",
+   "segments": 2,
+   "whitespace_words": 5,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 624,
+    "output_tokens": 280,
+    "cost_usd": 0.0008872
+   },
+   "latency_s": 1.93,
+   "document": {
+    "summary": "Lex Fridman 与伦敦政治经济学院经济学家金刻羽探讨了中国经济的转型与发展，金刻羽指出西方对中国经济最大的误解在于认为经济由少数人掌控，而实际上它是一个高度分散的庞大系统。",
+    "topics": [
+     {
+      "title": "西方对中国经济的误解",
+      "description": "金刻羽指出，西方最大的误解是认为中国经济由一群人或一个人掌控，而现实中这是一个极其复杂且完全分散的经济体。"
+     }
+    ],
+    "details": [
+     {
+      "title": "探讨中国经济的最大误解",
+      "description": "金刻羽回应 Lex Fridman 关于西方对中国经济最大误解的问题，强调中国经济实际上比美国经济还要分散，由地方官员的“市长经济”推动。",
+      "timestamp": "00:00:52"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": [
+     {
+      "item": "中国经济转型的起始年份",
+      "value": "1978年",
+      "context": "详细讲述了从1978年到今天中国的经济转型"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.913,
+    "lang_match": true,
+    "facts_due": 2,
+    "recall_pane_before": 1,
+    "recall_pane_full": 2,
+    "visible_chars_before": 90,
+    "visible_chars_full": 354,
+    "topics": 1,
+    "details": 1,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 180,
+   "lang": "zh",
+   "segments": 7,
+   "whitespace_words": 10,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1049,
+    "output_tokens": 545,
+    "cost_usd": 0.0016772
+   },
+   "latency_s": 3.01,
+   "document": {
+    "summary": "金刻羽在访谈中指出，西方对中国经济最大的误解是认为其由少数人完全掌控，而实际上中国经济高度分散且充满充满活力的创业精神。这场对话澄清了外界对中国经济转型及中国民众与权威关系的许多误解。",
+    "topics": [
+     {
+      "title": "中国经济的宏观分散性",
+      "description": "金刻羽指出中国经济并不是由少数人甚至一个人掌控的，而是高度分散的，其中地方官员即“市长经济”在改革和技术创新中发挥了重要作用。"
+     },
+     {
+      "title": "民众与权威的关系",
+      "description": "探讨了中国人和权威之间微妙的家长式关系，指出对权威的尊重并不等于盲目服从，几千年来人们用一定的顺从换取稳定与繁荣。"
+     }
+    ],
+    "details": [
+     {
+      "title": "讨论西方对中国经济最大的误解",
+      "description": "Speaker 2 提出西方误以为中国经济由极少数人掌控，但实际上它比美国经济还要分散。",
+      "timestamp": "00:00:52"
+     },
+     {
+      "title": "探讨中国人的契约精神与顺从",
+      "description": "Speaker 2 解释了顺从与尊重权威背后的契约，即换取稳定、安全、和平与繁荣。",
+      "timestamp": "00:01:37"
+     },
+     {
+      "title": "创业精神与自我意识",
+      "description": "Speaker 2 指出如果没有自我意识和对机会的追求，就不会有中国激进且充满活力的创业精神。",
+      "timestamp": "00:02:30"
+     }
+    ],
+    "speaker_background": [
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并著有《新中国经济学：超越社会主义与资本主义》一书"
+    ],
+    "data_references": [
+     {
+      "item": "中国经济转型起始年份",
+      "value": "1978年",
+      "context": "金刻羽的书详细讲述了从1978年到今天中国的经济转型。"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.955,
+    "lang_match": true,
+    "facts_due": 4,
+    "recall_pane_before": 2,
+    "recall_pane_full": 4,
+    "visible_chars_before": 92,
+    "visible_chars_full": 526,
+    "topics": 2,
+    "details": 3,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_keyu_jin_5m",
+   "at": 300,
+   "lang": "zh",
+   "segments": 10,
+   "whitespace_words": 13,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1498,
+    "output_tokens": 658,
+    "cost_usd": 0.0020944
+   },
+   "latency_s": 2.93,
+   "document": {
+    "summary": "金刻羽在对话中探讨了中国经济的独特性质，指出其经济运行高度分散且充满竞争，并澄清了西方对中国经济体制及人际关系的常见误解。这有助于读者更深入地理解中国从1978年至今的经济转型与发展动力。",
+    "topics": [
+     {
+      "title": "中国经济的运作方式与误解",
+      "description": "金刻羽指出西方认为中国经济由少数人掌控的最大误解，并强调中国经济实际上非常庞大且分散，地方官员和“市长经济”在其中发挥了重要作用。"
+     },
+     {
+      "title": "中国社会与权威的关系",
+      "description": "金刻羽阐述了中国人与权威之间微妙的家长式关系，认为尊重权威并不等于盲目服从，这种平衡也孕育了激进且充满活力的创业精神。"
+     },
+     {
+      "title": "中国社会的资本主义与社会主义双重性",
+      "description": "金刻羽认为从纯经济角度来看，中国社会极具资本主义竞争性，而从社会结构来看，它又包含国有企业主导和共同富裕等高度社会主义的特征。"
+     }
+    ],
+    "details": [
+     {
+      "title": "探讨西方对中国经济最大的误解",
+      "description": "金刻羽表示，最大的误解是以为有一群人甚至一个人在掌控整个中国经济，而现实是经济高度分散，甚至比美国经济还要分散。",
+      "timestamp": "00:00:52"
+     },
+     {
+      "title": "分析中国人与权威的关系",
+      "description": "金刻羽解释了契约里隐含的用一定顺从换取稳定、安全、和平与繁荣的关系，并指出这种关系中也包含个人自由与对权威的平衡。",
+      "timestamp": "00:01:37"
+     },
+     {
+      "title": "讨论年轻人的创业梦想",
+      "description": "金刻羽提到中国有数以百万计的年轻人看到十亿消费者的规模和速度，借助工程师团队和数字化转型成为改造本地经济的创业者。",
+      "timestamp": "00:03:02"
+     }
+    ],
+    "speaker_background": [
+     "金刻羽: 伦敦政治经济学院的经济学家，专门研究中国经济、国际宏观经济、全球贸易失衡和金融政策，并写了一本关于中国的书《新中国经济学：超越社会主义与资本主义》"
+    ],
+    "data_references": [
+     {
+      "item": "中国消费者数量",
+      "value": "十亿",
+      "context": "金刻羽提到年轻人看到一个有十亿消费者的国家、规模和速度，可以凭梦想做成很多事情"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 1.0,
+    "lang_match": true,
+    "facts_due": 6,
+    "recall_pane_before": 1,
+    "recall_pane_full": 6,
+    "visible_chars_before": 94,
+    "visible_chars_full": 667,
+    "topics": 3,
+    "details": 3,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 90,
+   "lang": "zh",
+   "segments": 3,
+   "whitespace_words": 3,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 676,
+    "output_tokens": 501,
+    "cost_usd": 0.0014553
+   },
+   "latency_s": 2.53,
+   "document": {
+    "summary": "Speaker 2 discusses a conversation with Argentine President Javier Milei, who is using free-market principles to transform Argentina's economy and achieve fiscal surplus despite deep crises. This matters because it highlights a unique approach to fighting government corruption and advancing economic freedom.",
+    "topics": [
+     {
+      "title": "阿根廷的经济危机与米莱的改革",
+      "description": "Speaker 2介绍了阿根廷总统哈维尔·米莱在上任时面临恶性通胀、债务和失业危机，并运用自由市场原则进行应对。"
+     },
+     {
+      "title": "米莱的改革成效与普遍意义",
+      "description": "Speaker 2指出米莱在上任几个月内实现了16年来的首次财政盈余并将通胀率降至三年最低，这代表了反对政府腐败和争取自由的普遍斗争。"
+     }
+    ],
+    "details": [
+     {
+      "title": "疯子与天才的区别",
+      "description": "Speaker 1提出疯子和天才之间的区别是成功。",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "介绍阿根廷总统哈维尔·米莱",
+      "description": "Speaker 2介绍哈维尔·米莱的身份背景及他竞选时挥舞电锯象征砍掉国家官僚机构的承诺。",
+      "timestamp": "00:00:10"
+     },
+     {
+      "title": "实现财政盈余与降低通胀",
+      "description": "Speaker 2提到米莱上任短短几个月实现了阿根廷16年来的第一次财政盈余，并将通胀率降到了三年来的最低水平。",
+      "timestamp": "00:01:02"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 2: 经济学家"
+    ],
+    "data_references": [
+     {
+      "item": "财政盈余",
+      "value": "16年",
+      "context": "实现了阿根廷16年来的第一次财政盈余"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.471,
+    "lang_match": false,
+    "facts_due": 3,
+    "recall_pane_before": 2,
+    "recall_pane_full": 3,
+    "visible_chars_before": 309,
+    "visible_chars_full": 670,
+    "topics": 2,
+    "details": 3,
+    "data_refs": 1
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 210,
+   "lang": "zh",
+   "segments": 4,
+   "whitespace_words": 14,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1065,
+    "output_tokens": 398,
+    "cost_usd": 0.0013145
+   },
+   "latency_s": 2.3,
+   "document": {
+    "summary": "Speaker 2 introduces an interview with Argentine President Javier Milei, discussing his radical economic reforms and the broader fight for freedom. This conversation highlights a significant modern economic transformation attempt aimed at overcoming hyperinflation and government corruption.",
+    "topics": [
+     {
+      "title": "阿根廷的经济转型",
+      "description": "Speaker 2 介绍了哈维尔·米莱如何利用自由市场原则应对恶性通货膨胀、债务和贫困危机，并在上任几个月后实现了财政盈余和通胀率下降。"
+     },
+     {
+      "title": "播客规划与访谈展望",
+      "description": "Speaker 2 分享了制作多语言播客的挑战，并表达了未来与多位世界领导人进行深入对话的愿望。"
+     }
+    ],
+    "details": [
+     {
+      "title": "介绍阿根廷总统哈维尔·米莱",
+      "description": "Speaker 2 介绍了哈维尔·米莱的背景以及他通过电锯象征砍掉国家官僚机构的竞选承诺。",
+      "timestamp": "00:00:10"
+     },
+     {
+      "title": "播客制作与未来计划",
+      "description": "Speaker 2 说明了本期节目利用 ElevenLabs 提供的多语言配音和字幕功能，并表达了未来采访泽连斯基、普京、莫迪和习近平的计划。",
+      "timestamp": "00:01:02"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: 未提供背景",
+     "Speaker 2: Lex Fridman 播客的主持人"
+    ],
+    "data_references": [
+     {
+      "item": "财政盈余时间",
+      "value": "16年",
+      "context": "阿根廷16年来的第一次财政盈余"
+     },
+     {
+      "item": "通胀率水平",
+      "value": "三年来的最低水平",
+      "context": "把通胀率降到了三年来的最低水平"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.458,
+    "lang_match": false,
+    "facts_due": 4,
+    "recall_pane_before": 2,
+    "recall_pane_full": 4,
+    "visible_chars_before": 291,
+    "visible_chars_full": 675,
+    "topics": 2,
+    "details": 2,
+    "data_refs": 2
+   }
+  },
+  {
+   "case": "zh_milei_5m",
+   "at": 300,
+   "lang": "zh",
+   "segments": 6,
+   "whitespace_words": 16,
+   "attempts": 1,
+   "valid": true,
+   "error": null,
+   "usage": {
+    "model": "gemini-3.5-flash-lite",
+    "input_tokens": 1381,
+    "output_tokens": 796,
+    "cost_usd": 0.0024043
+   },
+   "latency_s": 3.17,
+   "document": {
+    "summary": "Lex Fridman introduces his conversation with Argentine President Javier Milei, discussing Milei's radical free-market economic reforms and their global significance. Milei explains how his study of economic growth and historical GDP trends in 2013 and 2014 shaped his understanding of the value of freedom.",
+    "topics": [
+     {
+      "title": "阿根廷的经济转型",
+      "description": "Speaker 2 介绍了与阿根廷总统哈维尔·米莱的对话，指出他通过纯粹的自由市场原则应对恶性通货膨胀和债务危机，实现了阿根廷16年来的首次财政盈余。"
+     },
+     {
+      "title": "自由价值的认知",
+      "description": "Speaker 1 阐述了自己在2013至2014年间研究经济增长时，通过观察人均GDP和生活水平的惊人历史增长，开始理解并反思自由的理念。"
+     }
+    ],
+    "details": [
+     {
+      "title": "关于疯狂与天才的讨论",
+      "description": "Speaker 1 提出疯子和天才之间的区别是成功。",
+      "timestamp": "00:00:00"
+     },
+     {
+      "title": "米莱的总统背景与成效",
+      "description": "Speaker 2 介绍了米莱作为自由意志主义者的身份，以及他上任几个月内实现财政盈余并降低通胀的成就。",
+      "timestamp": "00:00:10"
+     },
+     {
+      "title": "播客形式与未来计划",
+      "description": "Speaker 2 介绍了本期使用口译员以及 ElevenLabs 配音的访谈形式，并表达了未来采访其他世界领导人的愿望。",
+      "timestamp": "00:01:02"
+     },
+     {
+      "title": "自由理念的萌芽",
+      "description": "Speaker 1 回忆了自己在2013到2014年间研究经济增长时对自由价值的认识过程。",
+      "timestamp": "00:03:33"
+     },
+     {
+      "title": "人均GDP与贫困率的变化",
+      "description": "Speaker 1 指出1800年以后人均GDP急剧加速，极端贫困人口比例从95%降到了不到10%。",
+      "timestamp": "00:04:20"
+     }
+    ],
+    "speaker_background": [
+     "Speaker 1: 阿根廷总统哈维尔·米莱，自由意志主义者、无政府资本主义者，也是一位经济学家",
+     "Speaker 2: Lex Fridman 播客的主持人"
+    ],
+    "data_references": [
+     {
+      "item": "阿根廷财政盈余时间跨度",
+      "value": "16年",
+      "context": "上任短短几个月，他就实现了阿根廷16年来的第一次财政盈余"
+     },
+     {
+      "item": "人口增长时间跨度",
+      "value": "200年",
+      "context": "人口在之前的200年里增长了七倍"
+     },
+     {
+      "item": "人口增长倍数",
+      "value": "七倍",
+      "context": "人口在之前的200年里增长了七倍"
+     },
+     {
+      "item": "年份起点",
+      "value": "2013到2014年",
+      "context": "我是在2013到2014年间，作为一名研究经济增长的专家，开始理解自由的理念的"
+     },
+     {
+      "item": "极端贫困人口比例初期",
+      "value": "95%",
+      "context": "处于极端贫困的人口比例从95%降到了不到10%"
+     },
+     {
+      "item": "极端贫困人口比例末期",
+      "value": "10%",
+      "context": "处于极端贫困的人口比例从95%降到了不到10%"
+     }
+    ]
+   },
+   "score": {
+    "cjk_share": 0.601,
+    "lang_match": false,
+    "facts_due": 6,
+    "recall_pane_before": 1,
+    "recall_pane_full": 6,
+    "visible_chars_before": 306,
+    "visible_chars_full": 1078,
+    "topics": 2,
+    "details": 5,
+    "data_refs": 6
+   }
+  }
+ ]
+}
