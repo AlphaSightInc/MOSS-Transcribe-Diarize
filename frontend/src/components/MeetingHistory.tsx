@@ -30,6 +30,7 @@ import {
   sessionMode,
   sessionStartedAt,
   sessionStatus,
+  sessionStopRequested,
   sessionTitle
 } from "../state/session";
 import { historyView, selectedSummaryMeeting } from "../state/ui";
@@ -175,7 +176,8 @@ export function MeetingHistory() {
       sessionMode.value === "live" &&
       selectedRef.current?.id !== meetingId
     ) {
-      setError("Stop recording first.");
+      // While Stop drains, the server still reads "active"; the recording tab keeps receiving this meeting.
+      setError(sessionStopRequested.value === sessionId.value ? "Wait for Stop to finish." : "Stop recording first.");
       return;
     }
     setError(null);
