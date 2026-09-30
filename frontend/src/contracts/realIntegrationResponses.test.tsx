@@ -6,9 +6,9 @@ import descriptor from "../test-fixtures/gemini-live-9fb217f4/descriptor.json";
 import liveSummary from "../test-fixtures/gemini-live-9fb217f4/live-summary.json";
 import serverSummary from "../test-fixtures/gemini-live-9fb217f4/server-summary.json";
 import meetingDetail from "../test-fixtures/gemini-live-9fb217f4/meeting-detail.json";
-import { SettingsDialog } from "../components/SettingsDialog";
+import { readEngineOptions, SettingsDialog } from "../components/SettingsDialog";
 import { SummaryPane } from "../components/SummaryPane";
-import { defaultAppSettings } from "../lib/settings";
+import { defaultAppSettings, saveAppSettings } from "../lib/settings";
 import { requestFinalSummary } from "../lib/summaryRequests";
 import { openMeeting } from "../api/meetings";
 import { sessionId, sessionStatus } from "../state/session";
@@ -24,20 +24,21 @@ function browserStorage() {
     removeItem: (key: string) => values.delete(key) });
 }
 
-it("reads transcription options from the captured descriptor envelope", async () => {
+it("keeps the documented fallback bounds for the captured round-2 descriptor (no I-3 seconds)", async () => {
   browserStorage();
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => descriptor }));
+  expect(readEngineOptions(descriptor)).toMatchObject({ vendors: ["gemini", "openai_compatible"],
+    refresh: { min: 5, max: 60 }, context: { min: 90, max: 300 },
+    cleanupAvailable: descriptor.descriptor.engine_options.cleanup_after_stop.available });
   await act(async () => render(<SettingsDialog />, root));
   await act(async () => root.querySelector<HTMLButtonElement>(".settings-trigger")!.click());
-  await vi.waitFor(() => expect(root.querySelector<HTMLSelectElement>('[aria-label="Speaker window"]')).not.toBeNull());
-  expect(root.querySelector<HTMLSelectElement>('[aria-label="Speaker window"]')?.value)
-    .toBe(descriptor.descriptor.engine_options.default_speaker_window);
-  expect(root.querySelector<HTMLInputElement>('.settings-checkbox input')?.checked)
-    .toBe(descriptor.descriptor.engine_options.cleanup_after_stop.default);
+  expect(root.querySelector<HTMLInputElement>('[aria-label="Refresh every (s)"]')?.value).toBe("15");
+  expect(root.querySelector<HTMLInputElement>('[aria-label="Context (s)"]')?.value).toBe("90");
 });
 
 it("renders the captured live-summary document as visible theme text", async () => {
   browserStorage();
+  saveAppSettings({ ...defaultAppSettings(), summary: { ...defaultAppSettings().summary, apiKey: "key" } });
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => liveSummary }));
   sessionId.value = meetingDetail.id; sessionStatus.value = "active";
   await act(async () => render(<SummaryPane hidden={false} />, root));

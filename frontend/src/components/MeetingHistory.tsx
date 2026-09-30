@@ -132,7 +132,7 @@ export function MeetingHistory() {
               summaryRegenerated.current.add(key);
               const artifact = await summaryApi(id);
               if (artifact && artifact.source_version < next.transcript_version &&
-                  loadAppSettings().summary.provider === "built-in") {
+                  loadAppSettings().summary.vendor === "gemini") {
                 await finalizeMeetingSummary(next);
               }
             }

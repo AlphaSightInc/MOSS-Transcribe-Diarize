@@ -1,0 +1,59 @@
+/* Settings dialog: the LiveTranscribe LLM Settings modal (.llm-modal*, .seg, .field-label, .btn in index.css)
+   plus the pieces it needs for tabs, toggles and a short prompt box. */
+
+.settings-modal .settings-tabs {
+  margin-bottom: 20px;
+}
+
+.settings-modal .llm-modal-toggle {
+  display: inline-flex;
+  align-items: center;
+  align-self: end;
+  gap: 8px;
+  min-height: 42px;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.settings-modal .llm-modal-toggle input {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.settings-modal .llm-modal-toggle:has(input:disabled) {
+  color: var(--muted-2);
+  cursor: not-allowed;
+}
+
+.settings-modal .settings-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-modal .settings-inline-btn {
+  min-height: 28px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.settings-modal textarea.settings-prompt {
+  min-height: 96px;
+  resize: vertical;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-modal input:disabled {
+  color: var(--muted-2);
+  background: var(--surface-3);
+}

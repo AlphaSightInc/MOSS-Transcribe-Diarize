@@ -1,6 +1,7 @@
 import { openMeeting } from "../api/meetings";
 import { OPEN_MEETING_EVENT, requestMeetingHistoryRefresh } from "./meetingEvents";
 import { MEETING_CREATED } from "./finalSummary";
+import { loadAppSettings, transcriptionWire } from "./settings";
 
 /** The existing account upload form, with per-item server outcomes. */
 export function bindFileUpload(): () => void {
@@ -84,15 +85,17 @@ export function bindFileUpload(): () => void {
     const current = ++generation;
     clearTimers(); results.replaceChildren(); submit.disabled = true;
     let accepted = 0, failed = 0;
+    const transcription = transcriptionWire(loadAppSettings()); // I-2, read at submit time.
     try {
       for (const file of files) {
         status.textContent = `Submitting ${accepted + failed + 1} of ${files.length + urls.length}…`;
-        const body = new FormData(); body.append("file", file, file.name);
+        const body = new FormData(); body.append("transcription", JSON.stringify(transcription));
+        body.append("file", file, file.name);
         (await send(file.name, "/api/meetings/file", { method: "POST", body }, current, file.size)) ? accepted++ : failed++;
       }
       for (const url of urls) {
         status.textContent = `Submitting ${accepted + failed + 1} of ${files.length + urls.length}…`;
-        (await send(url, "/api/meetings/url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) }, current)) ? accepted++ : failed++;
+        (await send(url, "/api/meetings/url", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url, transcription }) }, current)) ? accepted++ : failed++;
       }
       status.textContent = `${accepted} accepted; ${failed} need attention. Accepted work continues on the server.`;
     } finally { submit.disabled = false; }

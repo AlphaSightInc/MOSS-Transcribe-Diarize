@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { openMeeting, type Meeting } from "../api/meetings";
 import { summaryApi, SUMMARY_CHANGED, type SummaryArtifact, type SummaryDocument } from "../lib/finalSummary";
-import { finalizeMeetingSummary, requestLiveSummary, type LiveSummaryResponse } from "../lib/summaryRequests";
-import { loadAppSettings, SETTINGS_CHANGED } from "../lib/settings";
+import { createRollingLoop, finalizeMeetingSummary, GEMINI_KEY_REQUIRED, requestLiveSummary, SummaryRequestError,
+  summaryFailureReason, type LiveSummaryResponse } from "../lib/summaryRequests";
+import { loadAppSettings, missingGeminiKey, SETTINGS_CHANGED, type AppSettings } from "../lib/settings";
 import { sessionId, sessionStatus } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
+
+type Outcome = "ok" | "not_ready" | "failed";
+
+/** Rolling (live) summaries go through the server's Gemini path only. */
+const liveSummaries = (settings: AppSettings) =>
+  settings.summary.vendor === "gemini" && !missingGeminiKey(settings, "summary");
+const reasonOf = (cause: unknown) => cause instanceof SummaryRequestError ? cause.reason
+  : cause instanceof Error ? cause.message : "";
 
 export function SummaryPane({ hidden }: { hidden: boolean }) {
   const id = sessionId.value;
@@ -12,57 +21,68 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
   const meeting = selectedSummaryMeeting.value?.id === id ? selectedSummaryMeeting.value : null;
   const [rolling, setRolling] = useState<LiveSummaryResponse | null>(null);
   const [artifact, setArtifact] = useState<SummaryArtifact | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(Date.now());
   const [settings, setSettings] = useState(loadAppSettings);
   const improvementRequested = useRef<string | null>(null);
-  const liveRequestToken = useRef(0);
-  const liveMeetingId = useRef(id);
-  liveMeetingId.current = id;
+  const refreshLive = useRef<() => void>(() => undefined);
   useEffect(() => {
     const changed = () => setSettings(loadAppSettings());
     document.addEventListener(SETTINGS_CHANGED, changed);
     return () => document.removeEventListener(SETTINGS_CHANGED, changed);
   }, []);
-  const interval = settings.summary.provider === "built-in" ? settings.summary.intervalSeconds : 0;
 
-  async function refreshLive() {
-    const currentSettings = loadAppSettings();
-    if (!id || !active || currentSettings.summary.provider !== "built-in") return;
-    const token = ++liveRequestToken.current;
-    setBusy(true); setError("");
-    try {
-      const next = await requestLiveSummary(id, currentSettings);
-      if (liveMeetingId.current === id && liveRequestToken.current === token) setRolling(next);
-    } catch (cause) {
-      if (liveMeetingId.current === id && liveRequestToken.current === token)
-        setError(cause instanceof Error ? cause.message : "Live summary unavailable.");
-    } finally {
-      if (liveMeetingId.current === id && liveRequestToken.current === token) setBusy(false);
-    }
-  }
-
+  // One completion-timed loop per active meeting (J3). Settings are read at each decision.
   useEffect(() => {
-    liveRequestToken.current += 1;
-    setRolling(null); setArtifact(null); setError("");
-    setBusy(false);
+    setRolling(null); setArtifact(null); setError(null); setBusy(false);
+    if (!id || !active) return;
+    let current = true;
+    let manual = false;
+    const loop = createRollingLoop<Outcome>(async () => {
+      const requested = manual; manual = false;
+      const now = loadAppSettings();
+      if (!liveSummaries(now)) return "failed";
+      setBusy(true);
+      try {
+        const next = await requestLiveSummary(id, now);
+        if (current) { setRolling(next); setError(null); }
+        return "ok";
+      } catch (cause) {
+        const notReady = cause instanceof SummaryRequestError && cause.notReady;
+        // Too little finished speech is not a failure unless the user asked for this update.
+        if (current && (!notReady || requested)) setError(reasonOf(cause));
+        return notReady ? "not_ready" : "failed";
+      } finally {
+        if (current) setBusy(false);
+      }
+    }, last => {
+      const now = loadAppSettings();
+      if (!now.summary.rolling || !liveSummaries(now)) return null;
+      // The live transcript changes once per refresh window; retrying "not ready" sooner cannot succeed.
+      const wait = last === "not_ready" ? Math.max(now.summary.waitSeconds, now.transcription.refreshSeconds)
+        : now.summary.waitSeconds;
+      return wait * 1000;
+    });
+    refreshLive.current = () => { manual = true; void loop.now(); };
+    const changed = () => loop.reschedule();
+    document.addEventListener(SETTINGS_CHANGED, changed);
+    return () => {
+      current = false; loop.dispose(); refreshLive.current = () => undefined;
+      document.removeEventListener(SETTINGS_CHANGED, changed);
+    };
   }, [id, active]);
   useEffect(() => {
-    if (!id || !active || interval === 0) return;
-    const timer = setInterval(() => void refreshLive(), interval * 1000);
-    return () => clearInterval(timer);
-  }, [id, active, interval]);
-  useEffect(() => {
+    if (!active || !rolling) return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [active, rolling]);
   useEffect(() => {
     if (!id || active) return;
     let disposed = false;
     const read = async () => {
-      try { const next = await summaryApi(id); if (!disposed) { setArtifact(next); if (next?.state === "current") setError(""); } }
-      catch (cause) { if (!disposed) setError(cause instanceof Error ? cause.message : "Summary unavailable."); }
+      try { const next = await summaryApi(id); if (!disposed) { setArtifact(next); if (next?.state === "current") setError(null); } }
+      catch { /* A missed read keeps the last artifact; the next read retries. */ }
     };
     void read();
     const timer = setInterval(() => void read(), 5000);
@@ -70,57 +90,55 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
       const detail = (event as CustomEvent).detail;
       if (detail?.meeting_id !== id) return;
       if (detail.artifact) setArtifact(detail.artifact);
-      if (detail.error) setError(detail.error);
+      if (typeof detail.error === "string") setError(detail.error);
     };
     document.addEventListener(SUMMARY_CHANGED, changed);
     return () => { disposed = true; clearInterval(timer); document.removeEventListener(SUMMARY_CHANGED, changed); };
   }, [id, active]);
 
+  const keyMissing = missingGeminiKey(settings, "summary");
   const summaryStale = meeting?.refinement_state === "done" && artifact != null &&
     ["current", "failed", "cancelled"].includes(artifact.state) &&
     artifact.source_version < meeting.transcript_version;
   useEffect(() => {
-    if (!meeting || !summaryStale || settings.summary.provider !== "built-in") return;
+    if (!meeting || !summaryStale || settings.summary.vendor !== "gemini" || keyMissing) return;
     const key = `${meeting.id}:${meeting.transcript_version}`;
     if (improvementRequested.current === key) return;
     improvementRequested.current = key;
-    void finalizeMeetingSummary(meeting, settings).catch(cause =>
-      setError(cause instanceof Error ? cause.message : "Summary update unavailable."));
-  }, [meeting?.id, meeting?.transcript_version, summaryStale, settings.summary.provider]);
+    void finalizeMeetingSummary(meeting).catch(cause => setError(reasonOf(cause)));
+  }, [meeting?.id, meeting?.transcript_version, summaryStale, settings.summary.vendor, keyMissing]);
 
   async function refreshFinal() {
     if (!id || busy) return;
-    setBusy(true); setError("");
+    setBusy(true); setError(null);
     try {
       const current: Meeting = meeting ?? await openMeeting(id);
       await finalizeMeetingSummary(current);
       setArtifact(await summaryApi(id));
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Summary unavailable."); }
+    } catch (cause) { setError(reasonOf(cause)); }
     finally { setBusy(false); }
   }
 
   const elapsed = rolling ? Math.max(0, Math.floor((now - rolling.generated_at_ms) / 1000)) : 0;
-  const next = interval ? Math.max(0, interval - elapsed) : 0;
   const finalDocument = artifact?.state === "current" ? artifact.document : null;
+  const failed = error !== null || (!active && artifact?.state === "failed");
+  const reason = error ?? summaryFailureReason(artifact?.error_code);
+  const unavailable = settings.summary.vendor === "off" ? "Summary is off in Settings"
+    : keyMissing ? GEMINI_KEY_REQUIRED
+    : active && settings.summary.vendor !== "gemini" ? "Rolling summary needs Gemini" : "";
   return <section className="summary-pane" aria-label="Summary" hidden={hidden}>
-    {!id ? <p className="empty-state">Open a meeting to see its summary.</p> : <>
+    {id && <>
       <div className="summary-status-row"><div><span className="eyebrow">{active ? "Rolling summary" : "Final summary"}</span>
-        <p role="status">{active ? rolling ? `Updated ${elapsed}s ago${interval && !error ? ` · next in ${next}s` : ""}` : interval ? "Waiting for first update" : "Rolling summary is off"
-          : artifact?.state === "current" ? "Summary ready" : artifact ? `Summary ${artifact.state.replaceAll("_", " ")}` : "No saved summary yet"}</p></div>
-        <button type="button" className="btn" data-summary-refresh disabled={busy || settings.summary.provider === "off"}
-          onClick={() => void (active ? refreshLive() : refreshFinal())}>{busy ? "Refreshing…"
-            : !active && (error || artifact?.state === "failed") ? "Retry"
-            : !active && summaryStale && settings.summary.provider === "external" ? "Update summary" : "Refresh"}</button></div>
-      {error && (active ? <p className="summary-notice" role="status">
-        {rolling ? "Latest update failed; showing the last summary." : "Summary update failed."}
-        {interval ? " Retrying at the next interval." : " Use Refresh to retry."}
-      </p> : <p role="alert">{error}</p>)}
-      {active ? rolling ? <div className="summary-content"><h3>Theme</h3><p>{rolling.summary.summary}</p></div>
-        : <p className="empty-state">Summary will appear when enough finished speech is available.</p>
-        : finalDocument ? <SummaryDocumentView document={finalDocument} />
-        : <p className="empty-state">{artifact?.state === "failed" || error
-          ? "The summary is unavailable."
-          : "Finish transcription to generate a summary."}</p>}
+        {active && rolling && <p role="status">Updated {elapsed}s ago</p>}</div>
+        <button type="button" className="btn" data-summary-refresh disabled={busy || Boolean(unavailable)}
+          title={unavailable || undefined}
+          onClick={() => active ? refreshLive.current() : void refreshFinal()}>{busy ? "Refreshing…"
+            : failed ? "Retry"
+            : !active && summaryStale && settings.summary.vendor === "openai_compatible" ? "Update summary" : "Refresh"}</button></div>
+      {keyMissing ? <p className="summary-notice" role="status">{GEMINI_KEY_REQUIRED}</p>
+        : failed && <p className="summary-notice" role="alert">Summary failed{reason ? ` — ${reason}` : ""}</p>}
+      {active ? rolling && <div className="summary-content"><h3>Theme</h3><p>{rolling.summary.summary}</p></div>
+        : finalDocument && <SummaryDocumentView document={finalDocument} />}
     </>}
   </section>;
 }

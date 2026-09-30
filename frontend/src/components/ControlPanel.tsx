@@ -12,7 +12,7 @@ import { settledSpeakerNumbers, transcriptCardSpeakerLabel } from "../lib/transc
 import { serializeTranscriptExport, triggerTranscriptExportDownload, type TranscriptExportFormat } from "../lib/transcriptExport";
 import { summaryApi } from "../lib/finalSummary";
 import { openMeeting } from "../api/meetings";
-import { loadAppSettings } from "../lib/settings";
+import { engineSettingsFrom, loadAppSettings } from "../lib/settings";
 import { sessionId, sessionNeedsReview, sessionStatus, transcript, liveLabelPolicy } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 import { watchMeetingSummary } from "../lib/summaryRequests";
@@ -238,9 +238,7 @@ export function ControlPanel() {
     resetSessionState();
     sessionTitle.value = "";
     try {
-      const settings = loadAppSettings();
-      const session = await client.createSession({ speaker_window: settings.speakerWindow,
-        cleanup_after_stop: settings.cleanupAfterStop });
+      const session = await client.createSession(engineSettingsFrom(loadAppSettings()));
       watchMeetingSummary(session.id);
       saveSessionReattach(sessionReattachStorage(), {
         sessionId: session.id

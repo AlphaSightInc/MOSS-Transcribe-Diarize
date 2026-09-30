@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { bindFileUpload } from "./fileUpload";
 import { OPEN_MEETING_EVENT } from "./meetingEvents";
+import { defaultAppSettings, saveAppSettings } from "./settings";
 
 let dispose = () => {};
 afterEach(() => { dispose(); document.body.replaceChildren(); vi.unstubAllGlobals(); vi.useRealTimers(); });
@@ -95,4 +96,29 @@ it('sends a file only after preflight succeeds, preserving authoritative upload 
   form.dispatchEvent(new Event('submit', { cancelable: true }));
   await vi.waitFor(() => expect(document.body.textContent).toContain('Not accepted: Insufficient storage for upload.'));
   expect(fetcher.mock.calls.map(call => call[0])).toEqual(['/api/meetings/file/admission', '/api/meetings/file']);
+});
+
+it('sends the browser transcription settings (I-2) with every file and URL', async () => {
+  const values = new Map<string, string>();
+  vi.stubGlobal('localStorage', { getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) });
+  const settings = defaultAppSettings();
+  settings.transcription.apiKey = 'k';
+  saveAppSettings(settings);
+  const form = setup();
+  Object.defineProperty(form.querySelector('input'), 'files', { value: [new File(['audio'], 'media.wav')] });
+  form.querySelector('textarea')!.value = 'https://example.test/a.mp3';
+  const bodies: Record<string, BodyInit | null | undefined> = {};
+  vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+    if (url.endsWith('/admission')) return new Response(null, { status: 204 });
+    if (url === '/api/meetings/file' || url === '/api/meetings/url') { bodies[url] = init?.body; return response(meeting('completed')); }
+    return response(meeting('completed'));
+  }));
+  form.dispatchEvent(new Event('submit', { cancelable: true }));
+  await vi.waitFor(() => expect(Object.keys(bodies)).toHaveLength(2));
+  const wire = { vendor: 'gemini', url: null, model: 'gemini-3.5-transcribe', api_key: 'k' };
+  const multipart = bodies['/api/meetings/file'] as FormData;
+  expect(JSON.parse(multipart.get('transcription') as string)).toEqual(wire);
+  expect((multipart.get('file') as File).name).toBe('media.wav');
+  expect(JSON.parse(bodies['/api/meetings/url'] as string)).toEqual({ url: 'https://example.test/a.mp3', transcription: wire });
 });

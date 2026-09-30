@@ -426,9 +426,27 @@ describe("browser capture frame contract", () => {
     active.lanes.set("system", testLaneState());
     active.onWorkletFrame("microphone", workletFrame(0));
     active.onWorkletFrame("system", { ...workletFrame(0), lane: "system" });
-    await client.createSession({ speaker_window: "economy", cleanup_after_stop: true });
+    const engineSettings = { transcription: { vendor: "gemini" as const, url: null, model: "gemini-3.5-transcribe", api_key: "k" },
+      refresh_seconds: 15, context_seconds: 90, cleanup_after_stop: true };
+    await client.createSession(engineSettings);
     expect(fetchSpy.mock.calls[0][1]).toMatchObject({ headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ engine_settings: { speaker_window: "economy", cleanup_after_stop: true } }) });
+      body: JSON.stringify({ engine_settings: engineSettings }) });
+  });
+
+  it.each([
+    [{ detail: { code: "api_key_required" } }, "Enter your Gemini API key in Settings."],
+    [{ code: "api_key_required" }, "Enter your Gemini API key in Settings."],
+    [{ detail: "Refresh every must not exceed Context." }, "Refresh every must not exceed Context."],
+    [{ detail: { code: "other" } }, "session create failed: HTTP 400"],
+  ])("explains a 400 session-create refusal %j", async (body, message) => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: false, status: 400, json: async () => body });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = activeFrameClient();
+    client.session = null;
+    client.lanes.set("system", testLaneState());
+    client.onWorkletFrame("microphone", workletFrame(0));
+    client.onWorkletFrame("system", { ...workletFrame(0), lane: "system" });
+    await expect((client as unknown as CaptureClient).createSession()).rejects.toThrow(message);
   });
 
   it("explains the typed live capacity refusal without retrying", async () => {
