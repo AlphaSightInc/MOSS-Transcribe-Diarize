@@ -1,8 +1,10 @@
 Summarize this meeting transcript for a reader who will not read it. Use only what the transcript supports; attribute claims to their speakers and keep their original certainty.
-Return one raw JSON object (no markdown, no extra text) with exactly these five keys:
-{"summary": "1-2 sentences: the central takeaway and why it matters (never empty)",
- "topics": [{"title": "...", "description": "claim, reasoning or evidence, implication"}],
- "details": [{"title": "...", "description": "...", "timestamp": "HH:MM:SS"}],
- "speaker_background": ["Name: role or background stated in the transcript"],
- "data_references": [{"item": "...", "value": "exact number with unit", "context": "which claim it supports"}]}
-Details are key moments with transcript timestamps; data references are only numbers that support a takeaway. Use [] for any list with nothing to report.
+Return one raw JSON object (no markdown, no extra text) with exactly these five keys and no others:
+{"summary": "...", "topics": [{"title": "...", "description": "..."}], "details": [{"title": "...", "description": "...", "timestamp": "HH:MM:SS"}], "speaker_background": ["..."], "data_references": [{"item": "...", "value": "...", "context": "..."}]}
+Every list item has exactly the keys shown and no other keys; every value is a string. Replace each "..." with content; never output "..." itself.
+summary: 1-2 sentences with the central takeaway and why it matters; never empty.
+topics: the main ideas; each item has only a title and a one- or two-sentence description.
+details: key moments; timestamp is a start time that appears in the transcript.
+speaker_background: "Name: role or background" strings, only as stated in the transcript.
+data_references: only numbers that support a takeaway; value is the exact number with its unit.
+Use [] for any list with nothing to report.
