@@ -57,7 +57,7 @@ describe("transcriptExport", () => {
 
   it("includes a saved summary in Markdown export", () => {
     const file = serializeTranscriptExport("md", [makeTurn(0, "Jamie", "Hello")], () => "Jamie",
-      { sessionId: "m", exportedAt: new Date(0) }, { needsReview: false },
+      { sessionId: "m", exportedAt: new Date(0) },
       { summary: "Decision made.", topics: [{ title: "Schedule", description: "Next week." }],
         details: [], speaker_background: [], data_references: [] });
     expect(file.content).toContain("# Summary\n\nDecision made.");
@@ -66,25 +66,18 @@ describe("transcriptExport", () => {
   });
 
   it.each(["confirmed", "provisional"] as const)(
-    "marks %s exports in every format until finalization",
+    "exports %s turns as plain transcript without an attribution notice (Q6)",
     (state) => {
       const turns = [makeTurn(36, "SPEAKER_02", "Second turn", { state })];
-      const caveat = "Speaker attribution is provisional and may change before the meeting is finished.";
       const resolveLabel = () => "Jamie";
       const identity = {
         sessionId: "session-42",
         exportedAt: new Date("2026-08-18T20:00:16.182Z")
       };
 
-      expect(serializeTranscriptExport("md", turns, resolveLabel, identity).content).toContain(
-        `> **Provisional attribution:** ${caveat}`
-      );
-      expect(serializeTranscriptExport("txt", turns, resolveLabel, identity).content).toContain(
-        `Provisional attribution: ${caveat}`
-      );
-      expect(JSON.parse(serializeTranscriptExport("json", turns, resolveLabel, identity).content)).toMatchObject({
-        provisional_attribution_notice: `Provisional attribution: ${caveat}`
-      });
+      expect(serializeTranscriptExport("md", turns, resolveLabel, identity).content).toBe("## [00:00:36] Jamie\n\nSecond turn");
+      expect(serializeTranscriptExport("txt", turns, resolveLabel, identity).content).toBe("[00:00:36] Jamie:\nSecond turn");
+      expect(Object.keys(JSON.parse(serializeTranscriptExport("json", turns, resolveLabel, identity).content))).toEqual(["version", "turns"]);
     }
   );
 });
@@ -128,9 +121,10 @@ it.each(["srt", "vtt"] as const)("keeps %s empty and provisional exports syntact
   const identity = { sessionId: "m", exportedAt: new Date(0) };
   expect(serializeTranscriptExport(format, [], () => "Alex", identity).content).toBe(format === "vtt" ? "WEBVTT\n\n" : "");
   const content = serializeTranscriptExport(format, [makeTurn(0, "Alex", "Words", { state: "provisional" })], t => t.display_name, identity).content;
-  expect(content).toContain("Provisional attribution");
+  expect(content).not.toContain("Provisional attribution");
+  expect(content).not.toContain("NOTE");
   expect(content).toContain("Alex: Words");
-  expect(content).toMatch(format === "vtt" ? /^WEBVTT\n\nNOTE / : /^1\n00:00:00,000 --> 00:00:01,000\n/);
+  expect(content).toMatch(format === "vtt" ? /^WEBVTT\n\n1\n/ : /^1\n00:00:00,000 --> 00:00:01,000\n/);
 });
 
 
@@ -160,19 +154,18 @@ it.each(["srt", "vtt"] as const)("keeps %s lane overlap with speaker-only labels
 });
 
 it.each(["md", "txt", "json", "srt", "vtt"] as const)(
-  "marks needs-review saved output in %s",
+  "never writes a needs-review notice into %s output",
   format => {
     const file = serializeTranscriptExport(
       format,
-      [makeTurn(0, "Speaker TBD", "Uncertain words", {
+      [makeTurn(0, "Speaker 1", "Uncertain words", {
         speaker: "S00", speaker_entity_id: "S00"
       })],
       item => item.display_name,
-      { sessionId: "review", exportedAt: new Date(0) },
-      { needsReview: true }
+      { sessionId: "review", exportedAt: new Date(0) }
     );
-    expect(file.content).toContain("Needs review");
-    expect(file.content).toContain("Speaker TBD");
+    expect(file.content).not.toContain("Needs review");
+    expect(file.content).toContain("Uncertain words");
     if (format !== "json") expect(file.content).not.toContain("S00");
   }
 );
@@ -184,8 +177,7 @@ it("keeps the API unresolved identity in JSON exports", () => {
       speaker: "S00", speaker_entity_id: "S00"
     })],
     item => item.display_name,
-    { sessionId: "review", exportedAt: new Date(0) },
-    { needsReview: true }
+    { sessionId: "review", exportedAt: new Date(0) }
   );
   const [turn] = JSON.parse(file.content).turns;
   expect(turn.speaker).toBe("S00");
@@ -198,8 +190,7 @@ it("does not synthesize an SRT artifact for an empty review transcript", () => {
     "srt",
     [],
     () => "Speaker TBD",
-    { sessionId: "empty-review", exportedAt: new Date(0) },
-    { needsReview: true }
+    { sessionId: "empty-review", exportedAt: new Date(0) }
   );
   expect(file.content).toBe("");
 });

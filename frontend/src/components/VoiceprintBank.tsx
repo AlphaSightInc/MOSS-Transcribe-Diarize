@@ -51,26 +51,31 @@ export function VoiceprintBank() {
 
   if (historyView.value !== "voiceprints") return null;
 
-  return <section className="control-section" aria-label="Private voiceprints"><div>
-      <p className="hint">Private to this browser workspace. Name a speaker during capture to save their voiceprint; no separate recording needed.</p>
+  return <section className="control-section" aria-label="Voiceprints"><div>
       <button type="button" className="history-toolbar-btn" disabled={busy} onClick={() => void refresh()}>Refresh</button>
       {error ? <p role="alert">{error}</p> : null}
-      {busy ? <p role="status">Working…</p> : null}
       {!busy && !rows.length && !error ? <p className="hint">No voiceprints yet.</p> : null}
-      <ul className="voiceprint-list">{rows.map(row => <li key={row.id} data-voiceprint-id={row.id}>
-        <strong>{row.label}</strong> <span className="hint">{row.sample_count} saved sample{row.sample_count === 1 ? "" : "s"}</span>
-        {row.compatibility === "re_enrollment_required" ? <p className="hint">Re-enrollment required: this voiceprint uses a different encoder.</p> : null}
-        <div className="history-dialog-actions">
-          <button type="button" className="history-toolbar-btn" disabled={busy} onClick={() => { setTarget({ row, deleting: false }); setLabel(row.label); setError(null); }}>Rename</button>
-          <button type="button" className="history-toolbar-btn" disabled={busy} onClick={() => { setTarget({ row, deleting: true }); setError(null); }}>Delete</button>
+      {/* Reference history-card rows (LiveTranscribe VoiceprintSurface). */}
+      <ul className="voiceprint-list history-group-list">{rows.map(row => <li key={row.id} data-voiceprint-id={row.id}
+        className="history-card history-card-voiceprint">
+        <div className="history-card-headline">
+          <div className="history-card-copy">
+            <p className="history-card-title">{row.label}</p>
+            {row.compatibility === "re_enrollment_required" ? <p className="history-card-meta">Re-enroll needed</p> : null}
+          </div>
+          <span className="history-duration-chip">{row.sample_count} sample{row.sample_count === 1 ? "" : "s"}</span>
+        </div>
+        <div className="history-card-actions">
+          <button type="button" className="history-action-btn" disabled={busy} onClick={() => { setTarget({ row, deleting: false }); setLabel(row.label); setError(null); }}>Rename</button>
+          <button type="button" className="history-action-btn is-danger" disabled={busy} onClick={() => { setTarget({ row, deleting: true }); setError(null); }}>Delete</button>
         </div>
       </li>)}</ul>
       {target ? <form onSubmit={event => void save(event)} aria-label={target.deleting ? "Delete voiceprint" : "Rename voiceprint"}>
-        {target.deleting ? <p>Delete “{target.row.label}” and its saved samples? Recorded names stay; future recognition cannot use this voiceprint.</p>
-          : <label>Voiceprint name<input value={label} required disabled={busy} onInput={event => setLabel(event.currentTarget.value)} /></label>}
+        {target.deleting ? <p>Delete “{target.row.label}”?</p>
+          : <label>Name<input value={label} required disabled={busy} onInput={event => setLabel(event.currentTarget.value)} /></label>}
         <div className="history-dialog-actions">
           <button type="button" className="history-toolbar-btn" disabled={busy} onClick={() => setTarget(null)}>Cancel</button>
-          <button type="submit" className="history-toolbar-btn" disabled={busy || (!target.deleting && !label.trim())}>{target.deleting ? "Confirm delete" : "Save name"}</button>
+          <button type="submit" className="history-toolbar-btn" disabled={busy || (!target.deleting && !label.trim())}>{target.deleting ? "Delete" : "Save"}</button>
         </div>
       </form> : null}
     </div>

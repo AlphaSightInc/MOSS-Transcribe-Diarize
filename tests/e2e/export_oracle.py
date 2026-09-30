@@ -84,8 +84,10 @@ def compare_export(fmt,text,meeting):
     except (ValueError,KeyError,TypeError):
         return dict(ok=False,expected_turns=len(expected),parse_error=True)
     same_count=len(actual)==len(expected) and bool(expected)
+    # Round-3 Q6: export files carry the transcript only, never a review notice, whatever the
+    # meeting's needs_review flag says. The parser still detects a notice so one that returns fails.
     checks=dict(words=same_count,labels=same_count,timing=same_count,identity=same_count,
-                review=review is (meeting.get('needs_review') is True))
+                review=review is False)
     if fmt=='json': checks.update(lane=same_count,ids=same_count)
     for a,b in zip(actual,expected):
         checks['words'] &= a['tokens']==b['tokens']

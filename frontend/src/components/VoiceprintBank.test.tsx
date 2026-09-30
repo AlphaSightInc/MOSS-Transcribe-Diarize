@@ -25,7 +25,9 @@ it("loads only when opened and targets duplicate names by opaque ID", async () =
   act(() => { historyView.value = "voiceprints"; });
   await vi.waitFor(() => expect(root.querySelectorAll("li")).toHaveLength(2));
   act(() => root.querySelectorAll<HTMLButtonElement>('[data-voiceprint-id="b"] button')[1].click());
-  expect(root.textContent).toContain("Recorded names stay");
+  expect(root.textContent).toContain("Delete “Alex”?");
+  expect(root.textContent).not.toContain("Recorded names stay");
+  expect(root.textContent).not.toContain("Private to this browser");
   await act(async () => { root.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   await vi.waitFor(() => expect(root.querySelectorAll("li")).toHaveLength(1));
   expect(root.querySelector("li")?.getAttribute("data-voiceprint-id")).toBe("a");
@@ -39,7 +41,9 @@ it("explains incompatible entries and retains a failed rename for retry", async 
   ), { status: init?.method === "PUT" ? 401 : 200 })));
   await act(async () => render(<VoiceprintBank />, root));
   act(() => { historyView.value = "voiceprints"; });
-  await vi.waitFor(() => expect(root.textContent).toContain("Re-enrollment required"));
+  await vi.waitFor(() => expect(root.textContent).toContain("Re-enroll needed"));
+  expect(root.textContent).toContain("1 sample");
+  expect(root.textContent).not.toContain("different encoder");
   act(() => root.querySelector<HTMLButtonElement>("li button")!.click());
   await act(async () => { root.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   await vi.waitFor(() => expect(root.querySelector("[role='alert']")?.textContent).toBe("Workspace credential is unavailable."));

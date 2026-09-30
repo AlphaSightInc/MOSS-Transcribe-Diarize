@@ -17,44 +17,40 @@ _NANOSECONDS_PER_SECOND = 1_000_000_000
 _CAPTURE_HEALTH_FRAME_PERIODS = 4
 _SUSTAINED_REJECTION_OUTCOMES = 4
 
+# Round-3 Q6 text rule: a status line exists only when it tells the user what to do or why a
+# control will not work (keep list K1-K5 in docs/plan-r3-ui.md). Every other state is "" --
+# the browser's top pill and buttons carry it -- and raw codes never reach the page.
 BROWSER_MICROPHONE_SILENT_STATUS_LINE = (
-    "No microphone sound was detected. In Chrome, open Settings > Privacy and security > "
-    "Site settings > Microphone and select the correct default input."
+    "No microphone sound — check the input in Chrome site settings."  # K1
 )
+RECONNECTING_STATUS_LINE = "Reconnecting — keep this tab open."  # K4
 
 _FAILURE_STATUS_LINES: dict[str, str | dict[str, str]] = {
     "browser_microphone_permission_denied": (
-        "Microphone access was denied. Allow microphone access in Chrome and try again."
+        "Microphone blocked — allow it in Chrome site settings."
     ),
-    "browser_capture_request_rejected": (
-        "Screen sharing did not start. Choose a tab or screen and try again."
-    ),
+    "browser_capture_request_rejected": "Sharing did not start.",
     "browser_surface_audio_missing": (
-        "The shared surface has no audio. Choose a Chrome tab and enable Share tab audio."
+        "No audio in that share — choose a tab and turn on Share tab audio."
     ),
+    # K3. The server seals a lane whose track ended, so mid-meeting the only way back is a
+    # new recording; after the meeting ends the plain fact is enough.
     "browser_track_ended": {
-        "microphone": "Microphone audio stopped. Continuing with shared audio.",
-        "system": "Shared audio stopped. Continuing with microphone audio.",
+        "microphone": "Microphone stopped — stop and start a new recording to include it.",
+        "system": "Shared audio stopped — stop and start a new recording to include it.",
     },
+    # Nothing in the page resumes a suspended AudioContext; a new recording does.
     "browser_audio_context_suspended": (
-        "Audio capture was suspended. Return to this tab and resume capture."
+        "Audio paused by the browser — stop and start a new recording."
     ),
-    "browser_sustained_clipping": {
-        "microphone": "Microphone audio is too loud and may sound distorted.",
-        "system": "Shared audio is too loud and may sound distorted.",
+    "browser_sustained_clipping": {  # K2
+        "microphone": "Microphone too loud — lower it.",
+        "system": "Shared audio too loud — lower it.",
     },
     "browser_microphone_silent": BROWSER_MICROPHONE_SILENT_STATUS_LINE,
 }
+_ENDED_STATUS_LINES = {"microphone": "Microphone stopped.", "system": "Shared audio stopped."}
 BROWSER_CAPTURE_FAILURE_CODES = frozenset(_FAILURE_STATUS_LINES)
-
-_HELPER_STATUS_LINES = {
-    "starting": "Starting audio capture.",
-    "capturing": "Capturing microphone and shared audio.",
-    "degraded": "Audio capture is degraded, but the session is continuing.",
-    "recovering": "Audio capture is recovering.",
-    "failed": "Audio capture failed.",
-    "stopped": "Audio capture stopped.",
-}
 
 
 @dataclass(frozen=True, slots=True)
@@ -273,7 +269,7 @@ def project_live_capture_status(
         return terminal_status
 
     if presence is None:
-        return LiveCaptureStatus("starting", "Waiting for audio capture to start.")
+        return LiveCaptureStatus("starting", "")
 
     failed_lanes = {
         lane for lane, health in presence.lanes.items() if health.state == "failed"
@@ -314,12 +310,6 @@ def project_live_capture_status(
         (state != "failed", lane, code) for lane, (state, code) in issues.items()
     )
     if not sorted_issues:
-        if phase == "awaiting_audio":
-            if len(awaiting_lanes) == 1:
-                lane = awaiting_lanes[0]
-                label = "microphone audio" if lane == "microphone" else "shared audio"
-                return LiveCaptureStatus(phase, f"Waiting for {label} to arrive.")
-            return LiveCaptureStatus(phase, "Waiting for microphone and shared audio to arrive.")
         if phase == "recording" and presence.state == "capturing":
             observation_issue = _server_observation_issue(
                 v2_session=v2_session,
@@ -330,7 +320,7 @@ def project_live_capture_status(
             if observation_issue is not None:
                 lane, condition = observation_issue
                 return LiveCaptureStatus(phase, _observation_status_line(lane, condition))
-        return LiveCaptureStatus(phase, _HELPER_STATUS_LINES[presence.state])
+        return LiveCaptureStatus(phase, "")
 
     not_failed, lane, code = sorted_issues[0]
     return LiveCaptureStatus(
@@ -352,9 +342,10 @@ def _terminal_capture_status(
             "failed",
             _issue_status_line(lane, code, is_failed=True, continuing=False),
         )
+    # The browser maps an abnormal end to K5 and a clean close to nothing.
     if terminal_session_status == "closed":
-        return LiveCaptureStatus("stopped", "Audio capture stopped.")
-    return LiveCaptureStatus("failed", "Audio capture failed.")
+        return LiveCaptureStatus("stopped", "")
+    return LiveCaptureStatus("failed", "")
 
 
 def _issue_status_line(
@@ -367,15 +358,15 @@ def _issue_status_line(
     status_line = _FAILURE_STATUS_LINES.get(code)
     if isinstance(status_line, dict):
         if not continuing and code == "browser_track_ended":
-            label = "Microphone" if lane == "microphone" else "Shared audio"
-            return f"{label} audio stopped."
+            return _ENDED_STATUS_LINES[lane]
         return status_line[lane]
     if status_line is not None:
         return status_line
+    # An unknown future code still names the source and the one action that restores it.
     label = "Microphone" if lane == "microphone" else "Shared audio"
-    condition = "failed" if is_failed else "is degraded"
-    suffix = " The session is continuing." if continuing else ""
-    return f"{label} capture {condition}.{suffix}"
+    if not is_failed:
+        return ""
+    return f"{label} stopped — stop and start a new recording to include it." if continuing else f"{label} stopped."
 
 
 def _capture_session_id(value: str) -> None:
@@ -415,16 +406,13 @@ def _server_observation_issue(
 
 
 def _observation_status_line(lane: LiveLane, condition: str) -> str:
-    label = "Microphone audio" if lane == LiveLane.MICROPHONE else "Shared audio"
-    source_label = "microphone" if lane == LiveLane.MICROPHONE else "shared audio"
-    if condition == "sequence":
-        return f"{label} frames are out of sequence. Reconnecting capture."
-    if condition == "backpressure":
-        return f"Server is catching up on {label.lower()}."
-    if condition == "silence":
-        return f"No {source_label} sound is being detected."
-    if condition == "stale":
-        return f"{label} has stopped arriving. Check capture and try again."
+    # Out-of-sequence and stalled frames are transport trouble the browser retries (K4). Server
+    # catch-up needs no action, and server-side silence is either a quiet meeting (shared audio)
+    # or already named by the browser's own 10 s microphone check (K1).
+    if condition in {"sequence", "stale"}:
+        return RECONNECTING_STATUS_LINE
+    if condition in {"backpressure", "silence"}:
+        return ""
     raise ValueError(f"unknown capture observation condition: {condition}")
 
 

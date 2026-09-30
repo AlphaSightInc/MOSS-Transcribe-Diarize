@@ -568,7 +568,7 @@ export class CaptureClient {
         : null;
       if (code === "live_capacity_full") {
         throw new Error(
-          "Two live meetings are already recording. Stop one before starting another.",
+          "Two meetings are already recording — stop one first.",
         );
       }
       // I-2: a missing Gemini key is typed; other invalid engine settings carry a human detail.

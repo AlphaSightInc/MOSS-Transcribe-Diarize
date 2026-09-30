@@ -141,6 +141,11 @@ export function defaultSpeakerLabel(id: string, numbers: ReadonlyMap<string, num
 export function transcriptCardSpeakerLabel(turn: SpeakerRow, numbers: ReadonlyMap<string, number>): string {
   const id = speakerId(turn);
   if (isBackendUnknownSpeakerId(id)) return UNATTRIBUTED_SPEAKER_LABEL;
+  // A microphone-lane speaker carrying a server default ("Speaker n", "User n", "You") follows its id.
+  const display = turn.display_name.trim();
+  if (microphoneSpeakerLabel(id) !== null && /^(?:Speaker \d+|User \d+|You)$/.test(display)) {
+    return defaultSpeakerLabel(id, numbers);
+  }
   // A name chosen by the operator is literal, including a generic-looking name.
-  return hasCustomName(turn) ? turn.display_name.trim() : defaultSpeakerLabel(id, numbers);
+  return hasCustomName(turn) ? display : defaultSpeakerLabel(id, numbers);
 }

@@ -30,7 +30,7 @@ def test_header_and_pane_dimensions_survive_demo_changes(viewport):
             page.route('**/*', route)
             page.goto('http://demo.test')
             page.locator('[data-history-boot="ready"]').wait_for()
-            expect(page.locator('.topbar .session-title')).to_have_text('MOSS')
+            expect(page.locator('.topbar .session-title')).to_have_text('aiSight - LiveTranscribe')
             page.get_by_role('region', name='Meeting history', exact=True).locator('[data-open-meeting="demo-file"]').click()
             expect(page.locator('#tr-body')).to_contain_text('Demo words')
             expect(page.locator('.topbar .session-title')).to_have_text(meeting.title)

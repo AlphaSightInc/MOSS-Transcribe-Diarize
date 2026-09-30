@@ -469,7 +469,7 @@ describe("browser capture frame contract", () => {
     client.onWorkletFrame("system", { ...workletFrame(0), lane: "system" });
 
     await expect((client as unknown as CaptureClient).createSession()).rejects.toThrow(
-      "Two live meetings are already recording. Stop one before starting another.",
+      "Two meetings are already recording — stop one first.",
     );
     expect(fetchSpy).toHaveBeenCalledOnce();
   });

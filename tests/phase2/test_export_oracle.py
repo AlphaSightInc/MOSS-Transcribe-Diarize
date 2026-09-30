@@ -4,7 +4,10 @@ import json
 import subprocess
 from pathlib import Path
 import pytest
-from tests.e2e.export_oracle import compare_export, expected_rows
+import re
+from tests.e2e.export_oracle import (
+    MARKDOWN_NEEDS_REVIEW_NOTICE, NEEDS_REVIEW_NOTICE, compare_export, expected_rows,
+)
 from tests.e2e.verify_workspace import Harness
 
 FORMATS=('md','txt','json','srt','vtt')
@@ -59,7 +62,7 @@ for (const s of doc.transcript.segments) {
   last.end = s.end; last.text += ' ' + s.text; last.segment_ids.push(s.id); last.target_segment_keys.push(s.id);
  } else turns.push({...s,speaker:identity,speaker_entity_id:identity,display_name:s.speaker,state:'final',segment_ids:[s.id],target_segment_keys:[s.id],provisional_stale:false});
 }
-console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,turns,t=>t.display_name,{sessionId:'meeting',exportedAt:new Date(0)},{needsReview:doc.needs_review===true}).content]))));"""
+console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,turns,t=>t.display_name,{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"""
     return json.loads(subprocess.check_output(
         ['node', '--experimental-strip-types', '--input-type=module', '-e', script, json.dumps(meeting)],
         text=True, cwd=Path(__file__).resolve().parents[2]))
@@ -67,7 +70,7 @@ console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].ma
 
 @pytest.mark.parametrize('source_mode', ('live', 'file'))
 @pytest.mark.parametrize('fmt', FORMATS)
-def test_unknown_passage_exports_round_trip_with_review_metadata(fmt, source_mode):
+def test_unknown_passage_exports_round_trip_without_review_notice(fmt, source_mode):
     meeting = copy.deepcopy(UNKNOWN_MEETING)
     meeting['mode'] = source_mode
     if source_mode == 'file':
@@ -76,7 +79,8 @@ def test_unknown_passage_exports_round_trip_with_review_metadata(fmt, source_mod
     exported = serialize_exports(meeting)[fmt]
     result = compare_export(fmt, exported, meeting)
     assert result['ok']
-    assert result['review'] is True
+    assert result['review'] is True  # the check passed: no "Needs review" notice in the file
+    assert 'Needs review' not in exported
     if fmt == 'json':
         unresolved = [turn for turn in json.loads(exported)['turns']
                       if turn['speaker_label'] == 'Speaker TBD']
@@ -91,7 +95,7 @@ def test_unknown_passage_exports_round_trip_with_review_metadata(fmt, source_mod
     ('wrong_speaker','labels'),
     ('dropped_word','words'),
     ('changed_time','timing'),
-    ('missing_review','review'),
+    ('added_review','review'),
 ])
 def test_unknown_passage_export_corruptions_fail(fmt, mutation, failed_check, unknown_exports):
     text=unknown_exports[fmt]
@@ -101,13 +105,14 @@ def test_unknown_passage_export_corruptions_fail(fmt, mutation, failed_check, un
         if fmt=='json':
             body=json.loads(text);body['turns'][0]['start']=8.0;text=json.dumps(body)
         else: text=text.replace('00:00:00','00:00:08',1)
-    if mutation=='missing_review':
+    if mutation=='added_review':
+        # A regression that writes the removed review notice back into the file must fail.
         if fmt=='json':
-            body=json.loads(text);body.pop('review_status');text=json.dumps(body)
-        elif fmt=='md': text=text.replace('> **Needs review:** One or more speaker assignments remain uncertain or processing ended partially.\n\n','',1)
-        elif fmt=='txt': text=text.replace('Needs review: one or more speaker assignments remain uncertain or processing ended partially.\n\n','',1)
-        elif fmt=='srt': text=text.replace('[Needs review] ','',1)
-        else: text=text.replace('NOTE Needs review: one or more speaker assignments remain uncertain or processing ended partially.\n\n','',1)
+            body=json.loads(text);body['review_status']='Needs review';text=json.dumps(body)
+        elif fmt=='md': text=MARKDOWN_NEEDS_REVIEW_NOTICE+'\n\n'+text
+        elif fmt=='txt': text=NEEDS_REVIEW_NOTICE+'\n\n'+text
+        elif fmt=='srt': text=re.sub(r'^(1\n[^\n]+\n)', r'\1[Needs review] ', text, count=1)
+        else: text=text.replace('WEBVTT\n\n', f'WEBVTT\n\nNOTE {NEEDS_REVIEW_NOTICE}\n\n', 1)
     result=compare_export(fmt,text,UNKNOWN_MEETING)
     assert not result['ok']
     assert result[failed_check] is False
