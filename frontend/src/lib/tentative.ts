@@ -29,10 +29,13 @@ export interface TentativeBlock {
 
 const SAMPLE_RATE = 16_000;
 
-/** A guess reads as the speaker's label plus "?"; no guess, or no label, is simply unattributed. */
+/**
+ * A guess reads as the speaker's plain label (the row's dotted colour rule marks it, issue #7);
+ * no guess, or no label, is simply unattributed.
+ */
 function guessLabel(speakerId: string | null, speakerLabels: Readonly<Record<string, string>>): string {
   const label = speakerId ? speakerLabels[speakerId] : undefined;
-  return label && label !== UNATTRIBUTED_SPEAKER_LABEL ? `${label}?` : UNATTRIBUTED_SPEAKER_LABEL;
+  return label || UNATTRIBUTED_SPEAKER_LABEL;
 }
 
 export function projectTentativeBlocks(

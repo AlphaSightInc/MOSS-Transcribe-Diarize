@@ -29,14 +29,14 @@ describe("Q5 transcript cards", () => {
       .toEqual(source.map(row => row.target_segment_keys[0]).sort());
   });
 
-  it("renders distant consecutive confirmed Ben rows as one card after Ben? settles", () => {
+  it("renders distant consecutive confirmed Ben rows as one card after the Ben guess settles", () => {
     const confirmed = [turn(0, 1, "system", "speaker-ben", "first", true),
       turn(12, 13, "system", "speaker-ben", "second", true)];
     expect(projectTranscriptCards(confirmed)).toHaveLength(1);
     expect(projectTranscriptCards(confirmed)[0]?.rows.map(row => row.text))
       .toEqual(["first", "second"]);
     const pending = { ...confirmed[1]!, state: "provisional" as const, speaker: "S00",
-      speaker_entity_id: "S00", display_name: "Ben?" };
+      speaker_entity_id: "S00", display_name: "Ben" };
     expect(projectTranscriptCards([confirmed[0]!, pending])).toHaveLength(2);
   });
 
@@ -124,7 +124,7 @@ describe("Q5 transcript cards", () => {
 
   it("continues a block for the same speaker and lane, including a guess, but never for S00", () => {
     const guess = { ...turn(3, 4, "system", "speaker-a", "maybe more"), state: "provisional" as const,
-      display_name: "Speaker 1?", segment_ids: [] };
+      display_name: "Speaker 1", segment_ids: [] };
     const rows = projectTranscriptRows([
       turn(0, 1, "system", "speaker-a", "first"),
       turn(10, 11, "system", "S00", "unknown one"),

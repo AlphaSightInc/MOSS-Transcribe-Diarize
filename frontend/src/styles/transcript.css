@@ -320,6 +320,11 @@ button.legend-chip:disabled {
   border-right-color: var(--sp);
 }
 
+/* A guessed speaker keeps its colour but the rule is dotted until the speech is confirmed (issue #7). */
+.utt[data-speaker-guess="true"] .utt-meta {
+  border-right-style: dotted;
+}
+
 /* A continuation keeps the speaker's colour rule but does not repeat name, source and time. */
 .utt[data-continuation="true"] {
   padding-top: 0;
@@ -376,7 +381,7 @@ button.utt-speaker:disabled {
   letter-spacing: 0.02em;
 }
 
-/* A voice guess ("Speaker 2?") is muted like the preview text it labels. */
+/* A voice guess is muted like the preview text it labels. */
 .utt-speaker.is-guess {
   color: var(--muted);
   font-weight: 500;
@@ -568,6 +573,10 @@ button.utt-speaker:disabled {
     padding-left: 12px;
     padding-right: 0;
     margin-right: 0;
+  }
+
+  .utt[data-speaker-guess="true"] .utt-meta {
+    border-left-style: dotted;
   }
 
   /* One column: a continuation needs no empty meta line above its text. */

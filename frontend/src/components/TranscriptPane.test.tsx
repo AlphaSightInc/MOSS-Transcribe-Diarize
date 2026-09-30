@@ -641,14 +641,38 @@ describe("TranscriptPane", () => {
           { start_sample: 16000, end_sample: 24000, text: "wait", source_lane: "microphone", tentative_speaker: null }] });
     });
     expect(root.querySelectorAll("[data-tentative-block]")).toHaveLength(2);
-    expect(root.querySelector("[data-tentative-block]")?.textContent).toContain("You?");
     expect(root.querySelector("[data-tentative-block]")?.textContent).toContain("hello again");
     expect(root.querySelector("[data-tentative-block] .utt-speaker.is-guess")).not.toBeNull();
     expect(root.querySelector("[data-tentative-block] .utt-text .prov")?.textContent).toBe("hello again");
+    // Issue #7: a guessed name shows as the plain name; the dotted colour rule marks it instead of "?".
     expect([...root.querySelectorAll("[data-tentative-block] .utt-speaker-label")].map(node => node.textContent))
-      .toEqual(["You?", "Speaker TBD"]);
-    expect(root.textContent).not.toContain("Speaker TBD?");
+      .toEqual(["You", "Speaker TBD"]);
+    expect(root.querySelector("#tr-body")?.textContent).not.toContain("?");
+    const rows = [...root.querySelectorAll<HTMLElement>("article.utt")];
+    expect(rows.map(row => row.dataset.speakerGuess ?? "")).toEqual(["true", ""]);
+    // Screen readers still hear that the name is a guess; unattributed text needs no such note.
+    expect(rows.map(row => row.querySelector(".utt-speaker .sr-only")?.textContent ?? null))
+      .toEqual([" (guess)", null]);
     expect(root.querySelectorAll(".transcript-card:not([data-tentative-block])")).toHaveLength(0);
+  });
+
+  it("finds a guessed name by its plain label", () => {
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation(callback => { callback(0); return 1; });
+    Element.prototype.scrollIntoView = vi.fn();
+    act(() => {
+      sessionId.value = "m"; sessionStatus.value = "active";
+      render(<TranscriptPane />, root);
+      dispatchWsEvent({ type: "transcript_update", session_id: "m", seq: 1,
+        timestamp: new Date().toISOString(), items: [],
+        provisional_segments: [{ start_sample: 0, end_sample: 8000, text: "hello", source_lane: "microphone",
+          tentative_speaker: "local-0001" }] });
+    });
+    act(() => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "f", metaKey: true })); });
+    const input = root.querySelector<HTMLInputElement>("#transcript-find-input")!;
+    act(() => { input.value = "you"; input.dispatchEvent(new InputEvent("input", { bubbles: true })); });
+    expect(root.querySelector(".tr-find-meta")?.textContent).toBe("1 of 1 matches");
+    expect(root.querySelector("[data-tentative-block] .utt-speaker-label mark.tr-search-match")?.textContent)
+      .toBe("You");
   });
 
   it("continues the confirmed block when the guess is the same speaker (G9)", () => {
@@ -668,7 +692,9 @@ describe("TranscriptPane", () => {
       ["", "false"], ["true", "true"], ["true", "false"]
     ]);
     expect(rows.map(row => row.querySelector(".utt-speaker-label")?.textContent))
-      .toEqual(["Speaker 1", "Speaker 1?", "Speaker 2?"]);
+      .toEqual(["Speaker 1", "Speaker 1", "Speaker 2"]);
+    // The confirmed row keeps its solid rule; both guesses, including the continuation, are dotted.
+    expect(rows.map(row => row.dataset.speakerGuess ?? "")).toEqual(["", "true", "true"]);
     expect(rows[1]?.style.getPropertyValue("--sp")).toBe(rows[0]?.style.getPropertyValue("--sp"));
     expect(rows[2]?.dataset.activeTail).toBe("true");
   });
@@ -686,8 +712,8 @@ describe("TranscriptPane", () => {
         ] });
     });
     expect([...root.querySelectorAll("[data-tentative-block] .utt-speaker-label")].map(node => node.textContent))
-      .toEqual(["Alex?", "Speaker 1?"]);
-    expect(root.textContent).not.toContain("speaker-0002?");
+      .toEqual(["Alex", "Speaker 1"]);
+    expect(root.textContent).not.toContain("speaker-0002");
   });
 
   it("keeps summary in the centre card and leaves export to Controls", () => {

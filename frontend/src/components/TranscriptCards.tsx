@@ -45,6 +45,8 @@ export function TranscriptCards({ rows, search, activeMatchId, finalized, canCor
       const headSearch = row.continuation ? undefined : search.get(head);
       const label = headSearch ? searchParts(headSearch.speakerParts, activeMatchId) : labelText;
       const blocked = row.guess ? null : namingBlocked(row.speakerId);
+      // A preview row under a named voice guess; unattributed preview text names nobody.
+      const guessedName = row.guess && !unknown;
       const source = sourceLabel(row.lane);
       return <article key={row.key} className={`utt transcript-card${row.guess ? " tentative-card" : ""}`}
           data-card-key={row.key} data-s00={String(unknown)}
@@ -55,11 +57,13 @@ export function TranscriptCards({ rows, search, activeMatchId, finalized, canCor
           data-target-keys={row.fragments.flatMap(turn => turn.target_segment_keys).join("|")}
           data-segments={JSON.stringify(row.fragments.flatMap(turn => turn.segments))}
           {...(row.guess ? { "data-tentative-block": "true" } : {})}
+          {...(guessedName ? { "data-speaker-guess": "true" } : {})}
           style={{ "--sp": resolveSpeakerColorToken(row.speakerId, speakerColorMap) } as JSX.CSSProperties}>
         <div className="utt-meta">
           {row.guess
             ? <span className={`utt-speaker is-guess${unknown ? " is-unidentified" : ""}`} data-speaker-id={row.speakerId}>
                 <span className="utt-speaker-label">{label}</span>
+                {guessedName ? <span className="sr-only"> (guess)</span> : null}
               </span>
             : <button type="button" className={`utt-speaker${unknown ? " is-unidentified" : ""}`}
                 data-speaker-id={row.speakerId} aria-label={`Name speaker ${labelText}`}

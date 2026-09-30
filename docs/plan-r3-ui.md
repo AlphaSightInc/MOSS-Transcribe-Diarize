@@ -11,7 +11,7 @@ Base: `gemini/r2-integration` @ `1dee41cb`. Integration branch `gemini/r3-ui`. L
 | Q2 | Transcription vendors: **Gemini (AI Studio)** (URL hidden, model default `gemini-3.5-transcribe`) and **OpenAI-compatible** (URL, model, key optional). |
 | Q3/J1 | OpenAI-compatible transcription = small adapter: POST `{url}/audio/transcriptions`; uses the model's speaker labels when returned (`diarized_json`), else one provisional label per returned segment so local WeSpeaker fingerprints (ContinuityRegistry) link voices. No instant grey words for this vendor; clean-up after Stop not offered for it. Tested only against a local fake server; real-model quality UNMEASURED. |
 | Q4 | Gemini key is **required** (both tabs). The server key in `.env.local` is never used by the browser app. Start / summary / File / URL are blocked until a key is entered (K9). |
-| Q5 | Microphone-lane default names: first local voice **"You"**, then **"User 1"**, **"User 2"** … unless a voiceprint names them. Shared-lane speakers: **"Speaker 1"**, **"Speaker 2"** … everywhere (no raw `S01`, `S01?`, `Speaker TBD?`). Guesses append `?` (e.g. `You?`, `Speaker 2?`). |
+| Q5 | Microphone-lane default names: first local voice **"You"**, then **"User 1"**, **"User 2"** … unless a voiceprint names them. Shared-lane speakers: **"Speaker 1"**, **"Speaker 2"** … everywhere (no raw `S01`, `S01?`, `Speaker TBD?`). Guesses show the plain label (e.g. `You`, `Speaker 2`) with a dotted colour rule instead of the solid one, and a screen-reader-only "(guess)" (issue #7; was a `?` suffix). |
 | Q6 | Text rule: a string stays only if it tells the user to do something or explains why a control will not work. Keep list K1–K9 below; everything else removed. States show on the control (Export Save reads "Improving…" and is disabled; top pill "Recording 12:34" / "Stopping"). |
 | Q7 | Stress-test budget: real Gemini ≤ **$5** (public audio only). |
 | J2 | Speaker window = two integer fields: **Refresh every** 5–60 s (default 15) and **Context** 90–300 s (default 90); refresh ≤ context. Presets removed. The 90 s floor is measured (P5: 60 s merged/split speakers). |
@@ -91,7 +91,7 @@ server restart an in-flight clean-up or File job cannot resume → existing "liv
 
 One rule, implemented once per side: backend `published_speaker_label` (saved transcript/export) and frontend label
 mapping (live view, guesses). `local-1`→"You", `local-(n+1)`→"User n"; shared lane canonical `speaker-000n` / `S0n` →
-"Speaker n" in order of first settled speech (existing numbering); named/voiceprint names always win; guesses = label + "?".
+"Speaker n" in order of first settled speech (existing numbering); named/voiceprint names always win; guesses = plain label + dotted rule (issue #7).
 
 ### I-5 OpenAI-compatible adapter (WP-F → wired by WP-B)
 
