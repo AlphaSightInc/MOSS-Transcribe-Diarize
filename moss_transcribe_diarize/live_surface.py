@@ -6,7 +6,7 @@ The browser presentation and transcript export share this dependency-light leaf 
 
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Mapping, Sequence
 
 # The speaker label a span carries when the session never established who spoke it. The
 # wire grammar admits only `S` followed by digits, and canonical display labels are
@@ -79,9 +79,45 @@ def default_speaker_name(canonical_speaker: str | None, first_spoken: Sequence[s
     return f"Speaker {shared.index(canonical_speaker) + 1}"
 
 
+def transcript_speaker_names(
+    speakers: Sequence[str | None], names: Mapping[str, str]
+) -> list[str]:
+    """One label per transcript row, rows in transcript order.
+
+    `speakers` is each row's speaker, `None` where nobody is attributed or the identity was
+    never established; `names` are the names a person or a voiceprint gave. A named speaker
+    reads its name; every other speaker reads its `default_speaker_name`, numbered over the
+    unnamed speakers in the order they first speak here -- so the numbers are dense and
+    unique for exactly this transcript, whichever version of it this is.
+    """
+
+    first_spoken = tuple(dict.fromkeys(
+        speaker for speaker in speakers if speaker is not None and speaker not in names))
+    return [names[speaker] if speaker in names else default_speaker_name(speaker, first_spoken)
+            for speaker in speakers]
+
+
+def name_saved_speakers(segments: Sequence[dict], names: Mapping[str, str]) -> None:
+    """Rename a saved transcript's rows in place by `transcript_speaker_names`.
+
+    A row's speaker is its `speaker_entity_id`; a row without one, or one saved as
+    `UNATTRIBUTED_SPEAKER` and not named, keeps what it says.
+    """
+
+    speakers = [
+        segment.get("speaker_entity_id")
+        if segment.get("speaker_entity_id") in names
+        or segment.get("speaker") != UNATTRIBUTED_SPEAKER else None
+        for segment in segments
+    ]
+    for segment, speaker, name in zip(segments, speakers, transcript_speaker_names(speakers, names)):
+        if speaker is not None:
+            segment["speaker"] = name
+
+
 def _is_local(canonical_speaker: str) -> bool:
     return canonical_speaker.startswith("local-") and canonical_speaker[6:].isdigit()
 
 
 __all__ = ["UNATTRIBUTED_SPEAKER", "default_speaker_name", "display_speaker_label",
-           "published_speaker_label"]
+           "name_saved_speakers", "published_speaker_label", "transcript_speaker_names"]

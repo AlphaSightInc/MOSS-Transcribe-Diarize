@@ -16,6 +16,8 @@ from typing import Any, AsyncIterator, Mapping
 
 from starlette.requests import Request
 
+from moss_transcribe_diarize.live_surface import name_saved_speakers
+
 from .phase2_audio import MeetingAudioArtifactSurvives, MeetingAudioCleanupError
 
 
@@ -1447,26 +1449,18 @@ class Phase2Store:
             version = int(current["version"])
             if document is not None:
                 updated = json.loads(json.dumps(document, ensure_ascii=False))
-                current_document = json.loads(current["document_json"])
-                labels = {
-                    segment["speaker_entity_id"]: segment["speaker"]
-                    for segment in current_document.get("segments", [])
-                    if isinstance(segment, dict)
-                    and isinstance(segment.get("speaker_entity_id"), str)
-                    and isinstance(segment.get("speaker"), str)
-                }
+                # Only names a person or a voiceprint gave carry over (they are all in
+                # meeting_speakers, including ones given after Stop); default names are
+                # recomputed for the refined speakers, whose set and order differ.
                 cursor = await self._connection.execute(
                     """SELECT speaker_id, label FROM meeting_speakers
-                       WHERE account_id = ? AND meeting_id = ?""",
+                       WHERE account_id = ? AND meeting_id = ? AND label IS NOT NULL""",
                     (account_id, meeting_id),
                 )
-                for row in await cursor.fetchall():
-                    labels[str(row["speaker_id"])] = str(row["label"])
+                names = {str(row["speaker_id"]): str(row["label"])
+                         for row in await cursor.fetchall()}
                 await cursor.close()
-                for segment in updated.get("segments", []):
-                    speaker_id = segment.get("speaker_entity_id")
-                    if speaker_id in labels:
-                        segment["speaker"] = labels[speaker_id]
+                name_saved_speakers(updated.get("segments", []), names)
                 await self._connection.execute(
                     """UPDATE meeting_transcripts SET document_json = ?,
                        version = version + 1, updated_at_ms = ?

@@ -28,6 +28,7 @@ from moss_transcribe_diarize.app.phase2_file import (
     RETAINED_FILE_WORK_CONTRACT_VERSION,
     FileProcessingError,
     FileMeetingTasks,
+    file_transcript_document,
 )
 from moss_transcribe_diarize.app.phase2_lifecycle import MeetingLifecycleSettlementError
 from moss_transcribe_diarize.app.windowed_transcription import (
@@ -37,7 +38,6 @@ from moss_transcribe_diarize.app.windowed_transcription import (
     WindowTranscriptionError,
     plan_windows,
 )
-from moss_transcribe_diarize.subtitle import subtitle_segments_from_transcript
 
 
 class _Delegate:
@@ -429,15 +429,7 @@ def test_mix_bound_checkpoint_resumes_through_real_lifespan(tmp_path: Path) -> N
         reference_decoder = _RestartDecoder()
         reference_decoder.fail_window = None
         reference = _runner(reference_decoder).transcribe(mix)
-        expected = {
-            "segments": [
-                segment.to_dict()
-                for segment in subtitle_segments_from_transcript(
-                    reference.text,
-                    postprocess=False,
-                )
-            ]
-        }
+        expected = file_transcript_document(reference.text)
 
         decoder.calls.clear()
         decoder.fail_window = None

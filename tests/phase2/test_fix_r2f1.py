@@ -318,8 +318,9 @@ def test_resumed_different_transcript_commits_exactly_once(tmp_path: Path) -> No
                     "id": "seg_0001",
                     "start": 0.0,
                     "end": 1.0,
-                    "speaker": "S01",
+                    "speaker": "Speaker 1",
                     "text": "decoded words",
+                    "speaker_entity_id": "S01",
                 }
             ]
         }
@@ -354,8 +355,9 @@ def test_non_resumed_path_commits_byte_identical_document_at_version_one(
                     "id": "seg_0001",
                     "start": 0.0,
                     "end": 1.0,
-                    "speaker": "S01",
+                    "speaker": "Speaker 1",
                     "text": "decoded words",
+                    "speaker_entity_id": "S01",
                 }
             ]
         }

@@ -45,7 +45,8 @@ def test_file_meeting_completes_and_enrolls_after_name(tmp_path):
                                data={"transcription": '{"vendor": "gemini", "api_key": "user-key"}'})
         assert uploaded.status_code == 201, uploaded.text
         meeting = await_terminal(client, uploaded.json()["id"], "completed")
-        assert meeting["transcript"]["segments"][0]["speaker"] == "S01"
+        assert meeting["transcript"]["segments"][0]["speaker"] == "Speaker 1"
+        assert meeting["transcript"]["segments"][0]["speaker_entity_id"] == "S01"
         assert jobs == [{"vendor": "gemini", "url": None, "model": "gemini-3.5-transcribe",
                          "api_key": "user-key"}]
         named = client.put(f"/api/meetings/{meeting['id']}/speakers/S01/name", json={"label": "Alex"})
