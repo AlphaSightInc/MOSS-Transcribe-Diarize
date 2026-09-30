@@ -22,6 +22,9 @@ def test_boot_removes_server_meeting_fallback_and_keeps_locator_unique():
                                                          'speaker': 'S01', 'text': 'Local passage'}]})
             html = _workspace_html(SimpleNamespace(display_name='Audit'), [meeting], live_enabled=True)
             page = browser.new_page()
+            # Summaries need a Gemini key in browser settings (I-1, K9); seed one so Refresh is enabled.
+            page.add_init_script("""localStorage.setItem('moss.settings.v2',
+                JSON.stringify({summary: {vendor: 'gemini', apiKey: 'test-key'}}))""")
             def route(r):
                 path = urlsplit(r.request.url).path
                 if path == '/':

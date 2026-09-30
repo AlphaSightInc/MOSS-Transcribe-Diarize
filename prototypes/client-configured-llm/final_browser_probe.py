@@ -45,7 +45,8 @@ async def running_summary_workspace(*args, **kwargs):
 
 
 async def select_external_summary_provider(dialog):
-    await dialog.get_by_label("Summary provider", exact=True).select_option("external")
+    await dialog.get_by_role("tab", name="Summary", exact=True).click()
+    await dialog.get_by_label("Summary vendor", exact=True).select_option("openai_compatible")
 
 
 async def regenerate_summary(page, meeting_id):
@@ -107,8 +108,8 @@ async def run(root, chrome_binary=None, timeout_evidence=None):
                         await page.get_by_role("button", name="Settings", exact=True).click()
                         dialog = page.get_by_role("dialog", name="Settings", exact=True)
                         await select_external_summary_provider(dialog)
-                        for label, value in (("Provider HTTPS URL", endpoint), ("External model", f"probe-model-{index}"),
-                                             ("API key", f"probe-secret-{index}"), ("Summary prompt", f"probe-prompt-{index}")):
+                        for label, value in (("Summary URL", endpoint), ("Summary model", f"probe-model-{index}"),
+                                             ("Summary API key", f"probe-secret-{index}"), ("Summary prompt", f"probe-prompt-{index}")):
                             await dialog.get_by_label(label, exact=True).fill(value)
                         await dialog.get_by_role("button", name="Save", exact=True).click()
                         page.stage = f"provider-probe.owner-{index}.external-generate"
