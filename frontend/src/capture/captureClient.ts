@@ -46,6 +46,8 @@
  * that string; it does not need to know these codes -- except for the three pre-session
  * ones, which never reach the server and so have no server-side copy.
  */
+import { displaySurfaceOf, rememberCaptureSurface, type CaptureSurface } from "../lib/captureSurface";
+
 export const V2_FRAME_KEYS = [
   "lane",
   "sequence",
@@ -396,6 +398,8 @@ export class CaptureClient {
   private descriptor: CaptureDescriptor | null = null;
   private preparation: Promise<AudioContext> | null = null;
   private session: CaptureSession | null = null;
+  // Chrome's share choice for the system lane; stored per meeting for row source labels (J5).
+  private displaySurface: CaptureSurface | null = null;
   private readonly lanes = new Map<CaptureLane, LaneState>();
   private readonly laneHasSignal = new Set<CaptureLane>();
   private failedTransports = new Set<CaptureLane | "heartbeat">();
@@ -478,6 +482,7 @@ export class CaptureClient {
       throw new Error("selected display surface supplied no audio track");
     }
     await this.attachLane("system", new MediaStream([audioTrack]), stream.getTracks());
+    this.displaySurface = displaySurfaceOf(stream);
   }
 
   /**
@@ -519,6 +524,10 @@ export class CaptureClient {
     state.silentFrameRun = 0;
     this.observeLaneTracks(lane, state);
     this.observeLaneFrames(lane, state);
+    if (lane === "system") {
+      this.displaySurface = displaySurfaceOf(stream);
+      if (this.session) rememberCaptureSurface(this.session.id, this.displaySurface);
+    }
   }
 
   /**
@@ -578,6 +587,7 @@ export class CaptureClient {
       throw new Error("session descriptor differs from preflight descriptor");
     }
     this.session = Object.freeze({ id });
+    rememberCaptureSurface(id, this.displaySurface);
     // Establish the server-owned loss detector before returning control to the page. A reload or
     // close may happen before the next worklet frame; without this initial heartbeat no lease
     // exists to interrupt the now-orphaned Meeting.

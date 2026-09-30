@@ -9,7 +9,7 @@ import { SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { providerBody } from "../lib/finalSummary";
 import { groupSegmentsIntoTurns } from "../lib/mergeTranscript";
 import { serializeTranscriptExport } from "../lib/transcriptExport";
-import { captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionNeedsReview, sessionStatus, transcript } from "../state/session";
+import { captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionMode, sessionNeedsReview, sessionStatus, transcript } from "../state/session";
 
 const root = document.createElement("div");
 document.body.append(root);
@@ -44,11 +44,10 @@ it.each([
   });
   await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="m"]')).not.toBeNull());
   act(() => root.querySelector<HTMLButtonElement>(selector)!.click());
-  expect(root.querySelector("dialog")?.textContent).toContain("Applies to this speaker throughout this meeting.");
-  expect(root.querySelector("dialog")?.textContent).not.toContain("active meeting");
+  expect(root.querySelector("dialog")?.textContent).not.toContain("Applies to this speaker throughout this meeting.");
   const checkbox = root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')!;
   expect(checkbox.checked).toBe(true);
-  expect(root.querySelector('dialog .hint')?.textContent).toContain("at least 2 seconds of finished, clear speech");
+  expect(root.querySelector('dialog .hint')).toBeNull();
   if (!saveVoiceprint) act(() => checkbox.click());
   act(() => {
     const input = root.querySelector<HTMLInputElement>('#speaker-name-input')!;
@@ -56,7 +55,9 @@ it.each([
   });
   await act(async () => { root.querySelector('dialog form')!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
   const assertNames = () => {
-    expect([...root.querySelectorAll('.utt-lane')].map(n => n.textContent)).toEqual(["System", "Microphone"]);
+    // J5: live rows name their source; File/URL rows have none.
+    expect([...root.querySelectorAll('.utt-source')].map(n => n.textContent))
+      .toEqual(sessionMode.value === "live" ? ["Shared", "Mic"] : []);
     expect([...root.querySelectorAll('.utt-speaker-label')].map(n => n.textContent)).toEqual(["After", "Other"]);
     expect([...root.querySelectorAll('.utt-text')].map(n => n.textContent)).toEqual(["Words 0", "Words 2", "Words 1"]);
     expect([...root.querySelectorAll('.legend-chip-name')].map(n => n.textContent)).toEqual(["After", "Other"]);
@@ -71,9 +72,8 @@ it.each([
     }
   };
   await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
-  if (saveVoiceprint && status === "completed") {
-    expect(root.textContent).toContain("Voiceprint not saved: eligible audio was unavailable for this speaker.");
-  }
+  expect(root.querySelector(".tr-notice")?.textContent ?? null).toBe(saveVoiceprint && status === "completed"
+    ? "Voiceprint not saved — not enough clear speech" : null);
   assertNames();
   await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="m"]')!.click());
   await vi.waitFor(assertNames);
@@ -110,8 +110,8 @@ it.each(["active", "after Stop"])("saves the name in one action after a %s voice
   await vi.waitFor(() => expect(root.querySelector('dialog')).toBeNull());
   expect(requests).toEqual([{ label: "Alex" }, { label: "Alex", save_voiceprint: false }]);
   expect(transcript.value[0]?.display_name).toBe("Alex");
-  expect(root.textContent).toContain("Saved Alex. Voiceprint not saved.");
-  expect(root.textContent).toContain(serverMessage);
+  expect(root.querySelector(".tr-notice")?.textContent).toBe("Voiceprint not saved — not enough clear speech");
+  expect(root.textContent).not.toContain(serverMessage);
   act(() => root.querySelector<HTMLButtonElement>('.utt-speaker')!.click());
   expect(root.querySelector<HTMLInputElement>('dialog input[type="checkbox"]')?.checked).toBe(true);
 });
@@ -424,8 +424,7 @@ it("keeps closed-but-finalizing identity provisional and passage correction unav
     render(<TranscriptPane />, root);
   });
 
-  expect(root.textContent).toContain("Identity settling");
-  expect(root.querySelectorAll('[data-settling-hint="true"]')).toHaveLength(1);
+  expect(root.textContent).not.toContain("Identity settling");
   expect(root.querySelector('[data-reassign-passage="one"]')).toBeNull();
 
   act(() => replaceTranscript([

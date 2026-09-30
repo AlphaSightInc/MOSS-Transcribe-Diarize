@@ -1,4 +1,5 @@
 import type { TranscriptTurn } from "./mergeTranscript";
+import { isBackendUnknownSpeakerId, microphoneSpeakerLabel, UNATTRIBUTED_SPEAKER_LABEL } from "./speakerMap";
 
 export interface TranscriptCard {
   key: string;
@@ -18,10 +19,12 @@ function speakerId(turn: SpeakerRow): string {
   return turn.speaker_entity_id || turn.speaker || "S00";
 }
 
+/** Raw tags the poller and older saved transcripts carry before anyone is named. */
+const RAW_SPEAKER_TAG = /^(?:S\d+|Local \d+|(?:speaker|local|terminal)-\d+|speaker-microphone|Remote|Preview|UNKNOWN|Speaker TBD)$/;
+
 function hasCustomName(turn: SpeakerRow): boolean {
   const display = turn.display_name.trim();
-  return !!display && display !== turn.speaker && display !== "Remote" && display !== "You" &&
-    !/^S\d{2,}$/.test(display);
+  return !!display && display !== turn.speaker && display !== speakerId(turn) && !RAW_SPEAKER_TAG.test(display);
 }
 
 function turnKey(turn: TranscriptTurn): string {
@@ -60,35 +63,84 @@ export function projectTranscriptCards(turns: readonly TranscriptTurn[]): Transc
   return cards;
 }
 
+/** One rendered row: the reference's meta column (speaker, source, time) beside the text. */
+export interface TranscriptRow {
+  key: string;
+  speakerId: string;
+  lane?: string;
+  start: number;
+  end: number;
+  /** Preview words under a voice guess; display-only, never named or corrected. */
+  guess: boolean;
+  /** Same speaker and lane as the row above: no separator and no repeated name. */
+  continuation: boolean;
+  fragments: TranscriptTurn[];
+}
+
+/** Cards, then guess rows; a guess for the speaker already on screen continues that block (G9). */
+export function projectTranscriptRows(
+  turns: readonly TranscriptTurn[], guessTurns: readonly TranscriptTurn[] = []
+): TranscriptRow[] {
+  const rows = [
+    ...projectTranscriptCards(turns).map(card => ({ ...card, lane: card.rows[0]!.source_lane,
+      guess: false, fragments: card.rows })),
+    ...guessTurns.map(turn => ({ key: `tentative:${turn.source_lane}:${turn.start}`, speakerId: speakerId(turn),
+      lane: turn.source_lane, start: turn.start, end: turn.end, guess: true, fragments: [turn] }))
+  ];
+  return rows.map(({ key, speakerId: id, lane, start, end, guess, fragments }, index) => {
+    const previous = rows[index - 1];
+    // Unattributed speech is never "the same person" as the row above it.
+    const continuation = !!previous && !isBackendUnknownSpeakerId(id) &&
+      previous.speakerId === id && previous.lane === lane;
+    return { key, speakerId: id, lane, start, end, guess, continuation, fragments };
+  });
+}
+
 export function isSettledTurn(turn: SpeakerRow, finalized: boolean): boolean {
   return turn.settled === true || (finalized && turn.state === "final");
 }
 
-/** Recompute from current settled identities, so reconciliation cannot leave number gaps. */
-export function settledSpeakerNumbers(turns: readonly TranscriptTurn[], finalized: boolean): Map<string, number> {
+/**
+ * Shared-lane "Speaker n" numbers, dense and recomputed every render so a merged identity
+ * leaves no gap: settled speech first, then committed, then preview rows, then speakers that
+ * so far exist only as a guess. Microphone voices, unattributed speech and named people take
+ * no number.
+ */
+export function settledSpeakerNumbers(
+  turns: readonly TranscriptTurn[], finalized: boolean, guessedSpeakerIds: readonly string[] = []
+): Map<string, number> {
   const numbers = new Map<string, number>();
-  for (const turn of turns) {
-    const id = speakerId(turn);
-    if (!isSettledTurn(turn, finalized) || id === "S00" || id === "UNKNOWN" ||
-        hasCustomName(turn) || numbers.has(id)) continue;
-    numbers.set(id, numbers.size + 1);
+  const assign = (id: string) => {
+    if (!numbers.has(id) && !isBackendUnknownSpeakerId(id) && microphoneSpeakerLabel(id) === null) {
+      numbers.set(id, numbers.size + 1);
+    }
+  };
+  const named = new Set(turns.filter(hasCustomName).map(speakerId));
+  const passes: Array<(turn: TranscriptTurn) => boolean> = [
+    turn => isSettledTurn(turn, finalized),
+    turn => turn.state !== "provisional",
+    () => true
+  ];
+  for (const pass of passes) {
+    for (const turn of turns) if (pass(turn) && !named.has(speakerId(turn))) assign(speakerId(turn));
   }
+  for (const id of guessedSpeakerIds) if (!named.has(id)) assign(id);
   return numbers;
 }
 
-export function transcriptCardSpeakerLabel(
-  turn: SpeakerRow, numbers: ReadonlyMap<string, number>,
-  policy: "current" | "La", finalized: boolean
-): string {
-  const id = speakerId(turn);
-  if (id === "S00" || id === "UNKNOWN") return "Speaker TBD";
-  const display = turn.display_name.trim();
-  // A name chosen by the operator is literal, including a generic-looking name.
-  if (hasCustomName(turn)) return display;
-  if (!isSettledTurn(turn, finalized) && policy === "La") {
-    if (turn.source_lane === "system") return "Remote";
-    if (turn.source_lane === "microphone") return "You";
-  }
+/** The label a speaker id shows when nobody has named it (I-4); never a raw tag. */
+export function defaultSpeakerLabel(id: string, numbers: ReadonlyMap<string, number>): string {
+  if (isBackendUnknownSpeakerId(id)) return UNATTRIBUTED_SPEAKER_LABEL;
+  const microphone = microphoneSpeakerLabel(id);
+  if (microphone !== null) return microphone;
   const number = numbers.get(id);
-  return number === undefined ? display || turn.speaker : `Speaker ${number}`;
+  return number === undefined ? UNATTRIBUTED_SPEAKER_LABEL : `Speaker ${number}`;
+}
+
+/** Names chosen by a person or a voiceprint win; everything else follows the I-4 rule. */
+export function transcriptCardSpeakerLabel(turn: SpeakerRow, numbers: ReadonlyMap<string, number>): string {
+  const id = speakerId(turn);
+  if (isBackendUnknownSpeakerId(id)) return UNATTRIBUTED_SPEAKER_LABEL;
+  // A name chosen by the operator is literal, including a generic-looking name.
+  return hasCustomName(turn) ? turn.display_name.trim() : defaultSpeakerLabel(id, numbers);
 }

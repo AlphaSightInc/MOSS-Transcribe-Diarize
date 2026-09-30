@@ -137,7 +137,8 @@ describe("MeetingHistory", () => {
     });
     await vi.waitFor(() => expect(sessionNeedsReview.value).toBe(true));
     expect(transcript.value.map(row => row.text)).toEqual(["kept words"]);
-    expect(root.textContent).toContain("Needs review.");
+    // Q6: review state is kept, but the transcript pane no longer prints it.
+    expect(root.querySelector(".transcript-pane")?.textContent).not.toContain("Needs review");
     expect(lists).toBe(2);
   });
 
@@ -428,7 +429,7 @@ describe("MeetingHistory", () => {
       )
     );
 
-    expect(root.textContent).toContain("Needs review.");
+    expect(root.querySelector(".transcript-pane")?.textContent).not.toContain("Needs review");
     expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Speaker TBD");
     for (const [index, format] of ["md", "txt", "json", "srt", "vtt"].entries()) {
       act(() => { const select = root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!;

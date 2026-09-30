@@ -1,5 +1,6 @@
 import { type JSX } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
+import "../styles/transcript.css";
 import { requestMeetingHistoryRefresh, SPEAKER_NAMED_EVENT } from "../lib/meetingEvents";
 import { nameMeetingSpeaker, reassignMeetingPassages, VoiceprintEvidenceNotAdmittedError } from "../api/speakers";
 import {
@@ -13,9 +14,14 @@ import {
   resolveSpeakerColorToken
 } from "../lib/speakerMap";
 import { buildTranscriptSearchResults } from "../lib/transcriptSearch";
-import { isSettledTurn, settledSpeakerNumbers, transcriptCardSpeakerLabel } from "../lib/transcriptCards";
 import {
-  liveLabelPolicy,
+  defaultSpeakerLabel,
+  projectTranscriptRows,
+  settledSpeakerNumbers,
+  transcriptCardSpeakerLabel
+} from "../lib/transcriptCards";
+import { recallCaptureSurface, transcriptSourceLabel } from "../lib/captureSurface";
+import {
   sessionId,
   sessionNeedsReview,
   provisionalSegments,
@@ -28,7 +34,7 @@ import {
 } from "../state/session";
 import { autoscroll, selectedSummaryMeeting } from "../state/ui";
 import { TranscriptCards } from "./TranscriptCards";
-import { projectTentativeSegments } from "../lib/tentative";
+import { projectTentativeSegments, tentativeTurns } from "../lib/tentative";
 import { SummaryPane } from "./SummaryPane";
 import { view } from "../state/ui";
 
@@ -45,6 +51,11 @@ interface PassageCorrectionTarget {
   meetingId: string;
   passageIds: string[];
 }
+
+/** The one voiceprint line the pane keeps (Q6): enrollment was refused or had no usable audio. */
+const VOICEPRINT_NOT_SAVED = "Voiceprint not saved — not enough clear speech";
+/** Auto-scroll stays on while the reader is within this distance of the bottom (reference). */
+const AUTOSCROLL_BOTTOM_TOLERANCE_PX = 8;
 
 function matchesFindShortcut(event: KeyboardEvent): boolean {
   return (
@@ -86,7 +97,7 @@ export function TranscriptPane() {
   const [saveVoiceprint, setSaveVoiceprint] = useState(true);
   const [speakerName, setSpeakerName] = useState("");
   const [savingName, setSavingName] = useState(false);
-  const [namingMessage, setNamingMessage] = useState<string | null>(null);
+  const [voiceprintNotice, setVoiceprintNotice] = useState<string | null>(null);
   const [namingError, setNamingError] = useState<string | null>(null);
   const namingDialogRef = useRef<HTMLDialogElement | null>(null);
   const namingInputRef = useRef<HTMLInputElement | null>(null);
@@ -100,48 +111,47 @@ export function TranscriptPane() {
 
   const fullTranscriptItems = transcript.value;
   const searchQuery = transcriptSearchQuery.value.trim();
-  const speakerColorMap = buildSpeakerColorMap(fullTranscriptItems);
   const allTurns = groupSegmentsIntoTurns(fullTranscriptItems);
+  const guessedSpeakerIds = [...new Set(provisionalSegments.value.flatMap(segment =>
+    segment.tentative_speaker ? [segment.tentative_speaker] : []))];
+  const speakerColorMap = buildSpeakerColorMap(fullTranscriptItems, guessedSpeakerIds);
   const automaticProcessingRunning =
     sessionStatus.value === "active" ||
     sessionStatus.value === "closing" ||
     (sessionStatus.value === "closed" && allTurns.some(turn => turn.state !== "final"));
   const finalized = !automaticProcessingRunning;
-  const speakerNumbers = settledSpeakerNumbers(allTurns, finalized);
-  const speakerLabel = (item: Pick<typeof transcript.value[number], "speaker_entity_id" | "speaker" | "display_name" | "source_lane" | "settled" | "state">) => {
-    const id = item.speaker_entity_id || item.speaker;
-    if (/^local-\d+$/.test(id) && (!item.display_name || item.display_name === id || /^Speaker \d+$/.test(item.display_name))) {
-      return `Local ${String(Number(id.slice(6))).padStart(2, "0")}`;
-    }
-    return transcriptCardSpeakerLabel(item, speakerNumbers, liveLabelPolicy.value, finalized);
-  };
+  const speakerNumbers = settledSpeakerNumbers(allTurns, finalized, guessedSpeakerIds);
+  const speakerLabel = (item: Parameters<typeof transcriptCardSpeakerLabel>[0]) =>
+    transcriptCardSpeakerLabel(item, speakerNumbers);
+  const speakerLabels: Record<string, string> = {};
+  for (const item of fullTranscriptItems) speakerLabels[item.speaker_entity_id] = speakerLabel(item);
+  for (const id of guessedSpeakerIds) speakerLabels[id] ??= defaultSpeakerLabel(id, speakerNumbers);
+  const tentativeBlocks = projectTentativeSegments(provisionalSegments.value, speakerLabels);
+  // Guesses replace the transcript's own preview rows; both describe the same preview words.
+  const displayedTurns = tentativeBlocks.length
+    ? allTurns.filter(turn => turn.state !== "provisional") : allTurns;
+  const guessTurns = tentativeTurns(tentativeBlocks);
+  const guesses = new Set(guessTurns);
+  const rowSpeakerLabel = (turn: TranscriptTurn) => guesses.has(turn) ? turn.display_name : speakerLabel(turn);
+  const rows = projectTranscriptRows(displayedTurns, guessTurns);
+  const labelledTurns = new Set(rows.filter(row => !row.continuation).map(row => row.fragments[0]!));
   const searchResults = buildTranscriptSearchResults(
-    allTurns,
+    [...displayedTurns, ...guessTurns],
     searchQuery,
-    speakerLabel
+    turn => labelledTurns.has(turn) ? rowSpeakerLabel(turn) : ""
   );
+  const searchByTurn = new Map(searchResults.turns.map(item => [item.turn, item]));
   const activeSearchMatchId =
     searchResults.matchCount > 0
       ? Math.min(activeSearchMatchIndex, searchResults.matchCount - 1)
       : -1;
-  const speakerLabels: Record<string, string> = {};
-  for (const item of fullTranscriptItems) speakerLabels[item.speaker_entity_id] = speakerLabel(item);
-  for (const segment of provisionalSegments.value) {
-    const id = segment.tentative_speaker;
-    if (!id || speakerLabels[id]) continue;
-    const numberedSpeaker = /^speaker-(\d+)$/.exec(id);
-    speakerLabels[id] = /^local-\d+$/.test(id)
-      ? `Local ${String(Number(id.slice(6))).padStart(2, "0")}`
-      : numberedSpeaker ? `S${String(Number(numberedSpeaker[1])).padStart(2, "0")}`
-      : "Speaker TBD";
-  }
-  const tentativeBlocks = projectTentativeSegments(provisionalSegments.value, speakerLabels);
-  const transcriptAvailable = allTurns.length > 0 || tentativeBlocks.length > 0;
+  const transcriptAvailable = rows.length > 0;
   const activeSessionId = sessionId.value;
+  const captureSurface = activeSessionId ? recallCaptureSurface(activeSessionId) : null;
+  const sourceLabel = (lane: string | undefined) => transcriptSourceLabel(lane, captureSurface, sessionMode.value);
   const selectedMeeting = selectedSummaryMeeting.value?.id === activeSessionId
     ? selectedSummaryMeeting.value : null;
-  const refinementState = selectedMeeting?.refinement_state;
-  const refinementRunning = refinementState === "running";
+  const refinementRunning = selectedMeeting?.refinement_state === "running";
   const canNameSpeakers = activeSessionId !== null;
   const legendEntries = buildLegendEntries(
     fullTranscriptItems,
@@ -155,12 +165,17 @@ export function TranscriptPane() {
     activeSessionId !== null &&
     ["closed", "failed", "aborted"].includes(sessionStatus.value) &&
     !automaticProcessingRunning && !refinementRunning;
-  const settlingVisible = transcriptAvailable && !finalized &&
-    allTurns.some(turn => !isSettledTurn(turn, finalized));
+
+  /** Tooltip for a speaker that cannot be named yet; null when naming is available. */
+  function namingBlocked(entry: TranscriptLegendEntry | undefined): string | null {
+    if (!canNameSpeakers) return "Open a meeting to name speakers";
+    if (!entry || isBackendUnknownSpeakerId(entry.speakerId)) return "No identified speaker";
+    return entry.committed ? null : "Wait for confirmed speech";
+  }
 
   useEffect(() => {
     setNamingTarget(null);
-    setNamingMessage(null);
+    setVoiceprintNotice(null);
     setNamingError(null);
   }, [activeSessionId, canNameSpeakers]);
 
@@ -200,16 +215,9 @@ export function TranscriptPane() {
   }, [correctionTarget]);
 
   function openSpeakerName(entry: TranscriptLegendEntry | undefined): void {
-    const reason = !canNameSpeakers
-      ? "Open a meeting to name its speakers."
-      : !entry || !entry.committed
-        ? "Wait until this speaker has committed speech before naming."
-        : entry.speakerId === "S00"
-          ? "This speech has no identified speaker yet."
-          : null;
+    if (namingBlocked(entry) !== null || !entry) return;
     setNamingError(null);
-    setNamingMessage(reason);
-    if (reason || !entry) return;
+    setVoiceprintNotice(null);
     setNamingTarget(entry);
     setSpeakerName(entry.visibleLabel);
     setSaveVoiceprint(true);
@@ -224,12 +232,12 @@ export function TranscriptPane() {
     setNamingError(null);
     try {
       let result;
-      let refusalMessage: string | null = null;
+      let refused = false;
       try {
         result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, requestedName, undefined, saveVoiceprint);
       } catch (error) {
         if (!saveVoiceprint || !(error instanceof VoiceprintEvidenceNotAdmittedError) || sessionId.value !== meetingId) throw error;
-        refusalMessage = error.message;
+        refused = true;
         result = await nameMeetingSpeaker(meetingId, namingTarget.speakerId, requestedName, undefined, false);
       }
       if (sessionId.value !== meetingId) return;
@@ -238,15 +246,7 @@ export function TranscriptPane() {
         item.speaker_entity_id === result.speaker_id ? { ...item, display_name: result.label } : item);
       document.dispatchEvent(new CustomEvent(SPEAKER_NAMED_EVENT, { detail: { meetingId } }));
       requestMeetingHistoryRefresh();
-      setNamingMessage(refusalMessage
-        ? `Saved ${result.label}. Voiceprint not saved. ${refusalMessage}`
-        : result.enrollment === "not_requested"
-        ? `Saved ${result.label}. Voiceprint not saved.`
-        : result.enrollment === "unavailable"
-        ? `Saved ${result.label}. Voiceprint not saved: eligible audio was unavailable for this speaker.`
-        : result.enrollment === "enrolled"
-        ? `Saved ${result.label}. Voiceprint saved privately in this browser workspace.`
-        : `Saved ${result.label}. Voiceprint will be saved after recording finishes if eligible audio is available.`);
+      setVoiceprintNotice(refused || result.enrollment === "unavailable" ? VOICEPRINT_NOT_SAVED : null);
       setNamingTarget(null);
     } catch (error) {
       if (sessionId.value === meetingId) {
@@ -294,7 +294,6 @@ export function TranscriptPane() {
       );
       sessionNeedsReview.value = result.needs_review;
       requestMeetingHistoryRefresh();
-      setNamingMessage(`Reassigned selected passage to ${result.label}.`);
       setCorrectionTarget(null);
     } catch (error) {
       if (sessionId.value === meetingId) {
@@ -318,7 +317,7 @@ export function TranscriptPane() {
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
-      if (matchesFindShortcut(event)) {
+      if (matchesFindShortcut(event) && view.value === "transcript") {
         event.preventDefault();
         setFindOpen(true);
         return;
@@ -367,7 +366,13 @@ export function TranscriptPane() {
       if (node) node.scrollTop = node.scrollHeight;
     });
     return () => window.cancelAnimationFrame(frameId);
-  }, [autoscroll.value, findOpen, fullTranscriptItems]);
+  }, [autoscroll.value, findOpen, fullTranscriptItems, provisionalSegments.value]);
+
+  function handleTranscriptScroll(event: JSX.TargetedEvent<HTMLDivElement, Event>) {
+    const node = event.currentTarget;
+    const atBottom = node.scrollHeight - node.scrollTop - node.clientHeight <= AUTOSCROLL_BOTTOM_TOLERANCE_PX;
+    if (autoscroll.value !== atBottom) autoscroll.value = atBottom;
+  }
 
   function cycleSearchMatch(direction: -1 | 1) {
     if (searchResults.matchCount === 0) {
@@ -401,7 +406,7 @@ export function TranscriptPane() {
               its classes and the hint glyph are the reference's, because this pane is not an
               exempt region and its geometry is measured against the reference directly. */}
           <button type="button" className="tr-title" disabled>
-            {sessionTitle.value.trim() || "MOSS"}
+            {sessionTitle.value.trim() || "aiSight - LiveTranscribe"}
             <span className="edit-hint" aria-hidden="true">
               ✎
             </span>
@@ -421,9 +426,9 @@ export function TranscriptPane() {
             type="button"
             className={`legend-chip${entry.isUnidentified ? " is-unidentified" : ""}`}
             data-speaker-id={entry.speakerId}
-            disabled={!canNameSpeakers || !entry.committed || entry.speakerId === "S00"}
+            disabled={namingBlocked(entry) !== null}
             aria-label={`Name speaker ${entry.visibleLabel}`}
-            title={entry.speakerId === "S00" ? "This speech has no identified speaker yet" : canNameSpeakers ? "Name this speaker" : "Open a meeting to name its speakers"}
+            title={namingBlocked(entry) ?? undefined}
             onClick={() => openSpeakerName(entry)}
           >
             <span
@@ -442,12 +447,7 @@ export function TranscriptPane() {
         </div></div>
       </div>
 
-      {refinementRunning ? <p className="transcript-refinement" role="status"><strong>Improving transcript…</strong> Passage corrections wait until improvement finishes.</p>
-        : refinementState === "done" ? <p className="transcript-refinement" role="status">Transcript improved</p>
-        : refinementState === "failed" ? <p className="transcript-refinement" role="status">{selectedMeeting?.notice || "Improvement unavailable — the live transcript was kept"}</p> : null}
-
-      {namingMessage ? <p className="hint" role="status">{namingMessage}</p> : null}
-      {sessionNeedsReview.value ? <p className="hint" role="status"><strong>Needs review.</strong> Check passages marked Speaker TBD or a partial processing notice.</p> : null}
+      {voiceprintNotice ? <p className="tr-notice" role="status">{voiceprintNotice}</p> : null}
       {namingTarget ? (
         <dialog ref={namingDialogRef} className="history-dialog" aria-labelledby="speaker-name-title"
           onCancel={() => setNamingTarget(null)}>
@@ -457,7 +457,6 @@ export function TranscriptPane() {
             <input ref={namingInputRef} id="speaker-name-input" value={speakerName} required
               disabled={savingName} onInput={(event) => setSpeakerName(event.currentTarget.value)} />
             <label className="sp-voiceprint"><input type="checkbox" checked={saveVoiceprint} onChange={event => setSaveVoiceprint(event.currentTarget.checked)} disabled={savingName} /><span>Save voiceprint</span></label>
-            <p className="hint">Applies to this speaker throughout this meeting. Saving a private voiceprint needs at least 2 seconds of finished, clear speech; speech still being reviewed does not count. People may share the same name.</p>
             {namingError ? <p role="alert">{namingError}</p> : null}
             <div className="history-dialog-actions">
               <button className="history-toolbar-btn" type="button" disabled={savingName} onClick={() => setNamingTarget(null)}>Cancel</button>
@@ -471,7 +470,6 @@ export function TranscriptPane() {
           onCancel={() => setCorrectionTarget(null)}>
           <form onSubmit={(event) => void savePassageCorrection(event)}>
             <h3 id="passage-speaker-title">Reassign passage</h3>
-            <p className="hint">Changes only this selected passage in this recording. It does not save a voiceprint.</p>
             <label><input type="radio" name="passage-target" checked={correctionMode === "existing"}
               disabled={savingCorrection || correctionSpeakers.length === 0}
               onChange={() => setCorrectionMode("existing")} /> Existing person</label>
@@ -614,31 +612,19 @@ export function TranscriptPane() {
           </div>
         ) : null}
 
-        {settlingVisible ? <p className="transcript-settling-hint" data-settling-hint="true">
-          Identity settling. Live labels may change as speech is reviewed.
-        </p> : null}
-        <div ref={transcriptScrollRef} className="tr-body" id="tr-body">
+        <div ref={transcriptScrollRef} className="tr-body" id="tr-body" onScroll={handleTranscriptScroll}>
           {transcriptAvailable ? (
-            <TranscriptCards searchTurns={tentativeBlocks.length ? searchResults.turns.filter(item => item.turn.state !== "provisional") : searchResults.turns} activeMatchId={activeSearchMatchId}
+            <TranscriptCards rows={rows} search={searchByTurn} activeMatchId={activeSearchMatchId}
               finalized={finalized} canCorrectPassages={canCorrectPassages} correctionWaiting={refinementRunning}
-              speakerColorMap={speakerColorMap}
+              speakerColorMap={speakerColorMap} speakerLabel={rowSpeakerLabel} sourceLabel={sourceLabel}
+              namingBlocked={(id) => namingBlocked(legendEntries.find(entry => entry.speakerId === id))}
               onSpeakerClick={(id) => openSpeakerName(legendEntries.find(entry => entry.speakerId === id))}
               onPassageCorrection={openPassageCorrection} />
-          ) : null}
-          <div className="transcript-cards" data-tentative-blocks="true">{tentativeBlocks.map((block, index) => <article key={`${block.lane}:${block.start}:${index}`}
-            className="utt transcript-card tentative-card" data-tentative-block="true" data-state="provisional"
-            data-source-lane={block.lane} data-turn-start={block.start} data-turn-end={block.end}
-            data-target-keys={`tentative:${block.lane}:${block.start}`} data-segments={JSON.stringify([{ start: block.start, end: block.end, text: block.text }])}>
-            <div className="utt-meta"><span className="utt-speaker" data-speaker-id={block.speakerId ?? "S00"}>
-              <span className="utt-speaker-label">{block.label}</span></span>
-              <span className="utt-lane">{block.lane === "microphone" ? "Microphone" : block.lane === "system" ? "Shared audio" : block.lane}</span></div>
-            <div className="transcript-card-fragments"><div className="utt-content" data-text-status="unsettled"><p className="utt-text">{block.text}</p></div></div>
-          </article>)}</div>
-          {!transcriptAvailable ? (
+          ) : (
             <p className="empty-state transcript-empty-state">
               Transcript will appear here when a session starts.
             </p>
-          ) : null}
+          )}
         </div>
         <div className="tr-fade" aria-hidden="true" />
       </div>
@@ -670,7 +656,7 @@ function buildLegendEntries(
         speakerId: item.speaker_entity_id,
         committed: item.state !== "provisional",
         isUnidentified: isBackendUnknownSpeakerId(item.speaker_entity_id),
-        colorToken: resolveSpeakerColorToken(item.speaker, speakerColorMap)
+        colorToken: resolveSpeakerColorToken(item.speaker_entity_id, speakerColorMap)
       });
     } else if (item.state !== "provisional") {
       entries.get(legendKey)!.committed = true;

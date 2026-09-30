@@ -13,7 +13,7 @@ import { serializeTranscriptExport, triggerTranscriptExportDownload, type Transc
 import { summaryApi } from "../lib/finalSummary";
 import { openMeeting } from "../api/meetings";
 import { loadAppSettings } from "../lib/settings";
-import { sessionId, sessionNeedsReview, sessionStatus, transcript, liveLabelPolicy } from "../state/session";
+import { sessionId, sessionNeedsReview, sessionStatus, transcript } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 import { watchMeetingSummary } from "../lib/summaryRequests";
 import {
@@ -405,10 +405,7 @@ export function ControlPanel() {
     }
     if (selectedSummaryMeeting.value?.id === id && selectedSummaryMeeting.value.refinement_state === "running") return;
     triggerTranscriptExportDownload(serializeTranscriptExport(exportFormat, turns,
-      turn => /^local-\d+$/.test(turn.speaker_entity_id) &&
-        (!turn.display_name || turn.display_name === turn.speaker_entity_id || /^Speaker \d+$/.test(turn.display_name))
-        ? `Local ${String(Number(turn.speaker_entity_id.slice(6))).padStart(2, "0")}`
-        : transcriptCardSpeakerLabel(turn, numbers, liveLabelPolicy.value, finalized),
+      turn => transcriptCardSpeakerLabel(turn, numbers),
       { sessionId: id, exportedAt: new Date() }, { needsReview: sessionNeedsReview.value }, summary, summaryUpdating));
   }
 

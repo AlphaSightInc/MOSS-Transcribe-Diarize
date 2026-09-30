@@ -5,7 +5,11 @@ const SPEAKER_ID_PATTERN = /^SPEAKER_(\d+)$/;
 export const UNKNOWN_SPEAKER_ID = "UNKNOWN";
 export const UNRESOLVED_SPEAKER_ID = "S00";
 const UNKNOWN_DISPLAY_LABEL = "Preview";
-const UNCERTAIN_DISPLAY_LABEL = "Speaker TBD";
+/** The one neutral label for speech nobody is attributed to; the backend saves the same. */
+export const UNATTRIBUTED_SPEAKER_LABEL = "Speaker TBD";
+const UNCERTAIN_DISPLAY_LABEL = UNATTRIBUTED_SPEAKER_LABEL;
+const LOCAL_SPEAKER_ID = /^local-(\d+)$/;
+const UNATTRIBUTED_COLOR_TOKEN = "var(--muted-2)";
 const RESERVED_UNCERTAINTY_LABELS = new Set([
   "",
   "s00",
@@ -83,14 +87,32 @@ export function isUnidentifiedSpeakerLabel(displayName: unknown): boolean {
   return isReservedUncertaintyLabel(normalizedDisplayName);
 }
 
+/**
+ * Microphone-lane voices are named by their lane-local number: the first is the person at
+ * this browser ("You"), later ones are "User 1", "User 2", ... (I-4). Null for other ids.
+ */
+export function microphoneSpeakerLabel(speakerId: string): string | null {
+  if (speakerId === "speaker-microphone") return "You";
+  const match = LOCAL_SPEAKER_ID.exec(speakerId);
+  if (!match) return null;
+  const index = Number(match[1]);
+  return index <= 1 ? "You" : `User ${index - 1}`;
+}
+
+/**
+ * Colours follow first appearance of the canonical speaker, then any guessed-only speakers.
+ * Unattributed speech takes no palette slot: a colour would claim an identity it does not have.
+ */
 export function buildSpeakerColorMap(
-  segments: readonly Pick<TranscriptItem, "speaker">[]
+  segments: readonly (Pick<TranscriptItem, "speaker"> & Partial<Pick<TranscriptItem, "speaker_entity_id">>)[],
+  extraSpeakerIds: readonly string[] = []
 ): Map<string, string> {
   const colorMap = new Map<string, string>();
+  const ids = [...segments.map(segment => segment.speaker_entity_id || segment.speaker), ...extraSpeakerIds];
 
-  for (const segment of segments) {
-    const normalizedSpeakerId = normalizeDisplayNameForStorage(segment.speaker) || UNKNOWN_SPEAKER_ID;
-    if (colorMap.has(normalizedSpeakerId)) {
+  for (const id of ids) {
+    const normalizedSpeakerId = normalizeDisplayNameForStorage(id) || UNKNOWN_SPEAKER_ID;
+    if (colorMap.has(normalizedSpeakerId) || isBackendUnknownSpeakerId(normalizedSpeakerId)) {
       continue;
     }
 
@@ -106,6 +128,7 @@ export function resolveSpeakerColorToken(
   colorMap: ReadonlyMap<string, string>
 ): string {
   const normalizedSpeakerId = normalizeDisplayNameForStorage(speakerId) || UNKNOWN_SPEAKER_ID;
+  if (isBackendUnknownSpeakerId(normalizedSpeakerId)) return UNATTRIBUTED_COLOR_TOKEN;
   return colorMap.get(normalizedSpeakerId) ?? "var(--sp-1)";
 }
 

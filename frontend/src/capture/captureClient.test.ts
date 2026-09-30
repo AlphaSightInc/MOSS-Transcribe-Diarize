@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
+import { createMemoryStorage } from "../lib/persistence";
 
 import {
   CaptureClient,
@@ -1382,4 +1383,35 @@ it("does not publish a recovery notification from a frame response after close",
   resolve({ok:true,status:200});
   await vi.waitFor(()=>expect(lane.postInFlight).toBe(false));
   expect(recovered).not.toHaveBeenCalled();
+});
+
+it("stores Chrome's share choice for the created meeting and for a replacement share (J5)", async () => {
+  const storage = createMemoryStorage();
+  vi.stubGlobal("window", { localStorage: storage });
+  vi.stubGlobal("MediaStream", class { constructor(readonly tracks: MediaStreamTrack[]) {} });
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 201,
+    json: async () => ({ id: "meeting-j5", descriptor: { sample_rate: 4, frame_samples: 2 } }) }));
+  const display = (displaySurface: string) => {
+    const audio = fakeTrack();
+    return { getAudioTracks: () => [audio], getTracks: () => [audio],
+      getVideoTracks: () => [{ getSettings: () => ({ displaySurface }) }] } as unknown as MediaStream;
+  };
+  try {
+    const { client } = await eventLaneClient();
+    const frames = client as unknown as ActiveClient;
+    const capture = client as unknown as CaptureClient;
+    client.lanes.delete("system");
+    client.session = null;
+    await capture.attachDisplayMedia(display("window"));
+    frames.onWorkletFrame("microphone", workletFrame(0));
+    frames.onWorkletFrame("system", { ...workletFrame(0), lane: "system" });
+    await expect(capture.createSession()).resolves.toEqual({ id: "meeting-j5" });
+    expect(storage.getItem("moss.captureSurface.meeting-j5")).toBe("window");
+
+    const replacement = display("monitor");
+    await client.replaceLane("system", replacement, replacement.getTracks());
+    expect(storage.getItem("moss.captureSurface.meeting-j5")).toBe("monitor");
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
