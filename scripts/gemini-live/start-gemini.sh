@@ -2,8 +2,10 @@
 # One-command local MOSS with the Gemini live engine (D8 launcher).
 #   scripts/gemini-live/start-gemini.sh [port]      default port 18600
 # Opens https://127.0.0.1:<port>/ (self-signed certificate; accept it once in the browser).
-# Other machines (e.g. over the tailnet): MOSS_GEMINI_HOST=<this machine's tailnet IP>
-#   MOSS_GEMINI_TLS_SAN="DNS:<tailnet name>,IP:<tailnet IP>" — binds only that interface.
+# Other machines: MOSS_GEMINI_HOST=<one interface IP> (e.g. tailnet only) or 0.0.0.0 (LAN + tailnet), and list every
+#   name/address browsers will use: MOSS_GEMINI_TLS_SAN="DNS:<name>,DNS:<host>.local,IP:<tailnet IP>,IP:<LAN IP>".
+# Each browser gets its own private workspace (history, voiceprints); MOSS_GEMINI_OPEN_WORKSPACE=1 shares one
+# workspace with every browser that can reach the server (single-user or test use only).
 # Needs: this worktree's venv (<worktree>.venv), built frontend assets, and the local live
 # provider manifest (VAD + WeSpeaker settings). No server key: each user enters their own
 # Gemini API key in Settings; it is sent per meeting/job/request and never stored.
@@ -31,8 +33,8 @@ if [[ ! -f "$state/cert.pem" || ! -f "$state/key.pem" || "$(cat "$state/cert.san
   chmod 600 "$state/key.pem"; printf '%s' "$san" > "$state/cert.san"
 fi
 cd "$wt"
-echo "MOSS (Gemini live engine) → https://$host:$port/   state=$state   Ctrl-C to stop" >&2
-exec env MOSS_OPEN_WORKSPACE=1 PYTHONDONTWRITEBYTECODE=1 "$py" -m moss_transcribe_diarize.app.phase2_web_cli \
+echo "aiSight - LiveTranscribe → https://$host:$port/   state=$state   Ctrl-C to stop" >&2
+exec env MOSS_OPEN_WORKSPACE="${MOSS_GEMINI_OPEN_WORKSPACE:-0}" PYTHONDONTWRITEBYTECODE=1 "$py" -m moss_transcribe_diarize.app.phase2_web_cli \
   --database "$state/phase2.sqlite" --control-socket "$sock" \
   --tls-certfile "$state/cert.pem" --tls-keyfile "$state/key.pem" \
   --file-work-root "$state/file-work" --meeting-audio-root "$state/meeting-audio" \
