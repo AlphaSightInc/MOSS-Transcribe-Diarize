@@ -694,6 +694,36 @@ describe("MOSS session poller", () => {
     expect(poller.cursors()).toEqual({ snapshotVersion: 153, eventSequence: 4 });
   });
 
+  // #14: the Gemini runtime stays "active" while it drains the tail after Stop; this event is the only signal.
+  it("forwards the server's stop_requested event while the draining session still reports active", async () => {
+    const dispatched: WsEvent[] = [];
+    const poller = createMossSessionPoller({
+      sessionId: "draining",
+      dispatch: event => dispatched.push(event),
+      fetch: vi.fn(async (input: RequestInfo | URL) => {
+        if (String(input).includes("/events")) {
+          return jsonResponse({ events: [{ seq: 4, session_id: "draining", kind: "stop_requested", payload: {} }] });
+        }
+        return jsonResponse({
+          unchanged: false,
+          snapshot: {
+            session_id: "draining", descriptor: { sample_rate: 16_000 },
+            session: { committed_samples: 0, status: "active", version: 3, failure_reason: null,
+              label_revision_version: 0, identity_snapshot: { canonical_speakers: [] }, committed: [], provisional: null }
+          }
+        });
+      }) as typeof fetch
+    });
+
+    await poller.poll();
+
+    expect(dispatched.find(event => event.type === "session_state")).toMatchObject({ status: "active" });
+    expect(dispatched.find(event => event.type === "stop_progress")).toMatchObject({
+      session_id: "draining", stop_phase: "stop_requested"
+    });
+    poller.stop();
+  });
+
   it("updates capture health when the transcript snapshot cursor is unchanged", async () => {
     const dispatched: WsEvent[] = [];
     let snapshotRequests = 0;

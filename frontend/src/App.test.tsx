@@ -4,14 +4,17 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  resetSessionState, sessionId, sessionMode, sessionStartedAt, sessionStatus, sessionStatusLine, sessionTitle
+  resetSessionState, sessionId, sessionMode, sessionStartedAt, sessionStatus, sessionStatusLine, sessionStopRequested,
+  sessionTitle
 } from "./state/session";
+import { dispatchWsEvent } from "./api/ws";
 import { App, formatElapsed } from "./App";
 
 describe("Account application shell", () => {
   afterEach(() => {
     act(() => render(null, document.body));
     document.body.replaceChildren(); resetSessionState(); sessionTitle.value = ""; sessionStartedAt.value = null;
+    sessionStopRequested.value = null;
     vi.useRealTimers();
   });
 
@@ -74,6 +77,69 @@ describe("Account application shell", () => {
 
     act(() => { sessionId.value = "file-1"; sessionMode.value = "file"; sessionStatus.value = "active"; });
     expect(pill()?.textContent).toBe("Processing");
+  });
+
+  // #14: the server keeps a draining meeting "active" after Stop, so lifecycle alone never reached "Stopping".
+  it("stops the clock at Stop although the server still reports the draining meeting active", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(100_000));
+    const root = document.createElement("div");
+    document.body.append(root);
+    act(() => render(<App />, root));
+    const pill = () => root.querySelector(".top-status");
+    const serverSays = (status: "active" | "closed") => dispatchWsEvent({
+      type: "session_state", session_id: "live-1", mode: "live", state: status, status
+    });
+    act(() => {
+      sessionStartedAt.value = { sessionId: "live-1", ms: 100_000 - 60_000 };
+      serverSays("active");
+    });
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(pill()?.textContent).toBe("Recording 1:05");
+
+    act(() => { sessionStopRequested.value = "live-1"; });
+    expect(pill()?.textContent).toBe("Stopping");
+    expect(pill()?.getAttribute("data-state")).toBe("processing");
+    // The tail drain takes seconds to minutes; polls and History refreshes keep saying "active".
+    act(() => { vi.advanceTimersByTime(30_000); serverSays("active"); });
+    expect(pill()?.textContent).toBe("Stopping");
+
+    act(() => { serverSays("closed"); vi.advanceTimersByTime(5000); });
+    expect(pill()?.textContent).toBe("Standby");
+
+    // A new meeting's clock is unaffected by the previous meeting's Stop.
+    act(() => {
+      sessionStartedAt.value = { sessionId: "live-2", ms: Date.now() };
+      dispatchWsEvent({ type: "session_state", session_id: "live-2", mode: "live", state: "active", status: "active" });
+    });
+    act(() => { vi.advanceTimersByTime(3000); });
+    expect(pill()?.textContent).toBe("Recording 0:03");
+  });
+
+  it("learns about a Stop from the server's stop_requested event (observers, reloads)", () => {
+    const root = document.createElement("div");
+    document.body.append(root);
+    act(() => render(<App />, root));
+    act(() => {
+      sessionStartedAt.value = { sessionId: "watched", ms: Date.now() - 90_000 };
+      dispatchWsEvent({ type: "session_state", session_id: "watched", mode: "live", state: "active", status: "active" });
+    });
+    expect(root.querySelector(".top-status")?.textContent).toMatch(/^Recording 1:3\d$/);
+    act(() => dispatchWsEvent({ type: "stop_progress", session_id: "watched", stop_phase: "stop_requested", llm_state: null }));
+    expect(root.querySelector(".top-status")?.textContent).toBe("Stopping");
+  });
+
+  it("shows no time rather than a wrong one until a reattached meeting's start is known", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(5_000_000));
+    const root = document.createElement("div");
+    document.body.append(root);
+    act(() => render(<App />, root));
+    act(() => { sessionId.value = "reloaded"; sessionMode.value = "live"; sessionStatus.value = "active"; });
+    act(() => { vi.advanceTimersByTime(3000); });
+    expect(root.querySelector(".top-status")?.textContent).toBe("Recording");
+    act(() => { sessionStartedAt.value = { sessionId: "reloaded", ms: Date.now() - 1_800_000 }; });
+    expect(root.querySelector(".top-status")?.textContent).toBe("Recording 30:00");
   });
 
   it("formats elapsed time as m:ss, then h:mm:ss", () => {

@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { ControlPanel } from "./components/ControlPanel";
 import { TranscriptPane } from "./components/TranscriptPane";
-import { sessionId, sessionMode, sessionStartedAt, sessionStatus, sessionTitle } from "./state/session";
+import { sessionId, sessionMode, sessionStartedAt, sessionStatus, sessionStopRequested, sessionTitle } from "./state/session";
 
 export const PRODUCT_NAME = "aiSight - LiveTranscribe";
 
@@ -56,8 +56,9 @@ export function App() {
 function useStatusPill(): { label: string; state: "idle" | "recording" | "processing" } {
   const status = sessionStatus.value;
   const id = sessionId.value;
-  const recording = status === "active" && sessionMode.value === "live" && id !== null;
-  const firstSeen = useRef<{ sessionId: string; ms: number } | null>(null);
+  // A draining meeting still reports "active" after Stop; the Stop request ends the clock (#14).
+  const stopping = status === "closing" || (status === "active" && id !== null && sessionStopRequested.value === id);
+  const recording = status === "active" && sessionMode.value === "live" && id !== null && !stopping;
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -67,13 +68,11 @@ function useStatusPill(): { label: string; state: "idle" | "recording" | "proces
     return () => clearInterval(timer);
   }, [recording]);
 
-  if (status === "closing") return { label: "Stopping", state: "processing" };
+  if (stopping) return { label: "Stopping", state: "processing" };
   if (status === "active" && !recording) return { label: "Processing", state: "processing" };
   if (!recording) return { label: "Standby", state: "idle" };
-  const known = sessionStartedAt.value?.sessionId === id ? sessionStartedAt.value : null;
-  if (!known && firstSeen.current?.sessionId !== id) firstSeen.current = { sessionId: id, ms: Date.now() };
-  const startedMs = known?.ms ?? firstSeen.current!.ms;
-  return { label: `Recording ${formatElapsed(now - startedMs)}`, state: "recording" };
+  const started = sessionStartedAt.value?.sessionId === id ? sessionStartedAt.value.ms : null;
+  return { label: started === null ? "Recording" : `Recording ${formatElapsed(now - started)}`, state: "recording" };
 }
 
 export function formatElapsed(milliseconds: number): string {

@@ -26,8 +26,11 @@ export const sessionError = signal<string | null>(null);
 export const sessionTitle = signal("");
 export const sessionStatusLine = signal<string | null>(null);
 // When a meeting began, keyed by its id so a reset between publish and observe cannot lose it.
-// The top pill's "Recording mm:ss" reads it; unknown (reload reattach) falls back to first sight.
+// The top pill's "Recording mm:ss" reads it; while unknown (a reload before its Meeting loads) it shows no time.
 export const sessionStartedAt = signal<{ sessionId: string; ms: number } | null>(null);
+// The meeting whose Stop was requested: this tab's click, or the server's stop_requested event for
+// observers. The server keeps a draining meeting "active", so lifecycle alone cannot end the pill's clock.
+export const sessionStopRequested = signal<string | null>(null);
 export const sessionNeedsReview = signal(false);
 export const liveLabelPolicy = signal<"current" | "La">("current");
 
