@@ -38,7 +38,12 @@ describe("speakerMap", () => {
 
     expect(resolveSpeakerColorToken("speaker-b", colorMap)).toBe("var(--sp-1)");
     expect(resolveSpeakerColorToken("speaker-a", colorMap)).toBe("var(--sp-2)");
-    expect(resolveSpeakerColorToken("UNKNOWN", colorMap)).toBe("var(--sp-3)");
+    // Unattributed speech is neutral and leaves the palette to real speakers.
+    expect(resolveSpeakerColorToken("UNKNOWN", colorMap)).toBe("var(--muted-2)");
+    expect(resolveSpeakerColorToken("S00", colorMap)).toBe("var(--muted-2)");
+    expect(resolveSpeakerColorToken("speaker-c", buildSpeakerColorMap([
+      { speaker: "S00" }, { speaker: "x", speaker_entity_id: "speaker-c" }
+    ]))).toBe("var(--sp-1)");
   });
 
   it("treats default labels as unidentified and namespaces unknown legend keys by label", () => {

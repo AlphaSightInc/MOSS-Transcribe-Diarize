@@ -1,3 +1,7 @@
+import type { TranscriptTurn } from "./mergeTranscript";
+import { UNATTRIBUTED_SPEAKER_LABEL, UNRESOLVED_SPEAKER_ID } from "./speakerMap";
+import type { SourceLane } from "./transcriptOrder";
+
 /** Display-only projection of canonical voice guesses over provisional words. */
 export interface TentativeSpan {
   start_sample: number;
@@ -25,6 +29,12 @@ export interface TentativeBlock {
 
 const SAMPLE_RATE = 16_000;
 
+/** A guess reads as the speaker's label plus "?"; no guess, or no label, is simply unattributed. */
+function guessLabel(speakerId: string | null, speakerLabels: Readonly<Record<string, string>>): string {
+  const label = speakerId ? speakerLabels[speakerId] : undefined;
+  return label && label !== UNATTRIBUTED_SPEAKER_LABEL ? `${label}?` : UNATTRIBUTED_SPEAKER_LABEL;
+}
+
 export function projectTentativeBlocks(
   words: readonly TentativeWord[], spans: readonly TentativeSpan[],
   speakerLabels: Readonly<Record<string, string>>
@@ -39,7 +49,7 @@ export function projectTentativeBlocks(
         Math.max(startSample, span.start_sample)) }))
       .sort((left, right) => right.overlap - left.overlap)[0];
     const speakerId = best && best.overlap > 0 ? best.span.speaker : null;
-    const label = speakerId ? `${speakerLabels[speakerId] || speakerId}?` : "Speaker TBD";
+    const label = guessLabel(speakerId, speakerLabels);
     const prior = blocks.at(-1);
     if (prior && prior.lane === lane && prior.speakerId === speakerId) {
       prior.end = Math.max(prior.end, word.end);
@@ -75,10 +85,22 @@ export function projectTentativeSegments(
       prior.end = Math.max(prior.end, segment.end_sample / SAMPLE_RATE);
       prior.text = `${prior.text} ${text}`.trim();
     } else {
-      blocks.push({ speakerId, label: speakerId ? `${speakerLabels[speakerId] || speakerId}?` : "Speaker TBD",
+      blocks.push({ speakerId, label: guessLabel(speakerId, speakerLabels),
         tentative: speakerId !== null, lane,
         start: segment.start_sample / SAMPLE_RATE, end: segment.end_sample / SAMPLE_RATE, text });
     }
   }
   return blocks;
+}
+
+/** Guess blocks in the transcript's row shape, so they render and search like any other row. */
+export function tentativeTurns(blocks: readonly TentativeBlock[]): TranscriptTurn[] {
+  return blocks.map(block => {
+    const id = block.speakerId ?? UNRESOLVED_SPEAKER_ID;
+    const segment = { start: block.start, end: block.end, text: block.text };
+    return { source_lane: block.lane as SourceLane, start: block.start, end: block.end, speaker: id,
+      speaker_entity_id: id, display_name: block.label, state: "provisional", text: block.text,
+      segment_ids: [], target_segment_keys: [`tentative:${block.lane}:${block.start}`],
+      segments: [segment], provisional_stale: false };
+  });
 }
