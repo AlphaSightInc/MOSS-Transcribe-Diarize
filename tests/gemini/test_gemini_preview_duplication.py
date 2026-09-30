@@ -119,6 +119,23 @@ def test_new_interim_sharing_a_phrase_with_shown_text_is_kept_whole(tmp_path):
     assert _preview(rt, earlier, new) == earlier + " " + new
 
 
+def test_preview_trims_head_when_it_dropped_a_committed_phrase(tmp_path):
+    # Recorded (round-3 re-check, E1 at 250 s): the preview heard "Only Murders" where the
+    # committed words say "only eight were going to work? We should have I" -- a 9-word gap on
+    # the committed side only -- and re-showed 22 committed words.
+    rt = _runtime(tmp_path)
+    _commit(rt, "And you have to convince the market to buy it, and you got to convince "
+                "developers not to use anything but those eight blend modes. Walk us through "
+                "what that felt like. The other 24 weren't that important. Okay, so wait, wait. "
+                "First question. Was that the plan all along? Like when when did you realize "
+                "that only eight were going to work? We should have I realized I didn't learn "
+                "about it until it was too")
+    fresh = ("late. We should have implemented all 32. Yeah. But But we built what we built "
+             "and so we had to make the best of it. That was really an extraordinary time.")
+    assert _preview(rt, "the plan all along? When When did you realize that Only MurdersI "
+                        "realized I didn't learn about it until it was too " + fresh) == fresh
+
+
 def test_degraded_commit_keeps_lanes_so_preview_and_rolling_replace_it(tmp_path):
     # R1: preview words committed by the lag fallback carry their capture lane.
     rt = _runtime(tmp_path, lanes=True)

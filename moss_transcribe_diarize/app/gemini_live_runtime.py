@@ -1312,7 +1312,20 @@ def _repeated_head(tail: Sequence[str], words: Sequence[str]) -> int:
     "the") also match and must not trim new speech: they are not dense, and a run never ends
     on a lone word after a gap (the "the" of "in the world" seven words past a fused
     "thevery" is chance, not repetition).
+
+    The preview also drops or fuses whole phrases ("Only Murders" for "only eight were going
+    to work? We should have I"), so where the preview side skips at most one word the shown
+    side may skip up to 16, into a block of >= 2 words. Measured on 19 recorded W3 streams
+    against the committed words of the same audio, such omissions run up to 12 words; a
+    lone word after the skip, or an unbounded skip, joins chance matches and drops fresh
+    words on the $0 replay.
     """
+    def joined(previous, block):
+        shown_gap = block.a - (previous.a + previous.size)
+        preview_gap = block.b - (previous.b + previous.size)
+        return ((shown_gap <= 8 and preview_gap <= 8)
+                or (shown_gap <= 16 and preview_gap <= 1 and block.size >= 2))
+
     blocks = [block for block in difflib.SequenceMatcher(
         None, tail, words, autojunk=False).get_matching_blocks() if block.size]
     for index, head in enumerate(blocks):
@@ -1320,8 +1333,7 @@ def _repeated_head(tail: Sequence[str], words: Sequence[str]) -> int:
             break
         run = [head]
         for block in blocks[index + 1:]:
-            if (block.b - (run[-1].b + run[-1].size) > 8
-                    or block.a - (run[-1].a + run[-1].size) > 8):
+            if not joined(run[-1], block):
                 break
             run.append(block)
         while len(run) > 1 and run[-1].size == 1:
