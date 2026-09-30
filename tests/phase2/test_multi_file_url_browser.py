@@ -81,3 +81,43 @@ def test_mixed_file_url_form_reports_each_result_and_created_event():
         "url_status": "",
         "created": ["accepted-1", "accepted-4"],
     }
+
+
+def test_file_and_url_start_is_separated_from_mode_like_live():
+    """#12: the File/URL form wraps its sections, so Start lost the Mode divider Live has."""
+    from urllib.parse import urlsplit
+    from playwright.sync_api import sync_playwright
+    from tests.phase2.browser_support import require_browser
+    root = Path(__file__).resolve().parents[2]
+    workspace = _workspace_html(SimpleNamespace(display_name='Layout test'), [], live_enabled=True)
+
+    def route(r):
+        path = urlsplit(r.request.url).path
+        asset = root / 'moss_transcribe_diarize/app/frontend_assets' / path.removeprefix('/static/')
+        if path == '/':
+            r.fulfill(body=workspace, content_type='text/html')
+        elif path.startswith('/static/'):
+            r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+        else:
+            r.fulfill(json={'meetings': [], 'voiceprints': []})
+
+    gaps = {}
+    with sync_playwright() as p:
+        browser = p.chromium.launch(executable_path=str(require_browser(p)))
+        try:
+            for width in (1440, 400):
+                page = browser.new_page(viewport={'width': width, 'height': 900})
+                page.route('**/*', route)
+                page.goto('http://layout.test')
+                page.locator('[data-history-boot="ready"]').wait_for()
+                for mode in ('Live', 'File', 'URL'):
+                    page.get_by_role('button', name=mode, exact=True).click()
+                    gaps[(width, mode)] = page.evaluate(
+                        "() => document.querySelector('.record-btn').getBoundingClientRect().top"
+                        " - document.querySelector('.mode-tabs').getBoundingClientRect().bottom")
+                page.close()
+        finally:
+            browser.close()
+    for width in (1440, 400):
+        assert gaps[(width, 'Live')] >= 48, gaps
+        assert gaps[(width, 'File')] == gaps[(width, 'URL')] == gaps[(width, 'Live')], gaps

@@ -31,6 +31,8 @@ export interface Meeting {
   notice?: string;
   needs_review?: boolean;
   refinement_state?: RefinementState;
+  /** What the server is doing for an active File/URL meeting (absent once it ends). */
+  file_stage?: "downloading" | "transcribing";
   id: string;
   mode: MeetingMode;
   title: string | null;
@@ -115,6 +117,7 @@ function parseMeeting(value: unknown): Meeting {
     ...(typeof value.notice === "string" ? { notice: value.notice } : {}),
     ...(typeof value.needs_review === "boolean" ? { needs_review: value.needs_review } : {}),
     ...(typeof value.refinement_state === "string" ? { refinement_state: value.refinement_state as RefinementState } : {}),
+    ...(value.file_stage === "downloading" || value.file_stage === "transcribing" ? { file_stage: value.file_stage } : {}),
     mode: value.mode,
     title: value.title,
     title_source: value.title_source,

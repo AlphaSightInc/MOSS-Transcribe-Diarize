@@ -204,6 +204,42 @@ def test_accepted_url_continues_after_submitting_browser_leaves(tmp_path: Path):
         assert client.get(f"/api/meetings/{meeting_id}").status_code == 404
 
 
+class HeldRunner(RecordingRunner):
+    def __init__(self) -> None:
+        super().__init__()
+        self.started = threading.Event()
+        self.release = threading.Event()
+
+    def transcribe(self, input_path: str | Path, **options: object):
+        self.started.set()
+        assert self.release.wait(5), "test did not release transcription"
+        return super().transcribe(input_path, **options)
+
+
+def test_active_url_meeting_reports_download_then_transcription_stage(tmp_path: Path):
+    """The owner's status line needs the server's stage, not a client timer (#13)."""
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    runner = HeldRunner()
+    acquirer = ControlledAcquirer()
+    app = make_app(database, runner, tmp_path / "file-work", acquirer)
+
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        meeting_id = client.post(
+            "/api/meetings/url", json={"url": "https://media.test/staged"}
+        ).json()["id"]
+        assert acquirer.started.wait(timeout=2)
+        assert client.get(f"/api/meetings/{meeting_id}").json()["file_stage"] == "downloading"
+        acquirer.release.set()
+        assert runner.started.wait(timeout=2)
+        assert client.get(f"/api/meetings/{meeting_id}").json()["file_stage"] == "transcribing"
+        listed = {m["id"]: m for m in client.get("/api/meetings").json()["meetings"]}
+        assert listed[meeting_id]["file_stage"] == "transcribing"
+        runner.release.set()
+        assert "file_stage" not in await_terminal(client, meeting_id, "completed")
+
+
 def test_direct_http_acquisition_checks_declared_and_streamed_bytes(tmp_path: Path):
     def transport(request: httpx.Request) -> httpx.Response:
         path = request.url.path

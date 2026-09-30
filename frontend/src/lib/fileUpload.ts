@@ -3,9 +3,13 @@ import { OPEN_MEETING_EVENT, requestMeetingHistoryRefresh } from "./meetingEvent
 import { MEETING_CREATED } from "./finalSummary";
 import { loadAppSettings, transcriptionWire } from "./settings";
 
+/** The server's stage for an active item; without it a long download or transcription looks dead. */
+const STAGE_TEXT = { downloading: "Downloading audio…", transcribing: "Transcribing…" } as const;
+
 /**
- * The existing account upload form, with per-item server outcomes. Rows show only failures with
- * their reason (K8) and the "Open meeting" action; progress lives in History (Q6).
+ * The existing account upload form, with per-item server outcomes. Rows show the item's current
+ * stage from the server (or "Uploading…" while the browser sends the file), "Done", or the failure
+ * reason (K8), plus the "Open meeting" action.
  */
 export function bindFileUpload(): () => void {
   const form = document.querySelector<HTMLFormElement>('[data-file-upload="form"]');
@@ -24,7 +28,9 @@ export function bindFileUpload(): () => void {
         const meeting = await openMeeting(id);
         if (disposed || current !== generation) return;
         message.textContent = meeting.status === "failed" ? meeting.failure_reason || "Transcription failed."
-          : meeting.status === "interrupted" ? "Transcription interrupted." : "";
+          : meeting.status === "interrupted" ? "Transcription interrupted."
+          : meeting.status === "completed" ? "Done"
+          : meeting.file_stage ? STAGE_TEXT[meeting.file_stage] : "";
         if (meeting.status !== "active") { requestMeetingHistoryRefresh(); return; }
         const timer = setTimeout(() => { timers.delete(timer); void refresh(); }, 1500);
         timers.add(timer);
@@ -39,6 +45,7 @@ export function bindFileUpload(): () => void {
     name.textContent = label;
     const message = document.createElement("span");
     message.className = "hint";
+    if (fileSize !== undefined) message.textContent = "Uploading…";
     row.append(name, document.createTextNode(" "), message);
     results.append(row);
     try {
@@ -56,6 +63,7 @@ export function bindFileUpload(): () => void {
         return false;
       }
       if (typeof payload?.id !== "string" || !payload.id) throw new Error("Missing meeting ID");
+      message.textContent = ""; // The upload is done; the server's stage follows.
       const open = document.createElement("button");
       open.type = "button";
       open.className = "history-action-btn";

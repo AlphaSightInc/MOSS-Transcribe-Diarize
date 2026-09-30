@@ -110,6 +110,7 @@ class _OwnedFileTask:
     handle: Any
     task: asyncio.Task[None]
     phase: str = "queued"
+    acquiring: bool = False
     retained_lock: Any | None = None
     resumed: bool = False
     interrupted_by_meeting: bool = False
@@ -641,7 +642,7 @@ class FileMeetingTasks:
             except BaseException:
                 run.close()
                 raise
-            self._register(handle, task)
+            self._register(handle, task, acquiring=True)
         except BaseException:
             if task is not None:
                 task.cancel()
@@ -696,6 +697,14 @@ class FileMeetingTasks:
             (meeting_id, "validating") for meeting_id in self._reservations
         )
         return snapshot
+
+    def stage(self, meeting_id: str) -> str | None:
+        """What this process is doing for an active File Meeting, for its owner's status line."""
+
+        entry = self._tasks.get(meeting_id)
+        if entry is not None:
+            return "downloading" if entry.acquiring else "transcribing"
+        return "transcribing" if meeting_id in self._reservations else None
 
     async def interrupt_account(self, owner_key: tuple[str, int]) -> tuple[str, ...]:
         """Quiesce this Account generation, then durably interrupt its active File rows."""
@@ -867,6 +876,7 @@ class FileMeetingTasks:
         *,
         retained_lock: Any | None = None,
         resumed: bool = False,
+        acquiring: bool = False,
     ) -> None:
         meeting_id = handle.meeting_id
         if self._is_fenced(handle):
@@ -875,6 +885,7 @@ class FileMeetingTasks:
         self._tasks[meeting_id] = _OwnedFileTask(
             handle=handle,
             task=task,
+            acquiring=acquiring,
             retained_lock=retained_lock,
             resumed=resumed,
         )
@@ -1163,6 +1174,8 @@ class FileMeetingTasks:
             await self._mark_failed(handle, code, reason)
             self._remove_terminal_work_dir(staging_dir)
             return
+        if (entry := self._tasks.get(handle.meeting_id)) is not None:
+            entry.acquiring = False
         try:
             self._record_retained_source(handle, input_path, ingress="url")
         except Exception:

@@ -2347,6 +2347,9 @@ def create_phase2_app(
 
     def meeting_response(meeting: Meeting) -> dict[str, object]:
         result = meeting.to_dict()
+        if meeting.mode == "file" and meeting.status == "active" and file_tasks is not None:
+            if (stage := file_tasks.stage(meeting.meeting_id)) is not None:
+                result["file_stage"] = stage
         if (meeting.status == "completed" and phase2_live is not None
                 and phase2_live.refinement_running(meeting.meeting_id)):
             result["refinement_state"] = "running"
