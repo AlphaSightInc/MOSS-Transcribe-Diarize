@@ -4,6 +4,7 @@ Fake perfect voice vectors remove acoustic uncertainty; real WAV/MP3 archive pat
 import asyncio
 import json
 import os
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -53,13 +54,15 @@ def test_file_album_save_restart_exports_rename_enroll_and_private_bank(tmp_path
         for label in ('Alice','Alice renamed'):
             named=client.put(f'/api/meetings/{mid}/speakers/S01/name',json={'label':label})
             assert named.status_code==200,named.text
-            assert named.json()['enrollment']=='enrolled'
+            assert named.json()['enrollment']=='pending'  # fingerprint follows the saved name
             rows=client.get(f'/api/meetings/{mid}').json()['transcript']['segments']
             assert [(s['start'],s['end'],s['text']) for s in rows]==before
             assert [s['speaker'] for s in rows]==[label,'Speaker 2']*3
             assert [s['speaker_entity_id'] for s in rows]==['S01','S02']*3
-            bank=client.get('/api/voiceprints').json()['voiceprints']
-            assert len(bank)==1 and bank[0]['sample_count']==1 and bank[0]['label']==label
+            deadline=time.monotonic()+5
+            while [(v['label'],v['sample_count']) for v in client.get('/api/voiceprints').json()['voiceprints']]!=[(label,1)]:
+                assert time.monotonic()<deadline,'voiceprint was not enrolled'
+                time.sleep(.02)
         if output := os.environ.get('WP19_SAVED_FIXTURE'):
             Path(output).write_text(json.dumps(client.get(f'/api/meetings/{mid}').json(),indent=2)+'\n')
         session(client,sessions['sub-b'])

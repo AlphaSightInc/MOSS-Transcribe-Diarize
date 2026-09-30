@@ -137,7 +137,10 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   collapse (`prototypes/streaming-diarization/shared-encoder-concurrency/NOTES.md`). Fresh provider output remains unmeasured.
 - **After-Stop voiceprints** (D17): naming a completed Live meeting's speaker fingerprints that speaker's rows in the saved
   recording minus intervals overlapped by any other row (either lane), ≥ 2 s (3/3 cases: 3.0 s eligible, 1.0 s refused;
-  `prototypes/gemini-live/wp3-overlap/NOTES.md`).
+  `prototypes/gemini-live/wp3-overlap/NOTES.md`). The fingerprint runs after the name is saved (answer `pending`), one at a
+  time and outside the identity lock: it costs ~3.3–4 s per minute of the speaker's speech on an M3 Ultra (99% WeSpeaker,
+  ≤ 1% ffmpeg decode), which inside the request made a rename take 40 s (13.5 min meeting) to 278 s (150 min) and stalled
+  every Live publication meanwhile (issue #15, `prototypes/rename-latency/NOTES.md`).
 - **Server summaries** (ADR-0011/0013 amendments): `POST /api/meetings/{id}/summary/live` (ephemeral, owner-bound live transcript)
   and `/summary/server` (completed transcript at `source_version`, stored as `final_summary`), default `gemini-3.5-flash-lite`,
   content-free `usage` in both responses.
