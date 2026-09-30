@@ -873,6 +873,66 @@ def test_stale_preview_after_degraded_commit_is_ignored(tmp_path):
     assert rt.engine_diagnostics("one")["degraded_path_activations"] == 1
 
 
+def test_account_stage_keeps_recording_past_the_first_hour(tmp_path):
+    """Issue #1: a 1 h floor stopped the stage at 60 min; saved audio went partial, no post-Stop pass."""
+    import os
+    from moss_transcribe_diarize.app.phase2_audio import LiveMeetingAudioStages, MeetingAudioArchive
+    rt = GeminiLiveRuntime(
+        descriptor=descriptor(tape_bytes=9_600_000),  # the deployed manifest's own bound
+        tape_storage_root=tmp_path / "scratch",
+        engine_factory=lambda _id, publish, _usage, _settings: ScriptedGeminiEngine(
+            publish, batches=[], terminal=()),
+    )
+    assert rt.descriptor.bounds.max_tape_bytes >= 3 * 60 * 60 * 16000 * 2
+    stages = LiveMeetingAudioStages(MeetingAudioArchive(tmp_path / "archive"),
+                                    max_bytes=rt.descriptor.bounds.max_tape_bytes)
+    stages.reserve("owner", "one")
+    rt.bind_account_audio_stages(stages)
+    rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
+    stage = stages.get("one")
+    os.ftruncate(stage._fd, 60 * 60 * 16000 * 2)  # an hour already staged (sparse)
+    os.lseek(stage._fd, 0, os.SEEK_END)
+    rt.accept_frame("one", frame(0))
+    assert not stage.degraded
+    assert stage.path.stat().st_size == 60 * 60 * 16000 * 2 + 32000
+    stages.release("one")
+    stages.discard("owner", "one")
+
+
+def test_meeting_longer_than_the_refinement_bound_keeps_its_live_transcript(tmp_path, monkeypatch):
+    """The post-Stop pass holds whole lanes in RAM (~0.9 GB/h measured); past its bound the
+    meeting settles on the live transcript instead of attempting it."""
+    from moss_transcribe_diarize.app import gemini_live_runtime
+    from moss_transcribe_diarize.app.phase2_audio import LiveMeetingAudioStages, MeetingAudioArchive
+    monkeypatch.setattr(gemini_live_runtime, "GEMINI_MAX_REFINEMENT_SECONDS", 1)
+    stages = LiveMeetingAudioStages(MeetingAudioArchive(tmp_path / "archive"), max_bytes=10**9)
+    stages.reserve("owner", "one")
+    finished = []
+
+    class Engine(ScriptedGeminiEngine):
+        async def finish(self, tape):
+            finished.append(tape)
+            return ()
+
+    rt = GeminiLiveRuntime(
+        descriptor=descriptor(), tape_storage_root=tmp_path / "scratch",
+        engine_factory=lambda _id, publish, _usage, _settings: Engine(publish, batches=[], terminal=()))
+    rt.bind_account_audio_stages(stages)
+    rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
+    for sequence in range(2):
+        rt.accept_frame("one", frame(sequence))
+    rt.publish_update("one", GeminiBase(32000, ()))
+    rt.publish_update("one", GeminiRolling(0, 32000, (GeminiSegment(0, 32000, "live", "speaker-0001"),)))
+    asyncio.run(rt.stop("one", 1.0))
+    assert rt.snapshot("one").session.finalization_status == "unavailable"
+    assert [event.payload.get("reason") for event in rt.events("one")
+            if event.kind == "terminal_finalization_unavailable"] == ["meeting_exceeds_refinement_bound"]
+    assert finished == []
+    assert not stages.get("one").degraded  # The saved audio stays whole.
+    stages.release("one")
+    stages.discard("owner", "one")
+
+
 def test_account_stage_is_terminal_source_and_survives_view_release(tmp_path):
     from moss_transcribe_diarize.app.phase2_audio import LiveMeetingAudioStages, MeetingAudioArchive
     stages = LiveMeetingAudioStages(MeetingAudioArchive(tmp_path / "archive"), max_bytes=115_200_000)

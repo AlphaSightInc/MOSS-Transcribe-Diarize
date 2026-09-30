@@ -889,6 +889,53 @@ describe("browser capture frame contract", () => {
     expect(close).toHaveBeenCalledOnce();
   });
 
+  it("abandons a frame and heartbeat that never answer, then replays them once the network returns", async () => {
+    // A request on a dead connection never settles by itself. Before the per-request
+    // deadline it pinned its lane and the heartbeat path until the 30 s lease interrupted
+    // the meeting, though the network was back.
+    vi.useFakeTimers();
+    try {
+      let online = false;
+      const hung: AbortSignal[] = [];
+      const fetchSpy = vi.fn((_url: string, request: RequestInit) => {
+        if (online) return Promise.resolve({ ok: true, status: 200 });
+        const signal = request.signal as AbortSignal;
+        hung.push(signal);
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+        });
+      });
+      vi.stubGlobal("fetch", fetchSpy);
+      const { client, lane } = activeFrameClient();
+      const pulse = () =>
+        (client as unknown as { scheduleHeartbeat(state: string): Promise<void> }).scheduleHeartbeat("capturing");
+
+      void pulse();
+      client.onWorkletFrame("microphone", workletFrame(0));
+      client.onWorkletFrame("microphone", workletFrame(2));
+      void pulse();
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(hung).toHaveLength(2);
+      expect(hung.every((signal) => signal.aborted)).toBe(true);
+
+      online = true;
+      client.onWorkletFrame("microphone", workletFrame(4));
+      void pulse();
+      await vi.waitFor(() => expect(lane.sequence).toBe(3));
+      await vi.waitFor(() => expect(heartbeatBodies(fetchSpy)).toHaveLength(2));
+      expect(
+        fetchSpy.mock.calls
+          .filter(([url]) => String(url).endsWith("/frames"))
+          .map(([, request]) => JSON.parse((request as RequestInit).body as string).sequence),
+      ).toEqual([0, 0, 1, 2]);
+      expect(lane.droppedFrames).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("serializes worklet frame POSTs within a lane", async () => {
     let resolveFirst!: (response: { ok: boolean; status: number }) => void;
     const firstResponse = new Promise<{ ok: boolean; status: number }>((resolve) => {

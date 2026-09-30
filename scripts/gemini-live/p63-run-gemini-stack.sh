@@ -19,5 +19,5 @@ MOSS_OPEN_WORKSPACE=1 PYTHONDONTWRITEBYTECODE=1 "${wt}.venv/bin/python" -m moss_
   --database "$state/phase2.sqlite" --control-socket "$state/control.sock" \
   --tls-certfile "$state/cert.pem" --tls-keyfile "$state/key.pem" \
   --file-work-root "$state/file-work" --meeting-audio-root "$state/meeting-audio" \
-  --live-provider-manifest "$manifest" --live-helper-lease-seconds 30 \
+  --live-provider-manifest "$manifest" --live-helper-lease-seconds 120 \
   --live-engine gemini --host 127.0.0.1 --port "$port"

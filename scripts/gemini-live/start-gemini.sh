@@ -38,10 +38,13 @@ if [[ ! -f "$state/cert.pem" || ! -f "$state/key.pem" || "$(cat "$state/cert.san
   chmod 600 "$state/key.pem"; printf '%s' "$san" > "$state/cert.san"
 fi
 cd "$wt"
+# Lease = how long capture may go silent before the meeting is interrupted for good. 120 s rides
+# out a Wi-Fi drop + rejoin (the client retries every frame, abandons a hung request after 10 s
+# and replays the queued audio); the cost is that a closed tab's meeting ends 2 min later.
 echo "aiSight - LiveTranscribe → https://$host:$port/   state=$state   Ctrl-C to stop" >&2
 exec env MOSS_OPEN_WORKSPACE="${MOSS_GEMINI_OPEN_WORKSPACE:-0}" PYTHONDONTWRITEBYTECODE=1 "$py" -m moss_transcribe_diarize.app.phase2_web_cli \
   --database "$state/phase2.sqlite" --control-socket "$sock" \
   --tls-certfile "$state/cert.pem" --tls-keyfile "$state/key.pem" \
   --file-work-root "$state/file-work" --meeting-audio-root "$state/meeting-audio" \
-  --live-provider-manifest "$manifest" --live-helper-lease-seconds 30 \
+  --live-provider-manifest "$manifest" --live-helper-lease-seconds 120 \
   --live-engine gemini --host "$host" --port "$port"

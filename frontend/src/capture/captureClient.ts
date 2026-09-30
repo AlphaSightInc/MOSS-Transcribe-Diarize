@@ -180,6 +180,13 @@ type LaneState = {
 const SILENCE_RMS = 1e-4;
 const LANE_CAPACITY_FAILURE_CODE = "v2_lane_retention_capacity_reached";
 const TERMINAL_REQUEST_TIMEOUT_MS = 1_000;
+/**
+ * A frame or heartbeat POST unanswered this long is abandoned and retried (frames replay the
+ * same payload and sequence). A request stuck on a dead connection otherwise never settles:
+ * its lane sends nothing more and no heartbeat leaves, so the helper lease interrupts a
+ * meeting whose network has already come back.
+ */
+const CAPTURE_REQUEST_TIMEOUT_MS = 10_000;
 
 function requestDeadline(timeoutMs: number): Readonly<{ signal: AbortSignal; cancel: () => void }> {
   const controller = new AbortController();
@@ -1125,10 +1132,15 @@ export class CaptureClient {
     const controller = new AbortController();
     const abort = () => controller.abort(deadlineSignal?.reason);
     deadlineSignal?.addEventListener("abort", abort, { once: true });
+    const timeout = requestDeadline(CAPTURE_REQUEST_TIMEOUT_MS);
+    const expire = () => controller.abort(timeout.signal.reason);
+    timeout.signal.addEventListener("abort", expire, { once: true });
     this.requestControllers.add(controller);
     try {
       return await fetch(input, { ...init, signal: controller.signal });
     } finally {
+      timeout.cancel();
+      timeout.signal.removeEventListener("abort", expire);
       this.requestControllers.delete(controller);
       deadlineSignal?.removeEventListener("abort", abort);
     }
