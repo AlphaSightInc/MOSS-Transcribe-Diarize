@@ -70,7 +70,7 @@ describe("three tabs", () => {
     expect(field("Transcription URL")).not.toBeNull();
     expect(field("Transcription API key")!.value).toBe("");
     expect(field("Transcription API key")!.placeholder).toBe("Optional");
-    expect(field("Transcription model")!.value).toBe("");
+    expect(field("Transcription model")!.value).toBe("gpt-4o-transcribe-diarize");
     await type("Transcription URL", "http://127.0.0.1:18740/v1");
     await type("Transcription model", "whisper-1");
     await choose("Transcription vendor", "gemini");

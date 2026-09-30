@@ -168,7 +168,9 @@ export function SettingsDialog() {
     const current = draft[section];
     stash.current.set(`${section}:${current.vendor}`, { url: current.url, model: current.model, apiKey: current.apiKey });
     const restored = stash.current.get(`${section}:${vendor}`)
-      ?? { url: "", model: vendor === "gemini" ? MODEL_DEFAULTS[section] : "", apiKey: "" };
+      ?? { url: "", model: vendor === "gemini" ? MODEL_DEFAULTS[section]
+        // OpenAI's speaker-labelling model; text-only models give one speaker per request (WP-F F2).
+        : section === "transcription" && vendor === "openai_compatible" ? "gpt-4o-transcribe-diarize" : "", apiKey: "" };
     edit(section, { vendor, ...(vendor === "off" ? {} : restored) } as Partial<AppSettings[typeof section]>);
   };
   const save = (event: Event) => {
