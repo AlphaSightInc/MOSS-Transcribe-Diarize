@@ -24,7 +24,7 @@ from urllib.parse import urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from tests.phase2.browser_support import browser_executable, BrowserExecutableMissing
-from tests.e2e.export_oracle import compare_export
+from tests.e2e.export_oracle import compare_export, downloaded_export
 
 
 # First eligible canonical span (2.5s) + measured decode/identity allowance
@@ -437,11 +437,13 @@ class Harness:
 
     async def finish_rename(self, result):
         # Same page, no reload; download after Stop; no product reload or injected state.
-        path=await self.export('json','renamed-export')
-        turns=json.loads(path.read_text())['turns']
+        path=await self.export('md','renamed-export')
         final=result['renames'][-1]
-        matched=[t for t in turns if t['speaker_entity_id']==final['speaker_id']]
-        final['export_updated']=bool(matched) and all(t['speaker_label']==final['name'] for t in matched)
+        meeting=(await self.api('/api/meetings/'+(self.state['meetings'].get('enrollment_live') or self.state['meetings']['live'])))['body']
+        # Markdown carries labels, not IDs: every label must match the renamed API meeting.
+        text=path.read_text()
+        final['export_updated']=compare_export('md',text,meeting)['ok'] and any(
+            row['label']==final['name'] for row in downloaded_export('md',text)[0])
         result['export_after_stop_without_reload']=final['export_updated']
         result['export']=path.name
         result['ok'] &= final['export_updated']
@@ -482,7 +484,7 @@ class Harness:
                 'meters':meters,'artifact':f'meeting-{ident}.json'}
 
     async def export(self, fmt, prefix='export'):
-        labels={'md':'Markdown (.md)','txt':'Plain text (.txt)','json':'JSON (.json)','srt':'SubRip (.srt)','vtt':'WebVTT (.vtt)'}
+        labels={'md':'Markdown (.md)','txt':'Text (.txt)'}
         await self.page.get_by_role('button',name='Export transcript',exact=True).click()
         async with self.page.expect_download() as pending:
             await self.page.get_by_role('menuitem',name=labels[fmt],exact=True).click()
@@ -500,7 +502,7 @@ class Harness:
         await self.select(ident)
         meeting=(await self.api('/api/meetings/'+ident))['body']
         results={}
-        for fmt in ('md','txt','json','srt','vtt'):
+        for fmt in ('md','txt'):
             path=await self.export(fmt)
             results[fmt]={**compare_export(fmt,path.read_text(),meeting),
                           'bytes':path.stat().st_size,'artifact':path.name}

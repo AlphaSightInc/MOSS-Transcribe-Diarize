@@ -444,9 +444,9 @@ def test_file_gate_preserves_failure_and_export_bars():
     row['failure_code']='acquisition_failed'
     assert not file_passed(row,'missing')
     row.update(status='completed',reload_status='completed',mp3_link=True,mp3_bytes=10,
-               exports={fmt:{'ok':True} for fmt in ('md','txt','json','srt','vtt')})
+               exports={fmt:{'ok':True} for fmt in ('md','txt')})
     assert file_passed(row,'six.wav')
-    row['exports'].pop('vtt')
+    row['exports'].pop('txt')
     assert not file_passed(row,'six.wav')
 
 

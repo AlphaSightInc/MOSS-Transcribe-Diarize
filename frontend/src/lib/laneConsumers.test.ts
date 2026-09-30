@@ -28,17 +28,11 @@ describe("lane consumers", () => {
   const search=buildTranscriptSearchResults([...turns].reverse(),"speculation",t=>t.display_name);
   expect(search.matchCount).toBe(3);
   expect(search.turns.map(t=>t.turn)).toEqual(turns);
-  for(const format of ["md","txt","json","srt","vtt"] as const){
+  for(const format of ["md","txt"] as const){
    const output=serializeTranscriptExport(format,[...turns].reverse(),t=>t.display_name,identity).content;
    for(const s of expected) expect(output).toContain(s.text);
-   if(format==="json") {
-    const exported=JSON.parse(output).turns;
-    expect(exported.map((t: {source_lane?: string})=>t.source_lane)).toEqual(turns.map(t=>t.source_lane));
-    expect(exported.map((t: {speaker_label: string})=>t.speaker_label)).toEqual(turns.map(t=>t.display_name));
-   } else {
-    expect(output).not.toContain('[System]');
-    expect(output).not.toContain('[Microphone]');
-   }
+   expect(output).not.toContain('[System]');
+   expect(output).not.toContain('[Microphone]');
   }
   const payload: {segments: MeetingSegment[]}=JSON.parse(JSON.parse(providerBody(parsed,defaultSettings())).messages[1].content);
   expect(payload.segments.map(s=>s.text)).toEqual(expected.map(s=>s.text));
@@ -64,11 +58,5 @@ describe("lane consumers", () => {
   const pending=item({source_lane:"microphone",state:"provisional",segment_id:"live-provisional"});
   const committed=item({source_lane:"system",segment_id:"system-final"});
   expect(upsertTranscriptItems([pending],[committed]).map(s=>s.source_lane)).toEqual(["system","microphone"]);
- });
- it.each(["srt","vtt"] as const)("retains overlapping %s cue intervals and speaker-only labels exactly",format=>{
-  const turns=groupSegmentsIntoTurns([item({source_lane:"microphone",end:1,text:"Mic"}),item({source_lane:"system",end:3,text:"System"})]);
-  const sep=format==="srt"?",":".";
-  expect(serializeTranscriptExport(format,turns,t=>t.display_name,identity).content).toBe(
-   (format==="vtt"?"WEBVTT\n\n":"")+`1\n00:00:00${sep}000 --> 00:00:03${sep}000\nAlex: System\n\n2\n00:00:00${sep}000 --> 00:00:01${sep}000\nAlex: Mic\n`);
  });
 });

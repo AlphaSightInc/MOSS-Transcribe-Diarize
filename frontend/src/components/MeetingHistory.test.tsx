@@ -339,7 +339,7 @@ describe("MeetingHistory", () => {
     expect(root.textContent).not.toContain("canonical-a");
   });
 
-  it("opens Account history into the transcript pane and exports all three formats", async () => {
+  it("opens Account history into the transcript pane and exports both transcript formats", async () => {
     const completed = meeting({ id: "export-meeting", title: "Export source" });
     vi.stubGlobal(
       "fetch",
@@ -381,18 +381,18 @@ describe("MeetingHistory", () => {
 
     expect(root.querySelector('[data-open-meeting="export-meeting"]')?.getAttribute("aria-pressed")).toBe("true");
     expect(root.querySelector("#transcript-panel")).not.toBeNull();
-    for (const format of ["md", "txt", "json"]) {
+    for (const format of ["md", "txt"]) {
       act(() => { root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!.value = format;
         root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!.dispatchEvent(new Event("change", { bubbles: true })); });
       await act(async () => root.querySelector<HTMLButtonElement>(".controls-export button")!.click());
     }
 
-    expect(downloads).toHaveLength(3);
-    expect(downloads.map((name) => name.split(".").at(-1))).toEqual(["md", "txt", "json"]);
+    expect(downloads).toHaveLength(2);
+    expect(downloads.map((name) => name.split(".").at(-1))).toEqual(["md", "txt"]);
     expect(downloads.every((name) => name.startsWith("transcript-export-meeting-"))).toBe(true);
   });
 
-  it("keeps reopened review truth through failed History and real five-format downloads", async () => {
+  it("keeps reopened review truth through failed History and real transcript downloads", async () => {
     const savedReview = meeting({
       id: "review-meeting",
       needs_review: true,
@@ -443,29 +443,22 @@ describe("MeetingHistory", () => {
 
     expect(root.querySelector(".transcript-pane")?.textContent).not.toContain("Needs review");
     expect(root.querySelector(".utt-speaker-label")?.textContent).toBe("Speaker TBD");
-    for (const [index, format] of ["md", "txt", "json", "srt", "vtt"].entries()) {
+    for (const [index, format] of ["md", "txt"].entries()) {
       act(() => { const select = root.querySelector<HTMLSelectElement>('[aria-label="Export format"]')!;
         select.value = format; select.dispatchEvent(new Event("change", { bubbles: true })); });
       await act(async () => root.querySelector<HTMLButtonElement>(".controls-export button")!.click());
       await vi.waitFor(() => expect(downloads).toHaveLength(index + 1));
     }
 
-    expect(downloads.map(name => name.split(".").at(-1))).toEqual([
-      "md", "txt", "json", "srt", "vtt"
-    ]);
+    expect(downloads.map(name => name.split(".").at(-1))).toEqual(["md", "txt"]);
     const downloadedText = await Promise.all(blobs.map(blob => blob.text()));
-    expect(downloadedText).toHaveLength(5);
+    expect(downloadedText).toHaveLength(2);
     for (const content of downloadedText) {
       // Export files carry the transcript only (Q6): no review notice.
       expect(content).not.toContain("Needs review");
       expect(content).toContain("Speaker TBD");
-    }
-    for (const content of downloadedText.filter((_, index) => index !== 2)) {
       expect(content).not.toContain("S00");
     }
-    const [jsonTurn] = JSON.parse(downloadedText[2]).turns;
-    expect(jsonTurn.speaker).toBe("S00");
-    expect(jsonTurn.speaker_entity_id).toBe("S00");
   });
 
   it.each([

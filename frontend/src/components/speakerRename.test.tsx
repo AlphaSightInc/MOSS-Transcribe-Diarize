@@ -65,7 +65,7 @@ it.each([
       const body = providerBody(meeting(), {endpoint:"", model:"test", apiKey:"", prompt:"Summarize", language:"English", timeoutSeconds:60});
       expect(body).toContain("After"); expect(body).not.toContain("Before");
     }
-    for (const format of ["md", "txt", "json", "srt", "vtt"] as const) {
+    for (const format of ["md", "txt"] as const) {
       const file = serializeTranscriptExport(format, groupSegmentsIntoTurns(transcript.value), t => t.display_name,
         { sessionId: "m", exportedAt: new Date(0) });
       expect(file.content).toContain("After"); expect(file.content).not.toContain("Before");

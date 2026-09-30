@@ -73,7 +73,7 @@ async def run_case(browser,name,tag=None):
     row['reload_status']=(await fetch(page,f'/api/meetings/{mid}'))['body']['status']
     exports={}
     if segments:
-        for fmt,label in [('md','Markdown (.md)'),('txt','Plain text (.txt)'),('json','JSON (.json)'),('srt','SubRip (.srt)'),('vtt','WebVTT (.vtt)')]:
+        for fmt,label in [('md','Markdown (.md)'),('txt','Text (.txt)')]:
             await page.get_by_role('button',name='Export transcript',exact=True).click()
             async with page.expect_download() as pending: await page.get_by_role('menuitem',name=label,exact=True).click()
             download=await pending.value; path=ROOT/f'{tag}.{fmt}'; await download.save_as(str(path))
