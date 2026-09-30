@@ -4,7 +4,7 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { applySessionStateEvent, captureMeetingId, replaceTranscript, resetSessionState, sessionId, sessionMode, sessionNeedsReview, sessionStatus } from "../state/session";
-import { autoscroll, selectedSummaryMeeting } from "../state/ui";
+import { autoscroll, resetUiState, selectedSummaryMeeting } from "../state/ui";
 import { TranscriptPane } from "./TranscriptPane";
 import { dispatchWsEvent } from "../api/ws";
 import { createMemoryStorage } from "../lib/persistence";
@@ -14,7 +14,7 @@ describe("TranscriptPane", () => {
 
   beforeEach(() => {
     resetSessionState();
-    autoscroll.value = false;
+    autoscroll.value = true;
     selectedSummaryMeeting.value = null;
     root = document.createElement("div");
     document.body.appendChild(root);
@@ -28,7 +28,7 @@ describe("TranscriptPane", () => {
     });
     root.remove();
     resetSessionState();
-    autoscroll.value = false;
+    autoscroll.value = true;
     selectedSummaryMeeting.value = null;
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
@@ -342,6 +342,7 @@ describe("TranscriptPane", () => {
     vi.spyOn(window, "requestAnimationFrame").mockImplementation(callback => { callback(0); return 1; });
     vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => undefined);
     act(() => render(<TranscriptPane />, root));
+    act(() => { autoscroll.value = false; });
     const body = root.querySelector<HTMLDivElement>("#tr-body")!;
     Object.defineProperty(body, "scrollHeight", { configurable: true, value: 500 });
     const control = [...root.querySelectorAll<HTMLButtonElement>("button")]
@@ -505,7 +506,7 @@ describe("TranscriptPane", () => {
         speaker_entity_id: "speaker-0001", display_name: "S01", state: "final" }]);
     });
     const tools = root.querySelector(".tr-body-wrap > .tr-floating-tools")!;
-    expect([...tools.children].map(node => node.className)).toEqual(["mini-btn", "divider", "mini-btn", "divider", "mini-btn"]);
+    expect([...tools.children].map(node => node.className)).toEqual(["mini-btn", "divider", "mini-btn", "divider", "mini-btn is-on"]);
     expect(root.querySelector(".tr-find")).toBeNull();
     act(() => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "f", metaKey: true })); });
     expect(root.querySelector(".tr-body-wrap > .tr-find")).not.toBeNull();
@@ -520,18 +521,112 @@ describe("TranscriptPane", () => {
     expect(root.querySelector<HTMLInputElement>("#transcript-find-input")?.value).toBe("");
   });
 
-  it("turns Auto-scroll on within 8 px of the bottom and off when the reader scrolls up", () => {
-    act(() => render(<TranscriptPane />, root));
-    const body = root.querySelector<HTMLDivElement>("#tr-body")!;
-    Object.defineProperty(body, "scrollHeight", { configurable: true, value: 1000 });
-    Object.defineProperty(body, "clientHeight", { configurable: true, value: 400 });
-    const scrollTo = (top: number) => act(() => { body.scrollTop = top; body.dispatchEvent(new Event("scroll")); });
-    scrollTo(593);
-    expect(autoscroll.value).toBe(true);
-    expect(root.querySelector(".mini-btn.is-on")?.textContent).toBe("Auto-scroll");
-    scrollTo(500);
-    expect(autoscroll.value).toBe(false);
-    expect(root.querySelector(".mini-btn.is-on")).toBeNull();
+  describe("Auto-scroll hand-off", () => {
+    const segment = (text: string) => ({ start: 0, end: 1, text, speaker: "S01",
+      speaker_entity_id: "speaker-0001", display_name: "S01", state: "final" as const });
+    let height: number;
+    function mount() {
+      vi.spyOn(window, "requestAnimationFrame").mockImplementation(callback => { callback(0); return 1; });
+      vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => undefined);
+      height = 1000;
+      act(() => render(<TranscriptPane />, root));
+      const body = root.querySelector<HTMLDivElement>("#tr-body")!;
+      Object.defineProperty(body, "scrollHeight", { configurable: true, get: () => height });
+      Object.defineProperty(body, "clientHeight", { configurable: true, value: 400 });
+      return body;
+    }
+    /** A scroll event at `top`; the browser clamps scrollTop to the scrollable range. */
+    const scroll = (body: HTMLDivElement, top: number) => act(() => {
+      body.scrollTop = Math.max(0, Math.min(top, height - 400));
+      body.dispatchEvent(new Event("scroll"));
+    });
+    const button = () => [...root.querySelectorAll<HTMLButtonElement>(".mini-btn")].find(b => b.textContent === "Auto-scroll")!;
+
+    it("starts on, including after a UI reset and a meeting switch", async () => {
+      vi.resetModules();
+      expect((await import("../state/ui")).autoscroll.value).toBe(true);
+      const body = mount();
+      expect(button().getAttribute("aria-pressed")).toBe("true");
+      expect(button().classList.contains("is-on")).toBe(true);
+      scroll(body, 600); scroll(body, 200);
+      expect(autoscroll.value).toBe(false);
+      act(() => { sessionId.value = "another-meeting"; });
+      expect(autoscroll.value).toBe(true);
+      autoscroll.value = false;
+      act(() => resetUiState());
+      expect(autoscroll.value).toBe(true);
+    });
+
+    it("turns off when the reader scrolls up and back on at the very bottom", () => {
+      const body = mount();
+      scroll(body, 600);
+      expect(autoscroll.value).toBe(true);
+      scroll(body, 500);
+      expect(autoscroll.value).toBe(false);
+      expect(button().getAttribute("aria-pressed")).toBe("false");
+      // Words arrive while the reader is up: the view stays where they left it.
+      height = 1400;
+      act(() => replaceTranscript([segment("new words")]));
+      expect(body.scrollTop).toBe(500);
+      scroll(body, 900);
+      expect(autoscroll.value).toBe(false);
+      scroll(body, 993); // within 8 px of the bottom
+      expect(autoscroll.value).toBe(true);
+    });
+
+    it("stays on while content grows, shrinks or is anchored, and follows it to the bottom", () => {
+      const body = mount();
+      scroll(body, 600);
+      // Growth: a scroll event fired before the next pin reads a larger distance from the bottom.
+      height = 1200;
+      act(() => { body.dispatchEvent(new Event("scroll")); });
+      expect(autoscroll.value).toBe(true);
+      // Chrome's scroll anchoring moves scrollTop up when preview rows above the view settle shorter
+      // while new words land below it: the size changed, so it is not the reader.
+      height = 1350;
+      scroll(body, 550);
+      expect(autoscroll.value).toBe(true);
+      // Shrink: the browser clamps scrollTop down to the new bottom.
+      height = 800;
+      scroll(body, 550);
+      expect(body.scrollTop).toBe(400);
+      expect(autoscroll.value).toBe(true);
+      // New content while on pins the view to the bottom.
+      height = 1500;
+      act(() => replaceTranscript([segment("latest words")]));
+      expect(body.scrollTop).toBe(1500);
+      expect(autoscroll.value).toBe(true);
+    });
+
+    it("toggles by hand; turning it on jumps to the bottom", () => {
+      const body = mount();
+      scroll(body, 600);
+      act(() => button().click());
+      expect(autoscroll.value).toBe(false);
+      scroll(body, 300);
+      height = 1300;
+      act(() => replaceTranscript([segment("more words")]));
+      expect(body.scrollTop).toBe(300);
+      act(() => button().click());
+      expect(autoscroll.value).toBe(true);
+      expect(body.scrollTop).toBe(1300);
+    });
+
+    it("hands control to Find: a match scrolled into view turns Auto-scroll off", () => {
+      const body = mount();
+      scroll(body, 600);
+      Element.prototype.scrollIntoView = vi.fn(function scrollMatch() { scroll(body, 120); });
+      act(() => replaceTranscript([{ ...segment("alpha beta alpha") }]));
+      act(() => { window.dispatchEvent(new KeyboardEvent("keydown", { key: "f", metaKey: true })); });
+      const input = root.querySelector<HTMLInputElement>("#transcript-find-input")!;
+      act(() => { input.value = "alpha"; input.dispatchEvent(new InputEvent("input", { bubbles: true })); });
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+      expect(autoscroll.value).toBe(false);
+      // New words while Find is open do not pull the view away from the match.
+      height = 1400;
+      act(() => replaceTranscript([{ ...segment("alpha beta alpha gamma") }]));
+      expect(body.scrollTop).toBe(120);
+    });
   });
 
   it("shows lane-bound preview guesses as grey tentative blocks without duplicate preview rows", () => {

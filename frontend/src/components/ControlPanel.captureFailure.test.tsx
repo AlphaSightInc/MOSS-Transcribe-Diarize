@@ -36,7 +36,8 @@ class FakeStream {
   getAudioTracks() { return this.tracks; }
 }
 class FakeNode {
-  port: { onmessage: ((event: { data: unknown }) => void) | null } = { onmessage: null };
+  port: { onmessage: ((event: { data: unknown }) => void) | null; postMessage: ReturnType<typeof vi.fn> } =
+    { onmessage: null, postMessage: vi.fn() };
   connect(target: unknown) { return target; }
   disconnect = vi.fn();
 }
@@ -77,6 +78,15 @@ async function click(label: string) {
     await new Promise(resolve => setTimeout(resolve, 0));
   });
 }
+/** Pick a microphone in the dropdown, the only switch control. */
+async function chooseMicrophone(deviceId: string) {
+  const select = root.querySelector<HTMLSelectElement>("#microphone-select")!;
+  await act(async () => {
+    select.value = deviceId;
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 0));
+  });
+}
 async function ready() {
   await click("Enable microphone");
   await click("Share audio");
@@ -99,7 +109,8 @@ beforeEach(async () => {
     getDisplayMedia: vi.fn(async () => {
       if (displayMode === "reject") throw new Error("chooser rejected");
       return new FakeStream(displayMode === "missing" ? [] : undefined);
-    })
+    }),
+    enumerateDevices: vi.fn(async () => [{ kind: "audioinput", deviceId: "usb", label: "USB mic" }])
   } });
   vi.stubGlobal("fetch", vi.fn(async (url: string) => ({
     ok: true, status: 200,
@@ -152,8 +163,30 @@ it("F4/6 catches synchronous chooser errors in the user gesture", async () => {
 it.each(["source", "worklet"])("F4/9 cleans replacement microphone and both old lanes after %s failure and Reset", async failure => {
   await ready();
   sourceFails = failure === "source"; workletFails = failure === "worklet";
-  await click("Reconnect mic");
+  await chooseMicrophone("usb");
   await resetAfterFailure(`Microphone failed: ${failure} attachment failed`);
+});
+it("a muted microphone sends silence without the silent-microphone remedy and blocks Start until unmuted", async () => {
+  await ready();
+  expect(button("Reconnect mic")).toBeUndefined();
+  const microphone = nodes.get("microphone")!;
+  await click("Mute mic");
+  expect(microphone.port.postMessage).toHaveBeenLastCalledWith({ type: "mute", muted: true });
+  // The muted worklet delivers zeros; 25 frames x 0.5 s is past the 10 s silence window.
+  await settle(() => { for (let frame = 0; frame < 25; frame += 1) feed("microphone", 0); });
+  expect(status()).toBeUndefined();
+  expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
+  expect(button("Start recording")?.disabled).toBe(true);
+  expect(button("Start recording")?.title).toBe("Microphone is muted");
+  await click("Unmute mic");
+  expect(microphone.port.postMessage).toHaveBeenLastCalledWith({ type: "mute", muted: false });
+  await settle(() => feed("microphone", .02));
+  expect(button("Start recording")?.disabled).toBe(false);
+  // Control: the same silence unmuted is a real fault and names the remedy.
+  await settle(() => { for (let frame = 0; frame < 20; frame += 1) feed("microphone", 0); });
+  expect(status()).toBe("silent remedy");
+  await click("Mute mic");
+  expect(status()).toBeUndefined();
 });
 it("denied microphone recovers without reload", async () => {
   denyMicrophone = true; await click("Enable microphone");

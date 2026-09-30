@@ -93,6 +93,7 @@ export function TranscriptPane() {
   const [activeSearchMatchIndex, setActiveSearchMatchIndex] = useState(0);
   const transcriptFindRef = useRef<HTMLInputElement | null>(null);
   const transcriptScrollRef = useRef<HTMLDivElement | null>(null);
+  const lastScroll = useRef({ top: 0, height: 0 });
   const [namingTarget, setNamingTarget] = useState<TranscriptLegendEntry | null>(null);
   const [saveVoiceprint, setSaveVoiceprint] = useState(true);
   const [speakerName, setSpeakerName] = useState("");
@@ -353,25 +354,35 @@ export function TranscriptPane() {
     return () => window.cancelAnimationFrame(frameId);
   }, [activeSearchMatchId, findOpen, searchQuery]);
 
+  // Every meeting opens following its newest words.
   useEffect(() => {
-    if (activeSessionId && sessionMode.value === "live" && sessionStatus.value === "active") {
-      autoscroll.value = true;
-    }
+    autoscroll.value = true;
   }, [activeSessionId]);
 
   useEffect(() => {
-    if (!autoscroll.value || findOpen) return;
+    if (!autoscroll.value || findOpen || view.value !== "transcript") return;
     const frameId = window.requestAnimationFrame(() => {
       const node = transcriptScrollRef.current;
       if (node) node.scrollTop = node.scrollHeight;
     });
     return () => window.cancelAnimationFrame(frameId);
-  }, [autoscroll.value, findOpen, fullTranscriptItems, provisionalSegments.value]);
+  }, [autoscroll.value, findOpen, view.value, fullTranscriptItems, provisionalSegments.value]);
 
+  /**
+   * Hand Auto-scroll to the reader and back. Only the reader moves the view up while the content
+   * keeps its size: growth, bottom clamping on shrink and Chrome's scroll anchoring all change
+   * scrollHeight in the same step, so content arriving never turns Auto-scroll off. A move down onto
+   * the bottom turns it back on.
+   */
   function handleTranscriptScroll(event: JSX.TargetedEvent<HTMLDivElement, Event>) {
     const node = event.currentTarget;
-    const atBottom = node.scrollHeight - node.scrollTop - node.clientHeight <= AUTOSCROLL_BOTTOM_TOLERANCE_PX;
-    if (autoscroll.value !== atBottom) autoscroll.value = atBottom;
+    const previous = lastScroll.current;
+    const top = node.scrollTop;
+    const height = node.scrollHeight;
+    lastScroll.current = { top, height };
+    const atBottom = height - top - node.clientHeight <= AUTOSCROLL_BOTTOM_TOLERANCE_PX;
+    if (top < previous.top && height === previous.height && !atBottom) autoscroll.value = false;
+    else if (top > previous.top && atBottom) autoscroll.value = true;
   }
 
   function cycleSearchMatch(direction: -1 | 1) {

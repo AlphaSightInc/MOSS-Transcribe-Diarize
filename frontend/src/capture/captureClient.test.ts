@@ -151,7 +151,19 @@ type EventLaneClient = {
 };
 
 class FakeAudioWorkletNode {
-  readonly port: { onmessage: unknown } = { onmessage: null };
+  static created: FakeAudioWorkletNode[] = [];
+  readonly port: { onmessage: unknown; postMessage: ReturnType<typeof vi.fn> } = {
+    onmessage: null,
+    postMessage: vi.fn(),
+  };
+
+  constructor(
+    _context?: unknown,
+    _name?: string,
+    readonly options?: { processorOptions?: Record<string, unknown> },
+  ) {
+    FakeAudioWorkletNode.created.push(this);
+  }
 
   connect(target: unknown): unknown {
     return target;
@@ -1432,4 +1444,117 @@ it("stores Chrome's share choice for the created meeting and for a replacement s
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+describe("microphone mute", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    FakeAudioWorkletNode.created = [];
+  });
+
+  const frameBodies = (fetchSpy: ReturnType<typeof vi.fn>) => fetchSpy.mock.calls
+    .filter(([url]) => String(url).endsWith("/frames"))
+    .map(([, request]) => JSON.parse((request as RequestInit).body as string));
+  const framerOf = (client: EventLaneClient, lane: CaptureLane) =>
+    client.lanes.get(lane)!.framer as unknown as FakeAudioWorkletNode;
+
+  it("keeps the muted lane's frames, sequence, clock and epoch running as silence without the K1 remedy", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = await eventLaneClient();
+    const capture = client as unknown as CaptureClient;
+
+    capture.setMicrophoneMuted(true);
+    expect(framerOf(client, "microphone").port.postMessage).toHaveBeenLastCalledWith({ type: "mute", muted: true });
+    expect(framerOf(client, "system").port.postMessage).not.toHaveBeenCalled();
+    // The muted worklet delivers zeros: 30 frames is 15 s, past the 10 s silent-microphone window.
+    deliverSamples(client, "microphone", silent, 30);
+    await vi.waitFor(() => expect(frameBodies(fetchSpy)).toHaveLength(30));
+    expect(heartbeatBodies(fetchSpy)).toHaveLength(0);
+    expect(client.lanes.get("microphone")).toMatchObject({ silentFrameRun: 0, health: "capturing", degradedCode: null });
+    const frames = frameBodies(fetchSpy);
+    expect(frames.map((frame) => frame.sequence)).toEqual([...Array(30).keys()]);
+    expect(frames.every((frame) => frame.silent && frame.device_epoch === 1 && !frame.discontinuity)).toBe(true);
+    for (let index = 1; index < frames.length; index += 1) {
+      expect(frames[index].capture_timestamp_ns).toBe(frames[index - 1].capture_end_timestamp_ns);
+    }
+
+    // Unmuted, a genuinely silent microphone gets a fresh 10 s window and then the remedy.
+    capture.setMicrophoneMuted(false);
+    expect(framerOf(client, "microphone").port.postMessage).toHaveBeenLastCalledWith({ type: "mute", muted: false });
+    deliverSamples(client, "microphone", silent, 19, 30);
+    await vi.waitFor(() => expect(frameBodies(fetchSpy)).toHaveLength(49));
+    expect(heartbeatBodies(fetchSpy)).toHaveLength(0);
+    deliverSamples(client, "microphone", silent, 1, 49);
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy)).toHaveLength(1));
+    expect(heartbeatBodies(fetchSpy)[0].lanes.microphone).toMatchObject({
+      state: "degraded",
+      failure_code: "browser_microphone_silent",
+    });
+  });
+
+  it("clears a standing silent-microphone remedy on mute, and a replacement microphone stays muted", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = await eventLaneClient();
+    const capture = client as unknown as CaptureClient;
+    expect(FakeAudioWorkletNode.created.map((node) => node.options?.processorOptions?.muted)).toEqual([false, false]);
+
+    deliverSamples(client, "microphone", silent, 20);
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy)).toHaveLength(1));
+    capture.setMicrophoneMuted(true);
+    deliverSamples(client, "microphone", silent, 1, 20);
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy)).toHaveLength(2));
+    expect(heartbeatBodies(fetchSpy)[1].lanes.microphone).toMatchObject({ state: "capturing", failure_code: null });
+
+    await client.replaceLane("microphone", {} as MediaStream, [fakeTrack()]);
+    expect(FakeAudioWorkletNode.created.at(-1)?.options?.processorOptions).toMatchObject({
+      lane: "microphone",
+      muted: true,
+    });
+  });
+
+  it("stops a replacement's tracks when the switch is refused for an ended lane", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200 }));
+    const { client, microphone } = await eventLaneClient();
+    microphone.dispatchEvent(new Event("ended"));
+    const replacement = fakeTrack();
+    await expect(client.replaceLane("microphone", {} as MediaStream, [replacement])).rejects.toThrow("is failed");
+    expect(replacement.stop).toHaveBeenCalledOnce();
+  });
+
+  it("zeroes a muted lane in the worklet per sample without breaking its frame clock", () => {
+    type Port = { onmessage: ((event: { data: unknown }) => void) | null; postMessage: ReturnType<typeof vi.fn> };
+    type Framer = { port: Port; process: (inputs: Float32Array[][]) => boolean };
+    class Processor { port: Port = { onmessage: null, postMessage: vi.fn() }; }
+    let LaneFramer!: new (options: unknown) => Framer;
+    const source = readFileSync(new URL("../../public/worklets/lane-framer.js", import.meta.url), "utf8");
+    new Function("AudioWorkletProcessor", "registerProcessor", "currentFrame", source)(
+      Processor,
+      (_name: string, processor: typeof LaneFramer) => { LaneFramer = processor; },
+      100,
+    );
+    const quantum = (value: number) => [[new Float32Array(2).fill(value), new Float32Array(2).fill(value)]];
+    const framer = new LaneFramer({ processorOptions: { lane: "microphone", frameSamples: 4 } });
+    framer.process(quantum(0.5));
+    framer.process(quantum(0.5));
+    framer.port.onmessage!({ data: { type: "mute", muted: true } });
+    framer.process(quantum(0.5));
+    framer.port.onmessage!({ data: { type: "mute", muted: false } }); // mid-frame: exact to the sample
+    framer.process(quantum(0.5));
+    framer.process(quantum(0.5));
+    framer.process(quantum(0.5));
+    const frames = framer.port.postMessage.mock.calls.map(([message]) => message);
+    expect(frames.map((frame) => frame.startFrame)).toEqual([100, 104, 108]);
+    expect(frames.map((frame) => [...frame.samples])).toEqual([
+      [0.5, 0.5, 0.5, 0.5],
+      [0, 0, 0.5, 0.5],
+      [0.5, 0.5, 0.5, 0.5],
+    ]);
+
+    // A replacement worklet created while muted starts muted.
+    const replacement = new LaneFramer({ processorOptions: { lane: "microphone", frameSamples: 2, muted: true } });
+    replacement.process(quantum(0.5));
+    expect([...replacement.port.postMessage.mock.calls[0][0].samples]).toEqual([0, 0]);
+  });
 });

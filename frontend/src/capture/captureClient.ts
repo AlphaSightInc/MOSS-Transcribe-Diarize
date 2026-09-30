@@ -268,6 +268,23 @@ function record(value: unknown, field: string): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+/**
+ * The one microphone request, for the first acquisition and for every device switch: echo
+ * cancellation follows the listening route; the browser's noise suppression and gain control
+ * stay off so both lanes reach the server unprocessed.
+ */
+export function microphoneConstraints(echoCancellation: boolean, deviceId?: string): MediaStreamConstraints {
+  return {
+    audio: {
+      echoCancellation,
+      noiseSuppression: false,
+      autoGainControl: false,
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+    },
+    video: false,
+  };
+}
+
 export function parseCaptureDescriptor(payload: unknown): CaptureDescriptor {
   const response = record(payload, "descriptor response");
   const descriptor = record(response.descriptor, "descriptor");
@@ -412,6 +429,7 @@ export class CaptureClient {
   private heartbeatNextStartFrame = 0;
   private contextSuspended = false;
   private stopping = false;
+  private microphoneMuted = false;
   private frameDeadlineSignal: AbortSignal | null = null;
   private readonly requestControllers = new Set<AbortController>();
   private readonly instanceId = `browser-${crypto.randomUUID()}`;
@@ -434,19 +452,25 @@ export class CaptureClient {
     if (context.state !== "running") throw new Error("capture AudioContext did not start");
     let stream: MediaStream;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation,
-          noiseSuppression: false,
-          autoGainControl: false,
-          ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
-        },
-      });
+      stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints(echoCancellation, deviceId));
     } catch (error) {
       await this.failBeforeSession("microphone", "browser_microphone_permission_denied");
       throw error;
     }
     await this.attachLane("microphone", stream, stream.getTracks());
+  }
+
+  /**
+   * Mute or unmute the microphone lane without stopping it.
+   *
+   * The worklet keeps framing every input sample and zeroes them while muted, so frames,
+   * sequence numbers, timestamps and `device_epoch` continue unchanged and the server accounts
+   * the muted time as silence; nothing is restarted. A replacement microphone inherits the
+   * state. Muted silence is intentional, so it never raises `browser_microphone_silent` (K1).
+   */
+  setMicrophoneMuted(muted: boolean): void {
+    this.microphoneMuted = muted;
+    this.lanes.get("microphone")?.framer.port.postMessage({ type: "mute", muted });
   }
 
   // Call this directly from the display button's click handler. It intentionally
@@ -501,9 +525,12 @@ export class CaptureClient {
     tracks: MediaStreamTrack[],
   ): Promise<void> {
     const state = this.lanes.get(lane);
-    if (!state) throw new Error(`${lane} lane is not active`);
-    if (state.health === "failed") {
-      throw new Error(`${lane} lane is failed; recreate the capture session before replacing it`);
+    if (!state || state.health === "failed") {
+      // Own the caller's freshly acquired tracks here too, or a refused switch keeps the device open.
+      tracks.forEach(track => track.stop());
+      throw new Error(state
+        ? `${lane} lane is failed; recreate the capture session before replacing it`
+        : `${lane} lane is not active`);
     }
     const { source, framer, mute } = await this.createLaneGraph(lane, stream, tracks);
 
@@ -724,7 +751,11 @@ export class CaptureClient {
       framer = new AudioWorkletNode(context, "lane-framer", {
         numberOfInputs: 1,
         numberOfOutputs: 1,
-        processorOptions: { lane, frameSamples: descriptor.frameSamples },
+        processorOptions: {
+          lane,
+          frameSamples: descriptor.frameSamples,
+          muted: lane === "microphone" && this.microphoneMuted,
+        },
       });
       mute = context.createGain();
       mute.gain.value = 0;
@@ -1164,7 +1195,8 @@ export class CaptureClient {
    *
    * Silence is only ever reported for the microphone. A quiet system lane is the
    * normal state of a meeting where nobody is sharing sound, and the server's copy for
-   * `browser_microphone_silent` names a Chrome microphone setting.
+   * `browser_microphone_silent` names a Chrome microphone setting. A muted microphone is
+   * silent on purpose and never counts toward it.
    */
   private meterLaneHealth(
     lane: CaptureLane,
@@ -1176,7 +1208,8 @@ export class CaptureClient {
 
     state.clippedFrameRun =
       clippedFraction(samples) >= CLIPPED_FRAME_FRACTION ? state.clippedFrameRun + 1 : 0;
-    state.silentFrameRun = level < SILENCE_RMS ? state.silentFrameRun + 1 : 0;
+    const muted = lane === "microphone" && this.microphoneMuted;
+    state.silentFrameRun = level < SILENCE_RMS && !muted ? state.silentFrameRun + 1 : 0;
 
     let degraded: BrowserDegradedCode | null = null;
     if (state.clippedFrameRun >= SUSTAINED_CLIPPING_FRAMES) {
