@@ -29,8 +29,8 @@ export const DEFAULT_SUMMARY_PROMPT = defaultPrompt;
 export const REFRESH_SECONDS: SecondsBounds = { min: 5, max: 60, default: 15 };
 export const CONTEXT_SECONDS: SecondsBounds = { min: 90, max: 300, default: 90 };
 export const DEFAULT_WAIT_SECONDS = 20;
-// The wait default until round 4 (#10); a record saved then carries no `waitDefault`.
-const V2_DEFAULT_WAIT_SECONDS = 60;
+// Summary defaults until round 4 (v1 and v2 alike); a record saved then carries no `savedDefaults`.
+const OLD_DEFAULTS = { waitSeconds: 60, model: "gemini-3.5-flash-lite" };
 // The round-2 default prompt opened with this sentence; an untouched copy saved by v1 is replaced by the new default.
 const V1_DEFAULT_PROMPT_OPENING = "Create the sole final briefing for a thoughtful reader who will not read the transcript.";
 
@@ -47,7 +47,7 @@ export function defaultAppSettings(): AppSettings {
 export function loadAppSettings(): AppSettings {
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
-    if (saved) return normalize(withCurrentWaitDefault(saved));
+    if (saved) return normalize(withCurrentDefaults(saved));
     const v1 = JSON.parse(localStorage.getItem(V1_KEY) ?? "null");
     const old = v1 ? null : JSON.parse(localStorage.getItem(OLD_KEY) ?? "null");
     if (v1 || old) {
@@ -64,7 +64,8 @@ export function loadAppSettings(): AppSettings {
 export function saveAppSettings(settings: AppSettings): void {
   const normalized = normalize(settings);
   // An unedited prompt is stored empty so a later default reaches this browser too.
-  const stored = { ...normalized, summary: { ...normalized.summary, waitDefault: DEFAULT_WAIT_SECONDS,
+  const stored = { ...normalized, summary: { ...normalized.summary,
+    savedDefaults: { waitSeconds: DEFAULT_WAIT_SECONDS, model: DEFAULT_SUMMARY_MODEL },
     prompt: normalized.summary.prompt === DEFAULT_SUMMARY_PROMPT ? "" : normalized.summary.prompt } };
   localStorage.setItem(KEY, JSON.stringify(stored));
   document.dispatchEvent(new Event(SETTINGS_CHANGED));
@@ -116,11 +117,15 @@ function normalize(value: unknown): AppSettings {
   };
 }
 
-/** A wait still equal to the default it was saved under follows the current default (60 → 20 s). */
-function withCurrentWaitDefault(saved: unknown): unknown {
-  const root = record(saved), s = record(root.summary);
-  return s.waitSeconds === (s.waitDefault ?? V2_DEFAULT_WAIT_SECONDS)
-    ? { ...root, summary: { ...s, waitSeconds: DEFAULT_WAIT_SECONDS } } : saved;
+/**
+ * A wait or Gemini summary model still equal to the default it was saved under follows the current
+ * default (60 → 20 s; gemini-3.5-flash-lite → gemini-3.8-flash); a value chosen since is kept.
+ */
+function withCurrentDefaults(saved: unknown): unknown {
+  const root = record(saved), s = record(root.summary), under = { ...OLD_DEFAULTS, ...record(s.savedDefaults) };
+  return { ...root, summary: { ...s,
+    ...(s.waitSeconds === under.waitSeconds ? { waitSeconds: DEFAULT_WAIT_SECONDS } : {}),
+    ...(s.vendor !== "openai_compatible" && s.model === under.model ? { model: DEFAULT_SUMMARY_MODEL } : {}) } };
 }
 
 function migratedPrompt(value: unknown): string {
@@ -138,10 +143,12 @@ function migrateV1(value: unknown): AppSettings {
   return normalize({
     transcription: { refreshSeconds, contextSeconds },
     summary: { vendor: s.provider === "off" ? "off" : external ? "openai_compatible" : "gemini",
-      url: external ? s.externalUrl : "", model: external ? s.externalModel : s.model,
+      url: external ? s.externalUrl : "",
+      model: external ? s.externalModel : s.model === OLD_DEFAULTS.model ? DEFAULT_SUMMARY_MODEL : s.model,
       apiKey: external ? s.externalApiKey : "", rolling: interval !== 0,
-      // v1's default interval was 60 s; like an unset one it takes today's default wait.
-      waitSeconds: interval === 0 || interval === 60 ? DEFAULT_WAIT_SECONDS : interval, language: s.language,
+      // v1's defaults (60 s, flash-lite) take today's, like unset values.
+      waitSeconds: interval === 0 || interval === OLD_DEFAULTS.waitSeconds ? DEFAULT_WAIT_SECONDS : interval,
+      language: s.language,
       timeoutSeconds: s.timeoutSeconds,
       prompt: migratedPrompt(s.prompt) },
     general: { cleanupAfterStop: v1.cleanupAfterStop }

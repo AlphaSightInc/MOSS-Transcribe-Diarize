@@ -189,7 +189,9 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   the facts the document carried 50/54 of; `prototypes/gemini-live/live-summary/NOTES.md`).
 - Language = Auto now asks for "the transcript's dominant language": gemini-3.8-flash answered English for 3/12 Chinese
   snapshots before (all ≤ 50 s), 0/12 after. gemini-3.5-flash-lite stays unreliable under Auto (3/6); an explicit
-  Language works on it.
+  Language works on it. A browser still holding the untouched old default `gemini-3.5-flash-lite` (saved before
+  round 4, or a v1 record) moves to `gemini-3.8-flash`; flash-lite chosen since is kept (saves record the defaults
+  they were made under). The transcription model is untouched.
 - The 40-word minimum counts each CJK ideograph as a word (a 5-minute Chinese transcript was 13 "words").
 - Default wait after each summary 20 s (was 60; a browser still holding the untouched 60 moves to 20): ≈ $1.73 per
   meeting-hour with gemini-3.8-flash vs $0.70 at 60 s (measured usage, English). Previous-summary carry-forward
