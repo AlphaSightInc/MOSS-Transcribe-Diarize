@@ -12,6 +12,9 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "../moss_transcribe_diarize/app/frontend_assets"),
     emptyOutDir: true,
     target: "es2022",
+    // Browsers that take unprefixed backdrop-filter; the es2022-derived CSS target kept only the -webkit- form,
+    // which Chrome ignores (no glass on the floating transcript tools).
+    cssTarget: ["chrome111", "edge111", "firefox115", "safari18"],
     cssCodeSplit: false,
     sourcemap: true,
     rolldownOptions: {
