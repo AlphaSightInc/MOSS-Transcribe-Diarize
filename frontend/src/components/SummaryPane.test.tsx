@@ -1,85 +1,178 @@
 // @vitest-environment jsdom
 import { render } from "preact";
 import { act } from "preact/test-utils";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SummaryPane } from "./SummaryPane";
+import { defaultAppSettings, saveAppSettings, type AppSettings } from "../lib/settings";
 import { sessionId, sessionStatus } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
 const root = document.createElement("div"); document.body.append(root);
 const rollingDocument = (summary: string) => ({ summary, topics: [], details: [],
   speaker_background: [], data_references: [] });
-afterEach(() => { render(null, root); sessionId.value = null; sessionStatus.value = "idle"; selectedSummaryMeeting.value = null; vi.unstubAllGlobals(); vi.useRealTimers(); });
+const live = (summary: string) => ({ ok: true, json: async () => ({ summary: rollingDocument(summary),
+  source: { committed_samples: 48000, text_revision_version: 4 }, generated_at_ms: Date.now() }) });
+const refresh = () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!;
+const REMOVED = ["next in", "Waiting for first update", "Rolling summary is off", "Open a meeting to see its summary",
+  "Summary will appear", "Finish transcription", "The summary is unavailable", "No saved summary yet", "Summary ready",
+  "Retrying at the next interval"];
 
-it("renders a rolling summary from the frozen live response", async () => {
-  const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ summary: {
-    summary: "The team agreed.", topics: [], details: [], speaker_background: [], data_references: [] },
-    source: { committed_samples: 48000, text_revision_version: 4 }, generated_at_ms: Date.now() }) });
-  vi.stubGlobal("fetch", fetcher);
-  sessionId.value = "m"; sessionStatus.value = "active";
-  await act(async () => render(<SummaryPane hidden={false} />, root));
-  await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
-  await vi.waitFor(() => expect(root.textContent).toContain("The team agreed."));
-  expect(fetcher.mock.calls[0][0]).toBe("/api/meetings/m/summary/live");
-});
-
-it("applies a changed summary provider without reopening the meeting", async () => {
-  const { defaultAppSettings, saveAppSettings } = await import("../lib/settings");
+function configure(edit: (settings: AppSettings) => void = () => undefined) {
+  const settings = defaultAppSettings();
+  settings.summary.apiKey = "key";
+  edit(settings);
+  saveAppSettings(settings);
+}
+beforeEach(() => {
   const values = new Map<string, string>();
   vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => values.set(key, value),
-    removeItem: (key: string) => values.delete(key) });
-  const settings = defaultAppSettings();
-  saveAppSettings({ ...settings, summary: { ...settings.summary, provider: "off" } });
-  sessionId.value = "m"; sessionStatus.value = "active";
-  await act(async () => render(<SummaryPane hidden={false} />, root));
-  expect(root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")?.disabled).toBe(true);
-  await act(async () => saveAppSettings(settings));
-  expect(root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")?.disabled).toBe(false);
-  localStorage.removeItem("moss.settings.v1");
+    setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) });
+  configure();
+});
+afterEach(() => {
+  for (const text of REMOVED) expect(root.textContent).not.toContain(text);
+  render(null, root); sessionId.value = null; sessionStatus.value = "idle"; selectedSummaryMeeting.value = null;
+  vi.unstubAllGlobals(); vi.useRealTimers();
 });
 
-it("keeps the last rolling summary through a 502 and retries at the next interval", async () => {
-  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
-  const first = { summary: { summary: "The first good update.", topics: [], details: [],
-    speaker_background: [], data_references: [] },
-    source: { committed_samples: 48000, text_revision_version: 4 }, generated_at_ms: Date.now() };
-  const second = { ...first, summary: { ...first.summary, summary: "The recovered update." },
-    generated_at_ms: Date.now() + 120_000 };
-  const fetcher = vi.fn()
-    .mockResolvedValueOnce({ ok: true, json: async () => first })
-    .mockResolvedValueOnce({ ok: false, status: 502 })
-    .mockResolvedValueOnce({ ok: false, status: 502 })
-    .mockResolvedValueOnce({ ok: true, json: async () => second });
+it("renders a rolling summary from the frozen live response with only 'Updated Ns ago'", async () => {
+  const fetcher = vi.fn().mockResolvedValue(live("The team agreed."));
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "m"; sessionStatus.value = "active";
   await act(async () => render(<SummaryPane hidden={false} />, root));
-  await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
-  await vi.waitFor(() => expect(root.textContent).toContain(first.summary.summary));
+  expect(root.querySelector('[role="status"]')).toBeNull();
+  await act(async () => refresh().click());
+  await vi.waitFor(() => expect(root.textContent).toContain("The team agreed."));
+  expect(fetcher.mock.calls[0][0]).toBe("/api/meetings/m/summary/live");
+  expect(root.querySelector('[role="status"]')?.textContent).toMatch(/^Updated \d+s ago$/);
+});
 
-  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
-  expect(root.textContent).toContain(first.summary.summary);
-  expect(root.querySelectorAll(".summary-notice")).toHaveLength(1);
-  expect(root.querySelectorAll('[role="alert"]')).toHaveLength(0);
-  expect(root.textContent).toContain("Retrying at the next interval.");
-  expect(root.textContent).not.toContain("next in 0s");
+it("asks for the Gemini key instead of sending requests without one", async () => {
+  vi.useFakeTimers();
+  configure(settings => { settings.summary.apiKey = ""; });
+  const fetcher = vi.fn().mockResolvedValue(live("never"));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  expect(root.textContent).toContain("Enter your Gemini API key in Settings.");
+  expect(refresh().disabled).toBe(true);
+  await act(async () => { await vi.advanceTimersByTimeAsync(180_000); });
+  expect(fetcher).not.toHaveBeenCalled();
+  // Typing the key applies without reopening the meeting; the wait counts from the loop's start.
+  await act(async () => configure());
+  expect(refresh().disabled).toBe(false);
+  await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
 
+it("disables Refresh with the reason when summaries are off or not Gemini during a meeting", async () => {
+  configure(settings => { settings.summary.vendor = "off"; });
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  expect(refresh().disabled).toBe(true);
+  expect(refresh().title).toBe("Summary is off in Settings");
+  await act(async () => configure(settings => { settings.summary.vendor = "openai_compatible"; }));
+  expect(refresh().title).toBe("Rolling summary needs Gemini");
+  await act(async () => configure());
+  expect(refresh().disabled).toBe(false);
+});
+
+it("waits after each request finishes, shows 'Summary failed' + Retry, and keeps the last summary", async () => {
+  vi.useFakeTimers();
+  const fetcher = vi.fn()
+    .mockResolvedValueOnce(live("The first good update."))
+    .mockResolvedValueOnce({ ok: false, status: 502, json: async () => ({ detail: { code: "summary_provider_error" } }) })
+    .mockResolvedValueOnce(live("The recovered update."));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await act(async () => { await vi.advanceTimersByTimeAsync(59_999); });
+  expect(fetcher).not.toHaveBeenCalled();
+  await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+  expect(root.textContent).toContain("The first good update.");
   await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
-  expect(root.textContent).toContain(first.summary.summary);
-  expect(root.querySelectorAll(".summary-notice")).toHaveLength(1);
+  expect(fetcher).toHaveBeenCalledTimes(2);
+  expect(root.textContent).toContain("The first good update.");
+  expect(root.querySelector('[role="alert"]')?.textContent).toBe("Summary failed — the model provider returned an error.");
+  expect(refresh().textContent).toBe("Retry");
   await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
-  expect(fetcher).toHaveBeenCalledTimes(4);
-  expect(root.textContent).toContain(second.summary.summary);
-  expect(root.querySelectorAll(".summary-notice")).toHaveLength(0);
+  expect(fetcher).toHaveBeenCalledTimes(3);
+  expect(root.textContent).toContain("The recovered update.");
+  expect(root.querySelector('[role="alert"]')).toBeNull();
+  expect(refresh().textContent).toBe("Refresh");
+});
+
+it("keeps too-little-speech refusals silent and retries them no sooner than the transcript refresh", async () => {
+  vi.useFakeTimers();
+  configure(settings => { settings.summary.waitSeconds = 0; settings.transcription.refreshSeconds = 15; });
+  const notReady = { ok: false, status: 409, json: async () => ({ detail: "At least 40 transcript words are required." }) };
+  const fetcher = vi.fn().mockResolvedValueOnce(notReady).mockResolvedValueOnce(notReady).mockResolvedValue(live("Ready now."));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(root.querySelector('[role="alert"]')).toBeNull();
+  await act(async () => { await vi.advanceTimersByTimeAsync(14_999); });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  await act(async () => { await vi.advanceTimersByTimeAsync(15_001); });
+  expect(fetcher).toHaveBeenCalledTimes(3);
+  expect(root.textContent).toContain("Ready now.");
+  // After a real summary, 0 means back-to-back again.
+  await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+  expect(fetcher.mock.calls.length).toBeGreaterThan(3);
+});
+
+it("shows the reason when the user asked and there is too little speech", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 409,
+    json: async () => ({ detail: "At least 40 transcript words are required." }) }));
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await act(async () => refresh().click());
+  await vi.waitFor(() => expect(root.querySelector('[role="alert"]')?.textContent)
+    .toBe("Summary failed — At least 40 transcript words are required."));
+});
+
+it("sends no rolling requests when Rolling summary is unchecked, but Refresh still works", async () => {
+  vi.useFakeTimers();
+  configure(settings => { settings.summary.rolling = false; });
+  const fetcher = vi.fn().mockResolvedValue(live("On demand."));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await act(async () => { await vi.advanceTimersByTimeAsync(600_000); });
+  expect(fetcher).not.toHaveBeenCalled();
+  await act(async () => refresh().click());
+  await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+  expect(root.textContent).toContain("On demand.");
+  await act(async () => { await vi.advanceTimersByTimeAsync(600_000); });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+});
+
+it("applies a changed wait, model, prompt and language to the next request without restarting", async () => {
+  vi.useFakeTimers();
+  const fetcher = vi.fn(async (_url: string, _init?: RequestInit) => live("Updated"));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await act(async () => { await vi.advanceTimersByTimeAsync(10_000); });
+  await act(async () => configure(settings => { settings.summary.waitSeconds = 20; settings.summary.model = "gemini-3.5-flash";
+    settings.summary.prompt = "New prompt"; settings.summary.language = "French"; }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(9_999); });
+  expect(fetcher).not.toHaveBeenCalled();
+  await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(JSON.parse(fetcher.mock.calls[0][1]!.body as string)).toEqual({ model: "gemini-3.5-flash", prompt: "New prompt",
+    language: "French", provider: { vendor: "gemini", model: "gemini-3.5-flash", api_key: "key" } });
 });
 
 it("offers Retry when a final summary artifact or request fails", async () => {
   vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
   const failed = { state: "failed", attempt_id: "attempt", source_version: 1,
-    artifact_version: 0, error_code: "provider_error", document: null };
+    artifact_version: 0, error_code: "delivery_failed", document: null };
   let reads = 0;
   const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "POST"
-    ? { ok: false, status: 502 }
+    ? { ok: false, status: 502, json: async () => ({}) }
     : { ok: true, json: async () => ({ summary: reads++ === 0 ? failed : null }) });
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "m"; sessionStatus.value = "closed";
@@ -87,19 +180,17 @@ it("offers Retry when a final summary artifact or request fails", async () => {
     status: "completed", created_at_ms: Date.now(), transcript_version: 1,
     transcript: { segments: [] }, audio: null };
   await act(async () => render(<SummaryPane hidden={false} />, root));
-  await vi.waitFor(() => expect(root.textContent).toContain("Summary failed"));
-  const button = root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!;
+  await vi.waitFor(() => expect(root.querySelector('[role="alert"]')?.textContent)
+    .toBe("Summary failed — the provider could not be reached."));
+  const button = refresh();
   expect(button.textContent).toBe("Retry");
-  expect(root.textContent).toContain("The summary is unavailable.");
-  expect(root.textContent).not.toContain("Finish transcription to generate a summary.");
   await act(async () => button.click());
-  await vi.waitFor(() => expect(root.textContent).toContain("Summary request failed (502)"));
+  await vi.waitFor(() => expect(root.textContent).toContain("Summary failed — the server answered 502."));
   expect(button.textContent).toBe("Retry");
   await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
   expect(reads).toBeGreaterThanOrEqual(2);
-  expect(root.textContent).toContain("No saved summary yet");
   expect(button.textContent).toBe("Retry");
-  expect(root.textContent).toContain("Summary request failed (502)");
+  expect(root.textContent).toContain("Summary failed — the server answered 502.");
   expect(fetcher.mock.calls.some(([_url, init]) => init?.method === "POST")).toBe(true);
 });
 
@@ -108,26 +199,26 @@ it("does not carry a rolling failure into a successful final summary", async () 
     artifact_version: 1, error_code: null, document: { summary: "Final decision.", topics: [],
       details: [], speaker_background: [], data_references: [] } };
   const fetcher = vi.fn(async (url: string) => url.endsWith("/summary/live")
-    ? { ok: false, status: 502 }
+    ? { ok: false, status: 502, json: async () => ({}) }
     : { ok: true, json: async () => ({ summary: artifact }) });
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "m"; sessionStatus.value = "active";
   await act(async () => render(<SummaryPane hidden={false} />, root));
-  await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
-  await vi.waitFor(() => expect(root.querySelectorAll(".summary-notice")).toHaveLength(1));
+  await act(async () => refresh().click());
+  await vi.waitFor(() => expect(root.querySelectorAll('[role="alert"]')).toHaveLength(1));
   await act(async () => { sessionStatus.value = "closed"; });
   await vi.waitFor(() => expect(root.textContent).toContain("Final decision."));
   expect(root.querySelectorAll(".summary-notice, [role='alert']")).toHaveLength(0);
-  expect(root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")?.textContent).toBe("Refresh");
+  expect(refresh().textContent).toBe("Refresh");
 });
 
-it("regenerates an existing built-in summary when refinement raises the transcript version", async () => {
+it("regenerates an existing Gemini summary when refinement raises the transcript version", async () => {
   const document = (summary: string) => ({ summary, topics: [], details: [], speaker_background: [], data_references: [] });
   const old = { state: "current", attempt_id: "old", source_version: 1, artifact_version: 1,
     error_code: null, document: document("Old summary") };
   const improved = { ...old, attempt_id: "improved", source_version: 2, artifact_version: 2,
     document: document("Improved summary") };
-  const fetcher = vi.fn(async (url: string, init?: RequestInit) => url.endsWith("/summary/server")
+  const fetcher = vi.fn(async (url: string, _init?: RequestInit) => url.endsWith("/summary/server")
     ? { ok: true, json: async () => improved }
     : { ok: true, json: async () => ({ summary: old }) });
   vi.stubGlobal("fetch", fetcher);
@@ -142,6 +233,7 @@ it("regenerates an existing built-in summary when refinement raises the transcri
   await vi.waitFor(() => expect(fetcher.mock.calls.some(([url]) => url.endsWith("/summary/server"))).toBe(true));
   const body = JSON.parse(fetcher.mock.calls.find(([url]) => url.endsWith("/summary/server"))![1]!.body as string);
   expect(body.source_version).toBe(2);
+  expect(body.provider).toEqual({ vendor: "gemini", model: "gemini-3.5-flash-lite", api_key: "key" });
   await vi.waitFor(() => expect(root.textContent).toContain("Improved summary"));
   expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/summary/server"))).toHaveLength(1);
 });
@@ -171,50 +263,22 @@ it.each([
 it("drops a late rolling response after switching meetings", async () => {
   let finishOld!: (response: unknown) => void;
   const oldResponse = new Promise(resolve => { finishOld = resolve; });
-  const fetcher = vi.fn((url: string) => url.includes("/old/") ? oldResponse : Promise.resolve({
-    ok: true, json: async () => ({ summary: rollingDocument("New meeting summary"), generated_at_ms: Date.now(),
-      source: { committed_samples: 1, text_revision_version: 1 } })
-  }));
+  const fetcher = vi.fn((url: string) => url.includes("/old/") ? oldResponse : Promise.resolve(live("New meeting summary")));
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "old"; sessionStatus.value = "active";
   await act(async () => render(<SummaryPane hidden={false} />, root));
-  await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
+  await act(async () => refresh().click());
   await act(async () => { sessionId.value = "new"; });
-  await act(async () => root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")!.click());
+  await act(async () => refresh().click());
   await vi.waitFor(() => expect(root.textContent).toContain("New meeting summary"));
-  await act(async () => finishOld({ ok: true, json: async () => ({ summary: rollingDocument("Old meeting summary"),
-    generated_at_ms: Date.now(), source: { committed_samples: 1, text_revision_version: 1 } }) }));
+  await act(async () => finishOld(live("Old meeting summary")));
   expect(root.textContent).toContain("New meeting summary");
   expect(root.textContent).not.toContain("Old meeting summary");
 });
 
-it("reads rolling model, prompt, and language at call time with an unchanged interval", async () => {
-  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
-  const { defaultAppSettings, saveAppSettings } = await import("../lib/settings");
-  const values = new Map<string, string>();
-  vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => values.set(key, value),
-    removeItem: (key: string) => values.delete(key) });
-  const fetcher = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ summary: rollingDocument("Updated"),
-    generated_at_ms: Date.now(), source: { committed_samples: 1, text_revision_version: 1 } }) }));
-  vi.stubGlobal("fetch", fetcher);
-  sessionId.value = "m"; sessionStatus.value = "active";
-  await act(async () => render(<SummaryPane hidden={false} />, root));
-  const settings = defaultAppSettings();
-  await act(async () => saveAppSettings({ ...settings, summary: { ...settings.summary,
-    model: "gemini-3.5-flash", prompt: "New prompt", language: "French" } }));
-  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
-  const body = JSON.parse(fetcher.mock.calls[0][1]!.body as string);
-  expect(body).toEqual({ model: "gemini-3.5-flash", prompt: "New prompt", language: "French" });
-});
-
-it("offers Update summary for a stale external artifact without sending automatically", async () => {
-  const { defaultAppSettings, saveAppSettings } = await import("../lib/settings");
-  const values = new Map<string, string>();
-  vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null,
-    setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) });
-  const settings = defaultAppSettings();
-  saveAppSettings({ ...settings, summary: { ...settings.summary, provider: "external" } });
+it("offers Update summary for a stale OpenAI-compatible artifact without sending automatically", async () => {
+  configure(settings => { settings.summary = { ...settings.summary, vendor: "openai_compatible", url: "https://example.com/v1",
+    model: "m", apiKey: "" }; });
   const old = { state: "current", attempt_id: "old", source_version: 1, artifact_version: 1,
     error_code: null, document: { summary: "Older summary", topics: [], details: [],
       speaker_background: [], data_references: [] } };
@@ -225,7 +289,6 @@ it("offers Update summary for a stale external artifact without sending automati
     status: "completed", created_at_ms: Date.now(), transcript_version: 2, refinement_state: "done",
     transcript: { segments: [] }, audio: null };
   await act(async () => render(<SummaryPane hidden={false} />, root));
-  await vi.waitFor(() => expect(root.querySelector<HTMLButtonElement>("button[data-summary-refresh]")?.textContent).toBe("Update summary"));
+  await vi.waitFor(() => expect(refresh().textContent).toBe("Update summary"));
   expect(fetcher.mock.calls.some(([url]) => url.endsWith("/summary/server"))).toBe(false);
-  localStorage.removeItem("moss.settings.v1");
 });

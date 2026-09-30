@@ -46,6 +46,8 @@
  * that string; it does not need to know these codes -- except for the three pre-session
  * ones, which never reach the server and so have no server-side copy.
  */
+import type { EngineSettingsWire } from "../lib/settings";
+
 export const V2_FRAME_KEYS = [
   "lane",
   "sequence",
@@ -527,7 +529,7 @@ export class CaptureClient {
    * A terminal frame conflict clears only the delivery state, so callers can
    * invoke this again without rebuilding the browser's capture graph.
    */
-  async createSession(engineSettings?: { speaker_window: "balanced" | "economy" | "max"; cleanup_after_stop: boolean }): Promise<CaptureSession> {
+  async createSession(engineSettings?: EngineSettingsWire): Promise<CaptureSession> {
     if (this.session) return this.session;
     // A microphone that is silent RIGHT NOW is a health condition, not a precondition. The
     // precondition charter section 4 states is that both lanes have SHOWN non-zero signal, which is
@@ -547,22 +549,23 @@ export class CaptureClient {
         body: JSON.stringify({ engine_settings: engineSettings }) } : {}),
     });
     if (!response.ok) {
-      const failure = response.status === 409
+      const failure = response.status === 409 || response.status === 400
         ? await response.json().catch(() => null)
         : null;
       const detail = failure !== null && typeof failure === "object" && !Array.isArray(failure)
-        ? (failure as Record<string, unknown>).detail
+        ? (failure as Record<string, unknown>).detail ?? failure
         : null;
-      if (
-        detail !== null &&
-        typeof detail === "object" &&
-        !Array.isArray(detail) &&
-        (detail as Record<string, unknown>).code === "live_capacity_full"
-      ) {
+      const code = detail !== null && typeof detail === "object" && !Array.isArray(detail)
+        ? (detail as Record<string, unknown>).code
+        : null;
+      if (code === "live_capacity_full") {
         throw new Error(
           "Two live meetings are already recording. Stop one before starting another.",
         );
       }
+      // I-2: a missing Gemini key is typed; other invalid engine settings carry a human detail.
+      if (code === "api_key_required") throw new Error("Enter your Gemini API key in Settings.");
+      if (response.status === 400 && typeof detail === "string" && detail) throw new Error(detail);
       throw new Error(`session create failed: HTTP ${response.status}`);
     }
     const payload = record(await response.json(), "session response");

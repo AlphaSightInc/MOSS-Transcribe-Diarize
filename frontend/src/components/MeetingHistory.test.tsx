@@ -12,6 +12,7 @@ import { replaceTranscript, resetSessionState, sessionTitle, sessionId, sessionM
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
 import { resetUiState, selectedSummaryMeeting } from "../state/ui";
+import { defaultAppSettings, saveAppSettings } from "../lib/settings";
 
 // These fixtures script history requests; model discovery is covered in FinalSummary.test.tsx.
 vi.mock("../lib/finalSummary", async importOriginal => ({
@@ -167,8 +168,14 @@ describe("MeetingHistory", () => {
     expect(transcript.value.map(row => row.text)).toEqual(["Improved words"]);
   });
 
-  it("polls an unselected refining meeting and updates its saved built-in summary", async () => {
+  it("polls an unselected refining meeting and updates its saved Gemini summary", async () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+    const values = new Map<string, string>();
+    vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) });
+    const settings = defaultAppSettings();
+    settings.summary.apiKey = "key";
+    saveAppSettings(settings);
     const running = meeting({ id: "refining", refinement_state: "running" });
     const done = meeting({ ...running, refinement_state: "done", transcript_version: 2,
       transcript: { segments: [{ id: "improved", start: 0, end: 1, speaker: "Alex", text: "Improved words" }] } });
