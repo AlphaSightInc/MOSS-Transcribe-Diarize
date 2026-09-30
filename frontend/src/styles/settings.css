@@ -32,6 +32,42 @@
   cursor: not-allowed;
 }
 
+/* A checkbox field: label above, the box centred in an input-height row, so a neighbour's label and
+   input line up with it. */
+.settings-modal .settings-check-row {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+}
+
+.settings-modal .settings-check-row input {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.settings-modal .settings-check-field:has(input:disabled) {
+  cursor: not-allowed;
+}
+
+/* The app's select: no native chevron; the Controls-panel chevron (index.css .control-panel .field select). */
+.settings-modal select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 9px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 28px;
+}
+
 .settings-modal .settings-label-row {
   display: flex;
   align-items: center;

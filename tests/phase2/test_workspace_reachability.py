@@ -75,7 +75,10 @@ def test_same_workspace_reads_converge_without_acquiring_capture(tmp_path):
             assert 'id="app"' in html
             for section in ('live', 'history', 'voiceprints'):
                 assert f'id="workspace-{section}"' in html
+            # Voiceprints is a tab inside History, so only Live and History get jump links.
+            for section in ('live', 'history'):
                 assert f'href="#workspace-{section}"' in html
+            assert 'href="#workspace-voiceprints"' not in html
             assert 'data-auth-state="signed-in"' in html
             for asset in ('app.js', 'styles.css', 'worklets/lane-framer.js'):
                 match = re.search(rf'(/static/{re.escape(asset)}\?v=[0-9a-f]{{64}})', html)

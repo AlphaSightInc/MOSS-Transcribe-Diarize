@@ -2873,13 +2873,15 @@ def _workspace_html(
         if live_enabled
         else ""
     )
+    # The account name, h1 and section headings are screen-reader only (styles/index.css). The jump
+    # links show below desktop width; Voiceprints has no link because it is a tab inside History.
     return f"""<!doctype html>
 <html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{PRODUCT_NAME}</title>{live_head}</head>
 <body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-workspace-name>{html.escape(account.display_name)}</span></header>
 <nav class="workspace-nav" aria-label="Workspace">
 {('<a href="#workspace-file">Files &amp; URLs</a>' if not live_enabled else '')}
 {('<a href="#workspace-live">Live</a>' if live_enabled else '')}
-<a href="#workspace-history">Meeting history</a><a href="#workspace-voiceprints">Voiceprints</a>
+<a href="#workspace-history">Meeting history</a>
 </nav>
 <section data-workspace=\"account\"><h1>Your meetings</h1>
 {file_fallback}

@@ -115,6 +115,19 @@ describe("three tabs", () => {
     expect(loadAppSettings().summary.vendor).toBe("off");
   });
 
+  it("Settings is an icon button; Rolling summary keeps the label-above field grammar of its neighbour (P6, P8)", async () => {
+    await open();
+    const trigger = root.querySelector<HTMLButtonElement>(".settings-trigger")!;
+    expect(trigger.classList.contains("icon-btn")).toBe(true);
+    expect(trigger.textContent).toBe("");
+    await tab("Summary");
+    const rolling = field("Rolling summary")!.closest("label")!;
+    expect(rolling.classList.contains("llm-modal-field")).toBe(true);
+    expect(rolling.querySelector(".field-label")!.textContent).toBe("Rolling summary");
+    expect(field("Wait after each summary (s)")!.closest("label")!.querySelector(".field-label")!.textContent)
+      .toBe("Wait after each summary (s)");
+  });
+
   it("Rolling summary needs Gemini", async () => {
     await open();
     await tab("Summary");
