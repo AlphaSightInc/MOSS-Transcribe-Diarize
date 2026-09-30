@@ -45,6 +45,14 @@ speaker-identity = [
   "onnxruntime==1.23.2",
   "webrtcvad-wheels==2.0.14",
 ]
+# Gemini live engine (no GPU): provider SDK, WeSpeaker ONNX voiceprints (torchaudio fbank), WebRTC VAD.
+gemini = [
+  "google-genai==2.25.0",
+  "torch>=2.8",
+  "torchaudio>=2.8",
+  "onnxruntime==1.23.2",
+  "webrtcvad-wheels==2.0.14",
+]
 flash-attn = ["flash-attn"]
 dev = [
     "pytest",
