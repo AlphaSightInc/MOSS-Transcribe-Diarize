@@ -9,6 +9,12 @@ class LaneFramer extends AudioWorkletProcessor {
     this.filled = 0;
     this.firstSampleFrame = null;
     this.framesSent = 0;
+    // A muted lane keeps framing every input sample and zeroes it, so its frame clock, sequence
+    // and timestamps run on unchanged and the server accounts the time as silence.
+    this.muted = options.processorOptions.muted === true;
+    this.port.onmessage = (event) => {
+      if (event.data?.type === "mute") this.muted = event.data.muted === true;
+    };
   }
 
   process(inputs) {
@@ -21,7 +27,7 @@ class LaneFramer extends AudioWorkletProcessor {
     for (let index = 0; index < sampleCount; index += 1) {
       let mixed = 0;
       for (const channel of input) mixed += channel[index] ?? 0;
-      this.buffer[this.filled] = mixed / input.length;
+      this.buffer[this.filled] = this.muted ? 0 : mixed / input.length;
       this.filled += 1;
       if (this.filled !== this.frameSamples) continue;
 

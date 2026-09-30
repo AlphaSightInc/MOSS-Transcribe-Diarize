@@ -252,7 +252,7 @@ export function MeetingHistory() {
           </button>
         </div>
 
-        <div className="history-panel-actions">
+        {historyView.value === "sessions" ? <div className="history-panel-actions">
           <label className="history-search">
             <span className="sr-only">Search meetings</span>
             <input
@@ -271,7 +271,7 @@ export function MeetingHistory() {
           >
             {loading ? "Refreshing…" : "Refresh"}
           </button>
-        </div>
+        </div> : null}
 
         {historyView.value === "sessions" ? <>
         {error ? <p className="history-state-card is-error" role="alert">{error}</p> : null}
