@@ -43,14 +43,15 @@ def test_deployed_predicate_selects_external_when_relay_is_default(tmp_path):
                 await page.locator('[data-history-boot="ready"]').wait_for()
                 await open_selected_summary(page, context, app)
                 region = page.get_by_role("dialog", name="Settings", exact=True)
-                await async_expect(region.get_by_label("Summary provider", exact=True)).to_have_value("built-in")
-                assert await region.get_by_label("Provider HTTPS URL", exact=True).count() == 0
+                await region.get_by_role("tab", name="Summary", exact=True).click()
+                await async_expect(region.get_by_label("Summary vendor", exact=True)).to_have_value("gemini")
+                assert await region.get_by_label("Summary URL", exact=True).count() == 0
                 await probe.select_external_summary_provider(region)
-                await region.get_by_label("Provider HTTPS URL", exact=True).fill("https://example.test/v1")
-                await region.get_by_label("External model", exact=True).fill("external-test")
-                assert await region.get_by_label("Summary provider", exact=True).input_value() == "external"
-                assert await region.get_by_label("Provider HTTPS URL", exact=True).input_value() == "https://example.test/v1"
-                assert await region.get_by_label("External model", exact=True).input_value() == "external-test"
+                await region.get_by_label("Summary URL", exact=True).fill("https://example.test/v1")
+                await region.get_by_label("Summary model", exact=True).fill("external-test")
+                assert await region.get_by_label("Summary vendor", exact=True).input_value() == "openai_compatible"
+                assert await region.get_by_label("Summary URL", exact=True).input_value() == "https://example.test/v1"
+                assert await region.get_by_label("Summary model", exact=True).input_value() == "external-test"
             finally:
                 await browser.close()
 
@@ -87,13 +88,14 @@ def test_deterministic_probe_selection_with_relay_models_present(tmp_path):
                     await page.locator('[data-history-boot="ready"]').wait_for()
                     await open_selected_summary(page, page.context, app)
                     region = page.get_by_role("dialog", name="Settings", exact=True)
-                    await async_expect(region.get_by_label("Summary provider", exact=True)).to_have_value("built-in")
-                    assert await region.get_by_label("Provider HTTPS URL", exact=True).count() == 0
+                    await region.get_by_role("tab", name="Summary", exact=True).click()
+                    await async_expect(region.get_by_label("Summary vendor", exact=True)).to_have_value("gemini")
+                    assert await region.get_by_label("Summary URL", exact=True).count() == 0
                     # Invoke the exact helper imported by the deterministic probe.
                     await probe.select_external_summary_provider(region)
-                    await region.get_by_label("Provider HTTPS URL", exact=True).fill("https://example.test/v1")
-                    assert await region.get_by_label("Summary provider", exact=True).input_value() == "external"
-                    assert await region.get_by_label("Provider HTTPS URL", exact=True).input_value() == "https://example.test/v1"
+                    await region.get_by_label("Summary URL", exact=True).fill("https://example.test/v1")
+                    assert await region.get_by_label("Summary vendor", exact=True).input_value() == "openai_compatible"
+                    assert await region.get_by_label("Summary URL", exact=True).input_value() == "https://example.test/v1"
                 finally:
                     await browser.close()
     asyncio.run(run())
