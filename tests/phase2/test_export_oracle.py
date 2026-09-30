@@ -4,13 +4,12 @@ import json
 import subprocess
 from pathlib import Path
 import pytest
-import re
 from tests.e2e.export_oracle import (
     MARKDOWN_NEEDS_REVIEW_NOTICE, NEEDS_REVIEW_NOTICE, compare_export, expected_rows,
 )
 from tests.e2e.verify_workspace import Harness
 
-FORMATS=('md','txt','json','srt','vtt')
+FORMATS=('md','txt')
 
 UNKNOWN_MEETING = {
     'needs_review': True,
@@ -62,7 +61,7 @@ for (const s of doc.transcript.segments) {
   last.end = s.end; last.text += ' ' + s.text; last.segment_ids.push(s.id); last.target_segment_keys.push(s.id);
  } else turns.push({...s,speaker:identity,speaker_entity_id:identity,display_name:s.speaker,state:'final',segment_ids:[s.id],target_segment_keys:[s.id],provisional_stale:false});
 }
-console.log(JSON.stringify(Object.fromEntries(['md','txt','json','srt','vtt'].map(f => [f,serializeTranscriptExport(f,turns,t=>t.display_name,{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"""
+console.log(JSON.stringify(Object.fromEntries(['md','txt'].map(f => [f,serializeTranscriptExport(f,turns,t=>t.display_name,{sessionId:'meeting',exportedAt:new Date(0)}).content]))));"""
     return json.loads(subprocess.check_output(
         ['node', '--experimental-strip-types', '--input-type=module', '-e', script, json.dumps(meeting)],
         text=True, cwd=Path(__file__).resolve().parents[2]))
@@ -81,13 +80,7 @@ def test_unknown_passage_exports_round_trip_without_review_notice(fmt, source_mo
     assert result['ok']
     assert result['review'] is True  # the check passed: no "Needs review" notice in the file
     assert 'Needs review' not in exported
-    if fmt == 'json':
-        unresolved = [turn for turn in json.loads(exported)['turns']
-                      if turn['speaker_label'] == 'Speaker TBD']
-        assert unresolved
-        assert all(turn['speaker_entity_id'] == 'S00' for turn in unresolved)
-    else:
-        assert 'S00' not in exported
+    assert 'S00' not in exported
 
 
 @pytest.mark.parametrize('fmt', FORMATS)
@@ -101,36 +94,14 @@ def test_unknown_passage_export_corruptions_fail(fmt, mutation, failed_check, un
     text=unknown_exports[fmt]
     if mutation=='wrong_speaker': text=text.replace('Speaker TBD','Wrong speaker')
     if mutation=='dropped_word': text=text.replace('Second unknown','Second')
-    if mutation=='changed_time':
-        if fmt=='json':
-            body=json.loads(text);body['turns'][0]['start']=8.0;text=json.dumps(body)
-        else: text=text.replace('00:00:00','00:00:08',1)
+    if mutation=='changed_time': text=text.replace('00:00:00','00:00:08',1)
     if mutation=='added_review':
         # A regression that writes the removed review notice back into the file must fail.
-        if fmt=='json':
-            body=json.loads(text);body['review_status']='Needs review';text=json.dumps(body)
-        elif fmt=='md': text=MARKDOWN_NEEDS_REVIEW_NOTICE+'\n\n'+text
-        elif fmt=='txt': text=NEEDS_REVIEW_NOTICE+'\n\n'+text
-        elif fmt=='srt': text=re.sub(r'^(1\n[^\n]+\n)', r'\1[Needs review] ', text, count=1)
-        else: text=text.replace('WEBVTT\n\n', f'WEBVTT\n\nNOTE {NEEDS_REVIEW_NOTICE}\n\n', 1)
+        text=(MARKDOWN_NEEDS_REVIEW_NOTICE if fmt=='md' else NEEDS_REVIEW_NOTICE)+'\n\n'+text
     result=compare_export(fmt,text,UNKNOWN_MEETING)
     assert not result['ok']
     assert result[failed_check] is False
 
-
-@pytest.mark.parametrize('mutation,failed_check', [
-    ('speaker','identity'),
-    ('speaker_entity_id','identity'),
-    ('segment_id','ids'),
-])
-def test_unknown_json_identity_corruptions_fail(mutation, failed_check, unknown_exports):
-    body=json.loads(unknown_exports['json'])
-    if mutation=='speaker': body['turns'][0]['speaker']='wrong-person'
-    if mutation=='speaker_entity_id': body['turns'][0]['speaker_entity_id']='wrong-person'
-    if mutation=='segment_id': body['turns'][0]['segment_ids'][0]='wrong-segment'
-    result=compare_export('json',json.dumps(body),UNKNOWN_MEETING)
-    assert not result['ok']
-    assert result[failed_check] is False
 
 @pytest.mark.parametrize('fmt', FORMATS)
 def test_real_exports_match_api(fmt,real_exports,meeting):
@@ -142,14 +113,11 @@ def test_download_corruptions_fail(fmt,mutation,real_exports,meeting):
     text=real_exports[fmt]
     if mutation=='words': text=text.replace('And the key','Unrelated invented transcript.')
     if mutation=='label': text=text.replace('Bill Ackman','Wrong speaker')
-    if mutation=='time':
-        if fmt=='json':
-            body=json.loads(text);body['turns'][0]['start']=8.0;text=json.dumps(body)
-        else: text=text.replace('00:00:00','00:00:08')
+    if mutation=='time': text=text.replace('00:00:00','00:00:08')
     assert not compare_export(fmt,text,meeting)['ok']
 
 @pytest.mark.parametrize('corrupt',[True,False])
-def test_harness_all_five_downloads(tmp_path,real_exports,corrupt,meeting):
+def test_harness_all_transcript_downloads(tmp_path,real_exports,corrupt,meeting):
     class Downloads:
         state={'meetings':{'file':'controlled'}}
         async def select(self, ident): pass
@@ -161,26 +129,8 @@ def test_harness_all_five_downloads(tmp_path,real_exports,corrupt,meeting):
             p.write_text(real_exports[fmt].replace('And the key','Fabricated unrelated content.') if corrupt else real_exports[fmt])
             return p
     result=asyncio.run(Harness.exports(Downloads()))
-    assert sum(bool(r['ok']) for r in result['formats'].values())==(0 if corrupt else 5)
+    assert sum(bool(r['ok']) for r in result['formats'].values())==(0 if corrupt else len(FORMATS))
     assert result['ok'] is not corrupt
-
-
-@pytest.mark.parametrize('mutation', ['missing', 'wrong'])
-def test_json_lane_corruption_fails(meeting, real_exports, mutation):
-    if not any(s.get('source_lane') for s in meeting['transcript']['segments']):
-        # Adding an invented lane to legacy output is also corruption.
-        body = json.loads(real_exports['json'])
-        body['turns'][0]['source_lane'] = 'system' if mutation == 'wrong' else 'microphone'
-    else:
-        body = json.loads(real_exports['json'])
-        if mutation == 'missing':
-            del body['turns'][0]['source_lane']
-        else:
-            body['turns'][0]['source_lane'] = 'microphone'
-    result = compare_export('json', json.dumps(body), meeting)
-    assert not result['ok']
-    assert not result['lane']
-    assert all(result[key] for key in ('words', 'labels', 'timing', 'identity'))
 
 
 @pytest.mark.parametrize('tagged', [True, False])

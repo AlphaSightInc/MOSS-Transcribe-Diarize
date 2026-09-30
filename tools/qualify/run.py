@@ -755,7 +755,7 @@ def file_passed(row,case):
         return bool(common and row.get('status')=='failed' and row.get('failure_code')==FILE_FAILURES[case])
     exports=row.get('exports',{})
     return bool(common and row.get('status')=='completed' and row.get('mp3_link') and row.get('mp3_bytes',0)>0
-        and set(exports)=={'md','txt','json','srt','vtt'} and all(e['ok'] for e in exports.values()))
+        and set(exports)=={'md','txt'} and all(e['ok'] for e in exports.values()))
 
 
 def identity_passed(row, expected_voices=2):

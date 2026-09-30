@@ -20,7 +20,7 @@ describe("transcriptExport", () => {
     );
   });
 
-  it("serializes Markdown, text, and versioned JSON with resolved labels", () => {
+  it("serializes Markdown and text with resolved labels", () => {
     const turns = [makeTurn(36, "SPEAKER_02", "Second turn")];
     const resolveLabel = () => "Jamie";
     const identity = {
@@ -37,21 +37,6 @@ describe("transcriptExport", () => {
       content: "[00:00:36] Jamie:\nSecond turn",
       filename: "transcript-session-42-2026-08-18T20:00:16.182Z.txt",
       mediaType: "text/plain;charset=utf-8"
-    });
-
-    const json = serializeTranscriptExport("json", turns, resolveLabel, identity);
-    expect(json.filename).toBe("transcript-session-42-2026-08-18T20:00:16.182Z.json");
-    expect(json.mediaType).toBe("application/json;charset=utf-8");
-    expect(JSON.parse(json.content)).toEqual({
-      version: 1,
-      turns: [expect.objectContaining({
-        start: 36,
-        end: 37,
-        speaker: "SPEAKER_02",
-        speaker_label: "Jamie",
-        state: "final",
-        text: "Second turn"
-      })]
     });
   });
 
@@ -77,7 +62,6 @@ describe("transcriptExport", () => {
 
       expect(serializeTranscriptExport("md", turns, resolveLabel, identity).content).toBe("## [00:00:36] Jamie\n\nSecond turn");
       expect(serializeTranscriptExport("txt", turns, resolveLabel, identity).content).toBe("[00:00:36] Jamie:\nSecond turn");
-      expect(Object.keys(JSON.parse(serializeTranscriptExport("json", turns, resolveLabel, identity).content))).toEqual(["version", "turns"]);
     }
   );
 });
@@ -105,55 +89,17 @@ function makeTurn(
 }
 
 
-it.each(["srt", "vtt"] as const)("exports valid %s cues with millisecond rollover and literal speaker/text", format => {
-  const turns = [makeTurn(59.9996, "Old", " <b>Hello</b> & yes\r\n\r\nNext line ", { end: 3600.0124 }),
-    makeTurn(4000, "Old", "  "), makeTurn(4001.1234, "Old", "Second", { end: 4001.1234 })];
-  const file = serializeTranscriptExport(format, turns, () => "Alex & Sam", { sessionId: "m", exportedAt: new Date(0) });
-  const separator = format === "srt" ? "," : ".";
-  expect(file.filename.endsWith(`.${format}`)).toBe(true);
-  expect(file.mediaType).toBe(format === "vtt" ? "text/vtt;charset=utf-8" : "application/x-subrip;charset=utf-8");
-  expect(file.content).toBe((format === "vtt" ? "WEBVTT\n\n" : "") +
-    `1\n00:01:00${separator}000 --> 01:00:00${separator}012\nAlex &amp; Sam: &lt;b&gt;Hello&lt;/b&gt; &amp; yes\nNext line\n\n` +
-    `2\n01:06:41${separator}123 --> 01:06:41${separator}124\nAlex &amp; Sam: Second\n`);
-});
-
-it.each(["srt", "vtt"] as const)("keeps %s empty and provisional exports syntactically valid", format => {
-  const identity = { sessionId: "m", exportedAt: new Date(0) };
-  expect(serializeTranscriptExport(format, [], () => "Alex", identity).content).toBe(format === "vtt" ? "WEBVTT\n\n" : "");
-  const content = serializeTranscriptExport(format, [makeTurn(0, "Alex", "Words", { state: "provisional" })], t => t.display_name, identity).content;
-  expect(content).not.toContain("Provisional attribution");
-  expect(content).not.toContain("NOTE");
-  expect(content).toContain("Alex: Words");
-  expect(content).toMatch(format === "vtt" ? /^WEBVTT\n\n1\n/ : /^1\n00:00:00,000 --> 00:00:01,000\n/);
-});
-
-
-it("serializes labelled overlapping md/txt/json turns exactly in lane order", () => {
+it("serializes labelled overlapping md/txt turns exactly in lane order", () => {
   const system: TranscriptTurn = {...makeTurn(0, "Alex", "System"), end:3, source_lane:"system", state:"final"};
   const microphone: TranscriptTurn = {...makeTurn(0, "Alex", "Mic"), end:1, source_lane:"microphone", state:"final"};
   const turns = [microphone,system];
   const identity = {sessionId:"lanes",exportedAt:new Date(0)};
   expect(serializeTranscriptExport("md", turns, t=>t.display_name,identity).content).toBe("## [00:00:00] Alex\n\nSystem\n\n## [00:00:00] Alex\n\nMic");
   expect(serializeTranscriptExport("txt", turns, t=>t.display_name,identity).content).toBe("[00:00:00] Alex:\nSystem\n\n[00:00:00] Alex:\nMic");
-  expect(serializeTranscriptExport("json", turns, t=>t.display_name,identity).content).toBe(JSON.stringify({version:1,turns:[
-    {source_lane:"system",start:0,end:3,speaker:system.speaker,speaker_entity_id:system.speaker_entity_id,display_name:"Alex",speaker_label:"Alex",state:"final",text:"System",segment_ids:system.segment_ids,target_segment_keys:system.target_segment_keys,provisional_stale:false},
-    {source_lane:"microphone",start:0,end:1,speaker:microphone.speaker,speaker_entity_id:microphone.speaker_entity_id,display_name:"Alex",speaker_label:"Alex",state:"final",text:"Mic",segment_ids:microphone.segment_ids,target_segment_keys:microphone.target_segment_keys,provisional_stale:false}
-  ]},null,2)+"\n");
 });
 
 
-it.each(["srt", "vtt"] as const)("keeps %s lane overlap with speaker-only labels", format => {
-  const turns = [makeTurn(0, "Alex", "System", {end:3,source_lane:"system"}),
-    makeTurn(0, "Sam", "Mic", {end:1,source_lane:"microphone"})];
-  const separator = format === "srt" ? "," : ".";
-  expect(serializeTranscriptExport(format, [...turns].reverse(), t=>t.display_name,
-    {sessionId:"lanes",exportedAt:new Date(0)}).content).toBe(
-    (format === "vtt" ? "WEBVTT\n\n" : "") +
-    `1\n00:00:00${separator}000 --> 00:00:03${separator}000\nAlex: System\n\n` +
-    `2\n00:00:00${separator}000 --> 00:00:01${separator}000\nSam: Mic\n`);
-});
-
-it.each(["md", "txt", "json", "srt", "vtt"] as const)(
+it.each(["md", "txt"] as const)(
   "never writes a needs-review notice into %s output",
   format => {
     const file = serializeTranscriptExport(
@@ -166,31 +112,6 @@ it.each(["md", "txt", "json", "srt", "vtt"] as const)(
     );
     expect(file.content).not.toContain("Needs review");
     expect(file.content).toContain("Uncertain words");
-    if (format !== "json") expect(file.content).not.toContain("S00");
+    expect(file.content).not.toContain("S00");
   }
 );
-
-it("keeps the API unresolved identity in JSON exports", () => {
-  const file = serializeTranscriptExport(
-    "json",
-    [makeTurn(0, "Speaker TBD", "Uncertain words", {
-      speaker: "S00", speaker_entity_id: "S00"
-    })],
-    item => item.display_name,
-    { sessionId: "review", exportedAt: new Date(0) }
-  );
-  const [turn] = JSON.parse(file.content).turns;
-  expect(turn.speaker).toBe("S00");
-  expect(turn.speaker_entity_id).toBe("S00");
-  expect(turn.display_name).toBe("Speaker TBD");
-});
-
-it("does not synthesize an SRT artifact for an empty review transcript", () => {
-  const file = serializeTranscriptExport(
-    "srt",
-    [],
-    () => "Speaker TBD",
-    { sessionId: "empty-review", exportedAt: new Date(0) }
-  );
-  expect(file.content).toBe("");
-});

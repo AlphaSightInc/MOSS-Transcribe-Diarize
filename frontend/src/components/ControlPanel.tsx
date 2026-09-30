@@ -575,9 +575,8 @@ export function ControlPanel() {
           <div className="field">
             <select id="meeting-export-format" aria-label="Export format" value={exportFormat} disabled={refinementRunning}
               onChange={event => setExportFormat(event.currentTarget.value as TranscriptExportFormat | "audio")}>
-              <option value="md">Markdown (.md)</option><option value="txt">Plain text (.txt)</option>
-              <option value="srt">SRT (.srt)</option><option value="vtt">VTT (.vtt)</option>
-              <option value="json">JSON (.json)</option><option value="audio">Audio (.mp3)</option>
+              <option value="md">Markdown (.md)</option><option value="txt">Text (.txt)</option>
+              <option value="audio">Audio (.mp3)</option>
             </select>
           </div>
           <button type="button" className="btn" disabled={!exportReady || refinementRunning} onClick={() => void saveExport()}>

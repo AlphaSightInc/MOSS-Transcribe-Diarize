@@ -1,11 +1,8 @@
 """Compare downloaded words, labels and represented times with the selected API meeting.
 
-Text/Markdown expose start seconds only; subtitle formats expose milliseconds;
-JSON additionally exposes end times, canonical identity and optional source lane. Do not claim precision
-or fields a format does not carry. No renderer imports or generated expected text.
+The product exports Markdown and plain text only (#11); both expose start seconds only. Do not claim
+precision or fields a format does not carry. No renderer imports or generated expected text.
 """
-import html
-import json
 import math
 import re
 from moss_transcribe_diarize.lane_word_oracle import words
@@ -16,8 +13,8 @@ MARKDOWN_NEEDS_REVIEW_NOTICE = '> **Needs review:** One or more speaker assignme
 
 
 def clock(value):
-    hours,minutes,seconds=value.replace(',', '.').split(':')
-    return int(hours)*3600+int(minutes)*60+float(seconds)
+    hours,minutes,seconds=value.split(':')
+    return int(hours)*3600+int(minutes)*60+int(seconds)
 
 
 def expected_rows(meeting):
@@ -42,40 +39,16 @@ def expected_rows(meeting):
 
 
 def downloaded_export(fmt,text):
-    if fmt=='json':
-        body=json.loads(text)
-        review=body.get('review_status')
-        if review not in (None, 'Needs review'): raise ValueError('Unexpected review status')
-        rows=[dict(start=r['start'],end=r['end'],label=r['speaker_label'],speaker=r['speaker'],identity=r['speaker_entity_id'],
-                   tokens=words(r['text']),lane=r.get('source_lane'),segment_ids=r['segment_ids'])
-              for r in body['turns']]
-        return rows, review == 'Needs review'
-    if fmt in ('txt','md'):
-        notice=MARKDOWN_NEEDS_REVIEW_NOTICE if fmt=='md' else NEEDS_REVIEW_NOTICE
-        marker=notice+'\n\n'
-        review=text.startswith(marker)
-        if review: text=text[len(marker):]
-        pattern = r'^## \[(\d{2}:\d{2}:\d{2})\] (.+)\n\n' if fmt=='md' else r'^\[(\d{2}:\d{2}:\d{2})\] (.+):\n'
-        matches=list(re.finditer(pattern,text,re.M))
-        if not matches or text[:matches[0].start()].strip(): raise ValueError('Unexpected export header')
-        rows=[dict(start=clock(m[1]),label=m[2],tokens=words(text[m.end():matches[i+1].start() if i+1<len(matches) else len(text)])) for i,m in enumerate(matches)]
-        return rows, review
-    review=False
-    if fmt=='vtt':
-        if not text.startswith('WEBVTT\n\n'): raise ValueError('Missing WEBVTT')
-        text=text[len('WEBVTT\n\n'):]
-        marker=f'NOTE {NEEDS_REVIEW_NOTICE}\n\n'
-        review=text.startswith(marker)
-        if review: text=text[len(marker):]
-    result=[]
-    for index,cue in enumerate(re.split(r'\n\s*\n',text.strip())):
-        match=re.fullmatch(r'\d+\n(\d{2}:\d{2}:\d{2}[.,]\d{3}) --> (\d{2}:\d{2}:\d{2}[.,]\d{3})\n([^\n]+?): (.*)',cue,re.S)
-        if not match: raise ValueError('Malformed cue')
-        label=html.unescape(match[3])
-        if fmt=='srt' and index==0 and label.startswith('[Needs review] '):
-            review=True; label=label[len('[Needs review] '):]
-        result.append(dict(start=clock(match[1]),end=clock(match[2]),label=label,tokens=words(html.unescape(match[4]))))
-    return result,review
+    if fmt not in ('txt','md'): raise ValueError('Unsupported export format')
+    notice=MARKDOWN_NEEDS_REVIEW_NOTICE if fmt=='md' else NEEDS_REVIEW_NOTICE
+    marker=notice+'\n\n'
+    review=text.startswith(marker)
+    if review: text=text[len(marker):]
+    pattern = r'^## \[(\d{2}:\d{2}:\d{2})\] (.+)\n\n' if fmt=='md' else r'^\[(\d{2}:\d{2}:\d{2})\] (.+):\n'
+    matches=list(re.finditer(pattern,text,re.M))
+    if not matches or text[:matches[0].start()].strip(): raise ValueError('Unexpected export header')
+    rows=[dict(start=clock(m[1]),label=m[2],tokens=words(text[m.end():matches[i+1].start() if i+1<len(matches) else len(text)])) for i,m in enumerate(matches)]
+    return rows, review
 
 
 def compare_export(fmt,text,meeting):
@@ -86,21 +59,9 @@ def compare_export(fmt,text,meeting):
     same_count=len(actual)==len(expected) and bool(expected)
     # Round-3 Q6: export files carry the transcript only, never a review notice, whatever the
     # meeting's needs_review flag says. The parser still detects a notice so one that returns fails.
-    checks=dict(words=same_count,labels=same_count,timing=same_count,identity=same_count,
-                review=review is False)
-    if fmt=='json': checks.update(lane=same_count,ids=same_count)
+    checks=dict(words=same_count,labels=same_count,timing=same_count,review=review is False)
     for a,b in zip(actual,expected):
         checks['words'] &= a['tokens']==b['tokens']
         checks['labels'] &= a['label']==b['label']
-        start=math.floor(b['start']) if fmt in ('md','txt') else b['start']
-        end=b['end']
-        if fmt in ('srt','vtt'):
-            start=math.floor(start*1000+0.5)/1000
-            end=max(start+0.001,math.floor(end*1000+0.5)/1000)
-        checks['timing'] &= math.isclose(a['start'],start,abs_tol=1e-9)
-        if 'end' in a: checks['timing'] &= math.isclose(a['end'],end,abs_tol=1e-9)
-        if fmt=='json':
-            checks['identity'] &= a['speaker']==b['identity'] and a['identity']==b['identity']
-            checks['lane'] &= a['lane']==b['lane']
-            checks['ids'] &= a['segment_ids']==b['segment_ids']
+        checks['timing'] &= a['start']==math.floor(b['start'])
     return dict(ok=all(checks.values()),expected_turns=len(expected),downloaded_turns=len(actual),**checks)

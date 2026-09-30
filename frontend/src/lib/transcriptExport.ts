@@ -1,11 +1,9 @@
 import { compareTranscriptOrder } from "./transcriptOrder.ts";
-import type { SourceLane } from "./transcriptOrder.ts";
 import type { SummaryDocument } from "./finalSummary";
 import type { TranscriptTurn } from "./mergeTranscript";
-import { isBackendUnknownSpeakerId, UNRESOLVED_SPEAKER_ID } from "./speakerMap.ts";
 
-export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json", "srt", "vtt"] as const;
-export type TranscriptExportFormat = (typeof TRANSCRIPT_EXPORT_FORMATS)[number];
+/** Product exports are Markdown and plain text only (#11); audio downloads separately as MP3. */
+export type TranscriptExportFormat = "md" | "txt";
 
 export interface TranscriptExportFile {
   content: string;
@@ -16,27 +14,6 @@ export interface TranscriptExportFile {
 export interface TranscriptExportIdentity {
   sessionId: string;
   exportedAt: Date;
-}
-
-export interface TranscriptExportJsonTurn {
-  source_lane?: SourceLane;
-  start: number;
-  end: number;
-  speaker: string;
-  speaker_entity_id: string;
-  display_name: string;
-  speaker_label: string;
-  state: TranscriptTurn["state"];
-  text: string;
-  segment_ids: string[];
-  target_segment_keys: string[];
-  provisional_stale: boolean;
-}
-
-/** Files carry the transcript only: no provisional, review or pending-summary notices (Q6). */
-export interface TranscriptExportJsonDocument {
-  version: 1;
-  turns: TranscriptExportJsonTurn[];
 }
 
 export function formatTranscriptClockTime(seconds: number): string {
@@ -56,6 +33,7 @@ export function buildTranscriptExportText(
     .join("\n\n");
 }
 
+/** Files carry the transcript only: no provisional, review or pending-summary notices (Q6). */
 export function serializeTranscriptExport(
   format: TranscriptExportFormat,
   turns: readonly TranscriptTurn[],
@@ -66,18 +44,6 @@ export function serializeTranscriptExport(
   turns = [...turns].sort(compareTranscriptOrder);
   const rows = buildExportRows(turns, resolveLabel);
   const filename = `transcript-${identity.sessionId}-${identity.exportedAt.toISOString()}.${format}`;
-  if (format === "srt" || format === "vtt") {
-    const cues = turns.filter(turn => turn.text.trim()).map((turn, index) => {
-      const start = Math.max(0, Math.round(turn.start * 1000));
-      const end = Math.max(start + 1, Math.round(turn.end * 1000));
-      const text = subtitleText(turn.text.trim());
-      const label = subtitleText(resolveExportLabel(turn, resolveLabel)).replace(/\n/g, " ");
-      return `${index + 1}\n${subtitleTime(start, format)} --> ${subtitleTime(end, format)}\n${label}: ${text}`;
-    }).join("\n\n");
-    const header = format === "vtt" ? "WEBVTT\n\n" : "";
-    return { content: `${header}${cues}${cues ? "\n" : ""}`, filename,
-      mediaType: format === "vtt" ? "text/vtt;charset=utf-8" : "application/x-subrip;charset=utf-8" };
-  }
   if (format === "md") {
     return {
       content: `${summary ? `${formatSummaryMarkdown(summary)}\n\n# Transcript\n\n` : ""}${rows.map((row) => `## [${row.clockTime}] ${row.label}\n\n${row.text}`).join("\n\n")}`,
@@ -85,44 +51,10 @@ export function serializeTranscriptExport(
       mediaType: "text/markdown;charset=utf-8"
     };
   }
-  if (format === "txt") {
-    return {
-      content: buildTranscriptExportText(turns, resolveLabel),
-      filename,
-      mediaType: "text/plain;charset=utf-8"
-    };
-  }
   return {
-    content: `${JSON.stringify(buildTranscriptExportJsonDocument(turns, resolveLabel), null, 2)}\n`,
+    content: buildTranscriptExportText(turns, resolveLabel),
     filename,
-    mediaType: "application/json;charset=utf-8"
-  };
-}
-
-export function buildTranscriptExportJsonDocument(
-  turns: readonly TranscriptTurn[],
-  resolveLabel: (turn: TranscriptTurn) => string
-): TranscriptExportJsonDocument {
-  return {
-    version: 1,
-    turns: [...turns].sort(compareTranscriptOrder).map((turn) => {
-      const speakerLabel = resolveExportLabel(turn, resolveLabel);
-      const unidentified = isBackendUnknownSpeakerId(turn.speaker_entity_id);
-      return {
-        ...(turn.source_lane ? { source_lane: turn.source_lane } : {}),
-        start: turn.start,
-        end: turn.end,
-        speaker: unidentified ? UNRESOLVED_SPEAKER_ID : turn.speaker,
-        speaker_entity_id: unidentified ? UNRESOLVED_SPEAKER_ID : turn.speaker_entity_id,
-        display_name: unidentified ? speakerLabel : turn.display_name,
-        speaker_label: speakerLabel,
-        state: turn.state,
-        text: turn.text,
-        segment_ids: [...turn.segment_ids],
-        target_segment_keys: [...turn.target_segment_keys],
-        provisional_stale: turn.provisional_stale
-      };
-    })
+    mediaType: "text/plain;charset=utf-8"
   };
 }
 
@@ -153,18 +85,6 @@ function buildExportRows(
 
 function resolveExportLabel(turn: TranscriptTurn, resolveLabel: (turn: TranscriptTurn) => string): string {
   return resolveLabel(turn).trim() || turn.display_name.trim() || turn.speaker;
-}
-
-
-function subtitleTime(milliseconds: number, format: "srt" | "vtt"): string {
-  const seconds = Math.floor(milliseconds / 1000);
-  return `${formatTranscriptClockTime(seconds)}${format === "srt" ? "," : "."}${String(milliseconds % 1000).padStart(3, "0")}`;
-}
-
-function subtitleText(text: string): string {
-  // Blank lines delimit cues; escape markup so transcript words remain literal.
-  return text.replace(/\r\n?/g, "\n").replace(/\n[ \t]*\n+/g, "\n")
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 function formatSummaryMarkdown(document: SummaryDocument): string {

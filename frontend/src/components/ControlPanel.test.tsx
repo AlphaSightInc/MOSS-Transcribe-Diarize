@@ -120,6 +120,13 @@ describe("ControlPanel reattach", () => {
     workletMeta.remove();
   });
 
+  it("offers only Markdown, Text and Audio exports (#11)", () => {
+    act(() => { render(<ControlPanel />, root); });
+    const options = [...root.querySelectorAll<HTMLOptionElement>('[aria-label="Export format"] option')];
+    expect(options.map(option => [option.value, option.textContent])).toEqual([
+      ["md", "Markdown (.md)"], ["txt", "Text (.txt)"], ["audio", "Audio (.mp3)"]]);
+  });
+
   it("holds transcript and audio export while refinement runs, then restores Save", async () => {
     const meeting = { id: "refining", mode: "live" as const, title: "Meeting", title_source: "automatic" as const,
       status: "completed" as const, created_at_ms: Date.now(), transcript_version: 1,

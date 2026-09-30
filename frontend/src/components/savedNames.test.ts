@@ -9,7 +9,7 @@ import { providerBody } from "../lib/finalSummary";
 const cases: { case: string; status: number; meeting: Meeting; history: Meeting }[] = JSON.parse(
   readFileSync(new URL("../../../evidence/mvpfix/wp9/prototype-latest.json", import.meta.url), "utf8")
 );
-it.each(cases)("preserves saved $case names in five exports and summary input", row => {
+it.each(cases)("preserves saved $case names in both exports and summary input", row => {
   expect(row.status).toBe(200);
   expect(row.history).toEqual(row.meeting);
   const label = `WP9 ${row.case}`;
@@ -18,7 +18,7 @@ it.each(cases)("preserves saved $case names in five exports and summary input", 
     display_name: s.speaker, state: "confirmed" as const
   }));
   const turns = groupSegmentsIntoTurns(items);
-  for (const format of ["md", "txt", "json", "srt", "vtt"] as const) {
+  for (const format of ["md", "txt"] as const) {
     expect(serializeTranscriptExport(format, turns, t => t.display_name,
       {sessionId: row.meeting.id, exportedAt: new Date(0)}).content).toContain(label);
   }
