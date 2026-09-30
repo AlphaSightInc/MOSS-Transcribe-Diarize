@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from moss_transcribe_diarize.live_surface import UNATTRIBUTED_SPEAKER, name_saved_speakers
 from moss_transcribe_diarize.subtitle import subtitle_segments_from_transcript
 
 from .live_silence import is_digital_silence
@@ -1310,12 +1311,7 @@ class FileMeetingTasks:
             return
 
         try:
-            document = {
-                "segments": [
-                    segment.to_dict()
-                    for segment in subtitle_segments_from_transcript(result.text, postprocess=False)
-                ]
-            }
+            document = file_transcript_document(result.text)
             if not document["segments"] and not accepted_speechless(result):
                 raise ValueError("Empty decoder output without speechless evidence")
         except Exception:
@@ -1411,6 +1407,22 @@ class FileMeetingTasks:
             handle.owner_key in self._fenced_owner_keys
             or handle.meeting_id in self._fenced_meeting_ids
         )
+
+
+def file_transcript_document(text: str) -> dict[str, object]:
+    """A decoded File transcript as saved.
+
+    The decoder's `Sxx` token stays each row's speaker identity (`speaker_entity_id`, the
+    address naming uses); the saved name is the default a live transcript gets ("Speaker n"
+    by first speech), so summaries and exports never read a raw token.
+    """
+    segments = [segment.to_dict()
+                for segment in subtitle_segments_from_transcript(text, postprocess=False)]
+    for segment in segments:
+        if segment["speaker"] != UNATTRIBUTED_SPEAKER:
+            segment["speaker_entity_id"] = segment["speaker"]
+    name_saved_speakers(segments, {})
+    return {"segments": segments}
 
 
 def _is_silent_mix(path: Path) -> bool:

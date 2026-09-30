@@ -15,7 +15,7 @@ from typing import Any, AsyncIterator, Mapping
 
 from starlette.requests import Request
 
-from moss_transcribe_diarize.live_surface import default_speaker_name
+from moss_transcribe_diarize.live_surface import transcript_speaker_names
 
 from .live_service_runtime import (
     LIVE_TERMINAL_SESSION_STATUSES,
@@ -1406,11 +1406,11 @@ def _transcript_document(
     labels = {} if speaker_labels is None else speaker_labels
     sample_rate = snapshot.descriptor.sample_rate
     transcript = snapshot.session.effective_transcript
-    # Default names count the unnamed established speakers in the order they first speak in
-    # this transcript, as the browser numbers them, so screen and saved file agree.
-    order = tuple(dict.fromkeys(
-        segment.canonical_speaker for segment in transcript
-        if segment.canonical_speaker in canonical and segment.canonical_speaker not in labels))
+    names = transcript_speaker_names(
+        [segment.canonical_speaker
+         if segment.canonical_speaker in labels or segment.canonical_speaker in canonical
+         else None for segment in transcript],
+        labels)
     return {
         "segments": [
             {
@@ -1419,16 +1419,12 @@ def _transcript_document(
                 "end": segment.end_sample / sample_rate,
                 **({"speaker_entity_id": segment.canonical_speaker}
                    if segment.canonical_speaker is not None else {}),
-                "speaker": (
-                    labels[segment.canonical_speaker]
-                    if segment.canonical_speaker in labels
-                    else default_speaker_name(segment.canonical_speaker, order)
-                ),
+                "speaker": name,
                 "text": segment.text,
                 **({"source_lane": segment.source_lane}
                    if segment.source_lane is not None else {}),
             }
-            for index, segment in enumerate(transcript, start=1)
+            for index, (segment, name) in enumerate(zip(transcript, names), start=1)
         ]
     }
 

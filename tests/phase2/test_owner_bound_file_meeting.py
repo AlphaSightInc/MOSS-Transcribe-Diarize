@@ -157,7 +157,8 @@ def test_upload_runs_after_browser_leaves_and_remains_owner_bound(tmp_path: Path
         assert meeting["transcript_version"] == 1
         assert meeting["transcript"] == {
             "segments": [
-                {"id": "seg_0001", "start": 0.0, "end": 1.0, "speaker": "S01", "text": "owner sentinel"}
+                {"id": "seg_0001", "start": 0.0, "end": 1.0, "speaker": "Speaker 1",
+                 "text": "owner sentinel", "speaker_entity_id": "S01"}
             ]
         }
         assert client.get("/api/meetings").json()["meetings"] == [meeting]

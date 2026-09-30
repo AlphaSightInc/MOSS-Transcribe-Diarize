@@ -44,7 +44,8 @@ def test_file_album_save_restart_exports_rename_enroll_and_private_bank(tmp_path
         assert response.status_code==201,response.text
         mid=response.json()['id']; meeting=await_terminal(client,mid,'completed')
         assert len(meeting['transcript']['segments'])==6
-        assert {s['speaker'] for s in meeting['transcript']['segments']}=={'S01','S02'}
+        assert [s['speaker'] for s in meeting['transcript']['segments']]==['Speaker 1','Speaker 2']*3
+        assert [s['speaker_entity_id'] for s in meeting['transcript']['segments']]==['S01','S02']*3
         before=[(s['start'],s['end'],s['text']) for s in meeting['transcript']['segments']]
     with TestClient(app(),base_url='https://moss.test') as client:
         session(client,sessions['sub-a-second'])
@@ -55,7 +56,7 @@ def test_file_album_save_restart_exports_rename_enroll_and_private_bank(tmp_path
             assert named.json()['enrollment']=='enrolled'
             rows=client.get(f'/api/meetings/{mid}').json()['transcript']['segments']
             assert [(s['start'],s['end'],s['text']) for s in rows]==before
-            assert [s['speaker'] for s in rows]==[label,'S02']*3
+            assert [s['speaker'] for s in rows]==[label,'Speaker 2']*3
             assert [s['speaker_entity_id'] for s in rows]==['S01','S02']*3
             bank=client.get('/api/voiceprints').json()['voiceprints']
             assert len(bank)==1 and bank[0]['sample_count']==1 and bank[0]['label']==label
