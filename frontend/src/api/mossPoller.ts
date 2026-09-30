@@ -551,7 +551,7 @@ function mapRuntimeEvent(
       };
     }
     case "session_closed":
-    case "stop":
+    case "stop_requested":
       return {
         type: "stop_progress",
         session_id: event.sessionId,

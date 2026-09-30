@@ -4,6 +4,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { storageKeys } from "../lib/persistence";
 import { captureMeetingId, replaceTranscript, resetSessionState, sessionError, sessionId, sessionStatus, sessionStatusLine } from "../state/session";
+import { sessionStartedAt, sessionStopRequested } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
 const mocks = vi.hoisted(() => {
@@ -114,6 +115,8 @@ describe("ControlPanel reattach", () => {
   afterEach(() => {
     act(() => render(null, root));
     resetSessionState();
+    sessionStartedAt.value = null;
+    sessionStopRequested.value = null;
     selectedSummaryMeeting.value = null;
     vi.unstubAllGlobals();
     root.remove();
@@ -202,6 +205,12 @@ describe("ControlPanel reattach", () => {
       storageKeys.sessionReattach,
       JSON.stringify({ sessionId: "session-42" })
     );
+    // After a reload the top pill counts from the meeting's real start, not from the reload (#14).
+    const createdAtMs = Date.now() - 25 * 60_000;
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => ({ ok: true, status: 200, json: async () => (
+      url === "/api/meetings/session-42" ? { id: "session-42", mode: "live", title: "Meeting", title_source: "automatic",
+        status: "active", created_at_ms: createdAtMs, transcript: { segments: [] }, transcript_version: 0, audio: null }
+        : {}) })));
 
     await act(async () => {
       render(<ControlPanel />, root);
@@ -220,6 +229,7 @@ describe("ControlPanel reattach", () => {
       (button) => button.textContent?.trim() === "Detach"
     );
     expect(detach).toBeTruthy();
+    await vi.waitFor(() => expect(sessionStartedAt.value).toEqual({ sessionId: "session-42", ms: createdAtMs }));
 
     act(() => render(null, root));
     expect(mocks.poller.stop).toHaveBeenCalledOnce();
@@ -420,6 +430,8 @@ describe("ControlPanel reattach", () => {
     await act(async () => button("Start recording")?.click());
     await act(async () => button("Stop recording")?.click());
     expect(mocks.captureStop).toHaveBeenCalledWith(5);
+    // The top pill stops counting at the click, before the server reports anything (#14).
+    expect(sessionStopRequested.value).toBe("account-live-meeting");
     expect(root.querySelector('[data-capture-phase="stopping"]')).not.toBeNull();
     expect(mocks.poller.stop).not.toHaveBeenCalled();
     expect(button("Stopping…")?.disabled).toBe(true);

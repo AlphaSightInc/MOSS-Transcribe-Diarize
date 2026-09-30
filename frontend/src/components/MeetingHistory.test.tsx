@@ -9,6 +9,7 @@ import {
   MEETING_HISTORY_REFRESH_EVENT
 } from "../lib/meetingEvents";
 import { replaceTranscript, resetSessionState, sessionTitle, sessionId, sessionMode, sessionNeedsReview, sessionStatus, sessionTranscriptItems, transcript } from "../state/session";
+import { sessionStartedAt, sessionStopRequested } from "../state/session";
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
 import { resetUiState, selectedSummaryMeeting } from "../state/ui";
@@ -54,6 +55,8 @@ describe("MeetingHistory", () => {
     act(() => render(null, root));
     root.remove();
     resetSessionState();
+    sessionStartedAt.value = null;
+    sessionStopRequested.value = null;
     resetUiState();
     vi.unstubAllGlobals();
     vi.useRealTimers();
@@ -87,6 +90,30 @@ describe("MeetingHistory", () => {
     await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: selected.id } })); });
     await vi.waitFor(() => expect(transcript.value.map(segment => segment.text)).toEqual(["first words"]));
     expect(root.textContent).not.toContain(notice);
+  });
+
+  // #14: the top pill never runs a clock for a finished meeting, and an observed one counts from its real start.
+  it.each([
+    { name: "a finished meeting", status: "completed" as const, liveEvents: [], pill: /^Standby$/ },
+    { name: "an active meeting", status: "active" as const, liveEvents: [], pill: /^Recording 5:0\d$/ },
+    { name: "a meeting draining after Stop", status: "active" as const,
+      liveEvents: [{ seq: 7, session_id: "observed", kind: "stop_requested", payload: {} }], pill: /^Stopping$/ }
+  ])("opening $name from History shows the true pill state", async ({ status, liveEvents, pill }) => {
+    const opened = meeting({ id: "observed", status, created_at_ms: Date.now() - 300_000 });
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url === "/api/meetings") return response({ meetings: [opened] });
+      if (url.includes("/events")) return response({ events: liveEvents });
+      if (url.includes("/snapshot")) return response({ unchanged: false, snapshot: {
+        session_id: "observed", descriptor: { sample_rate: 16_000 },
+        session: { committed_samples: 0, status: "active", version: 1, failure_reason: null, label_revision_version: 0,
+          identity_snapshot: { canonical_speakers: [] }, committed: [], provisional: null } } });
+      if (url.endsWith("/summary")) return response({ summary: null });
+      return response(opened);
+    }));
+    await act(async () => render(<div><App /><MeetingHistory /></div>, root));
+    await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="observed"]')).not.toBeNull());
+    await act(async () => root.querySelector<HTMLButtonElement>('[data-open-meeting="observed"]')!.click());
+    await vi.waitFor(() => expect(root.querySelector(".top-status")?.textContent).toMatch(pill));
   });
 
   it("opens the selected meeting summary in the centre card", async () => {

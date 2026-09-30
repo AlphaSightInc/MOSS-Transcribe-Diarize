@@ -14,7 +14,7 @@ import { serializeTranscriptExport, triggerTranscriptExportDownload, type Transc
 import { summaryApi } from "../lib/finalSummary";
 import { openMeeting } from "../api/meetings";
 import { engineSettingsFrom, loadAppSettings } from "../lib/settings";
-import { sessionId, sessionStatus, transcript } from "../state/session";
+import { sessionId, sessionStatus, sessionStopRequested, transcript } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 import { watchMeetingSummary } from "../lib/summaryRequests";
 import {
@@ -311,6 +311,8 @@ export function ControlPanel() {
     const client = clientRef.current;
     if (!client || phase !== "active") return;
     transition("stopping");
+    // The pill stops counting now; the server keeps reporting "active" while it drains (#14).
+    sessionStopRequested.value = captureMeetingId.value;
     captureMeetingId.value = null;
     setMessage("");
     try {
@@ -386,6 +388,10 @@ export function ControlPanel() {
 
     const saved = loadSessionReattach(sessionReattachStorage());
     if (saved) {
+      // After a reload the pill counts from the meeting's real start, not from the reload.
+      void openMeeting(saved.sessionId).then(meeting => {
+        sessionStartedAt.value = { sessionId: meeting.id, ms: meeting.created_at_ms };
+      }, () => undefined);
       const poller = createMossSessionPoller({
         sessionId: saved.sessionId,
         onError: () => transportFailed("transcript"),

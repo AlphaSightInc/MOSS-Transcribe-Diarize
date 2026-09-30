@@ -3,7 +3,8 @@ import {
   applySessionStateEvent,
   applyTranscriptUpdate,
   provisionalSegments,
-  replaceTranscript
+  replaceTranscript,
+  sessionStopRequested
 } from "../state/session";
 
 /**
@@ -28,8 +29,8 @@ export function dispatchWsEvent(event: WsEvent): void {
       applyTranscriptUpdate(event.items, event.metadata);
       return;
     case "stop_progress":
-      // The Account transcript has no LLM state. The event is preserved so consumers can observe the
-      // reference lifecycle seam without inventing an unreachable LLM event.
+      // Stop was requested; the session may still report "active" while the server drains its tail.
+      sessionStopRequested.value = event.session_id;
       return;
   }
 }

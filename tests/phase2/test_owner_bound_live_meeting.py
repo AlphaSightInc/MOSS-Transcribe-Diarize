@@ -666,6 +666,59 @@ def test_gemini_cleanup_stop_saves_completed_live_version_while_improvement_runs
             assert detail["notice"] == "Improvement unavailable — the live transcript was kept."
 
 
+def test_gemini_stop_drain_stays_active_and_publishes_stop_requested_to_observers(tmp_path):
+    """#14: the top pill ends its clock on this event, because the draining meeting still reads "active"."""
+    from moss_transcribe_diarize.app.gemini_live_runtime import (
+        GeminiLiveRuntime, ScriptedGeminiEngine)
+
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    release = asyncio.Event()
+
+    class HeldDrain(ScriptedGeminiEngine):
+        async def drain_tail(self, deadline):
+            await release.wait()
+            return True
+
+    descriptor = LiveServiceDescriptor(
+        source_revision="test", provider_name="gemini", provider_revision="test",
+        provider_manifest_hash="0" * 64,
+        config_hashes=LiveServiceConfigHashes.from_parts(
+            endpoint_config={}, identity_config={}, decoder_config={}),
+        bounds=LiveServiceBounds(max_frame_samples=16000, max_queue_depth=4,
+                                 max_retained_samples=32000, max_identity_speakers=8,
+                                 max_events=64, max_tape_bytes=160000), frame_samples=16000,
+    )
+    runtime = GeminiLiveRuntime(descriptor=descriptor, tape_storage_root=tmp_path / "tapes",
+        engine_factory=lambda _id, publish, _usage, _settings: HeldDrain(
+            publish, batches=[], terminal=()))
+    app = make_app(database, live_runtime_factory=lambda: runtime)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.post("/api/live/sessions", json={"engine_settings": {
+            "transcription": {"api_key": "user-key"}, "cleanup_after_stop": False}}).json()["id"]
+        feed_two_lane_pairs(client, meeting_id, range(2))
+        stopped = client.post(f"/api/live/sessions/{meeting_id}/stop", json={"deadline": 0.05})
+        assert stopped.status_code == 202
+        deadline = time.monotonic() + 5
+        kinds: list[str] = []
+        while time.monotonic() < deadline and "stop_requested" not in kinds:
+            kinds = [event["kind"] for event in
+                     client.get(f"/api/live/sessions/{meeting_id}/events?since_seq=0").json()["events"]]
+            time.sleep(.01)
+        assert "stop_requested" in kinds and "session_closed" not in kinds
+        snapshot = client.get(f"/api/live/sessions/{meeting_id}/snapshot?since_version=0").json()
+        assert snapshot["snapshot"]["session"]["status"] == "active"
+        assert client.get(f"/api/meetings/{meeting_id}").json()["status"] == "active"
+        client.portal.call(release.set)
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            if client.get(f"/api/meetings/{meeting_id}").json()["status"] == "completed":
+                break
+            time.sleep(.01)
+        assert client.get(f"/api/meetings/{meeting_id}").json()["status"] == "completed"
+
+
 def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durable(
     tmp_path: Path,
 ):
