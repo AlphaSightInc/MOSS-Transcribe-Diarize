@@ -16,7 +16,8 @@ from moss_transcribe_diarize.app.live_session import (
     TextRevisionProposal,
 )
 from moss_transcribe_diarize.app.live_transcript_convergence import terminal_speaker_mapping
-from moss_transcribe_diarize.app.phase2 import create_phase2_app
+from moss_transcribe_diarize.app.phase2 import (REFINEMENT_DONE_MARKER, REFINEMENT_RUNNING_MARKER,
+                                             create_phase2_app)
 from moss_transcribe_diarize.app.phase2_live import _transcript_document
 from test_owner_bound_live_meeting import provision, session
 from tests.test_live_session import publish_prepared
@@ -28,7 +29,7 @@ RESERVED_LABELS = json.loads(
 )["reserved_labels"]
 
 
-async def _seed(app, sign_in_session: str, status: str) -> str:
+async def _seed(app, sign_in_session: str, status: str, notice: str | None = None) -> str:
     account = await app.state.phase2_store.account_for_session(sign_in_session)
     handle = await app.state.phase2_store.workspace(account).create_meeting("file")
     document = {
@@ -61,7 +62,9 @@ async def _seed(app, sign_in_session: str, status: str) -> str:
     if status == "active":
         await handle.commit_transcript(document)
     else:
-        await handle.finish_with_transcript(document, status)
+        await handle.finish_with_transcript(document, status, **({"notice": notice} if notice else {}))
+        if notice == REFINEMENT_RUNNING_MARKER:
+            await handle.settle_refinement(document)
     return handle.meeting_id
 
 
@@ -145,6 +148,25 @@ def test_passage_correction_to_existing_person_clears_review_and_is_owner_bound(
             json={"segment_ids": ["seg_0001"], "label": "Foreign"},
         )
         assert foreign.status_code == 404
+
+
+@pytest.mark.parametrize("notice", [REFINEMENT_RUNNING_MARKER, REFINEMENT_DONE_MARKER])
+def test_passage_correction_on_a_cleaned_up_meeting_clears_review(tmp_path, notice):
+    """The clean-up marker is refinement state, not a notice that needs review."""
+    database = tmp_path / "m.sqlite"
+    sessions = asyncio.run(provision(database))
+    app = create_phase2_app(database_path=database)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        meeting_id = client.portal.call(_seed, app, sessions["a"], "completed", notice)
+        assert client.get(f"/api/meetings/{meeting_id}").json()["refinement_state"] == "done"
+        corrected = client.put(
+            f"/api/meetings/{meeting_id}/passages/speaker",
+            json={"segment_ids": ["seg_0003"], "speaker_id": "person-a"},
+        )
+        assert corrected.status_code == 200, corrected.text
+        assert corrected.json()["needs_review"] is False
+        assert client.get(f"/api/meetings/{meeting_id}").json()["needs_review"] is False
 
 
 def test_passage_correction_rejects_missing_or_ambiguous_targets(tmp_path):

@@ -1275,7 +1275,7 @@ class Phase2Store:
                 label=target_label,
                 transcript_version=int(version_row["version"]),
                 needs_review=_meeting_needs_review(
-                    status, document, row["failure_code"], row["notice"]
+                    status, document, row["failure_code"], _public_notice(row["notice"])
                 ),
             )
 
@@ -2761,6 +2761,15 @@ def _refined_version(stored_notice: str | None) -> int | None:
     return int(version) if marker == REFINEMENT_DONE_MARKER and version.isdigit() else None
 
 
+def _public_notice(stored_notice: str | None) -> str | None:
+    """Clean-up markers are refinement state; only an interrupted one reads as a notice."""
+    if stored_notice == REFINEMENT_RUNNING_MARKER:
+        return REFINEMENT_FAILED_NOTICE
+    if stored_notice == REFINEMENT_DONE_MARKER or _refined_version(stored_notice) is not None:
+        return None
+    return stored_notice
+
+
 def _meeting_from_row(row: Any) -> Meeting:
     document_json = row["document_json"]
     status = str(row["status"])
@@ -2772,8 +2781,7 @@ def _meeting_from_row(row: Any) -> Meeting:
     refinement_state = ("failed" if stored_notice == REFINEMENT_RUNNING_MARKER else
                         "done" if done else
                         "failed" if stored_notice == REFINEMENT_FAILED_NOTICE else "none")
-    notice = (REFINEMENT_FAILED_NOTICE if stored_notice == REFINEMENT_RUNNING_MARKER else
-              None if done else stored_notice)
+    notice = _public_notice(stored_notice)
     needs_review = _meeting_needs_review(
         status, transcript, row["failure_code"], notice
     )
