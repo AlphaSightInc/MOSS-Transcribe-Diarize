@@ -12,6 +12,7 @@ from pathlib import Path
 from array import array
 from typing import Callable, Sequence
 
+from .gemini_hybrid_engine import attributed_embedding_intervals
 from .gemini_live_runtime import (GeminiBase, GeminiPreview, GeminiRelabel, GeminiTurnBridge,
                                   GeminiRolling, GeminiSegment, GeminiUpdate)
 from .gemini_provider import GeminiWord
@@ -233,12 +234,14 @@ class MicrophoneWordGate:
         self.embedding_source = embedding_source
 
     def _record(self, before: int, acoustic: int, after_voice: int,
-                after_text: int) -> None:
+                after_text: int, unanchored: int = 0) -> None:
         if self.report_drops is not None:
             counts = {"acoustic_gate_dropped_words": before-acoustic,
                       "text_guard_dropped_words": after_voice-after_text}
             if self.voice_guard is not None and acoustic > after_voice:
                 counts["mic_echo_dropped_by_voice"] = acoustic-after_voice
+            if unanchored:
+                counts["unanchored_window_dropped_words"] = unanchored
             self.report_drops(counts)
 
     def filter(self, pcm16: bytes, words: Sequence[GeminiWord], *,
@@ -260,7 +263,15 @@ class MicrophoneWordGate:
         else:
             after_voice = len(kept)
             kept = TextEchoGuard().filter(kept, system)
-        self._record(len(voiced), len(acoustic), after_voice, len(kept))
+        after_text = len(kept)
+        # Local speech context: a live window whose surviving words hold no continuous
+        # attributed span of at least 2 s (the evidence a voiceprint needs) is room noise or
+        # echo residue that Gemini filled with short, often foreign-language words. Its words
+        # stay out of the live view; the whole-recording pass still decides the saved text.
+        unanchored = 0
+        if kept and not attributed_embedding_intervals(kept):
+            unanchored, kept = len(kept), ()
+        self._record(len(voiced), len(acoustic), after_voice, after_text, unanchored)
         return kept
 
     def filter_terminal(self, mic_pcm16: bytes, words: Sequence[GeminiWord],
