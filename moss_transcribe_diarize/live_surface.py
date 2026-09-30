@@ -36,7 +36,7 @@ def display_speaker_label(canonical_speaker: str, canonical_speakers: Sequence[s
 def published_speaker_label(
     canonical_speaker: str | None, canonical_speakers: Sequence[str]
 ) -> str:
-    """The default label a *surface* segment is shown and exported as. Total, never raises.
+    """The `Sxx` a *surface* segment is scored and exported as. Total, never raises.
 
     `display_speaker_label` is the strict primitive: it answers only for a speaker this
     session established, and refuses otherwise so a writer cannot invent a name. A reader of
@@ -46,21 +46,42 @@ def published_speaker_label(
     payload. Neither may be rendered as a guess, so both read as the honest
     `UNATTRIBUTED_SPEAKER`.
 
-    Local IDs display as `Local NN`; other canonical speakers retain their `Sxx` label.
-    It is total because two readers depend on it -- the browser render and the export -- and a
-    transcript whose screen and whose file disagree about who spoke is worse than either being
-    wrong alone.
+    It is total because two readers depend on it -- the scored hypothesis and the evaluator
+    export -- and both must read the same token the committed spans carry. The name a person
+    is shown is `default_speaker_name`.
     """
 
     if canonical_speaker is None:
         return UNATTRIBUTED_SPEAKER
     try:
-        label = display_speaker_label(canonical_speaker, canonical_speakers)
+        return display_speaker_label(canonical_speaker, canonical_speakers)
     except ValueError:
         return UNATTRIBUTED_SPEAKER
-    if canonical_speaker.startswith("local-") and canonical_speaker[6:].isdigit():
-        return f"Local {int(canonical_speaker[6:]):02d}"
-    return label
 
 
-__all__ = ["UNATTRIBUTED_SPEAKER", "display_speaker_label", "published_speaker_label"]
+def default_speaker_name(canonical_speaker: str | None, first_spoken: Sequence[str]) -> str:
+    """The name a speaker is shown under until a person or a voiceprint names them.
+
+    Microphone voices (`local-N`) read `You` for the first and `User n` after it (`local-2`
+    is `User 1`); every other speaker reads `Speaker n`, numbered by its place among the
+    non-local speakers of `first_spoken` -- the unnamed speakers in the order they first
+    speak. The browser applies the same rule to the live view, so the screen and the saved
+    transcript agree. Nobody attributed, or an identity not in `first_spoken`, reads as the
+    honest `UNATTRIBUTED_SPEAKER`.
+    """
+
+    if canonical_speaker is None or canonical_speaker not in first_spoken:
+        return UNATTRIBUTED_SPEAKER
+    if _is_local(canonical_speaker):
+        number = int(canonical_speaker[6:])
+        return "You" if number == 1 else f"User {number - 1}"
+    shared = [speaker for speaker in first_spoken if not _is_local(speaker)]
+    return f"Speaker {shared.index(canonical_speaker) + 1}"
+
+
+def _is_local(canonical_speaker: str) -> bool:
+    return canonical_speaker.startswith("local-") and canonical_speaker[6:].isdigit()
+
+
+__all__ = ["UNATTRIBUTED_SPEAKER", "default_speaker_name", "display_speaker_label",
+           "published_speaker_label"]

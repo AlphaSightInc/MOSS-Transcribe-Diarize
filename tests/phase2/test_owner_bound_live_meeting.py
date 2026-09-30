@@ -750,7 +750,7 @@ def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durabl
         meeting = client.get(f"/api/meetings/{meeting_id}").json()
         assert meeting["status"] == "completed"
         assert meeting["transcript_version"] == 3
-        assert meeting["transcript"]["segments"][0]["speaker"] == "S01"
+        assert meeting["transcript"]["segments"][0]["speaker"] == "Speaker 1"
         assert meeting["transcript"]["segments"][0]["text"] == "terminal owner words"
         assert meeting["audio"]["state"] == "available"
         assert {

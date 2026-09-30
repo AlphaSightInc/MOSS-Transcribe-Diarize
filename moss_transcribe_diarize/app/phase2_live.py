@@ -15,7 +15,7 @@ from typing import Any, AsyncIterator, Mapping
 
 from starlette.requests import Request
 
-from moss_transcribe_diarize.live_surface import published_speaker_label
+from moss_transcribe_diarize.live_surface import default_speaker_name
 
 from .live_service_runtime import (
     LIVE_TERMINAL_SESSION_STATUSES,
@@ -1403,6 +1403,12 @@ def _transcript_document(
     canonical = snapshot.session.identity_snapshot.canonical_speakers
     labels = {} if speaker_labels is None else speaker_labels
     sample_rate = snapshot.descriptor.sample_rate
+    transcript = snapshot.session.effective_transcript
+    # Default names count the unnamed established speakers in the order they first speak in
+    # this transcript, as the browser numbers them, so screen and saved file agree.
+    order = tuple(dict.fromkeys(
+        segment.canonical_speaker for segment in transcript
+        if segment.canonical_speaker in canonical and segment.canonical_speaker not in labels))
     return {
         "segments": [
             {
@@ -1414,13 +1420,13 @@ def _transcript_document(
                 "speaker": (
                     labels[segment.canonical_speaker]
                     if segment.canonical_speaker in labels
-                    else published_speaker_label(segment.canonical_speaker, canonical)
+                    else default_speaker_name(segment.canonical_speaker, order)
                 ),
                 "text": segment.text,
                 **({"source_lane": segment.source_lane}
                    if segment.source_lane is not None else {}),
             }
-            for index, segment in enumerate(snapshot.session.effective_transcript, start=1)
+            for index, segment in enumerate(transcript, start=1)
         ]
     }
 
