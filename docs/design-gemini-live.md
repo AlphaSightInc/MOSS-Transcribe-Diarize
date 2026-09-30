@@ -150,6 +150,22 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   Engine worker exceptions are now counted as `errors_by_code["worker_<Exception>"]` instead of staying silent.
   The fixed paced long60 run (WP4) published labels through the whole meeting and settled all 2,586 s.
 
+## Round 3 addition: OpenAI-compatible transcription (WP-F, plan `docs/plan-r3-ui.md` J1/I-5)
+
+- **Adapter** `app/openai_compatible_provider.py`: `OpenAICompatibleDiarizer(url, model, api_key, report_usage)` has
+  `WindowDiarizer`'s surface (`diarize(pcm16, *, deadline, kind, diarize) -> GeminiWords`) over
+  `POST {url}/audio/transcriptions`. Format rule: model name containing `diarize` → `diarized_json` + `chunking_strategy=auto`;
+  otherwise `verbose_json` with word + segment timestamps; a 400 naming the format falls back once to `json`, sticky per meeting.
+  Labels: the model's speaker when returned, else one label per returned segment (J1). Text without word times is spread over
+  mode-1 WebRTC voiced frames, so placed words survive the word gates. Requests over 600 s (25 MB upload limit) split into
+  prefixed pieces. It owns retries (429/5xx/timeout, per attempt ≤ 120 s inside the caller deadline); usage rows are
+  content-free, `cost_usd` 0 (price unknown). No preview words (`NoPreviewWords`); `probe()` backs the Settings Test.
+- **Measured through the production identity paths** (golden lines as provider stand-in,
+  `prototypes/streaming-diarization/openai-segment-labels/NOTES.md`): per-segment labels give live accuracy .836 (+1.1 extra
+  speakers, 8.5% speaker-less before Stop) and File .867 with **+3.9 extra speakers** (rtfl: 22 for 4) — File has no orphan step.
+  json-only models (e.g. `gpt-4o-transcribe`) give one speaker per request and lose/duplicate up to 11%/13% of words at live
+  refresh boundaries. A short-segment attach rule was rejected (≤ +1 point). Real model quality is unmeasured.
+
 ## Measured envelope and custody
 
 Figures below name their code/fixture population. They do not combine different

@@ -72,12 +72,12 @@ def _voiced_frames(pcm16: bytes, vad) -> list[int]:
 def spread_tokens(tokens: Sequence[str], start: int, end: int,
                   voiced: Sequence[int]) -> list[tuple[str, int, int]]:
     """Place ordered tokens over voiced frames in [start, end), by character share."""
+    if not tokens or end <= start:
+        return []
     frames = voiced[bisect_left(voiced, -(-start // _FRAME)):
                     bisect_right(voiced, end // _FRAME - 1)]
     weights = [len(token) + 1 for token in tokens]
     total = sum(weights)
-    if not tokens or end <= start:
-        return []
     if not frames:  # No voice in the span: fall back to uniform time.
         cursor, placed = 0, []
         for token, weight in zip(tokens, weights):
