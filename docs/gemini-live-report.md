@@ -4,7 +4,45 @@ Markdown copy of the published report (https://claude.ai/artifact/KSifNWFMk8wTgh
 qualified runtime `0b9deed5` + preview fixes L-3 `fe1610f5`, L-4 `3901d2db`; base `8d8fb682`.
 MOSS comparator = recorded H1 #3 receipts (no GPU used in this campaign).
 
-## Verdict
+## Round 2 (2026-09-29) — ready for in-person review
+
+Branch `gemini/r2-integration` head `fb8f5498`; final qualification on `9fb217f4` (engine identical; later commits fix
+summary/refinement races and UI contract bugs). Defaults: Balanced 15 s / 90 s speaker windows, clean-up after Stop ON
+in the background (D20/D21), built-in summaries on `gemini-3.5-flash-lite`.
+
+**Verdict.** Saved transcripts are accurate: speaker error (DER) **0.104** on six short clips ×2 and **0.035** on the
+43-minute meeting (5/5 speakers). Words appear at once; confirmed names a median **13.8 s** after speech. The meeting is
+usable **12 s** after Stop; the improved version lands **55–75 s** later. Cost **$1.62/meeting-hour** metered,
+**$2.76** if output is billed (A5 unconfirmed). One soft gate misses: fast guesses cover 62% of the waiting time on short
+clips (target 70%) and are 94% right on the long meeting (target 95%).
+
+| Check | Result | Target | Verdict |
+|---|---|---|---|
+| Saved DER, 6 clips ×2 | 0.104 (live view 0.103) | ≤ 0.110 | PASS |
+| Saved DER, 43-min (5 voices) | 0.035, 5 IDs (live view 0.164, 6) | ≤ 0.060 | PASS |
+| E1 speakers | 4 | ≤ 5 | PASS |
+| Dropped passages · speakerless speech | 0 · 0 s | 0 · 0 | PASS |
+| Words · names (p50) | 0.0 s · 13.8 s | ≤ 1 s · ≤ 15 s | PASS |
+| Guesses coverage · accuracy | short 62% · 98%; 43-min 88% · 94% | ≥ 70% · ≥ 95% | MISS |
+| Background clean-up | usable 12 s after Stop; +55–75 s; export 409 meanwhile; renames kept | — | PASS |
+| Two people on one mic + echo (saved) | 94–95% local words kept; 99.8–100% echo dropped; 2 Local IDs | ≥ 90% | PASS |
+| Summaries | 45 rolling, 0 errors; final regenerated on improved version | valid | PASS |
+| File / URL | 0.103 · 0.034; voiceprints saved (unchanged path, reused) | ≤ 0.110 · ≤ 0.060 | PASS |
+| Cost / meeting-hour | $1.62 metered · $2.76 with output estimate | report; spend ≤ $50 | PASS |
+
+Known limits: live view on long meetings can mis-group speakers until clean-up lands; loud (−10 dB) speaker echo drops
+some local words live (84.8% on `f962d97d`; saved 94%); guesses ~94% right on long meetings; actual Google invoice
+UNMEASURED (round-2 spend ≥ $17.51 from usage records). Gemini is non-deterministic on byte-identical audio (28/60
+long60 windows matched) — the background whole-recording pass is the correction.
+
+Final-head smoke on `fb8f5498`: E1 5-min meeting ready 12.5 s after Stop, improved 52 s later, 5/5 rolling summaries, final
+summary regenerated on the improved version, $0.21; backend suite 2631 passed.
+
+Receipts: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/P66/qual-9fb217f4/{scorecard.md,scorecard.json,spend.json}`, `evidence/P66/smoke-fb8f5498/RECEIPT.md`.
+
+## Round 1 (2026-09-28)
+
+### Verdict
 
 A Gemini-powered live engine beats self-hosted MOSS on speaker accuracy and passes every hard bar, behind the same
 UI and HTTP API. Speaker error before Stop falls from 0.145 to 0.099; the final transcript matches MOSS
