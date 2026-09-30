@@ -62,8 +62,7 @@ def run_arm(base_url: str, clip, cleanup: bool, out: Path, surface):
     cookie.chmod(0o600)
     adapter = SettingsReplayService(base_url=base_url, cookie_file=cookie,
                                     timeout_seconds=300,
-                                    engine_settings={"speaker_window": "balanced",
-                                                     "cleanup_after_stop": cleanup})
+                                    engine_settings={"cleanup_after_stop": cleanup})
     capture = surface.SurfaceCaptureService(adapter, settle_timeout=120.0, poll_seconds=.25)
     descriptor = adapter.descriptor()
     identity = (descriptor.source_revision, descriptor.provider_manifest_hash,

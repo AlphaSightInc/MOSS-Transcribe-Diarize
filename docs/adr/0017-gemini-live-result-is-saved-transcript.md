@@ -73,3 +73,7 @@ the background whole-recording pass is the retrospective correction for the Gemi
 The cached P2/P4/P5 receipts were reused because they test the specific cost and
 identity mechanisms without new provider calls. Q-IND requires fresh product-path
 measurement because it can change the default decision.
+
+**2026-09-29 amendment (round 3, Q4):** the clean-up pass uses the meeting's own user key,
+held only in memory. A restart therefore cannot resume it; the durable running marker
+keeps the live version, as above. OpenAI-compatible meetings never run clean-up.

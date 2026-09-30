@@ -28,3 +28,8 @@ language, and model choices arrive with each browser request and are not saved a
 Account settings or artifact provenance. External AI remains browser-configured;
 the configured key-less tailnet relay retains its separate narrow exception. This
 amends the earlier blanket prohibition on server-held AI credentials for Gemini only.
+
+**2026-09-29 amendment (round 3, Q4):** the server-held Gemini key is withdrawn. Each
+user enters their own Gemini key in browser Settings; it travels with each Live create,
+File/URL upload, summary and provider-test request, is used in server memory for that
+meeting/job/request only, and is never persisted (`docs/design-gemini-live.md`, Round 3).

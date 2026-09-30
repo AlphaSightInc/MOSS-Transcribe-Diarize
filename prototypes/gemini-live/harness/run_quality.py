@@ -59,8 +59,13 @@ class SettingsReplayService(AccountCookieLiveReplayService):
     def create(self):
         if self.engine_settings is None:
             return super().create()
+        # Round 3: the Gemini server holds no key. Send the operator's own key per meeting,
+        # like the Settings dialog does; recorded engine_settings stay key-free.
+        from gemini_common import load_key
+        transcription = {**self.engine_settings.get("transcription", {}), "api_key": load_key()}
         payload = self._json("POST", "/api/live/sessions", {
-            "echo_mode": "speakers", "engine_settings": self.engine_settings})
+            "echo_mode": "speakers",
+            "engine_settings": {**self.engine_settings, "transcription": transcription}})
         from moss_transcribe_diarize.phase2_acceptance_replay import _descriptor_from_dict, _snapshot_from_dict
         from moss_transcribe_diarize.app.live_service_runtime import LiveServiceCreateResult
         descriptor = _descriptor_from_dict(payload["descriptor"])
@@ -200,7 +205,8 @@ def main() -> None:
                         help="frozen manifest-matching corpus root; default is worktree corpus")
     parser.add_argument("--mic", type=Path)
     parser.add_argument("--engine-settings", type=json.loads,
-                        help='JSON object sent with each live start, e.g. {"cleanup_after_stop":false}')
+                        help='JSON object sent with each live start, e.g. {"cleanup_after_stop":false}; '
+                             'the Gemini key is added from .env.local at request time')
     parser.add_argument("--enroll-after-stop", action="store_true",
                         help="name one final speaker and check the owner voiceprint bank")
     parser.add_argument("--case", choices=sorted(QUALITY_CASE_IDS))
