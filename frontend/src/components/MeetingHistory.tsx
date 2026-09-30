@@ -33,7 +33,8 @@ import {
   sessionStopRequested,
   sessionTitle
 } from "../state/session";
-import { historyView, selectedSummaryMeeting } from "../state/ui";
+import { historyPanelCollapsed, historyView, selectedSummaryMeeting, setHistoryPanelCollapsed } from "../state/ui";
+import { PanelCollapseButton, PanelRailTitle } from "./PanelCollapse";
 
 export function MeetingHistory() {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -231,8 +232,9 @@ export function MeetingHistory() {
   };
 
   return (<>
-    <section className="panel history-panel account-history-panel" aria-label="Meeting history">
-      <div className="panel-body">
+    <section className={`panel history-panel account-history-panel${historyPanelCollapsed.value ? " collapsed" : ""}`}
+      aria-label="Meeting history">
+      <div className="panel-head">
         <div className="seg history-tabs" role="tablist" aria-label="History views">
           <button
             type="button"
@@ -253,7 +255,11 @@ export function MeetingHistory() {
             Voiceprints
           </button>
         </div>
-
+        <PanelRailTitle name="History" onExpand={() => setHistoryPanelCollapsed(false)} />
+        <PanelCollapseButton name="History" side="right" collapsed={historyPanelCollapsed.value}
+          onChange={setHistoryPanelCollapsed} />
+      </div>
+      <div className="panel-body">
         {historyView.value === "sessions" ? <div className="history-panel-actions">
           <label className="history-search">
             <span className="sr-only">Search meetings</span>

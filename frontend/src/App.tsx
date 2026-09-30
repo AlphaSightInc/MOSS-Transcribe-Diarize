@@ -2,6 +2,8 @@ import { useEffect, useState } from "preact/hooks";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { ControlPanel } from "./components/ControlPanel";
 import { TranscriptPane } from "./components/TranscriptPane";
+import { PanelCollapseButton, PanelRailTitle } from "./components/PanelCollapse";
+import { controlPanelCollapsed, setControlPanelCollapsed } from "./state/ui";
 import { sessionId, sessionMode, sessionStartedAt, sessionStatus, sessionStopRequested, sessionTitle } from "./state/session";
 
 export const PRODUCT_NAME = "aiSight - LiveTranscribe";
@@ -9,6 +11,7 @@ export const PRODUCT_NAME = "aiSight - LiveTranscribe";
 /** The sole Account-owned Live surface mounted inside the authenticated workspace. */
 export function App() {
   const pill = useStatusPill();
+  const controlsCollapsed = controlPanelCollapsed.value;
 
   return (
     <div
@@ -20,7 +23,8 @@ export function App() {
       data-authority="account"
     >
       <header className="topbar">
-        <span className="status top-status" data-state={pill.state}>
+        {/* Over a collapsed Controls rail the pill is its dot alone (styles/index.css); hover shows the label. */}
+        <span className="status top-status" data-state={pill.state} title={controlsCollapsed ? pill.label : undefined}>
           <span className="status-dot" aria-hidden="true" />
           <span>{pill.label}</span>
         </span>
@@ -34,10 +38,16 @@ export function App() {
         <div className="top-right"><SettingsDialog /></div>
       </header>
 
-      <main className="main" id="main" data-left-collapsed="false" data-right-collapsed="true">
-        <aside className="panel control-panel" id="control-panel" aria-labelledby="capture-panel-title">
+      <main className="main" id="main" data-left-collapsed={String(controlsCollapsed)} data-right-collapsed="true">
+        <aside className={`panel control-panel${controlsCollapsed ? " collapsed" : ""}`} id="control-panel"
+          aria-labelledby="capture-panel-title">
           <div className="panel-head">
-            <h2 className="panel-title" id="capture-panel-title">Controls</h2>
+            <h2 className="panel-title" id="capture-panel-title">
+              <span className="panel-title-text">Controls</span>
+              <PanelRailTitle name="Controls" onExpand={() => setControlPanelCollapsed(false)} />
+            </h2>
+            <PanelCollapseButton name="Controls" side="left" collapsed={controlsCollapsed}
+              onChange={setControlPanelCollapsed} />
           </div>
           <div className="panel-body">
             <ControlPanel />

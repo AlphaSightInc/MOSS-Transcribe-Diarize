@@ -26,27 +26,32 @@ export const llmModalOpen = signal(false);
 export const toastQueue = signal<ToastItem[]>([]);
 export const activeToast = computed(() => toastQueue.value[0] ?? null);
 
-export function hydrateUiState(storage: StorageLike = browserStorage()): void {
-  controlPanelCollapsed.value =
-    loadBoolean(storage, storageKeys.controlPanelCollapsed) ?? false;
-  historyPanelCollapsed.value =
-    loadBoolean(storage, storageKeys.historyPanelCollapsed) ?? false;
+/**
+ * Side-panel collapse is a per-browser convenience (#8). Storage that is blocked or throws leaves the
+ * panels expanded and the toggles working for this page.
+ */
+export function hydrateUiState(storage?: StorageLike): void {
+  try {
+    const store = storage ?? browserStorage();
+    controlPanelCollapsed.value = loadBoolean(store, storageKeys.controlPanelCollapsed) ?? false;
+    historyPanelCollapsed.value = loadBoolean(store, storageKeys.historyPanelCollapsed) ?? false;
+  } catch { /* expanded defaults */ }
 }
 
-export function setControlPanelCollapsed(
-  nextValue: boolean,
-  storage: StorageLike = browserStorage()
-): void {
+export function setControlPanelCollapsed(nextValue: boolean, storage?: StorageLike): void {
   controlPanelCollapsed.value = nextValue;
-  saveBoolean(storage, storageKeys.controlPanelCollapsed, nextValue);
+  persistCollapse(storageKeys.controlPanelCollapsed, nextValue, storage);
 }
 
-export function setHistoryPanelCollapsed(
-  nextValue: boolean,
-  storage: StorageLike = browserStorage()
-): void {
+export function setHistoryPanelCollapsed(nextValue: boolean, storage?: StorageLike): void {
   historyPanelCollapsed.value = nextValue;
-  saveBoolean(storage, storageKeys.historyPanelCollapsed, nextValue);
+  persistCollapse(storageKeys.historyPanelCollapsed, nextValue, storage);
+}
+
+function persistCollapse(key: string, value: boolean, storage?: StorageLike): void {
+  try {
+    saveBoolean(storage ?? browserStorage(), key, value);
+  } catch { /* not remembered across reloads */ }
 }
 
 export function setLlmModalOpen(nextValue: boolean): void {

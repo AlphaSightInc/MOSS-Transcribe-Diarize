@@ -27,7 +27,6 @@ import {
   provisionalSegments,
   sessionMode,
   sessionStatus,
-  sessionTitle,
   sessionTranscriptItems,
   transcript,
   transcriptSearchQuery
@@ -409,22 +408,8 @@ export function TranscriptPane() {
 
   return (
     <section className="transcript-pane">
-      <header className="tr-head">
-        <div className="tr-head-spacer" aria-hidden="true" />
-        <div className="tr-title-wrap">
-          {/* Reference markup: a <button class="tr-title"> carrying the edit hint, not an <h1>.
-              Session titles are Phase 2, so the button is inert and disabled -- but the element,
-              its classes and the hint glyph are the reference's, because this pane is not an
-              exempt region and its geometry is measured against the reference directly. */}
-          <button type="button" className="tr-title" disabled>
-            {sessionTitle.value.trim() || "aiSight - LiveTranscribe"}
-            <span className="edit-hint" aria-hidden="true">
-              ✎
-            </span>
-          </button>
-        </div>
-      </header>
-
+      {/* #9: no title row -- the card starts at the speaker legend, leaving the height to the transcript.
+          The meeting title stays on its History card and in the top-bar title pill below desktop width. */}
       <div className="tr-legend" id="legend">
         <span className="tr-speakers-label">
           <span>Speakers</span>

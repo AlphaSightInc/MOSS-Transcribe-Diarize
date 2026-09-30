@@ -35,10 +35,12 @@ describe("TranscriptPane", () => {
     vi.useRealTimers();
   });
 
-  it("uses the product name for an untitled transcript", () => {
+  it("has no title row: the card starts at the speaker legend (#9)", () => {
     act(() => render(<TranscriptPane />, root));
-    expect(root.querySelector(".tr-title")?.textContent).toContain("aiSight - LiveTranscribe");
-    expect(root.querySelector(".tr-title")?.textContent).not.toContain("MOSS");
+    expect(root.querySelector(".tr-head, .tr-title")).toBeNull();
+    expect(root.querySelector(".transcript-pane")?.firstElementChild?.id).toBe("legend");
+    expect(root.textContent).not.toContain("aiSight - LiveTranscribe");
+    expect(root.textContent).not.toContain("MOSS");
   });
 
   it("disables passage correction while clean-up runs with a tooltip and no status text", () => {
