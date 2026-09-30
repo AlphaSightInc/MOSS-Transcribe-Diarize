@@ -176,7 +176,7 @@ describe("MeetingHistory", () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
     const running = meeting({ id: "refining", refinement_state: "running",
       transcript: { segments: [{ id: "first", start: 0, end: 1, speaker: "Alex", text: "Live words" }] } });
-    const done = meeting({ ...running, refinement_state: "done", transcript_version: 2,
+    const done = meeting({ ...running, refinement_state: "done", transcript_version: 2, refined_version: 2,
       transcript: { segments: [{ id: "second", start: 0, end: 1, speaker: "Named Alex", text: "Improved words" }] } });
     let detailReads = 0;
     const fetcher = vi.fn(async (url: string) => url === "/api/meetings"
@@ -207,7 +207,7 @@ describe("MeetingHistory", () => {
     settings.summary.apiKey = "key";
     saveAppSettings(settings);
     const running = meeting({ id: "refining", refinement_state: "running" });
-    const done = meeting({ ...running, refinement_state: "done", transcript_version: 2,
+    const done = meeting({ ...running, refinement_state: "done", transcript_version: 2, refined_version: 2,
       transcript: { segments: [{ id: "improved", start: 0, end: 1, speaker: "Alex", text: "Improved words" }] } });
     const other = meeting({ id: "other", title: "Other meeting" });
     const oldSummary = { state: "current", attempt_id: "old", source_version: 1,

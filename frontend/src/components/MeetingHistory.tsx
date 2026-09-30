@@ -23,7 +23,7 @@ import {
 } from "../lib/meetingEvents";
 import { summaryApi } from "../lib/finalSummary";
 import { loadAppSettings } from "../lib/settings";
-import { finalizeMeetingSummary } from "../lib/summaryRequests";
+import { finalizeMeetingSummary, summaryPredatesRefinement } from "../lib/summaryRequests";
 import {
   resetSessionState,
   sessionId,
@@ -133,8 +133,7 @@ export function MeetingHistory() {
               if (summaryRegenerated.current.has(key)) return;
               summaryRegenerated.current.add(key);
               const artifact = await summaryApi(id);
-              if (artifact && artifact.source_version < next.transcript_version &&
-                  loadAppSettings().summary.vendor === "gemini") {
+              if (summaryPredatesRefinement(next, artifact) && loadAppSettings().summary.vendor === "gemini") {
                 await finalizeMeetingSummary(next);
               }
             }

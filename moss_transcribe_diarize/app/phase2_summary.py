@@ -10,7 +10,7 @@ from typing import Any
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from .phase2 import AccountRevoked, MeetingHandle, _now_ms
+from .phase2 import AccountRevoked, MeetingHandle, _now_ms, _refined_version
 from .gemini_api_key import gemini_api_key
 
 ACTIVE = {"queued", "generating", "retry_wait"}
@@ -87,9 +87,10 @@ class MeetingSummaries:
         # Called inside the store's serialized read/mutation, never nested locks.
         account, generation = self.handle.owner_key
         cursor = await self.store._connection.execute(
-            """SELECT m.status,t.version,t.document_json FROM meetings m
+            """SELECT m.status,t.version,t.document_json,o.notice FROM meetings m
             JOIN accounts a ON a.account_id=m.account_id AND a.enabled=1 AND a.authority_generation=?
             LEFT JOIN meeting_transcripts t ON t.account_id=m.account_id AND t.meeting_id=m.meeting_id
+            LEFT JOIN meeting_outcomes o ON o.account_id=m.account_id AND o.meeting_id=m.meeting_id
             WHERE m.account_id=? AND m.meeting_id=?""",
             (generation, account, self.handle.meeting_id),
         )
@@ -158,7 +159,10 @@ class MeetingSummaries:
             value = await self._read()
             if value is None or value["attempt_id"] != attempt_id or value["state"] not in ACTIVE:
                 raise SummaryConflict("Summary attempt is no longer active.")
-            if source["status"] != "completed" or source["version"] != value["source_version"]:
+            # D1 (issue #15): only a clean-up result outdates an attempt. A rename or passage
+            # correction meanwhile bumps the version but keeps the words it summarized.
+            refined = _refined_version(source["notice"])
+            if source["status"] != "completed" or (refined is not None and refined > value["source_version"]):
                 value.update(state="failed", error_code="source_changed")
                 await self._write(value)
                 source_changed = True

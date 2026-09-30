@@ -74,6 +74,14 @@ export function externalSettings(settings: AppSettings): SummarySettings {
     timeoutSeconds: settings.summary.timeoutSeconds, prompt: settings.summary.prompt };
 }
 
+/** D1 (issue #15): only the post-Stop clean-up outdates a saved summary. A speaker rename
+ *  or passage correction bumps the version too, but Refresh is the user's choice there. */
+export function summaryPredatesRefinement(meeting: Meeting, artifact: SummaryArtifact | null): boolean {
+  return meeting.refinement_state === "done" && meeting.refined_version !== undefined &&
+    artifact != null && ["current", "failed", "cancelled"].includes(artifact.state) &&
+    artifact.source_version < meeting.refined_version;
+}
+
 /** Settings are read when called, so a key or vendor entered after Start applies. */
 export async function finalizeMeetingSummary(meeting: Meeting, settings = loadAppSettings()): Promise<void> {
   if (meeting.status !== "completed" || settings.summary.vendor === "off") return;

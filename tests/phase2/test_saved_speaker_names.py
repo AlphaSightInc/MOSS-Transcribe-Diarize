@@ -13,7 +13,8 @@ from types import SimpleNamespace
 
 from fastapi.testclient import TestClient
 
-from moss_transcribe_diarize.app.phase2 import REFINEMENT_RUNNING_MARKER, create_phase2_app
+from moss_transcribe_diarize.app.phase2 import (REFINEMENT_DONE_MARKER, REFINEMENT_RUNNING_MARKER,
+                                             create_phase2_app)
 from moss_transcribe_diarize.app.phase2_file import file_transcript_document
 from moss_transcribe_diarize.app.phase2_live import _transcript_document
 
@@ -92,3 +93,42 @@ def test_file_transcript_saves_default_names_and_keeps_the_decoder_token_as_iden
         "[0][S02]first voice[1][1][S01]second voice[2][2][S00]nobody known[3][3][S02]again[4]")
     assert [(s.get("speaker_entity_id"), s["speaker"]) for s in document["segments"]] == [
         ("S02", "Speaker 1"), ("S01", "Speaker 2"), (None, "S00"), ("S02", "Speaker 1")]
+
+
+def test_meeting_records_the_version_its_clean_up_produced_and_renames_keep_it(tmp_path: Path):
+    """D1 (issue #15): a rename bumps the transcript version but is not a new clean-up
+    result, so a summary made after the clean-up must not look stale."""
+    first = _transcript_document(_snapshot(["speaker-0001", "speaker-0002"]), {})
+    refined = _transcript_document(_snapshot(["speaker-0001", "speaker-0002", "speaker-0001"]), {})
+    app = create_phase2_app(database_path=tmp_path / "db")
+    with TestClient(app, base_url="https://moss.test") as client:
+        client.post("/api/workspace/bootstrap")
+        credential = client.cookies.get("__Host-moss_session")
+
+        async def seed(notice):
+            store = app.state.phase2_store
+            account = await store.account_for_session(credential)
+            handle = await store.workspace(account).create_meeting("live")
+            await handle.finish_with_transcript(first, "completed", notice=notice)
+            return handle
+
+        handle = client.portal.call(seed, REFINEMENT_RUNNING_MARKER)
+        path = f"/api/meetings/{handle.meeting_id}"
+        assert "refined_version" not in client.get(path).json()
+        assert client.portal.call(handle.settle_refinement, refined) == 2
+        detail = client.get(path).json()
+        assert (detail["refinement_state"], detail["refined_version"], detail["transcript_version"]) == ("done", 2, 2)
+        assert "notice" not in detail and detail["needs_review"] is False
+        named = client.put(f"{path}/speakers/speaker-0001/name",
+                           json={"label": "Alex", "save_voiceprint": False})
+        assert named.status_code == 200, named.text
+        detail = client.get(path).json()
+        assert (detail["refinement_state"], detail["refined_version"], detail["transcript_version"]) == ("done", 2, 3)
+        listed = client.get("/api/meetings").json()["meetings"][0]
+        assert (listed["refined_version"], listed["transcript_version"]) == (2, 3)
+
+        # A clean-up saved before versions were recorded stays "done", version unknown.
+        legacy = client.portal.call(seed, REFINEMENT_DONE_MARKER)
+        detail = client.get(f"/api/meetings/{legacy.meeting_id}").json()
+        assert detail["refinement_state"] == "done" and "refined_version" not in detail
+        assert "notice" not in detail

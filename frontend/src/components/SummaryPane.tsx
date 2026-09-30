@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { openMeeting, type Meeting } from "../api/meetings";
 import { summaryApi, SUMMARY_CHANGED, type SummaryArtifact, type SummaryDocument } from "../lib/finalSummary";
 import { createRollingLoop, finalizeMeetingSummary, requestLiveSummary, SummaryRequestError,
-  summaryFailureReason, type LiveSummaryResponse } from "../lib/summaryRequests";
+  summaryFailureReason, summaryPredatesRefinement, type LiveSummaryResponse } from "../lib/summaryRequests";
 import { loadAppSettings, SETTINGS_CHANGED, type AppSettings } from "../lib/settings";
 import { sessionId, sessionStatus } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
@@ -96,9 +96,7 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
     return () => { disposed = true; clearInterval(timer); document.removeEventListener(SUMMARY_CHANGED, changed); };
   }, [id, active]);
 
-  const summaryStale = meeting?.refinement_state === "done" && artifact != null &&
-    ["current", "failed", "cancelled"].includes(artifact.state) &&
-    artifact.source_version < meeting.transcript_version;
+  const summaryStale = meeting != null && summaryPredatesRefinement(meeting, artifact);
   useEffect(() => {
     if (!meeting || !summaryStale || settings.summary.vendor !== "gemini") return;
     const key = `${meeting.id}:${meeting.transcript_version}`;

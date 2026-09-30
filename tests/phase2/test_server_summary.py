@@ -355,6 +355,50 @@ def test_refinement_supersedes_held_summary_and_next_version_succeeds(
         assert calls == [TRANSCRIPT, improved]
 
 
+def test_speaker_renames_during_a_summary_after_clean_up_do_not_fail_it(tmp_path: Path):
+    """D1 (issue #15): a rename bumps the version but is no new clean-up result."""
+    entered, release = Event(), Event()
+
+    async def generate(document, *, model, language, prompt, api_key):
+        entered.set()
+        await asyncio.to_thread(release.wait, 5)
+        return RESULT, USAGE
+
+    app = create_phase2_app(database_path=tmp_path / "db", summary_generator=generate)
+    with TestClient(app, base_url="https://moss.test", raise_server_exceptions=False) as client:
+        client.post("/api/workspace/bootstrap")
+        credential = client.cookies.get("__Host-moss_session")
+        spoken = {"segments": [{"start": 0, "end": 4, "speaker": "Speaker 1",
+                                "speaker_entity_id": "speaker-0001", "text": "Owner A only."}]}
+
+        async def seed():
+            store = app.state.phase2_store
+            account = await store.account_for_session(credential)
+            handle = await store.workspace(account).create_meeting("live")
+            await handle.finish_with_transcript(spoken, "completed", notice=REFINEMENT_RUNNING_MARKER)
+            assert await handle.settle_refinement(spoken) == 2
+            return handle
+
+        handle = client.portal.call(seed)
+        path = f"/api/meetings/{handle.meeting_id}"
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            pending = pool.submit(client.post, f"{path}/summary/server",
+                                  json={"source_version": 2, "provider": PROVIDER})
+            try:
+                assert entered.wait(5)
+                for label in ("Alex", "Alexander", "Al"):
+                    named = client.put(f"{path}/speakers/speaker-0001/name",
+                                       json={"label": label, "save_voiceprint": False})
+                    assert named.status_code == 200, named.text
+            finally:
+                release.set()
+            response = pending.result(timeout=5)
+        assert response.status_code == 200, response.text
+        saved = client.get(f"{path}/summary").json()["summary"]
+        assert (saved["state"], saved["source_version"], saved["error_code"]) == ("current", 2, None)
+        assert client.get(path).json()["transcript_version"] == 5
+
+
 def test_server_cancel_between_start_and_generating_is_controlled(tmp_path: Path, monkeypatch):
     async def generate(_document, *, model, language, prompt, api_key):
         raise AssertionError("generator should not start after cancellation")

@@ -31,6 +31,8 @@ export interface Meeting {
   notice?: string;
   needs_review?: boolean;
   refinement_state?: RefinementState;
+  /** Transcript version the post-Stop clean-up produced; later renames do not change it. */
+  refined_version?: number;
   /** What the server is doing for an active File/URL meeting (absent once it ends). */
   file_stage?: "downloading" | "transcribing";
   id: string;
@@ -117,6 +119,7 @@ function parseMeeting(value: unknown): Meeting {
     ...(typeof value.notice === "string" ? { notice: value.notice } : {}),
     ...(typeof value.needs_review === "boolean" ? { needs_review: value.needs_review } : {}),
     ...(typeof value.refinement_state === "string" ? { refinement_state: value.refinement_state as RefinementState } : {}),
+    ...(typeof value.refined_version === "number" ? { refined_version: value.refined_version } : {}),
     ...(value.file_stage === "downloading" || value.file_stage === "transcribing" ? { file_stage: value.file_stage } : {}),
     mode: value.mode,
     title: value.title,

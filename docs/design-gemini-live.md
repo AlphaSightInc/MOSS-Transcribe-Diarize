@@ -143,7 +143,9 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   every Live publication meanwhile (issue #15, `prototypes/rename-latency/NOTES.md`).
 - **Server summaries** (ADR-0011/0013 amendments): `POST /api/meetings/{id}/summary/live` (ephemeral, owner-bound live transcript)
   and `/summary/server` (completed transcript at `source_version`, stored as `final_summary`), default `gemini-3.5-flash-lite`,
-  content-free `usage` in both responses.
+  content-free `usage` in both responses. A meeting records the version its post-Stop clean-up produced (`refined_version`);
+  only a summary older than that is regenerated automatically or failed as `source_changed`. Speaker renames and passage
+  corrections bump the version but do neither; Refresh stays the user's choice (D1, issue #15).
 - **Cost meter**: usage reports metered input, `metered_output_usd`, and a Google-rate output estimate ($0.002/min Transcribe,
   $0.004/min Live) separately; File/URL cost is an estimate from the terminal chunk plan (`prototypes/gemini-live/qfile/NOTES.md`;
   retries unmeasured). Whether Google bills Transcribe output tokens (usage reports 0) is unconfirmed (A5).

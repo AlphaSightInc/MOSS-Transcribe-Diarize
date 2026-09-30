@@ -240,7 +240,7 @@ it("regenerates an existing Gemini summary when refinement raises the transcript
   await act(async () => render(<SummaryPane hidden={false} />, root));
   await vi.waitFor(() => expect(root.textContent).toContain("Old summary"));
   await act(async () => { selectedSummaryMeeting.value = { ...selectedSummaryMeeting.value!,
-    transcript_version: 2, refinement_state: "done" }; });
+    transcript_version: 2, refinement_state: "done", refined_version: 2 }; });
   await vi.waitFor(() => expect(fetcher.mock.calls.some(([url]) => url.endsWith("/summary/server"))).toBe(true));
   const body = JSON.parse(fetcher.mock.calls.find(([url]) => url.endsWith("/summary/server"))![1]!.body as string);
   expect(body.source_version).toBe(2);
@@ -264,7 +264,7 @@ it.each([
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "m"; sessionStatus.value = "closed";
   selectedSummaryMeeting.value = { id: "m", mode: "live", title: "Meeting", title_source: "automatic",
-    status: "completed", created_at_ms: Date.now(), transcript_version: 2, refinement_state: "done",
+    status: "completed", created_at_ms: Date.now(), transcript_version: 2, refinement_state: "done", refined_version: 2,
     transcript: { segments: [] }, audio: null };
   await act(async () => render(<SummaryPane hidden={false} />, root));
   await vi.waitFor(() => expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/summary/server"))).toHaveLength(1));
@@ -297,9 +297,30 @@ it("offers Update summary for a stale OpenAI-compatible artifact without sending
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "m"; sessionStatus.value = "closed";
   selectedSummaryMeeting.value = { id: "m", mode: "live", title: "Meeting", title_source: "automatic",
-    status: "completed", created_at_ms: Date.now(), transcript_version: 2, refinement_state: "done",
+    status: "completed", created_at_ms: Date.now(), transcript_version: 2, refinement_state: "done", refined_version: 2,
     transcript: { segments: [] }, audio: null };
   await act(async () => render(<SummaryPane hidden={false} />, root));
   await vi.waitFor(() => expect(refresh().textContent).toBe("Update summary"));
   expect(fetcher.mock.calls.some(([url]) => url.endsWith("/summary/server"))).toBe(false);
+});
+
+it.each([1, 3])("sends no summary request after %i speaker rename(s) of a cleaned-up meeting (D1, #15)", async renames => {
+  const current = { state: "current", attempt_id: "a", source_version: 2, artifact_version: 1, error_code: null,
+    document: { summary: "Clean-up summary", topics: [], details: [], speaker_background: [], data_references: [] } };
+  const fetcher = vi.fn(async (_url: string) => ({ ok: true, json: async () => ({ summary: current }) }));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "closed";
+  selectedSummaryMeeting.value = { id: "m", mode: "live", title: "Meeting", title_source: "automatic",
+    status: "completed", created_at_ms: Date.now(), transcript_version: 2, refinement_state: "done", refined_version: 2,
+    transcript: { segments: [] }, audio: null };
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await vi.waitFor(() => expect(root.textContent).toContain("Clean-up summary"));
+  for (let version = 3; version < 3 + renames; version += 1) {
+    // Each rename's history refresh delivers the same meeting at a higher version.
+    await act(async () => { selectedSummaryMeeting.value = { ...selectedSummaryMeeting.value!, transcript_version: version }; });
+  }
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 50)); });
+  expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/summary/server"))).toHaveLength(0);
+  expect(refresh().textContent).toBe("Refresh");
+  expect(root.textContent).not.toContain("Summary failed");
 });

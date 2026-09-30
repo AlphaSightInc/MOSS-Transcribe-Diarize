@@ -121,6 +121,8 @@ def _unavailable_meeting_audio() -> MeetingAudio:
 
 
 REFINEMENT_RUNNING_MARKER = "moss:refinement:running"
+# Stored as "<marker>:<version>": the transcript version the clean-up produced (D1, issue #15).
+# A saved summary is stale only if it predates that version; renames bump versions too.
 REFINEMENT_DONE_MARKER = "moss:refinement:done"
 REFINEMENT_FAILED_NOTICE = "Improvement unavailable — the live transcript was kept."
 
@@ -141,6 +143,7 @@ class Meeting:
     notice: str | None = None
     needs_review: bool = False
     refinement_state: str = "none"
+    refined_version: int | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -157,6 +160,7 @@ class Meeting:
             **({"notice": self.notice} if self.notice else {}),
             "needs_review": self.needs_review,
             "refinement_state": self.refinement_state,
+            **({"refined_version": self.refined_version} if self.refined_version is not None else {}),
         }
 
 
@@ -1472,8 +1476,8 @@ class Phase2Store:
             await self._connection.execute(
                 """UPDATE meeting_outcomes SET notice = ?
                    WHERE account_id = ? AND meeting_id = ?""",
-                (REFINEMENT_DONE_MARKER if document is not None else REFINEMENT_FAILED_NOTICE,
-                 account_id, meeting_id),
+                (f"{REFINEMENT_DONE_MARKER}:{version}" if document is not None
+                 else REFINEMENT_FAILED_NOTICE, account_id, meeting_id),
             )
             await self._connection.execute(
                 """UPDATE meetings SET updated_at_ms = ?
@@ -2751,16 +2755,25 @@ def _meeting_needs_review(
     )
 
 
+def _refined_version(stored_notice: str | None) -> int | None:
+    """The transcript version a finished clean-up produced, if it was recorded."""
+    marker, _, version = (stored_notice or "").rpartition(":")
+    return int(version) if marker == REFINEMENT_DONE_MARKER and version.isdigit() else None
+
+
 def _meeting_from_row(row: Any) -> Meeting:
     document_json = row["document_json"]
     status = str(row["status"])
     transcript = None if document_json is None else json.loads(document_json)
     stored_notice = row["notice"]
+    refined_version = _refined_version(stored_notice)
+    # A bare marker is a clean-up saved before its version was recorded.
+    done = stored_notice == REFINEMENT_DONE_MARKER or refined_version is not None
     refinement_state = ("failed" if stored_notice == REFINEMENT_RUNNING_MARKER else
-                        "done" if stored_notice == REFINEMENT_DONE_MARKER else
+                        "done" if done else
                         "failed" if stored_notice == REFINEMENT_FAILED_NOTICE else "none")
     notice = (REFINEMENT_FAILED_NOTICE if stored_notice == REFINEMENT_RUNNING_MARKER else
-              None if stored_notice == REFINEMENT_DONE_MARKER else stored_notice)
+              None if done else stored_notice)
     needs_review = _meeting_needs_review(
         status, transcript, row["failure_code"], notice
     )
@@ -2778,6 +2791,7 @@ def _meeting_from_row(row: Any) -> Meeting:
         audio=_meeting_audio_from_row(row),
         failure_code=row["failure_code"], failure_reason=row["failure_reason"], notice=notice,
         needs_review=needs_review, refinement_state=refinement_state,
+        refined_version=refined_version,
     )
 
 

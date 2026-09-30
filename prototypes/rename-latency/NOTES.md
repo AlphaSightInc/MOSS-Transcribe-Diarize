@@ -36,6 +36,8 @@ per minute of the speaker's speech) inside the request while holding the identit
 is ≤ 1.3%. Nothing re-transcribes audio. Separate frontend effect: the rename bumps the
 transcript version, and on a refined meeting `SummaryPane` then regenerates the Gemini summary
 (blank until done; a second rename fails the first attempt with "the transcript changed").
+Ruled D1 = O1 and fixed: the meeting records `refined_version`; only a summary older than it is
+regenerated or failed as `source_changed` (`SummaryPane.test.tsx`, `test_server_summary.py`).
 
 ## After (fingerprint after the answer, one at a time, outside the identity lock)
 
