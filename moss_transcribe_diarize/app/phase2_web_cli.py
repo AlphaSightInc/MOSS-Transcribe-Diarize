@@ -222,7 +222,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     from .gemini_long_final import LongFinalStitcher
     from .gemini_live_runtime import (GeminiLiveRuntime, GEMINI_CONTEXT_SECONDS,
                                       GEMINI_DEFAULT_ENGINE_SETTINGS,
-                                      GEMINI_DEFAULT_TRANSCRIPTION_MODEL,
+                                      GEMINI_DEFAULT_TRANSCRIPTION_MODEL, GEMINI_MAX_TAPE_BYTES,
                                       GEMINI_REFRESH_SECONDS, TRANSCRIPTION_VENDORS)
     from .gemini_provider import GeminiWord, TerminalTranscriber
     from .live_provider_bundle import LiveProviderBundleConfig, _bounds, _identity_encoder
@@ -232,7 +232,7 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
     bounds = replace(_bounds(config.bounds_config),
                      max_tape_bytes=max(int(config.bounds_config["max_tape_bytes"]),
-                                        60 * 60 * 16_000 * 2))
+                                        GEMINI_MAX_TAPE_BYTES))
     encoder = _identity_encoder(config, interval_workers=GEMINI_EMBEDDING_INTERVAL_WORKERS)
     policy = {"model": "gemini-3.5-transcribe",
               "window_max_seconds": GEMINI_WINDOW_LMAX_SECONDS,

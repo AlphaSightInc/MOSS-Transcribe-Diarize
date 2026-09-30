@@ -167,6 +167,14 @@ class GeminiTurnBridge:
 GeminiUpdate = GeminiPreview | GeminiBase | GeminiRolling | GeminiRelabel | GeminiTurnBridge
 
 GEMINI_REFINEMENT_TIMEOUT_SECONDS = 3600.0
+# The longest Live meeting whose audio is saved whole. Account's mixed stage is a file, so this
+# bounds disk, not memory: 12 h of 16 kHz PCM16 mono is 1.38 GB. Past it the stage stops
+# growing and the saved audio is partial; the meeting keeps recording.
+GEMINI_MAX_MEETING_SECONDS = 12 * 60 * 60
+GEMINI_MAX_TAPE_BYTES = GEMINI_MAX_MEETING_SECONDS * LIVE_SAMPLE_RATE * 2
+# The post-Stop pass holds whole lanes in memory: measured peak +1.6 GB RSS at 1 h and
+# +2.6 GB at 3 h of meeting (R4 issue #1). Longer meetings keep their live transcript.
+GEMINI_MAX_REFINEMENT_SECONDS = 4 * 60 * 60
 TRANSCRIPTION_VENDORS = ("gemini", "openai_compatible")
 GEMINI_DEFAULT_TRANSCRIPTION_MODEL = "gemini-3.5-transcribe"
 # Refresh = rolling stride, context = rolling window length. The 90 s floor is measured
@@ -372,12 +380,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         voiceprint_encoder: object | None = None,
     ) -> None:
         # The same bound governs our scratch tape and Account's canonical audio stage.
-        # PCM16 mono at 16 kHz takes 115.2 MB for the supported 60-minute meeting.
         self.descriptor = replace(
             descriptor, bounds=replace(
                 descriptor.bounds,
                 max_retained_samples=max(descriptor.bounds.max_retained_samples, 960_000),
-                max_tape_bytes=max(descriptor.bounds.max_tape_bytes or 0, 115_200_000),
+                max_tape_bytes=max(descriptor.bounds.max_tape_bytes or 0, GEMINI_MAX_TAPE_BYTES),
             ),
         )
         self._engine_factory = engine_factory
@@ -969,6 +976,12 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     state.session.note_finalization("unavailable")
                     self._record_event(state, "terminal_finalization_unavailable", {
                         "outcome": "unavailable", "reason": "complete_tape_unavailable"})
+                    self._release_tape(state)
+                elif (state.session.snapshot().accepted_samples
+                      > GEMINI_MAX_REFINEMENT_SECONDS * LIVE_SAMPLE_RATE):
+                    state.session.note_finalization("unavailable")
+                    self._record_event(state, "terminal_finalization_unavailable", {
+                        "outcome": "unavailable", "reason": "meeting_exceeds_refinement_bound"})
                     self._release_tape(state)
                 else:
                     state.session.note_finalization("running")

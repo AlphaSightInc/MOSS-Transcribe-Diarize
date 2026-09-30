@@ -72,6 +72,6 @@ MOSS_OPEN_WORKSPACE=1 PYTHONDONTWRITEBYTECODE=1 "$py" -m moss_transcribe_diarize
   --vllm-model OpenMOSS-Team/MOSS-Transcribe-Diarize \
   --vllm-timeout 1800 --file-work-root "$state/file-work" \
   --meeting-audio-root "$state/meeting-audio" \
-  --live-provider-manifest "$manifest" --live-helper-lease-seconds 30 \
+  --live-provider-manifest "$manifest" --live-helper-lease-seconds 120 \
   --host 127.0.0.1 --port "$port" --max-len 16384 --max-new-tokens 12000 \
   "${extra[@]}"

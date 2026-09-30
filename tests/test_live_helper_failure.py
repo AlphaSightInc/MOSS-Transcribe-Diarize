@@ -243,8 +243,12 @@ def recording_abort(sink: list):
 
 
 class FakeReleaseRegistry:
-    def __init__(self) -> None:
+    def __init__(self, presence: HelperPresenceRegistry | None = None) -> None:
         self.released: list[str] = []
+        self._presence = presence
+
+    def snapshot(self, session_id: str):
+        return None if self._presence is None else self._presence.snapshot(session_id)
 
     def release(self, session_id: str):
         self.released.append(session_id)
@@ -293,7 +297,7 @@ def test_helper_lease_expiry_expires_v2_aborts_mono_and_releases_registries_once
     timer = FakeTimer()
     v2_sessions = FakeV2Sessions()
     v2_mixers = FakeReleaseRegistry()
-    helper_presence = FakeReleaseRegistry()
+    helper_presence = FakeReleaseRegistry(presence)
     aborted: list[tuple[str, str, dict | None]] = []
     terminal_log = RecordingTerminalLog()
     coordinator = LiveHelperFailureCoordinator(
@@ -330,8 +334,42 @@ def test_helper_lease_expiry_expires_v2_aborts_mono_and_releases_registries_once
     # says outright that no lane reported a failure - a silent expiry and an expiry after
     # two failed lanes are different diagnoses.
     assert [record.line() for record in terminal_log.records] == [
-        "session=session-a reason=helper_lease_expired lanes=none"
+        "session=session-a reason=helper_lease_expired lanes=none last=capturing"
     ]
+
+
+def test_lease_expiry_names_what_the_last_heartbeat_said():
+    """Issue #1: three long meetings ended `helper_lease_expired lanes=none`, which cannot
+    tell a suspended AudioContext (the page said so, then went quiet) from a lost network
+    or a dead tab (the page said nothing). The last accepted heartbeat can."""
+
+    for payload, last in (
+        (None, "last=none"),
+        ({"state": "degraded", "code": "browser_audio_context_suspended"},
+         "last=degraded last.system=browser_audio_context_suspended "
+         "last.microphone=browser_audio_context_suspended"),
+    ):
+        presence = HelperPresenceRegistry(monotonic_ns=lambda: 100)
+        timer = FakeTimer()
+        terminal_log = RecordingTerminalLog()
+        coordinator = LiveHelperFailureCoordinator(
+            live_helper_lease_seconds=0.4,
+            timer=timer,
+            helper_presence=FakeReleaseRegistry(presence),
+            on_terminal=terminal_log,
+        )
+        if payload is None:
+            coordinator.arm("session-a")
+        else:
+            heartbeat = heartbeat_payload(state=payload["state"], lane_state=payload["state"])
+            for lane in heartbeat["lanes"].values():
+                lane["failure_code"] = payload["code"]
+            observe(coordinator, "session-a",
+                    presence.observe("session-a", HelperHeartbeat.from_dict(heartbeat)))
+        timer.scheduled[-1][1].fire()
+        assert [record.line() for record in terminal_log.records] == [
+            f"session=session-a reason=helper_lease_expired lanes=none {last}"
+        ]
 
 
 def test_helper_failed_and_all_lanes_failed_are_terminal_without_renewing_timer():

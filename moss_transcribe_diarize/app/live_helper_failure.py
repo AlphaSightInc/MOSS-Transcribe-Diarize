@@ -5,7 +5,7 @@ import inspect
 import logging
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from typing import Any, Callable, Mapping, Protocol
 
 from .live_helper_presence import HelperPresenceSnapshot
@@ -52,6 +52,14 @@ class _SessionReleaseRegistry(Protocol):
         ...
 
 
+class _HelperPresence(Protocol):
+    def snapshot(self, session_id: str) -> HelperPresenceSnapshot | None:
+        ...
+
+    def release(self, session_id: str) -> Any:
+        ...
+
+
 class _MonoAbort(Protocol):
     def __call__(
         self,
@@ -75,6 +83,11 @@ class LiveHelperTerminalRecord:
     session_id: str
     reason: str
     lane_failures: Mapping[str, str]
+    #: A lease expiry's only evidence: the state and lane codes of the last accepted
+    #: heartbeat ("none" if none arrived). A suspended AudioContext and a lost network
+    #: both end in silence; only this says which one the browser saw first.
+    last_state: str | None = None
+    last_lane_codes: Mapping[str, str] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -96,6 +109,9 @@ class LiveHelperTerminalRecord:
             parts.extend(f"lane.{lane}={code}" for lane, code in self.lane_failures.items())
         else:
             parts.append("lanes=none")
+        if self.last_state is not None:
+            parts.append(f"last={self.last_state}")
+            parts.extend(f"last.{lane}={code}" for lane, code in self.last_lane_codes.items())
         return " ".join(parts)
 
 
@@ -154,7 +170,7 @@ class LiveHelperFailureCoordinator:
         v2_sessions: _V2SessionRegistry | None = None,
         v2_mixers: _SessionReleaseRegistry | None = None,
         tapes: _SessionReleaseRegistry | None = None,
-        helper_presence: _SessionReleaseRegistry | None = None,
+        helper_presence: _HelperPresence | None = None,
         abort_mono: _MonoAbort | None = None,
         on_terminal: Callable[[LiveHelperTerminalRecord], None] | None = None,
     ) -> None:
@@ -321,7 +337,10 @@ class LiveHelperFailureCoordinator:
         reason: str,
         lane_failures: Mapping[LiveLane, str],
     ) -> None:
-        self._on_terminal(_terminal_record(session_id, reason, lane_failures))
+        record = _terminal_record(session_id, reason, lane_failures)
+        if reason == "helper_lease_expired" and self._helper_presence is not None:
+            record = _with_last_heartbeat(record, self._helper_presence.snapshot(session_id))
+        self._on_terminal(record)
 
     def _schedule_terminal_failure(self, session_id: str, reason: str) -> None:
         result = self._terminal_failure(session_id, reason)
@@ -390,6 +409,23 @@ def _terminal_record(
         # same line and the same detail.
         lane_failures={
             lane.value: lane_failures[lane] for lane in LiveLane if lane in lane_failures
+        },
+    )
+
+
+def _with_last_heartbeat(
+    record: LiveHelperTerminalRecord,
+    heartbeat: HelperPresenceSnapshot | None,
+) -> LiveHelperTerminalRecord:
+    if heartbeat is None:
+        return replace(record, last_state="none")
+    return replace(
+        record,
+        last_state=heartbeat.state,
+        last_lane_codes={
+            lane.value: heartbeat.lanes[lane.value].failure_code
+            for lane in LiveLane
+            if lane.value in heartbeat.lanes and heartbeat.lanes[lane.value].failure_code
         },
     )
 

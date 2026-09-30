@@ -182,6 +182,22 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   json-only models (e.g. `gpt-4o-transcribe`) give one speaker per request and lose/duplicate up to 11%/13% of words at live
   refresh boundaries. A short-segment attach rule was rejected (≤ +1 point). Real model quality is unmeasured.
 
+## Round 4: long meetings and transient disconnects (issue #1, 2026-09-30)
+
+- **Incident.** Three back-to-back meetings on ga0-rog-laptop ran 45.5, 55.2 and 45.5 min and each ended
+  `helper_lease_expired lanes=none`: frames and heartbeats stopped at the same instant, the server interrupted 30 s
+  later. No server bound, runtime failure or host Wi-Fi event coincided; the browser-side trigger is unmeasured.
+- **Saved audio 1 h → 12 h** (`GEMINI_MAX_TAPE_BYTES`, disk-bound; Account's stage is a file). Time-compressed through the
+  real phase-2 stack, a 200-min meeting saved only 60 min (`audio.partial.mp3`) and skipped the post-Stop pass
+  (`complete_tape_unavailable`); with the fix it saves all 200 min.
+- **Post-Stop pass ≤ 4 h** (`GEMINI_MAX_REFINEMENT_SECONDS`, RAM-bound). Real composition + WeSpeaker ONNX, instant fake
+  provider: 35.6 s / +1.6 GB peak RSS at 1 h, 113.5 s / +2.6 GB at 3 h (provider latency excluded). Longer meetings keep
+  the live transcript (`meeting_exceeds_refinement_bound`).
+- **Transport.** Capture POSTs are abandoned after 10 s and replayed, so a hung request no longer pins a lane and the
+  heartbeat; the Gemini launch scripts' helper lease is 120 s (was 30 s); a lease expiry's journal line names the last
+  heartbeat (`last=<state> last.<lane>=<code>`, or `last=none`).
+- **Growth, not a limit.** Snapshot GET grows linearly (766 KB, 29 ms at 200 min / 1,200 rows); frame POST cost is flat.
+
 ## Measured envelope and custody
 
 Figures below name their code/fixture population. They do not combine different
