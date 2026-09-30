@@ -6,6 +6,7 @@ import {
   type CaptureLane,
   type PreSessionCaptureFailure
 } from "../capture/captureClient";
+import { chooseMicrophone, microphoneOptions } from "../capture/microphoneChoice";
 import { captureMeetingId, resetSessionState, sessionError, sessionStartedAt, sessionStatusLine, sessionTitle } from "../state/session";
 import { bindFileUpload } from "../lib/fileUpload";
 import { groupSegmentsIntoTurns } from "../lib/mergeTranscript";
@@ -67,7 +68,10 @@ export function ControlPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [audioRoute, setAudioRoute] = useState<AudioRoute>("speakers");
   const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
+  // The person's dropdown pick ("" = none yet) and the device the running lane opened.
   const [microphoneId, setMicrophoneId] = useState("");
+  const [openMicrophoneId, setOpenMicrophoneId] = useState("");
+  const openMicrophone = useRef("");
   const [micMuted, setMicMuted] = useState(false);
   const [phase, setPhase] = useState<CapturePhase>("idle");
   const [connected, setConnected] = useState({ microphone: false, system: false });
@@ -85,6 +89,11 @@ export function ControlPanel() {
   const transition = (next: CapturePhase) => {
     phaseRef.current = next;
     setPhase(next);
+  };
+
+  const microphoneOpened = (deviceId: string) => {
+    openMicrophone.current = deviceId;
+    setOpenMicrophoneId(deviceId);
   };
 
   const updateMeter = (lane: CaptureLane, rms: number) => {
@@ -178,9 +187,12 @@ export function ControlPanel() {
     });
     clientRef.current = client;
     try {
+      const devices = await refreshMicrophones();
       await client.prepare();
       if (clientRef.current !== client) { await client.close(); return; }
-      await client.startMicrophone(audioRoute === "speakers", microphoneId || undefined);
+      // Unnamed only while Chrome hides the devices; the client then names the device itself.
+      microphoneOpened(await client.startMicrophone(audioRoute === "speakers",
+        chooseMicrophone(devices, microphoneId) ?? undefined));
       void refreshMicrophones();
       if (clientRef.current !== client) { await client.close(); return; }
       setConnected(current => ({ ...current, microphone: true }));
@@ -218,29 +230,34 @@ export function ControlPanel() {
     }
   };
 
-  const refreshMicrophones = async () => {
+  const refreshMicrophones = async (): Promise<MediaDeviceInfo[]> => {
     try {
-      const devices = await navigator.mediaDevices.enumerateDevices?.();
-      if (devices) setMicrophones(devices.filter(device => device.kind === "audioinput"));
-    } catch { /* Browser device labels may require microphone permission. */ }
+      const inputs = ((await navigator.mediaDevices?.enumerateDevices?.()) ?? [])
+        .filter(device => device.kind === "audioinput");
+      setMicrophones(inputs);
+      return inputs;
+    } catch { return []; }
   };
 
-  // A dropdown choice replaces the running microphone in place (same lane, next device epoch).
-  const switchMicrophone = async (deviceId: string) => {
+  // A dropdown pick, or the system default moving during setup, replaces the running microphone
+  // in place (same lane, next device epoch).
+  const switchMicrophone = async (deviceId: string, picked: boolean) => {
     const client = clientRef.current;
     if (!client || phase === "stopping") return;
     const previousId = microphoneId;
     try {
       const stream = await navigator.mediaDevices.getUserMedia(
-        microphoneConstraints(audioRoute === "speakers", deviceId || undefined));
+        microphoneConstraints(audioRoute === "speakers", deviceId));
       metersRef.current = { ...metersRef.current, microphone: 0 };
       setMeters(metersRef.current);
       await client.replaceLane("microphone", stream, stream.getTracks());
       setConnected(current => ({ ...current, microphone: true }));
-      setMicrophoneId(deviceId);
+      microphoneOpened(deviceId);
       void refreshMicrophones();
       if (phaseRef.current === "active") setMessage("");
     } catch (error) {
+      // An automatic switch that fails leaves the running microphone as it was.
+      if (!picked) return;
       if (phaseRef.current === "active") {
         // The running microphone is untouched, so the dropdown goes back to it.
         setMicrophoneId(previousId);
@@ -251,6 +268,18 @@ export function ControlPanel() {
       transition("error");
     }
   };
+
+  // Plugging headphones in or out moves the system default. Setup follows it; a recording keeps
+  // its microphone until the person picks another, so nothing changes under them mid-meeting.
+  const followMicrophones = async () => {
+    const devices = await refreshMicrophones();
+    const settingUp = (phaseRef.current === "configuring" && !starting) || phaseRef.current === "ready";
+    if (!clientRef.current || !connected.microphone || !settingUp) return;
+    const next = chooseMicrophone(devices, microphoneId, openMicrophone.current);
+    if (next && next !== openMicrophone.current) await switchMicrophone(next, false);
+  };
+  const deviceChange = useRef(followMicrophones);
+  deviceChange.current = followMicrophones;
 
   // Muting keeps the lane running and sends silence; the server keeps accounting the time.
   const toggleMicMute = () => {
@@ -412,6 +441,16 @@ export function ControlPanel() {
     return bindFileUpload();
   }, [mode]);
 
+  useEffect(() => {
+    // Device changes arrive in bursts; each follow runs after the previous one settles.
+    let follows = Promise.resolve();
+    const onDeviceChange = () => { follows = follows.then(() => deviceChange.current()).catch(() => undefined); };
+    const devices = navigator.mediaDevices;
+    void refreshMicrophones();
+    devices?.addEventListener?.("devicechange", onDeviceChange);
+    return () => devices?.removeEventListener?.("devicechange", onDeviceChange);
+  }, []);
+
   async function saveExport(): Promise<void> {
     const id = sessionId.value;
     if (!id) return;
@@ -461,6 +500,10 @@ export function ControlPanel() {
     : meters.microphone <= 0 ? "Microphone has no sound yet"
       : meters.system <= 0 ? "Shared audio has no sound yet" : undefined;
   const startTitle = canStart ? undefined : silentSources;
+
+  // The dropdown names the device that is open, or the one Enable microphone will open.
+  const microphoneChoices = microphoneOptions(microphones);
+  const shownMicrophoneId = connected.microphone ? openMicrophoneId : chooseMicrophone(microphones, microphoneId) ?? "";
 
   const setupLines = [setupErrors.microphone, setupErrors.system].filter(Boolean);
   const statusLine = setupLines.length > 0 ? setupLines.join(" ")
@@ -514,18 +557,20 @@ export function ControlPanel() {
           </section>
 
           <section className="control-section">
-            <label className="label" htmlFor="microphone-select">Microphone</label>
-            <div className="field">
-              <select id="microphone-select" aria-label="Microphone" value={microphoneId}
-                disabled={reattached || phase === "stopping"}
-                onFocus={() => void refreshMicrophones()}
-                onChange={event => { const id = event.currentTarget.value; setMicrophoneId(id);
-                  if (clientRef.current && connected.microphone) void switchMicrophone(id); }}>
-                <option value="">System default</option>
-                {microphones.map((device, index) => <option key={device.deviceId} value={device.deviceId}>
-                  {device.label || `Microphone ${index + 1}`}</option>)}
-              </select>
-            </div>
+            {/* Chrome names no microphone before permission, so there is nothing to pick until then. */}
+            {microphoneChoices.length > 0 ? <>
+              <label className="label" htmlFor="microphone-select">Microphone</label>
+              <div className="field">
+                <select id="microphone-select" aria-label="Microphone" value={shownMicrophoneId}
+                  disabled={reattached || phase === "stopping"}
+                  onFocus={() => void refreshMicrophones()}
+                  onChange={event => { const id = event.currentTarget.value; setMicrophoneId(id);
+                    if (clientRef.current && connected.microphone) void switchMicrophone(id, true); }}>
+                  {microphoneChoices.map(device => <option key={device.deviceId} value={device.deviceId}>
+                    {device.label}</option>)}
+                </select>
+              </div>
+            </> : null}
 
             <label className="label" htmlFor="audio-route">Listening with</label>
             <div className="field">

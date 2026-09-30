@@ -78,8 +78,9 @@ vi.mock("../capture/captureClient", async importOriginal => ({
 
     prepare = vi.fn().mockResolvedValue(undefined);
     startMicrophone = vi.fn(async (...args: unknown[]) => {
-      mocks.startMicrophone(...args);
+      const opened = mocks.startMicrophone(...args);
       this.options.onMeter?.("microphone", 0.5);
+      return opened ?? args[1] ?? "default"; // the device the real client opened
     });
     requestDisplayMedia = vi.fn().mockResolvedValue({ getTracks: () => [] });
     attachDisplayMedia = vi.fn(async () => this.options.onMeter?.("system", 0.5));
@@ -478,7 +479,8 @@ describe("ControlPanel reattach", () => {
 
     async function connectBoth() {
       await act(async () => render(<ControlPanel />, root));
-      await act(async () => { select().dispatchEvent(new FocusEvent("focus")); });
+      // The dropdown appears once Chrome names the microphones.
+      await vi.waitFor(() => expect(select()).toBeTruthy());
       await choose("desk");
       await act(async () => button("Enable microphone")!.click());
       await vi.waitFor(() => expect(button("Share audio")).toBeTruthy());
@@ -568,6 +570,100 @@ describe("ControlPanel reattach", () => {
       expect(root.querySelector('[role="status"]')?.textContent).toBe(remedy);
       await act(async () => button("Mute mic")!.click());
       expect(root.querySelector('[role="status"]')).toBeNull();
+    });
+  });
+
+  describe("microphone choice (issue #2)", () => {
+    // Chrome on macOS, measured shapes: a "default" alias labelled after its device and sharing its group id.
+    type Device = { kind: "audioinput"; deviceId: string; groupId: string; label: string };
+    const device = (deviceId: string, label: string): Device => ({ kind: "audioinput", deviceId, groupId: `g-${deviceId}`, label });
+    const defaultIs = (target: Device): Device => ({ ...target, deviceId: "default", label: `Default - ${target.label}` });
+    const iphone = device("phone", "Gao’s iPhone Microphone");
+    const builtIn = device("builtin", "MacBook Pro Microphone (Built-in)");
+    const airPods = device("airpods", "AirPods (Bluetooth)");
+    const hidden = [{ kind: "audioinput", deviceId: "", groupId: "", label: "" }];
+    const replacement = { getTracks: () => ["replacement-track"] };
+    const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
+    const select = () => root.querySelector<HTMLSelectElement>("#microphone-select");
+    const optionLabels = () => [...select()!.options].map(option => option.textContent);
+    const shownLabel = () => select()!.selectedOptions[0]?.textContent;
+    let devices: unknown[];
+    let media: EventTarget & { getUserMedia: ReturnType<typeof vi.fn>; enumerateDevices: ReturnType<typeof vi.fn> };
+
+    beforeEach(() => {
+      media = Object.assign(new EventTarget(), {
+        getUserMedia: vi.fn(async () => replacement),
+        enumerateDevices: vi.fn(async () => devices)
+      });
+      vi.stubGlobal("navigator", { mediaDevices: media });
+    });
+
+    async function plug(next: Device[]) {
+      devices = next;
+      await act(async () => { media.dispatchEvent(new Event("devicechange")); });
+    }
+
+    it("hides the dropdown until Chrome names the microphones, then shows the one opened, not an iPhone default", async () => {
+      devices = hidden;
+      await act(async () => render(<ControlPanel />, root));
+      expect(select()).toBeNull();
+      expect(root.textContent).not.toContain("System default");
+
+      // The real client reveals the devices with Chrome's default alias and opens the rule's choice.
+      mocks.startMicrophone.mockImplementationOnce(() => {
+        devices = [defaultIs(iphone), iphone, builtIn];
+        return "builtin";
+      });
+      await act(async () => button("Enable microphone")!.click());
+      await vi.waitFor(() => expect(mocks.startMicrophone).toHaveBeenCalledWith(true, undefined));
+      await vi.waitFor(() => expect(select()).not.toBeNull());
+      expect(select()!.value).toBe("builtin");
+      expect(shownLabel()).toBe("MacBook Pro Microphone (Built-in)");
+      expect(optionLabels()).toEqual(["Gao’s iPhone Microphone", "MacBook Pro Microphone (Built-in)"]);
+    });
+
+    it("names the device Enable will open once permission is known, and honours an explicit iPhone pick", async () => {
+      devices = [defaultIs(iphone), iphone, builtIn, airPods];
+      await act(async () => render(<ControlPanel />, root));
+      await vi.waitFor(() => expect(select()).not.toBeNull());
+      expect(shownLabel()).toBe("AirPods (Bluetooth)");
+
+      await act(async () => {
+        select()!.value = "phone";
+        select()!.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      await act(async () => button("Enable microphone")!.click());
+      await vi.waitFor(() => expect(mocks.startMicrophone).toHaveBeenCalledWith(true, "phone"));
+      await vi.waitFor(() => expect(select()!.value).toBe("phone"));
+    });
+
+    it("follows the system default while setting up, ignores an iPhone taking it, and never switches a recording", async () => {
+      devices = [defaultIs(builtIn), builtIn, iphone];
+      await act(async () => render(<ControlPanel />, root));
+      await act(async () => button("Enable microphone")!.click());
+      await vi.waitFor(() => expect(mocks.startMicrophone).toHaveBeenCalledWith(true, "builtin"));
+      await vi.waitFor(() => expect(button("Share audio")).toBeTruthy());
+      await act(async () => button("Share audio")!.click());
+      await vi.waitFor(() => expect(button("Start recording")?.disabled).toBe(false));
+
+      await plug([defaultIs(iphone), builtIn, iphone, airPods]);
+      await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+      expect(media.getUserMedia).not.toHaveBeenCalled();
+      expect(select()!.value).toBe("builtin");
+
+      await plug([defaultIs(airPods), builtIn, iphone, airPods]);
+      await vi.waitFor(() => expect(mocks.replaceLane).toHaveBeenCalledWith("microphone", replacement, ["replacement-track"]));
+      expect(media.getUserMedia).toHaveBeenCalledWith({ audio: { echoCancellation: true, noiseSuppression: false,
+        autoGainControl: false, deviceId: { exact: "airpods" } }, video: false });
+      await vi.waitFor(() => expect(select()!.value).toBe("airpods"));
+
+      act(() => mocks.captureOptions!.onMeter!("microphone", 0.5));
+      await act(async () => button("Start recording")!.click());
+      expect(root.querySelector('[data-capture-phase="active"]')).not.toBeNull();
+      await plug([defaultIs(builtIn), builtIn, iphone]);
+      await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+      expect(mocks.replaceLane).toHaveBeenCalledOnce();
+      expect(media.getUserMedia).toHaveBeenCalledOnce();
     });
   });
 });
