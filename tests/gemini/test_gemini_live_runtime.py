@@ -286,7 +286,7 @@ def test_cost_and_veto_counters_are_content_free_and_per_lane(tmp_path):
     rt.record_engine_call("one", kind="system_rolling", audio_seconds_sent=90,
                           cost_usd=.01, output_cost_estimate_usd=.003, veto_fired=2)
     rt.record_engine_call("one", kind="microphone_gate", count_call=False,
-                          mic_echo_dropped_by_voice=3)
+                          mic_echo_dropped_by_voice=3, unanchored_window_dropped_words=4)
     diagnostic = rt.engine_diagnostics("one")
     assert diagnostic["cost_usd"] == .01
     assert diagnostic["output_cost_estimate_usd"] == .003
@@ -294,6 +294,8 @@ def test_cost_and_veto_counters_are_content_free_and_per_lane(tmp_path):
     assert diagnostic["mic_echo_dropped_by_voice"] == 3
     assert diagnostic["lanes"]["system"]["veto_fired"] == 2
     assert diagnostic["lanes"]["microphone"]["mic_echo_dropped_by_voice"] == 3
+    assert diagnostic["mic_words_dropped_unanchored"] == 4
+    assert diagnostic["lanes"]["microphone"]["mic_words_dropped_unanchored"] == 4
 
 
 def test_create_frame_preview_and_diarized_commit_are_poller_shaped(tmp_path):

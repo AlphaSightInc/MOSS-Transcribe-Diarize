@@ -263,7 +263,8 @@ def test_microphone_gate_requires_acoustic_and_text_admission_with_separate_coun
     ledger.observe((GeminiWord("same", "s", 0, 16000),), 16000)
     counts = []
     gate = MicrophoneWordGate(PassVoice(), ledger, Acoustic(), counts.append)
-    words = tuple(GeminiWord(text, "m", 0, 16000)
+    # Two seconds of attributed speech: the live window has local speech context.
+    words = tuple(GeminiWord(text, "m", 0, 32000)
                   for text in ("echo", "same", "local"))
     assert [w.text for w in gate.filter(bytes(32000), words)] == ["local"]
     assert counts == [{"acoustic_gate_dropped_words": 1, "text_guard_dropped_words": 1}]
@@ -287,7 +288,7 @@ def test_microphone_word_gate_reports_voice_echo_drops_after_existing_guards():
     gate = MicrophoneWordGate(PassVoice(), ledger, report_drops=counts.append,
                               voice_guard=voice, embedding_source=embed)
     words = (GeminiWord("different", "echo", 0, 8000),
-             GeminiWord("local", "C", 0, 8000))
+             GeminiWord("local", "C", 0, 32000))
     assert gate.filter(bytes(32000), words) == (words[1],)
     assert counts == [{"acoustic_gate_dropped_words": 0,
                        "text_guard_dropped_words": 0,
@@ -302,10 +303,65 @@ def test_microphone_gate_keeps_single_matching_word_from_distinct_local_voice():
     ledger.observe(system, 16000)
     voice = CrossLaneVoiceEchoGuard(threshold=.60)
     voice.observe_system(system, {"A": ((1., 0.), 3.)}, frontier=16000)
-    mic = (GeminiWord("shared", "C", 0, 16000),)
+    mic = (GeminiWord("shared", "C", 0, 32000),)
     gate = MicrophoneWordGate(PassVoice(), ledger, voice_guard=voice,
                               embedding_source=lambda pcm, start, words: {"C": ((0., 1.), 3.)})
     assert gate.filter(bytes(32000), mic) == mic
+
+
+def _passing_microphone_gate(counts):
+    class PassVoice:
+        def filter(self, pcm, words, *, offset_sample=0): return tuple(words)
+    ledger = SystemWordLedger()
+    ledger.observe((), 30*16000)
+    return MicrophoneWordGate(PassVoice(), ledger, report_drops=counts.append)
+
+
+def test_microphone_live_window_without_local_speech_context_publishes_no_words():
+    # Measured (prototypes/gemini-live/mic-hallucination): in a 30 s mic window holding only
+    # room noise or echo residue, Gemini returns isolated short words, often in another
+    # language, that pass every echo and voice gate.
+    counts = []
+    gate = _passing_microphone_gate(counts)
+    noise_words = (GeminiWord("Oui.", "spk:0", 16000, 17600),
+                   GeminiWord("はい。", "spk:0", 80000, 81600),
+                   GeminiWord("Mamma", "spk:1", 160000, 161600),
+                   GeminiWord("mia!", "spk:1", 161600, 163200),
+                   GeminiWord("好。", "spk:0", 240000, 241600))
+    assert gate.filter(bytes(30*32000), noise_words) == ()
+    assert counts == [{"acoustic_gate_dropped_words": 0, "text_guard_dropped_words": 0,
+                       "unanchored_window_dropped_words": 5}]
+
+
+def test_local_speech_context_keeps_short_and_mixed_language_words_in_the_window():
+    counts = []
+    gate = _passing_microphone_gate(counts)
+    # A 2.4 s Mandarin run (per-character words, as Gemini returns them) anchors the
+    # window; an English backchannel and a code-switched term 10 s later are kept.
+    sentence = tuple(GeminiWord(ch, "spk:0", 16000 + i*3200, 16000 + (i+1)*3200)
+                     for i, ch in enumerate("我觉得这个方案可以先上线。"[:12]))
+    later = (GeminiWord("OK.", "spk:0", 200000, 204800),
+             GeminiWord("API", "spk:0", 300000, 304800))
+    kept = gate.filter(bytes(30*32000), sentence + later)
+    assert kept == sentence + later
+    assert counts == [{"acoustic_gate_dropped_words": 0, "text_guard_dropped_words": 0}]
+
+
+def test_short_joined_words_under_two_seconds_are_not_local_speech_context():
+    counts = []
+    gate = _passing_microphone_gate(counts)
+    # Three words 0.5 s apart span 1.9 s: the voiceprint evidence needs 2 s joined by <= 0.6 s.
+    words = tuple(GeminiWord(text, "spk:0", 16000 + i*12800, 16000 + i*12800 + 4800)
+                  for i, text in enumerate(("stop", "two", "say")))
+    assert gate.filter(bytes(30*32000), words) == ()
+    assert counts[-1]["unanchored_window_dropped_words"] == 3
+
+
+def test_terminal_microphone_filter_keeps_isolated_words_for_the_saved_transcript():
+    # The whole-recording pass has the lane's full speech context; a lone backchannel stays.
+    gate = _passing_microphone_gate([])
+    word = (GeminiWord("Yeah.", "spk:0", 16000, 24000),)
+    assert gate.filter_terminal(bytes(32000), word, ()) == word
 
 
 def test_terminal_microphone_voice_check_uses_diarized_words():
