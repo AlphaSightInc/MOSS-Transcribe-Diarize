@@ -1493,6 +1493,35 @@ describe("microphone mute", () => {
     });
   });
 
+  it("creates a session with a microphone muted before it ever carried signal, then unmutes it (#4)", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: "muted-start", descriptor: { sample_rate: 4, frame_samples: 2 } }),
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = await eventLaneClient();
+    const capture = client as unknown as CaptureClient;
+    client.session = null;
+    deliverSamples(client, "microphone", silent, 3);
+    deliverSamples(client, "system", clean, 1);
+    // Control: an unmuted microphone that never carried signal is still refused.
+    await expect(capture.createSession()).rejects.toThrow(
+      "both capture lanes must have non-zero signal before session creation",
+    );
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    // Muted, its zeros are intentional: the lane is attached and live, so the meeting may start.
+    capture.setMicrophoneMuted(true);
+    await expect(capture.createSession()).resolves.toEqual({ id: "muted-start" });
+    deliverSamples(client, "microphone", silent, 1, 3);
+    capture.setMicrophoneMuted(false);
+    deliverSamples(client, "microphone", clean, 1, 4);
+    await vi.waitFor(() => expect(frameBodies(fetchSpy)).toHaveLength(2));
+    expect(frameBodies(fetchSpy).map((frame) => [frame.sequence, frame.silent, frame.device_epoch]))
+      .toEqual([[0, true, 1], [1, false, 1]]);
+  });
+
   it("clears a standing silent-microphone remedy on mute, and a replacement microphone stays muted", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);

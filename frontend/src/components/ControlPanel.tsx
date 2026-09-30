@@ -47,7 +47,6 @@ export { LIVE_MEETING_OBSERVE_EVENT } from "../lib/meetingEvents";
 /** Keep-list copy (plan-r3-ui §1 Q6). Nothing else is shown as status text. */
 export const RECONNECTING_LINE = "Reconnecting — keep this tab open."; // K4
 export const CONNECTION_LOST_LINE = "Recording stopped: connection lost."; // K5
-export const MICROPHONE_MUTED_LINE = "Microphone is muted"; // K6
 
 function workletUrl(): string {
   const url = document.querySelector<HTMLMetaElement>(
@@ -80,11 +79,17 @@ export function ControlPanel() {
   const pollerRef = useRef<MossSessionPoller | null>(null);
   const phaseRef = useRef<CapturePhase>("idle");
   const metersRef = useRef<LaneMeters>(EMPTY_METERS);
+  const micMutedRef = useRef(false);
   const preflightLine = useRef<string | null>(null);
 
   const transition = (next: CapturePhase) => {
     phaseRef.current = next;
     setPhase(next);
+  };
+
+  const applyMicMuted = (muted: boolean) => {
+    micMutedRef.current = muted;
+    setMicMuted(muted);
   };
 
   const updateMeter = (lane: CaptureLane, rms: number) => {
@@ -97,7 +102,8 @@ export function ControlPanel() {
       preflightLine.current = null;
       setMessage(current => current === stale ? "" : current);
     }
-    if (next.microphone > 0 && next.system > 0 && phaseRef.current === "configuring") {
+    // A muted microphone frames zeros on purpose; it does not hold the setup back (#4).
+    if ((next.microphone > 0 || micMutedRef.current) && next.system > 0 && phaseRef.current === "configuring") {
       transition("ready");
     }
   };
@@ -144,7 +150,7 @@ export function ControlPanel() {
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
     setConnected({ microphone: false, system: false });
-    setMicMuted(false);
+    applyMicMuted(false);
     transition("terminal");
     setMessage(normalClose ? "" : CONNECTION_LOST_LINE);
     requestMeetingHistoryRefresh();
@@ -154,7 +160,7 @@ export function ControlPanel() {
     if (clientRef.current) return;
     transition("configuring");
     setMessage("");
-    setMicMuted(false);
+    applyMicMuted(false);
     const client = new CaptureClient({
       helperVersion: HELPER_VERSION,
       workletUrl: workletUrl(),
@@ -258,7 +264,7 @@ export function ControlPanel() {
     if (!client) return;
     const next = !micMuted;
     client.setMicrophoneMuted(next);
-    setMicMuted(next);
+    applyMicMuted(next);
     if (next && preflightLine.current) {
       // "No microphone sound" (K1) is not the reason once the microphone is muted on purpose.
       const stale = preflightLine.current;
@@ -339,7 +345,7 @@ export function ControlPanel() {
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
     setConnected({ microphone: false, system: false });
-    setMicMuted(false);
+    applyMicMuted(false);
     resetSessionState();
     sessionTitle.value = "";
     transition("idle");
@@ -452,13 +458,14 @@ export function ControlPanel() {
   const configured = clientRef.current !== null;
   const reattached = phase === "viewing";
   const microphoneLevel = micMuted ? 0 : meters.microphone;
-  const canStart = phase === "ready" && !micMuted && meters.microphone > 0 && meters.system > 0;
+  // A muted microphone is silent on purpose: the meeting may start muted and unmute later (#4).
+  const microphoneSilent = !micMuted && meters.microphone <= 0;
+  const canStart = phase === "ready" && !microphoneSilent && meters.system > 0;
   const canReplace = phase === "ready" || phase === "active";
-  // K6: a disabled Start names the source that is muted or has no sound yet.
-  const silentSources = micMuted ? MICROPHONE_MUTED_LINE
-    : meters.microphone <= 0 && meters.system <= 0
+  // K6: a disabled Start names the source that has no sound yet.
+  const silentSources = microphoneSilent && meters.system <= 0
     ? "Microphone and shared audio have no sound yet"
-    : meters.microphone <= 0 ? "Microphone has no sound yet"
+    : microphoneSilent ? "Microphone has no sound yet"
       : meters.system <= 0 ? "Shared audio has no sound yet" : undefined;
   const startTitle = canStart ? undefined : silentSources;
 
@@ -507,7 +514,7 @@ export function ControlPanel() {
             {configured && connected.microphone && (phase === "configuring" || canReplace) ? (
               <div className="btn-row">
                 <button type="button" className={`btn ghost${micMuted ? " is-active" : ""}`} aria-pressed={micMuted}
-                  onClick={toggleMicMute}>{micMuted ? "Unmute mic" : "Mute mic"}</button>
+                  onClick={toggleMicMute}><MicIcon muted={micMuted} />{micMuted ? "Unmute mic" : "Mute mic"}</button>
                 {connected.system ? <button type="button" className="btn" onClick={() => void shareAudio()}>Share again</button> : null}
               </div>
             ) : null}
@@ -637,6 +644,17 @@ function LaneMeter({ label, value }: { label: string; value: number }) {
 
 function PlayIcon() {
   return <svg className="rec-icon rec-icon--play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>;
+}
+
+/** LiveTranscribe's microphone glyph; struck through while the microphone is muted. */
+function MicIcon({ muted }: { muted: boolean }) {
+  return (
+    <svg data-icon={muted ? "mic-off" : "mic"} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10a7 7 0 0 1-14 0" />
+      <path d="M12 17v4" />{muted ? <path d="M4 4l16 16" /> : null}
+    </svg>
+  );
 }
 
 function StopIcon() {
