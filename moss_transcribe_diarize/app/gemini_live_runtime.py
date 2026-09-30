@@ -473,9 +473,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     span = session.freeze_until(update.through_sample, reason="gemini_base")
                     transcript = _unlabelled_transcript(update.segments, start)
                     if transcript:
+                        # The lag fallback's preview words keep their lane, so later previews
+                        # trim against them and rolling replaces them per lane.
+                        lanes = tuple(row.source_lane for row in update.segments)
                         outcome = session.submit_unlabeled_canonical(
                             span_id=span.id, epoch=span.epoch, start_sample=start,
                             end_sample=update.through_sample, transcript=transcript,
+                            source_lanes=lanes if all(lanes) else (),
                         )
                     else:
                         outcome = session.submit_empty_canonical(
@@ -1189,57 +1193,75 @@ _PREVIEW_WORD = re.compile(r"[^\W_\d]+|\d+")
 def _trim_committed_preview(
     segments: Sequence[GeminiSegment], committed: Sequence[EffectiveTranscriptSegment]
 ) -> tuple[GeminiSegment, ...]:
-    """Remove a W3 chunk's already committed head, using only its capture lane."""
-    tails: dict[str | None, list[str]] = {}
-    result = []
+    """Remove each W3 chunk's head that the reader already sees in the same capture lane.
+
+    The reader sees the lane's committed rows followed by the preview rows kept so far: a
+    W3 chunk restarts from speech that is already committed, and an interim often restates
+    the final just before it. The compared window is sized to the lane's preview, because a
+    repeated head is never longer than the preview itself; recorded W3 chunks run 40-100
+    words, past any fixed window.
+    """
+    lane_words: dict[str | None, int] = {}
     for segment in segments:
-        if segment.source_lane not in tails:
-            parts = []
-            count = 0
-            for row in reversed(committed):
-                if row.source_lane != segment.source_lane:
-                    continue
+        lane_words[segment.source_lane] = (
+            lane_words.get(segment.source_lane, 0) + len(_PREVIEW_WORD.findall(segment.text)))
+    kept: list[GeminiSegment] = []
+    for segment in segments:
+        lane = segment.source_lane
+        limit = max(60, lane_words[lane] * 5 // 4 + 8)
+        parts = [row.text for row in reversed(kept) if row.source_lane == lane]
+        count = sum(len(_PREVIEW_WORD.findall(text)) for text in parts)
+        for row in reversed(committed):
+            if count >= limit:
+                break
+            if row.source_lane == lane:
                 parts.append(row.text)
                 count += len(_PREVIEW_WORD.findall(row.text))
-                if count >= 60:
-                    break
-            tail = " ".join(reversed(parts))
-            tails[segment.source_lane] = [
-                _PREVIEW_NUMBERS.get(word, word)
-                for word in _PREVIEW_WORD.findall(tail.casefold())][-60:]
+        tail = [_PREVIEW_NUMBERS.get(word, word)
+                for word in _PREVIEW_WORD.findall(" ".join(reversed(parts)).casefold())][-limit:]
         matches = list(_PREVIEW_WORD.finditer(segment.text.casefold()))
-        words = [_PREVIEW_NUMBERS.get(match.group(), match.group()) for match in matches]
-        tail = tails[segment.source_lane]
-        blocks = [block for block in difflib.SequenceMatcher(
-            None, tail, words, autojunk=False
-        ).get_matching_blocks() if block.size]
-        # Only a near-contiguous run anchored at the chunk's head counts as repeated speech:
-        # scattered common words ("and", "you", "the") also match and must not trim new words.
-        # Small insertions/deletions between the two models' wording are allowed (gaps of up
-        # to 8 words); the run must still be dense (>= 60 % of its span matched).
-        chain_end = matched = 0
-        first = previous = None
-        for block in blocks:
-            if previous is None:
-                if block.b > 3:
-                    break
-                first = block
-            elif (block.b - (previous.b + previous.size) > 8
-                  or block.a - (previous.a + previous.size) > 8):
-                break
-            matched += block.size
-            chain_end = block.b + block.size
-            previous = block
-        dense = first is not None and matched >= 0.6 * (chain_end - first.b)
-        repeats_tail_end = previous is not None and previous.a + previous.size >= len(tail) - 3
-        repeats_whole_chunk = previous is not None and chain_end >= len(words) - 1
-        text = segment.text
-        if matched >= 5 and dense and (repeats_tail_end or repeats_whole_chunk):
-            text = text[matches[chain_end - 1].end():]
-            text = text.lstrip(" \t\r\n,.;:!?")
+        cut = _repeated_head(tail, [_PREVIEW_NUMBERS.get(match.group(), match.group())
+                                    for match in matches])
+        text = (segment.text[matches[cut - 1].end():].lstrip(" \t\r\n,.;:!?")
+                if cut else segment.text)
         if text:
-            result.append(replace(segment, text=text))
-    return tuple(result)
+            kept.append(replace(segment, text=text))
+    return tuple(kept)
+
+
+def _repeated_head(tail: Sequence[str], words: Sequence[str]) -> int:
+    """How many leading `words` repeat the end of `tail`; 0 when they do not.
+
+    Two models transcribe the same audio slightly differently ("6"/"six", frontier fusions
+    such as "thelocal"), so a repeat is a run of matching blocks joined across gaps of at
+    most 8 words on either side and >= 5 words long. It starts within the chunk's first 8
+    words -- a stray early match of a common head word is skipped, not allowed to break the
+    run -- and reaches within 8 words of the end of what is shown, or covers the whole chunk
+    (an older chunk repeated whole). Everything before its end is removed, so >= 60 % of
+    those words must be matched, the unmatched head included. Scattered common words ("and",
+    "the") also match and must not trim new speech: they are not dense, and a run never ends
+    on a lone word after a gap (the "the" of "in the world" seven words past a fused
+    "thevery" is chance, not repetition).
+    """
+    blocks = [block for block in difflib.SequenceMatcher(
+        None, tail, words, autojunk=False).get_matching_blocks() if block.size]
+    for index, head in enumerate(blocks):
+        if head.b > 8:
+            break
+        run = [head]
+        for block in blocks[index + 1:]:
+            if (block.b - (run[-1].b + run[-1].size) > 8
+                    or block.a - (run[-1].a + run[-1].size) > 8):
+                break
+            run.append(block)
+        while len(run) > 1 and run[-1].size == 1:
+            run.pop()
+        end = run[-1].b + run[-1].size
+        matched = sum(block.size for block in run)
+        if (matched >= 5 and matched >= 0.6 * end
+                and (run[-1].a + run[-1].size >= len(tail) - 8 or end >= len(words) - 1)):
+            return end
+    return 0
 
 
 def _surface_segments(segments: Sequence[GeminiSegment], authority: str) -> tuple[EffectiveTranscriptSegment, ...]:
