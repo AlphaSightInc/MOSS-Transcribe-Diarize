@@ -15,7 +15,7 @@ import { summaryApi } from "../lib/finalSummary";
 import { openMeeting } from "../api/meetings";
 import { engineSettingsFrom, loadAppSettings } from "../lib/settings";
 import { sessionId, sessionStatus, transcript } from "../state/session";
-import { selectedSummaryMeeting } from "../state/ui";
+import { controlPanelCollapsed, selectedSummaryMeeting } from "../state/ui";
 import { watchMeetingSummary } from "../lib/summaryRequests";
 import {
   clearSessionReattach,
@@ -465,6 +465,9 @@ export function ControlPanel() {
   const setupLines = [setupErrors.microphone, setupErrors.system].filter(Boolean);
   const statusLine = setupLines.length > 0 ? setupLines.join(" ")
     : message || (phase === "active" ? sessionStatusLine.value ?? "" : "");
+  // #8: a keep-list line asks the operator to act, so a collapsed Controls rail opens to show it.
+  // The remembered preference is unchanged; the next reload collapses the rail again.
+  useEffect(() => { if (statusLine) controlPanelCollapsed.value = false; }, [statusLine]);
 
   const modeLocked = phase === "active" || phase === "stopping" || phase === "viewing" || phase === "configuring" || sessionStatus.value === "active" || sessionStatus.value === "closing";
   const exportReady = sessionId.value !== null && (exportFormat === "audio" || transcript.value.length > 0);

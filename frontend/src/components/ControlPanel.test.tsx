@@ -4,7 +4,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { storageKeys } from "../lib/persistence";
 import { captureMeetingId, replaceTranscript, resetSessionState, sessionError, sessionId, sessionStatus, sessionStatusLine } from "../state/session";
-import { selectedSummaryMeeting } from "../state/ui";
+import { controlPanelCollapsed, selectedSummaryMeeting } from "../state/ui";
 
 const mocks = vi.hoisted(() => {
   const poller = {
@@ -401,6 +401,26 @@ describe("ControlPanel reattach", () => {
     expect(root.querySelector('[role="status"]')?.textContent).toBe("Microphone too loud — lower it.");
     act(() => { sessionStatusLine.value = ""; });
     expect(root.querySelector('[role="status"]')).toBeNull();
+  });
+
+  it("opens a collapsed Controls rail when a keep-list line needs the operator (#8)", async () => {
+    await act(async () => { render(<ControlPanel />, root); });
+    const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
+    await act(async () => button("Enable microphone")?.click());
+    await vi.waitFor(() => expect(button("Share audio")).toBeTruthy());
+    await act(async () => button("Share audio")?.click());
+    await vi.waitFor(() => expect(button("Start recording")?.disabled).toBe(false));
+    await act(async () => button("Start recording")?.click());
+    act(() => { controlPanelCollapsed.value = true; });
+    act(() => { sessionStatusLine.value = "Microphone too loud — lower it."; });
+    expect(controlPanelCollapsed.value).toBe(false);
+    // Once open, the operator may collapse it again over the same line.
+    act(() => { controlPanelCollapsed.value = true; });
+    expect(controlPanelCollapsed.value).toBe(true);
+    act(() => { mocks.captureOptions?.onTransportError?.("frame", new TypeError("Failed to fetch")); });
+    expect(controlPanelCollapsed.value).toBe(false);
+    controlPanelCollapsed.value = false;
+    sessionStatusLine.value = "";
   });
 
   it("keeps polling while an accepted Stop is still draining", async () => {

@@ -3126,7 +3126,7 @@ textarea:focus {
 
   .phase2-workspace [data-workspace="account"] {
     display: grid;
-    grid-template-columns: var(--side-col) minmax(0, 1fr) var(--side-col);
+    grid-template-columns: var(--side-col) minmax(0, 1fr) var(--right-col);
     grid-template-rows: minmax(0, 1fr);
     height: 100dvh;
     gap: 12px;
@@ -3162,10 +3162,10 @@ textarea:focus {
   }
 
   .phase2-workspace .topbar {
-    grid-template-columns: var(--side-col) minmax(0, 1fr) var(--side-col);
+    grid-template-columns: var(--left-col) minmax(0, 1fr) var(--right-col);
     column-gap: 12px;
     height: var(--ws-topbar-h);
-    margin-right: calc(-12px - var(--side-col));
+    margin-right: calc(-12px - var(--right-col));
     padding: 6px 0;
   }
 
@@ -3185,7 +3185,7 @@ textarea:focus {
   }
 
   .phase2-workspace [data-authority="account"] .main {
-    grid-template-columns: var(--side-col) minmax(0, 1fr);
+    grid-template-columns: var(--left-col) minmax(0, 1fr);
     min-height: 0;
   }
 
@@ -3279,12 +3279,70 @@ textarea:focus {
 @media (min-width: 1025px) and (max-width: 1280px) {
   .phase2-workspace [data-workspace="account"] {
     --side-col: 240px;
-    grid-template-columns: 240px minmax(0, 1fr) 240px;
+    grid-template-columns: 240px minmax(0, 1fr) var(--right-col);
   }
 
   .phase2-workspace [data-authority="account"] .main {
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: var(--left-col) minmax(0, 1fr);
   }
+}
+
+/* #8: collapsible side panels (reference LiveTranscribe rails). Desktop only: each side column is its
+   panel's width, or a 48 px rail while that panel is collapsed. The workspace grid, the top bar and the
+   Live grid all read the same two widths, so the status pill stays over Controls and Settings over
+   History in every combination. */
+@media (min-width: 1025px) {
+  .phase2-workspace [data-workspace="account"] {
+    --left-col: var(--side-col);
+    --right-col: var(--side-col);
+    transition: grid-template-columns 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .phase2-workspace [data-workspace="account"]:has(.control-panel.collapsed) { --left-col: 48px; }
+  .phase2-workspace [data-workspace="account"]:has(.account-history-panel.collapsed) { --right-col: 48px; }
+
+  .phase2-workspace .topbar {
+    transition: grid-template-columns 0.28s cubic-bezier(0.4, 0, 0.2, 1), margin-right 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Over the Controls rail the pill keeps only its dot -- red and pulsing while recording -- so it is
+     never covered by the transcript card; the label stays for screen readers and as the hover title. */
+  .phase2-workspace [data-workspace="account"]:has(.control-panel.collapsed) .top-status {
+    justify-self: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+  }
+
+  .phase2-workspace [data-workspace="account"]:has(.control-panel.collapsed) .top-status > :not(.status-dot) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .panel.collapsed .collapse-btn { order: -1; }
+  .history-panel.collapsed .history-tabs { display: none; }
+  .history-panel.collapsed .panel-head { background: transparent; }
+}
+
+/* History's head holds its tabs and the chevron, on the body's background. */
+.history-panel .panel-head {
+  padding: 14px 14px 0;
+  border-bottom: 0;
+  background: var(--panel-bg);
+}
+
+.history-panel .panel-head .history-tabs { flex: 1; min-width: 0; }
+
+/* Stacked layout (tablet and phone): panels never collapse, so there is nothing to toggle. */
+@media (max-width: 1024px) {
+  .collapse-btn { display: none; }
+  .history-panel.collapsed .panel-head { padding: 14px 14px 0; border-bottom: 0; }
 }
 
 

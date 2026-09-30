@@ -6,11 +6,15 @@ import { MeetingHistory } from "./components/MeetingHistory";
 import "./styles/index.css";
 import { MEETING_CREATED } from "./lib/finalSummary";
 import { watchMeetingSummary } from "./lib/summaryRequests";
+import { hydrateUiState } from "./state/ui";
 
 document.addEventListener(MEETING_CREATED, event => {
   const id = (event as CustomEvent).detail?.meeting_id;
   if (typeof id === "string") watchMeetingSummary(id);
 });
+
+// Side-panel collapse is remembered per browser (#8) and read before either panel first renders.
+hydrateUiState();
 
 const root = document.getElementById("app");
 

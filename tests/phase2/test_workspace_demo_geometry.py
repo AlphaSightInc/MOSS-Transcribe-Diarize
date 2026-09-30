@@ -213,3 +213,105 @@ def test_shell_chrome_settings_placement_and_settings_fields(viewport):
     if width > 1024:  # two columns: the checkbox field shares a row with Wait after each summary
         assert abs(fields['rollingLabel']['top'] - fields['waitLabel']['top']) <= 1, fields
         assert abs(fields['rolling']['cy'] - fields['wait']['cy']) <= 1, fields
+
+
+COLLAPSE_GEOMETRY = """() => {
+    const box = s => { const r = document.querySelector(s).getBoundingClientRect();
+        return {left: r.left, right: r.right, top: r.top, bottom: r.bottom, w: r.width, h: r.height,
+                cx: r.left + r.width / 2, cy: r.top + r.height / 2}; };
+    // Nothing (the transcript card, a neighbour) may paint over the control's centre.
+    const uncovered = s => { const b = box(s); const hit = document.elementFromPoint(b.cx, b.cy);
+        return !!hit && document.querySelector(s).contains(hit); };
+    const shown = s => [...document.querySelectorAll(s)].filter(e => e.getClientRects().length > 0).length;
+    return {viewport: innerWidth, scrollWidth: document.documentElement.scrollWidth,
+        control: box('.control-panel'), transcript: box('.transcript-shell'), legend: box('#legend'),
+        history: box('.account-history-panel'), status: box('.top-status'), gear: box('.settings-trigger'),
+        statusUncovered: uncovered('.top-status'), gearUncovered: uncovered('.settings-trigger'),
+        titleRows: document.querySelectorAll('.tr-head, .tr-title').length,
+        toggles: shown('.collapse-btn'), historyTabs: shown('.history-tabs'),
+        controlBody: shown('.control-panel .panel-body'), historyBody: shown('.account-history-panel .panel-body')};
+}"""
+
+
+def _open_workspace(p, viewport, init_script=None):
+    from tests.phase2.browser_support import require_browser
+    browser = p.chromium.launch(executable_path=str(require_browser(p)))
+    page = browser.new_page(viewport=viewport)
+    if init_script:
+        page.add_init_script(init_script)
+    html = _workspace_html(SimpleNamespace(display_name='Open workspace'), [], live_enabled=True)
+    def route(r):
+        path = urlsplit(r.request.url).path
+        if path == '/': r.fulfill(body=html, content_type='text/html')
+        elif path.startswith('/static/'):
+            asset = ROOT / 'moss_transcribe_diarize/app/frontend_assets' / path.removeprefix('/static/')
+            r.fulfill(path=str(asset)) if asset.is_file() else r.fulfill(status=404)
+        else: r.fulfill(json={'meetings': [], 'voiceprints': [], 'summary': None})
+    page.route('**/*', route)
+    page.goto('http://demo.test')
+    page.locator('[data-history-boot="ready"]').wait_for()
+    page.evaluate('document.fonts.ready')
+    return browser, page
+
+
+@pytest.mark.parametrize('viewport', [{'width': 1440, 'height': 900}, {'width': 1280, 'height': 800}])
+def test_side_panels_collapse_to_rails_and_are_remembered(viewport):
+    """#8: each side panel folds into a 48 px rail and the transcript card takes the freed width; the status
+    pill stays over Controls and Settings over History, uncovered, in every combination; the choice survives
+    a reload. #9: the card has no title row -- it starts at the speaker legend."""
+    settle = 400  # the rail transition is 0.28 s
+    with sync_playwright() as p:
+        browser, page = _open_workspace(p, viewport)
+        try:
+            states = {(False, False): page.evaluate(COLLAPSE_GEOMETRY)}
+            for label, state in [('Collapse controls', (True, False)), ('Collapse history', (True, True)),
+                                 ('Expand controls', (False, True))]:
+                page.get_by_role('button', name=label, exact=True).click()
+                page.wait_for_timeout(settle)
+                states[state] = page.evaluate(COLLAPSE_GEOMETRY)
+            page.reload()
+            page.locator('[data-history-boot="ready"]').wait_for()
+            page.wait_for_timeout(settle)
+            reloaded = page.evaluate(COLLAPSE_GEOMETRY)
+            page.locator('.account-history-panel .panel-title-rail').click()
+            page.wait_for_timeout(settle)
+            reopened = page.evaluate(COLLAPSE_GEOMETRY)
+        finally:
+            browser.close()
+    expanded = states[(False, False)]
+    side = expanded['control']['w']
+    assert expanded['titleRows'] == 0 and abs(expanded['legend']['top'] - expanded['transcript']['top']) <= 1, expanded
+    for (left, right), shell in states.items():
+        assert shell['scrollWidth'] <= shell['viewport'], shell
+        assert shell['statusUncovered'] and shell['gearUncovered'], shell
+        assert abs(shell['control']['w'] - (48 if left else side)) <= 1, shell
+        assert abs(shell['history']['w'] - (48 if right else side)) <= 1, shell
+        assert abs(shell['transcript']['w'] - expanded['transcript']['w'] - (side - 48) * (left + right)) <= 1, shell
+        assert shell['control']['left'] - 1 <= shell['status']['left'] and shell['status']['right'] <= shell['control']['right'] + 1, shell
+        assert shell['history']['left'] - 1 <= shell['gear']['left'] and shell['gear']['right'] <= shell['history']['right'] + 1, shell
+        assert shell['gear']['bottom'] <= shell['history']['top'] and abs(shell['history']['top'] - shell['control']['top']) <= 1, shell
+        assert shell['controlBody'] == (0 if left else 1) and shell['historyBody'] == (0 if right else 1), shell
+    for key in ('control', 'transcript', 'history'):
+        assert abs(reloaded[key]['w'] - states[(False, True)][key]['w']) <= 1, (reloaded, states[(False, True)])
+        assert abs(reopened[key]['w'] - expanded[key]['w']) <= 1, (reopened, expanded)
+
+
+def test_phone_layout_ignores_a_remembered_collapse():
+    """#8 is desktop only: stacked panels stay open with no toggles, even when this browser remembers both
+    panels collapsed."""
+    remembered = ("localStorage.setItem('lt:ui:controlPanelCollapsed', 'true');"
+                  "localStorage.setItem('lt:ui:historyPanelCollapsed', 'true');")
+    with sync_playwright() as p:
+        browser, page = _open_workspace(p, {'width': 400, 'height': 860}, remembered)
+        try:
+            shell = page.evaluate(COLLAPSE_GEOMETRY)
+            collapsed = page.locator('.control-panel.collapsed, .account-history-panel.collapsed').count()
+        finally:
+            browser.close()
+    assert collapsed == 2  # the remembered state applies; the stacked layout neutralises it
+    assert shell['scrollWidth'] <= shell['viewport'], shell
+    assert shell['toggles'] == 0 and shell['titleRows'] == 0, shell
+    assert shell['controlBody'] == 1 and shell['historyBody'] == 1 and shell['historyTabs'] == 1, shell
+    for key in ('control', 'transcript', 'history'):
+        assert shell[key]['left'] >= 16 and shell[key]['right'] <= 400 - 16, shell
+        assert shell[key]['w'] >= 400 - 32 - 1, shell
