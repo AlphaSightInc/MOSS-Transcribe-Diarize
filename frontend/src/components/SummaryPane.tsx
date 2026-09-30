@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { openMeeting, type Meeting } from "../api/meetings";
 import { summaryApi, SUMMARY_CHANGED, type SummaryArtifact, type SummaryDocument } from "../lib/finalSummary";
-import { createRollingLoop, finalizeMeetingSummary, GEMINI_KEY_REQUIRED, requestLiveSummary, SummaryRequestError,
+import { createRollingLoop, finalizeMeetingSummary, requestLiveSummary, SummaryRequestError,
   summaryFailureReason, type LiveSummaryResponse } from "../lib/summaryRequests";
-import { loadAppSettings, missingGeminiKey, SETTINGS_CHANGED, type AppSettings } from "../lib/settings";
+import { loadAppSettings, SETTINGS_CHANGED, type AppSettings } from "../lib/settings";
 import { sessionId, sessionStatus } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
@@ -11,7 +11,7 @@ type Outcome = "ok" | "not_ready" | "failed";
 
 /** Rolling (live) summaries go through the server's Gemini path only. */
 const liveSummaries = (settings: AppSettings) =>
-  settings.summary.vendor === "gemini" && !missingGeminiKey(settings, "summary");
+  settings.summary.vendor === "gemini";
 const reasonOf = (cause: unknown) => cause instanceof SummaryRequestError ? cause.reason
   : cause instanceof Error ? cause.message : "";
 
@@ -96,17 +96,16 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
     return () => { disposed = true; clearInterval(timer); document.removeEventListener(SUMMARY_CHANGED, changed); };
   }, [id, active]);
 
-  const keyMissing = missingGeminiKey(settings, "summary");
   const summaryStale = meeting?.refinement_state === "done" && artifact != null &&
     ["current", "failed", "cancelled"].includes(artifact.state) &&
     artifact.source_version < meeting.transcript_version;
   useEffect(() => {
-    if (!meeting || !summaryStale || settings.summary.vendor !== "gemini" || keyMissing) return;
+    if (!meeting || !summaryStale || settings.summary.vendor !== "gemini") return;
     const key = `${meeting.id}:${meeting.transcript_version}`;
     if (improvementRequested.current === key) return;
     improvementRequested.current = key;
     void finalizeMeetingSummary(meeting).catch(cause => setError(reasonOf(cause)));
-  }, [meeting?.id, meeting?.transcript_version, summaryStale, settings.summary.vendor, keyMissing]);
+  }, [meeting?.id, meeting?.transcript_version, summaryStale, settings.summary.vendor]);
 
   async function refreshFinal() {
     if (!id || busy) return;
@@ -124,7 +123,6 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
   const failed = error !== null || (!active && artifact?.state === "failed");
   const reason = error ?? summaryFailureReason(artifact?.error_code);
   const unavailable = settings.summary.vendor === "off" ? "Summary is off in Settings"
-    : keyMissing ? GEMINI_KEY_REQUIRED
     : active && settings.summary.vendor !== "gemini" ? "Rolling summary needs Gemini" : "";
   return <section className="summary-pane" aria-label="Summary" hidden={hidden}>
     {id && <>
@@ -135,8 +133,7 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
           onClick={() => active ? refreshLive.current() : void refreshFinal()}>{busy ? "Refreshing…"
             : failed ? "Retry"
             : !active && summaryStale && settings.summary.vendor === "openai_compatible" ? "Update summary" : "Refresh"}</button></div>
-      {keyMissing ? <p className="summary-notice" role="status">{GEMINI_KEY_REQUIRED}</p>
-        : failed && <p className="summary-notice" role="alert">Summary failed{reason ? ` — ${reason}` : ""}</p>}
+      {failed && <p className="summary-notice" role="alert">Summary failed{reason ? ` — ${reason}` : ""}</p>}
       {active ? rolling && <div className="summary-content"><h3>Theme</h3><p>{rolling.summary.summary}</p></div>
         : finalDocument && <SummaryDocumentView document={finalDocument} />}
     </>}

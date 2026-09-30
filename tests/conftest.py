@@ -8,6 +8,12 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+def no_operator_gemini_key(monkeypatch: pytest.MonkeyPatch):
+    """The operator fallback key comes from the environment; tests opt in with setenv."""
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+
+
+@pytest.fixture(autouse=True)
 def permit_test_runner_sqlite(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch):
     """Phase-2 semantic tests use host SQLite; exact-runtime gates override this.
 

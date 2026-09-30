@@ -28,9 +28,9 @@ describe("summary request bodies (I-2)", () => {
   it("finalizes at the authoritative transcript version", async () => {
     const fetcher = vi.fn().mockResolvedValue(json({ state: "current" }));
     await requestFinalSummary("m", 7, defaultAppSettings(), fetcher);
-    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ source_version: 7, model: "gemini-3.5-flash-lite",
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ source_version: 7, model: "gemini-3.8-flash",
       language: "", prompt: defaultAppSettings().summary.prompt,
-      provider: { vendor: "gemini", model: "gemini-3.5-flash-lite", api_key: null } });
+      provider: { vendor: "gemini", model: "gemini-3.8-flash", api_key: null } });
   });
 
   it.each([
@@ -71,14 +71,16 @@ describe("watchMeetingSummary", () => {
     expect(artifacts).toHaveBeenCalledOnce();
   });
 
-  it("does not request a Gemini summary without a key", async () => {
-    const fetcher = vi.fn(async (_url: string) => json({ id: "m", mode: "live", title: "M", title_source: "automatic", status: "completed",
+  it("requests a Gemini summary with a blank key for the server fallback", async () => {
+    const fetcher = vi.fn(async (_url: string, _init?: RequestInit) => json({ id: "m", mode: "live", title: "M", title_source: "automatic", status: "completed",
       created_at_ms: 1, transcript_version: 1, transcript: { segments: [] }, audio: null }));
     vi.stubGlobal("fetch", fetcher);
     watchMeetingSummary("m");
     await vi.waitFor(() => expect(fetcher).toHaveBeenCalled());
     await new Promise(resolve => setTimeout(resolve, 0));
-    expect(fetcher.mock.calls.every(([url]) => !String(url).includes("/summary"))).toBe(true);
+    const summary = fetcher.mock.calls.find(([url]) => String(url).includes("/summary"));
+    expect(summary).toBeDefined();
+    expect(JSON.parse(summary![1]!.body as string).provider.api_key).toBeNull();
   });
 });
 

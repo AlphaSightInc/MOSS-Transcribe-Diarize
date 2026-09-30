@@ -24,6 +24,8 @@ from urllib.parse import urlsplit
 
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
+from .gemini_api_key import gemini_api_key
+
 from .live_service_runtime import (
     LIVE_TERMINAL_SESSION_STATUSES,
     LiveServiceCreateResult,
@@ -181,7 +183,7 @@ GEMINI_DEFAULT_ENGINE_SETTINGS = {
 
 
 class ApiKeyRequired(ValueError):
-    """The chosen provider needs the user's key; the server never supplies one."""
+    """The chosen provider has neither a request key nor a server fallback."""
 
     code = "api_key_required"
 
@@ -209,11 +211,12 @@ def validate_transcription(value: object) -> dict[str, object]:
             raise ValueError(f"transcription {name} must be text.")
         fields[name] = (field_value or "").strip() or None
     if vendor == "gemini":
-        if fields["api_key"] is None:
+        key = gemini_api_key(fields["api_key"])
+        if key is None:
             raise ApiKeyRequired()
         return {"vendor": vendor, "url": None,
                 "model": fields["model"] or GEMINI_DEFAULT_TRANSCRIPTION_MODEL,
-                "api_key": fields["api_key"]}
+                "api_key": key}
     url = urlsplit(fields["url"] or "")
     if url.scheme not in {"http", "https"} or not url.netloc:
         raise ValueError("Enter the OpenAI-compatible server URL (http or https).")

@@ -15,7 +15,9 @@ import pytest
 
 from moss_transcribe_diarize.app.gemini_file_runner import GeminiFileRunner
 from moss_transcribe_diarize.app.gemini_live_runtime import (
-    GeminiBase, GeminiLiveRuntime, GeminiRolling, GeminiSegment, ScriptedGeminiEngine)
+    GeminiBase, GeminiLiveRuntime, GeminiRolling, GeminiSegment, ScriptedGeminiEngine,
+    validate_transcription)
+from moss_transcribe_diarize.app.gemini_api_key import gemini_api_key
 from moss_transcribe_diarize.app.gemini_provider import GeminiWord, GeminiWords
 from moss_transcribe_diarize.app.live_service_runtime import (
     LiveServiceBounds, LiveServiceConfigHashes, LiveServiceDescriptor)
@@ -137,7 +139,7 @@ def test_provider_test_route_checks_gemini_key_and_model(tmp_path, monkeypatch):
         models, keys = gemini_client(monkeypatch, None)
         assert client.post("/api/providers/test", json=body).json() == {"ok": True}
         assert client.post("/api/providers/test", json={**body, "purpose": "summary"}).json() == {"ok": True}
-        assert models.seen == ["gemini-3.5-transcribe", "gemini-3.5-flash-lite"] and keys == ["k", "k"]
+        assert models.seen == ["gemini-3.5-transcribe", "gemini-3.8-flash"] and keys == ["k", "k"]
         for outcome, detail in (
                 (errors.APIError(404, {"error": {"message": "gone", "status": "NOT_FOUND"}}),
                  "Gemini has no model named gemini-3.5-transcribe."),
@@ -150,11 +152,30 @@ def test_provider_test_route_checks_gemini_key_and_model(tmp_path, monkeypatch):
             assert client.post("/api/providers/test", json=body).json() == {"ok": False, "detail": detail}
         _, keys = gemini_client(monkeypatch, None)
         assert client.post("/api/providers/test", json={**body, "api_key": " "}).json() == {
-            "ok": False, "detail": "Enter your Gemini API key."}
+            "ok": False, "detail": "Enter a Gemini API key or ask the operator to configure the server fallback."}
         assert keys == []
         for invalid in ([], {**body, "purpose": "other"}, {**body, "vendor": "moss"},
                         {**body, "extra": 1}, {**body, "api_key": 3}):
             assert client.post("/api/providers/test", json=invalid).status_code == 400
+
+
+def test_operator_gemini_key_fills_only_blank_gemini_requests(tmp_path, monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "operator-key")
+    assert gemini_api_key(None) == "operator-key"
+    assert gemini_api_key(" user-key ") == "user-key"
+    assert validate_transcription({"vendor": "gemini", "api_key": None})["api_key"] == "operator-key"
+    assert validate_transcription({"vendor": "gemini", "api_key": "user-key"})["api_key"] == "user-key"
+    assert validate_transcription({"vendor": "openai_compatible", "url": "https://example.test/v1",
+                                   "model": "m", "api_key": None})["api_key"] is None
+    app = create_phase2_app(database_path=tmp_path / "moss.sqlite")
+    with TestClient(app, base_url="https://moss.test") as client:
+        client.post("/api/workspace/bootstrap")
+        models, keys = gemini_client(monkeypatch, None)
+        body = {"purpose": "summary", "vendor": "gemini", "model": "", "api_key": None}
+        assert client.post("/api/providers/test", json=body).json() == {"ok": True}
+        assert client.post("/api/providers/test", json={**body, "api_key": "user-key"}).json() == {"ok": True}
+        assert models.seen == ["gemini-3.8-flash", "gemini-3.8-flash"]
+        assert keys == ["operator-key", "user-key"]
 
 
 def test_provider_test_route_lists_openai_compatible_models(tmp_path):

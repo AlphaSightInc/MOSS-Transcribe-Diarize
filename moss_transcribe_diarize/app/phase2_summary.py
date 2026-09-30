@@ -11,6 +11,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from .phase2 import AccountRevoked, MeetingHandle, _now_ms
+from .gemini_api_key import gemini_api_key
 
 ACTIVE = {"queued", "generating", "retry_wait"}
 ERRORS = {"delivery_failed", "invalid_output", "request_rejected", "browser_worker_lost", "server_restarted", "source_changed"}
@@ -21,7 +22,7 @@ SUMMARY_PRICES = {
     "gemini-3.5-flash": (1.50, 9.00),
     "gemini-3.8-flash": (0.75, 3.75),
 }
-DEFAULT_SUMMARY_MODEL = "gemini-3.5-flash-lite"
+DEFAULT_SUMMARY_MODEL = "gemini-3.8-flash"
 DEFAULT_SUMMARY_PROMPT = Path(__file__).with_name("final_summary_prompt.txt").read_text(encoding="utf-8")
 SUMMARY_ATTEMPTS = 3
 
@@ -224,7 +225,7 @@ def attach_summary_routes(app, require_account, generator=None):
                 or any(not isinstance(body[key], str) for key in ("model", "language", "prompt") if key in body)
                 or (final and (type(body.get("source_version")) is not int))):
             raise HTTPException(400, "Invalid summary options.")
-        # The user's own Gemini key pays for server summaries; it lives only for this request.
+        # An entered Gemini key takes precedence over the operator fallback.
         provider = body.get("provider")
         if provider is None:
             raise HTTPException(400, {"code": "api_key_required"})
@@ -234,7 +235,7 @@ def attach_summary_routes(app, require_account, generator=None):
             raise HTTPException(400, "Invalid summary provider.")
         if provider.get("vendor", "gemini") != "gemini":
             raise HTTPException(400, "Server summaries use Gemini; OpenAI-compatible summaries run in the browser.")
-        api_key = (provider.get("api_key") or "").strip()
+        api_key = gemini_api_key(provider.get("api_key"))
         if not api_key:
             raise HTTPException(400, {"code": "api_key_required"})
         model = ((provider.get("model") or "").strip() or (body.get("model") or "").strip()

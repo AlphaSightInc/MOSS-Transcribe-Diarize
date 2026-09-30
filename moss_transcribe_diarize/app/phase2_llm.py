@@ -20,6 +20,8 @@ import httpx
 from fastapi import HTTPException
 from starlette.requests import Request
 
+from .gemini_api_key import gemini_api_key
+
 
 class InvalidSummaryOutput(ValueError):
     """The provider answered, but not with parseable JSON; usage was still incurred."""
@@ -192,7 +194,7 @@ class LlmRelay:
 
 PROVIDER_TEST_TIMEOUT_SECONDS = 15
 PROVIDER_DEFAULT_MODELS = {"transcription": "gemini-3.5-transcribe",
-                           "summary": "gemini-3.5-flash-lite"}
+                           "summary": "gemini-3.8-flash"}
 
 
 def _provider_test_body(body: Any) -> dict[str, Any]:
@@ -207,15 +209,16 @@ def _provider_test_body(body: Any) -> dict[str, Any]:
 
 async def check_provider(body: dict[str, Any], *,
                          transport: httpx.AsyncBaseTransport | None = None) -> dict[str, Any]:
-    """One cheap reachability call with the user's key; the key and reply are not kept."""
+    """One cheap reachability call; the key and reply are not kept."""
     model, key = body["model"], body["api_key"]
 
     def failed(detail: str) -> dict[str, Any]:
         return {"ok": False, "detail": detail}
 
     if body["vendor"] == "gemini":
+        key = gemini_api_key(key)
         if not key:
-            return failed("Enter your Gemini API key.")
+            return failed("Enter a Gemini API key or ask the operator to configure the server fallback.")
         model = model or PROVIDER_DEFAULT_MODELS[body["purpose"]]
         from google import genai
         from google.genai import errors

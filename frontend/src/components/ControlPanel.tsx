@@ -13,7 +13,7 @@ import { settledSpeakerNumbers, transcriptCardSpeakerLabel } from "../lib/transc
 import { serializeTranscriptExport, triggerTranscriptExportDownload, type TranscriptExportFormat } from "../lib/transcriptExport";
 import { summaryApi } from "../lib/finalSummary";
 import { openMeeting } from "../api/meetings";
-import { engineSettingsFrom, loadAppSettings, missingGeminiKey, SETTINGS_CHANGED } from "../lib/settings";
+import { engineSettingsFrom, loadAppSettings } from "../lib/settings";
 import { sessionId, sessionStatus, transcript } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 import { watchMeetingSummary } from "../lib/summaryRequests";
@@ -47,7 +47,6 @@ export { LIVE_MEETING_OBSERVE_EVENT } from "../lib/meetingEvents";
 /** Keep-list copy (plan-r3-ui §1 Q6). Nothing else is shown as status text. */
 export const RECONNECTING_LINE = "Reconnecting — keep this tab open."; // K4
 export const CONNECTION_LOST_LINE = "Recording stopped: connection lost."; // K5
-export const GEMINI_KEY_LINE = "Enter your Gemini API key in Settings"; // K9
 export const MICROPHONE_MUTED_LINE = "Microphone is muted"; // K6
 
 function workletUrl(): string {
@@ -77,7 +76,6 @@ export function ControlPanel() {
   const [message, setMessage] = useState("");
   const [setupErrors, setSetupErrors] = useState<Partial<Record<CaptureLane, string>>>({});
   const [starting, setStarting] = useState(false);
-  const [settings, setSettings] = useState(loadAppSettings);
   const clientRef = useRef<CaptureClient | null>(null);
   const pollerRef = useRef<MossSessionPoller | null>(null);
   const phaseRef = useRef<CapturePhase>("idle");
@@ -271,7 +269,7 @@ export function ControlPanel() {
 
   const startCapture = async () => {
     const client = clientRef.current;
-    if (!client || phase !== "ready" || missingGeminiKey(loadAppSettings(), "transcription")) return;
+    if (!client || phase !== "ready") return;
     transition("configuring");
     setStarting(true);
     recovering.current.clear();
@@ -414,12 +412,6 @@ export function ControlPanel() {
     return bindFileUpload();
   }, [mode]);
 
-  useEffect(() => {
-    const changed = () => setSettings(loadAppSettings());
-    document.addEventListener(SETTINGS_CHANGED, changed);
-    return () => document.removeEventListener(SETTINGS_CHANGED, changed);
-  }, []);
-
   async function saveExport(): Promise<void> {
     const id = sessionId.value;
     if (!id) return;
@@ -462,19 +454,17 @@ export function ControlPanel() {
   const microphoneLevel = micMuted ? 0 : meters.microphone;
   const canStart = phase === "ready" && !micMuted && meters.microphone > 0 && meters.system > 0;
   const canReplace = phase === "ready" || phase === "active";
-  const keyMissing = missingGeminiKey(settings, "transcription");
   // K6: a disabled Start names the source that is muted or has no sound yet.
   const silentSources = micMuted ? MICROPHONE_MUTED_LINE
     : meters.microphone <= 0 && meters.system <= 0
     ? "Microphone and shared audio have no sound yet"
     : meters.microphone <= 0 ? "Microphone has no sound yet"
       : meters.system <= 0 ? "Shared audio has no sound yet" : undefined;
-  const startTitle = keyMissing ? GEMINI_KEY_LINE : canStart ? undefined : silentSources;
+  const startTitle = canStart ? undefined : silentSources;
 
   const setupLines = [setupErrors.microphone, setupErrors.system].filter(Boolean);
   const statusLine = setupLines.length > 0 ? setupLines.join(" ")
-    : message || (phase === "active" ? sessionStatusLine.value ?? "" : "")
-      || (keyMissing && (phase === "idle" || phase === "configuring" || phase === "ready") ? GEMINI_KEY_LINE : "");
+    : message || (phase === "active" ? sessionStatusLine.value ?? "" : "");
 
   const modeLocked = phase === "active" || phase === "stopping" || phase === "viewing" || phase === "configuring" || sessionStatus.value === "active" || sessionStatus.value === "closing";
   const exportReady = sessionId.value !== null && (exportFormat === "audio" || transcript.value.length > 0);
@@ -507,7 +497,7 @@ export function ControlPanel() {
               : phase === "viewing" || phase === "terminal" || phase === "error" ? null
               : !connected.microphone ? <button type="button" className="record-btn" disabled={phase === "configuring"} onClick={() => void configureMicrophone()}>{phase === "configuring" ? "Connecting…" : "Enable microphone"}</button>
               : !connected.system ? <button type="button" className="record-btn" onClick={() => void shareAudio()}>Share audio</button>
-              : <button type="button" className="record-btn" data-action="start" disabled={!canStart || keyMissing || starting}
+              : <button type="button" className="record-btn" data-action="start" disabled={!canStart || starting}
                   title={startTitle} onClick={() => void startCapture()}><PlayIcon />{starting ? "Starting…" : "Start recording"}</button>}
 
             {statusLine ? <p className="capture-status" role="status">{statusLine}</p> : null}
@@ -559,10 +549,8 @@ export function ControlPanel() {
         </> :
         <form key={mode} data-file-upload="form" className="controls-mode-form" onSubmit={event => { if (mode === "url" && !url.startsWith("https://")) event.preventDefault(); }}>
           <section className="control-section">
-            <button type="submit" className="record-btn" data-action="start" disabled={!uploadReady || keyMissing}
-              title={keyMissing ? GEMINI_KEY_LINE : undefined}>
+            <button type="submit" className="record-btn" data-action="start" disabled={!uploadReady}>
               <PlayIcon />{mode === "file" ? "Start file transcription" : "Start URL transcription"}</button>
-            {keyMissing ? <p className="capture-status">{GEMINI_KEY_LINE}</p> : null}
           </section>
           <section className="control-section">
             {mode === "file" ? <><label className="label" htmlFor="meeting-files">Files</label>

@@ -50,7 +50,7 @@ describe("three tabs", () => {
     expect(field("Transcription URL")).toBeNull();
     expect(field("Transcription model")!.value).toBe("gemini-3.5-transcribe");
     expect(field("Transcription API key")!.type).toBe("password");
-    expect(field("Transcription API key")!.placeholder).toBe("Required");
+    expect(field("Transcription API key")!.placeholder).toBe("Optional; server default");
     expect(field("Refresh every (s)")!.value).toBe("15");
     expect(field("Context (s)")!.value).toBe("90");
     expect(root.querySelector("p:not(.eyebrow)")).toBeNull(); // No explanatory paragraphs.
@@ -89,7 +89,7 @@ describe("three tabs", () => {
     await tab("Summary");
     expect([...field<HTMLSelectElement>("Summary vendor")!.options].map(o => o.textContent))
       .toEqual(["Gemini (AI Studio)", "OpenAI-compatible", "Off"]);
-    expect(field("Summary model")!.value).toBe("gemini-3.5-flash-lite");
+    expect(field("Summary model")!.value).toBe("gemini-3.8-flash");
     expect(field("Summary URL")).toBeNull();
     expect(field("Rolling summary")!.checked).toBe(true);
     expect(field("Wait after each summary (s)")!.value).toBe("60");
@@ -218,11 +218,12 @@ describe("validation", () => {
 });
 
 describe("Test button", () => {
-  it("asks for the Gemini key without calling the server", async () => {
+  it("tests the server fallback when the Gemini key is empty", async () => {
     await open();
     await act(async () => button("Test").click());
-    expect(status()).toBe("Enter your Gemini API key.");
-    expect(fetcher.mock.calls.some(([url]) => url === "/api/providers/test")).toBe(false);
+    expect(fetcher.mock.calls.some(([url]) => url === "/api/providers/test")).toBe(true);
+    const [, init] = fetcher.mock.calls.find(([url]) => url === "/api/providers/test")!;
+    expect(JSON.parse(init.body).api_key).toBeNull();
   });
 
   it("posts the tab's provider to /api/providers/test and shows Testing…, ok and the returned detail", async () => {

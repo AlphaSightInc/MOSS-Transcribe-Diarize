@@ -271,31 +271,10 @@ describe("ControlPanel reattach", () => {
     expect(root.querySelector('[role="status"]')).toBeNull();
   });
 
-  it("blocks Start without a Gemini key and says where to enter it (K9)", async () => {
+  it("allows the server Gemini fallback when the browser key is blank", async () => {
     mocks.apiKey = "";
     await act(async () => render(<ControlPanel />, root));
     const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
-    expect(root.querySelector('[role="status"]')?.textContent).toBe("Enter your Gemini API key in Settings");
-    await act(async () => button("Enable microphone")!.click());
-    await vi.waitFor(() => expect(button("Share audio")).toBeTruthy());
-    await act(async () => button("Share audio")!.click());
-    await vi.waitFor(() => expect(button("Start recording")).toBeTruthy());
-    expect(button("Start recording")!.disabled).toBe(true);
-    expect(button("Start recording")!.title).toBe("Enter your Gemini API key in Settings");
-    await act(async () => button("Start recording")!.click());
-    expect(mocks.createSession).not.toHaveBeenCalled();
-
-    for (const [mode, label] of [["File", "Start file transcription"], ["URL", "Start URL transcription"]] as const) {
-      await act(async () => button(mode)!.click());
-      const start = button(label)!;
-      expect(start.disabled).toBe(true);
-      expect(start.title).toBe("Enter your Gemini API key in Settings");
-      expect(root.textContent).toContain("Enter your Gemini API key in Settings");
-      await act(async () => button("Live")!.click());
-    }
-
-    mocks.apiKey = "entered";
-    await act(async () => { document.dispatchEvent(new Event("moss:settings-changed")); });
     await act(async () => button("URL")!.click());
     const url = root.querySelector<HTMLInputElement>("#meeting-url")!;
     await act(async () => { url.value = "https://example.com/a.mp3"; url.dispatchEvent(new Event("input", { bubbles: true })); });

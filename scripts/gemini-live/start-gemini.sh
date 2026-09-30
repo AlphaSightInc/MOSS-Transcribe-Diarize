@@ -7,11 +7,16 @@
 # Each browser gets its own private workspace (history, voiceprints); MOSS_GEMINI_OPEN_WORKSPACE=1 shares one
 # workspace with every browser that can reach the server (single-user or test use only).
 # Needs: this worktree's venv (<worktree>.venv), built frontend assets, and the local live
-# provider manifest (VAD + WeSpeaker settings). No server key: each user enters their own
-# Gemini API key in Settings; it is sent per meeting/job/request and never stored.
+# provider manifest (VAD + WeSpeaker settings). An optional operator key in .env.local
+# is used only for Gemini requests whose browser settings have no API key.
 # State (meetings, voiceprints, audio) persists in ~/.local/share/moss-gemini-live/state.
 set -euo pipefail
 wt="$(cd "$(dirname "$0")/../.." && pwd)"
+if [[ -f "$wt/.env.local" ]]; then
+  set -a
+  . "$wt/.env.local"
+  set +a
+fi
 port="${1:-18600}"
 host="${MOSS_GEMINI_HOST:-127.0.0.1}"
 san="IP:127.0.0.1${MOSS_GEMINI_TLS_SAN:+,$MOSS_GEMINI_TLS_SAN}"

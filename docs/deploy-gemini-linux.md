@@ -1,13 +1,17 @@
 # Deploy aiSight - LiveTranscribe (Gemini engine) on a Linux host
 
-No GPU is needed: transcription runs on Google Gemini with each user's own key (entered in Settings); voiceprints run on
-CPU (WeSpeaker ONNX). First deployment: `ga0-rog-laptop` (Ubuntu 26.04, x86-64, Python 3.12), 2026-09-30.
+No GPU is needed: transcription runs on Google Gemini; voiceprints run on CPU (WeSpeaker ONNX). A key entered in Settings
+is used first; otherwise an optional operator key `GEMINI_API_KEY=` in `<checkout>/.env.local` (git-ignored, mode 0600;
+loaded by the launcher) pays for Gemini requests whose browser settings have no key. First deployment: `ga0-rog-laptop` (Ubuntu 26.04, x86-64, Python 3.12), 2026-09-30.
 
 ## One-time setup
 ```bash
 sudo apt install -y ffmpeg                               # File/URL decoding and meeting audio (.mp3)
 git clone -b gemini/r3-ui https://github.com/AlphaSightInc/MOSS-Transcribe-Diarize.git /aiSight/MOSS-Transcribe-Diarize
-python3.12 -m venv /aiSight/MOSS-Transcribe-Diarize.venv  # the launcher expects <checkout>.venv
+# SQLite must be exactly 3.53.4 (ADR-0008/0012). If the host Python embeds another version, build the pinned
+# sqlite-autoconf-3530400 (SHA3-256 in ops/build-account-sqlite.sh) into ~/.local/share/moss-transcribe-diarize/sqlite-3.53.4
+# and a python.org Python 3.12 (GPG-verified) linked to it with -Wl,-rpath into .../python-3.12.14 (needs build-essential).
+~/.local/share/moss-transcribe-diarize/python-3.12.14/bin/python3.12 -m venv /aiSight/MOSS-Transcribe-Diarize.venv  # launcher expects <checkout>.venv
 V=/aiSight/MOSS-Transcribe-Diarize.venv/bin
 $V/python -m pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu   # CPU wheels, no CUDA
 $V/python -m pip install -e "/aiSight/MOSS-Transcribe-Diarize[gemini]"

@@ -1,6 +1,6 @@
 import { openMeeting, type Meeting } from "../api/meetings";
 import { finalSummaryWorker, SUMMARY_CHANGED, type SummaryArtifact, type SummaryDocument, type SummarySettings } from "./finalSummary";
-import { loadAppSettings, missingGeminiKey, summaryProviderWire, type AppSettings } from "./settings";
+import { loadAppSettings, summaryProviderWire, type AppSettings } from "./settings";
 import { requestMeetingHistoryRefresh } from "./meetingEvents";
 
 export interface LiveSummaryResponse {
@@ -80,7 +80,6 @@ export async function finalizeMeetingSummary(meeting: Meeting, settings = loadAp
   if (settings.summary.vendor === "openai_compatible") {
     await finalSummaryWorker.enqueue(meeting, externalSettings(settings));
   } else {
-    if (missingGeminiKey(settings, "summary")) return; // The pane shows the K9 line instead.
     const artifact = await requestFinalSummary(meeting.id, meeting.transcript_version, settings);
     document.dispatchEvent(new CustomEvent(SUMMARY_CHANGED, { detail: { meeting_id: meeting.id, artifact } }));
   }

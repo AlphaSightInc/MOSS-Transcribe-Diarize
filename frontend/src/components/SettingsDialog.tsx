@@ -20,7 +20,6 @@ const VENDOR_LABELS: Record<Vendor | "off", string> = {
 const MODEL_DEFAULTS: Record<ModelTab, string> = { transcription: DEFAULT_TRANSCRIPTION_MODEL, summary: DEFAULT_SUMMARY_MODEL };
 const FALLBACK_OPTIONS: EngineOptions = { vendors: ["gemini", "openai_compatible"], refresh: REFRESH_SECONDS,
   context: CONTEXT_SECONDS, cleanupAvailable: true };
-const KEY_NEEDED = "Enter your Gemini API key.";
 
 function record(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -87,7 +86,6 @@ async function detailOf(response: Response): Promise<string> {
  */
 export async function testProvider(purpose: ModelTab, settings: AppSettings, fetcher: typeof fetch = fetch): Promise<Status> {
   const tab = settings[purpose];
-  if (tab.vendor === "gemini" && !tab.apiKey.trim()) return { message: KEY_NEEDED, tone: "error" };
   try {
     if (purpose === "summary" && tab.vendor === "openai_compatible") return await testBrowserProvider(settings, fetcher);
     const response = await fetcher("/api/providers/test", { method: "POST", credentials: "same-origin",
@@ -195,7 +193,7 @@ export function SettingsDialog() {
       <span className="field-label">API key</span>
       <span className="llm-modal-inline-field">
         <input type={showKey ? "text" : "password"} autoComplete="off" spellcheck={false} aria-label={`${TABS.find(x => x.id === section)!.label} API key`}
-          placeholder={value.vendor === "gemini" ? "Required" : "Optional"} value={value.apiKey}
+          placeholder={value.vendor === "gemini" ? "Optional; server default" : "Optional"} value={value.apiKey}
           onInput={event => edit(section, { apiKey: event.currentTarget.value })} />
         <button type="button" className="icon-btn" aria-label={showKey ? "Hide API key" : "Show API key"}
           aria-pressed={showKey} onClick={() => setShowKey(current => !current)}>

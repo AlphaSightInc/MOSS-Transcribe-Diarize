@@ -3,7 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { validateSummary } from "./finalSummary";
 import {
-  DEFAULT_SUMMARY_PROMPT, defaultAppSettings, engineSettingsFrom, loadAppSettings, missingGeminiKey, saveAppSettings,
+  DEFAULT_SUMMARY_PROMPT, defaultAppSettings, engineSettingsFrom, loadAppSettings, saveAppSettings,
   SETTINGS_CHANGED, summaryProviderWire, transcriptionWire, type AppSettings
 } from "./settings";
 
@@ -26,7 +26,7 @@ describe("I-1 schema", () => {
   it("defaults to Gemini for both tabs with the documented seconds", () => {
     expect(loadAppSettings()).toEqual({
       transcription: { vendor: "gemini", url: "", model: "gemini-3.5-transcribe", apiKey: "", refreshSeconds: 15, contextSeconds: 90 },
-      summary: { vendor: "gemini", url: "", model: "gemini-3.5-flash-lite", apiKey: "", rolling: true, waitSeconds: 60,
+      summary: { vendor: "gemini", url: "", model: "gemini-3.8-flash", apiKey: "", rolling: true, waitSeconds: 60,
         language: "", timeoutSeconds: 120, prompt: DEFAULT_SUMMARY_PROMPT },
       general: { cleanupAfterStop: true }
     });
@@ -90,7 +90,7 @@ describe("migration to v2", () => {
     values.clear();
     values.set("moss.browser-final-summary.v1", JSON.stringify({ endpoint: "", model: "", apiKey: "", prompt: OLD_DEFAULT_PROMPT,
       language: "", timeoutSeconds: 120 }));
-    expect(loadAppSettings().summary).toMatchObject({ vendor: "off", model: "gemini-3.5-flash-lite", prompt: DEFAULT_SUMMARY_PROMPT });
+    expect(loadAppSettings().summary).toMatchObject({ vendor: "off", model: "gemini-3.8-flash", prompt: DEFAULT_SUMMARY_PROMPT });
   });
 });
 
@@ -113,23 +113,12 @@ describe("I-2 wire builders", () => {
 
   it("adds a server summary provider only for Gemini", () => {
     expect(summaryProviderWire(settingsWith(s => { s.summary.apiKey = "k"; })))
-      .toEqual({ vendor: "gemini", model: "gemini-3.5-flash-lite", api_key: "k" });
+      .toEqual({ vendor: "gemini", model: "gemini-3.8-flash", api_key: "k" });
     expect(summaryProviderWire(defaultAppSettings())?.api_key).toBeNull();
     expect(summaryProviderWire(settingsWith(s => { s.summary.vendor = "openai_compatible"; }))).toBeNull();
     expect(summaryProviderWire(settingsWith(s => { s.summary.vendor = "off"; }))).toBeNull();
   });
 
-  it("reports a missing Gemini key per purpose", () => {
-    const settings = settingsWith(s => { s.transcription.apiKey = "key"; });
-    expect(missingGeminiKey(settings, "transcription")).toBe(false);
-    expect(missingGeminiKey(settings, "summary")).toBe(true);
-    settings.summary.apiKey = "  ";
-    expect(missingGeminiKey(settings, "summary")).toBe(true);
-    settings.summary.vendor = "openai_compatible";
-    expect(missingGeminiKey(settings, "summary")).toBe(false);
-    settings.transcription = { ...settings.transcription, vendor: "openai_compatible", apiKey: "" };
-    expect(missingGeminiKey(settings, "transcription")).toBe(false);
-  });
 });
 
 describe("J4 default prompt", () => {

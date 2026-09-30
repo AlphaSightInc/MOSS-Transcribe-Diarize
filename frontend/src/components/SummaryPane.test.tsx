@@ -47,22 +47,16 @@ it("renders a rolling summary from the frozen live response with only 'Updated N
   expect(root.querySelector('[role="status"]')?.textContent).toMatch(/^Updated \d+s ago$/);
 });
 
-it("asks for the Gemini key instead of sending requests without one", async () => {
-  vi.useFakeTimers();
+it("allows a blank browser key to use the server summary fallback", async () => {
   configure(settings => { settings.summary.apiKey = ""; });
   const fetcher = vi.fn().mockResolvedValue(live("never"));
   vi.stubGlobal("fetch", fetcher);
   sessionId.value = "m"; sessionStatus.value = "active";
   await act(async () => render(<SummaryPane hidden={false} />, root));
-  expect(root.textContent).toContain("Enter your Gemini API key in Settings.");
-  expect(refresh().disabled).toBe(true);
-  await act(async () => { await vi.advanceTimersByTimeAsync(180_000); });
-  expect(fetcher).not.toHaveBeenCalled();
-  // Typing the key applies without reopening the meeting; the wait counts from the loop's start.
-  await act(async () => configure());
   expect(refresh().disabled).toBe(false);
-  await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+  await act(async () => refresh().click());
   expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(JSON.parse(fetcher.mock.calls[0][1].body).provider.api_key).toBeNull();
 });
 
 it("disables Refresh with the reason when summaries are off or not Gemini during a meeting", async () => {
@@ -233,7 +227,7 @@ it("regenerates an existing Gemini summary when refinement raises the transcript
   await vi.waitFor(() => expect(fetcher.mock.calls.some(([url]) => url.endsWith("/summary/server"))).toBe(true));
   const body = JSON.parse(fetcher.mock.calls.find(([url]) => url.endsWith("/summary/server"))![1]!.body as string);
   expect(body.source_version).toBe(2);
-  expect(body.provider).toEqual({ vendor: "gemini", model: "gemini-3.5-flash-lite", api_key: "key" });
+  expect(body.provider).toEqual({ vendor: "gemini", model: "gemini-3.8-flash", api_key: "key" });
   await vi.waitFor(() => expect(root.textContent).toContain("Improved summary"));
   expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/summary/server"))).toHaveLength(1);
 });

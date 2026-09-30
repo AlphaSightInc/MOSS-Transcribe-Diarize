@@ -23,7 +23,7 @@ const V1_KEY = "moss.settings.v1";
 const OLD_KEY = "moss.browser-final-summary.v1";
 export const SETTINGS_CHANGED = "moss:settings-changed";
 export const DEFAULT_TRANSCRIPTION_MODEL = "gemini-3.5-transcribe";
-export const DEFAULT_SUMMARY_MODEL = "gemini-3.5-flash-lite";
+export const DEFAULT_SUMMARY_MODEL = "gemini-3.8-flash";
 export const DEFAULT_SUMMARY_PROMPT = defaultPrompt;
 /** Fallback bounds when the descriptor carries no `engine_options` (I-3). */
 export const REFRESH_SECONDS: SecondsBounds = { min: 5, max: 60, default: 15 };
@@ -85,11 +85,6 @@ export function summaryProviderWire(settings: AppSettings): SummaryProviderWire 
   if (settings.summary.vendor !== "gemini") return null;
   return { vendor: "gemini", model: settings.summary.model.trim() || DEFAULT_SUMMARY_MODEL,
     api_key: settings.summary.apiKey.trim() || null };
-}
-
-export function missingGeminiKey(settings: AppSettings, purpose: "transcription" | "summary"): boolean {
-  const tab = settings[purpose];
-  return tab.vendor === "gemini" && !tab.apiKey.trim();
 }
 
 const text = (value: unknown, fallback = "") => typeof value === "string" ? value : fallback;
