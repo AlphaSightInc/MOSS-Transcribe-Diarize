@@ -17,18 +17,13 @@ RESULT = {"summary": "A grounded result.", "topics": [{"title": "Useful title", 
 TRANSCRIPT = {"segments": [{"start": 0, "end": 4, "speaker": "Alex", "text": "Owner A only."}]}
 
 
-def test_shipped_default_prompt_preserves_v15_with_nonempty_summary_clarification():
+def test_shipped_default_prompt_names_the_five_summary_keys():
+    # Round 3 (plan-r3-ui J4) replaced the 8 KB v15 prompt with a short one; the JSON contract is unchanged.
     repo = Path(__file__).resolve().parents[2]
-    # Preserve the accepted quality baseline; permit only this measured row-9 clarification.
-    accepted = (repo / "prototypes/client-configured-llm/final-summary-prompt.txt").read_text()
-    clarified = accepted.replace(
-        "shows the required top-level types; populate it with supported content:",
-        "shows the required top-level types; populate it with supported content. The completed summary must\n"
-        "never be empty: for an introduction-only transcript, briefly state who or what is introduced\n"
-        "and that the excerpt provides no substantive discussion beyond that introduction:",
-    )
-    assert clarified != accepted
-    assert (repo / "frontend/src/lib/final-summary-prompt.txt").read_text() == clarified
+    prompt = (repo / "frontend/src/lib/final-summary-prompt.txt").read_text()
+    assert len(prompt) < 1500
+    for key in ("summary", "topics", "details", "speaker_background", "data_references"):
+        assert f'"{key}"' in prompt
 
 
 @pytest.mark.parametrize("mutate", [

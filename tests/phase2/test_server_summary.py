@@ -89,7 +89,7 @@ def test_server_summary_generates_from_exact_final_version_and_saves(tmp_path: P
         assert response.json()["usage"] == USAGE
         assert calls[0][0] == TRANSCRIPT
         assert calls[0][1:3] == ("gemini-3.5-flash-lite", "")
-        assert "GOAL" in calls[0][3]
+        assert calls[0][3] == DEFAULT_SUMMARY_PROMPT
         assert client.get(f"/api/meetings/{meeting_id}/summary").json()["summary"]["document"] == RESULT
         assert "usage" not in client.get(f"/api/meetings/{meeting_id}/summary").json()["summary"]
         assert client.get(f"/api/meetings/{meeting_id}").json()["title"] == "Useful title"
