@@ -330,7 +330,8 @@ def test_file_runner_links_per_segment_labels_by_voice(tmp_path):
     with FakeTranscriptionServer(default=verbose) as server:
         usage = []
         runner = GeminiFileRunner(
-            OpenAICompatibleDiarizer(server.url, "whisper-1", None, lambda **row: usage.append(row)),
+            lambda _transcription: OpenAICompatibleDiarizer(server.url, "whisper-1", None,
+                                                            lambda **row: usage.append(row)),
             ParityEncoder())
         result = runner.transcribe(audio)
     rows = subtitle_segments_from_transcript(result.text, postprocess=False)
