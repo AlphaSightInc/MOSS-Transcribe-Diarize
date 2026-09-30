@@ -182,9 +182,9 @@ body.phase2-workspace {
   overflow: auto;
 }
 
+/* No gap: with the headings screen-reader only, History follows the transcript card at the .app spacing. */
 .phase2-workspace [data-workspace="account"] {
   display: grid;
-  gap: 24px;
 }
 
 .phase2-workspace [data-workspace-section] {
@@ -192,11 +192,20 @@ body.phase2-workspace {
   scroll-margin-block: 16px;
 }
 
+/* Q6: the account name, page title and section headings add no decision at any width;
+   they stay for screen readers and the section anchors. */
+.phase2-workspace main[data-auth-state] > header,
+.phase2-workspace [data-workspace="account"] > h1,
 .phase2-workspace-heading {
-  margin: 0 18px 10px;
-  font-family: var(--f-display);
-  font-size: 20px;
-  font-weight: 600;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .phase2-workspace [data-live-capture="account"] .app {
@@ -3014,7 +3023,7 @@ textarea:focus {
   }
 
   .phase2-workspace [data-history-root] {
-    margin-inline: 12px;
+    margin-inline: 16px;
   }
 
   .account-history-panel {
@@ -3101,8 +3110,13 @@ textarea:focus {
 .workspace-nav { position: sticky; top: 0; z-index: 50; display: flex; flex-wrap: wrap; gap: 18px; padding: 12px 18px; background: var(--paper); border-bottom: 1px solid var(--line); }
 .workspace-nav a { color: var(--ink); }
 .phase2-workspace [data-workspace-section] { scroll-margin-top: 70px; }
-.phase2-workspace [data-workspace-section="file"],
-.phase2-workspace [data-workspace-section="voiceprints"] { padding: 18px; }
+/* Voiceprints is moved into the History card body (main.tsx), which already pads it. */
+.phase2-workspace [data-workspace-section="file"] { padding: 18px; }
+/* Phone: one 16 px side gutter for the jump links, cards and History. */
+@media (max-width: 768px) {
+  .workspace-nav { padding-inline: 16px; }
+  .phase2-workspace [data-live-capture="account"] .app { padding-inline: 16px; }
+}
 
 /* Desktop account workspace: one viewport, with scrolling inside its panels. */
 @media (min-width: 1025px) {
@@ -3140,6 +3154,25 @@ textarea:focus {
     overflow: hidden;
   }
 
+  /* Reference top bar: it reaches over the History column on the workspace's own three columns, so
+     the status pill sits above Controls, Settings above History, and the title pill stays under the
+     transcript card. History then starts level with Controls (top bar + the .app row gap). */
+  .phase2-workspace [data-workspace="account"] {
+    --ws-topbar-h: 46px;
+  }
+
+  .phase2-workspace .topbar {
+    grid-template-columns: var(--side-col) minmax(0, 1fr) var(--side-col);
+    column-gap: 12px;
+    height: var(--ws-topbar-h);
+    margin-right: calc(-12px - var(--side-col));
+    padding: 6px 0;
+  }
+
+  .phase2-workspace [data-workspace-section="live"] ~ [data-workspace-section="history"] {
+    margin-top: calc(var(--ws-topbar-h) + 10px);
+  }
+
   .phase2-workspace [data-live-capture="account"] #app {
     height: 100%;
     min-height: 0;
@@ -3169,10 +3202,7 @@ textarea:focus {
   }
 
   .phase2-workspace [data-workspace-section="file"] [data-file-upload="form"] .field:has(input[type="file"]) .field-label,
-  .workspace-nav,
-  .phase2-workspace [data-workspace="account"] > h1,
-  .phase2-workspace-heading,
-  .phase2-workspace main[data-auth-state] > header {
+  .workspace-nav {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -3248,6 +3278,7 @@ textarea:focus {
 
 @media (min-width: 1025px) and (max-width: 1280px) {
   .phase2-workspace [data-workspace="account"] {
+    --side-col: 240px;
     grid-template-columns: 240px minmax(0, 1fr) 240px;
   }
 
@@ -3297,7 +3328,6 @@ textarea:focus {
 .controls-mode-form ul:empty, .controls-mode-form [data-file-upload="status"]:empty { display: none; }
 .controls-export { flex: none; margin-top: 0; border-top: 1px solid var(--line); padding: 12px 0 0; }
 .voiceprint-list { list-style: none; margin: 12px 0 0; padding: 0; }
-.settings-trigger { border: 1px solid var(--line); border-radius: 9px; background: var(--surface); padding: 7px 10px; font-size: 18px; cursor: pointer; }
 .settings-dialog { width: min(760px, calc(100vw - 24px)); max-height: min(840px, calc(100dvh - 24px)); padding: 0; border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 18px 60px #0004; }
 .settings-dialog::backdrop { background: #17202a88; backdrop-filter: blur(3px); }
 .settings-dialog form { display: flex; flex-direction: column; max-height: min(840px, calc(100dvh - 24px)); }

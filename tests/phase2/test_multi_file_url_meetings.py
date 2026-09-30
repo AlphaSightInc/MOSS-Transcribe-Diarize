@@ -118,8 +118,10 @@ def test_mixed_serial_items_are_independent_and_owner_bound(tmp_path: Path):
         workspace = client.get("/").text
         assert 'aria-label="Workspace"' in workspace
         for section in ("file", "history", "voiceprints"):
-            assert f'href="#workspace-{section}"' in workspace
             assert f'id="workspace-{section}"' in workspace
+        # Voiceprints is a tab inside History, so it has no jump link of its own.
+        for section in ("file", "history"):
+            assert f'href="#workspace-{section}"' in workspace
         assert 'id="voiceprint-bank-app"' in workspace
         assert 'type="file" multiple' in workspace
         assert '<textarea name="urls">' in workspace
