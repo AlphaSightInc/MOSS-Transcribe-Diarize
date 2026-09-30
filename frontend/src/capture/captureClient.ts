@@ -26,7 +26,8 @@
  * ## What the caller must handle
  *
  * - `onMeter(lane, rms)` fires once per worklet frame per lane. Both meters must be
- *   non-zero before `createSession()` will succeed; that is the preflight gate.
+ *   non-zero before `createSession()` will succeed; that is the preflight gate. A muted
+ *   microphone is exempt: it frames zeros on purpose and may start the meeting muted.
  * - `onPreSessionFailure(failure)` fires for the three failures that happen before a
  *   session exists, so there is no authenticated heartbeat to carry them. The client
  *   has already torn its capture graph down when this fires; the caller owns the retry
@@ -572,7 +573,11 @@ export class CaptureClient {
     // picking a tab and ticking "share tab audio" is quiet for well over the ten-second window, and
     // with echoCancellation on Chrome emits exact zeros in that gap. The remedy line still reaches
     // them through `onPreflightStatus`; it just no longer prevents the meeting from starting.
-    if (!this.laneHasSignal.has("microphone") || !this.laneHasSignal.has("system")) {
+    // A muted microphone cannot show signal (the worklet zeroes it) and needs none: the operator
+    // chose silence, and its lane is attached with a live track -- an ended track has already torn
+    // the capture down (`browser_track_ended`). After unmute, K1 names a microphone that stays silent.
+    const microphoneReady = this.microphoneMuted || this.laneHasSignal.has("microphone");
+    if (!microphoneReady || !this.laneHasSignal.has("system")) {
       throw new Error("both capture lanes must have non-zero signal before session creation");
     }
     const descriptor = await this.requireDescriptor();

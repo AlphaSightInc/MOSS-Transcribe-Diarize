@@ -554,27 +554,36 @@ describe("ControlPanel reattach", () => {
       expect(root.querySelector('[data-capture-phase="active"]')).not.toBeNull();
     });
 
-    it("mutes without stopping the lane, empties the meter and names the muted microphone on Start (K6)", async () => {
+    const micIcon = (label: string) => button(label)?.querySelector("svg")?.getAttribute("data-icon");
+
+    it("mutes without stopping the lane or holding back Start, and its icon shows the state", async () => {
       await connectBoth();
       const mute = button("Mute mic")!;
       expect(mute.parentElement?.classList.contains("btn-row")).toBe(true);
       expect(mute.className).toBe("btn ghost");
       expect(mute.getAttribute("aria-pressed")).toBe("false");
+      expect(micIcon("Mute mic")).toBe("mic");
 
       await act(async () => mute.click());
       expect(mocks.setMicrophoneMuted).toHaveBeenLastCalledWith(true);
       const unmute = button("Unmute mic")!;
       expect(unmute.getAttribute("aria-pressed")).toBe("true");
       expect(unmute.classList.contains("is-active")).toBe(true);
+      expect(micIcon("Unmute mic")).toBe("mic-off");
       // The worklet's last pre-mute frame may still carry a level; the meter shows none.
       act(() => mocks.captureOptions!.onMeter!("microphone", .5));
       expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
-      expect(button("Start recording")!.disabled).toBe(true);
-      expect(button("Start recording")!.title).toBe("Microphone is muted");
+      // Then the muted worklet delivers zeros: a muted microphone is silent on purpose, so Start
+      // stays available and names nothing (#4).
+      act(() => mocks.captureOptions!.onMeter!("microphone", 0));
+      expect(button("Start recording")!.disabled).toBe(false);
+      expect(button("Start recording")!.title).toBe("");
       expect(root.querySelector('[role="status"]')).toBeNull();
 
       await act(async () => unmute.click());
       expect(mocks.setMicrophoneMuted).toHaveBeenLastCalledWith(false);
+      expect(micIcon("Mute mic")).toBe("mic");
+      act(() => mocks.captureOptions!.onMeter!("microphone", .5));
       expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeNull();
       expect(button("Start recording")!.disabled).toBe(false);
       expect(button("Start recording")!.title).toBe("");
@@ -595,6 +604,30 @@ describe("ControlPanel reattach", () => {
       await act(async () => button("Enable microphone")!.click());
       await vi.waitFor(() => expect(button("Mute mic")).toBeTruthy());
       expect(button("Unmute mic")).toBeUndefined();
+    });
+
+    it("starts the meeting muted when Mute mic is pressed before Share audio, and unmutes it later (#4)", async () => {
+      await act(async () => render(<ControlPanel />, root));
+      await act(async () => button("Enable microphone")!.click());
+      await vi.waitFor(() => expect(button("Mute mic")).toBeTruthy());
+      await act(async () => button("Mute mic")!.click());
+      expect(mocks.setMicrophoneMuted).toHaveBeenLastCalledWith(true);
+      // From here the muted worklet delivers only zeros.
+      act(() => mocks.captureOptions!.onMeter!("microphone", 0));
+      await act(async () => button("Share audio")!.click());
+      await vi.waitFor(() => expect(button("Start recording")?.disabled).toBe(false));
+      expect(button("Start recording")!.title).toBe("");
+      expect(button("Unmute mic")?.getAttribute("aria-pressed")).toBe("true");
+
+      await act(async () => button("Start recording")!.click());
+      expect(mocks.createSession).toHaveBeenCalledOnce();
+      expect(button("Stop recording")).toBeTruthy();
+      expect(micIcon("Unmute mic")).toBe("mic-off");
+      await act(async () => button("Unmute mic")!.click());
+      expect(mocks.setMicrophoneMuted).toHaveBeenLastCalledWith(false);
+      expect(button("Mute mic")?.getAttribute("aria-pressed")).toBe("false");
+      expect(micIcon("Mute mic")).toBe("mic");
+      expect(mocks.replaceLane).not.toHaveBeenCalled();
     });
 
     it("drops the silent-microphone remedy (K1) once the microphone is muted on purpose", async () => {

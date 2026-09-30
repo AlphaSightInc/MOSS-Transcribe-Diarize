@@ -9,11 +9,14 @@ vi.mock("../api/mossPoller", () => ({
   createMossSessionPoller: () => ({ start() {}, stop() {} })
 }));
 vi.mock("../lib/finalSummary", () => ({ watchCreatedMeeting() {} }));
+// A started meeting polls for its summary; that is not what these scenarios test.
+vi.mock("../lib/summaryRequests", () => ({ watchMeetingSummary: () => () => undefined }));
 // These scenarios are about capture failures, so a Gemini key is present (K9 is covered elsewhere).
 vi.mock("../lib/settings", async importOriginal => {
   const actual = await importOriginal<typeof import("../lib/settings")>();
-  return { ...actual, loadAppSettings: () => ({ ...actual.defaultAppSettings(),
-    transcription: { vendor: "gemini", apiKey: "test-key" } }) };
+  const defaults = actual.defaultAppSettings();
+  return { ...actual, loadAppSettings: () => ({ ...defaults,
+    transcription: { ...defaults.transcription, vendor: "gemini", apiKey: "test-key" } }) };
 });
 
 // Real ControlPanel and CaptureClient. Only browser devices, audio scheduling and
@@ -56,14 +59,27 @@ class FakeContext extends EventTarget {
   createGain() { return Object.assign(new FakeNode(), { gain: { value: 1 } }); }
 }
 class FakeWorklet extends FakeNode {
-  constructor(_context: unknown, _name: string, options: { processorOptions: { lane: CaptureLane } }) {
+  // Like lane-framer.js, a muted worklet frames zeros (captureClient.test covers the real one).
+  muted: boolean;
+  constructor(_context: unknown, _name: string, options: { processorOptions: { lane: CaptureLane; muted?: boolean } }) {
     super(); if (workletFails) throw new Error("worklet attachment failed"); nodes.set(options.processorOptions.lane, this);
+    this.muted = options.processorOptions.muted === true;
+    this.port.postMessage.mockImplementation((message: { type?: string; muted?: boolean }) => {
+      if (message.type === "mute") this.muted = message.muted === true;
+    });
   }
 }
 function feed(lane: CaptureLane, level: number) {
-  nodes.get(lane)?.port.onmessage?.({ data: {
-    type: "frame", lane, samples: new Float32Array(8000).fill(level), startFrame: 8000
+  const node = nodes.get(lane) as FakeWorklet | undefined;
+  if (!node) return;
+  node.port.onmessage?.({ data: {
+    type: "frame", lane, samples: new Float32Array(8000).fill(node.muted ? 0 : level), startFrame: 8000
   } });
+}
+function postedFrames(lane: CaptureLane) {
+  return vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith("/frames"))
+    .map(([, request]) => JSON.parse((request as RequestInit).body as string))
+    .filter(frame => frame.lane === lane);
 }
 function phase() { return root.querySelector("[data-capture-phase]")?.getAttribute("data-capture-phase"); }
 function status() { return root.querySelector("[role=status]")?.textContent; }
@@ -166,18 +182,18 @@ it.each(["source", "worklet"])("F4/9 cleans replacement microphone and both old 
   await chooseMicrophone("usb");
   await resetAfterFailure(`Microphone failed: ${failure} attachment failed`);
 });
-it("a muted microphone sends silence without the silent-microphone remedy and blocks Start until unmuted", async () => {
+it("a muted microphone sends silence without the silent-microphone remedy and does not hold back Start", async () => {
   await ready();
   expect(button("Reconnect mic")).toBeUndefined();
   const microphone = nodes.get("microphone")!;
   await click("Mute mic");
   expect(microphone.port.postMessage).toHaveBeenLastCalledWith({ type: "mute", muted: true });
   // The muted worklet delivers zeros; 25 frames x 0.5 s is past the 10 s silence window.
-  await settle(() => { for (let frame = 0; frame < 25; frame += 1) feed("microphone", 0); });
+  await settle(() => { for (let frame = 0; frame < 25; frame += 1) feed("microphone", .02); });
   expect(status()).toBeUndefined();
   expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
-  expect(button("Start recording")?.disabled).toBe(true);
-  expect(button("Start recording")?.title).toBe("Microphone is muted");
+  expect(button("Start recording")?.disabled).toBe(false);
+  expect(button("Start recording")?.title).toBe("");
   await click("Unmute mic");
   expect(microphone.port.postMessage).toHaveBeenLastCalledWith({ type: "mute", muted: false });
   await settle(() => feed("microphone", .02));
@@ -187,6 +203,33 @@ it("a muted microphone sends silence without the silent-microphone remedy and bl
   expect(status()).toBe("silent remedy");
   await click("Mute mic");
   expect(status()).toBeUndefined();
+});
+it("Mute mic before Share audio starts the meeting sending silence, and Unmute restores the audio (#4)", async () => {
+  await click("Enable microphone");
+  // Muted before the microphone ever reached the meter, so no frame of it has ever carried signal.
+  await click("Mute mic");
+  await click("Share audio");
+  await settle(() => { for (let frame = 0; frame < 25; frame += 1) feed("microphone", .02); feed("system", .3); });
+  expect(phase()).toBe("ready");
+  expect(status()).toBeUndefined();
+  expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
+  expect(button("Start recording")?.disabled).toBe(false);
+  expect(button("Start recording")?.title).toBe("");
+
+  await click("Start recording");
+  expect(phase()).toBe("active");
+  expect(vi.mocked(fetch).mock.calls.filter(([url]) => url === "/api/live/sessions")).toHaveLength(1);
+  // The lane runs muted: its frames reach the server as silence.
+  await settle(() => feed("microphone", .02));
+  await vi.waitFor(() => expect(postedFrames("microphone")).toHaveLength(1));
+  expect(postedFrames("microphone")[0]).toMatchObject({ sequence: 0, silent: true, device_epoch: 1 });
+
+  await click("Unmute mic");
+  expect(button("Mute mic")?.querySelector("svg")?.getAttribute("data-icon")).toBe("mic");
+  await settle(() => feed("microphone", .02));
+  await vi.waitFor(() => expect(postedFrames("microphone")).toHaveLength(2));
+  expect(postedFrames("microphone")[1]).toMatchObject({ sequence: 1, silent: false, device_epoch: 1, discontinuity: false });
+  expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeNull();
 });
 it("denied microphone recovers without reload", async () => {
   denyMicrophone = true; await click("Enable microphone");
