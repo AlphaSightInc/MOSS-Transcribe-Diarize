@@ -28,7 +28,7 @@ import {
   resetSessionState,
   sessionId,
   sessionMode,
-  sessionNeedsReview,
+  sessionStartedAt,
   sessionStatus,
   sessionTitle
 } from "../state/session";
@@ -175,7 +175,7 @@ export function MeetingHistory() {
       sessionMode.value === "live" &&
       selectedRef.current?.id !== meetingId
     ) {
-      setError("Stop the current capture before opening another Meeting.");
+      setError("Stop recording first.");
       return;
     }
     setError(null);
@@ -258,7 +258,7 @@ export function MeetingHistory() {
             <input
               type="search"
               aria-label="Search meetings"
-              placeholder="Search title, transcript, mode, status"
+              placeholder="Search meetings"
               value={query}
               onInput={(event) => setQuery(event.currentTarget.value)}
             />
@@ -275,15 +275,11 @@ export function MeetingHistory() {
 
         {historyView.value === "sessions" ? <>
         {error ? <p className="history-state-card is-error" role="alert">{error}</p> : null}
-        {selected && (selected.failure_reason || selected.notice) && <p role="status">{selected.failure_reason || selected.notice}</p>}
-        {loading && meetings.length === 0 ? (
-          <p className="history-state-card" role="status">Loading meetings…</p>
-        ) : null}
         {!loading && meetings.length === 0 ? (
           <p className="history-state-card">No meetings yet.</p>
         ) : null}
         {!loading && meetings.length > 0 && groups.length === 0 ? (
-          <p className="history-state-card">No meetings match this search.</p>
+          <p className="history-state-card">No matches.</p>
         ) : null}
 
         <div className="history-stack" data-history="list">
@@ -308,11 +304,10 @@ export function MeetingHistory() {
                         <span className="history-card-copy">
                           <span className="history-card-title">{meetingTitle(meeting)}</span>
                           <span className="history-card-meta">
-                            {formatMeetingTimestamp(meeting.created_at_ms)} · {modeLabel(meeting.mode)} · {statusLabel(meeting.status)}
+                            {[formatMeetingTimestamp(meeting.created_at_ms), modeLabel(meeting.mode),
+                              ...(meeting.status === "failed" || meeting.status === "interrupted" ? [statusLabel(meeting.status)] : [])].join(" · ")}
                           </span>
-                          <span className="history-card-subtitle">
-                            {meeting.failure_reason || meeting.notice || meetingPreview(meeting)}
-                          </span>
+                          <span className="history-card-subtitle">{meetingPreview(meeting)}</span>
                         </span>
                         {formatMeetingDuration(meeting) ? <span className="history-duration-chip">{formatMeetingDuration(meeting)}</span> : null}
                       </span>
@@ -329,7 +324,7 @@ export function MeetingHistory() {
                         Rename
                       </button>
                       {meeting.refinement_state === "running" && (meeting.audio?.state === "available" || meeting.audio?.state === "partial") ? (
-                        <span className="history-audio-unavailable">Audio export waits for transcript improvement.</span>
+                        <button type="button" className="history-action-btn" data-audio-download-pending disabled>Improving…</button>
                       ) : meeting.audio?.state === "available" || meeting.audio?.state === "partial" ? (
                         <a
                           className="history-action-btn"
@@ -403,6 +398,7 @@ export function MeetingHistory() {
 
 function publishMeeting(meeting: Meeting, observeActive: boolean): void {
   sessionTitle.value = meetingTitle(meeting);
+  sessionStartedAt.value = { sessionId: meeting.id, ms: meeting.created_at_ms };
   dispatchWsEvent({
     type: "session_state",
     session_id: meeting.id,
@@ -412,7 +408,8 @@ function publishMeeting(meeting: Meeting, observeActive: boolean): void {
     error: meeting.status === "failed" || meeting.status === "interrupted"
       ? meeting.failure_reason || statusLabel(meeting.status)
       : null,
-    status_line: meeting.failure_reason || meeting.notice || (meeting.status === "active" ? "Meeting active" : statusLabel(meeting.status)),
+    // Saved outcome notices and raw failure reasons are not shown (Q6); the pill reads lifecycle only.
+    status_line: null,
     needs_review: meeting.needs_review
   });
   dispatchWsEvent({

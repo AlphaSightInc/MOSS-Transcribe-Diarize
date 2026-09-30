@@ -31,14 +31,18 @@ describe('account file/URL feedback', () => {
     const open = vi.fn();
     document.addEventListener(OPEN_MEETING_EVENT, open);
     form.dispatchEvent(new Event('submit', { cancelable: true }));
-    await vi.waitFor(() => expect(document.body.textContent).toContain('Unsupported media URL'));
-    expect(document.body.textContent).toContain('Processing on the server');
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Not accepted: Unsupported media URL'));
+    // Progress prose is gone (Q6); an accepted row carries only its "Open meeting" action.
+    for (const removed of ['Processing on the server', 'Submitting', 'Accepted', 'need attention']) {
+      expect(document.body.textContent).not.toContain(removed);
+    }
     expect(document.querySelectorAll('[data-file-upload="results"] li')).toHaveLength(2);
     expect(open).not.toHaveBeenCalled();
     document.querySelector<HTMLButtonElement>('[aria-label="Open meeting for https://good.test/audio"]')!.click();
     expect(open).toHaveBeenCalledOnce();
     expect((open.mock.calls[0][0] as CustomEvent).detail).toEqual({ meetingId: 'accepted' });
-    await vi.waitFor(() => expect(document.body.textContent).toContain('Completed — ready to open.'), { timeout: 2500 });
+    await vi.waitFor(() => expect(reads).toBeGreaterThan(1), { timeout: 2500 });
+    expect(document.body.textContent).not.toContain('Completed');
     expect(requests.filter(url => url === '/api/meetings/url')).toHaveLength(2);
     document.removeEventListener(OPEN_MEETING_EVENT, open);
   });
@@ -54,7 +58,7 @@ describe('account file/URL feedback', () => {
     expect(fetcher).toHaveBeenCalledOnce();
     expect(document.querySelector('strong')!.textContent).toBe('<sample>.wav');
     reject(new Error('offline'));
-    await vi.waitFor(() => expect(document.body.textContent).toContain('Check your connection and meeting history before retrying'));
+    await vi.waitFor(() => expect(document.body.textContent).toContain('Not confirmed — check History before retrying.'));
     expect(document.querySelector('button')!.disabled).toBe(false);
     expect(document.querySelector('[data-file-upload="results"] button')).toBeNull();
   });

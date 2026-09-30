@@ -61,17 +61,19 @@ describe("MeetingHistory", () => {
   it.each([
     { status: "failed" as const, failure_code: "decode_failed", failure_reason: "Decoder unavailable." },
     { status: "completed" as const, notice: "No speech detected." }
-  ])("shows file outcome on the history row and selected meeting", async outcome => {
+  ])("keeps saved outcome notices and raw reasons off the history row and selection (Q6)", async outcome => {
     const selected = meeting({ mode: "file", transcript: { segments: [] }, ...outcome });
     vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [selected] } : selected)));
     await act(async () => render(<MeetingHistory />, root));
     const reason = selected.failure_reason || selected.notice!;
-    await vi.waitFor(() => expect(root.querySelector(".history-card-subtitle")?.textContent).toBe(reason));
+    await vi.waitFor(() => expect(root.querySelector(".history-card-subtitle")?.textContent).toBe("No transcript"));
+    expect(root.querySelector(".history-card-meta")?.textContent?.endsWith(selected.status === "failed" ? "Failed" : "File / URL")).toBe(true);
     await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: selected.id } })); });
-    await vi.waitFor(() => expect([...root.querySelectorAll('[role="status"]')].some(node => node.textContent === reason)).toBe(true));
+    await vi.waitFor(() => expect(sessionId.value).toBe(selected.id));
+    expect(root.textContent).not.toContain(reason);
   });
 
-  it("shows retained words notice and partial audio after tape exhaustion", async () => {
+  it("shows partial audio after tape exhaustion without the retained-words notice", async () => {
     const notice = "Final transcript refinement was unavailable for some audio. Previously committed words were kept.";
     const selected = meeting({ notice, audio: {
       state: "partial", relative_path: "audio.partial.mp3", byte_count: 360693,
@@ -79,11 +81,11 @@ describe("MeetingHistory", () => {
     } });
     vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [selected] } : selected)));
     await act(async () => render(<MeetingHistory />, root));
-    await vi.waitFor(() => expect(root.querySelector(".history-card-subtitle")?.textContent).toBe(notice));
+    await vi.waitFor(() => expect(root.querySelector(".history-card-subtitle")?.textContent).toBe("first words"));
     expect(root.querySelector("[data-audio-download]")?.textContent).toBe("Download partial audio");
     await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: selected.id } })); });
-    await vi.waitFor(() => expect([...root.querySelectorAll('[role="status"]')].some(node => node.textContent === notice)).toBe(true));
-    expect(transcript.value.map(segment => segment.text)).toEqual(["first words"]);
+    await vi.waitFor(() => expect(transcript.value.map(segment => segment.text)).toEqual(["first words"]));
+    expect(root.textContent).not.toContain(notice);
   });
 
   it("opens the selected meeting summary in the centre card", async () => {
@@ -208,7 +210,10 @@ describe("MeetingHistory", () => {
     await act(async () => render(<MeetingHistory />, root));
     await vi.waitFor(() => expect(root.querySelector('[data-meeting-card="meeting-a"]')).not.toBeNull());
     expect(root.querySelector("[data-audio-download]")).toBeNull();
-    expect(root.textContent).toContain("Audio export waits for transcript improvement.");
+    expect(root.textContent).not.toContain("Audio export waits");
+    // The state lives on the control, as with Export Save.
+    expect(root.querySelector<HTMLButtonElement>("[data-audio-download-pending]")?.textContent).toBe("Improving…");
+    expect(root.querySelector<HTMLButtonElement>("[data-audio-download-pending]")?.disabled).toBe(true);
     expect(root.querySelector<HTMLButtonElement>(".history-action-btn")?.disabled).toBe(false);
   });
 
@@ -443,7 +448,8 @@ describe("MeetingHistory", () => {
     const downloadedText = await Promise.all(blobs.map(blob => blob.text()));
     expect(downloadedText).toHaveLength(5);
     for (const content of downloadedText) {
-      expect(content).toContain("Needs review");
+      // Export files carry the transcript only (Q6): no review notice.
+      expect(content).not.toContain("Needs review");
       expect(content).toContain("Speaker TBD");
     }
     for (const content of downloadedText.filter((_, index) => index !== 2)) {

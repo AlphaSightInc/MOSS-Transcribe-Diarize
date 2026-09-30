@@ -7,16 +7,6 @@ import { isBackendUnknownSpeakerId, UNRESOLVED_SPEAKER_ID } from "./speakerMap.t
 export const TRANSCRIPT_EXPORT_FORMATS = ["md", "txt", "json", "srt", "vtt"] as const;
 export type TranscriptExportFormat = (typeof TRANSCRIPT_EXPORT_FORMATS)[number];
 
-const PROVISIONAL_ATTRIBUTION_CAVEAT =
-  "Speaker attribution is provisional and may change before the meeting is finished.";
-const TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT =
-  `Provisional attribution: ${PROVISIONAL_ATTRIBUTION_CAVEAT}`;
-const MARKDOWN_PROVISIONAL_ATTRIBUTION_CAVEAT =
-  `> **Provisional attribution:** ${PROVISIONAL_ATTRIBUTION_CAVEAT}`;
-const NEEDS_REVIEW_NOTICE = "Needs review: one or more speaker assignments remain uncertain or processing ended partially.";
-const MARKDOWN_NEEDS_REVIEW_NOTICE =
-  "> **Needs review:** One or more speaker assignments remain uncertain or processing ended partially.";
-
 export interface TranscriptExportFile {
   content: string;
   filename: string;
@@ -43,15 +33,10 @@ export interface TranscriptExportJsonTurn {
   provisional_stale: boolean;
 }
 
+/** Files carry the transcript only: no provisional, review or pending-summary notices (Q6). */
 export interface TranscriptExportJsonDocument {
   version: 1;
-  provisional_attribution_notice?: string;
-  review_status?: "Needs review";
   turns: TranscriptExportJsonTurn[];
-}
-
-export interface TranscriptExportReview {
-  needsReview: boolean;
 }
 
 export function formatTranscriptClockTime(seconds: number): string {
@@ -76,13 +61,10 @@ export function serializeTranscriptExport(
   turns: readonly TranscriptTurn[],
   resolveLabel: (turn: TranscriptTurn) => string,
   identity: TranscriptExportIdentity,
-  review: TranscriptExportReview = { needsReview: false },
-  summary?: SummaryDocument | null,
-  summaryUpdating = false
+  summary?: SummaryDocument | null
 ): TranscriptExportFile {
   turns = [...turns].sort(compareTranscriptOrder);
   const rows = buildExportRows(turns, resolveLabel);
-  const provisionalAttribution = hasProvisionalAttribution(turns);
   const filename = `transcript-${identity.sessionId}-${identity.exportedAt.toISOString()}.${format}`;
   if (format === "srt" || format === "vtt") {
     const cues = turns.filter(turn => turn.text.trim()).map((turn, index) => {
@@ -90,39 +72,28 @@ export function serializeTranscriptExport(
       const end = Math.max(start + 1, Math.round(turn.end * 1000));
       const text = subtitleText(turn.text.trim());
       const label = subtitleText(resolveExportLabel(turn, resolveLabel)).replace(/\n/g, " ");
-      const provisional = format === "srt" && turn.state !== "final" ? "[Provisional attribution] " : "";
-      const needsReview = format === "srt" && review.needsReview && index === 0 ? "[Needs review] " : "";
-      return `${index + 1}\n${subtitleTime(start, format)} --> ${subtitleTime(end, format)}\n${needsReview}${provisional}${label}: ${text}`;
+      return `${index + 1}\n${subtitleTime(start, format)} --> ${subtitleTime(end, format)}\n${label}: ${text}`;
     }).join("\n\n");
-    const header = format === "vtt"
-      ? `WEBVTT\n\n${review.needsReview ? `NOTE ${NEEDS_REVIEW_NOTICE}\n\n` : ""}${provisionalAttribution ? `NOTE ${TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT}\n\n` : ""}` : "";
+    const header = format === "vtt" ? "WEBVTT\n\n" : "";
     return { content: `${header}${cues}${cues ? "\n" : ""}`, filename,
       mediaType: format === "vtt" ? "text/vtt;charset=utf-8" : "application/x-subrip;charset=utf-8" };
   }
   if (format === "md") {
     return {
-      content: prependNotice(prependProvisionalAttributionCaveat(
-        `${summary ? `${formatSummaryMarkdown(summary)}\n\n# Transcript\n\n` : ""}${summaryUpdating ? "> summary is being updated\n\n" : ""}${rows.map((row) => `## [${row.clockTime}] ${row.label}\n\n${row.text}`).join("\n\n")}`,
-        MARKDOWN_PROVISIONAL_ATTRIBUTION_CAVEAT,
-        provisionalAttribution
-      ), MARKDOWN_NEEDS_REVIEW_NOTICE, review.needsReview),
+      content: `${summary ? `${formatSummaryMarkdown(summary)}\n\n# Transcript\n\n` : ""}${rows.map((row) => `## [${row.clockTime}] ${row.label}\n\n${row.text}`).join("\n\n")}`,
       filename,
       mediaType: "text/markdown;charset=utf-8"
     };
   }
   if (format === "txt") {
     return {
-      content: prependNotice(prependProvisionalAttributionCaveat(
-        buildTranscriptExportText(turns, resolveLabel),
-        TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT,
-        provisionalAttribution
-      ), NEEDS_REVIEW_NOTICE, review.needsReview),
+      content: buildTranscriptExportText(turns, resolveLabel),
       filename,
       mediaType: "text/plain;charset=utf-8"
     };
   }
   return {
-    content: `${JSON.stringify(buildTranscriptExportJsonDocument(turns, resolveLabel, review), null, 2)}\n`,
+    content: `${JSON.stringify(buildTranscriptExportJsonDocument(turns, resolveLabel), null, 2)}\n`,
     filename,
     mediaType: "application/json;charset=utf-8"
   };
@@ -130,15 +101,10 @@ export function serializeTranscriptExport(
 
 export function buildTranscriptExportJsonDocument(
   turns: readonly TranscriptTurn[],
-  resolveLabel: (turn: TranscriptTurn) => string,
-  review: TranscriptExportReview = { needsReview: false }
+  resolveLabel: (turn: TranscriptTurn) => string
 ): TranscriptExportJsonDocument {
   return {
     version: 1,
-    ...(review.needsReview ? { review_status: "Needs review" as const } : {}),
-    ...(hasProvisionalAttribution(turns)
-      ? { provisional_attribution_notice: TEXT_PROVISIONAL_ATTRIBUTION_CAVEAT }
-      : {}),
     turns: [...turns].sort(compareTranscriptOrder).map((turn) => {
       const speakerLabel = resolveExportLabel(turn, resolveLabel);
       const unidentified = isBackendUnknownSpeakerId(turn.speaker_entity_id);
@@ -158,11 +124,6 @@ export function buildTranscriptExportJsonDocument(
       };
     })
   };
-}
-
-function prependNotice(content: string, notice: string, present: boolean): string {
-  if (!present) return content;
-  return content ? `${notice}\n\n${content}` : notice;
 }
 
 export function triggerTranscriptExportDownload(file: TranscriptExportFile): void {
@@ -192,21 +153,6 @@ function buildExportRows(
 
 function resolveExportLabel(turn: TranscriptTurn, resolveLabel: (turn: TranscriptTurn) => string): string {
   return resolveLabel(turn).trim() || turn.display_name.trim() || turn.speaker;
-}
-
-function hasProvisionalAttribution(turns: readonly TranscriptTurn[]): boolean {
-  return turns.some((turn) => turn.state !== "final");
-}
-
-function prependProvisionalAttributionCaveat(
-  content: string,
-  caveat: string,
-  provisionalAttribution: boolean
-): string {
-  if (!provisionalAttribution) {
-    return content;
-  }
-  return content ? `${caveat}\n\n${content}` : caveat;
 }
 
 

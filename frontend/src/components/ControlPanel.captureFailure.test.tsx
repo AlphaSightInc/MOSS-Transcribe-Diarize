@@ -9,6 +9,12 @@ vi.mock("../api/mossPoller", () => ({
   createMossSessionPoller: () => ({ start() {}, stop() {} })
 }));
 vi.mock("../lib/finalSummary", () => ({ watchCreatedMeeting() {} }));
+// These scenarios are about capture failures, so a Gemini key is present (K9 is covered elsewhere).
+vi.mock("../lib/settings", async importOriginal => {
+  const actual = await importOriginal<typeof import("../lib/settings")>();
+  return { ...actual, loadAppSettings: () => ({ ...actual.defaultAppSettings(),
+    transcription: { vendor: "gemini", apiKey: "test-key" } }) };
+});
 
 // Real ControlPanel and CaptureClient. Only browser devices, audio scheduling and
 // HTTP are simulated; failures cross the same attachment/catch/cleanup boundary.
@@ -109,13 +115,12 @@ afterEach(async () => {
   vi.restoreAllMocks(); vi.unstubAllGlobals();
 });
 
-async function resetAfterFailure(message: string, lane?: CaptureLane) {
+async function resetAfterFailure(line: string) {
   expect(phase()).toBe("error");
-  expect(status()).toBe(lane
-    ? `${lane === "microphone" ? "Microphone" : "Shared audio"}: ${message}. Reset capture to try again.`
-    : message);
-  expect(button("Reset capture")).toBeTruthy();
-  await click("Reset capture");
+  // K8/K3 short form beside the Reset action; never a raw browser_* code.
+  expect(status()).toBe(line);
+  expect(button("Reset")).toBeTruthy();
+  await click("Reset");
   expect(phase()).toBe("idle");
   expect(contexts.every(context => context.state === "closed")).toBe(true);
   expect(streams.every(stream => stream.getTracks().every(track => track.stop.mock.calls.length > 0))).toBe(true);
@@ -125,12 +130,12 @@ it.each(["source", "worklet"])("F4/4 cleans acquired display and existing microp
   await click("Enable microphone");
   sourceFails = failure === "source"; workletFails = failure === "worklet";
   await click("Share audio");
-  await resetAfterFailure(`${failure} attachment failed`, "system");
+  await resetAfterFailure(`Shared audio failed: ${failure} attachment failed`);
 });
 it.each(["source", "worklet"])("F4/5 cleans acquired microphone after %s failure and Reset", async failure => {
   sourceFails = failure === "source"; workletFails = failure === "worklet";
   await click("Enable microphone");
-  await resetAfterFailure(`${failure} attachment failed`, "microphone");
+  await resetAfterFailure(`Microphone failed: ${failure} attachment failed`);
 });
 it("F4/6 catches synchronous chooser errors in the user gesture", async () => {
   await click("Enable microphone");
@@ -142,22 +147,22 @@ it("F4/6 catches synchronous chooser errors in the user gesture", async () => {
     expect(request).toHaveBeenCalledOnce();
     await new Promise(resolve => setTimeout(resolve, 0));
   });
-  await resetAfterFailure("capture AudioContext is not running", "system");
+  await resetAfterFailure("Shared audio failed: capture AudioContext is not running");
 });
 it.each(["source", "worklet"])("F4/9 cleans replacement microphone and both old lanes after %s failure and Reset", async failure => {
   await ready();
   sourceFails = failure === "source"; workletFails = failure === "worklet";
-  await click("Switch mic");
-  await resetAfterFailure(`${failure} attachment failed`);
+  await click("Reconnect mic");
+  await resetAfterFailure(`Microphone failed: ${failure} attachment failed`);
 });
 it("denied microphone recovers without reload", async () => {
   denyMicrophone = true; await click("Enable microphone");
-  await resetAfterFailure("microphone denied", "microphone");
+  await resetAfterFailure("Microphone blocked — allow it in Chrome site settings.");
   denyMicrophone = false; await ready();
 });
 it("cancelled picker recovers without reload", async () => {
   await click("Enable microphone"); displayMode = "reject"; await click("Share audio");
-  await resetAfterFailure("chooser rejected", "system");
+  await resetAfterFailure("Sharing did not start.");
   displayMode = "ok"; await ready();
 });
 
@@ -173,7 +178,7 @@ async function settle(action: () => void) {
 }
 function snapshot(step: string) {
   process.stdout.write(JSON.stringify({ step, phase: phase(), status: status(),
-    reset: !!button("Reset capture"),
+    reset: !!button("Reset"),
     meters: [...root.querySelectorAll(".capture-meter-track")].map(n => n.getAttribute("aria-label")),
     connected: [...root.querySelectorAll(".capture-meter small")].map(n => n.textContent),
     tracks: streams.flatMap(s => s.getTracks().map(t => t.stop.mock.calls.length)),
@@ -182,8 +187,8 @@ function snapshot(step: string) {
     chooserCalls: vi.mocked(navigator.mediaDevices.getDisplayMedia).mock.calls.length }) + "\n");
 }
 async function assertReset() {
-  expect(button("Reset capture")).toBeTruthy();
-  await click("Reset capture"); snapshot("reset");
+  expect(button("Reset")).toBeTruthy();
+  await click("Reset"); snapshot("reset");
   expect(phase()).toBe("idle");
   expect(contexts.every(c => c.state === "closed")).toBe(true);
   expect(streams.every(s => s.getTracks().every(t => t.stop.mock.calls.length > 0))).toBe(true);
@@ -197,12 +202,12 @@ it.each(["descriptor", "microphone"] as const)("pending %s exposes only the next
   else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
   await click("Enable microphone"); snapshot(`${pending} pending`);
   expect(button("Share audio")).toBeUndefined();
-  expect(button("Connecting microphone…")?.disabled).toBe(true);
+  expect(button("Connecting…")?.disabled).toBe(true);
   expect(vi.mocked(navigator.mediaDevices.getDisplayMedia)).not.toHaveBeenCalled();
   await settle(() => gate.resolve(pending === "descriptor"
     ? { ok: true, json: async () => ({ descriptor, preflight_status_lines: { browser_microphone_silent: "silent remedy" } }) } as Response : new FakeStream() as unknown as MediaStream));
   expect(button("Share audio")?.classList.contains("record-btn")).toBe(true);
-  expect(status()).toContain("Microphone connected");
+  expect(status()).toBeUndefined();
 });
 it.each(["descriptor", "microphone"] as const)("pending %s failure offers recovery", async pending => {
   const gate = deferred<Response | MediaStream>();
@@ -211,8 +216,8 @@ it.each(["descriptor", "microphone"] as const)("pending %s failure offers recove
   await click("Enable microphone"); snapshot(`${pending} pending`);
   expect(button("Share audio")).toBeUndefined();
   await settle(() => gate.reject(new Error("microphone preparation denied"))); snapshot("microphone failed");
-  expect(status()).toContain("microphone preparation denied");
-  expect(status()).toContain("Reset capture");
+  expect(status()).toBe(pending === "descriptor" ? "Microphone failed: microphone preparation denied"
+    : "Microphone blocked — allow it in Chrome site settings.");
   await assertReset();
 });
 it.each(["descriptor", "microphone"] as const)("Reset before pending %s resolves cannot revive capture", async pending => {
@@ -220,12 +225,12 @@ it.each(["descriptor", "microphone"] as const)("Reset before pending %s resolves
   if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
   else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
   await click("Enable microphone");
-  await click("Reset capture"); snapshot("reset while pending");
+  await click("Reset"); snapshot("reset while pending");
   await settle(() => gate.resolve(pending === "descriptor"
     ? { ok: true, json: async () => ({ descriptor, preflight_status_lines: { browser_microphone_silent: "silent remedy" } }) } as Response : new FakeStream() as unknown as MediaStream)); snapshot("old setup settled");
   expect(contexts.length).toBeGreaterThan(0);
   expect(phase()).toBe("idle");
-  expect(status()).toContain("Live capture requires both");
+  expect(status()).toBeUndefined();
   expect(contexts.every(c => c.state === "closed")).toBe(true);
   expect(streams.every(s => s.getTracks().every(t => t.stop.mock.calls.length > 0))).toBe(true);
   expect([...nodes.values()].filter(n => n.port.onmessage)).toHaveLength(0);
@@ -233,8 +238,9 @@ it.each(["descriptor", "microphone"] as const)("Reset before pending %s resolves
 it.each(["reject", "missing"] as const)("admitted Share %s clears meters and explains recovery", async mode => {
   await click("Enable microphone"); await settle(() => feed("microphone", .02)); snapshot("mic receiving");
   displayMode = mode; await click("Share audio"); snapshot(`share ${mode}`);
-  expect(status()).toContain("Shared audio"); expect(status()).toContain("Reset capture");
-  expect(status()).toContain(mode === "reject" ? "chooser rejected" : "selected display surface supplied no audio track");
+  expect(status()).toBe(mode === "reject" ? "Sharing did not start."
+    : "No audio in that share — choose a tab and turn on Share tab audio.");
+  expect(button("Reset")).toBeTruthy();
   expect(root.querySelector('[aria-label="Microphone level 0%"]')).toBeTruthy();
   await assertReset();
   displayMode = "ok"; await ready(); snapshot("retry ready");
@@ -242,27 +248,27 @@ it.each(["reject", "missing"] as const)("admitted Share %s clears meters and exp
 it("mic failure before Share removes Share and offers Reset", async () => {
   denyMicrophone = true; await click("Enable microphone"); snapshot("mic denied first");
   expect(button("Share audio")).toBeUndefined();
-  expect(status()).toContain("Microphone"); expect(status()).toContain("microphone denied");
-  expect(status()).toContain("Reset capture"); await assertReset();
+  expect(status()).toBe("Microphone blocked — allow it in Chrome site settings.");
+  await assertReset();
 });
 it("successful setup still becomes ready only after both lanes have sound", async () => {
   await click("Enable microphone"); await click("Share audio"); snapshot("both attached");
   expect(phase()).toBe("configuring");
   await settle(() => feed("microphone", .02)); snapshot("mic sound"); expect(phase()).toBe("configuring");
   await settle(() => feed("system", .3)); snapshot("both sound"); expect(phase()).toBe("ready");
-  expect(status()).toBe("Both sources are receiving sound. Start capture when ready.");
+  expect(status()).toBeUndefined();
 });
 
 it.each(["descriptor", "microphone"] as const)("old %s rejection after Reset cannot overwrite a fresh ready setup", async pending => {
   const gate = deferred<Response | MediaStream>();
   if (pending === "descriptor") vi.mocked(fetch).mockImplementationOnce(() => gate.promise as Promise<Response>);
   else vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(() => gate.promise as Promise<MediaStream>);
-  await click("Enable microphone"); await click("Reset capture");
+  await click("Enable microphone"); await click("Reset");
   await ready();
   await settle(() => gate.reject(new Error("old microphone denied"))); snapshot("retired rejection after fresh ready");
   expect(phase()).toBe("ready");
-  expect(status()).toBe("Both sources are receiving sound. Start capture when ready.");
-  expect(button("Reset capture")).toBeUndefined();
+  expect(status()).toBeUndefined();
+  expect(button("Reset")).toBeUndefined();
 });
 it.each(["success", "reject"] as const)("Reset while chooser pending handles late %s", async outcome => {
   await click("Enable microphone");
@@ -274,11 +280,11 @@ it.each(["success", "reject"] as const)("Reset while chooser pending handles lat
   displayMode = "reject";
   await click("Share audio");
   snapshot("second chooser rejected with first pending");
-  await click("Reset capture");
+  await click("Reset");
   await settle(() => outcome === "success" ? chooser.resolve(new FakeStream() as unknown as MediaStream)
     : chooser.reject(new Error("chooser cancelled")));
   snapshot("late chooser settled");
-  expect(phase()).toBe("idle"); expect(status()).toContain("Live capture requires both");
+  expect(phase()).toBe("idle"); expect(status()).toBeUndefined();
   expect(contexts.every(c => c.state === "closed")).toBe(true);
   expect(streams.every(s => s.getTracks().every(t => t.stop.mock.calls.length > 0))).toBe(true);
 });
@@ -297,9 +303,9 @@ it.each([
   await settle(() => track.dispatchEvent(new Event("ended")));
   snapshot(`pre-session ${lane} ended`);
   expect(phase()).toBe("error");
-  expect(status()).toContain("browser_track_ended");
-  expect(status()).not.toContain("connected");
-  expect([...root.querySelectorAll(".capture-meter small")].map(n => n.textContent)).toEqual(["Not connected", "Not connected"]);
+  // K3: the stopped source by name; the raw browser_track_ended code never reaches the page.
+  expect(status()).toBe(lane === "microphone" ? "Microphone stopped." : "Shared audio stopped.");
+  expect(root.querySelectorAll(".capture-meter small")).toHaveLength(0);
   expect(contexts.every(c => c.state === "closed")).toBe(true);
   expect(streams.every(s => s.getTracks().every(t => t.stop.mock.calls.length > 0))).toBe(true);
   expect([...nodes.values()].filter(n => n.port.onmessage)).toHaveLength(0);

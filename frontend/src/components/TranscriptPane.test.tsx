@@ -34,8 +34,8 @@ describe("TranscriptPane", () => {
 
   it("uses the product name for an untitled transcript", () => {
     act(() => render(<TranscriptPane />, root));
-    expect(root.querySelector(".tr-title")?.textContent).toContain("MOSS");
-    expect(root.querySelector(".tr-title")?.textContent).not.toContain("LiveTranscribe");
+    expect(root.querySelector(".tr-title")?.textContent).toContain("aiSight - LiveTranscribe");
+    expect(root.querySelector(".tr-title")?.textContent).not.toContain("MOSS");
   });
 
   it("shows refinement progress while naming stays available and passage correction waits", () => {

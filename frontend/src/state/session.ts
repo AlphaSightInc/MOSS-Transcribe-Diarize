@@ -25,6 +25,9 @@ export const sessionError = signal<string | null>(null);
 // the signal exists so that fallback is the only reason it is ever empty.
 export const sessionTitle = signal("");
 export const sessionStatusLine = signal<string | null>(null);
+// When a meeting began, keyed by its id so a reset between publish and observe cannot lose it.
+// The top pill's "Recording mm:ss" reads it; unknown (reload reattach) falls back to first sight.
+export const sessionStartedAt = signal<{ sessionId: string; ms: number } | null>(null);
 export const sessionNeedsReview = signal(false);
 export const liveLabelPolicy = signal<"current" | "La">("current");
 

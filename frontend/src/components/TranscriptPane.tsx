@@ -401,7 +401,7 @@ export function TranscriptPane() {
               its classes and the hint glyph are the reference's, because this pane is not an
               exempt region and its geometry is measured against the reference directly. */}
           <button type="button" className="tr-title" disabled>
-            {sessionTitle.value.trim() || "MOSS"}
+            {sessionTitle.value.trim() || "aiSight - LiveTranscribe"}
             <span className="edit-hint" aria-hidden="true">
               ✎
             </span>

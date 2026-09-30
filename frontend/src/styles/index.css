@@ -981,7 +981,6 @@ textarea:focus {
 }
 
 .capture-status {
-  min-height: 34px;
   border-left: 2px solid var(--line-2);
   padding-left: 10px;
 }
@@ -3805,21 +3804,14 @@ button.legend-chip:disabled {
 .control-panel .panel-body { overflow: hidden; }
 .controls-workspace { display: flex; flex-direction: column; height: 100%; min-height: 0; gap: 0; }
 .controls-scroll { flex: 1; min-height: 0; overflow-y: auto; }
-.controls-block { padding: 18px 0; border-bottom: 1px solid var(--line); }
-.controls-block:first-child { padding-top: 0; }
 .mode-tabs, .transcript-tabs { display: flex; width: 100%; }
 .mode-tabs .seg-btn, .transcript-tabs .seg-btn { flex: 1; }
-.controls-primary { padding: 16px 0 4px; }
-.controls-primary .record-btn, .controls-mode-form > .record-btn { width: 100%; }
-.live-mode-section { border-bottom: 0; padding-top: 14px; }
-.live-mode-section .capture-supervisor { display: grid; gap: 8px; }
 .controls-mode-form { display: flex; flex-direction: column; }
-.controls-mode-form .controls-block { display: grid; gap: 8px; }
 .controls-mode-form input[type="url"], .controls-mode-form input[type="file"] { width: 100%; min-width: 0; }
-.controls-mode-form [data-file-upload="results"] { padding-left: 18px; overflow-wrap: anywhere; }
-.controls-export { flex: none; margin-top: 0; border-top: 1px solid var(--line); border-bottom: 0; padding: 12px 0 0; }
-.controls-export-row { display: flex; gap: 6px; }
-.controls-export-row select { flex: 1; min-width: 0; }
+.controls-mode-form ul { margin: 0; padding-left: 18px; overflow-wrap: anywhere; }
+.controls-mode-form ul:empty, .controls-mode-form [data-file-upload="status"]:empty { display: none; }
+.controls-export { flex: none; margin-top: 0; border-top: 1px solid var(--line); padding: 12px 0 0; }
+.voiceprint-list { list-style: none; margin: 12px 0 0; padding: 0; }
 .settings-trigger { border: 1px solid var(--line); border-radius: 9px; background: var(--surface); padding: 7px 10px; font-size: 18px; cursor: pointer; }
 .settings-dialog { width: min(760px, calc(100vw - 24px)); max-height: min(840px, calc(100dvh - 24px)); padding: 0; border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 18px 60px #0004; }
 .settings-dialog::backdrop { background: #17202a88; backdrop-filter: blur(3px); }

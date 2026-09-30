@@ -560,7 +560,7 @@ export class CaptureClient {
         (detail as Record<string, unknown>).code === "live_capacity_full"
       ) {
         throw new Error(
-          "Two live meetings are already recording. Stop one before starting another.",
+          "Two meetings are already recording — stop one first.",
         );
       }
       throw new Error(`session create failed: HTTP ${response.status}`);

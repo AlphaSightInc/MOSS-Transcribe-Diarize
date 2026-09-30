@@ -16,6 +16,8 @@ def execute_submission_script(workspace_html: str) -> dict[str, object]:
         try:
             page = browser.new_page()
             page.add_init_script("window.created=[]; document.addEventListener('moss:meeting-created', e=>window.created.push(e.detail.meeting_id));")
+            # K9: File/URL Start needs a Gemini key in the I-1 browser settings (plan-r3-ui I-1).
+            page.add_init_script("localStorage.setItem('moss.settings.v2', JSON.stringify({transcription: {vendor: 'gemini', apiKey: 'test-key'}}));")
             def route(r):
                 path = urlsplit(r.request.url).path
                 if path == '/':
@@ -44,18 +46,21 @@ def execute_submission_script(workspace_html: str) -> dict[str, object]:
                 {'name': 'two.wav', 'mimeType': 'audio/wav', 'buffer': b'two'},
             ])
             page.get_by_role('button', name='Start file transcription', exact=True).click()
-            expect(page.locator('[data-file-upload="status"]')).to_contain_text('1 accepted; 1 need attention.')
-            expect(page.locator('[data-file-upload="results"] li')).to_have_count(2)
+            results = page.locator('[data-file-upload="results"]')
+            expect(results.locator('li')).to_have_count(2)
+            # Q6: rows keep only a failure with its reason and the "Open meeting" action.
+            expect(results.get_by_role('button', name='Open meeting for one.wav')).to_have_count(1)
+            expect(results.locator('li').nth(1)).to_contain_text('Not confirmed — check History before retrying.')
             file_status = page.locator('[data-file-upload="status"]').inner_text()
             page.get_by_role('button', name='URL', exact=True).click()
             url = page.locator('input[name="urls"]')
             url.fill('https://media.test/http-failure')
             page.get_by_role('button', name='Start URL transcription', exact=True).click()
-            expect(page.locator('[data-file-upload="results"]')).to_contain_text('Unsupported media URL')
-            expect(page.locator('[data-file-upload="results"]')).to_contain_text('before submitting it again')
+            expect(page.locator('[data-file-upload="results"]')).to_contain_text('Not accepted: Unsupported media URL')
             url.fill('https://media.test/good')
             page.get_by_role('button', name='Start URL transcription', exact=True).click()
-            expect(page.locator('[data-file-upload="status"]')).to_contain_text('1 accepted; 0 need attention.')
+            expect(page.get_by_role('button', name='Open meeting for https://media.test/good')).to_have_count(1)
+            expect(page.locator('[data-file-upload="results"]')).not_to_contain_text('Not accepted')
             return {'calls': calls, 'created': page.evaluate('window.created'),
                     'file_status': file_status,
                     'url_status': page.locator('[data-file-upload="status"]').inner_text()}
@@ -72,7 +77,7 @@ def test_mixed_file_url_form_reports_each_result_and_created_event():
             "/api/meetings/url",
             "/api/meetings/url",
         ],
-        "file_status": "1 accepted; 1 need attention. Accepted work continues on the server.",
-        "url_status": "1 accepted; 0 need attention. Accepted work continues on the server.",
+        "file_status": "",
+        "url_status": "",
         "created": ["accepted-1", "accepted-4"],
     }
