@@ -45,9 +45,14 @@ def test_file_runner_emits_stable_parseable_speaker_tokens(tmp_path):
         GeminiWord("there", "spk:1", 16000, 32000),
         GeminiWord("reply", "spk:2", 32000, 48000),
     ])
-    runner = GeminiFileRunner(diarizer, FakeEncoder(), word_gate=PassthroughGate(),
+    seen = []
+    runner = GeminiFileRunner(lambda transcription: seen.append(transcription) or diarizer,
+                              FakeEncoder(), word_gate=PassthroughGate(),
                               voiced_audio=lambda _pcm: True)
-    result = runner.transcribe(wav_file(tmp_path / "input.wav"), prompt="ignored")
+    job = {"vendor": "gemini", "url": None, "model": "gemini-3.5-transcribe", "api_key": "k"}
+    result = runner.transcribe(wav_file(tmp_path / "input.wav"), prompt="ignored",
+                               transcription=job)
+    assert seen == [job]  # One diarizer per job, built from that job's provider choice.
     rows = subtitle_segments_from_transcript(result.text, postprocess=False)
     assert [(row.speaker, row.text) for row in rows] == [
         ("S01", "hello there"), ("S02", "reply")]
@@ -59,7 +64,8 @@ def test_file_runner_marks_speechless_audio_without_calling_provider(tmp_path):
     from moss_transcribe_diarize.app.gemini_file_runner import GeminiFileRunner
 
     diarizer = FakeDiarizer(())
-    result = GeminiFileRunner(diarizer, FakeEncoder()).transcribe(wav_file(tmp_path / "silent.wav"))
+    result = GeminiFileRunner(lambda _transcription: diarizer, FakeEncoder()).transcribe(
+        wav_file(tmp_path / "silent.wav"))
     assert result.text == ""
     assert result.window_diagnostics[0]["condition"] == "speechless_window_empty"
     assert diarizer.calls == 0

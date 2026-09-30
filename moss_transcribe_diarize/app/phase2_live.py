@@ -1259,14 +1259,16 @@ class _Phase2LiveTransportAdapter:
     ) -> LiveTransportCreated:
         if not isinstance(authority, _Phase2CreateAuthority):
             raise TypeError("Phase-2 Live creation requires Account authority.")
-        from .gemini_live_runtime import GeminiLiveRuntime, validate_engine_settings
+        from .gemini_live_runtime import ApiKeyRequired, GeminiLiveRuntime, validate_engine_settings
         engine_settings = None
         if isinstance(self.live.runtime, GeminiLiveRuntime):
+            from fastapi import HTTPException
             try:
                 engine_settings = validate_engine_settings(payload.get("engine_settings"))
+            except ApiKeyRequired:
+                raise HTTPException(status_code=400, detail={"code": ApiKeyRequired.code}) from None
             except ValueError as exc:
-                from fastapi import HTTPException
-                raise HTTPException(status_code=422, detail=str(exc)) from exc
+                raise HTTPException(status_code=400, detail=str(exc)) from None
         try:
             binding = await self.live.create(
                 account=authority.account,

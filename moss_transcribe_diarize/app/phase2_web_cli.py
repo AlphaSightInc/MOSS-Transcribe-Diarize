@@ -161,7 +161,11 @@ def _gemini_http_options():
                              retry_options=types.HttpRetryOptions(attempts=1))
 
 
-def _gemini_client(api_key: str):
+def _gemini_client(api_key: str | None):
+    from .gemini_live_runtime import ApiKeyRequired
+    if not api_key:
+        # genai.Client(api_key=None) would fall back to a process env key (Q4: never).
+        raise ApiKeyRequired()
     from google import genai
     client = genai.Client(api_key=api_key, http_options=_gemini_http_options())
     # Installed google-genai normalizes attempts=0/1 to one hidden retry.
@@ -171,37 +175,40 @@ def _gemini_client(api_key: str):
     return client
 
 
-def _gemini_key() -> str:
-    key_path = Path(__file__).resolve().parents[2] / ".env.local"
-    if key_path.exists():
-        for line in key_path.read_text().splitlines():
-            if line.startswith("GEMINI_API_KEY="):
-                key = line.partition("=")[2].strip()
-                if key:
-                    return key
-    key = os.environ.get("MOSS_GEMINI_API_KEY")
-    if not key:
-        raise SystemExit("Gemini key missing from .env.local or MOSS_GEMINI_API_KEY")
-    return key
+def _transcription_diarizer(transcription, report_usage, *, gemini_client=None):
+    """One lane's batch diarizer for the user's provider choice (I-2 `T`)."""
+    if transcription["vendor"] == "openai_compatible":
+        from .openai_compatible_provider import OpenAICompatibleDiarizer
+        return OpenAICompatibleDiarizer(transcription["url"], transcription["model"],
+                                        transcription["api_key"], report_usage)
+    from .gemini_provider import WindowDiarizer
+    return WindowDiarizer(gemini_client or _gemini_client(transcription["api_key"]),
+                          report_usage, model=transcription["model"])
+
+
+def _file_transcription_diarizer(transcription):
+    if transcription is None:
+        # Keys live only for the request that started the job; a restart cannot resume it.
+        raise RuntimeError("File transcription settings are not kept across a restart.")
+    return _transcription_diarizer(transcription, lambda **_usage: None)
 
 
 def _build_gemini_file_runner(args: argparse.Namespace):
     from .file_identity_album import AlbumIdentityResolver
     from .gemini_file_runner import GeminiFileRunner
-    from .gemini_provider import WindowDiarizer
     from .live_provider_bundle import LiveProviderBundleConfig, _identity_encoder
 
     config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
     encoder = _identity_encoder(config, interval_workers=GEMINI_EMBEDDING_INTERVAL_WORKERS)
     return GeminiFileRunner(
-        WindowDiarizer(_gemini_client(_gemini_key()), lambda **_usage: None),
+        _file_transcription_diarizer,
         encoder,
         identity_resolver=AlbumIdentityResolver(config=config, encoder=encoder),
     )
 
 
 def _build_gemini_live_runtime_factory(args: argparse.Namespace):
-    """Load the provider key only here; MOSS model/GPU construction stays outside this path."""
+    """Clients are built per meeting from its own key; MOSS model/GPU construction stays outside."""
     from .gemini_hybrid_engine import (GrowingContextWindowScheduler,
                                        GeminiHybridEngine,
                                        WeSpeakerWindowEmbeddings)
@@ -213,14 +220,15 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
     from .gemini_live_words import GeminiLiveWordSource
     from .gemini_final_policy import FinalWordPolicy, WebRtcWordGate
     from .gemini_long_final import LongFinalStitcher
-    from .gemini_live_runtime import (GeminiLiveRuntime, GEMINI_SPEAKER_WINDOW_PRESETS,
-                                      GEMINI_DEFAULT_ENGINE_SETTINGS)
-    from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber
+    from .gemini_live_runtime import (GeminiLiveRuntime, GEMINI_CONTEXT_SECONDS,
+                                      GEMINI_DEFAULT_ENGINE_SETTINGS,
+                                      GEMINI_DEFAULT_TRANSCRIPTION_MODEL,
+                                      GEMINI_REFRESH_SECONDS, TRANSCRIPTION_VENDORS)
+    from .gemini_provider import GeminiWord, TerminalTranscriber
     from .live_provider_bundle import LiveProviderBundleConfig, _bounds, _identity_encoder
     from .live_service_runtime import LiveServiceConfigHashes, LiveServiceDescriptor
     from .live_service_runtime import hash_config
 
-    key = _gemini_key()
     config = LiveProviderBundleConfig.from_manifest(args.live_provider_manifest)
     bounds = replace(_bounds(config.bounds_config),
                      max_tape_bytes=max(int(config.bounds_config["max_tape_bytes"]),
@@ -262,23 +270,28 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
         ),
         bounds=bounds,
         frame_samples=int(config.bounds_config.get("frame_samples", bounds.max_frame_samples)),
-        engine_options={"speaker_windows": list(GEMINI_SPEAKER_WINDOW_PRESETS),
-                        "default_speaker_window": "balanced",
+        engine_options={"transcription_vendors": list(TRANSCRIPTION_VENDORS),
+                        "default_model": GEMINI_DEFAULT_TRANSCRIPTION_MODEL,
+                        "refresh_seconds": dict(GEMINI_REFRESH_SECONDS),
+                        "context_seconds": dict(GEMINI_CONTEXT_SECONDS),
                         "cleanup_after_stop": {"available": True, "default": True}},
     )
-    client = _gemini_client(key)
 
     def factory():
         def engine_factory(_sid, publish, report_usage, settings=None):
             settings = settings or GEMINI_DEFAULT_ENGINE_SETTINGS
-            stride, length = GEMINI_SPEAKER_WINDOW_PRESETS[settings["speaker_window"]]
+            transcription = settings["transcription"]
+            # Gemini: one client per meeting from the meeting's key (batch + instant words).
+            client = (_gemini_client(transcription["api_key"])
+                      if transcription["vendor"] == "gemini" else None)
             def lane_report(lane):
                 def report(**usage):
                     report_usage(**{**usage, "kind": f"{lane}_{usage['kind']}"})
                 return report
             system_report, mic_report = lane_report("system"), lane_report("microphone")
             system_diarizer, mic_diarizer = _serialize_gemini_lanes(
-                WindowDiarizer(client, system_report), WindowDiarizer(client, mic_report))
+                _transcription_diarizer(transcription, system_report, gemini_client=client),
+                _transcription_diarizer(transcription, mic_report, gemini_client=client))
             system_words = SystemWordLedger()
             voice_echo = CrossLaneVoiceEchoGuard(threshold=.60)
             system_embeddings = WeSpeakerWindowEmbeddings(encoder)
@@ -322,12 +335,17 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                 word_gate=mic_gate, word_filter=mic_terminal_filter,
                 source_lane="microphone",
                 report_usage=mic_report, voiced_audio=mic_batch_detector)
-            system_source = VoicedLiveWords(
-                lambda: GeminiLiveWordSource(client, system_report),
-                voiced_audio=system_preview_detector)
-            mic_source = VoicedLiveWords(
-                lambda: GeminiLiveWordSource(client, mic_report),
-                voiced_audio=mic_preview_detector)
+            def preview_words(report):
+                # The instant-word model stays gemini-3.5-transcribe-live (gemini_live_words);
+                # OpenAI-compatible meetings have none, so rolling windows publish all text.
+                if client is not None:
+                    return lambda: GeminiLiveWordSource(client, report)
+                from .openai_compatible_provider import NoPreviewWords
+                return NoPreviewWords
+            system_source = VoicedLiveWords(preview_words(system_report),
+                                            voiced_audio=system_preview_detector)
+            mic_source = VoicedLiveWords(preview_words(mic_report),
+                                         voiced_audio=mic_preview_detector)
             def system_factory(lane_publish):
                 def observed_system_embeddings(pcm, start, words):
                     vectors = system_embeddings(pcm, start, words)
@@ -337,7 +355,8 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                 return GeminiHybridEngine(
                     lane_publish, word_source=system_source,
                     window_scheduler=GrowingContextWindowScheduler(
-                        max_seconds=length, stride_seconds=stride),
+                        max_seconds=settings["context_seconds"],
+                        stride_seconds=settings["refresh_seconds"]),
                     registry=ContinuityRegistry(
                         embedding_threshold=GEMINI_CONTINUITY_E,
                         within_window_threshold=GEMINI_CONTINUITY_W,
@@ -412,7 +431,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         live_helper_lease_seconds=args.live_helper_lease_seconds,
         control_socket_path=Path(args.control_socket).expanduser(),
         llm_upstreams=args.llm_upstreams,
-        summary_generator=GeminiSummaryGenerator.from_local_key(),
+        summary_generator=GeminiSummaryGenerator(),
         open_workspace=os.environ.get("MOSS_OPEN_WORKSPACE") == "1",
         inference_scheduler=args._inference_scheduler,
     )

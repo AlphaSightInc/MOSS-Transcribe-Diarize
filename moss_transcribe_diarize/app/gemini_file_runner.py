@@ -9,6 +9,7 @@ from pathlib import Path
 from .file_identity_album import AlbumIdentityResolver
 from .gemini_final_policy import FinalWordPolicy, WebRtcWordGate
 from .gemini_lane_engine import WebRtcSpeechDetector
+from .gemini_live_runtime import validate_transcription
 from .gemini_long_final import LongFinalStitcher
 from .gemini_provider import TerminalTranscriber
 from .live_span_bounds import LIVE_SAMPLE_RATE
@@ -35,27 +36,37 @@ class _WavTape:
 
 
 class GeminiFileRunner:
-    """One diarized terminal pass; FileMeetingTasks owns outcomes and saved audio."""
+    """One diarized terminal pass per job; FileMeetingTasks owns outcomes and saved audio."""
 
     model_path = "gemini-3.5-transcribe"
 
-    def __init__(self, diarizer, encoder, *, identity_resolver=None,
+    def __init__(self, diarizer_factory, encoder, *, identity_resolver=None,
                  word_gate=None, voiced_audio=None, report_usage=None):
+        # diarizer_factory(transcription) builds the job's client from the request's key.
+        self._diarizer_factory = diarizer_factory
+        self._encoder = encoder
         self.identity_resolver = identity_resolver or AlbumIdentityResolver(encoder=encoder)
         self.live_enrollment_observation = self.identity_resolver.enrollment_observation
         self._voiced_audio = voiced_audio or WebRtcSpeechDetector()
-        self._terminal = TerminalTranscriber(
-            diarizer, identity_policy=FinalWordPolicy(encoder),
-            stitcher=LongFinalStitcher(encoder),
-            word_gate=word_gate or WebRtcWordGate(),
-            voiced_audio=self._voiced_audio, report_usage=report_usage,
-        )
+        self._word_gate = word_gate or WebRtcWordGate()
+        self._report_usage = report_usage
 
-    def transcribe(self, audio_path: str | Path, **_options) -> TranscriptionResult:
+    @staticmethod
+    def transcription_settings(value: object) -> dict[str, object]:
+        """Validate the upload's provider choice before any meeting exists."""
+        return validate_transcription(value)
+
+    def transcribe(self, audio_path: str | Path, *, transcription=None,
+                   **_options) -> TranscriptionResult:
         path = Path(audio_path)
         tape = _WavTape(path)
         started = time.monotonic()
-        rows = self._terminal.transcribe(tape)
+        terminal = TerminalTranscriber(
+            self._diarizer_factory(transcription), identity_policy=FinalWordPolicy(self._encoder),
+            stitcher=LongFinalStitcher(self._encoder), word_gate=self._word_gate,
+            voiced_audio=self._voiced_audio, report_usage=self._report_usage,
+        )
+        rows = terminal.transcribe(tape)
         speakers = tuple(dict.fromkeys(row.speaker for row in rows))
         labels = {speaker: f"S{index:02d}" for index, speaker in enumerate(speakers, 1)}
         text = "".join(
@@ -66,7 +77,8 @@ class GeminiFileRunner:
         speechless = not rows and not self._voiced_audio(tape.read())
         return TranscriptionResult(
             text=text, prompt_len=0, generated_tokens=0,
-            elapsed_sec=time.monotonic() - started, model=self.model_path,
+            elapsed_sec=time.monotonic() - started,
+            model=(transcription or {}).get("model") or self.model_path,
             audio=str(path), decoding="gemini", temperature=None,
             window_diagnostics=([{"condition": "speechless_window_empty"}]
                                 if speechless else []),

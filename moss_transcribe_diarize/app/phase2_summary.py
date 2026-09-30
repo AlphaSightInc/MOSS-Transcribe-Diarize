@@ -21,7 +21,6 @@ SUMMARY_PRICES = {
     "gemini-3.5-flash": (1.50, 9.00),
     "gemini-3.8-flash": (0.75, 3.75),
 }
-SUMMARY_MODELS = frozenset(SUMMARY_PRICES)
 DEFAULT_SUMMARY_MODEL = "gemini-3.5-flash-lite"
 DEFAULT_SUMMARY_PROMPT = Path(__file__).with_name("final_summary_prompt.txt").read_text(encoding="utf-8")
 SUMMARY_ATTEMPTS = 3
@@ -32,8 +31,10 @@ def _add_usage(total, usage):
         return total
     if total is None:
         return dict(usage)
-    return {"model": usage["model"],
-            **{key: total[key] + usage[key] for key in ("input_tokens", "output_tokens", "cost_usd")}}
+    cost = (None if total["cost_usd"] is None or usage["cost_usd"] is None
+            else total["cost_usd"] + usage["cost_usd"])
+    return {"model": usage["model"], "cost_usd": cost,
+            **{key: total[key] + usage[key] for key in ("input_tokens", "output_tokens")}}
 
 
 class SummaryConflict(ValueError):
@@ -218,13 +219,28 @@ def attach_summary_routes(app, require_account, generator=None):
             body = await request.json()
         except (ValueError, UnicodeDecodeError):
             raise HTTPException(400, "Invalid summary request.") from None
-        allowed = {"model", "language", "prompt", "source_version"} if final else {"model", "language", "prompt"}
+        allowed = {"model", "language", "prompt", "provider"} | ({"source_version"} if final else set())
         if (not isinstance(body, dict) or set(body) - allowed
                 or any(not isinstance(body[key], str) for key in ("model", "language", "prompt") if key in body)
-                or body.get("model", DEFAULT_SUMMARY_MODEL) not in SUMMARY_MODELS
                 or (final and (type(body.get("source_version")) is not int))):
-            raise HTTPException(400, "Invalid summary options or model.")
-        return body
+            raise HTTPException(400, "Invalid summary options.")
+        # The user's own Gemini key pays for server summaries; it lives only for this request.
+        provider = body.get("provider")
+        if provider is None:
+            raise HTTPException(400, {"code": "api_key_required"})
+        if (not isinstance(provider, dict) or set(provider) - {"vendor", "model", "api_key"}
+                or any(provider.get(key) is not None and not isinstance(provider[key], str)
+                       for key in ("vendor", "model", "api_key"))):
+            raise HTTPException(400, "Invalid summary provider.")
+        if provider.get("vendor", "gemini") != "gemini":
+            raise HTTPException(400, "Server summaries use Gemini; OpenAI-compatible summaries run in the browser.")
+        api_key = (provider.get("api_key") or "").strip()
+        if not api_key:
+            raise HTTPException(400, {"code": "api_key_required"})
+        model = ((provider.get("model") or "").strip() or (body.get("model") or "").strip()
+                 or DEFAULT_SUMMARY_MODEL)
+        return {**{key: body[key] for key in body if key != "provider"},
+                "model": model, "api_key": api_key}
 
     async def generate(request, document, body):
         # Flash-lite occasionally returns malformed or out-of-contract JSON (long60: 1 of 2 calls);
@@ -236,9 +252,10 @@ def attach_summary_routes(app, require_account, generator=None):
         spent = None
         for _attempt in range(SUMMARY_ATTEMPTS):
             try:
-                result, usage = await service(document, model=body.get("model", DEFAULT_SUMMARY_MODEL),
+                result, usage = await service(document, model=body["model"],
                                               language=body.get("language", ""),
-                                              prompt=body.get("prompt", DEFAULT_SUMMARY_PROMPT))
+                                              prompt=body.get("prompt", DEFAULT_SUMMARY_PROMPT),
+                                              api_key=body["api_key"])
             except TimeoutError:
                 raise HTTPException(504, {"code": "summary_timeout"}) from None
             except ValueError as exc:

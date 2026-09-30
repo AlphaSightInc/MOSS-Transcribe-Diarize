@@ -46,6 +46,12 @@ def frame(sequence):
     return AudioFrame(sequence=sequence, pcm=b"\0" * 32000, sample_count=16000)
 
 
+def settings(**overrides):
+    """A complete v3 engine settings payload (I-2) with a test Gemini key."""
+    return {"transcription": {"vendor": "gemini", "model": "gemini-3.5-transcribe",
+                              "api_key": "test-key"}, **overrides}
+
+
 def test_stop_request_timeout_does_not_cut_off_server_tail_drain(tmp_path):
     async def run():
         class LateTail:
@@ -65,7 +71,7 @@ def test_stop_request_timeout_does_not_cut_off_server_tail_drain(tmp_path):
             def close(self): pass
         rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
             engine_factory=lambda _id, publish, _usage, _settings=None: LateTail(publish))
-        rt.create(session_id="one", engine_settings={"cleanup_after_stop": False})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=False))
         rt.accept_frame("one", frame(0))
         rt.accept_frame("one", frame(1))
         with pytest.raises(LiveServiceStopPending):
@@ -89,7 +95,7 @@ def test_cleanup_stop_commits_live_text_before_held_refinement(tmp_path):
         rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
             engine_factory=lambda _id, publish, _usage, _settings: HeldTerminal(
                 publish, batches=[], terminal=()))
-        rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
         rt.accept_frame("one", frame(0))
         rt.publish_update("one", GeminiBase(16000, ()))
         rt.publish_update("one", GeminiRolling(0, 16000, (
@@ -118,7 +124,7 @@ def test_refinement_timeout_keeps_live_text(tmp_path, monkeypatch):
         rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
             engine_factory=lambda _id, publish, _usage, _settings: HungTerminal(
                 publish, batches=[], terminal=()))
-        rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
         rt.accept_frame("one", frame(0))
         rt.publish_update("one", GeminiBase(16000, ()))
         rt.publish_update("one", GeminiRolling(0, 16000, (
@@ -173,7 +179,7 @@ def test_stop_uses_terminal_tail_recovery_after_drain_refusal(tmp_path):
             def close(self): pass
         rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
             engine_factory=lambda _id, publish, _usage, _settings=None: RecoveringTail(publish))
-        rt.create(session_id="one", engine_settings={"cleanup_after_stop": False})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=False))
         rt.accept_frame("one", frame(0))
         rt.accept_frame("one", frame(1))
         snap = (await rt.stop("one", 1)).session
@@ -197,34 +203,81 @@ def test_meeting_settings_reach_engine_and_are_recorded(tmp_path):
         descriptor=descriptor(), tape_storage_root=tmp_path,
         engine_factory=lambda _sid, publish, _usage, settings: (
             seen.append(settings) or ScriptedGeminiEngine(publish, batches=[], terminal=())))
-    rt.create(session_id="one", engine_settings={"speaker_window": "max",
-                                                  "cleanup_after_stop": True})
-    assert seen == [{"speaker_window": "max", "cleanup_after_stop": True}]
-    assert rt.engine_diagnostics("one")["engine_settings"] == seen[0]
+    rt.create(session_id="one", engine_settings=settings(
+        refresh_seconds=20, context_seconds=180, cleanup_after_stop=True))
+    expected = {"transcription": {"vendor": "gemini", "url": None,
+                                  "model": "gemini-3.5-transcribe", "api_key": "test-key"},
+                "refresh_seconds": 20, "context_seconds": 180, "cleanup_after_stop": True}
+    assert seen == [expected]
+    # The engine factory alone receives the key; diagnostics carry a redacted copy.
+    assert rt.engine_diagnostics("one")["engine_settings"] == {
+        **expected, "transcription": {**expected["transcription"], "api_key": "[redacted]"}}
+    assert "test-key" not in repr(rt.snapshot("one").to_dict())
 
 
 def test_omitted_gemini_settings_default_to_background_cleanup(tmp_path):
     rt = runtime(tmp_path, {"one": ([], ())})
     rt.create(session_id="one")
     assert rt.engine_diagnostics("one")["engine_settings"] == {
-        "speaker_window": "balanced", "cleanup_after_stop": True}
+        "transcription": {"vendor": "gemini", "url": None,
+                          "model": "gemini-3.5-transcribe", "api_key": None},
+        "refresh_seconds": 15, "context_seconds": 90, "cleanup_after_stop": True}
 
 
 def test_engine_options_are_advertised_only_when_supplied():
     assert "engine_options" not in descriptor().to_dict()
-    options = {"speaker_windows": ["balanced", "economy", "max"],
-               "default_speaker_window": "balanced",
+    options = {"transcription_vendors": ["gemini", "openai_compatible"],
+               "default_model": "gemini-3.5-transcribe",
+               "refresh_seconds": {"min": 5, "max": 60, "default": 15},
+               "context_seconds": {"min": 90, "max": 300, "default": 90},
                "cleanup_after_stop": {"available": True, "default": True}}
     assert replace(descriptor(), engine_options=options).to_dict()["engine_options"] == options
 
 
-@pytest.mark.parametrize("settings", [
-    {"speaker_window": "invalid"}, {"cleanup_after_stop": "false"},
-    {"other": 1}, {"speaker_window": []}, []])
-def test_meeting_settings_reject_unknown_keys_and_values(tmp_path, settings):
+@pytest.mark.parametrize("value", [
+    {"speaker_window": "balanced"}, {"cleanup_after_stop": "false"},
+    {"other": 1}, {"refresh_seconds": 4}, {"refresh_seconds": 61}, {"refresh_seconds": 15.0},
+    {"refresh_seconds": True}, {"context_seconds": 89}, {"context_seconds": 301},
+    {"transcription": {"vendor": "other", "api_key": "k"}},
+    {"transcription": {"api_key": "k", "extra": 1}},
+    {"transcription": {"api_key": 7}},
+    {"transcription": {"vendor": "openai_compatible", "model": "m"}},
+    {"transcription": {"vendor": "openai_compatible", "url": "ftp://x", "model": "m"}},
+    {"transcription": {"vendor": "openai_compatible", "url": "http://x"}}, []])
+def test_meeting_settings_reject_unknown_keys_and_values(tmp_path, value):
     rt = runtime(tmp_path, {})
+    payload = value if not isinstance(value, dict) or "transcription" in value else settings(**value)
     with pytest.raises(ValueError):
-        rt.create(session_id="one", engine_settings=settings)
+        rt.create(session_id="one", engine_settings=payload)
+
+
+@pytest.mark.parametrize("transcription", [None, {}, {"api_key": ""}, {"api_key": "  "},
+                                           {"vendor": "gemini", "api_key": None}])
+def test_gemini_transcription_requires_the_users_key(tmp_path, transcription):
+    from moss_transcribe_diarize.app.gemini_live_runtime import ApiKeyRequired
+    rt = runtime(tmp_path, {})
+    payload = {} if transcription is None else {"transcription": transcription}
+    with pytest.raises(ApiKeyRequired):
+        rt.create(session_id="one", engine_settings=payload)
+
+
+def test_openai_compatible_settings_force_cleanup_off_and_ignore_gemini_defaults():
+    from moss_transcribe_diarize.app.gemini_live_runtime import validate_engine_settings
+    validated = validate_engine_settings({
+        "transcription": {"vendor": "openai_compatible", "url": " http://127.0.0.1:18720/v1/ ",
+                          "model": "whisper-1", "api_key": ""},
+        "cleanup_after_stop": True})
+    assert validated["transcription"] == {"vendor": "openai_compatible",
+                                          "url": "http://127.0.0.1:18720/v1",
+                                          "model": "whisper-1", "api_key": None}
+    assert validated["cleanup_after_stop"] is False
+    gemini = validate_engine_settings({"transcription": {
+        "vendor": "gemini", "url": "https://ignored", "model": "", "api_key": "k"}})
+    assert gemini["transcription"] == {"vendor": "gemini", "url": None,
+                                       "model": "gemini-3.5-transcribe", "api_key": "k"}
+    # The multipart File/URL field carries the same object as a JSON string.
+    from moss_transcribe_diarize.app.gemini_live_runtime import validate_transcription
+    assert validate_transcription('{"api_key": "k"}') == gemini["transcription"]
 
 
 def test_cost_and_veto_counters_are_content_free_and_per_lane(tmp_path):
@@ -373,7 +426,7 @@ def test_terminal_maps_overlapping_labels_within_each_capture_lane(tmp_path):
                                            GeminiRolling(0, 16000, (system, microphone),
                                                revision_lanes=("system", "microphone")))],
                                  terminal)})
-        rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
         rt.accept_frame("one", frame(0))
         await rt.stop("one", 1.0)
         await rt.wait_terminal("one")
@@ -394,7 +447,7 @@ def test_terminal_coverage_gap_preserves_live_rows_in_final_revision(tmp_path):
             descriptor=descriptor(tape_bytes=20*32000), tape_storage_root=tmp_path,
             engine_factory=lambda _id, publish, _usage, _settings: GapEngine(
                 publish, batches=(), terminal=final))
-        rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
         for second in range(20):
             rt.accept_frame("one", frame(second))
         rt.publish_update("one", GeminiBase(20*16000, ()))
@@ -424,7 +477,7 @@ async def _relabel_and_terminal_revision_replace_visible_rows(tmp_path):
                          GeminiRolling(0, 16000, (first,)),
                          GeminiRelabel(0, 8000, terminal))], terminal)}
     rt = runtime(tmp_path, scripts)
-    rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+    rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
     rt.accept_frame("one", frame(0))
     live = rt.snapshot("one").session
     assert [row.canonical_speaker for row in live.effective_transcript] == [
@@ -497,7 +550,7 @@ def test_refused_stale_f13_relabel_during_stop_still_finalizes(tmp_path):
         engine_factory=lambda _id, publish, _usage, _settings: TailEngine(publish,
             batches=[(GeminiBase(16000, ()), GeminiRolling(0, 16000, (first, second)),
                       GeminiTurnBridge(0, 4000, 6000))], terminal=()))
-    rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+    rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
     rt.accept_frame("one", frame(0))
     async def finish():
         await rt.stop("one", 1.0)
@@ -526,7 +579,7 @@ def _orphan_stop_runtime(tmp_path, *, orphan_audio: int, cleanup: bool = False,
     rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
         engine_factory=lambda _id, publish, _usage, _settings: ScriptedGeminiEngine(
             publish, batches=batches, terminal=rows), voiceprint_encoder=Encoder())
-    rt.create(session_id="one", engine_settings={"cleanup_after_stop": cleanup})
+    rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=cleanup))
     for sequence in range(6):
         if sequence == 5:
             pcm = b"\x02\x00" * 8000 + orphan_audio.to_bytes(2, "little") * 8000
@@ -608,7 +661,7 @@ def test_stop_cleanup_setting_controls_terminal_pass(tmp_path, cleanup, expected
     async def run():
         rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp_path,
             engine_factory=lambda _id, publish, _usage, _settings: Engine(publish))
-        rt.create(session_id="one", engine_settings={"cleanup_after_stop": cleanup})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=cleanup))
         rt.accept_frame("one", frame(0))
         await rt.stop("one", 1.0)
         await rt.wait_terminal("one")
@@ -625,7 +678,7 @@ def test_live_only_final_preserves_both_lanes(tmp_path):
     mic = GeminiSegment(0, 40000, "local", "local-0001", "microphone")
     rt = runtime(tmp_path, {"one": (((), (), (GeminiBase(48000, ()),
         GeminiRolling(0, 48000, (system, mic), revision_lanes=("system", "microphone")))), ())})
-    rt.create(session_id="one", engine_settings={"cleanup_after_stop": False})
+    rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=False))
     for sequence in range(3):
         rt.accept_frame("one", frame(sequence))
     stopped = asyncio.run(rt.stop("one", 1.0))
@@ -661,7 +714,7 @@ def test_stop_fingerprint_relabels_remaining_speakerless_row(tmp_path, vector, e
             engine_factory=lambda _id, publish, _usage, _settings: (
                 engines.append(WaitingEngine(publish)) or engines[-1]),
             voiceprint_encoder=Encoder())
-        rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
         rt.accept_frame("one", frame(0))
         rt._sessions["one"].voice_observations["speaker-0001"] = type(
             "Observation", (), {"centroid": (1., 0.)})()
@@ -684,7 +737,7 @@ async def _two_sessions_abort_and_engine_failure_are_isolated(tmp_path):
         "two": ([()], ()),
     }
     rt = runtime(tmp_path, scripts)
-    rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+    rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
     rt.create(session_id="two")
     rt.accept_frame("one", frame(0))
     rt.accept_frame("two", frame(0))
@@ -737,7 +790,7 @@ def test_tape_degradation_is_unavailable_and_releases_scratch(tmp_path):
                 publish, batches=[()], terminal=(),
             ),
         )
-        rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
         rt.accept_frame("one", frame(0))
         rt._sessions["one"].tape.release()  # Simulate a real tape loss before Stop.
         stopped = await rt.stop("one", 1.0)
@@ -830,7 +883,7 @@ def test_account_stage_is_terminal_source_and_survives_view_release(tmp_path):
             publish, batches=[], terminal=(GeminiSegment(0, 16000, "hello", "speaker-0001"),)),
     )
     rt.bind_account_audio_stages(stages)
-    rt.create(session_id="one", engine_settings={"cleanup_after_stop": True})
+    rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
     rt.accept_frame("one", frame(0))  # Legacy mono route writes into the same stage.
     rt.publish_update("one", GeminiBase(16000, ()))
     rt.publish_update("one", GeminiRolling(0, 16000, (
@@ -1112,7 +1165,7 @@ def test_stop_drains_rolling_tail_before_session_closes(tmp_path):
                 publish, batches=[(GeminiBase(16000, ()), GeminiRolling(0, 16000, (first,))), ()],
                 terminal=()),
         )
-        rt.create(session_id="one", engine_settings={"cleanup_after_stop": False})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=False))
         rt.accept_frame("one", frame(0))
         rt.accept_frame("one", frame(1))
         before = rt.snapshot("one").session

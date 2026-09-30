@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import difflib
+import json
 import math
 import re
 import tempfile
@@ -19,6 +20,7 @@ from collections import deque
 from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Callable, Protocol, Sequence
+from urllib.parse import urlsplit
 
 from moss_transcribe_diarize.transcript_parser import TranscriptSegment
 
@@ -162,23 +164,88 @@ class GeminiTurnBridge:
 
 GeminiUpdate = GeminiPreview | GeminiBase | GeminiRolling | GeminiRelabel | GeminiTurnBridge
 
-GEMINI_DEFAULT_ENGINE_SETTINGS = {"speaker_window": "balanced", "cleanup_after_stop": True}
 GEMINI_REFINEMENT_TIMEOUT_SECONDS = 3600.0
-GEMINI_SPEAKER_WINDOW_PRESETS = {"balanced": (15, 90), "economy": (30, 90),
-                                 "max": (15, 180)}
+TRANSCRIPTION_VENDORS = ("gemini", "openai_compatible")
+GEMINI_DEFAULT_TRANSCRIPTION_MODEL = "gemini-3.5-transcribe"
+# Refresh = rolling stride, context = rolling window length. The 90 s floor is measured
+# (P5: 60 s merged/split speakers); 300 s is GrowingContextWindowScheduler's bound.
+GEMINI_REFRESH_SECONDS = {"min": 5, "max": 60, "default": 15}
+GEMINI_CONTEXT_SECONDS = {"min": 90, "max": 300, "default": 90}
+GEMINI_DEFAULT_ENGINE_SETTINGS = {
+    "transcription": {"vendor": "gemini", "url": None,
+                      "model": GEMINI_DEFAULT_TRANSCRIPTION_MODEL, "api_key": None},
+    "refresh_seconds": GEMINI_REFRESH_SECONDS["default"],
+    "context_seconds": GEMINI_CONTEXT_SECONDS["default"],
+    "cleanup_after_stop": True,
+}
+
+
+class ApiKeyRequired(ValueError):
+    """The chosen provider needs the user's key; the server never supplies one."""
+
+    code = "api_key_required"
+
+    def __init__(self) -> None:
+        super().__init__("Enter your Gemini API key in Settings.")
+
+
+def validate_transcription(value: object) -> dict[str, object]:
+    """One transcription provider choice (I-2 `T`); a JSON string is a multipart field."""
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            raise ValueError("transcription must be a JSON object.") from None
+    value = {} if value is None else value
+    if not isinstance(value, dict) or set(value) - {"vendor", "url", "model", "api_key"}:
+        raise ValueError("transcription contains unknown keys or is not an object.")
+    vendor = value.get("vendor", "gemini")
+    if vendor not in TRANSCRIPTION_VENDORS:
+        raise ValueError("transcription vendor must be gemini or openai_compatible.")
+    fields = {}
+    for name in ("url", "model", "api_key"):
+        field_value = value.get(name)
+        if field_value is not None and not isinstance(field_value, str):
+            raise ValueError(f"transcription {name} must be text.")
+        fields[name] = (field_value or "").strip() or None
+    if vendor == "gemini":
+        if fields["api_key"] is None:
+            raise ApiKeyRequired()
+        return {"vendor": vendor, "url": None,
+                "model": fields["model"] or GEMINI_DEFAULT_TRANSCRIPTION_MODEL,
+                "api_key": fields["api_key"]}
+    url = urlsplit(fields["url"] or "")
+    if url.scheme not in {"http", "https"} or not url.netloc:
+        raise ValueError("Enter the OpenAI-compatible server URL (http or https).")
+    if fields["model"] is None:
+        raise ValueError("Enter the OpenAI-compatible model name.")
+    return {"vendor": vendor, "url": fields["url"].rstrip("/"), "model": fields["model"],
+            "api_key": fields["api_key"]}
 
 
 def validate_engine_settings(value: object) -> dict[str, object]:
-    if value is None:
-        return GEMINI_DEFAULT_ENGINE_SETTINGS.copy()
+    value = {} if value is None else value
     if not isinstance(value, dict) or set(value) - set(GEMINI_DEFAULT_ENGINE_SETTINGS):
         raise ValueError("engine_settings contains unknown keys or is not an object.")
     settings = {**GEMINI_DEFAULT_ENGINE_SETTINGS, **value}
-    if (not isinstance(settings["speaker_window"], str) or
-            settings["speaker_window"] not in GEMINI_SPEAKER_WINDOW_PRESETS or
-            type(settings["cleanup_after_stop"]) is not bool):
-        raise ValueError("engine_settings contains an unsupported value.")
+    # Ranges alone keep refresh <= context (60 < 90).
+    for name, bounds in (("refresh_seconds", GEMINI_REFRESH_SECONDS),
+                         ("context_seconds", GEMINI_CONTEXT_SECONDS)):
+        if type(settings[name]) is not int or not bounds["min"] <= settings[name] <= bounds["max"]:
+            raise ValueError(f"{name} must be a whole number from {bounds['min']} to {bounds['max']}.")
+    if type(settings["cleanup_after_stop"]) is not bool:
+        raise ValueError("cleanup_after_stop must be true or false.")
+    settings["transcription"] = validate_transcription(value.get("transcription"))
+    if settings["transcription"]["vendor"] == "openai_compatible":
+        settings["cleanup_after_stop"] = False  # Clean-up after Stop is a Gemini-only pass.
     return settings
+
+
+def redacted_engine_settings(settings: dict[str, object]) -> dict[str, object]:
+    transcription = dict(settings["transcription"])
+    if transcription.get("api_key") is not None:
+        transcription["api_key"] = "[redacted]"
+    return {**settings, "transcription": transcription}
 
 
 class GeminiEngine(Protocol):
@@ -359,7 +426,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                engine_settings: object = None) -> LiveServiceCreateResult:
         if echo_mode is not None and echo_mode not in {"headphones", "speakers"}:
             raise ValueError("echo_mode must be headphones or speakers.")
-        settings = validate_engine_settings(engine_settings)
+        # None keeps in-process engines key-free; HTTP creation always validates first.
+        settings = (GEMINI_DEFAULT_ENGINE_SETTINGS if engine_settings is None
+                    else validate_engine_settings(engine_settings))
         with self._lock:
             session_id = session_id or uuid.uuid4().hex
             if session_id in self._sessions:
@@ -376,7 +445,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             else:
                 tape = None
             state = _GeminiState(session_id, session, None, tape,
-                                 deque(maxlen=self.descriptor.bounds.max_events), settings,
+                                 deque(maxlen=self.descriptor.bounds.max_events),
+                                 redacted_engine_settings(settings),
                                  GeminiTentativeLabeler(self._voiceprint_encoder)
                                  if self._voiceprint_encoder is not None else None)
             self._sessions[session_id] = state
@@ -672,7 +742,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         with self._lock:
             state = self._get(session_id)
             return {
-                "engine_settings": dict(state.engine_settings),
+                "engine_settings": redacted_engine_settings(state.engine_settings),
                 **({"tentative_shown_s": 0.0, "tentative_abstained_s": 0.0,
                     "tentative_embed_p50_ms": None, "tentative_embed_p95_ms": None,
                     "tentative_embed_wall_s": 0.0, "tentative_busy_ticks": 0}

@@ -33,16 +33,21 @@ def test_file_meeting_completes_and_enrolls_after_name(tmp_path):
             return SimpleNamespace(centroid=(1.0, 0.0), sample_seconds=2.1,
                                    provisional=False, embedder_id="wespeaker:pinned")
 
-    runner = GeminiFileRunner(Diarizer(), Encoder(), identity_resolver=Evidence(),
+    jobs = []
+    runner = GeminiFileRunner(lambda transcription: jobs.append(transcription) or Diarizer(),
+                              Encoder(), identity_resolver=Evidence(),
                               word_gate=Gate(), voiced_audio=lambda _pcm: True)
     app = create_phase2_app(database_path=tmp_path / "meeting.sqlite", file_runner=runner,
                             file_work_root=tmp_path / "file-work")
     with TestClient(app, base_url="https://moss.test") as client:
         session(client, sessions["sub-a"])
-        uploaded = client.post("/api/meetings/file", files={"file": (sample.name, sample.read_bytes(), "audio/wav")})
+        uploaded = client.post("/api/meetings/file", files={"file": (sample.name, sample.read_bytes(), "audio/wav")},
+                               data={"transcription": '{"vendor": "gemini", "api_key": "user-key"}'})
         assert uploaded.status_code == 201, uploaded.text
         meeting = await_terminal(client, uploaded.json()["id"], "completed")
         assert meeting["transcript"]["segments"][0]["speaker"] == "S01"
+        assert jobs == [{"vendor": "gemini", "url": None, "model": "gemini-3.5-transcribe",
+                         "api_key": "user-key"}]
         named = client.put(f"/api/meetings/{meeting['id']}/speakers/S01/name", json={"label": "Alex"})
         assert named.status_code == 200, named.text
         assert named.json()["enrollment"] == "enrolled"

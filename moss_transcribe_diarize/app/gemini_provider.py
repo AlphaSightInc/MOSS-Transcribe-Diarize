@@ -230,10 +230,12 @@ def _error_code(exc: Exception) -> str:
 class WindowDiarizer:
     """One bounded request per attempt, with retries only for transient failures."""
 
-    def __init__(self, client: object, report_usage: Callable[..., None], *, max_attempts: int = 3):
+    def __init__(self, client: object, report_usage: Callable[..., None], *, max_attempts: int = 3,
+                 model: str = MODEL):
         self.client = client
         self.report_usage = report_usage
         self.max_attempts = max_attempts
+        self.model = model
 
     def diarize(self, pcm16: bytes, *, deadline: float, kind: str = "rolling",
                 diarize: bool = True) -> GeminiWords:
@@ -251,7 +253,7 @@ class WindowDiarizer:
                 raise TimeoutError("Gemini request deadline expired")
             try:
                 response = self.client.interactions.create(
-                    model=MODEL,
+                    model=self.model,
                     input=[{"type": "audio", "data": payload, "mime_type": "audio/wav"}],
                     generation_config={"transcription_config": {"mode": mode}},
                 )
