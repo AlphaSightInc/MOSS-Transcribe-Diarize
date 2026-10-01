@@ -80,6 +80,8 @@ Newly ruled:
   (1) Start capture button; (2) microphone permission step; (3) surface-choice step, tab
   preferred; (4) explicit share-audio reminder; (5) **two live meters** that must both read
   non-zero before a server session is created; (6) headphones-vs-speakers echo choice.
+  *(Superseded 2026-09-30, round 4: Start needs both sources attached, not sounding — the user may play audio after
+  Start; a share without an audio track still fails preflight.)*
 - **Activation ordering: mic-first.** Verify `ctx.state === "running"` before enabling
   "Start display". Call `getDisplayMedia()` **synchronously inside the click handler** before it
   yields. Display-first / system-only bootstrap is **out of Phase 1** — unmeasured.
