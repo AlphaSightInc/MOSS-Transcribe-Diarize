@@ -201,6 +201,8 @@ it("a muted microphone sends silence without the silent-microphone remedy and do
   // Control: the same silence unmuted is a real fault and names the remedy.
   await settle(() => { for (let frame = 0; frame < 20; frame += 1) feed("microphone", 0); });
   expect(status()).toBe("silent remedy");
+  // K1 names a remedy; it never holds back Start.
+  expect(button("Start recording")?.disabled).toBe(false);
   await click("Mute mic");
   expect(status()).toBeUndefined();
 });
@@ -327,12 +329,25 @@ it("mic failure before Share removes Share and offers Reset", async () => {
   expect(status()).toBe("Microphone blocked — allow it in Chrome site settings.");
   await assertReset();
 });
-it("successful setup still becomes ready only after both lanes have sound", async () => {
-  await click("Enable microphone"); await click("Share audio"); snapshot("both attached");
+it("setup is ready once both sources are attached, before either carries sound", async () => {
+  await click("Enable microphone"); snapshot("microphone attached");
   expect(phase()).toBe("configuring");
-  await settle(() => feed("microphone", .02)); snapshot("mic sound"); expect(phase()).toBe("configuring");
-  await settle(() => feed("system", .3)); snapshot("both sound"); expect(phase()).toBe("ready");
+  expect(button("Start recording")).toBeUndefined();
+  await click("Share audio"); snapshot("both attached");
+  // The person may start recording first and play the audio afterwards.
+  await settle(() => { feed("microphone", 0); feed("system", 0); });
+  expect(phase()).toBe("ready");
+  expect(button("Start recording")?.disabled).toBe(false);
+  expect(button("Start recording")?.hasAttribute("title")).toBe(false);
   expect(status()).toBeUndefined();
+  await click("Start recording");
+  expect(phase()).toBe("active");
+  expect(vi.mocked(fetch).mock.calls.filter(([url]) => url === "/api/live/sessions")).toHaveLength(1);
+  // Silence-only frames are delivered as such; nothing waits for sound.
+  await settle(() => { feed("microphone", 0); feed("system", 0); });
+  await vi.waitFor(() => expect(postedFrames("system")).toHaveLength(1));
+  expect(postedFrames("system")[0]).toMatchObject({ silent: true });
+  expect(postedFrames("microphone")[0]).toMatchObject({ silent: true });
 });
 
 it.each(["descriptor", "microphone"] as const)("old %s rejection after Reset cannot overwrite a fresh ready setup", async pending => {
@@ -367,14 +382,14 @@ it.each(["success", "reject"] as const)("Reset while chooser pending handles lat
 
 it.each([
   ["microphone", false], ["system", false], ["microphone", true], ["system", true]
-] as const)("pre-session ended %s (ready=%s) offers Reset, cleans capture and permits retry", async (lane, isReady) => {
+] as const)("pre-session ended %s (sound=%s) offers Reset, cleans capture and permits retry", async (lane, withSound) => {
   await click("Enable microphone");
   await click("Share audio");
-  if (isReady) {
+  if (withSound) {
     await settle(() => feed("microphone", .02));
     await settle(() => feed("system", .3));
   }
-  expect(phase()).toBe(isReady ? "ready" : "configuring");
+  expect(phase()).toBe("ready");
   const track = streams[lane === "microphone" ? 0 : 1].getTracks()[0];
   await settle(() => track.dispatchEvent(new Event("ended")));
   snapshot(`pre-session ${lane} ended`);

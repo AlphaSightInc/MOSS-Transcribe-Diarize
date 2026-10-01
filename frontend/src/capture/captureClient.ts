@@ -6,7 +6,7 @@
  * The order below is not a suggestion. Chrome requires the microphone before the
  * display chooser, `getDisplayMedia()` must be called synchronously inside the click
  * handler that authorised it, and the server session must not exist until both lanes
- * have proved they carry signal.
+ * are attached. Neither lane needs sound yet: audio may start after the meeting does.
  *
  *   const client = new CaptureClient({ helperVersion, workletUrl, onMeter, ... });
  *   await client.prepare();                      // descriptor + AudioContext + worklet
@@ -14,7 +14,7 @@
  *   // ... in the display button's own click handler, with no await before it:
  *   const stream = await client.requestDisplayMedia();
  *   await client.attachDisplayMedia(stream);
- *   // ... both meters must read non-zero; `createSession` refuses otherwise:
+ *   // ... both lanes are attached; `createSession` refuses otherwise:
  *   const session = await client.createSession();
  *   // ... capture now runs on its own, driven by worklet frames. Then:
  *   await client.stop(deadlineSeconds);
@@ -25,9 +25,8 @@
  *
  * ## What the caller must handle
  *
- * - `onMeter(lane, rms)` fires once per worklet frame per lane. Both meters must be
- *   non-zero before `createSession()` will succeed; that is the preflight gate. A muted
- *   microphone is exempt: it frames zeros on purpose and may start the meeting muted.
+ * - `onMeter(lane, rms)` fires once per worklet frame per lane, for the level meters.
+ *   It gates nothing: a silent or muted lane still starts a meeting.
  * - `onPreSessionFailure(failure)` fires for the three failures that happen before a
  *   session exists, so there is no authenticated heartbeat to carry them. The client
  *   has already torn its capture graph down when this fires; the caller owns the retry
@@ -429,7 +428,6 @@ export class CaptureClient {
   // Chrome's share choice for the system lane; stored per meeting for row source labels (J5).
   private displaySurface: CaptureSurface | null = null;
   private readonly lanes = new Map<CaptureLane, LaneState>();
-  private readonly laneHasSignal = new Set<CaptureLane>();
   private failedTransports = new Set<CaptureLane | "heartbeat">();
   private heartbeatPending: HelperState | null = null;
   private heartbeatFlush: Promise<void> | null = null;
@@ -584,25 +582,20 @@ export class CaptureClient {
   }
 
   /**
-   * Create a server session after both lanes have proved they carry signal.
+   * Create a server session once both lanes are attached.
    *
    * A terminal frame conflict clears only the delivery state, so callers can
    * invoke this again without rebuilding the browser's capture graph.
    */
   async createSession(engineSettings?: EngineSettingsWire): Promise<CaptureSession> {
     if (this.session) return this.session;
-    // A microphone that is silent RIGHT NOW is a health condition, not a precondition. The
-    // precondition charter section 4 states is that both lanes have SHOWN non-zero signal, which is
-    // the sticky `laneHasSignal` gate below. Blocking here refused healthy microphones: an operator
-    // picking a tab and ticking "share tab audio" is quiet for well over the ten-second window, and
-    // with echoCancellation on Chrome emits exact zeros in that gap. The remedy line still reaches
-    // them through `onPreflightStatus`; it just no longer prevents the meeting from starting.
-    // A muted microphone cannot show signal (the worklet zeroes it) and needs none: the operator
-    // chose silence, and its lane is attached with a live track -- an ended track has already torn
-    // the capture down (`browser_track_ended`). After unmute, K1 names a microphone that stays silent.
-    const microphoneReady = this.microphoneMuted || this.laneHasSignal.has("microphone");
-    if (!microphoneReady || !this.laneHasSignal.has("system")) {
-      throw new Error("both capture lanes must have non-zero signal before session creation");
+    // Start needs both sources attached, not sound on either (user decision, round 4): the person
+    // may start recording first and play the audio afterwards, or start with the microphone muted.
+    // A lane exists only while its track is live -- an ended track or a share without an audio
+    // track tears the capture down before this point (browser_track_ended,
+    // browser_surface_audio_missing). Silence stays a health condition (K1), never a precondition.
+    if (!this.lanes.has("microphone") || !this.lanes.has("system")) {
+      throw new Error("both capture lanes must be attached before session creation");
     }
     const descriptor = await this.requireDescriptor();
     const response = await fetch("/api/live/sessions", {
@@ -714,7 +707,6 @@ export class CaptureClient {
     }
     this.lanes.clear();
     this.failedTransports.clear();
-    this.laneHasSignal.clear();
     this.session = null;
     this.heartbeatPending = null;
     this.contextSuspended = false;
@@ -871,7 +863,6 @@ export class CaptureClient {
     if (!state || !descriptor) return;
 
     const level = rms(workletFrame.samples);
-    if (level >= SILENCE_RMS) this.laneHasSignal.add(lane);
     this.options.onMeter?.(lane, level);
     // Health is metered before the delivery gate so a lane that is clipping or dead
     // during preflight is already in that state when the first heartbeat goes out.

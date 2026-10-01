@@ -83,17 +83,11 @@ export function ControlPanel() {
   const pollerRef = useRef<MossSessionPoller | null>(null);
   const phaseRef = useRef<CapturePhase>("idle");
   const metersRef = useRef<LaneMeters>(EMPTY_METERS);
-  const micMutedRef = useRef(false);
   const preflightLine = useRef<string | null>(null);
 
   const transition = (next: CapturePhase) => {
     phaseRef.current = next;
     setPhase(next);
-  };
-
-  const applyMicMuted = (muted: boolean) => {
-    micMutedRef.current = muted;
-    setMicMuted(muted);
   };
 
   const microphoneOpened = (deviceId: string) => {
@@ -110,10 +104,6 @@ export function ControlPanel() {
       const stale = preflightLine.current;
       preflightLine.current = null;
       setMessage(current => current === stale ? "" : current);
-    }
-    // A muted microphone frames zeros on purpose; it does not hold the setup back (#4).
-    if ((next.microphone > 0 || micMutedRef.current) && next.system > 0 && phaseRef.current === "configuring") {
-      transition("ready");
     }
   };
 
@@ -159,7 +149,7 @@ export function ControlPanel() {
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
     setConnected({ microphone: false, system: false });
-    applyMicMuted(false);
+    setMicMuted(false);
     transition("terminal");
     setMessage(normalClose ? "" : CONNECTION_LOST_LINE);
     requestMeetingHistoryRefresh();
@@ -169,7 +159,7 @@ export function ControlPanel() {
     if (clientRef.current) return;
     transition("configuring");
     setMessage("");
-    applyMicMuted(false);
+    setMicMuted(false);
     const client = new CaptureClient({
       helperVersion: HELPER_VERSION,
       workletUrl: workletUrl(),
@@ -226,6 +216,9 @@ export function ControlPanel() {
       }
       if (clientRef.current !== client) { await client.close(); return; }
       setConnected(current => ({ ...current, system: true }));
+      // Both sources attached is all Start needs: neither has to carry sound yet, since the
+      // person may start recording first and play the audio afterwards.
+      if (!connected.system && phaseRef.current === "configuring") transition("ready");
       if (phaseRef.current === "active") setMessage("");
     } catch (error) {
       if (clientRef.current !== client) return;
@@ -293,7 +286,7 @@ export function ControlPanel() {
     if (!client) return;
     const next = !micMuted;
     client.setMicrophoneMuted(next);
-    applyMicMuted(next);
+    setMicMuted(next);
     if (next && preflightLine.current) {
       // "No microphone sound" (K1) is not the reason once the microphone is muted on purpose.
       const stale = preflightLine.current;
@@ -376,7 +369,7 @@ export function ControlPanel() {
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
     setConnected({ microphone: false, system: false });
-    applyMicMuted(false);
+    setMicMuted(false);
     resetSessionState();
     sessionTitle.value = "";
     transition("idle");
@@ -503,16 +496,8 @@ export function ControlPanel() {
   const configured = clientRef.current !== null;
   const reattached = phase === "viewing";
   const microphoneLevel = micMuted ? 0 : meters.microphone;
-  // A muted microphone is silent on purpose: the meeting may start muted and unmute later (#4).
-  const microphoneSilent = !micMuted && meters.microphone <= 0;
-  const canStart = phase === "ready" && !microphoneSilent && meters.system > 0;
+  const canStart = phase === "ready";
   const canReplace = phase === "ready" || phase === "active";
-  // K6: a disabled Start names the source that has no sound yet.
-  const silentSources = microphoneSilent && meters.system <= 0
-    ? "Microphone and shared audio have no sound yet"
-    : microphoneSilent ? "Microphone has no sound yet"
-      : meters.system <= 0 ? "Shared audio has no sound yet" : undefined;
-  const startTitle = canStart ? undefined : silentSources;
 
   // The dropdown names the device that is open, or the one Enable microphone will open.
   const microphoneChoices = microphoneOptions(microphones);
@@ -557,7 +542,7 @@ export function ControlPanel() {
               : !connected.microphone ? <button type="button" className="record-btn" disabled={phase === "configuring"} onClick={() => void configureMicrophone()}>{phase === "configuring" ? "Connecting…" : "Enable microphone"}</button>
               : !connected.system ? <button type="button" className="record-btn" onClick={() => void shareAudio()}>Share audio</button>
               : <button type="button" className="record-btn" data-action="start" disabled={!canStart || starting}
-                  title={startTitle} onClick={() => void startCapture()}><PlayIcon />{starting ? "Starting…" : "Start recording"}</button>}
+                  onClick={() => void startCapture()}><PlayIcon />{starting ? "Starting…" : "Start recording"}</button>}
 
             {statusLine ? <p className="capture-status" role="status">{statusLine}</p> : null}
 

@@ -258,7 +258,7 @@ describe("ControlPanel reattach", () => {
     expect(root.querySelector('[role="status"]')).toBeNull();
   });
 
-  it("distinguishes connections from sound and names the silent source on disabled Start (K6)", async () => {
+  it("enables Start once both sources are connected, with no sound on either yet", async () => {
     await act(async () => render(<ControlPanel />, root));
     const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
     // No setup prose, "Next:" hints or meter sub-labels: the next button is the instruction.
@@ -273,16 +273,11 @@ describe("ControlPanel reattach", () => {
     act(() => mocks.captureOptions!.onMeter!("microphone", 0));
     await act(async () => button("Share audio")!.click());
     await vi.waitFor(() => expect(button("Start recording")).toBeTruthy());
-    expect(button("Start recording")!.disabled).toBe(true);
-    expect(button("Start recording")!.title).toBe("Microphone has no sound yet");
-    act(() => mocks.captureOptions!.onMeter!("microphone", .5));
-    expect(button("Start recording")!.disabled).toBe(false);
-    expect(button("Start recording")!.title).toBe("");
+    // The person may start recording first and play the audio afterwards: meters gate nothing.
     act(() => mocks.captureOptions!.onMeter!("system", 0));
-    expect(button("Start recording")!.disabled).toBe(true);
-    expect(button("Start recording")!.title).toBe("Shared audio has no sound yet");
-    act(() => mocks.captureOptions!.onMeter!("microphone", 0));
-    expect(button("Start recording")!.title).toBe("Microphone and shared audio have no sound yet");
+    expect(button("Start recording")!.disabled).toBe(false);
+    expect(button("Start recording")!.hasAttribute("title")).toBe(false);
+    expect(root.textContent).not.toContain("no sound yet");
     await act(async () => button("Share again")!.click());
     expect(mocks.replaceLane).toHaveBeenCalledWith("system", expect.anything(), expect.any(Array));
     expect(mocks.createSession).not.toHaveBeenCalled();

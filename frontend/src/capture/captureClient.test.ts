@@ -324,7 +324,7 @@ describe("browser capture frame contract", () => {
     expect(body).toMatchObject({ sample_rate: 8, capture_timestamp_ns: 250_000_000 });
   });
 
-  it("requires signal above the declared preflight noise floor before creating a session", async () => {
+  it("creates a session once both lanes are attached, with neither carrying sound yet", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -336,27 +336,17 @@ describe("browser capture frame contract", () => {
     vi.stubGlobal("fetch", fetchSpy);
     const { client } = activeFrameClient();
     client.session = null;
-    client.lanes.set("system", testLaneState());
+    client.onWorkletFrame("microphone", { ...workletFrame(0), samples: silent() });
 
-    client.onWorkletFrame("microphone", {
-      ...workletFrame(0),
-      samples: new Float32Array([5e-5, -5e-5]),
-    });
-    client.onWorkletFrame("system", {
-      ...workletFrame(0),
-      lane: "system",
-      samples: new Float32Array([0.5, -0.5]),
-    });
-
+    // Only the microphone is attached: no shared audio, no session.
     await expect((client as unknown as CaptureClient).createSession()).rejects.toThrow(
-      "both capture lanes must have non-zero signal before session creation",
+      "both capture lanes must be attached before session creation",
     );
     expect(fetchSpy).not.toHaveBeenCalled();
 
-    client.onWorkletFrame("microphone", {
-      ...workletFrame(2),
-      samples: new Float32Array([2e-4, -2e-4]),
-    });
+    // Both attached and both silent: the person may play audio after Start.
+    client.lanes.set("system", testLaneState());
+    client.onWorkletFrame("system", { ...workletFrame(0), lane: "system", samples: silent() });
     await expect((client as unknown as CaptureClient).createSession()).resolves.toMatchObject({
       id: "session",
     });
@@ -1250,7 +1240,12 @@ describe("browser capture frame contract", () => {
     });
   });
 
-  it("reports the silent-microphone remedy and refuses a session for a lane that never produced any signal", async () => {
+  it("reports the silent-microphone remedy (K1) yet still starts a session for a lane that never produced any signal", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: "session", descriptor: { sample_rate: 4, frame_samples: 2 } }),
+    }));
     const onPreflightStatus = vi.fn<(statusLine: string) => void>();
     const client = new CaptureClient({
       helperVersion: "test",
@@ -1277,19 +1272,14 @@ describe("browser capture frame contract", () => {
       });
     }
     await vi.waitFor(() => expect(onPreflightStatus).toHaveBeenCalledWith(silentMicrophoneRemedy));
-    // This lane never produced a single non-silent frame, so the sticky signal gate refuses it --
-    // that is the precondition charter section 4 actually states, and it stays enforced.
-    await expect(client.createSession()).rejects.toThrow(
-      "both capture lanes must have non-zero signal before session creation",
-    );
+    // K1 names the remedy; it never blocks Start, which needs only both lanes attached.
+    await expect(client.createSession()).resolves.toMatchObject({ id: "session" });
   });
 
   it("starts a session for a lane that HAS proven signal and then went quiet, while still surfacing the remedy", async () => {
-    // Charter section 4's precondition is that both lanes have SHOWN non-zero signal, which is the
-    // sticky laneHasSignal gate. Live silence is a health condition, not a precondition: an operator
-    // choosing a tab and ticking "share tab audio" is naturally quiet for well over ten seconds, and
-    // with echoCancellation on Chrome emits exact zeros in that gap. Blocking there refuses a healthy
-    // microphone and nothing transcribes at all.
+    // Live silence is a health condition, not a precondition: an operator choosing a tab and
+    // ticking "share tab audio" is naturally quiet for well over ten seconds, and with
+    // echoCancellation on Chrome emits exact zeros in that gap.
     const onPreflightStatus = vi.fn<(statusLine: string) => void>();
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
@@ -1540,7 +1530,7 @@ describe("microphone mute", () => {
     });
   });
 
-  it("creates a session with a microphone muted before it ever carried signal, then unmutes it (#4)", async () => {
+  it("creates a session with a microphone muted from its first frame, then unmutes it (#4)", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -1550,16 +1540,10 @@ describe("microphone mute", () => {
     const { client } = await eventLaneClient();
     const capture = client as unknown as CaptureClient;
     client.session = null;
+    capture.setMicrophoneMuted(true);
+    // The muted worklet delivers only zeros, so this microphone never carries signal before Start.
     deliverSamples(client, "microphone", silent, 3);
     deliverSamples(client, "system", clean, 1);
-    // Control: an unmuted microphone that never carried signal is still refused.
-    await expect(capture.createSession()).rejects.toThrow(
-      "both capture lanes must have non-zero signal before session creation",
-    );
-    expect(fetchSpy).not.toHaveBeenCalled();
-
-    // Muted, its zeros are intentional: the lane is attached and live, so the meeting may start.
-    capture.setMicrophoneMuted(true);
     await expect(capture.createSession()).resolves.toEqual({ id: "muted-start" });
     deliverSamples(client, "microphone", silent, 1, 3);
     capture.setMicrophoneMuted(false);

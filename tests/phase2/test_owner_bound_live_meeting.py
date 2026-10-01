@@ -719,6 +719,105 @@ def test_gemini_stop_drain_stays_active_and_publishes_stop_requested_to_observer
         assert client.get(f"/api/meetings/{meeting_id}").json()["status"] == "completed"
 
 
+def test_gemini_meeting_starts_on_silent_lanes_and_opens_each_preview_on_its_first_voice(tmp_path):
+    """Round 4: Start needs both sources attached, not sound. A meeting whose two lanes carry
+    digital silence from the first frame is accepted and stays healthy past the server's own
+    silence window, and each lane's instant-word preview opens only on that lane's first voice."""
+    from moss_transcribe_diarize.app.gemini_hybrid_engine import (
+        GeminiHybridEngine, GrowingContextWindowScheduler, OverlapRegistry)
+    from moss_transcribe_diarize.app.gemini_lane_engine import (
+        LaneGeminiEngine, VoicedLiveWords, WebRtcSpeechDetector)
+    from moss_transcribe_diarize.app.gemini_live_runtime import GeminiLiveRuntime
+
+    database = tmp_path / "moss.sqlite3"
+    sessions = asyncio.run(provision(database))
+    opened: list[str] = []
+
+    class PreviewWords:
+        def __init__(self, lane: str):
+            self.lane = lane
+            opened.append(lane)
+        def bind(self, listener): self.listener = listener
+        def push_audio(self, start_sample, pcm16):
+            self.listener("hello", start_sample, start_sample + 8000, False)
+        async def finish(self): pass
+        def close(self): pass
+
+    class NoBatch:
+        def diarize(self, *_args, **_kwargs):
+            raise AssertionError("under 15 s of audio opens no batch window")
+        def transcribe(self, _tape): return ()
+        def transcribe_interval(self, _tape, _start, _end): return ()
+
+    def lane(name: str):
+        return lambda lane_publish: GeminiHybridEngine(
+            lane_publish,
+            word_source=VoicedLiveWords(lambda: PreviewWords(name), voiced_audio=WebRtcSpeechDetector()),
+            window_scheduler=GrowingContextWindowScheduler(max_seconds=180, stride_seconds=15),
+            registry=OverlapRegistry(), diarizer=NoBatch(), terminal=NoBatch(), source_lane=name)
+
+    descriptor = LiveServiceDescriptor(
+        source_revision="test", provider_name="gemini", provider_revision="test",
+        provider_manifest_hash="0" * 64,
+        config_hashes=LiveServiceConfigHashes.from_parts(
+            endpoint_config={}, identity_config={}, decoder_config={}),
+        bounds=LiveServiceBounds(max_frame_samples=16000, max_queue_depth=4,
+                                 max_retained_samples=32000, max_identity_speakers=8,
+                                 max_events=64, max_tape_bytes=640000), frame_samples=16000,
+    )
+    runtime = GeminiLiveRuntime(descriptor=descriptor, tape_storage_root=tmp_path / "tapes",
+        engine_factory=lambda _id, publish, _usage, _settings: LaneGeminiEngine(
+            publish, system_factory=lane("system"), microphone_factory=lane("microphone"),
+            tape_root=tmp_path / "lanes"))
+    with wave.open(str(Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"), "rb") as wav:
+        voice = wav.readframes(16000)
+    assert len(voice) == 32000
+
+    def frame(sequence: int, lane_name: str, pcm: bytes) -> dict[str, object]:
+        return {"lane": lane_name, "sequence": sequence,
+                "capture_timestamp_ns": sequence * 1_000_000_000, "device_epoch": 0,
+                "pcm_base64": base64.b64encode(pcm).decode("ascii"), "sample_count": 16000,
+                "sample_rate": LIVE_SAMPLE_RATE, "silent": not any(pcm), "discontinuity": False}
+
+    app = make_app(database, live_runtime_factory=lambda: runtime)
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["a"])
+        created = client.post("/api/live/sessions", json={"engine_settings": {
+            "transcription": {"api_key": "user-key"}, "cleanup_after_stop": False}})
+        assert created.status_code == 201, created.text
+        meeting_id = created.json()["id"]
+        url = f"/api/live/sessions/{meeting_id}/frames"
+        assert client.post(f"/api/live/sessions/{meeting_id}/heartbeat", json=heartbeat()).status_code == 200
+        # Six seconds of silence on both lanes: past the server's four-frame silence window.
+        for sequence in range(6):
+            for lane_name in ("system", "microphone"):
+                assert client.post(url, json=frame(sequence, lane_name, bytes(32000))).status_code == 200
+        body = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
+        assert (body["capture_phase"], body["status_line"]) == ("recording", "")
+        assert body["snapshot"]["session"]["status"] == "active"
+        assert opened == []
+
+        # Shared audio starts playing; the microphone stays silent. One more pair flushes the
+        # compatibility mixer, which holds one frame per lane for alignment.
+        assert client.post(url, json=frame(6, "system", voice)).status_code == 200
+        assert client.post(url, json=frame(6, "microphone", bytes(32000))).status_code == 200
+        for lane_name in ("system", "microphone"):
+            assert client.post(url, json=frame(7, lane_name, bytes(32000))).status_code == 200
+        assert opened == ["system"]
+        body = client.get(f"/api/live/sessions/{meeting_id}/snapshot").json()
+        assert (body["capture_phase"], body["status_line"]) == ("recording", "")
+
+        stopped = client.post(f"/api/live/sessions/{meeting_id}/stop", json={"deadline": 2})
+        assert stopped.status_code in {200, 202}
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            status = client.get(f"/api/meetings/{meeting_id}").json()["status"]
+            if status != "active":
+                break
+            time.sleep(.01)
+        assert status == "completed"
+
+
 def test_signed_in_two_lane_live_meeting_is_owner_bound_memory_polled_and_durable(
     tmp_path: Path,
 ):

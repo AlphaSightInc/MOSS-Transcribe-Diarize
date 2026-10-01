@@ -29,7 +29,7 @@ Base: `gemini/r2-integration` @ `1dee41cb`. Integration branch `gemini/r3-ui`. L
 - K3 Shared audio stopped [Share again] / Microphone stopped [Reconnect].
 - K4 Reconnecting — keep this tab open.
 - K5 Recording stopped: connection lost [Reset].
-- K6 Start disabled → tooltip names the source with no sound yet.
+- K6 Start disabled → tooltip names the source with no sound yet. *(Retired in round 4: Start needs only both sources attached, never sound, so there is no tooltip.)*
 - K7 Two meetings are already recording — stop one first.
 - K8 Action failures with the reason: naming, correction, export, upload/URL, summary failed [Retry].
 - K9 Enter your Gemini API key in Settings.
