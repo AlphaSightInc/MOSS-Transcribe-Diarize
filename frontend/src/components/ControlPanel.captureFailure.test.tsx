@@ -289,7 +289,7 @@ it("a share that fails for another reason starts nothing and names the reason", 
   displayMode = "reject";
   await click("Start recording");
   expect(phase()).toBe("idle");
-  expect(status()).toBe("Shared audio failed: chooser rejected");
+  expect(status()).toBe("System sound failed: chooser rejected");
   expect(media().getUserMedia).not.toHaveBeenCalled();
   expectReleased();
 });
@@ -336,7 +336,7 @@ it.each(["source", "worklet"])("F4/4 releases the acquired share after %s failur
   sourceFails = failure === "source"; workletFails = failure === "worklet";
   await click("Start recording");
   expect(phase()).toBe("idle");
-  expect(status()).toBe(`Shared audio failed: ${failure} attachment failed`);
+  expect(status()).toBe(`System sound failed: ${failure} attachment failed`);
   expect(media().getUserMedia).not.toHaveBeenCalled();
   expectReleased();
 });
@@ -362,7 +362,7 @@ it("F4/6 catches synchronous chooser errors in the user gesture", async () => {
     await new Promise(resolve => setTimeout(resolve, 0));
   });
   expect(phase()).toBe("idle");
-  expect(status()).toBe("Shared audio failed: display capture is not supported");
+  expect(status()).toBe("System sound failed: display capture is not supported");
   expectReleased();
 });
 it.each(["source", "worklet"])("F4/9 a microphone switch that fails mid-recording after %s failure keeps the recording and releases the replacement", async failure => {
@@ -403,15 +403,41 @@ it("a muted microphone sends silence without the silent-microphone remedy", asyn
   await settle(() => { for (let frame = 0; frame < 20; frame += 1) feed("microphone", 0); });
   await vi.waitFor(() => expect(reportedSilentMicrophone()).toBe(true));
 });
-it("K3: a recorded source that stops mid-recording is reported failed while the meeting goes on", async () => {
-  await untick("Microphone");
+it.each(["system", "microphone"] as const)("K3: a recorded %s that stops mid-recording goes silent, never failed, and Stop goes through", async lane => {
   await record();
-  await settle(() => streams[0].getTracks()[0].dispatchEvent(new Event("ended")));
-  await vi.waitFor(() => expect(posted("heartbeat").at(-1)!.lanes.system)
-    .toMatchObject({ state: "failed", failure_code: "browser_track_ended" }));
-  expect(posted("heartbeat").at(-1)!.lanes.microphone).toMatchObject({ state: "capturing", failure_code: null });
+  await settle(() => { feed("microphone", .02); feed("system", .3); feed("microphone", .02); feed("system", .3); });
+  await vi.waitFor(() => expect(postedFrames(lane)).toHaveLength(2));
+  const framer = nodes.get(lane)!;
+  // The real event: Chrome's "Stop sharing", or an unplugged microphone.
+  const track = streams[lane === "system" ? 0 : 2].getTracks()[0];
+  await settle(() => track.dispatchEvent(new Event("ended")));
+  expect(status()).toBe(lane === "system" ? "System sound stopped." : "Microphone stopped.");
   expect(phase()).toBe("active");
-  expect(button("Stop recording")).toBeTruthy();
+  expect(button(lane === "system" ? "Share again" : "Mute mic")).toBeUndefined();
+  expect(button(lane === "system" ? "Mute mic" : "Share again")).toBeTruthy();
+  expect(meters()).toEqual([lane === "system" ? "Microphone level 43%" : "System sound level 83%"]);
+  expect(box(lane === "system" ? "System sound" : "Microphone").checked).toBe(false);
+  expect(track.stop).toHaveBeenCalled();
+  // Zeros now feed the lane's own framer, and its frames continue the same sequence and clock.
+  expect(silentSources).toHaveLength(1);
+  expect(nodes.get(lane)).toBe(framer);
+  await settle(() => { for (let frame = 0; frame < 25; frame += 1) { feed(lane, 0); feed(lane === "system" ? "microphone" : "system", .02); } });
+  await vi.waitFor(() => expect(postedFrames(lane)).toHaveLength(27));
+  expect(postedFrames(lane).map(frame => frame.sequence)).toEqual([...Array(27).keys()]);
+  expect(postedFrames(lane).every(frame => frame.device_epoch === 1 && !frame.discontinuity)).toBe(true);
+  expect(postedFrames(lane).map(frame => frame.capture_timestamp_ns))
+    .toEqual(postedFrames(lane === "system" ? "microphone" : "system").map(frame => frame.capture_timestamp_ns));
+  // The server's failed-lane rule never sees a failed lane, and a stopped microphone raises no K1.
+  expect(posted("heartbeat").every(beat => beat.state === "capturing"
+    && beat.lanes.system.state === "capturing" && beat.lanes.microphone.state === "capturing"
+    && beat.lanes.system.failure_code === null && beat.lanes.microphone.failure_code === null)).toBe(true);
+  expect(status()).toBe(lane === "system" ? "System sound stopped." : "Microphone stopped.");
+
+  await click("Stop recording");
+  expect(phase()).toBe("stopping");
+  expect(posted("heartbeat").at(-1)).toMatchObject({ state: "stopped" });
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => url === "/api/live/sessions/probe/stop")).toBe(true);
+  expect(status()).toBeUndefined();
 });
 
 // Ordering regressions (WP27), for the one-click flow.
@@ -498,7 +524,7 @@ it.each(["microphone", "system"] as const)("a %s that stops before the meeting e
   await settle(() => track.dispatchEvent(new Event("ended")));
   expect(phase()).toBe("idle");
   // K3: the stopped source by name; the raw browser_track_ended code never reaches the page.
-  expect(status()).toBe(lane === "microphone" ? "Microphone stopped." : "Shared audio stopped.");
+  expect(status()).toBe(lane === "microphone" ? "Microphone stopped." : "System sound stopped.");
   expect(meters()).toEqual([]);
   expectReleased();
   // The meeting that was created after all is ended at the server, not left to its lease.

@@ -22,7 +22,7 @@ type TestLaneState = {
   clippedFrameRun: number;
   silentFrameRun: number;
   degradedCode: string | null;
-  source: { disconnect: () => void };
+  source: { disconnect: ReturnType<typeof vi.fn> };
   framer: { port: { onmessage: unknown }; disconnect: () => void };
   mute: { disconnect: () => void };
   tracks: { stop: () => void }[];
@@ -34,8 +34,7 @@ type TestLaneState = {
   pendingDiscontinuityEpochs: Set<number>;
   discontinuities: number;
   droppedFrames: number;
-  health: "capturing" | "degraded" | "failed";
-  failureCode: string | null;
+  health: "capturing" | "degraded";
 };
 
 type ActiveClient = {
@@ -67,7 +66,6 @@ function testLaneState(): TestLaneState {
     discontinuities: 0,
     droppedFrames: 0,
     health: "capturing",
-    failureCode: null,
     degradedCode: null,
     clippedFrameRun: 0,
     silentFrameRun: 0,
@@ -181,7 +179,7 @@ function fakeTrack(): MediaStreamTrack {
 }
 
 /** The node a silent lane is fed from: `createConstantSource()` in the fake context below. */
-const zeros = { offset: { value: 1 }, start: vi.fn(), connect: (target: unknown) => target, disconnect: vi.fn() };
+const zeros = { offset: { value: 1 }, start: vi.fn(), connect: vi.fn((target: unknown) => target), disconnect: vi.fn() };
 
 /** A client in a session; `silentLane` is the source that is not recorded, if any. */
 async function eventLaneClient(
@@ -189,7 +187,8 @@ async function eventLaneClient(
   silentLane: CaptureLane | null = null,
 ): Promise<{ client: EventLaneClient; microphone: MediaStreamTrack }> {
   vi.stubGlobal("AudioWorkletNode", FakeAudioWorkletNode);
-  const source = { connect: (target: unknown) => target, disconnect: vi.fn() };
+  zeros.offset.value = 1;
+  for (const call of [zeros.start, zeros.connect, zeros.disconnect]) call.mockClear();
   const mute = {
     gain: { value: 1 },
     connect: (target: unknown) => target,
@@ -200,7 +199,7 @@ async function eventLaneClient(
     sampleRate: 4,
     destination: {},
     resume: vi.fn().mockResolvedValue(undefined),
-    createMediaStreamSource: () => source,
+    createMediaStreamSource: () => ({ connect: (target: unknown) => target, disconnect: vi.fn() }),
     createConstantSource: () => zeros,
     createGain: () => mute,
   }) as unknown as AudioContext;
@@ -546,22 +545,70 @@ describe("browser capture frame contract", () => {
     expect(source.match(/\bsetTimeout\b/g)).toHaveLength(1);
   });
 
-  it("reports a real track ended event as a failed lane while its peer keeps capture alive", async () => {
+  it("turns a lane silent on its own framer when its track really ends, and never reports it failed", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     vi.stubGlobal("fetch", fetchSpy);
-    const { microphone } = await eventLaneClient();
+    const onSourceStopped = vi.fn();
+    const onMeter = vi.fn();
+    const { client, microphone } = await eventLaneClient(
+      { helperVersion: "test", workletUrl: WORKLET_URL, onSourceStopped, onMeter });
+    client.heartbeatNextStartFrame = 0; // let every frame carry a heartbeat
+    const lane = client.lanes.get("microphone")!;
+    const { framer, source } = lane;
+    const frames = () => fetchSpy.mock.calls.filter(([url]) => String(url).endsWith("/frames"))
+      .map(([, request]) => JSON.parse((request as RequestInit).body as string));
 
+    deliverSamples(client, "microphone", clean, 2);
+    microphone.dispatchEvent(new Event("ended")); // the real event: an unplugged microphone
     microphone.dispatchEvent(new Event("ended"));
-    await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalledOnce());
 
-    const body = JSON.parse((fetchSpy.mock.calls[0][1] as RequestInit).body as string);
-    expect(body).toMatchObject({
-      state: "capturing",
-      lanes: {
-        microphone: { state: "failed", failure_code: "browser_track_ended" },
-        system: { state: "capturing", failure_code: null },
-      },
-    });
+    // Zeros join the same framer before the ended source leaves it: the frame clock never sees an empty input.
+    expect(zeros.connect).toHaveBeenCalledExactlyOnceWith(framer);
+    expect(zeros.connect.mock.invocationCallOrder[0]).toBeLessThan(source.disconnect.mock.invocationCallOrder[0]);
+    expect(zeros.start).toHaveBeenCalledOnce();
+    expect(zeros.offset.value).toBe(0);
+    expect(lane).toMatchObject({ silent: true, source: zeros, tracks: [], health: "capturing", degradedCode: null });
+    expect(lane.framer).toBe(framer);
+    expect(microphone.stop).toHaveBeenCalledOnce();
+    expect(onSourceStopped).toHaveBeenCalledExactlyOnceWith("microphone");
+
+    // The lane keeps sending: same sequence, same clock, same epoch, no discontinuity; 30 silent
+    // frames (15 s) raise no K1 and no level.
+    deliverSamples(client, "microphone", silent, 30, 2);
+    await vi.waitFor(() => expect(frames()).toHaveLength(32));
+    expect(frames().map((frame) => frame.sequence)).toEqual([...Array(32).keys()]);
+    expect(frames().map((frame) => frame.silent)).toEqual([false, false, ...Array(30).fill(true)]);
+    expect(frames().every((frame) => frame.device_epoch === 1 && !frame.discontinuity)).toBe(true);
+    for (let index = 1; index < 32; index += 1) {
+      expect(frames()[index].capture_timestamp_ns).toBe(frames()[index - 1].capture_end_timestamp_ns);
+    }
+    expect(onMeter).toHaveBeenCalledTimes(2);
+    expect(heartbeatBodies(fetchSpy).length).toBeGreaterThan(0);
+    for (const body of heartbeatBodies(fetchSpy)) {
+      expect(body).toMatchObject({ state: "capturing", lanes: {
+        microphone: { state: "capturing", device_epoch: 1, discontinuities: 0, failure_code: null },
+        system: { state: "capturing", failure_code: null } } });
+    }
+  });
+
+  it("keeps recording silence when both recorded sources have stopped, and Stop still goes through", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client, microphone } = await eventLaneClient();
+    Object.assign(client.context!, { close: vi.fn().mockResolvedValue(undefined), removeEventListener: vi.fn() });
+    const system = client.lanes.get("system")!.tracks[0] as unknown as EventTarget;
+    microphone.dispatchEvent(new Event("ended"));
+    system.dispatchEvent(new Event("ended"));
+    expect([...client.lanes.values()].map((lane) => lane.silent)).toEqual([true, true]);
+    deliverSamples(client, "microphone", silent, 1);
+    deliverSamples(client, "system", silent, 1);
+    await vi.waitFor(() => expect(fetchSpy.mock.calls.filter(([url]) => String(url).endsWith("/frames"))).toHaveLength(2));
+    await (client as unknown as CaptureClient).stop(1);
+    const urls = fetchSpy.mock.calls.map(([url]) => String(url));
+    expect(urls.at(-1)).toBe("/api/live/sessions/session/stop");
+    expect(heartbeatBodies(fetchSpy).at(-1)).toMatchObject({ state: "stopped" });
+    expect(heartbeatBodies(fetchSpy).every((body) => body.state !== "failed"
+      && body.lanes.microphone.state !== "failed" && body.lanes.system.state !== "failed")).toBe(true);
   });
 
   it("preserves queued-source epochs and marks the first replacement frame discontinuous", async () => {
@@ -1366,13 +1413,13 @@ describe("browser capture frame contract", () => {
       expect(body.lanes.microphone.state).not.toBe("failed");
     }
 
-    // A really-gone track still latches failed, and outranks the metered reason. Driven
-    // by the real event, not by calling the transition.
+    // Nor does a really-gone track: its lane goes silent, and the stopped source's metered
+    // condition goes with it. Driven by the real event, not by calling the transition.
     microphone.dispatchEvent(new Event("ended"));
-    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy).at(-1)!.lanes.microphone.state).toBe("failed"));
-    expect(heartbeatBodies(fetchSpy).at(-1)!.lanes.microphone.failure_code).toBe(
-      "browser_track_ended",
-    );
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy).at(-1)!.lanes.microphone)
+      .toMatchObject({ state: "capturing", failure_code: null }));
+    expect(heartbeatBodies(fetchSpy).at(-1)).toMatchObject({ state: "degraded",
+      lanes: { system: { state: "degraded", failure_code: "browser_sustained_clipping" } } });
   });
 
   it("stops local capture instead of sending another frame after a malformed-frame 400", async () => {
@@ -1582,12 +1629,12 @@ describe("microphone mute", () => {
     });
   });
 
-  it("stops a replacement's tracks when the switch is refused for an ended lane", async () => {
+  it("stops a replacement's tracks when there is no lane to replace", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200 }));
-    const { client, microphone } = await eventLaneClient();
-    microphone.dispatchEvent(new Event("ended"));
+    const { client } = await eventLaneClient();
+    client.lanes.delete("microphone");
     const replacement = fakeTrack();
-    await expect(client.replaceLane("microphone", {} as MediaStream, [replacement])).rejects.toThrow("is failed");
+    await expect(client.replaceLane("microphone", {} as MediaStream, [replacement])).rejects.toThrow("is not active");
     expect(replacement.stop).toHaveBeenCalledOnce();
   });
 
@@ -1694,7 +1741,6 @@ describe("silent lane for a source that is not recorded (round 5)", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     FakeAudioWorkletNode.created = [];
-    zeros.start.mockClear();
   });
 
   const frameBodies = (fetchSpy: ReturnType<typeof vi.fn>, lane: CaptureLane) => fetchSpy.mock.calls

@@ -25,10 +25,12 @@ Base: `gemini/r2-integration` @ `1dee41cb`. Integration branch `gemini/r3-ui`. L
 ### Keep list (Q6) — the only status/hint text allowed
 
 - K1 No microphone sound — check the input in Chrome site settings.
-- K2 Microphone / shared audio too loud — lower it.
-- K3 Shared audio stopped [Share again] / Microphone stopped [Reconnect].
+- K2 Microphone / System sound too loud — lower it.
+- K3 System sound stopped / Microphone stopped. *(Round 5: the user-facing name is "System sound", not "Shared audio".
+  A recorded source that stops mid-recording goes silent and the recording continues to a normal Stop, so the line is
+  the plain fact with no action.)*
 - K4 Reconnecting — keep this tab open.
-- K5 Recording stopped: connection lost [Reset].
+- K5 Recording stopped: connection lost. *(Round 5: no Reset; Start recording is offered directly.)*
 - K6 Start disabled → tooltip names the source with no sound yet. *(Retired in round 4: Start needs only both sources attached, never sound, so there is no tooltip.)*
   *(Round 5: Start is disabled only while both source boxes are unticked; tooltip "Tick System sound or Microphone.")*
 - K7 Two meetings are already recording — stop one first.

@@ -3,8 +3,7 @@ import { createMossSessionPoller, type MossSessionPoller } from "../api/mossPoll
 import {
   CaptureClient,
   microphoneConstraints,
-  type CaptureLane,
-  type PreSessionCaptureFailure
+  type CaptureLane
 } from "../capture/captureClient";
 import { chooseMicrophone, microphoneOptions } from "../capture/microphoneChoice";
 import { captureMeetingId, resetSessionState, sessionError, sessionStartedAt, sessionStatusLine, sessionTitle } from "../state/session";
@@ -42,6 +41,11 @@ type CapturePhase =
   | "terminal"
   | "error";
 type LaneMeters = Record<CaptureLane, number>;
+
+/** Nothing is running in these phases, so Start is offered: no Reset between recordings. */
+function startable(phase: CapturePhase): boolean {
+  return phase === "idle" || phase === "terminal" || phase === "error";
+}
 
 const EMPTY_METERS: LaneMeters = { microphone: 0, system: 0 };
 const HELPER_VERSION = "moss-web/1";
@@ -85,8 +89,9 @@ export function ControlPanel() {
   const [meters, setMeters] = useState<LaneMeters>(EMPTY_METERS);
   // Empty unless a keep-list line applies; buttons and the top pill carry every other state.
   const [message, setMessage] = useState("");
-  // What Start could not record (Q16). It yields to any line that asks for action.
-  const [startNote, setStartNote] = useState("");
+  // A source this recording does not take: what Start could not record (Q16), or the source that
+  // stopped since (K3). It yields to any line that asks for action.
+  const [sourceNote, setSourceNote] = useState("");
   const [starting, setStarting] = useState(false);
   const clientRef = useRef<CaptureClient | null>(null);
   const pollerRef = useRef<MossSessionPoller | null>(null);
@@ -116,10 +121,11 @@ export function ControlPanel() {
     }
   };
 
-  // A Start that records nothing: close what it opened and return to idle with at most one line.
-  // A client that Reset (or an earlier abandon) already retired changes nothing here.
-  const abandonStart = async (client: CaptureClient, line: string) => {
-    if (clientRef.current !== client) return;
+  // A Start that records nothing, or that Reset cancelled: close what it opened and return to idle
+  // with at most one line. The meeting on screen is untouched. A client already retired changes
+  // nothing here.
+  const abandonStart = async (client: CaptureClient | null, line: string) => {
+    if (!client || clientRef.current !== client) return;
     clientRef.current = null;
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
@@ -129,7 +135,18 @@ export function ControlPanel() {
     preflightLine.current = null;
     transition("idle");
     setMessage(line);
+    setSourceNote("");
     await client.close().catch(() => undefined);
+  };
+
+  // A recorded source stopped mid-recording (Chrome's "Stop sharing", an unplugged microphone).
+  // Its lane now sends silence, so the recording goes on and Stop completes normally (K3).
+  const sourceStopped = (lane: CaptureLane) => {
+    metersRef.current = { ...metersRef.current, [lane]: 0 };
+    setMeters(metersRef.current);
+    setConnected(current => ({ ...current, [lane]: false }));
+    if (lane === "microphone") setMicMuted(false);
+    setSourceNote(sourceStoppedLine(lane));
   };
 
   const transportFailed = (source: "capture" | "transcript") => {
@@ -164,7 +181,7 @@ export function ControlPanel() {
     setMicMuted(false);
     transition("terminal");
     setMessage(normalClose ? "" : CONNECTION_LOST_LINE);
-    setStartNote("");
+    setSourceNote("");
     requestMeetingHistoryRefresh();
   };
 
@@ -183,7 +200,7 @@ export function ControlPanel() {
       await client.replaceLane("system", stream, stream.getTracks());
       if (clientRef.current === client) setMessage("");
     } catch (error) {
-      // A stopped share is sealed at the server; only a new recording restores it.
+      // The recorded share is untouched when its replacement cannot be attached.
       if (clientRef.current === client && !chooserDismissed(error)) {
         setMessage("Could not share again — stop and start a new recording.");
       }
@@ -246,7 +263,11 @@ export function ControlPanel() {
    */
   const startCapture = async () => {
     const want = sources;
-    if (clientRef.current || phaseRef.current !== "idle" || (!want.system && !want.microphone)) return;
+    if (!startable(phaseRef.current) || (!want.system && !want.microphone)) return;
+    // A Stop that failed leaves its closed client and its poller behind; Start replaces them.
+    void clientRef.current?.close().catch(() => undefined);
+    pollerRef.current?.stop();
+    pollerRef.current = null;
     const client = new CaptureClient({
       helperVersion: HELPER_VERSION,
       workletUrl: workletUrl(),
@@ -259,7 +280,10 @@ export function ControlPanel() {
         setMessage(line);
       },
       // A source that stops between its attachment and the meeting (K3): nothing starts.
-      onPreSessionFailure: failure => void abandonStart(client, preSessionLine(failure)),
+      onPreSessionFailure: failure => void abandonStart(client, sourceStoppedLine(failure.lane)),
+      onSourceStopped: lane => {
+        if (clientRef.current === client) sourceStopped(lane);
+      },
       onTransportError: () => {
         if (clientRef.current === client) transportFailed("capture");
       },
@@ -272,7 +296,7 @@ export function ControlPanel() {
     setStarting(true);
     recovering.current.clear();
     setMessage("");
-    setStartNote("");
+    setSourceNote("");
     setMicMuted(false);
     sessionStarting.value = true;
     let display: MediaStream | null = null;
@@ -323,6 +347,7 @@ export function ControlPanel() {
       if (await retired()) return;
       setConnected({ microphone: microphone !== null, system });
       if (microphone !== null) setOpenMicrophoneId(microphone);
+      setSourceNote(microphoneFailed ? MICROPHONE_UNAVAILABLE_LINE : want.system && !system ? SYSTEM_NOT_SHARED_LINE : "");
 
       const session = await client.createSession(engineSettingsFrom(loadAppSettings()));
       if (clientRef.current !== client) {
@@ -353,7 +378,6 @@ export function ControlPanel() {
       });
       pollerRef.current = poller;
       captureMeetingId.value = session.id;
-      setStartNote(microphoneFailed ? MICROPHONE_UNAVAILABLE_LINE : want.system && !system ? SYSTEM_NOT_SHARED_LINE : "");
       setStarting(false);
       sessionStarting.value = false;
       transition("active");
@@ -375,7 +399,7 @@ export function ControlPanel() {
     sessionStopRequested.value = captureMeetingId.value;
     captureMeetingId.value = null;
     setMessage("");
-    setStartNote("");
+    setSourceNote("");
     try {
       // Five seconds bounds local frame delivery and this request's wait only.
       // A 202 leaves the existing poller running while the server finishes draining.
@@ -386,30 +410,15 @@ export function ControlPanel() {
     }
   };
 
-  const resetCapture = async () => {
+  // Leave a meeting this page was only watching.
+  const detach = () => {
     clearSessionReattach(sessionReattachStorage());
     pollerRef.current?.stop();
     pollerRef.current = null;
-    const client = clientRef.current;
-    clientRef.current = null;
-    if (client) {
-      try {
-        await client.stop(0);
-      } catch {
-        // A terminal server may reject the redundant stop; local state still resets.
-      }
-    }
-    metersRef.current = EMPTY_METERS;
-    setMeters(EMPTY_METERS);
-    setConnected({ microphone: false, system: false });
-    setMicMuted(false);
-    setStarting(false);
     resetSessionState();
     sessionTitle.value = "";
     transition("idle");
-    preflightLine.current = null;
     setMessage("");
-    setStartNote("");
   };
 
   useEffect(() => {
@@ -527,6 +536,7 @@ export function ControlPanel() {
   }
 
   const recording = phase === "active" || phase === "stopping";
+  const ready = startable(phase);
   // The boxes choose the sources of the next Start; a recording shows the ones it really takes.
   const ticked = recording ? connected : sources;
   const noSource = !sources.system && !sources.microphone;
@@ -536,7 +546,7 @@ export function ControlPanel() {
   const microphoneChoices = microphoneOptions(microphones);
   const shownMicrophoneId = recording ? openMicrophoneId : chooseMicrophone(microphones, microphoneId) ?? "";
 
-  const statusLine = message || (phase === "active" ? sessionStatusLine.value || startNote : "");
+  const statusLine = message || (phase === "active" ? sessionStatusLine.value || sourceNote : "");
   // #8: a keep-list line asks the operator to act, so a collapsed Controls rail opens to show it.
   // The remembered preference is unchanged; the next reload collapses the rail again.
   useEffect(() => { if (statusLine) controlPanelCollapsed.value = false; }, [statusLine]);
@@ -569,15 +579,16 @@ export function ControlPanel() {
           >
             {phase === "active" ? <button type="button" className="record-btn" data-action="stop" onClick={() => void stopCapture()}><StopIcon />Stop recording</button>
               : phase === "stopping" ? <button type="button" className="record-btn" data-action="stop" disabled><StopIcon />Stopping…</button>
-              : phase === "viewing" || phase === "terminal" || phase === "error" ? null
+              : phase === "viewing" ? null
               : <button type="button" className="record-btn" data-action="start" disabled={starting || noSource}
                   title={noSource ? NO_SOURCE_TOOLTIP : undefined}
                   onClick={() => void startCapture()}><PlayIcon />{starting ? "Starting…" : "Start recording"}</button>}
 
             {statusLine ? <p className="capture-status" role="status">{statusLine}</p> : null}
 
-            {phase === "configuring" || phase === "terminal" || phase === "error" ? <button type="button" className="btn" onClick={() => void resetCapture()}>Reset</button> : null}
-            {phase === "viewing" ? <button type="button" className="btn" onClick={() => void resetCapture()}>Detach</button> : null}
+            {/* Reset exists only while a Start is pending (an open picker, an unanswered prompt): it cancels it. */}
+            {phase === "configuring" ? <button type="button" className="btn" onClick={() => void abandonStart(clientRef.current, "")}>Reset</button> : null}
+            {phase === "viewing" ? <button type="button" className="btn" onClick={detach}>Detach</button> : null}
             {phase === "active" && (connected.microphone || connected.system) ? (
               <div className="btn-row">
                 {connected.microphone ? <button type="button" className={`btn ghost${micMuted ? " is-active" : ""}`} aria-pressed={micMuted}
@@ -593,7 +604,7 @@ export function ControlPanel() {
               const label = lane === "system" ? "System sound" : "Microphone";
               return <div key={lane} className="source-row">
                 <label className="check-row">
-                  <input type="checkbox" checked={ticked[lane]} disabled={phase !== "idle"}
+                  <input type="checkbox" checked={ticked[lane]} disabled={!ready}
                     onChange={event => { chooseSources({ ...sources, [lane]: event.currentTarget.checked }); setMessage(""); }} />
                   <span>{label}</span>
                 </label>
@@ -605,7 +616,7 @@ export function ControlPanel() {
             {ticked.microphone && microphoneChoices.length > 0 ? (
               <div className="field">
                 <select id="microphone-select" aria-label="Microphone device" value={shownMicrophoneId}
-                  disabled={phase !== "idle" && phase !== "active"}
+                  disabled={!ready && phase !== "active"}
                   onFocus={() => void refreshMicrophones()}
                   onChange={event => { const id = event.currentTarget.value; setMicrophoneId(id);
                     if (phase === "active") void switchMicrophone(id); }}>
@@ -657,13 +668,13 @@ export function ControlPanel() {
   );
 }
 
-/** A source that stopped before the meeting existed, as its keep-list line (K3). */
-function preSessionLine(failure: PreSessionCaptureFailure): string {
-  return failure.lane === "microphone" ? "Microphone stopped." : "Shared audio stopped.";
+/** A recorded source that stopped, before the meeting existed or during it, as its keep-list line (K3). */
+function sourceStoppedLine(lane: CaptureLane): string {
+  return lane === "microphone" ? "Microphone stopped." : "System sound stopped.";
 }
 
 function laneFailedLine(lane: CaptureLane, error: unknown): string {
-  return `${lane === "microphone" ? "Microphone" : "Shared audio"} failed: ${errorMessage(error)}`;
+  return `${lane === "microphone" ? "Microphone" : "System sound"} failed: ${errorMessage(error)}`;
 }
 
 /** Closing Chrome's chooser is a choice, not a failure. */

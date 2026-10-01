@@ -39,6 +39,7 @@ const mocks = vi.hoisted(() => {
       onTransportRecovered?: () => void;
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
       onPreflightStatus?: (statusLine: string) => void;
+      onSourceStopped?: (lane: "microphone" | "system") => void;
     } | null,
   };
 });
@@ -348,8 +349,8 @@ describe("ControlPanel reattach", () => {
       expect(button("Mute mic")).toBeUndefined();
       expect(meters()).toEqual(["System sound level 90%"]);
       // A line that asks for action outranks the note, which returns once it clears.
-      act(() => { sessionStatusLine.value = "Shared audio too loud — lower it."; });
-      expect(status()).toBe("Shared audio too loud — lower it.");
+      act(() => { sessionStatusLine.value = "System sound too loud — lower it."; });
+      expect(status()).toBe("System sound too loud — lower it.");
       act(() => { sessionStatusLine.value = ""; });
       expect(status()).toBe("Microphone unavailable");
       // The box stays unticked for the next Start, in this browser.
@@ -389,8 +390,8 @@ describe("ControlPanel reattach", () => {
       // The choice itself is untouched: the next Start asks for system sound again.
       await act(async () => { sessionStatus.value = "closed"; sessionError.value = null;
         mocks.pollerOptions?.onTerminal?.("Audio capture stopped."); });
-      await act(async () => button("Reset")!.click());
       expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
+      expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([false, false]);
       expect(storage.getItem(storageKeys.captureSources)).toBeNull();
     });
 
@@ -473,13 +474,16 @@ describe("ControlPanel reattach", () => {
     it("Reset while the picker is open retires the Start and stops a share that arrives late", async () => {
       let share!: (stream: unknown) => void;
       mocks.requestDisplayMedia.mockReturnValue(new Promise(resolve => { share = resolve; }));
-      await act(async () => render(<ControlPanel />, root));
+      await act(async () => { sessionId.value = "meeting-on-screen"; render(<ControlPanel />, root); });
       await act(async () => button("Start recording")!.click());
       expect(phase()).toBe("configuring");
       expect(button("Starting…")?.disabled).toBe(true);
       expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([true, true]);
+      // Reset exists only here, and only cancels the pending Start: the meeting on screen stays.
       await act(async () => button("Reset")!.click());
       expect(phase()).toBe("idle");
+      expect(button("Reset")).toBeUndefined();
+      expect(sessionId.value).toBe("meeting-on-screen");
       const track = { stop: vi.fn() };
       await act(async () => { share({ getTracks: () => [track] }); await new Promise(resolve => setTimeout(resolve, 0)); });
       expect(track.stop).toHaveBeenCalled();
@@ -487,6 +491,119 @@ describe("ControlPanel reattach", () => {
       expect(mocks.createSession).not.toHaveBeenCalled();
       expect(phase()).toBe("idle");
       expect(button("Start recording")!.disabled).toBe(false);
+    });
+  });
+
+  describe("no Reset between recordings (round 5, D5)", () => {
+    const finish = (status: "closed" | "failed" = "closed") => act(async () => {
+      sessionStatus.value = status; sessionError.value = status === "closed" ? null : "lost";
+      mocks.pollerOptions?.onTerminal?.(status === "closed" ? "Audio capture stopped." : "lost");
+    });
+
+    it("offers Start as soon as a recording has finished, keeps the finished meeting until the next one exists", async () => {
+      await act(async () => render(<ControlPanel />, root));
+      await startRecording();
+      await act(async () => button("Stop recording")!.click());
+      await finish();
+      expect(phase()).toBe("terminal");
+      expect(button("Reset")).toBeUndefined();
+      expect(button("Start recording")?.disabled).toBe(false);
+      expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([false, false]);
+      expect(sessionId.value).toBe("account-live-meeting");
+
+      // A second Start whose picker is closed changes nothing: the finished meeting stays on screen.
+      mocks.requestDisplayMedia.mockReturnValueOnce(Promise.reject(new DOMException("Permission denied", "NotAllowedError")));
+      await clickStart();
+      expect(phase()).toBe("idle");
+      expect(sessionId.value).toBe("account-live-meeting");
+      expect(mocks.createSession).toHaveBeenCalledOnce();
+
+      // The next Start that succeeds replaces it, with no Reset click in between.
+      mocks.createSession.mockResolvedValueOnce({ id: "second-meeting" });
+      await startRecording();
+      expect(mocks.createSession).toHaveBeenCalledTimes(2);
+      expect(sessionId.value).toBe("second-meeting");
+      expect(captureMeetingId.value).toBe("second-meeting");
+      expect(status()).toBeNull();
+    });
+
+    it("offers Start after a recording was lost (K5), and the line goes when Start is clicked", async () => {
+      await act(async () => render(<ControlPanel />, root));
+      await startRecording();
+      await finish("failed");
+      expect(status()).toBe("Recording stopped: connection lost.");
+      expect(button("Reset")).toBeUndefined();
+      await startRecording();
+      expect(status()).toBeNull();
+      expect(mocks.createSession).toHaveBeenCalledTimes(2);
+    });
+
+    it("offers Start after a Stop that failed, and that Start retires the old poller", async () => {
+      mocks.captureStop.mockRejectedValueOnce(new Error("HTTP 500"));
+      await act(async () => render(<ControlPanel />, root));
+      await startRecording();
+      await act(async () => button("Stop recording")!.click());
+      expect(phase()).toBe("error");
+      expect(status()).toBe("Stop failed: HTTP 500");
+      expect(button("Reset")).toBeUndefined();
+      expect(mocks.poller.stop).not.toHaveBeenCalled();
+      await startRecording();
+      expect(mocks.poller.stop).toHaveBeenCalledOnce();
+      expect(mocks.captureClose).toHaveBeenCalledOnce();
+      expect(mocks.createSession).toHaveBeenCalledTimes(2);
+      expect(status()).toBeNull();
+    });
+  });
+
+  describe("a recorded source that stops mid-recording (K3)", () => {
+    it("system sound: says so, drops its level and Share again, and Stop completes normally", async () => {
+      await act(async () => render(<ControlPanel />, root));
+      await startRecording();
+      act(() => mocks.captureOptions!.onSourceStopped!("system"));
+      expect(status()).toBe("System sound stopped.");
+      expect(phase()).toBe("active");
+      expect(button("Share again")).toBeUndefined();
+      expect(button("Mute mic")).toBeTruthy();
+      expect(meters()).toEqual(["Microphone level 90%"]);
+      expect([box("System sound").checked, box("Microphone").checked]).toEqual([false, true]);
+      // A late level from the stopped lane is not shown.
+      act(() => mocks.captureOptions!.onMeter!("system", .5));
+      expect(meters()).toEqual(["Microphone level 90%"]);
+      // The choice for the next recording is untouched.
+      expect(storage.getItem(storageKeys.captureSources)).toBeNull();
+
+      await act(async () => button("Stop recording")!.click());
+      expect(mocks.captureStop).toHaveBeenCalledWith(5);
+      expect(status()).toBeNull();
+      await act(async () => { sessionStatus.value = "closed"; sessionError.value = null;
+        mocks.pollerOptions?.onTerminal?.("Audio capture stopped."); });
+      expect(phase()).toBe("terminal");
+      expect(status()).toBeNull();
+      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
+    });
+
+    it("microphone: says so and drops Mute and its level; with both stopped the recording goes on until Stop", async () => {
+      await act(async () => render(<ControlPanel />, root));
+      await startRecording();
+      await act(async () => button("Mute mic")!.click());
+      act(() => mocks.captureOptions!.onSourceStopped!("microphone"));
+      expect(status()).toBe("Microphone stopped.");
+      expect(button("Mute mic")).toBeUndefined();
+      expect(button("Unmute mic")).toBeUndefined();
+      expect(button("Share again")).toBeTruthy();
+      expect(meters()).toEqual(["System sound level 90%"]);
+      // A line that asks for action outranks it, then it returns.
+      act(() => { sessionStatusLine.value = "System sound too loud — lower it."; });
+      expect(status()).toBe("System sound too loud — lower it.");
+      act(() => { sessionStatusLine.value = ""; });
+      expect(status()).toBe("Microphone stopped.");
+
+      act(() => mocks.captureOptions!.onSourceStopped!("system"));
+      expect(status()).toBe("System sound stopped.");
+      expect(meters()).toEqual([]);
+      expect(button("Share again")).toBeUndefined();
+      expect(phase()).toBe("active");
+      expect(button("Stop recording")?.disabled).toBe(false);
     });
   });
 
@@ -610,7 +727,8 @@ describe("ControlPanel reattach", () => {
     act(() => mocks.pollerOptions?.onTerminal?.("helper_lease_expired"));
     act(() => { mocks.captureOptions?.onTransportRecovered?.(); mocks.pollerOptions?.onRecovered?.(); });
     expect(status()).toBe("Recording stopped: connection lost.");
-    expect(button("Reset")).toBeTruthy();
+    expect(button("Reset")).toBeUndefined();
+    expect(button("Start recording")?.disabled).toBe(false);
   });
 
   it("shows a keep-list capture line from the server only while this tab records", async () => {
@@ -726,7 +844,9 @@ describe("ControlPanel reattach", () => {
     // Raw reasons and codes never reach the page: every abnormal end is K5.
     expect(status()).toBe("Recording stopped: connection lost.");
     expect(button("Stop recording")).toBeUndefined();
-    expect(button("Reset")).toBeTruthy();
+    expect(button("Reset")).toBeUndefined();
+    expect(button("Start recording")?.disabled).toBe(false);
+    expect(mocks.createSession).toHaveBeenCalledTimes(1);
   });
 
   describe("microphone dropdown and Mute mic", () => {
@@ -839,7 +959,6 @@ describe("ControlPanel reattach", () => {
       await act(async () => { sessionStatus.value = "failed"; sessionError.value = "lost";
         mocks.pollerOptions?.onTerminal?.("lost"); });
       expect(button("Unmute mic")).toBeUndefined();
-      await act(async () => button("Reset")!.click());
       await startRecording();
       expect(button("Mute mic")?.getAttribute("aria-pressed")).toBe("false");
       expect(button("Unmute mic")).toBeUndefined();

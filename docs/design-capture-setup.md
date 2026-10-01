@@ -12,7 +12,10 @@ server needs both lanes of a meeting attached. What is the least the browser mus
    (`lt:capture:sources`). It says what the next Start asks for; it is locked from the click until the recording ends.
 2. *Lane* — one per source, always two per meeting. A lane is either *recorded* (fed by a device or a shared surface)
    or *silent* (fed zeros by the browser). Nothing else distinguishes them: same framer, same clock, same frames.
+   A lane has no third, "failed" state: a recorded lane whose source stops becomes a silent lane.
 3. *Start* — one sequential routine with one outcome: a recording with at least one recorded lane, or nothing.
+   It is offered whenever nothing is running — on load, after a Start that recorded nothing, and after a recording
+   has finished or was lost — so there is no Reset step between recordings.
 
 **Invariants.**
 
@@ -20,6 +23,10 @@ server needs both lanes of a meeting attached. What is the least the browser mus
   user activation); the microphone follows; the meeting is created only after both lanes are attached.
 - A meeting is created only when at least one lane is recorded. A Start that records nothing releases everything it
   opened (tracks stopped, AudioContext closed) and returns to ready with at most one line.
+- The meeting on screen (a finished recording, or one opened from History) stays until the next Start has created
+  its meeting. Reset exists only while a Start is pending (an open picker, an unanswered prompt) and only cancels it.
+- The browser never reports a lane as `failed`. The server seals a failed lane and then closes the meeting as failed
+  instead of completed (`live_v2_session.stop`), so a source that stops must not cost the rest of the recording.
 - A silent lane opens no device, has no track that can end, shows no level, and never raises the silent-microphone
   remedy (K1). Mute is offered only while the microphone lane is recorded: "unticked" and "muted" are different states.
 - During a recording the boxes show the sources it really takes. The remembered choice changes only when the person
@@ -45,6 +52,15 @@ also start nothing and show the reason (K8). A source that stops between its att
 nothing and shows K3. Reset during Start retires it: whatever arrives late is stopped, and a meeting created after
 all is stopped at the server.
 
+**A recorded source that stops mid-recording** (Chrome's "Stop sharing", a closed shared tab, an unplugged
+microphone): `CaptureClient.sourceEnded` connects the zero source to the lane's own framer, then disconnects the
+ended source, so the framer never sees an empty input and the lane's sequence numbers, timestamps and `device_epoch`
+continue. The panel shows "System sound stopped." or "Microphone stopped." (K3), drops that source's level and the
+controls that need it (Share again; Mute and the device dropdown), and shows its box unticked; the remembered choice
+is untouched. The recording goes on with the other source — or with silence, if both have stopped — until Stop,
+which completes normally. Stopping it automatically when the last source goes was not chosen: the person may be
+about to stop anyway, and one rule ("a stopped source is silence") covers every case.
+
 **Silent lane.** `CaptureClient.attachSilentLane` connects a started `ConstantSourceNode` with offset 0 to the
 production `lane-framer` worklet in place of a `MediaStreamAudioSourceNode`. The worklet is unchanged and frames
 whatever its input delivers on the AudioContext's `currentFrame` clock, so sequence numbers, timestamps and
@@ -62,9 +78,6 @@ uses, without a device. Measured, Chrome 154 headless, 16 kHz context, 8000-samp
 
 Unmeasured: the cost of always-on echo cancellation to a voice heard through headphones (Q17); provider cost of a
 silent lane on real Gemini (round-5 gate 2; lanes open provider sessions on voiced audio only).
-
-Not changed: a recorded source that stops mid-recording is sealed by the server (K3) and the meeting goes on with
-the other lane, silent or not, until Stop.
 
 # Microphone choice (issue #2)
 

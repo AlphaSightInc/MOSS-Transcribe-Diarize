@@ -39,9 +39,11 @@
  *   to a state where `createSession()` can be called again WITHOUT rebuilding the audio
  *   graph. A 400 is a client bug: the client stops capture locally and does not retry.
  * - `replaceLane(lane, stream, tracks)` is the only way `device_epoch` ever advances. It
- *   is for a lane that is still live (a user-chosen device switch). A lane whose track
- *   has ended is already reported `failed` and sealed by the server, and needs a new
- *   session instead.
+ *   is a user-chosen device switch.
+ * - `onSourceStopped(lane)` fires when a recorded source's track ends during a session
+ *   (Chrome's "Stop sharing", an unplugged microphone). The lane is never reported
+ *   `failed` -- the server would seal it and could not close the meeting cleanly. It goes
+ *   silent on its own framer instead, so the meeting records on and Stop completes.
  *
  * Lane health reaches the operator only through the heartbeat, and the server turns it
  * into one `capture_phase` + one `status_line` on the snapshot route. The caller renders
@@ -92,9 +94,10 @@ export type CaptureSession = Readonly<{
   id: string;
 }>;
 
-type HelperState = "starting" | "capturing" | "degraded" | "recovering" | "failed" | "stopped";
+/** The helper states this client reports: it never reports itself or a lane as `failed`. */
+type HelperState = "capturing" | "degraded" | "stopped";
 
-/** Terminal for the lane: the server seals a lane it is told is `failed`. */
+/** A recorded source's track ended. It reaches the caller, never the heartbeat. */
 type BrowserFailureCode = "browser_track_ended";
 
 /**
@@ -112,7 +115,7 @@ type BrowserDegradedCode =
   | "browser_microphone_silent";
 
 /** Every `browser_*` code this client can put on the wire. */
-export type BrowserCaptureCode = BrowserFailureCode | BrowserDegradedCode;
+export type BrowserCaptureCode = BrowserDegradedCode;
 
 /**
  * A source that stopped after it was attached and before a server session exists.
@@ -125,7 +128,7 @@ export type PreSessionCaptureFailure = Readonly<{
   code: BrowserFailureCode;
 }>;
 
-type LaneHealthState = "capturing" | "degraded" | "failed";
+type LaneHealthState = "capturing" | "degraded";
 
 export type CaptureClientOptions = Readonly<{
   helperVersion: string;
@@ -136,6 +139,8 @@ export type CaptureClientOptions = Readonly<{
   /** Fires once all previously failing frame lanes/heartbeat have succeeded. */
   onTransportRecovered?: () => void;
   onPreSessionFailure?: (failure: PreSessionCaptureFailure) => void;
+  /** A recorded source stopped during a session; its lane now sends silence. */
+  onSourceStopped?: (lane: CaptureLane) => void;
 }>;
 
 type WorkletFrame = Readonly<{
@@ -167,7 +172,6 @@ type LaneState = {
   discontinuities: number;
   droppedFrames: number;
   health: LaneHealthState;
-  failureCode: BrowserFailureCode | null;
   degradedCode: BrowserDegradedCode | null;
   clippedFrameRun: number;
   silentFrameRun: number;
@@ -290,6 +294,14 @@ export function microphoneConstraints(deviceId: string): MediaStreamConstraints 
     },
     video: false,
   };
+}
+
+/** Zeros on the context's own clock: the source of a lane that is not recorded. */
+function zeroSource(context: AudioContext): ConstantSourceNode {
+  const zeros = context.createConstantSource();
+  zeros.offset.value = 0;
+  zeros.start();
+  return zeros;
 }
 
 export function parseCaptureDescriptor(payload: unknown): CaptureDescriptor {
@@ -541,13 +553,11 @@ export class CaptureClient {
   }
 
   /**
-   * Swap a still-live lane for a caller-acquired replacement stream.
+   * Swap a lane's source for a caller-acquired replacement stream.
    *
    * The caller must acquire browser media through its required user gesture.
-   * A lane already reported as failed is terminal at the server, so it needs a
-   * new capture session rather than a local replacement. Queued frames keep
-   * their source epoch; the first replacement frame carries the incremented
-   * epoch and an explicit discontinuity.
+   * Queued frames keep their source epoch; the first replacement frame carries
+   * the incremented epoch and an explicit discontinuity.
    */
   async replaceLane(
     lane: CaptureLane,
@@ -555,12 +565,10 @@ export class CaptureClient {
     tracks: MediaStreamTrack[],
   ): Promise<void> {
     const state = this.lanes.get(lane);
-    if (!state || state.health === "failed") {
+    if (!state) {
       // Own the caller's freshly acquired tracks here too, or a refused switch keeps the device open.
       tracks.forEach(track => track.stop());
-      throw new Error(state
-        ? `${lane} lane is failed; recreate the capture session before replacing it`
-        : `${lane} lane is not active`);
+      throw new Error(`${lane} lane is not active`);
     }
     const { source, framer, mute } = await this.createLaneGraph(lane, stream, tracks);
 
@@ -575,7 +583,6 @@ export class CaptureClient {
     state.pendingDiscontinuityEpochs.add(state.deviceEpoch);
     state.discontinuities += 1;
     state.health = "capturing";
-    state.failureCode = null;
     // A new source starts with a clean health history; the old device's clipping or
     // silence says nothing about this one.
     state.degradedCode = null;
@@ -784,14 +791,7 @@ export class CaptureClient {
     let mute: GainNode | undefined;
     try {
       const [context, descriptor] = await Promise.all([this.prepare(), this.requireDescriptor()]);
-      if (stream) {
-        source = context.createMediaStreamSource(stream);
-      } else {
-        const zeros = context.createConstantSource();
-        zeros.offset.value = 0;
-        zeros.start();
-        source = zeros;
-      }
+      source = stream ? context.createMediaStreamSource(stream) : zeroSource(context);
       framer = new AudioWorkletNode(context, "lane-framer", {
         numberOfInputs: 1,
         numberOfOutputs: 1,
@@ -837,7 +837,6 @@ export class CaptureClient {
       discontinuities: 0,
       droppedFrames: 0,
       health: "capturing",
-      failureCode: null,
       degradedCode: null,
       clippedFrameRun: 0,
       silentFrameRun: 0,
@@ -860,7 +859,7 @@ export class CaptureClient {
 
   private observeLaneTracks(lane: CaptureLane, state: LaneState): void {
     for (const track of state.tracks) {
-      const listener = () => this.markLaneFailed(lane, "browser_track_ended");
+      const listener = () => this.sourceEnded(lane);
       track.addEventListener("ended", listener);
       state.trackEndedListeners.push({ track, listener });
     }
@@ -893,7 +892,7 @@ export class CaptureClient {
       // during preflight is already in that state when the first heartbeat goes out.
       this.meterLaneHealth(lane, state, level, workletFrame.samples);
     }
-    if (!this.session || this.stopping || state.health === "failed") return;
+    if (!this.session || this.stopping) return;
 
     this.queueHeartbeat(workletFrame);
     state.frameQueue.push({ workletFrame, deviceEpoch: state.deviceEpoch });
@@ -903,7 +902,7 @@ export class CaptureClient {
   private async flushFrameQueue(state: LaneState): Promise<void> {
     state.postInFlight = true;
     try {
-      while (state.frameQueue.length > 0 && this.session && state.health !== "failed") {
+      while (state.frameQueue.length > 0 && this.session) {
         const descriptor = this.descriptor;
         const context = this.context;
         if (!descriptor || !context) return;
@@ -1175,7 +1174,6 @@ export class CaptureClient {
 
   private heartbeatState(): HelperState {
     const states = [...this.lanes.values()];
-    if (states.length > 0 && states.every((state) => state.health === "failed")) return "failed";
     if (this.contextSuspended || states.some((state) => state.health === "degraded")) {
       return "degraded";
     }
@@ -1193,7 +1191,7 @@ export class CaptureClient {
         failure_code: null,
       };
     }
-    if (this.contextSuspended && state?.health !== "failed") {
+    if (this.contextSuspended) {
       return {
         state: "degraded",
         device_epoch: state?.deviceEpoch ?? 0,
@@ -1207,9 +1205,7 @@ export class CaptureClient {
       device_epoch: state?.deviceEpoch ?? 0,
       dropped_frames: state?.droppedFrames ?? 0,
       discontinuities: state?.discontinuities ?? 0,
-      // A sealed lane's reason outranks a recoverable one; the server's projection sorts
-      // failed lanes ahead of degraded ones for exactly the same reason.
-      failure_code: state?.failureCode ?? state?.degradedCode ?? null,
+      failure_code: state?.degradedCode ?? null,
     };
   }
 
@@ -1223,25 +1219,50 @@ export class CaptureClient {
     }
   }
 
-  private markLaneFailed(lane: CaptureLane, failureCode: BrowserFailureCode): void {
+  /**
+   * A recorded source's track ended: Chrome's "Stop sharing", an unplugged microphone.
+   *
+   * Before a session exists nothing starts. During one the lane goes silent rather than
+   * `failed`: a failed lane is sealed by the server, which then ends the meeting as failed
+   * instead of completing it at Stop. Zeros join the lane's own framer before the ended source
+   * leaves it, so the framer never sees an empty input and its sequence numbers and timestamps
+   * continue; frames already queued are still delivered.
+   */
+  private sourceEnded(lane: CaptureLane): void {
     const state = this.lanes.get(lane);
-    if (!state || state.health === "failed") return;
-    state.health = "failed";
-    state.failureCode = failureCode;
-    state.degradedCode = null;
-    state.frameQueue.length = 0;
-    if (!this.session) {
-      void this.failBeforeSession(lane, failureCode);
+    if (!state || state.silent) return;
+    const context = this.context;
+    if (!this.session || !context) {
+      void this.failBeforeSession(lane, "browser_track_ended");
       return;
     }
-    void this.scheduleHeartbeat(this.heartbeatState());
+    const zeros = zeroSource(context);
+    zeros.connect(state.framer);
+    for (const { track, listener } of state.trackEndedListeners) {
+      track.removeEventListener("ended", listener);
+    }
+    state.source.disconnect();
+    state.tracks.forEach((track) => track.stop());
+    state.silent = true;
+    state.source = zeros;
+    state.tracks = [];
+    state.trackEndedListeners = [];
+    state.clippedFrameRun = 0;
+    state.silentFrameRun = 0;
+    if (state.degradedCode !== null) {
+      // The stopped source's clipping or silence is not a condition of the silent lane.
+      state.degradedCode = null;
+      state.health = "capturing";
+      void this.scheduleHeartbeat(this.heartbeatState());
+    }
+    this.options.onSourceStopped?.(lane);
   }
 
   /**
    * Turn worklet frames into the two metered lane conditions the charter requires.
    *
    * Both are *recoverable*: they set `degraded`, and they clear themselves when the
-   * audio recovers. Neither may ever set `failed`, which the server treats as a
+   * audio recovers. Neither is ever reported as `failed`, which the server treats as a
    * permanent seal on the lane.
    *
    * Silence is only ever reported for the microphone. A quiet system lane is the
@@ -1255,8 +1276,6 @@ export class CaptureClient {
     level: number,
     samples: Float32Array,
   ): void {
-    if (state.health === "failed") return;
-
     state.clippedFrameRun =
       clippedFraction(samples) >= CLIPPED_FRAME_FRACTION ? state.clippedFrameRun + 1 : 0;
     const muted = lane === "microphone" && this.microphoneMuted;
