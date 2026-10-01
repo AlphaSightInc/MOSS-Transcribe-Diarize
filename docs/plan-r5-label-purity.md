@@ -275,10 +275,17 @@ provider output.
 
 **Fixtures** (public audio on disk only; built and truth-checked before the first call; listed in priority order):
 - Shape: a base meeting with ≥ 4 speakers fills the first 15-minute chunk; two voices that have not spoken before
-  start alternating turns `d` seconds before the 900 s boundary and continue ≥ 200 s into the next chunk
-  (total ≈ 1130–1230 s, two chunks, production 900 s / 30 s overlap).
-- F1: real conversation audio, `d` ≈ 50 s. F2: synthetic meeting from LibriSpeech voices and seeds not used in DEV or
-  HOLD (exact truth), `d` ≈ 50 s. F3: the better-truth source again with `d` ≈ 25 s.
+  start alternating conversational turns (≈ 5–12 s each) `d` seconds before the 900 s boundary and continue ≥ 200 s
+  into the next chunk (total ≈ 1130 s, two chunks, production 900 s / 30 s overlap; six calls ≈ $0.29).
+- **Amendment before any call (lead, 2026-10-01):** the failure needs a person who already carries two provider labels
+  in the chunk (in the known case the host: narrated intro vs conversation). A base of single-condition read-speech
+  voices is unlikely to produce that, so the first two fixtures use the base where it is known to occur.
+  F1: base = `long60` 1740–2586 s (complete truth; this audio was BASE in the HOLD 65.5-min case — disclosed, W was
+  designed knowing it), late joiners = two LibriSpeech voices never used in DEV/HOLD, `d` ≈ 50 s.
+  F2: same base shifted to end ≈ 25 s later (`d` ≈ 25 s) with a different unused late pair.
+  F3: fully unseen audio — the evaluator's all-new LibriSpeech meeting (new voices and seeds), `d` ≈ 50 s.
+  What is unseen in F1/F2 is the late-joiner audio, voices and timing, and the provider's response; F3 is unseen
+  throughout but may not exercise the failure.
 - The late-joiner audio must not be an interval used by any DEV or HOLD case; any reuse of base audio or of voices
   is stated. **Truth must be complete** (who speaks when) over every scored range including `[900 − d, 900]`;
   a fixture whose truth is not complete is not sent.
