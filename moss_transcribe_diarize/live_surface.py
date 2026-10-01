@@ -6,6 +6,7 @@ The browser presentation and transcript export share this dependency-light leaf 
 
 from __future__ import annotations
 
+import re
 from typing import Mapping, Sequence
 
 # The speaker label a span carries when the session never established who spoke it. The
@@ -15,6 +16,7 @@ from typing import Mapping, Sequence
 # is publishing the decoder's *local* labels as if they were canonical -- `S01` in one span
 # and `S01` in the next are not the same person until identity says so.
 UNATTRIBUTED_SPEAKER = "S00"
+_DEFAULT_NAMED_ID = re.compile(r"(local-|speaker-|S)(\d+)")
 
 
 def display_speaker_label(canonical_speaker: str, canonical_speakers: Sequence[str]) -> str:
@@ -59,41 +61,40 @@ def published_speaker_label(
         return UNATTRIBUTED_SPEAKER
 
 
-def default_speaker_name(canonical_speaker: str | None, first_spoken: Sequence[str]) -> str:
+def default_speaker_name(speaker: str | None) -> str:
     """The name a speaker is shown under until a person or a voiceprint names them.
 
-    Microphone voices (`local-N`) read `You` for the first and `User n` after it (`local-2`
-    is `User 1`); every other speaker reads `Speaker n`, numbered by its place among the
-    non-local speakers of `first_spoken` -- the unnamed speakers in the order they first
-    speak. The browser applies the same rule to the live view, so the screen and the saved
-    transcript agree. Nobody attributed, or an identity not in `first_spoken`, reads as the
-    honest `UNATTRIBUTED_SPEAKER`.
+    It is read off the speaker's identity alone, so it is the same in every version of a
+    meeting's transcript -- live, cleaned up after Stop, saved and reopened -- and naming one
+    speaker never renames another. Microphone voices (`local-N`) read `You` for the first
+    and `User n` after it (`local-2` is `User 1`); a shared-audio voice (`speaker-N`, or a
+    File decoder's `SN`) reads `Speaker N`. Ids are handed out in the order voices are first
+    heard, and clean-up keeps the ids of the voices it recognises, so a voice that
+    disappears leaves a gap and a new one takes the next unused number. The browser applies
+    the same rule. Nobody attributed, or an id of neither shape, reads as the honest
+    `UNATTRIBUTED_SPEAKER`.
     """
 
-    if canonical_speaker is None or canonical_speaker not in first_spoken:
+    match = _DEFAULT_NAMED_ID.fullmatch(speaker or "")
+    number = int(match.group(2)) if match else 0
+    if number == 0:
         return UNATTRIBUTED_SPEAKER
-    if _is_local(canonical_speaker):
-        number = int(canonical_speaker[6:])
+    if match.group(1) == "local-":
         return "You" if number == 1 else f"User {number - 1}"
-    shared = [speaker for speaker in first_spoken if not _is_local(speaker)]
-    return f"Speaker {shared.index(canonical_speaker) + 1}"
+    return f"Speaker {number}"
 
 
 def transcript_speaker_names(
     speakers: Sequence[str | None], names: Mapping[str, str]
 ) -> list[str]:
-    """One label per transcript row, rows in transcript order.
+    """One label per transcript row.
 
     `speakers` is each row's speaker, `None` where nobody is attributed or the identity was
     never established; `names` are the names a person or a voiceprint gave. A named speaker
-    reads its name; every other speaker reads its `default_speaker_name`, numbered over the
-    unnamed speakers in the order they first speak here -- so the numbers are dense and
-    unique for exactly this transcript, whichever version of it this is.
+    reads its name; every other speaker reads its `default_speaker_name`.
     """
 
-    first_spoken = tuple(dict.fromkeys(
-        speaker for speaker in speakers if speaker is not None and speaker not in names))
-    return [names[speaker] if speaker in names else default_speaker_name(speaker, first_spoken)
+    return [names[speaker] if speaker in names else default_speaker_name(speaker)
             for speaker in speakers]
 
 
@@ -113,10 +114,6 @@ def name_saved_speakers(segments: Sequence[dict], names: Mapping[str, str]) -> N
     for segment, speaker, name in zip(segments, speakers, transcript_speaker_names(speakers, names)):
         if speaker is not None:
             segment["speaker"] = name
-
-
-def _is_local(canonical_speaker: str) -> bool:
-    return canonical_speaker.startswith("local-") and canonical_speaker[6:].isdigit()
 
 
 __all__ = ["UNATTRIBUTED_SPEAKER", "default_speaker_name", "display_speaker_label",

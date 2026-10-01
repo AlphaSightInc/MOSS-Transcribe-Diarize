@@ -10,7 +10,7 @@ import { chooseMicrophone, microphoneOptions } from "../capture/microphoneChoice
 import { captureMeetingId, resetSessionState, sessionError, sessionStartedAt, sessionStatusLine, sessionTitle } from "../state/session";
 import { bindFileUpload } from "../lib/fileUpload";
 import { groupSegmentsIntoTurns } from "../lib/mergeTranscript";
-import { settledSpeakerNumbers, transcriptCardSpeakerLabel } from "../lib/transcriptCards";
+import { transcriptCardSpeakerLabel } from "../lib/transcriptCards";
 import { serializeTranscriptExport, triggerTranscriptExportDownload, type TranscriptExportFormat } from "../lib/transcriptExport";
 import { summaryApi } from "../lib/finalSummary";
 import { openMeeting } from "../api/meetings";
@@ -481,7 +481,6 @@ export function ControlPanel() {
     }
     const turns = groupSegmentsIntoTurns(transcript.value);
     const finalized = sessionStatus.value !== "active" && sessionStatus.value !== "closing";
-    const numbers = settledSpeakerNumbers(turns, finalized);
     let summary = null;
     if (exportFormat === "md" && finalized) {
       try {
@@ -494,7 +493,7 @@ export function ControlPanel() {
     }
     if (selectedSummaryMeeting.value?.id === id && selectedSummaryMeeting.value.refinement_state === "running") return;
     triggerTranscriptExportDownload(serializeTranscriptExport(exportFormat, turns,
-      turn => transcriptCardSpeakerLabel(turn, numbers),
+      transcriptCardSpeakerLabel,
       { sessionId: id, exportedAt: new Date() }, summary));
   }
 

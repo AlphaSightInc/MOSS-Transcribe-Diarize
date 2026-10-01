@@ -1458,8 +1458,8 @@ class Phase2Store:
             if document is not None:
                 updated = json.loads(json.dumps(document, ensure_ascii=False))
                 # Only names a person or a voiceprint gave carry over (they are all in
-                # meeting_speakers, including ones given after Stop); default names are
-                # recomputed for the refined speakers, whose set and order differ.
+                # meeting_speakers, including ones given after Stop); every other speaker
+                # reads the default name of its id, the same one it had while recording.
                 cursor = await self._connection.execute(
                     """SELECT speaker_id, label FROM meeting_speakers
                        WHERE account_id = ? AND meeting_id = ? AND label IS NOT NULL""",

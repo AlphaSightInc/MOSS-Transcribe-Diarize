@@ -2,13 +2,12 @@ import { describe, expect, it } from "vitest";
 import reservedSpeakerLabels from "../../../tests/fixtures/reserved_speaker_labels.json";
 import {
   buildConsecutiveSpeakerMap,
-  buildSpeakerColorMap,
   buildSpeakerLegendKey,
   isUnidentifiedSpeakerLabel,
   isReservedUncertaintyLabel,
   resolveDisplayLabel,
-  resolveSpeakerColorToken,
-  resolveVisibleSpeakerLabel
+  resolveVisibleSpeakerLabel,
+  speakerColorToken
 } from "./speakerMap";
 
 describe("speakerMap", () => {
@@ -28,22 +27,21 @@ describe("speakerMap", () => {
     expect(resolveVisibleSpeakerLabel("Alex", map)).toBe("Alex");
   });
 
-  it("assigns stable palette colors by first speaker appearance", () => {
-    const colorMap = buildSpeakerColorMap([
-      { speaker: "speaker-b" },
-      { speaker: "speaker-a" },
-      { speaker: "speaker-b" },
-      { speaker: "UNKNOWN" }
-    ]);
-
-    expect(resolveSpeakerColorToken("speaker-b", colorMap)).toBe("var(--sp-1)");
-    expect(resolveSpeakerColorToken("speaker-a", colorMap)).toBe("var(--sp-2)");
+  it("reads a speaker's colour off its id, not off the order of the transcript (F4)", () => {
+    // Shared voices take slots from the front by their number, in any speaking order.
+    expect(speakerColorToken("speaker-0001")).toBe("var(--sp-1)");
+    expect(speakerColorToken("speaker-0004")).toBe("var(--sp-4)");
+    expect(speakerColorToken("speaker-0009")).toBe("var(--sp-1)");
+    expect(speakerColorToken("S02")).toBe("var(--sp-2)");
+    // Microphone voices take slots from the back, so "You" keeps one colour.
+    expect(speakerColorToken("local-0001")).toBe("var(--sp-8)");
+    expect(speakerColorToken("local-0002")).toBe("var(--sp-7)");
+    // Any other id (a person added by a correction) keeps the slot its text gives it.
+    expect(speakerColorToken("manual-AbC")).toBe(speakerColorToken(" manual-AbC "));
+    expect(speakerColorToken("manual-AbC")).toMatch(/^var\(--sp-[1-8]\)$/);
     // Unattributed speech is neutral and leaves the palette to real speakers.
-    expect(resolveSpeakerColorToken("UNKNOWN", colorMap)).toBe("var(--muted-2)");
-    expect(resolveSpeakerColorToken("S00", colorMap)).toBe("var(--muted-2)");
-    expect(resolveSpeakerColorToken("speaker-c", buildSpeakerColorMap([
-      { speaker: "S00" }, { speaker: "x", speaker_entity_id: "speaker-c" }
-    ]))).toBe("var(--sp-1)");
+    expect(speakerColorToken("UNKNOWN")).toBe("var(--muted-2)");
+    expect(speakerColorToken("S00")).toBe("var(--muted-2)");
   });
 
   it("treats default labels as unidentified and namespaces unknown legend keys by label", () => {

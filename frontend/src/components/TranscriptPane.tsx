@@ -8,16 +8,14 @@ import {
 } from "../lib/transcriptExport";
 import { groupSegmentsIntoTurns, type TranscriptTurn } from "../lib/mergeTranscript";
 import {
-  buildSpeakerColorMap,
   buildSpeakerLegendKey,
   isBackendUnknownSpeakerId,
-  resolveSpeakerColorToken
+  speakerColorToken
 } from "../lib/speakerMap";
 import { buildTranscriptSearchResults } from "../lib/transcriptSearch";
 import {
   defaultSpeakerLabel,
   projectTranscriptRows,
-  settledSpeakerNumbers,
   transcriptCardSpeakerLabel
 } from "../lib/transcriptCards";
 import { recallCaptureSurface, transcriptSourceLabel } from "../lib/captureSurface";
@@ -114,18 +112,15 @@ export function TranscriptPane() {
   const allTurns = groupSegmentsIntoTurns(fullTranscriptItems);
   const guessedSpeakerIds = [...new Set(provisionalSegments.value.flatMap(segment =>
     segment.tentative_speaker ? [segment.tentative_speaker] : []))];
-  const speakerColorMap = buildSpeakerColorMap(fullTranscriptItems, guessedSpeakerIds);
   const automaticProcessingRunning =
     sessionStatus.value === "active" ||
     sessionStatus.value === "closing" ||
     (sessionStatus.value === "closed" && allTurns.some(turn => turn.state !== "final"));
   const finalized = !automaticProcessingRunning;
-  const speakerNumbers = settledSpeakerNumbers(allTurns, finalized, guessedSpeakerIds);
-  const speakerLabel = (item: Parameters<typeof transcriptCardSpeakerLabel>[0]) =>
-    transcriptCardSpeakerLabel(item, speakerNumbers);
+  const speakerLabel = transcriptCardSpeakerLabel;
   const speakerLabels: Record<string, string> = {};
   for (const item of fullTranscriptItems) speakerLabels[item.speaker_entity_id] = speakerLabel(item);
-  for (const id of guessedSpeakerIds) speakerLabels[id] ??= defaultSpeakerLabel(id, speakerNumbers);
+  for (const id of guessedSpeakerIds) speakerLabels[id] ??= defaultSpeakerLabel(id);
   const tentativeBlocks = projectTentativeSegments(provisionalSegments.value, speakerLabels);
   // Guesses replace the transcript's own preview rows; both describe the same preview words.
   const displayedTurns = tentativeBlocks.length
@@ -153,11 +148,7 @@ export function TranscriptPane() {
     ? selectedSummaryMeeting.value : null;
   const refinementRunning = selectedMeeting?.refinement_state === "running";
   const canNameSpeakers = activeSessionId !== null;
-  const legendEntries = buildLegendEntries(
-    fullTranscriptItems,
-    speakerLabel,
-    speakerColorMap
-  );
+  const legendEntries = buildLegendEntries(fullTranscriptItems, speakerLabel);
   const correctionSpeakers = legendEntries.filter(
     entry => !isBackendUnknownSpeakerId(entry.speakerId)
   );
@@ -612,7 +603,7 @@ export function TranscriptPane() {
           {transcriptAvailable ? (
             <TranscriptCards rows={rows} search={searchByTurn} activeMatchId={activeSearchMatchId}
               finalized={finalized} canCorrectPassages={canCorrectPassages} correctionWaiting={refinementRunning}
-              speakerColorMap={speakerColorMap} speakerLabel={rowSpeakerLabel} sourceLabel={sourceLabel}
+              speakerLabel={rowSpeakerLabel} sourceLabel={sourceLabel}
               namingBlocked={(id) => namingBlocked(legendEntries.find(entry => entry.speakerId === id))}
               onSpeakerClick={(id) => openSpeakerName(legendEntries.find(entry => entry.speakerId === id))}
               onPassageCorrection={openPassageCorrection} />
@@ -631,8 +622,7 @@ export function TranscriptPane() {
 
 function buildLegendEntries(
   items: typeof transcript.value,
-  speakerLabel: (item: typeof transcript.value[number]) => string,
-  speakerColorMap: ReadonlyMap<string, string>
+  speakerLabel: (item: typeof transcript.value[number]) => string
 ): TranscriptLegendEntry[] {
   const entries = new Map<string, TranscriptLegendEntry>();
 
@@ -652,7 +642,7 @@ function buildLegendEntries(
         speakerId: item.speaker_entity_id,
         committed: item.state !== "provisional",
         isUnidentified: isBackendUnknownSpeakerId(item.speaker_entity_id),
-        colorToken: resolveSpeakerColorToken(item.speaker_entity_id, speakerColorMap)
+        colorToken: speakerColorToken(item.speaker_entity_id)
       });
     } else if (item.state !== "provisional") {
       entries.get(legendKey)!.committed = true;

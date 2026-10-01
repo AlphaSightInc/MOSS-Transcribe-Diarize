@@ -5,7 +5,6 @@ import {
   defaultSpeakerLabel,
   projectTranscriptCards,
   projectTranscriptRows,
-  settledSpeakerNumbers,
   transcriptCardSpeakerLabel
 } from "./transcriptCards";
 
@@ -47,29 +46,31 @@ describe("Q5 transcript cards", () => {
     const cards = projectTranscriptCards(source);
     expect(cards).toHaveLength(3);
     expect(cards[0]?.speakerId).toBe("S00");
-    expect(transcriptCardSpeakerLabel(source[0]!, new Map())).toBe("Speaker TBD");
+    expect(transcriptCardSpeakerLabel(source[0]!)).toBe("Speaker TBD");
   });
 
   it("keeps a source key through text and label revision", () => {
     const original = turn(10, 11, "system", "speaker-a", "words");
     const revised = { ...original, display_name: "Alex", text: "revised words" };
     expect(projectTranscriptCards([original])[0]?.key).toBe(projectTranscriptCards([revised])[0]?.key);
-    expect(transcriptCardSpeakerLabel(revised, new Map())).toBe("Alex");
-    expect(transcriptCardSpeakerLabel({ ...revised, display_name: "SPEAKER_07" }, new Map()))
+    expect(transcriptCardSpeakerLabel(revised)).toBe("Alex");
+    expect(transcriptCardSpeakerLabel({ ...revised, display_name: "SPEAKER_07" }))
       .toBe("SPEAKER_07");
   });
 
-  it("numbers settled identities first, then first committed speech, and closes gaps", () => {
-    const live = [turn(0, 1, "system", "birth-1", "early"),
-      turn(2, 3, "system", "settled-a", "first", true),
-      turn(3, 4, "system", "settled-b", "second", true)];
-    const numbers = settledSpeakerNumbers(live, false);
-    expect([...numbers]).toEqual([["settled-a", 1], ["settled-b", 2], ["birth-1", 3]]);
-    expect(live.map(row => transcriptCardSpeakerLabel(row, numbers)))
-      .toEqual(["Speaker 3", "Speaker 1", "Speaker 2"]);
-    // A reconciled identity leaves no gap.
-    expect([...settledSpeakerNumbers([live[1]!, { ...live[2]!, speaker_entity_id: "settled-a" }], false)])
-      .toEqual([["settled-a", 1]]);
+  it("keeps each speaker's number through clean-up: order changes, one leaves, one is new (F4)", () => {
+    const row = (start: number, id: string) =>
+      ({ ...turn(start, start + 1, "system", id, "words", true), speaker: "S01", display_name: "S01" });
+    // r4-ui-e2e run a: live order 0001, 0002, 0003, 0004; after clean-up 0004 speaks first,
+    // 0003 is gone and 0005 is new.
+    const live = ["speaker-0001", "speaker-0002", "speaker-0003", "speaker-0004"].map((id, i) => row(i, id));
+    const refined = ["speaker-0004", "speaker-0002", "speaker-0001", "speaker-0005"].map((id, i) => row(i, id));
+    const labels = (rows: TranscriptTurn[]) =>
+      Object.fromEntries(rows.map(item => [item.speaker_entity_id, transcriptCardSpeakerLabel(item)]));
+    expect(labels(live)).toEqual({ "speaker-0001": "Speaker 1", "speaker-0002": "Speaker 2",
+      "speaker-0003": "Speaker 3", "speaker-0004": "Speaker 4" });
+    expect(labels(refined)).toEqual({ "speaker-0004": "Speaker 4", "speaker-0002": "Speaker 2",
+      "speaker-0001": "Speaker 1", "speaker-0005": "Speaker 5" });
   });
 
   it("maps microphone voices to You / User n and shared voices to Speaker n (I-4)", () => {
@@ -78,34 +79,31 @@ describe("Q5 transcript cards", () => {
       { ...turn(1, 2, "microphone", "local-0001", "me"), speaker: "S01", display_name: "S01" },
       { ...turn(2, 3, "microphone", "local-0002", "guest"), speaker: "S03", display_name: "Local 02" },
       { ...turn(3, 4, "system", "speaker-0001", "second remote"), speaker: "S04", display_name: "S04" },
-      { ...turn(4, 5, "microphone", "speaker-microphone", "hybrid"), display_name: "speaker-microphone" }
+      { ...turn(4, 5, "microphone", "speaker-microphone", "hybrid"), display_name: "speaker-microphone" },
+      { ...turn(5, 6, "system", "S02", "file voice"), display_name: "S02" }
     ];
-    const numbers = settledSpeakerNumbers(rows, false);
-    expect(rows.map(row => transcriptCardSpeakerLabel(row, numbers)))
-      .toEqual(["Speaker 1", "You", "User 1", "Speaker 2", "You"]);
-    for (const label of rows.map(row => transcriptCardSpeakerLabel(row, numbers))) {
+    expect(rows.map(row => transcriptCardSpeakerLabel(row)))
+      .toEqual(["Speaker 3", "You", "User 1", "Speaker 1", "You", "Speaker 2"]);
+    for (const label of rows.map(row => transcriptCardSpeakerLabel(row))) {
       expect(label).not.toMatch(/^S\d+|^Local |\?$/);
     }
   });
 
-  it("lets user and voiceprint names win and gives guessed-only voices the next number", () => {
+  it("lets user and voiceprint names win and names a guessed-only voice by its id", () => {
     const named = { ...turn(0, 1, "microphone", "local-0001", "me"), display_name: "Yu" };
-    const shared = { ...turn(1, 2, "system", "speaker-0002", "remote"), display_name: "S01" };
-    const numbers = settledSpeakerNumbers([named, shared], false, ["speaker-0009", "local-0003"]);
-    expect(transcriptCardSpeakerLabel(named, numbers)).toBe("Yu");
-    expect(defaultSpeakerLabel("speaker-0009", numbers)).toBe("Speaker 2");
-    expect(defaultSpeakerLabel("local-0003", numbers)).toBe("User 2");
-    expect(defaultSpeakerLabel("S00", numbers)).toBe("Speaker TBD");
-    expect(defaultSpeakerLabel("never-seen", numbers)).toBe("Speaker TBD");
+    expect(transcriptCardSpeakerLabel(named)).toBe("Yu");
+    expect(defaultSpeakerLabel("speaker-0009")).toBe("Speaker 9");
+    expect(defaultSpeakerLabel("local-0003")).toBe("User 2");
+    expect(defaultSpeakerLabel("S00")).toBe("Speaker TBD");
+    expect(defaultSpeakerLabel("never-seen")).toBe("Speaker TBD");
   });
 
-  it("keeps displayed generic numbers dense when a settled person has a chosen name", () => {
-    const named = { ...turn(0, 1, "system", "named", "first", true), display_name: "Alex" };
-    const generic = turn(1, 2, "microphone", "generic", "second", true);
-    const numbers = settledSpeakerNumbers([named, generic], false);
-    expect([...numbers]).toEqual([["generic", 1]]);
-    expect(transcriptCardSpeakerLabel(named, numbers)).toBe("Alex");
-    expect(transcriptCardSpeakerLabel(generic, numbers)).toBe("Speaker 1");
+  it("does not renumber the others when one speaker is named (F4)", () => {
+    const first = { ...turn(0, 1, "system", "speaker-0001", "first", true), display_name: "S01" };
+    const second = { ...turn(1, 2, "system", "speaker-0002", "second", true), display_name: "S02" };
+    expect([first, second].map(row => transcriptCardSpeakerLabel(row))).toEqual(["Speaker 1", "Speaker 2"]);
+    expect([{ ...first, display_name: "Alex" }, second].map(row => transcriptCardSpeakerLabel(row)))
+      .toEqual(["Alex", "Speaker 2"]);
   });
 
   it("keeps a live settlement boundary visible inside one card", () => {

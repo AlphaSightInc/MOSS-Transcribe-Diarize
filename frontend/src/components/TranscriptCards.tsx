@@ -3,7 +3,7 @@ import type { TranscriptTurn } from "../lib/mergeTranscript";
 import { isSettledTurn, type TranscriptRow } from "../lib/transcriptCards";
 import type { TranscriptSearchPart, TranscriptSearchTurn } from "../lib/transcriptSearch";
 import { formatTranscriptClockTime } from "../lib/transcriptExport";
-import { isBackendUnknownSpeakerId, resolveSpeakerColorToken } from "../lib/speakerMap";
+import { isBackendUnknownSpeakerId, speakerColorToken } from "../lib/speakerMap";
 
 interface Props {
   rows: readonly TranscriptRow[];
@@ -12,7 +12,6 @@ interface Props {
   finalized: boolean;
   canCorrectPassages: boolean;
   correctionWaiting?: boolean;
-  speakerColorMap: ReadonlyMap<string, string>;
   speakerLabel: (turn: TranscriptTurn) => string;
   sourceLabel: (lane: string | undefined) => string | null;
   /** Why this speaker cannot be named now, or null when it can. */
@@ -31,7 +30,7 @@ function searchParts(parts: readonly TranscriptSearchPart[], activeMatchId: numb
 
 /** Reference rows: meta column (speaker, source, time) on the left, the speaker's text on the right. */
 export function TranscriptCards({ rows, search, activeMatchId, finalized, canCorrectPassages,
-  correctionWaiting = false, speakerColorMap, speakerLabel, sourceLabel, namingBlocked, onSpeakerClick,
+  correctionWaiting = false, speakerLabel, sourceLabel, namingBlocked, onSpeakerClick,
   onPassageCorrection }: Props) {
   return <div className="transcript-cards" data-transcript-cards="true">
     {rows.map((row, index) => {
@@ -58,7 +57,7 @@ export function TranscriptCards({ rows, search, activeMatchId, finalized, canCor
           data-segments={JSON.stringify(row.fragments.flatMap(turn => turn.segments))}
           {...(row.guess ? { "data-tentative-block": "true" } : {})}
           {...(guessedName ? { "data-speaker-guess": "true" } : {})}
-          style={{ "--sp": resolveSpeakerColorToken(row.speakerId, speakerColorMap) } as JSX.CSSProperties}>
+          style={{ "--sp": speakerColorToken(row.speakerId) } as JSX.CSSProperties}>
         <div className="utt-meta">
           {row.guess
             ? <span className={`utt-speaker is-guess${unknown ? " is-unidentified" : ""}`} data-speaker-id={row.speakerId}>
