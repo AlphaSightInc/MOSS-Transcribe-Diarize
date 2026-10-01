@@ -59,7 +59,7 @@ describe("collapsible side panels (#8)", () => {
     // The pill shrinks to its dot over the rail; its label moves to the hover title.
     expect(root.querySelector(".top-status")?.getAttribute("title")).toBe("Standby");
     // The panel stays mounted: capture state lives in it and must survive a collapse.
-    expect(panel.querySelector('[aria-label="Listening with"]')).not.toBeNull();
+    expect(panel.querySelector(".capture-sources")).not.toBeNull();
 
     act(() => root.querySelector<HTMLButtonElement>("#control-panel .panel-title-rail")!.click());
     expect(panel.classList.contains("collapsed")).toBe(false);

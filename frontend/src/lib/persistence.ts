@@ -14,8 +14,15 @@ const noopStorage: StorageLike = {
 export const storageKeys = {
   controlPanelCollapsed: "lt:ui:controlPanelCollapsed",
   historyPanelCollapsed: "lt:ui:historyPanelCollapsed",
+  captureSources: "lt:capture:sources",
   sessionReattach: "lt:session:reattach"
 } as const;
+
+/** Which sources a recording takes (round 5, Q15). Both by default; remembered per browser. */
+export interface CaptureSources {
+  system: boolean;
+  microphone: boolean;
+}
 
 export interface SessionReattachRecord {
   sessionId: string;
@@ -77,6 +84,22 @@ export function loadBoolean(storage: StorageLike, key: string): boolean | null {
 
 export function saveBoolean(storage: StorageLike, key: string, value: boolean): void {
   writeJson(storage, key, value);
+}
+
+/** Storage that is blocked or throws leaves both sources ticked and the boxes working for this page. */
+export function loadCaptureSources(storage?: StorageLike): CaptureSources {
+  try {
+    const saved = readJson<Partial<CaptureSources>>(storage ?? browserStorage(), storageKeys.captureSources);
+    return { system: saved?.system !== false, microphone: saved?.microphone !== false };
+  } catch {
+    return { system: true, microphone: true };
+  }
+}
+
+export function saveCaptureSources(value: CaptureSources, storage?: StorageLike): void {
+  try {
+    writeJson(storage ?? browserStorage(), storageKeys.captureSources, value);
+  } catch { /* not remembered across reloads */ }
 }
 
 export function loadSessionReattach(storage: StorageLike): SessionReattachRecord | null {

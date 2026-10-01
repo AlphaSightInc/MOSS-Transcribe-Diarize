@@ -4,6 +4,7 @@ import { createMemoryStorage } from "../lib/persistence";
 
 import {
   CaptureClient,
+  type CaptureClientOptions,
   type CaptureDescriptor,
   type CaptureLane,
   type PreSessionCaptureFailure,
@@ -17,6 +18,7 @@ import {
 const WORKLET_URL = "/static/worklets/lane-framer.js?v=" + "a".repeat(64);
 
 type TestLaneState = {
+  silent: boolean;
   clippedFrameRun: number;
   silentFrameRun: number;
   degradedCode: string | null;
@@ -51,6 +53,7 @@ type ActiveClient = {
 
 function testLaneState(): TestLaneState {
   return {
+    silent: false,
     source: { disconnect: vi.fn() },
     framer: { port: { onmessage: null }, disconnect: vi.fn() },
     mute: { disconnect: vi.fn() },
@@ -100,9 +103,9 @@ type PreSessionClient = {
   context: AudioContext | null;
   descriptor: { sampleRate: number; frameSamples: number } | null;
   lanes: Map<string, TestLaneState>;
-  startMicrophone: (echoCancellation: boolean) => Promise<void>;
+  startMicrophone: (deviceId?: string) => Promise<string | null>;
   requestDisplayMedia: () => Promise<MediaStream>;
-  attachDisplayMedia: (stream: MediaStream) => Promise<void>;
+  attachDisplayMedia: (stream: MediaStream) => Promise<boolean>;
 };
 
 function preSessionClient(onPreSessionFailure: (failure: PreSessionCaptureFailure) => void): {
@@ -146,7 +149,8 @@ type EventLaneClient = {
   session: { id: string } | null;
   heartbeatNextStartFrame: number;
   lanes: Map<CaptureLane, TestLaneState>;
-  attachLane: (lane: "microphone" | "system", stream: MediaStream, tracks: MediaStreamTrack[]) => Promise<void>;
+  attachLane: (lane: "microphone" | "system", stream: MediaStream | null, tracks: MediaStreamTrack[]) => Promise<void>;
+  attachSilentLane: (lane: CaptureLane) => Promise<void>;
   replaceLane: (lane: CaptureLane, stream: MediaStream, tracks: MediaStreamTrack[]) => Promise<void>;
 };
 
@@ -176,7 +180,14 @@ function fakeTrack(): MediaStreamTrack {
   return Object.assign(new EventTarget(), { stop: vi.fn() }) as unknown as MediaStreamTrack;
 }
 
-async function eventLaneClient(): Promise<{ client: EventLaneClient; microphone: MediaStreamTrack }> {
+/** The node a silent lane is fed from: `createConstantSource()` in the fake context below. */
+const zeros = { offset: { value: 1 }, start: vi.fn(), connect: (target: unknown) => target, disconnect: vi.fn() };
+
+/** A client in a session; `silentLane` is the source that is not recorded, if any. */
+async function eventLaneClient(
+  options: CaptureClientOptions = { helperVersion: "test", workletUrl: WORKLET_URL },
+  silentLane: CaptureLane | null = null,
+): Promise<{ client: EventLaneClient; microphone: MediaStreamTrack }> {
   vi.stubGlobal("AudioWorkletNode", FakeAudioWorkletNode);
   const source = { connect: (target: unknown) => target, disconnect: vi.fn() };
   const mute = {
@@ -188,18 +199,22 @@ async function eventLaneClient(): Promise<{ client: EventLaneClient; microphone:
     state: "running",
     sampleRate: 4,
     destination: {},
+    resume: vi.fn().mockResolvedValue(undefined),
     createMediaStreamSource: () => source,
+    createConstantSource: () => zeros,
     createGain: () => mute,
   }) as unknown as AudioContext;
-  const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
+  const client = new CaptureClient(options);
   const active = client as unknown as EventLaneClient;
   active.context = context;
   active.descriptor = { sampleRate: 4, frameSamples: 2 };
   active.session = { id: "session" };
   active.heartbeatNextStartFrame = Number.MAX_SAFE_INTEGER;
   const microphone = fakeTrack();
-  await active.attachLane("microphone", {} as MediaStream, [microphone]);
-  await active.attachLane("system", {} as MediaStream, [fakeTrack()]);
+  for (const lane of ["microphone", "system"] as const) {
+    if (lane === silentLane) await active.attachSilentLane(lane);
+    else await active.attachLane(lane, {} as MediaStream, [lane === "microphone" ? microphone : fakeTrack()]);
+  }
   return { client: active, microphone };
 }
 
@@ -687,10 +702,10 @@ describe("browser capture frame contract", () => {
       return Promise.resolve(stream);
     });
     vi.stubGlobal("navigator", { mediaDevices: { getDisplayMedia } });
-    // New captures plus a reshare each require their own one-use CaptureController.
+    // New captures plus a reshare each require their own one-use CaptureController. The chooser is
+    // the first thing Start asks for: it needs no microphone lane and no AudioContext.
     for (let i = 0; i < 3; i++) {
-      const { client } = preSessionClient(vi.fn());
-      client.lanes.set("microphone", testLaneState());
+      const client = new CaptureClient({ helperVersion: "test", workletUrl: WORKLET_URL });
       const first = client.requestDisplayMedia();
       expect(getDisplayMedia).toHaveBeenCalledTimes(i * 2 + 1); // synchronous user gesture
       expect(await first).toBe(stream);
@@ -700,55 +715,48 @@ describe("browser capture frame contract", () => {
     expect(controllers.size).toBe(6);
   });
 
-  it("reports and tears down real pre-session capture failures without a heartbeat", async () => {
+  it("leaves a source that cannot be opened to the caller, tearing nothing down (round 5, Q16)", async () => {
     const onPreSessionFailure = vi.fn<(failure: PreSessionCaptureFailure) => void>();
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
-    const microphoneError = new DOMException("denied", "NotAllowedError");
-    const microphone = preSessionClient(onPreSessionFailure);
-    vi.stubGlobal("navigator", {
-      mediaDevices: { getUserMedia: vi.fn().mockRejectedValue(microphoneError) },
-    });
+    const { client, context } = preSessionClient(onPreSessionFailure);
+    const system = testLaneState();
+    client.lanes.set("system", system);
 
-    await expect(microphone.client.startMicrophone(false)).rejects.toBe(microphoneError);
-    expect(microphone.context.close).toHaveBeenCalledOnce();
+    // (a) No microphone, or permission denied: null, and the attached system lane stays.
+    for (const error of [new DOMException("denied", "NotAllowedError"), new DOMException("none", "NotFoundError")]) {
+      vi.stubGlobal("navigator", { mediaDevices: { getUserMedia: vi.fn().mockRejectedValue(error) } });
+      await expect(client.startMicrophone()).resolves.toBeNull();
+    }
+    expect(client.lanes.get("system")).toBe(system);
 
+    // (b) The chooser was closed: the rejection is the caller's to read.
     const displayError = new DOMException("dismissed", "NotAllowedError");
-    const display = preSessionClient(onPreSessionFailure);
-    display.client.lanes.set("microphone", testLaneState());
-    vi.stubGlobal("navigator", {
-      mediaDevices: { getDisplayMedia: vi.fn().mockRejectedValue(displayError) },
-    });
+    vi.stubGlobal("navigator", { mediaDevices: { getDisplayMedia: vi.fn().mockRejectedValue(displayError) } });
+    await expect(client.requestDisplayMedia()).rejects.toBe(displayError);
 
-    await expect(display.client.requestDisplayMedia()).rejects.toBe(displayError);
-    expect(display.context.close).toHaveBeenCalledOnce();
-
-    const missingAudio = preSessionClient(onPreSessionFailure);
-    missingAudio.client.lanes.set("microphone", testLaneState());
+    // (c) A surface shared without audio: false, with its tracks stopped.
+    client.lanes.delete("system");
     const videoTrack = { stop: vi.fn() } as unknown as MediaStreamTrack;
-    const noAudioSurface = {
-      getAudioTracks: () => [],
-      getTracks: () => [videoTrack],
-    } as unknown as MediaStream;
-
-    await expect(missingAudio.client.attachDisplayMedia(noAudioSurface)).rejects.toThrow(
-      "selected display surface supplied no audio track",
-    );
+    const noAudioSurface = { getAudioTracks: () => [], getTracks: () => [videoTrack] } as unknown as MediaStream;
+    await expect(client.attachDisplayMedia(noAudioSurface)).resolves.toBe(false);
     expect(videoTrack.stop).toHaveBeenCalledOnce();
-    expect(missingAudio.context.close).toHaveBeenCalledOnce();
-    expect(onPreSessionFailure).toHaveBeenNthCalledWith(1, {
-      lane: "microphone",
-      code: "browser_microphone_permission_denied",
-    });
-    expect(onPreSessionFailure).toHaveBeenNthCalledWith(2, {
-      lane: "system",
-      code: "browser_capture_request_rejected",
-    });
-    expect(onPreSessionFailure).toHaveBeenNthCalledWith(3, {
-      lane: "system",
-      code: "browser_surface_audio_missing",
-    });
+    expect(client.lanes.size).toBe(0);
+
+    expect(context.close).not.toHaveBeenCalled();
+    expect(onPreSessionFailure).not.toHaveBeenCalled();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("tears capture down when an attached source stops before a session exists", async () => {
+    const onPreSessionFailure = vi.fn<(failure: PreSessionCaptureFailure) => void>();
+    const { client, microphone } = await eventLaneClient(
+      { helperVersion: "test", workletUrl: WORKLET_URL, onPreSessionFailure });
+    Object.assign(client.context!, { close: vi.fn().mockResolvedValue(undefined) });
+    client.session = null;
+    microphone.dispatchEvent(new Event("ended"));
+    await vi.waitFor(() => expect(client.lanes.size).toBe(0));
+    expect(onPreSessionFailure).toHaveBeenCalledExactlyOnceWith({ lane: "microphone", code: "browser_track_ended" });
   });
 
   it("keeps an active session and both lanes when the Reshare chooser is cancelled", async () => {
@@ -1661,7 +1669,7 @@ describe("microphone device request (issue #2)", () => {
     vi.stubGlobal("navigator", { mediaDevices: { getUserMedia, enumerateDevices } });
     const client = idleClient();
 
-    await expect(client.startMicrophone(true)).resolves.toBe("builtin");
+    await expect(client.startMicrophone()).resolves.toBe("builtin");
     expect(requestedDevices(getUserMedia)).toEqual([{ exact: "default" }, { exact: "builtin" }]);
     expect(permissionTrack.stop).toHaveBeenCalledOnce();
     expect(client.lanes.get("microphone")?.tracks).toEqual([laneTrack]);
@@ -1673,8 +1681,106 @@ describe("microphone device request (issue #2)", () => {
     const enumerateDevices = vi.fn();
     vi.stubGlobal("navigator", { mediaDevices: { getUserMedia, enumerateDevices } });
 
-    await expect(idleClient().startMicrophone(false, "phone")).resolves.toBe("phone");
+    await expect(idleClient().startMicrophone("phone")).resolves.toBe("phone");
     expect(requestedDevices(getUserMedia)).toEqual([{ exact: "phone" }]);
     expect(enumerateDevices).not.toHaveBeenCalled();
+    // Echo cancellation is always on (round 5, Q17); the other browser processing stays off.
+    expect(getUserMedia).toHaveBeenCalledWith({ audio: { echoCancellation: true, noiseSuppression: false,
+      autoGainControl: false, deviceId: { exact: "phone" } }, video: false });
+  });
+});
+
+describe("silent lane for a source that is not recorded (round 5)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    FakeAudioWorkletNode.created = [];
+    zeros.start.mockClear();
+  });
+
+  const frameBodies = (fetchSpy: ReturnType<typeof vi.fn>, lane: CaptureLane) => fetchSpy.mock.calls
+    .filter(([url]) => String(url).endsWith("/frames"))
+    .map(([, request]) => JSON.parse((request as RequestInit).body as string))
+    .filter((frame) => frame.lane === lane);
+
+  it.each(["microphone", "system"] as const)("frames an unrecorded %s as silence on the lane clock, with no K1 and no meter", async (lane) => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const onMeter = vi.fn();
+    const onPreflightStatus = vi.fn();
+    const { client } = await eventLaneClient(
+      { helperVersion: "test", workletUrl: WORKLET_URL, onMeter, onPreflightStatus }, lane);
+    const other = lane === "microphone" ? "system" : "microphone";
+
+    // Zeros from a started constant source drive the lane's own framer; no device, no track.
+    expect(zeros.offset.value).toBe(0);
+    expect(zeros.start).toHaveBeenCalledOnce();
+    expect(client.lanes.get(lane)).toMatchObject({ silent: true, tracks: [], source: zeros });
+    expect(FakeAudioWorkletNode.created.map((node) => node.options?.processorOptions?.lane)).toEqual(["microphone", "system"]);
+
+    // 30 frames is 15 s, past the 10 s silent-microphone window: the silence is intended.
+    deliverSamples(client, lane, silent, 30);
+    deliverSamples(client, other, clean, 30);
+    await vi.waitFor(() => expect(frameBodies(fetchSpy, lane)).toHaveLength(30));
+    const frames = frameBodies(fetchSpy, lane);
+    expect(frames.map((frame) => frame.sequence)).toEqual([...Array(30).keys()]);
+    expect(frames.every((frame) => frame.silent && frame.device_epoch === 1 && !frame.discontinuity)).toBe(true);
+    // The same clock as the recorded lane: identical capture timestamps, frame for frame.
+    await vi.waitFor(() => expect(frameBodies(fetchSpy, other)).toHaveLength(30));
+    expect(frames.map((frame) => [frame.capture_timestamp_ns, frame.capture_end_timestamp_ns]))
+      .toEqual(frameBodies(fetchSpy, other).map((frame) => [frame.capture_timestamp_ns, frame.capture_end_timestamp_ns]));
+    expect(heartbeatBodies(fetchSpy)).toHaveLength(0);
+    expect(client.lanes.get(lane)).toMatchObject({ silentFrameRun: 0, health: "capturing", degradedCode: null });
+    expect(onPreflightStatus).not.toHaveBeenCalled();
+    expect(onMeter.mock.calls.every(([metered]) => metered === other)).toBe(true);
+    expect(onMeter).toHaveBeenCalledTimes(30);
+  });
+
+  it("creates the session with one recorded lane and one silent lane, and stores no share label for silent system sound", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200,
+      json: async () => ({ id: "mic-only", descriptor: { sample_rate: 4, frame_samples: 2 } }) });
+    vi.stubGlobal("fetch", fetchSpy);
+    const storage = createMemoryStorage();
+    vi.stubGlobal("window", { localStorage: storage });
+    const { client } = await eventLaneClient(undefined, "system");
+    client.session = null;
+    await expect((client as unknown as CaptureClient).createSession()).resolves.toEqual({ id: "mic-only" });
+    expect(heartbeatBodies(fetchSpy)[0]).toMatchObject({ state: "capturing", lanes: {
+      microphone: { state: "capturing", device_epoch: 1, failure_code: null },
+      system: { state: "capturing", device_epoch: 1, failure_code: null } } });
+    expect(storage.getItem("moss.captureSurface.mic-only")).toBeNull();
+  });
+
+  it("a silent unmuted microphone still raises K1, so the silent lane is what suppresses it", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchSpy);
+    const { client } = await eventLaneClient();
+    deliverSamples(client, "microphone", silent, 20);
+    await vi.waitFor(() => expect(heartbeatBodies(fetchSpy)).toHaveLength(1));
+    expect(heartbeatBodies(fetchSpy)[0].lanes.microphone).toMatchObject({ failure_code: "browser_microphone_silent" });
+  });
+
+  it("the production worklet frames a constant zero source exactly like a signal source", () => {
+    type Port = { onmessage: ((event: { data: unknown }) => void) | null; postMessage: ReturnType<typeof vi.fn> };
+    type Framer = { port: Port; process: (inputs: Float32Array[][]) => boolean };
+    class Processor { port: Port = { onmessage: null, postMessage: vi.fn() }; }
+    let LaneFramer!: new (options: unknown) => Framer;
+    const source = readFileSync(new URL("../../public/worklets/lane-framer.js", import.meta.url), "utf8");
+    new Function("AudioWorkletProcessor", "registerProcessor", "currentFrame", source)(
+      Processor,
+      (_name: string, processor: typeof LaneFramer) => { LaneFramer = processor; },
+      100,
+    );
+    // A constant source is one channel per render quantum; a microphone here is two.
+    const recorded = new LaneFramer({ processorOptions: { lane: "microphone", frameSamples: 4 } });
+    const unrecorded = new LaneFramer({ processorOptions: { lane: "system", frameSamples: 4 } });
+    for (let quantum = 0; quantum < 6; quantum += 1) {
+      recorded.process([[new Float32Array(2).fill(0.5), new Float32Array(2).fill(0.5)]]);
+      unrecorded.process([[new Float32Array(2)]]);
+    }
+    const starts = (framer: Framer) => framer.port.postMessage.mock.calls.map(([message]) => message.startFrame);
+    expect(starts(unrecorded)).toEqual([100, 104, 108]);
+    expect(starts(unrecorded)).toEqual(starts(recorded));
+    expect(unrecorded.port.postMessage.mock.calls.every(([message]) =>
+      message.samples.length === 4 && message.samples.every((sample: number) => sample === 0))).toBe(true);
   });
 });

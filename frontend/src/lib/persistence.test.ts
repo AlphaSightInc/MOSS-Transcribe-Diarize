@@ -4,8 +4,10 @@ import {
   clearSessionReattach,
   createMemoryStorage,
   loadBoolean,
+  loadCaptureSources,
   loadSessionReattach,
   saveBoolean,
+  saveCaptureSources,
   saveSessionReattach,
   storageKeys
 } from "./persistence";
@@ -19,6 +21,24 @@ describe("persistence helpers", () => {
 
     expect(loadBoolean(storage, storageKeys.controlPanelCollapsed)).toBe(true);
     expect(loadBoolean(storage, storageKeys.historyPanelCollapsed)).toBe(false);
+  });
+
+  it("ticks both capture sources until the person chooses, then remembers the choice", () => {
+    const storage = createMemoryStorage();
+    expect(loadCaptureSources(storage)).toEqual({ system: true, microphone: true });
+    saveCaptureSources({ system: false, microphone: true }, storage);
+    expect(storage.getItem(storageKeys.captureSources)).toBe('{"system":false,"microphone":true}');
+    expect(loadCaptureSources(storage)).toEqual({ system: false, microphone: true });
+    // A damaged record falls back to both.
+    storage.setItem(storageKeys.captureSources, "not json");
+    expect(loadCaptureSources(storage)).toEqual({ system: true, microphone: true });
+  });
+
+  it("keeps both capture sources ticked and the boxes usable when storage throws", () => {
+    const blocked = () => { throw new DOMException("blocked", "SecurityError"); };
+    const storage = { getItem: blocked, setItem: blocked, removeItem: blocked };
+    expect(loadCaptureSources(storage)).toEqual({ system: true, microphone: true });
+    expect(() => saveCaptureSources({ system: true, microphone: false }, storage)).not.toThrow();
   });
 
   it("reports an absent boolean key as null rather than false", () => {
