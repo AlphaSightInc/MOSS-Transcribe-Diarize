@@ -245,6 +245,17 @@ def case_inputs(name):
         system = w3_events(EVID / "P52/robust-live-e1_system-en-US.json", "p52")
         return {"system_w3": system, "mic_w3": mic, "sys_rows": sys_rows,
                 "mic_rows": mic_rows, "local": local}
+    if name == "zh2-echo":
+        # Corrected Mandarin echo lane (two genuinely different voices: Tingting far end, Meijia
+        # local), built and recorded by prototypes/gemini-live/preview-script.
+        ps = HERE.parent / "preview-script" / "out"
+        man = json.loads((ps / "manifest.json").read_text())["zh2-echo"]
+        return {"system_ref": [u for r in man["system"] for u in units(r["text"])],
+                "system_w3": w3_events(ps / "zh2-system-w3.json", "v1"),
+                "mic_w3": w3_events(ps / "zh2-echo-w3.json", "v1"),
+                "sys_rows": [GeminiSegment(round(r["start"] * S), round(r["end"] * S), r["text"], "s", "system")
+                             for r in man["system"]],
+                "mic_rows": [], "local": [(r["start"], r["end"], units(r["text"])) for r in man["local"]]}
     if name == "qmic-sp10":
         sys.path.insert(0, str(ROOT / "prototypes/gemini-live/common"))
         import hashlib

@@ -27,7 +27,7 @@ def speech(clip: str, offset_s: float, n: int) -> np.ndarray:
     return x[s:s + n].astype(np.float64)
 
 
-def zh_stream(n: int, voice="Sandy") -> np.ndarray:
+def zh_stream(n: int, voice="Meijia") -> np.ndarray:
     parts = [x for _, x in tts.zh_sentences(voice)]
     y = np.concatenate([np.concatenate([p, np.zeros(int(.4 * RATE))]) for p in parts])
     return np.resize(y, n)

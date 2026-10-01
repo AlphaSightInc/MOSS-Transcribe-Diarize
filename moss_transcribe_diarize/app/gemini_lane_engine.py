@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import difflib
 import math
 import re
 import tempfile
@@ -45,12 +44,32 @@ def _preview_units(text: str) -> list[tuple[str, int, int]]:
 
 
 def _repeated_units(reference: Sequence[str], units: Sequence[str]) -> set[int]:
-    """Indexes of `units` inside runs of at least three words (five CJK characters) of `reference`."""
+    """Indexes of `units` inside runs of at least three words (five CJK characters) of `reference`.
+
+    Each run is the longest stretch starting there that occurs anywhere in the reference. One
+    in-order alignment of the two texts is not used: the reference repeats itself (committed
+    rows and the preview restate the same speech; speakers repeat sentences), and a single
+    alignment anchored on the wrong copy leaves the rest of an echoed row unmatched.
+    """
+    places: dict[str, list[int]] = {}
+    for index, unit in enumerate(reference):
+        places.setdefault(unit, []).append(index)
     repeated: set[int] = set()
-    for block in difflib.SequenceMatcher(None, reference, units, autojunk=False).get_matching_blocks():
+    index = 0
+    while index < len(units):
+        longest = 0
+        for at in places.get(units[index], ()):
+            size = 1
+            while (index + size < len(units) and at + size < len(reference)
+                   and units[index + size] == reference[at + size]):
+                size += 1
+            longest = max(longest, size)
         if sum(3 if len(unit) == 1 and unicodedata.name(unit, "").startswith(_CJK) else 5
-               for unit in units[block.b:block.b + block.size]) >= 15:
-            repeated.update(range(block.b, block.b + block.size))
+               for unit in units[index:index + longest]) >= 15:
+            repeated.update(range(index, index + longest))
+            index += longest
+        else:
+            index += 1
     return repeated
 
 
@@ -90,6 +109,79 @@ def _without_echo(row: GeminiSegment, heard: Sequence[GeminiSegment],
     if not runs:
         return None
     text = " … ".join(row.text[spans[run[0]][1]:spans[run[-1]][2]] for run in runs)
+    return GeminiSegment(row.start_sample, row.end_sample, text, row.speaker, row.source_lane)
+
+
+_SUSTAINED_SCRIPT = 20  # four words, or seven CJK-like characters, of one script
+
+
+def _script(char: str) -> str | None:
+    """The writing system of a letter (Hiragana and Katakana are one); None for other characters."""
+    if not char.isalpha():
+        return None
+    head = unicodedata.name(char, "").split(" ")[0]
+    return "KANA" if head in ("HIRAGANA", "KATAKANA") else head
+
+
+def _script_runs(text: str) -> list[tuple[str, int, int, int]]:
+    """(script, weight, start, end) per maximal same-script stretch of letters in `text`.
+
+    Weight is 3 per Han/kana/Hangul character and 5 per word of any other script (a word
+    keeps its combining marks); digits and punctuation carry no script. A run's span reaches
+    the next run, so removing it removes its trailing punctuation too.
+    """
+    runs: list[list] = []
+    index = 0
+    while index < len(text):
+        script = _script(text[index])
+        if script is None:
+            index += 1
+            continue
+        stop = index + 1
+        while stop < len(text) and (_script(text[stop]) == script
+                                    or unicodedata.category(text[stop]).startswith("M")):
+            stop += 1
+        weight = (3 * sum(char.isalpha() for char in text[index:stop])
+                  if script in ("CJK", "KANA", "HANGUL") else 5)
+        if runs and runs[-1][0] == script:
+            runs[-1][1] += weight
+        else:
+            if runs:
+                runs[-1][3] = index
+            runs.append([script, weight, index, len(text)])
+        index = stop
+    return [tuple(run) for run in runs]
+
+
+def _sustained_scripts(text: str) -> set[str]:
+    """Scripts with at least four words (seven CJK-like characters) in `text`."""
+    totals: dict[str, int] = {}
+    for script, weight, _, _ in _script_runs(text):
+        totals[script] = totals.get(script, 0) + weight
+    return {script for script, total in totals.items() if total >= _SUSTAINED_SCRIPT}
+
+
+def _without_foreign_script(row: GeminiSegment, established: set[str]) -> GeminiSegment | None:
+    """A short mic preview row minus the words in a script the meeting has not used.
+
+    Noise and echo residue make W3 emit isolated words in unrelated scripts (kana, Devanagari,
+    Hangul in a Mandarin or English meeting). A row that itself holds sustained speech in some
+    script is left whole, so code-switched terms inside a sentence are never touched; a
+    genuine first short reply in a new language waits for its commit instead.
+    Measured: prototypes/gemini-live/preview-script/NOTES.md.
+    """
+    if _sustained_scripts(row.text):
+        return row
+    runs = _script_runs(row.text)
+    foreign = [run for run in runs if run[0] not in established]
+    if not foreign:
+        return row
+    text = row.text
+    for _, _, start, end in reversed(foreign):
+        text = text[:start] + text[end:]
+    text = text.strip()
+    if len(foreign) == len(runs) or not text:
+        return None
     return GeminiSegment(row.start_sample, row.end_sample, text, row.speaker, row.source_lane)
 
 
@@ -555,6 +647,10 @@ class LaneGeminiEngine:
         self._rows: dict[str, list[GeminiSegment]] = {lane: [] for lane in self.LANES}
         self._pending_turn_bridges: list[GeminiTurnBridge] = []
         self._previews: dict[str, GeminiPreview | None] = {lane: None for lane in self.LANES}
+        # Scripts this meeting has used: >= _SUSTAINED_SCRIPT committed on either lane in
+        # total, or once in one preview run of either lane.
+        self._committed_script_weight: dict[str, int] = {}
+        self._scripts: set[str] = set()
         self.terminal_coverage_gaps: tuple[tuple[str | None, int, int], ...] = ()
         self._observations: dict[str, object] = {}
         self._tapes = {lane: _LaneTape(tape_root) for lane in self.LANES}
@@ -607,6 +703,12 @@ class LaneGeminiEngine:
                 pass
             elif isinstance(update, GeminiRolling):
                 self._rows[lane].extend(update.segments)
+                for row in update.segments:
+                    for script, weight, _, _ in _script_runs(row.text):
+                        total = self._committed_script_weight.get(script, 0) + weight
+                        self._committed_script_weight[script] = total
+                        if total >= _SUSTAINED_SCRIPT:
+                            self._scripts.add(script)
                 self._lane_frontiers[lane] = update.end_sample
                 for observation in update.observations:
                     self._observations[observation.speaker_label] = observation
@@ -640,10 +742,18 @@ class LaneGeminiEngine:
                             or prior.start_sample >= current.end_sample]
                 segments.append(current)
         heard = self._rows["system"] + [row for row in segments if row.source_lane == "system"]
-        unique = []
+        heard_rows = []
         for row in segments:
             if row.source_lane == "microphone":
                 row = _without_echo(row, heard, self._rows["microphone"])
+            if row is not None:
+                heard_rows.append(row)
+        for row in heard_rows:
+            self._scripts |= _sustained_scripts(row.text)
+        unique = []
+        for row in heard_rows:
+            if row.source_lane == "microphone":
+                row = _without_foreign_script(row, self._scripts)
             if row is not None:
                 unique.append(row)
         return tuple(sorted(unique, key=lambda row: (row.start_sample,
