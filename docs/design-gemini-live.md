@@ -121,9 +121,20 @@ reply in a new language waits ≈13 s for its commit, a sentence ≤0.6 s
 (`prototypes/gemini-live/preview-script/NOTES.md`). System text wins an echo tie; a later
 overlapping row in the same lane replaces the earlier one.
 At the commit frontier, the public publisher aligns each preview chunk's head to
-the last 60 tokens of committed effective speech in the same lane. A match of at
-least five tokens trims the repeated prefix; number words and digits align.
-A truly identical simultaneous phrase can be hidden in preview.
+visible text in the same lane: committed speech followed by preview rows already kept.
+Comparable units are individual CJK, kana or Hangul characters and whole other letter/digit
+runs; number words and digits align. The tail holds at least 60 units, growing with the
+lane's preview (1.25 × its units + 8). A repeated head needs evidence equal to five words
+or nine CJK characters (weights 5 and 3, minimum 25), at least 60 % matched, with the
+existing bounded gaps. The cut uses original-string spans and drops leading Western
+and CJK punctuation. Committed and saved rows are untouched.
+Measured arm C removes repeats on all ten recorded cells and preserves the 302 s English
+stream byte-for-byte (`prototypes/gemini-live/mic-speaker-echo/f1/NOTES.md`). A traditional
+commit under a simplified preview can leave 1–4 solid characters; no script folding is
+applied. Heads shorter than nine characters or five words stay. A genuinely repeated
+phrase at or above that minimum may be hidden in grey until committed. Japanese and
+Korean evidence is synthetic; real provider output and other unspaced scripts are unmeasured.
+Mixed scripts and doubled characters in committed rows are separate defects.
 
 The pinned WeSpeaker observations for Gemini-attributed meeting IDs flow through
 `_identity_observations` and `_identity_match_observations` to Account's existing
