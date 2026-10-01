@@ -5,6 +5,8 @@ import { requestMeetingHistoryRefresh } from "./meetingEvents";
 
 export interface LiveSummaryResponse {
   summary: SummaryDocument;
+  /** The name each speaker id was given to the generator under. */
+  speaker_names?: Record<string, string>;
   source: { committed_samples: number; text_revision_version: number };
   generated_at_ms: number;
 }

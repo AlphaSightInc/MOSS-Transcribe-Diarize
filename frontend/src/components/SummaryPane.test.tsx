@@ -3,8 +3,9 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SummaryPane } from "./SummaryPane";
+import { TranscriptPane } from "./TranscriptPane";
 import { defaultAppSettings, saveAppSettings, type AppSettings } from "../lib/settings";
-import { sessionId, sessionStatus, sessionStopRequested } from "../state/session";
+import { replaceTranscript, sessionId, sessionStatus, sessionStopRequested } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
 const root = document.createElement("div"); document.body.append(root);
@@ -32,6 +33,7 @@ beforeEach(() => {
 afterEach(() => {
   for (const text of REMOVED) expect(root.textContent).not.toContain(text);
   render(null, root); sessionId.value = null; sessionStatus.value = "idle"; sessionStopRequested.value = null; selectedSummaryMeeting.value = null;
+  replaceTranscript([]);
   vi.unstubAllGlobals(); vi.useRealTimers();
 });
 
@@ -337,4 +339,82 @@ it.each([1, 3])("sends no summary request after %i speaker rename(s) of a cleane
   expect(fetcher.mock.calls.filter(([url]) => url.endsWith("/summary/server"))).toHaveLength(0);
   expect(refresh().textContent).toBe("Refresh");
   expect(root.textContent).not.toContain("Summary failed");
+});
+
+// Round 5: a summary names people as its generator was given them; the pane shows each mention under
+// the name that speaker carries in the transcript now. A rename never asks the model again (#15).
+const NAMED_SUMMARY = { summary: "Speaker 1 asked Speaker 10 for the plan.",
+  topics: [{ title: "Plan", description: "Speaker 2 answered Speaker 1." }], details: [],
+  speaker_background: ["Speaker 1: host", "You: the note taker"], data_references: [] };
+const GIVEN_NAMES = { "speaker-0001": "Speaker 1", "speaker-0002": "Speaker 2", "speaker-0010": "Speaker 10", "local-1": "You" };
+const namedRows = (state: "confirmed" | "final") => Object.keys(GIVEN_NAMES).map((id, index) => ({
+  start: index, end: index + 1, text: `Words ${index}`, speaker: id, speaker_entity_id: id, display_name: id,
+  segment_id: `row-${index}`, state, source_lane: id.startsWith("local-") ? "microphone" as const : "system" as const }));
+const summaryText = () => root.querySelector(".summary-content")?.textContent ?? "";
+
+/** The real naming dialog: click the speaker in the transcript, type, save. */
+async function renameInTranscript(speakerId: string, name: string) {
+  const entry = [...root.querySelectorAll<HTMLButtonElement>(".legend-chip")]
+    [Object.keys(GIVEN_NAMES).indexOf(speakerId)]!;
+  act(() => entry.click());
+  act(() => {
+    const input = root.querySelector<HTMLInputElement>("#speaker-name-input")!;
+    input.value = name; input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => { root.querySelector("dialog form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); });
+  await vi.waitFor(() => expect(root.querySelector("dialog")).toBeNull());
+}
+
+it.each(["active", "closed"] as const)(
+  "shows renamed speakers in the %s meeting's summary at once and sends no summary request", async status => {
+  const artifact = { state: "current", attempt_id: "final", source_version: 1, artifact_version: 1, error_code: null,
+    document: NAMED_SUMMARY, speaker_names: GIVEN_NAMES };
+  const summaryRequests: string[] = [];
+  vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
+    if (url.includes("/speakers/")) {
+      const speaker_id = decodeURIComponent(url.split("/speakers/")[1]!.split("/")[0]!);
+      return Response.json({ meeting_id: "m", speaker_id, label: JSON.parse(init!.body as string).label, enrollment: "not_requested" });
+    }
+    if (init?.method === "POST" || init?.method === "PUT") summaryRequests.push(url);
+    return Response.json(url.endsWith("/summary/live")
+      ? { summary: NAMED_SUMMARY, speaker_names: GIVEN_NAMES,
+          source: { committed_samples: 48000, text_revision_version: 4 }, generated_at_ms: Date.now() }
+      : { summary: artifact });
+  }));
+  sessionId.value = "m"; sessionStatus.value = status;
+  replaceTranscript(namedRows(status === "active" ? "confirmed" : "final"));
+  await act(async () => render(<><TranscriptPane /><SummaryPane hidden={false} /></>, root));
+  if (status === "active") await act(async () => refresh().click());
+  await vi.waitFor(() => expect(summaryText()).toContain("Speaker 1 asked Speaker 10 for the plan."));
+  const generated = status === "active" ? ["/api/meetings/m/summary/live"] : [];
+  expect(summaryRequests).toEqual(generated);
+
+  await renameInTranscript("speaker-0001", "Alice");
+  expect(summaryText()).toContain("Alice asked Speaker 10 for the plan.");
+  expect(summaryText()).toContain("Speaker 2 answered Alice.");
+  expect(summaryText()).toContain("Alice: host");
+  expect(summaryText()).not.toContain("Speaker 1 ");
+  // A second speaker, then the first one again (Speaker 1 -> Alice -> Bob).
+  await renameInTranscript("local-1", "王芳");
+  await renameInTranscript("speaker-0001", "Bob");
+  expect(summaryText()).toContain("Bob asked Speaker 10 for the plan.");
+  expect(summaryText()).toContain("Bob: host");
+  expect(summaryText()).toContain("王芳: the note taker");
+  expect(summaryText()).not.toContain("Alice");
+  // Back to the default name.
+  await renameInTranscript("speaker-0001", "Speaker 1");
+  expect(summaryText()).toContain("Speaker 1 asked Speaker 10 for the plan.");
+  expect(summaryRequests).toEqual(generated);
+});
+
+it("shows a summary saved without its speaker names as stored, renamed speakers or not", async () => {
+  const older = { state: "current", attempt_id: "older", source_version: 1, artifact_version: 1, error_code: null,
+    document: NAMED_SUMMARY };
+  vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, json: async () => ({ summary: older }) })));
+  sessionId.value = "m"; sessionStatus.value = "closed";
+  replaceTranscript(namedRows("final").map(row => row.speaker_entity_id === "speaker-0001" ? { ...row, display_name: "Alice" } : row));
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await vi.waitFor(() => expect(summaryText()).toContain("Speaker 1 asked Speaker 10 for the plan."));
+  expect(summaryText()).toContain("Speaker 1: host");
+  expect(summaryText()).not.toContain("Alice");
 });

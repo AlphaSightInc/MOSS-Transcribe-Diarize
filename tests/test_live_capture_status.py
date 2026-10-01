@@ -95,7 +95,7 @@ def test_projection_uses_reference_compatible_phases_and_says_nothing_when_healt
             "failed",
             {"system": "browser_track_ended"},
             "failed",
-            "System sound stopped.",
+            "System sound output stopped.",
         ),
     ),
 )
@@ -146,7 +146,7 @@ def test_terminal_session_state_precedes_nonterminal_capture_facts(
             "system",
             "failed",
             "capturing",
-            "System sound stopped — stop and start a new recording to include it.",
+            "System sound output stopped — stop and start a new recording to include it.",
         ),
         (
             "browser_audio_context_suspended",
@@ -215,7 +215,7 @@ def test_single_failed_lane_keeps_recording_and_unknown_codes_use_additive_fallb
 
     assert status.to_dict() == {
         "capture_phase": "recording",
-        "status_line": "System sound stopped — stop and start a new recording to include it.",
+        "status_line": "System sound output stopped — stop and start a new recording to include it.",
     }
     degraded = project_live_capture_status(
         _presence(state="capturing", lane="system", lane_state="degraded",

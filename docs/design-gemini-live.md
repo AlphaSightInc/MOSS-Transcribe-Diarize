@@ -88,20 +88,55 @@ when successive same-speaker gaps are ≤1.5 s. Production WebRTC mode 1, 10 ms 
 a rolling or final word only when no voiced frame lies in its ±0.2 s padded span.
 Final labels map back to live meeting IDs by sample overlap (ADR-0005 D8).
 
-The microphone gate also requires either no system WebRTC voice over a word or
-microphone RMS at least −15 dB relative to the best system RMS at a 0–100 ms lag.
-The existing normalized-token echo guard must also pass. Both filters run on rolling
-and final mic words. A live (rolling) mic window publishes words only when its gated
-words hold a continuous attributed span of at least 2 s (0.6 s joins, the same evidence a
-voiceprint needs); otherwise its words are counted as `mic_words_dropped_unanchored` and the
-terminal pass decides the saved text (round 4, issue #3: noise and echo-residue windows
-produced 165 → 3 invented, often foreign-language, words with unchanged non-backchannel
-retention; `prototypes/gemini-live/mic-hallucination/NOTES.md`). The saved (terminal and
-Stop-tail) mic words are withheld only when the meeting's microphone never showed such a span,
-in any live window or in the saved words themselves; they are counted as
-`mic_words_withheld_unanchored_lane`, and a Stop tail withheld this way counts as covered, not
-as a failed recovery (listen-only speaker lanes 104/73 → 0/0 saved invented words; saved
-retention unchanged on six lanes with local speech; margin 1.9 s vs 2 s). W3's provisional text lacks reliable word timing, so the lane
+The microphone gate retains the existing level and two-second anchor rules and adds
+measured local-voice evidence (round 5b, `hybrid-w3-mic-short-v9`). `LocalVoiceEvidence`
+reads the two lane tapes in 10 ms frames with fresh WebRTC mode-3 detectors per context.
+The tab reference is its loudest frame in the preceding 0–100 ms. Echo return is the
+median microphone/tab level on tab-voiced frames; with less than one second of tab
+speech, the existing fixed −15 dB level test stands in. An unexplained frame is voiced
+microphone audio while the tab is silent, or more than 6 dB above its measured echo
+return. A sustained stretch lasts at least 0.4 s, bridging holes of at most 50 ms.
+
+A provider-label run joins words across gaps of at most 0.6 s, before the level gate.
+It is local if it touches a sustained stretch, at least 80% of its words touch unexplained
+audio (word midpoint ±0.2 s), and those words weigh at least 15: three words or five
+CJK-like characters. A: local words survive the fixed level gate. C: local words are
+removed by the text guard only as part of a two-word echo phrase; the voice guard stays
+unchanged. B: without a two-second attributed span, only surviving local runs still
+weighing 15 are admitted. `local_speech_seen` retains its two-second meaning, so a short
+reply admits only itself. `MicrophoneWordGate(local_voice=None)` preserves prior behavior.
+The saved and Stop-tail passes compute the same frame facts in 30 s contexts every
+15 s, only computing contexts overlapping the candidate words. Withholding still counts
+a Stop tail as covered, rather than failed recovery.
+
+For clean-up witness restoration (WP-C), call
+`LocalVoiceEvidence.is_local_run(mic_pcm16, words, offset_sample=0, whole_lane=True)`
+with **one restore candidate run alone**, after clean-up words were gated. Its word
+samples/text are judged against the lane audio by the same sustained/80%/weight-15 rule,
+independently of `local_speech_seen` and neighbouring clean-up words. Only then assign
+its speaker. An anchored lane never waives this evidence requirement.
+
+The recorded prototype admitted 15/15 short English and 15/15 Mandarin saved units at
+−40 dB echo; quiet double-talk 20 dB below the tab retained 27/31 long-turn units.
+Across 18 engine cells, live/Stop/saved recall rose from 90/101/157 to 206/291/310 of
+343. Five listener/noise engine cells and 28 rebuilt round-4 negative provider answers
+(908 voice-gated words) kept zero invented/echoed words; echo-only admission remained
+zero at −40/−25/−15 dB. Source: `prototypes/gemini-live/mic-speaker-echo/f2/NOTES.md`.
+One/two-word replies without an anchored turn remain withheld; words absent from the
+provider answer cannot be admitted; another room voice can qualify from 0.4 s.
+Physical echo cancellation and double-talk attenuation remain **unmeasured**, requiring
+the plan's attended device check. Grey microphone echo fragments are unchanged.
+
+Per-meeting and per-lane diagnostics add `mic_words_from_provider` (after voice activity),
+`mic_words_kept_by_local_voice_level`, `mic_words_kept_unanchored_by_local_voice`,
+`mic_echo_return_db` (last measured; null until measured), and `mic_local_voice_seconds`
+(union of sustained spans observed so far, avoiding double-counting overlapping windows).
+At final release, after clean-up or at live-only close, the shared operator journal
+emits one `moss-operator-event.v1` event, code `meeting_engine_diagnostics`, containing
+meeting id and numeric diagnostics only. Engine settings, strings, nulls and booleans
+are omitted. No transcript, audio, credentials, new storage, or provider requests.
+
+W3's provisional text lacks reliable word timing, so the lane
 composer removes from a mic preview row every run of at least three words (five CJK
 characters) that occurs anywhere in the system words it could echo: committed system rows
 and the system preview ending within n/1.5 + 5 s of the row (n = its units). Each run is
@@ -121,9 +156,20 @@ reply in a new language waits ≈13 s for its commit, a sentence ≤0.6 s
 (`prototypes/gemini-live/preview-script/NOTES.md`). System text wins an echo tie; a later
 overlapping row in the same lane replaces the earlier one.
 At the commit frontier, the public publisher aligns each preview chunk's head to
-the last 60 tokens of committed effective speech in the same lane. A match of at
-least five tokens trims the repeated prefix; number words and digits align.
-A truly identical simultaneous phrase can be hidden in preview.
+visible text in the same lane: committed speech followed by preview rows already kept.
+Comparable units are individual CJK, kana or Hangul characters and whole other letter/digit
+runs; number words and digits align. The tail holds at least 60 units, growing with the
+lane's preview (1.25 × its units + 8). A repeated head needs evidence equal to five words
+or nine CJK characters (weights 5 and 3, minimum 25), at least 60 % matched, with the
+existing bounded gaps. The cut uses original-string spans and drops leading Western
+and CJK punctuation. Committed and saved rows are untouched.
+Measured arm C removes repeats on all ten recorded cells and preserves the 302 s English
+stream byte-for-byte (`prototypes/gemini-live/mic-speaker-echo/f1/NOTES.md`). A traditional
+commit under a simplified preview can leave 1–4 solid characters; no script folding is
+applied. Heads shorter than nine characters or five words stay. A genuinely repeated
+phrase at or above that minimum may be hidden in grey until committed. Japanese and
+Korean evidence is synthetic; real provider output and other unspaced scripts are unmeasured.
+Mixed scripts and doubled characters in committed rows are separate defects.
 
 The pinned WeSpeaker observations for Gemini-attributed meeting IDs flow through
 `_identity_observations` and `_identity_match_observations` to Account's existing
@@ -300,6 +346,47 @@ drops the veto for 7 of 38 different-speaker pairs there — every time a label 
 shipped either. The open primitive is label purity, not the alternation rule. Numbers and gates:
 `prototypes/gemini-live/aba-veto/NOTES.md`.
 
+## Round 5: a renamed speaker in a summary (2026-10-01)
+
+- **Defect.** After a rename the summary still said "Speaker 1". A summary is prose written once by a model that was
+  given every transcript row under its speaker's name at that moment (`GeminiSummaryGenerator`: `"speaker": row["speaker"]`).
+  A rename rewrites the transcript rows and, by decision D1 (#15), asks the model nothing, so the stored prose kept
+  the old name. A second defect hid behind it: the Markdown export kept a summary only when its version equalled the
+  transcript's, and a rename raises the transcript version, so after any rename the export dropped the whole summary.
+- **Structural question.** Which words of a stored summary mean which speaker, and under what name is that speaker
+  shown now?
+- **Primitives.** (1) *Given names*: the name each speaker id carried in the transcript handed to the generator, saved
+  with the summary (`speaker_names` in the artifact's `provenance_json`; returned by `/summary/live`). (2) *Current
+  names*: the name each speaker id shows in the transcript now (`transcriptSpeakerNames`, the transcript's own label
+  rule). (3) *Reading*: every whole mention of a given name is shown as that speaker's current name
+  (`renameSummarySpeakers`, `frontend/src/lib/summarySpeakers.ts`), in the Summary pane and in the Markdown export.
+  The stored document is never rewritten, so a second rename, a swap of two names and a rename back all start from
+  the same text. Neither side can be dropped: without (1) a search has only the default label to look for.
+- **Why not search for the default label.** "Speaker 1" is what speaker-0001 is called only until someone names it. A
+  speaker named Alice before the summary (by a voiceprint, or by hand during the meeting) is "Alice" in the prose;
+  renaming her to "Alicia" afterwards leaves a default-label search nothing to find. And before round 4 (F4)
+  "Speaker n" was numbered by order of first speech in one transcript version, not read off the id
+  (`docs/plan-r3-ui.md` I-4), so in an older summary "Speaker 1" need not be speaker-0001: the search could put one
+  person's new name on another person's sentences. How often that would happen is unmeasured.
+- **Invariants.** No model call and no summary request on a rename. Only given names are looked for: a default label
+  the generator never used is ordinary text. A name must be whole: "Speaker 1" is not in "Speaker 10", nor "Al" in
+  "Also"; all given names are matched together, longest first, so "Ann" inside another speaker's "Ann Lee" belongs to
+  the longer name. Chinese writes no space between words, so a Chinese neighbour needs no gap ("Speaker 2介绍了…").
+  A name is left as written when its speaker is no longer in the transcript, when the transcript shows that speaker
+  as unattributed, or when two speakers were given one name and now differ. Timestamps and data values are not prose
+  and are not touched.
+- **Measured.** On the 84 recorded Gemini summaries under `prototypes/gemini-live/live-summary/` (37 Chinese) the
+  model wrote the given label verbatim in 252 of 252 mentions (0 paraphrases such as "the first speaker" or a
+  translated label; 49 mentions touch a Chinese character). The reading rule renamed 252/252, changed 0 characters
+  outside them, and made 0 false rewrites of the word "You" (the first microphone voice's default name).
+- **Summaries saved before this change** carry no given names; they are shown exactly as stored (no guess), in the
+  pane and in the export. Refresh regenerates one with the current names.
+- **Cannot do.** Tell a name from the same word used otherwise ("You", "Will", "May" in a quoted sentence); follow a
+  mention the model paraphrased or lower-cased; split a Chinese name from a longer word that only starts with it
+  ("张伟" inside a non-speaker's "张伟明"); follow a passage correction (its rows move to another speaker, the prose
+  does not); rename the meeting title the first summary set. How Gemini mentions the microphone voice "You" in a
+  two-lane summary is unmeasured (no recorded two-lane summary in the repo).
+
 ## Measured envelope and custody
 
 Figures below name their code/fixture population. They do not combine different
@@ -316,7 +403,7 @@ are supporting populations.
 | Long60 2586 s, `6c5776e3` | 5/5 IDs; settled/final raw DER .043404/.034375; Lex retained one dominant ID; cost $2.461/audio-hour | Label p50 26.517 s first 5 min, 29.519 s last 5 min before L1 |
 | Public long60 first 600 s, `0b9deed5` candidate | Label p50/p90 18.262/25.015 s, 583/600 labeled buckets, 0 skipped ticks, two IDs at Stop; before 26.761/37.508 s, 597/600 buckets, one skip | Standalone after run ends at 600 s; full-meeting lag and the 14-bucket coverage difference remain open |
 | Real cross-meeting public voiceprints, `c58595da` | Lex named from Bill60, auto-named on Keyu60; Lex and Keyu both auto-named on Keyu5m; Bill remained unnamed on Bill5m (0/524 Bill-dominant observations named) | Earlier code path, same naming seam; natural-room recordings unmeasured |
-| E1 microphone acoustic gate, `e7078edc` | 0/20 stray final mic words outside operator intervals; phrase recall 7/7, 6/7, 4/5 | Echo ≥−15 dB and quiet operator gain 0.1 defeat this rule in bench tests |
+| E1 microphone acoustic gate, `e7078edc` | 0/20 stray final mic words outside operator intervals; phrase recall 7/7, 6/7, 4/5 | Fixed rule alone loses quiet local words; v9 adds measured local-voice evidence (F2 fixtures). Physical echo cancellation remains unmeasured |
 | Stress on `56513e30` | 600 s digital silence finalized 2.621 s after Stop with no batch calls; 604 s many-speaker fixture finalized in 68.397 s; injected 503 physical attempts matched error/retry counters | Silence still opened system W3 on that SHA; `130f3d39` adds voiced-only system W3; final-SHA real stress rerun pending pane 6.4 |
 
 The E1 cost model for a 302 s meeting with its observed lane activity is

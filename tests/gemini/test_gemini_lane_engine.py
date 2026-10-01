@@ -592,3 +592,167 @@ def test_lazy_microphone_preview_opens_on_voice_and_closes_after_60s_quiet():
     lazy.push_audio(63*16000, b"\x01\x00"*16000)
     assert len(made) == 2 and observed[-1] == ("local", 63*16000, 64*16000)
     asyncio.run(lazy.finish())
+
+
+class _LocalVad:
+    def is_speech(self, pcm, rate):
+        import numpy as np
+        return bool(np.abs(np.frombuffer(pcm, dtype='<i2')).max(initial=0) >= 50)
+
+
+def _local_fixture(bursts=((8, 9.1),), *, echo=10, seconds=30):
+    import numpy as np
+    system = np.full(round(seconds*16000), 1000, dtype='<i2')
+    mic = np.full_like(system, echo)
+    for start, end in bursts:
+        mic[round(start*16000):round(end*16000)] += 100
+    return mic.tobytes(), system.tobytes()
+
+
+def _local_gate(system, counts, tab_words=()):
+    from moss_transcribe_diarize.app.gemini_lane_engine import LocalVoiceEvidence
+    class PassVoice:
+        def filter(self, pcm, words, **kwargs): return tuple(words)
+    ledger = SystemWordLedger()
+    ledger.observe(tab_words, len(system)//2)
+    read = lambda a, b: system[a*2:b*2]
+    class PassEchoVoice:
+        def filter_mic(self, words, vectors, **kwargs): return tuple(words)
+        def filter_terminal(self, words, *args): return tuple(words)
+    return MicrophoneWordGate(PassVoice(), ledger, AcousticEchoGuard(read, vad=_LocalVad()),
+                              counts.append, voice_guard=PassEchoVoice(),
+                              embedding_source=lambda *args: {},
+                              local_voice=LocalVoiceEvidence(read, vad_factory=_LocalVad))
+
+
+def _local_phrase(text='Can you elaborate on that?', start=8.4, end=9.2, label='local'):
+    tokens = text.split()
+    step = (end-start)/len(tokens)
+    return tuple(GeminiWord(t, label, round((start+i*step)*16000),
+                            round((start+(i+1)*step)*16000)) for i, t in enumerate(tokens))
+
+
+def test_local_voice_frames_use_the_measured_echo_return_not_a_fixed_level():
+    mic, system = _local_fixture((), echo=316)
+    gate = _local_gate(system, [])
+    assert gate.local_voice.local_words(mic, _local_phrase()) == {}
+    assert gate.local_voice.sustained_seconds == 0
+    mic, system = _local_fixture()
+    gate = _local_gate(system, [])
+    assert len(gate.local_voice.local_words(mic, _local_phrase())) == 5
+    assert gate.local_voice.sustained_seconds >= .4
+
+
+def test_short_local_phrase_with_no_two_second_span_is_published_live():
+    mic, system = _local_fixture()
+    counts = []
+    gate = _local_gate(system, counts)
+    echo = _local_phrase(' '.join(['remote']*29), 3, 15, 'echo')
+    local = _local_phrase()
+    assert gate.filter(mic, echo+local) == local
+    assert not gate.local_speech_seen
+    assert counts[-1]['mic_words_kept_unanchored_by_local_voice'] == 5
+    assert 'unanchored_window_dropped_words' not in counts[-1]
+
+
+def test_listen_only_echo_window_publishes_nothing_with_local_voice_enabled():
+    mic, system = _local_fixture((), echo=56)
+    counts = []
+    gate = _local_gate(system, counts)
+    assert gate.filter(mic, _local_phrase(' '.join(['remote']*63), 3, 15)) == ()
+    assert counts[-1]['acoustic_gate_dropped_words'] == 63
+
+
+def test_words_on_a_noise_event_are_not_local_speech():
+    mic, system = _local_fixture(((8, 8.6),))
+    for text in ('Think about', '后 一 个。'):
+        gate = _local_gate(system, [])
+        assert gate.filter(mic, _local_phrase(text, 8, 8.6)) == ()
+
+
+def test_residue_fragments_are_not_a_sustained_stretch():
+    mic, system = _local_fixture(((8, 8.2), (8.7, 8.9), (9.4, 9.6)))
+    gate = _local_gate(system, [])
+    assert gate.filter(mic, _local_phrase('Oh about the words', 8, 9.6)) == ()
+    assert gate.local_voice.sustained_seconds == 0
+
+
+def test_echoed_voice_overlapping_local_speech_is_not_rescued():
+    mic, system = _local_fixture(echo=56)
+    counts = []
+    gate = _local_gate(system, counts)
+    assert gate.filter(mic, _local_phrase(' '.join(['remote']*31), 3, 15)) == ()
+    assert counts[-1]['acoustic_gate_dropped_words'] == 31
+    assert counts[-1]['mic_words_kept_by_local_voice_level'] == 0
+
+
+def test_quiet_local_turn_under_the_tab_passes_the_level_gate():
+    mic, system = _local_fixture(((6, 12.1),))
+    counts = []
+    gate = _local_gate(system, counts)
+    words = _local_phrase(' '.join(['local']*24), 6.2, 12)
+    assert gate.filter(mic, words) == words
+    assert gate.local_speech_seen
+    assert counts[-1]['mic_words_kept_by_local_voice_level'] == 24
+
+
+def test_local_words_lose_only_echo_phrases_to_the_text_guard():
+    mic, system = _local_fixture()
+    words = _local_phrase('好 的， 没 问 题。')
+    gate = _local_gate(system, [], _local_phrase('的', 8.5, 8.6, 'remote'))
+    assert gate.filter(mic, words) == words
+    gate = _local_gate(system, [], _local_phrase('没 问', 8.7, 9, 'remote'))
+    assert gate.filter(mic, words) == ()
+
+
+def test_saved_pass_keeps_local_runs_without_opening_the_lane():
+    mic, system = _local_fixture(((8, 9.1), (23, 24.1), (38, 39.1)), seconds=45)
+    counts = []
+    gate = _local_gate(system, counts)
+    words = sum((_local_phrase(start=s+.4, end=s+1.2) for s in (8, 23, 38)), ())
+    assert gate.filter_terminal(mic, words+_local_phrase('No.', 42, 42.1), (), system_pcm16=system) == words
+    # Stray outside voice is dropped by the level gate; a voiced one is withheld by the run bar.
+    mic, system = _local_fixture(((8, 9.1), (23, 24.1), (38, 39.1), (42, 42.6)), seconds=45)
+    gate = _local_gate(system, [])
+    class PassLevel:
+        def filter(self, pcm, words, **kwargs): return tuple(words)
+    gate.acoustic_gate = PassLevel()
+    assert gate.filter_terminal(mic, words+_local_phrase('No.', 42, 42.1), (), system_pcm16=system) == words
+    assert gate.lane_withheld_words == 1
+    assert not gate.local_speech_seen
+
+
+def test_one_and_two_word_replies_stay_withheld_without_other_evidence():
+    mic, system = _local_fixture()
+    for text in ('Yeah.', 'Thanks everyone.'):
+        gate = _local_gate(system, [])
+        class PassLevel:
+            def filter(self, pcm, words, **kwargs): return tuple(words)
+        gate.acoustic_gate = PassLevel()
+        assert gate.filter(mic, _local_phrase(text)) == ()
+
+
+def test_saved_pass_and_live_window_judge_the_same_stretch_alike():
+    mic, system = _local_fixture()
+    live, saved = _local_gate(system, []), _local_gate(system, [])
+    words = _local_phrase()
+    assert live.filter(mic, words) == saved.filter_terminal(mic, words, (), system_pcm16=system) == words
+
+
+def test_local_run_interface_judges_restore_candidate_on_its_own():
+    mic, system = _local_fixture()
+    gate = _local_gate(system, [])
+    gate.local_speech_seen = True
+    assert gate.local_voice.is_local_run(mic, _local_phrase(), whole_lane=True)
+    assert not gate.local_voice.is_local_run(mic, _local_phrase('invented stray words', 20, 20.8), whole_lane=True)
+    assert not gate.local_voice.is_local_run(mic, _local_phrase('No.'), whole_lane=True)
+    echo = _local_phrase(' '.join(['remote']*31), 3, 15, 'echo')
+    assert not gate.local_voice.is_local_run(mic, echo+_local_phrase(), whole_lane=True)
+
+
+def test_saved_local_run_keeps_sustained_audio_across_context_boundary():
+    # The word pad reaches a stretch mostly in the preceding 15 s context.
+    mic, system = _local_fixture(((14.5, 15.1),), seconds=45)
+    gate = _local_gate(system, [])
+    words = _local_phrase(start=15.25, end=15.3)
+    assert len(gate.local_voice.local_words(mic, words, whole_lane=True)) == 5

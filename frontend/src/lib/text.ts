@@ -17,6 +17,13 @@ const UNSPACED = "[\\u3000-\\u312f\\u31f0-\\u31ff\\u3400-\\u4dbf\\u4e00-\\u9fff\
   "\\uff00-\\uff9f\\uffe0-\\uffef\\u{20000}-\\u{3134f}]";
 const ENDS_UNSPACED = new RegExp(`${UNSPACED}$`, "u");
 const STARTS_UNSPACED = new RegExp(`^${UNSPACED}`, "u");
+const UNSPACED_CHARACTER = new RegExp(UNSPACED, "u");
+const LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;
+
+/** A letter or digit of a script that puts spaces between words ("a", "é", "7"; not "好"). */
+export function isSpacedWordCharacter(character: string | undefined): boolean {
+  return character !== undefined && LETTER_OR_DIGIT.test(character) && !UNSPACED_CHARACTER.test(character);
+}
 
 /**
  * The one rule for joining transcript text (the server's `join_text`): no space where either side

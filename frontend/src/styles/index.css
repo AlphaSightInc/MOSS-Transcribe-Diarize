@@ -1009,10 +1009,11 @@ textarea:focus {
   border-color: var(--danger);
 }
 
-/* Sources (round 5): one checkbox per source, its level beside it while it is being recorded. */
+/* Sources (round 5): one checkbox per source, its level beside it while it is being recorded.
+   The first column holds the longer label, "System Sound Output", on one line (158 px with its box). */
 .source-row {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr);
+  grid-template-columns: 164px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
   min-height: 20px;

@@ -41,7 +41,7 @@ describe("Account application shell", () => {
     // Live is the mode on load: the two source boxes and one Start button (round 5).
     expect(root.querySelector('.mode-tabs [aria-pressed="true"]')?.textContent).toBe("Live");
     expect([...root.querySelectorAll(".capture-sources label.check-row")].map(row =>
-      [row.textContent, row.querySelector("input")?.checked])).toEqual([["System sound", true], ["Microphone", true]]);
+      [row.textContent, row.querySelector("input")?.checked])).toEqual([["System Sound Output", true], ["Microphone", true]]);
     expect(root.querySelector<HTMLButtonElement>('.record-btn[data-action="start"]')?.textContent).toBe("Start recording");
     expect(root.querySelector('[aria-label="Listening with"]')).toBeNull();
     expect(root.querySelectorAll('[aria-label="Meeting views"] [role="tab"]')).toHaveLength(2);

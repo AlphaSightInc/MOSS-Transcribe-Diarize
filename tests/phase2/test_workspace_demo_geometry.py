@@ -315,3 +315,42 @@ def test_phone_layout_ignores_a_remembered_collapse():
     for key in ('control', 'transcript', 'history'):
         assert shell[key]['left'] >= 16 and shell[key]['right'] <= 400 - 16, shell
         assert shell[key]['w'] >= 400 - 32 - 1, shell
+
+
+SOURCE_ROWS = """() => {
+    const lines = e => { const range = document.createRange(); range.selectNodeContents(e);
+        return new Set([...range.getClientRects()].map(r => Math.round(r.top))).size; };
+    const panel = document.querySelector('.control-panel').getBoundingClientRect();
+    return {viewport: innerWidth, scrollWidth: document.documentElement.scrollWidth,
+        rows: [...document.querySelectorAll('.capture-sources .source-row')].map(row => {
+            const cell = row.querySelector('.check-row').getBoundingClientRect();
+            const text = row.querySelector('.check-row span'), name = text.getBoundingClientRect();
+            return {label: text.textContent, lines: lines(text), box: row.querySelector('input').getBoundingClientRect().width,
+                    left: cell.left, cell: cell.right, name: name.right, row: row.getBoundingClientRect().right,
+                    panelLeft: panel.left, panelRight: panel.right};
+        })};
+}"""
+
+
+@pytest.mark.parametrize('viewport', [{'width': 1440, 'height': 900}, {'width': 400, 'height': 800}])
+def test_source_names_keep_one_line_and_their_own_column(viewport):
+    """Round 5: the system source reads "System Sound Output". On desktop and on a 400 px phone each name
+    keeps one line and a full-size box inside the label column, leaving the level meter's column free,
+    and the page does not scroll sideways."""
+    with sync_playwright() as p:
+        browser, page = _open_workspace(p, viewport)
+        try:
+            page.locator('.capture-sources').scroll_into_view_if_needed()
+            sources = page.evaluate(SOURCE_ROWS)
+            for box in page.locator('.capture-sources input[type=checkbox]').all():
+                box.uncheck()
+            tooltip = page.locator('.record-btn[data-action="start"]').get_attribute('title')
+        finally:
+            browser.close()
+    assert sources['scrollWidth'] <= viewport['width'], sources
+    assert [row['label'] for row in sources['rows']] == ['System Sound Output', 'Microphone']
+    for row in sources['rows']:
+        assert row['lines'] == 1 and row['box'] == 16, sources
+        assert row['name'] <= row['cell'] <= row['row'] - 60, sources  # the meter keeps at least 60 px
+        assert row['panelLeft'] <= row['left'] and row['row'] <= row['panelRight'], sources
+    assert tooltip == 'Tick System Sound Output or Microphone.'

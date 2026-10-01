@@ -14,6 +14,7 @@ import re
 import tempfile
 import threading
 import time
+import unicodedata
 import uuid
 import wave
 from collections import deque
@@ -326,6 +327,12 @@ class _GeminiState:
     clamped_words: int = 0
     dropped_words: int = 0
     repaired_words: int = 0
+    mic_words_from_provider: int = 0
+    mic_words_kept_by_local_voice_level: int = 0
+    mic_words_kept_unanchored_by_local_voice: int = 0
+    mic_echo_return_db: float | None = None
+    mic_local_voice_seconds: float = 0.0
+    diagnostics_emitted: bool = False
     mic_words_dropped_by_acoustic_gate: int = 0
     mic_words_dropped_by_text_guard: int = 0
     mic_echo_dropped_by_voice: int = 0
@@ -648,6 +655,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         clamped_words: int = 0,
         dropped_words: int = 0,
         repaired_words: int = 0,
+        mic_words_from_provider: int = 0,
+        mic_words_kept_by_local_voice_level: int = 0,
+        mic_words_kept_unanchored_by_local_voice: int = 0,
+        mic_echo_return_db: float | None = None,
+        mic_local_voice_seconds: float | None = None,
         acoustic_gate_dropped_words: int = 0,
         text_guard_dropped_words: int = 0,
         mic_echo_dropped_by_voice: int = 0,
@@ -676,6 +688,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks,
                              preview_stall_restarts, coverage_retry, coverage_preview_fallbacks,
                              terminal_coverage_fallbacks,
+                             mic_words_from_provider, mic_words_kept_by_local_voice_level,
+                             mic_words_kept_unanchored_by_local_voice,
                              acoustic_gate_dropped_words, text_guard_dropped_words,
                              mic_echo_dropped_by_voice, unanchored_window_dropped_words,
                              unanchored_lane_withheld_words, veto_fired)):
@@ -683,6 +697,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         if any(not math.isfinite(value) or value < 0 for value in
                (audio_seconds_sent, cost_usd, metered_output_usd, output_cost_estimate_usd)):
             raise ValueError("engine audio seconds and cost must be finite and nonnegative.")
+        if mic_echo_return_db is not None and not math.isfinite(mic_echo_return_db):
+            raise ValueError("microphone echo return must be finite.")
+        if mic_local_voice_seconds is not None and (not math.isfinite(mic_local_voice_seconds)
+                                                   or mic_local_voice_seconds < 0):
+            raise ValueError("microphone local voice seconds must be finite and nonnegative.")
         if (not isinstance(count_call, bool) or not isinstance(chunked, bool)
                 or cost_basis not in {"provider_usage", "list_price_estimate"}):
             raise ValueError("engine call count and cost basis must be operational metadata.")
@@ -697,6 +716,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.clamped_words += clamped_words
             state.dropped_words += dropped_words
             state.repaired_words += repaired_words
+            state.mic_words_from_provider += mic_words_from_provider
+            state.mic_words_kept_by_local_voice_level += mic_words_kept_by_local_voice_level
+            state.mic_words_kept_unanchored_by_local_voice += mic_words_kept_unanchored_by_local_voice
+            if mic_echo_return_db is not None:
+                state.mic_echo_return_db = mic_echo_return_db
+            if mic_local_voice_seconds is not None:
+                state.mic_local_voice_seconds = mic_local_voice_seconds
             state.mic_words_dropped_by_acoustic_gate += acoustic_gate_dropped_words
             state.mic_words_dropped_by_text_guard += text_guard_dropped_words
             state.mic_echo_dropped_by_voice += mic_echo_dropped_by_voice
@@ -728,6 +754,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "metered_output_usd": 0.0,
                     "output_cost_estimate_usd": 0.0,
                     "skipped_window_ticks": 0})
+                totals.setdefault("mic_words_from_provider", 0)
+                totals.setdefault("mic_words_kept_by_local_voice_level", 0)
+                totals.setdefault("mic_words_kept_unanchored_by_local_voice", 0)
+                totals.setdefault("mic_echo_return_db", None)
+                totals.setdefault("mic_local_voice_seconds", 0.0)
                 totals.setdefault("mic_words_dropped_unanchored", 0)
                 totals.setdefault("mic_words_withheld_unanchored_lane", 0)
                 totals.setdefault("preview_stall_restarts", 0)
@@ -745,6 +776,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["timing_anomalies"]["clamped"] += clamped_words
                 totals["timing_anomalies"]["dropped"] += dropped_words
                 totals["repaired_words"] += repaired_words
+                totals["mic_words_from_provider"] += mic_words_from_provider
+                totals["mic_words_kept_by_local_voice_level"] += mic_words_kept_by_local_voice_level
+                totals["mic_words_kept_unanchored_by_local_voice"] += mic_words_kept_unanchored_by_local_voice
+                if mic_echo_return_db is not None:
+                    totals["mic_echo_return_db"] = mic_echo_return_db
+                if mic_local_voice_seconds is not None:
+                    totals["mic_local_voice_seconds"] = mic_local_voice_seconds
                 totals["mic_words_dropped_by_acoustic_gate"] += acoustic_gate_dropped_words
                 totals["mic_words_dropped_by_text_guard"] += text_guard_dropped_words
                 totals["mic_echo_dropped_by_voice"] += mic_echo_dropped_by_voice
@@ -779,6 +817,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "retries_by_code": dict(state.retries_by_code),
                 "timing_anomalies": {"clamped": state.clamped_words, "dropped": state.dropped_words},
                 "repaired_words": state.repaired_words,
+                "mic_words_from_provider": state.mic_words_from_provider,
+                "mic_words_kept_by_local_voice_level": state.mic_words_kept_by_local_voice_level,
+                "mic_words_kept_unanchored_by_local_voice": state.mic_words_kept_unanchored_by_local_voice,
+                "mic_echo_return_db": state.mic_echo_return_db,
+                "mic_local_voice_seconds": state.mic_local_voice_seconds,
                 "mic_words_dropped_by_acoustic_gate": state.mic_words_dropped_by_acoustic_gate,
                 "mic_words_dropped_by_text_guard": state.mic_words_dropped_by_text_guard,
                 "mic_echo_dropped_by_voice": state.mic_echo_dropped_by_voice,
@@ -1252,6 +1295,29 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         (rolling caches, provider client and so the meeting's key, lane tapes, Live sockets)
         is closed and dropped here on every ending, not only the ones that ran the final pass.
         """
+        if not state.diagnostics_emitted:
+            from datetime import datetime, timezone
+            from .phase2_operator import emit_operator_event, OPERATOR_EVENT_SCHEMA
+
+            def numbers(value):
+                if isinstance(value, dict):
+                    return {key: filtered for key, item in value.items()
+                            if (filtered := numbers(item)) is not None}
+                return value if type(value) in (int, float) else None
+
+            diagnostics = self.engine_diagnostics(state.session_id)
+            diagnostics.pop("engine_settings", None)
+            event = {
+                "schema": OPERATOR_EVENT_SCHEMA, "sequence": state.next_event_seq,
+                "occurred_at_utc": datetime.now(timezone.utc).isoformat(),
+                "kind": "meeting_lifecycle", "code": "meeting_engine_diagnostics",
+                "severity": "info", "terminal": True, "retryable": False,
+                "occurrence_count": 1,
+                "context": {"meeting_id": state.session_id,
+                            "engine_diagnostics": numbers(diagnostics)},
+            }
+            emit_operator_event(event)
+            state.diagnostics_emitted = True
         engine, state.engine = state.engine, None
         close = getattr(engine, "close", None)
         if callable(close):
@@ -1290,7 +1356,27 @@ def _unlabelled_transcript(segments: Sequence[GeminiSegment], start_sample: int)
 _PREVIEW_NUMBERS = {word: str(index) for index, word in enumerate(
     "zero one two three four five six seven eight nine ten eleven twelve thirteen "
     "fourteen fifteen sixteen seventeen eighteen nineteen twenty".split())}
-_PREVIEW_WORD = re.compile(r"[^\W_\d]+|\d+")
+_CJK = ("CJK", "HIRAGANA", "KATAKANA", "HANGUL")
+
+
+def _preview_units(text: str) -> list[tuple[str, int, int]]:
+    """Comparable units with their text spans: a CJK character each, other letter/digit runs whole."""
+    units = []
+    for match in re.finditer(r"[^\W_\d]+|\d+", text):
+        token, at, i = match.group(), match.start(), 0
+        while i < len(token):
+            j = i + 1
+            if not unicodedata.name(token[i], "").startswith(_CJK):
+                while j < len(token) and not unicodedata.name(token[j], "").startswith(_CJK):
+                    j += 1
+            unit = token[i:j].casefold()
+            units.append((_PREVIEW_NUMBERS.get(unit, unit), at + i, at + j))
+            i = j
+    return units
+
+
+def _unit_weight(unit: str) -> int:
+    return 3 if len(unit) == 1 and unicodedata.name(unit, "").startswith(_CJK) else 5
 
 
 def _trim_committed_preview(
@@ -1304,32 +1390,28 @@ def _trim_committed_preview(
     repeated head is never longer than the preview itself; recorded W3 chunks run 40-100
     words, past any fixed window.
     """
-    lane_words: dict[str | None, int] = {}
-    for segment in segments:
-        lane_words[segment.source_lane] = (
-            lane_words.get(segment.source_lane, 0) + len(_PREVIEW_WORD.findall(segment.text)))
-    kept: list[GeminiSegment] = []
-    for segment in segments:
+    spans_of = [_preview_units(segment.text) for segment in segments]
+    lane_units: dict[str | None, int] = {}
+    for segment, spans in zip(segments, spans_of):
+        lane_units[segment.source_lane] = lane_units.get(segment.source_lane, 0) + len(spans)
+    kept: list[tuple[GeminiSegment, list[str]]] = []
+    for segment, spans in zip(segments, spans_of):
         lane = segment.source_lane
-        limit = max(60, lane_words[lane] * 5 // 4 + 8)
-        parts = [row.text for row in reversed(kept) if row.source_lane == lane]
-        count = sum(len(_PREVIEW_WORD.findall(text)) for text in parts)
+        limit = max(60, lane_units[lane] * 5 // 4 + 8)
+        parts = [units for row, units in reversed(kept) if row.source_lane == lane]
+        count = sum(len(part) for part in parts)
         for row in reversed(committed):
             if count >= limit:
                 break
             if row.source_lane == lane:
-                parts.append(row.text)
-                count += len(_PREVIEW_WORD.findall(row.text))
-        tail = [_PREVIEW_NUMBERS.get(word, word)
-                for word in _PREVIEW_WORD.findall(" ".join(reversed(parts)).casefold())][-limit:]
-        matches = list(_PREVIEW_WORD.finditer(segment.text.casefold()))
-        cut = _repeated_head(tail, [_PREVIEW_NUMBERS.get(match.group(), match.group())
-                                    for match in matches])
-        text = (segment.text[matches[cut - 1].end():].lstrip(" \t\r\n,.;:!?")
-                if cut else segment.text)
+                parts.append([unit for unit, _, _ in _preview_units(row.text)])
+                count += len(parts[-1])
+        tail = [unit for part in reversed(parts) for unit in part][-limit:]
+        cut = _repeated_head(tail, [unit for unit, _, _ in spans])
+        text = (segment.text[spans[cut - 1][2]:].lstrip(" \t\r\n,.;:!?，。；：！？、") if cut else segment.text)
         if text:
-            kept.append(replace(segment, text=text))
-    return tuple(kept)
+            kept.append((replace(segment, text=text), [unit for unit, _, _ in spans[cut:]]))
+    return tuple(row for row, _ in kept)
 
 
 def _repeated_head(tail: Sequence[str], words: Sequence[str]) -> int:
@@ -1337,18 +1419,19 @@ def _repeated_head(tail: Sequence[str], words: Sequence[str]) -> int:
 
     Two models transcribe the same audio slightly differently ("6"/"six", frontier fusions
     such as "thelocal"), so a repeat is a run of matching blocks joined across gaps of at
-    most 8 words on either side and >= 5 words long. It starts within the chunk's first 8
-    words -- a stray early match of a common head word is skipped, not allowed to break the
-    run -- and reaches within 8 words of the end of what is shown, or covers the whole chunk
+    most 8 units on either side and evidence of at least five words (nine CJK characters).
+    It starts within the chunk's first 8 units -- a stray early match of a common head word
+    is skipped, not allowed to break the run -- and reaches within 8 units of the end of
+    what is shown, or covers the whole chunk
     (an older chunk repeated whole). Everything before its end is removed, so >= 60 % of
-    those words must be matched, the unmatched head included. Scattered common words ("and",
+    those units must be matched, the unmatched head included. Scattered common words ("and",
     "the") also match and must not trim new speech: they are not dense, and a run never ends
-    on a lone word after a gap (the "the" of "in the world" seven words past a fused
+    on a lone unit after a gap (the "the" of "in the world" seven words past a fused
     "thevery" is chance, not repetition).
 
     The preview also drops or fuses whole phrases ("Only Murders" for "only eight were going
-    to work? We should have I"), so where the preview side skips at most one word the shown
-    side may skip up to 16, into a block of >= 2 words. Measured on 19 recorded W3 streams
+    to work? We should have I"), so where the preview side skips at most one unit the shown
+    side may skip up to 16, into a block of >= 2 units. Measured on 19 recorded W3 streams
     against the committed words of the same audio, such omissions run up to 12 words; a
     lone word after the skip, or an unbounded skip, joins chance matches and drops fresh
     words on the $0 replay.
@@ -1373,7 +1456,9 @@ def _repeated_head(tail: Sequence[str], words: Sequence[str]) -> int:
             run.pop()
         end = run[-1].b + run[-1].size
         matched = sum(block.size for block in run)
-        if (matched >= 5 and matched >= 0.6 * end
+        evidence = sum(_unit_weight(unit) for block in run
+                       for unit in words[block.b:block.b + block.size])
+        if (evidence >= 25 and matched >= 0.6 * end
                 and (run[-1].a + run[-1].size >= len(tail) - 8 or end >= len(words) - 1)):
             return end
     return 0
