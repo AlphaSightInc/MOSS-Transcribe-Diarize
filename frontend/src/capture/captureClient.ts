@@ -3,17 +3,18 @@
  *
  * ## Mounting it
  *
- * The order below is not a suggestion. Chrome requires the microphone before the
- * display chooser, `getDisplayMedia()` must be called synchronously inside the click
- * handler that authorised it, and the server session must not exist until both lanes
- * are attached. Neither lane needs sound yet: audio may start after the meeting does.
+ * One Start click does all of it (round 5, docs/plan-r5-start-flow.md). `getDisplayMedia()`
+ * needs that click's user activation, so it is requested first, with nothing awaited before
+ * it; the microphone follows. The server session must not exist until both lanes are
+ * attached, so a source that is not recorded -- unticked, or unavailable -- gets a silent
+ * lane instead. Neither lane needs sound yet: audio may start after the meeting does.
  *
  *   const client = new CaptureClient({ helperVersion, workletUrl, onMeter, ... });
- *   await client.prepare();                      // descriptor + AudioContext + worklet
- *   await client.startMicrophone(useEchoCancel, deviceId); // speakers -> true, headphones -> false
- *   // ... in the display button's own click handler, with no await before it:
+ *   // ... in the Start click handler, with no await before it (system sound ticked):
  *   const stream = await client.requestDisplayMedia();
- *   await client.attachDisplayMedia(stream);
+ *   await client.attachDisplayMedia(stream);     // false: the surface carried no audio
+ *   await client.startMicrophone(deviceId);      // null: no microphone, or permission denied
+ *   await client.attachSilentLane(lane);         // for each source that is not recorded
  *   // ... both lanes are attached; `createSession` refuses otherwise:
  *   const session = await client.createSession();
  *   // ... capture now runs on its own, driven by worklet frames. Then:
@@ -25,26 +26,29 @@
  *
  * ## What the caller must handle
  *
- * - `onMeter(lane, rms)` fires once per worklet frame per lane, for the level meters.
- *   It gates nothing: a silent or muted lane still starts a meeting.
- * - `onPreSessionFailure(failure)` fires for the three failures that happen before a
- *   session exists, so there is no authenticated heartbeat to carry them. The client
- *   has already torn its capture graph down when this fires; the caller owns the retry
- *   UI, and the retry is a fresh `startMicrophone` on a new user gesture.
+ * - `onMeter(lane, rms)` fires once per worklet frame per recorded lane, for the level
+ *   meters. It gates nothing: a quiet or muted lane still starts a meeting.
+ * - `onPreSessionFailure(failure)` fires when a source's track ends before a session
+ *   exists, so there is no authenticated heartbeat to carry it. The client has already
+ *   torn its capture graph down when this fires; the retry is a new Start click. A
+ *   cancelled picker, a surface without audio and an unavailable microphone are results
+ *   of the calls above, not failures: the caller decides what still starts.
  * - `onTransportError(route, error)` is advisory. The client has already decided what to
  *   do about the response by the time this fires.
  * - A frame 409 that is not a sequence conflict clears the session and returns the client
  *   to a state where `createSession()` can be called again WITHOUT rebuilding the audio
  *   graph. A 400 is a client bug: the client stops capture locally and does not retry.
  * - `replaceLane(lane, stream, tracks)` is the only way `device_epoch` ever advances. It
- *   is for a lane that is still live (a user-chosen device switch). A lane whose track
- *   has ended is already reported `failed` and sealed by the server, and needs a new
- *   session instead.
+ *   is a user-chosen device switch.
+ * - `onSourceStopped(lane)` fires when a recorded source's track ends during a session
+ *   (Chrome's "Stop sharing", an unplugged microphone). The lane is never reported
+ *   `failed` -- the server would seal it and could not close the meeting cleanly. It goes
+ *   silent on its own framer instead, so the meeting records on and Stop completes.
  *
  * Lane health reaches the operator only through the heartbeat, and the server turns it
  * into one `capture_phase` + one `status_line` on the snapshot route. The caller renders
- * that string; it does not need to know these codes -- except for the three pre-session
- * ones, which never reach the server and so have no server-side copy.
+ * that string; it does not need to know these codes -- except for the pre-session
+ * one, which never reaches the server and so has no server-side copy.
  */
 import type { EngineSettingsWire } from "../lib/settings";
 import { displaySurfaceOf, rememberCaptureSurface, type CaptureSurface } from "../lib/captureSurface";
@@ -90,9 +94,10 @@ export type CaptureSession = Readonly<{
   id: string;
 }>;
 
-type HelperState = "starting" | "capturing" | "degraded" | "recovering" | "failed" | "stopped";
+/** The helper states this client reports: it never reports itself or a lane as `failed`. */
+type HelperState = "capturing" | "degraded" | "stopped";
 
-/** Terminal for the lane: the server seals a lane it is told is `failed`. */
+/** A recorded source's track ended. It reaches the caller, never the heartbeat. */
 type BrowserFailureCode = "browser_track_ended";
 
 /**
@@ -110,27 +115,20 @@ type BrowserDegradedCode =
   | "browser_microphone_silent";
 
 /** Every `browser_*` code this client can put on the wire. */
-export type BrowserCaptureCode =
-  | BrowserFailureCode
-  | BrowserDegradedCode
-  | PreSessionCaptureFailure["code"];
+export type BrowserCaptureCode = BrowserDegradedCode;
 
 /**
- * A capture-start failure observed before a server session exists.
+ * A source that stopped after it was attached and before a server session exists.
  *
- * The caller owns the UI retry action. These facts intentionally do not use
+ * The caller owns the UI retry action. This fact intentionally does not use
  * the authenticated heartbeat route because there is no session to report to.
  */
 export type PreSessionCaptureFailure = Readonly<{
   lane: CaptureLane;
-  code:
-    | "browser_microphone_permission_denied"
-    | "browser_capture_request_rejected"
-    | "browser_surface_audio_missing"
-    | BrowserFailureCode;
+  code: BrowserFailureCode;
 }>;
 
-type LaneHealthState = "capturing" | "degraded" | "failed";
+type LaneHealthState = "capturing" | "degraded";
 
 export type CaptureClientOptions = Readonly<{
   helperVersion: string;
@@ -141,6 +139,8 @@ export type CaptureClientOptions = Readonly<{
   /** Fires once all previously failing frame lanes/heartbeat have succeeded. */
   onTransportRecovered?: () => void;
   onPreSessionFailure?: (failure: PreSessionCaptureFailure) => void;
+  /** A recorded source stopped during a session; its lane now sends silence. */
+  onSourceStopped?: (lane: CaptureLane) => void;
 }>;
 
 type WorkletFrame = Readonly<{
@@ -156,7 +156,9 @@ type QueuedFrame = Readonly<{
 }>;
 
 type LaneState = {
-  source: MediaStreamAudioSourceNode;
+  /** A source that is not recorded has no stream: its lane frames zeros (`attachSilentLane`). */
+  silent: boolean;
+  source: AudioNode;
   framer: AudioWorkletNode;
   mute: GainNode;
   tracks: MediaStreamTrack[];
@@ -170,7 +172,6 @@ type LaneState = {
   discontinuities: number;
   droppedFrames: number;
   health: LaneHealthState;
-  failureCode: BrowserFailureCode | null;
   degradedCode: BrowserDegradedCode | null;
   clippedFrameRun: number;
   silentFrameRun: number;
@@ -278,20 +279,29 @@ function record(value: unknown, field: string): Record<string, unknown> {
 
 /**
  * The one microphone request, for the first acquisition and for every device switch: echo
- * cancellation follows the listening route; the browser's noise suppression and gain control
- * stay off so both lanes reach the server unprocessed. It always names its device exactly:
- * left to choose, Chrome follows its own device ranking and wakes a nearby iPhone (issue #2).
+ * cancellation is always on (round 5, Q17: no listening-route question; its cost to a voice heard
+ * through headphones is unmeasured); the browser's noise suppression and gain control stay off.
+ * It always names its device exactly: left to choose, Chrome follows its own device ranking and
+ * wakes a nearby iPhone (issue #2).
  */
-export function microphoneConstraints(echoCancellation: boolean, deviceId: string): MediaStreamConstraints {
+export function microphoneConstraints(deviceId: string): MediaStreamConstraints {
   return {
     audio: {
-      echoCancellation,
+      echoCancellation: true,
       noiseSuppression: false,
       autoGainControl: false,
       deviceId: { exact: deviceId },
     },
     video: false,
   };
+}
+
+/** Zeros on the context's own clock: the source of a lane that is not recorded. */
+function zeroSource(context: AudioContext): ConstantSourceNode {
+  const zeros = context.createConstantSource();
+  zeros.offset.value = 0;
+  zeros.start();
+  return zeros;
 }
 
 export function parseCaptureDescriptor(payload: unknown): CaptureDescriptor {
@@ -454,33 +464,43 @@ export class CaptureClient {
   }
 
   /**
-   * Open the microphone lane on `deviceId` and resolve with the device id it opened.
+   * Open the microphone lane on `deviceId` and resolve with the device id it opened, or with
+   * null when no microphone can be opened (none present, or permission denied). Nothing else is
+   * torn down then: the caller records the other source and gives this lane silence.
    *
    * With no `deviceId` the caller could not name one because Chrome still hides the devices.
    * Opening Chrome's default alias once grants the permission that reveals them; the lane then
    * opens the device `chooseMicrophone` names, so an iPhone default is skipped from the start.
    */
-  async startMicrophone(echoCancellation: boolean, deviceId?: string): Promise<string> {
+  async startMicrophone(deviceId?: string): Promise<string | null> {
     if (this.lanes.has("microphone")) throw new Error("microphone lane is already active");
-    const context = await this.prepare();
-    await context.resume();
-    if (context.state !== "running") throw new Error("capture AudioContext did not start");
+    await this.runningContext();
     let stream: MediaStream;
     let opened = deviceId;
     try {
       if (!opened) {
-        const permission = await navigator.mediaDevices.getUserMedia(
-          microphoneConstraints(echoCancellation, DEFAULT_MICROPHONE_ID));
+        const permission = await navigator.mediaDevices.getUserMedia(microphoneConstraints(DEFAULT_MICROPHONE_ID));
         permission.getTracks().forEach(track => track.stop());
         opened = chooseMicrophone(await navigator.mediaDevices.enumerateDevices()) ?? DEFAULT_MICROPHONE_ID;
       }
-      stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints(echoCancellation, opened));
-    } catch (error) {
-      await this.failBeforeSession("microphone", "browser_microphone_permission_denied");
-      throw error;
+      stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints(opened));
+    } catch {
+      return null;
     }
     await this.attachLane("microphone", stream, stream.getTracks());
     return opened;
+  }
+
+  /**
+   * Give a source that is not recorded its lane. The server needs both lanes attached; this one
+   * is fed zeros by a constant source through the same framer on the same AudioContext clock,
+   * so its frames, sequence numbers and timestamps run exactly like a recorded lane's (measured:
+   * docs/design-capture-setup.md, Silent lane). It opens no device, has no track to end, and is
+   * never metered: its silence is intended, so it raises no `browser_microphone_silent` (K1).
+   */
+  async attachSilentLane(lane: CaptureLane): Promise<void> {
+    await this.runningContext();
+    await this.attachLane(lane, null, []);
   }
 
   /**
@@ -496,11 +516,10 @@ export class CaptureClient {
     this.lanes.get("microphone")?.framer.port.postMessage({ type: "mute", muted });
   }
 
-  // Call this directly from the display button's click handler. It intentionally
-  // does not await preparation or any other work before requesting the chooser.
+  // Call this directly from the click handler, before anything is awaited: Chrome's chooser
+  // needs the click's user activation. It needs no AudioContext and no other lane. A rejection
+  // (the chooser was closed) tears nothing down; the caller decides what it means.
   requestDisplayMedia(): Promise<MediaStream> {
-    if (!this.lanes.has("microphone")) throw new Error("start microphone before display capture");
-    if (this.context?.state !== "running") throw new Error("capture AudioContext is not running");
     // Keep the capture tab active after the chooser. On macOS, moving native
     // focus to the shared tab can make the next chooser reject as backgrounded
     // even when document.hasFocus() is true. Controllers are single-request objects.
@@ -513,34 +532,33 @@ export class CaptureClient {
       options.controller = new Controller();
       options.controller.setFocusBehavior("focus-capturing-application");
     }
-    return navigator.mediaDevices.getDisplayMedia(options).catch(async (error) => {
-      if (!this.session) {
-        await this.failBeforeSession("system", "browser_capture_request_rejected");
-      }
-      throw error;
-    });
-  }
-
-  async attachDisplayMedia(stream: MediaStream): Promise<void> {
-    if (this.lanes.has("system")) throw new Error("system lane is already active");
-    const audioTrack = stream.getAudioTracks()[0];
-    if (!audioTrack) {
-      stream.getTracks().forEach((track) => track.stop());
-      await this.failBeforeSession("system", "browser_surface_audio_missing");
-      throw new Error("selected display surface supplied no audio track");
-    }
-    await this.attachLane("system", new MediaStream([audioTrack]), stream.getTracks());
-    this.displaySurface = displaySurfaceOf(stream);
+    return navigator.mediaDevices.getDisplayMedia(options);
   }
 
   /**
-   * Swap a still-live lane for a caller-acquired replacement stream.
+   * Attach the shared surface as the system lane. Resolves false, with the surface's tracks
+   * stopped and nothing else torn down, when it was shared without audio.
+   */
+  async attachDisplayMedia(stream: MediaStream): Promise<boolean> {
+    if (this.lanes.has("system")) throw new Error("system lane is already active");
+    const audioTrack = stream.getAudioTracks()[0];
+    // An ended track (sharing stopped before the lane existed) would frame silence as a recorded source.
+    if (!audioTrack || audioTrack.readyState === "ended") {
+      stream.getTracks().forEach((track) => track.stop());
+      return false;
+    }
+    await this.runningContext();
+    await this.attachLane("system", new MediaStream([audioTrack]), stream.getTracks());
+    this.displaySurface = displaySurfaceOf(stream);
+    return true;
+  }
+
+  /**
+   * Swap a lane's source for a caller-acquired replacement stream.
    *
    * The caller must acquire browser media through its required user gesture.
-   * A lane already reported as failed is terminal at the server, so it needs a
-   * new capture session rather than a local replacement. Queued frames keep
-   * their source epoch; the first replacement frame carries the incremented
-   * epoch and an explicit discontinuity.
+   * Queued frames keep their source epoch; the first replacement frame carries
+   * the incremented epoch and an explicit discontinuity.
    */
   async replaceLane(
     lane: CaptureLane,
@@ -548,16 +566,15 @@ export class CaptureClient {
     tracks: MediaStreamTrack[],
   ): Promise<void> {
     const state = this.lanes.get(lane);
-    if (!state || state.health === "failed") {
+    if (!state) {
       // Own the caller's freshly acquired tracks here too, or a refused switch keeps the device open.
       tracks.forEach(track => track.stop());
-      throw new Error(state
-        ? `${lane} lane is failed; recreate the capture session before replacing it`
-        : `${lane} lane is not active`);
+      throw new Error(`${lane} lane is not active`);
     }
     const { source, framer, mute } = await this.createLaneGraph(lane, stream, tracks);
 
     this.detachLaneResources(state);
+    state.silent = false;
     state.source = source;
     state.framer = framer;
     state.mute = mute;
@@ -567,7 +584,6 @@ export class CaptureClient {
     state.pendingDiscontinuityEpochs.add(state.deviceEpoch);
     state.discontinuities += 1;
     state.health = "capturing";
-    state.failureCode = null;
     // A new source starts with a clean health history; the old device's clipping or
     // silence says nothing about this one.
     state.degradedCode = null;
@@ -589,11 +605,11 @@ export class CaptureClient {
    */
   async createSession(engineSettings?: EngineSettingsWire): Promise<CaptureSession> {
     if (this.session) return this.session;
-    // Start needs both sources attached, not sound on either (user decision, round 4): the person
-    // may start recording first and play the audio afterwards, or start with the microphone muted.
-    // A lane exists only while its track is live -- an ended track or a share without an audio
-    // track tears the capture down before this point (browser_track_ended,
-    // browser_surface_audio_missing). Silence stays a health condition (K1), never a precondition.
+    // Start needs both lanes attached, not sound on either (user decision, round 4): the person
+    // may start recording first and play the audio afterwards. A source that is not recorded has
+    // a silent lane (round 5). A recorded lane exists only while its track is live -- an ended
+    // track tears the capture down before this point (browser_track_ended). Silence stays a
+    // health condition (K1), never a precondition.
     if (!this.lanes.has("microphone") || !this.lanes.has("system")) {
       throw new Error("both capture lanes must be attached before session creation");
     }
@@ -740,6 +756,13 @@ export class CaptureClient {
     }
   }
 
+  private async runningContext(): Promise<AudioContext> {
+    const context = await this.prepare();
+    await context.resume();
+    if (context.state !== "running") throw new Error("capture AudioContext did not start");
+    return context;
+  }
+
   private async requireDescriptor(): Promise<CaptureDescriptor> {
     await this.prepare();
     if (!this.descriptor) throw new Error("capture descriptor is unavailable");
@@ -758,17 +781,18 @@ export class CaptureClient {
   }
 
   // Own acquired tracks immediately: attachment can fail before a LaneState exists.
+  // With no stream the lane is silent: a constant source of zeros drives the same framer.
   private async createLaneGraph(
     lane: CaptureLane,
-    stream: MediaStream,
+    stream: MediaStream | null,
     tracks: MediaStreamTrack[],
-  ): Promise<{ source: MediaStreamAudioSourceNode; framer: AudioWorkletNode; mute: GainNode }> {
-    let source: MediaStreamAudioSourceNode | undefined;
+  ): Promise<{ source: AudioNode; framer: AudioWorkletNode; mute: GainNode }> {
+    let source: AudioNode | undefined;
     let framer: AudioWorkletNode | undefined;
     let mute: GainNode | undefined;
     try {
       const [context, descriptor] = await Promise.all([this.prepare(), this.requireDescriptor()]);
-      source = context.createMediaStreamSource(stream);
+      source = stream ? context.createMediaStreamSource(stream) : zeroSource(context);
       framer = new AudioWorkletNode(context, "lane-framer", {
         numberOfInputs: 1,
         numberOfOutputs: 1,
@@ -793,12 +817,13 @@ export class CaptureClient {
 
   private async attachLane(
     lane: CaptureLane,
-    stream: MediaStream,
+    stream: MediaStream | null,
     tracks: MediaStreamTrack[],
   ): Promise<void> {
     if (this.lanes.has(lane)) throw new Error(`${lane} lane is already active`);
     const { source, framer, mute } = await this.createLaneGraph(lane, stream, tracks);
     const state: LaneState = {
+      silent: stream === null,
       source,
       framer,
       mute,
@@ -813,7 +838,6 @@ export class CaptureClient {
       discontinuities: 0,
       droppedFrames: 0,
       health: "capturing",
-      failureCode: null,
       degradedCode: null,
       clippedFrameRun: 0,
       silentFrameRun: 0,
@@ -836,7 +860,7 @@ export class CaptureClient {
 
   private observeLaneTracks(lane: CaptureLane, state: LaneState): void {
     for (const track of state.tracks) {
-      const listener = () => this.markLaneFailed(lane, "browser_track_ended");
+      const listener = () => this.sourceEnded(lane);
       track.addEventListener("ended", listener);
       state.trackEndedListeners.push({ track, listener });
     }
@@ -862,12 +886,14 @@ export class CaptureClient {
     const descriptor = this.descriptor;
     if (!state || !descriptor) return;
 
-    const level = rms(workletFrame.samples);
-    this.options.onMeter?.(lane, level);
-    // Health is metered before the delivery gate so a lane that is clipping or dead
-    // during preflight is already in that state when the first heartbeat goes out.
-    this.meterLaneHealth(lane, state, level, workletFrame.samples);
-    if (!this.session || this.stopping || state.health === "failed") return;
+    if (!state.silent) {
+      const level = rms(workletFrame.samples);
+      this.options.onMeter?.(lane, level);
+      // Health is metered before the delivery gate so a lane that is clipping or dead
+      // during preflight is already in that state when the first heartbeat goes out.
+      this.meterLaneHealth(lane, state, level, workletFrame.samples);
+    }
+    if (!this.session || this.stopping) return;
 
     this.queueHeartbeat(workletFrame);
     state.frameQueue.push({ workletFrame, deviceEpoch: state.deviceEpoch });
@@ -877,7 +903,7 @@ export class CaptureClient {
   private async flushFrameQueue(state: LaneState): Promise<void> {
     state.postInFlight = true;
     try {
-      while (state.frameQueue.length > 0 && this.session && state.health !== "failed") {
+      while (state.frameQueue.length > 0 && this.session) {
         const descriptor = this.descriptor;
         const context = this.context;
         if (!descriptor || !context) return;
@@ -1149,7 +1175,6 @@ export class CaptureClient {
 
   private heartbeatState(): HelperState {
     const states = [...this.lanes.values()];
-    if (states.length > 0 && states.every((state) => state.health === "failed")) return "failed";
     if (this.contextSuspended || states.some((state) => state.health === "degraded")) {
       return "degraded";
     }
@@ -1167,7 +1192,7 @@ export class CaptureClient {
         failure_code: null,
       };
     }
-    if (this.contextSuspended && state?.health !== "failed") {
+    if (this.contextSuspended) {
       return {
         state: "degraded",
         device_epoch: state?.deviceEpoch ?? 0,
@@ -1181,9 +1206,7 @@ export class CaptureClient {
       device_epoch: state?.deviceEpoch ?? 0,
       dropped_frames: state?.droppedFrames ?? 0,
       discontinuities: state?.discontinuities ?? 0,
-      // A sealed lane's reason outranks a recoverable one; the server's projection sorts
-      // failed lanes ahead of degraded ones for exactly the same reason.
-      failure_code: state?.failureCode ?? state?.degradedCode ?? null,
+      failure_code: state?.degradedCode ?? null,
     };
   }
 
@@ -1197,25 +1220,50 @@ export class CaptureClient {
     }
   }
 
-  private markLaneFailed(lane: CaptureLane, failureCode: BrowserFailureCode): void {
+  /**
+   * A recorded source's track ended: Chrome's "Stop sharing", an unplugged microphone.
+   *
+   * Before a session exists nothing starts. During one the lane goes silent rather than
+   * `failed`: a failed lane is sealed by the server, which then ends the meeting as failed
+   * instead of completing it at Stop. Zeros join the lane's own framer before the ended source
+   * leaves it, so the framer never sees an empty input and its sequence numbers and timestamps
+   * continue; frames already queued are still delivered.
+   */
+  private sourceEnded(lane: CaptureLane): void {
     const state = this.lanes.get(lane);
-    if (!state || state.health === "failed") return;
-    state.health = "failed";
-    state.failureCode = failureCode;
-    state.degradedCode = null;
-    state.frameQueue.length = 0;
-    if (!this.session) {
-      void this.failBeforeSession(lane, failureCode);
+    if (!state || state.silent) return;
+    const context = this.context;
+    if (!this.session || !context) {
+      void this.failBeforeSession(lane, "browser_track_ended");
       return;
     }
-    void this.scheduleHeartbeat(this.heartbeatState());
+    const zeros = zeroSource(context);
+    zeros.connect(state.framer);
+    for (const { track, listener } of state.trackEndedListeners) {
+      track.removeEventListener("ended", listener);
+    }
+    state.source.disconnect();
+    state.tracks.forEach((track) => track.stop());
+    state.silent = true;
+    state.source = zeros;
+    state.tracks = [];
+    state.trackEndedListeners = [];
+    state.clippedFrameRun = 0;
+    state.silentFrameRun = 0;
+    if (state.degradedCode !== null) {
+      // The stopped source's clipping or silence is not a condition of the silent lane.
+      state.degradedCode = null;
+      state.health = "capturing";
+      void this.scheduleHeartbeat(this.heartbeatState());
+    }
+    this.options.onSourceStopped?.(lane);
   }
 
   /**
    * Turn worklet frames into the two metered lane conditions the charter requires.
    *
    * Both are *recoverable*: they set `degraded`, and they clear themselves when the
-   * audio recovers. Neither may ever set `failed`, which the server treats as a
+   * audio recovers. Neither is ever reported as `failed`, which the server treats as a
    * permanent seal on the lane.
    *
    * Silence is only ever reported for the microphone. A quiet system lane is the
@@ -1229,8 +1277,6 @@ export class CaptureClient {
     level: number,
     samples: Float32Array,
   ): void {
-    if (state.health === "failed") return;
-
     state.clippedFrameRun =
       clippedFraction(samples) >= CLIPPED_FRAME_FRACTION ? state.clippedFrameRun + 1 : 0;
     const muted = lane === "microphone" && this.microphoneMuted;

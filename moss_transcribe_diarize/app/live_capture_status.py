@@ -37,7 +37,7 @@ _FAILURE_STATUS_LINES: dict[str, str | dict[str, str]] = {
     # new recording; after the meeting ends the plain fact is enough.
     "browser_track_ended": {
         "microphone": "Microphone stopped — stop and start a new recording to include it.",
-        "system": "Shared audio stopped — stop and start a new recording to include it.",
+        "system": "System sound stopped — stop and start a new recording to include it.",
     },
     # Nothing in the page resumes a suspended AudioContext; a new recording does.
     "browser_audio_context_suspended": (
@@ -45,11 +45,11 @@ _FAILURE_STATUS_LINES: dict[str, str | dict[str, str]] = {
     ),
     "browser_sustained_clipping": {  # K2
         "microphone": "Microphone too loud — lower it.",
-        "system": "Shared audio too loud — lower it.",
+        "system": "System sound too loud — lower it.",
     },
     "browser_microphone_silent": BROWSER_MICROPHONE_SILENT_STATUS_LINE,
 }
-_ENDED_STATUS_LINES = {"microphone": "Microphone stopped.", "system": "Shared audio stopped."}
+_ENDED_STATUS_LINES = {"microphone": "Microphone stopped.", "system": "System sound stopped."}
 BROWSER_CAPTURE_FAILURE_CODES = frozenset(_FAILURE_STATUS_LINES)
 
 
@@ -363,7 +363,7 @@ def _issue_status_line(
     if status_line is not None:
         return status_line
     # An unknown future code still names the source and the one action that restores it.
-    label = "Microphone" if lane == "microphone" else "Shared audio"
+    label = "Microphone" if lane == "microphone" else "System sound"
     if not is_failed:
         return ""
     return f"{label} stopped — stop and start a new recording to include it." if continuing else f"{label} stopped."
@@ -407,7 +407,7 @@ def _server_observation_issue(
 
 def _observation_status_line(lane: LiveLane, condition: str) -> str:
     # Out-of-sequence and stalled frames are transport trouble the browser retries (K4). Server
-    # catch-up needs no action, and server-side silence is either a quiet meeting (shared audio)
+    # catch-up needs no action, and server-side silence is either a quiet meeting (system sound)
     # or already named by the browser's own 10 s microphone check (K1).
     if condition in {"sequence", "stale"}:
         return RECONNECTING_STATUS_LINE

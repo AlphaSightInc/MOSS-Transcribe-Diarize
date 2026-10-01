@@ -3,8 +3,7 @@ import { createMossSessionPoller, type MossSessionPoller } from "../api/mossPoll
 import {
   CaptureClient,
   microphoneConstraints,
-  type CaptureLane,
-  type PreSessionCaptureFailure
+  type CaptureLane
 } from "../capture/captureClient";
 import { chooseMicrophone, microphoneOptions } from "../capture/microphoneChoice";
 import { captureMeetingId, resetSessionState, sessionError, sessionStartedAt, sessionStatusLine, sessionTitle } from "../state/session";
@@ -21,9 +20,12 @@ import { controlPanelCollapsed, selectedSummaryMeeting } from "../state/ui";
 import { watchMeetingSummary } from "../lib/summaryRequests";
 import {
   clearSessionReattach,
+  loadCaptureSources,
   loadSessionReattach,
+  saveCaptureSources,
   saveSessionReattach,
-  sessionReattachStorage
+  sessionReattachStorage,
+  type CaptureSources
 } from "../lib/persistence";
 import {
   LIVE_MEETING_OBSERVE_EVENT,
@@ -33,14 +35,17 @@ import {
 type CapturePhase =
   | "idle"
   | "configuring"
-  | "ready"
   | "active"
   | "viewing"
   | "stopping"
   | "terminal"
   | "error";
-type AudioRoute = "speakers" | "headphones";
 type LaneMeters = Record<CaptureLane, number>;
+
+/** Nothing is running in these phases, so Start is offered: no Reset between recordings. */
+function startable(phase: CapturePhase): boolean {
+  return phase === "idle" || phase === "terminal" || phase === "error";
+}
 
 const EMPTY_METERS: LaneMeters = { microphone: 0, system: 0 };
 const HELPER_VERSION = "moss-web/1";
@@ -49,6 +54,11 @@ export { LIVE_MEETING_OBSERVE_EVENT } from "../lib/meetingEvents";
 /** Keep-list copy (plan-r3-ui §1 Q6). Nothing else is shown as status text. */
 export const RECONNECTING_LINE = "Reconnecting — keep this tab open."; // K4
 export const CONNECTION_LOST_LINE = "Recording stopped: connection lost."; // K5
+// Round 5 (Q16): what one Start click could not record.
+export const MICROPHONE_UNAVAILABLE_LINE = "Microphone unavailable";
+export const SYSTEM_NOT_SHARED_LINE = "System sound not shared";
+export const NO_AUDIO_SHARED_LINE = "No audio was shared — turn on “Also share audio” in Chrome’s picker";
+export const NO_SOURCE_TOOLTIP = "Tick System sound or Microphone."; // K6
 
 function workletUrl(): string {
   const url = document.querySelector<HTMLMetaElement>(
@@ -66,19 +76,22 @@ export function ControlPanel() {
   const [exportFormat, setExportFormat] = useState<TranscriptExportFormat | "audio">("md");
   const [exportError, setExportError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [audioRoute, setAudioRoute] = useState<AudioRoute>("speakers");
+  // The sources the next Start takes: ticked by the person, remembered per browser.
+  const [sources, setSources] = useState<CaptureSources>(() => loadCaptureSources());
   const [microphones, setMicrophones] = useState<MediaDeviceInfo[]>([]);
   // The person's dropdown pick ("" = none yet) and the device the running lane opened.
   const [microphoneId, setMicrophoneId] = useState("");
   const [openMicrophoneId, setOpenMicrophoneId] = useState("");
-  const openMicrophone = useRef("");
   const [micMuted, setMicMuted] = useState(false);
   const [phase, setPhase] = useState<CapturePhase>("idle");
+  // The sources this recording really takes; the other lane, if any, is silent.
   const [connected, setConnected] = useState({ microphone: false, system: false });
   const [meters, setMeters] = useState<LaneMeters>(EMPTY_METERS);
   // Empty unless a keep-list line applies; buttons and the top pill carry every other state.
   const [message, setMessage] = useState("");
-  const [setupErrors, setSetupErrors] = useState<Partial<Record<CaptureLane, string>>>({});
+  // A source this recording does not take: what Start could not record (Q16), or the source that
+  // stopped since (K3). It yields to any line that asks for action.
+  const [sourceNote, setSourceNote] = useState("");
   const [starting, setStarting] = useState(false);
   const clientRef = useRef<CaptureClient | null>(null);
   const pollerRef = useRef<MossSessionPoller | null>(null);
@@ -91,9 +104,9 @@ export function ControlPanel() {
     setPhase(next);
   };
 
-  const microphoneOpened = (deviceId: string) => {
-    openMicrophone.current = deviceId;
-    setOpenMicrophoneId(deviceId);
+  const chooseSources = (next: CaptureSources) => {
+    setSources(next);
+    saveCaptureSources(next);
   };
 
   const updateMeter = (lane: CaptureLane, rms: number) => {
@@ -108,17 +121,33 @@ export function ControlPanel() {
     }
   };
 
-  const reportSetupError = (lane: CaptureLane, line: string, keepEarlier = false) => {
-    // A classified pre-session failure precedes the raw error it rethrows; keep the classified line.
-    setSetupErrors(current => keepEarlier && current[lane] ? current : { ...current, [lane]: line });
+  // A Start that records nothing, or that Reset cancelled: close what it opened and return to idle
+  // with at most one line. The meeting on screen is untouched. A client already retired changes
+  // nothing here.
+  const abandonStart = async (client: CaptureClient | null, line: string) => {
+    if (!client || clientRef.current !== client) return;
+    clientRef.current = null;
     metersRef.current = EMPTY_METERS;
     setMeters(EMPTY_METERS);
-    transition("error");
+    setConnected({ microphone: false, system: false });
+    setStarting(false);
+    sessionStarting.value = false;
+    preflightLine.current = null;
+    transition("idle");
+    setMessage(line);
+    setSourceNote("");
+    // A meeting this Start had already created is ended at the server too, not left to its lease.
+    await client.stop(0).catch(() => client.close()).catch(() => undefined);
   };
 
-  const reportPreSessionFailure = (failure: PreSessionCaptureFailure) => {
-    setConnected({ microphone: false, system: false });
-    reportSetupError(failure.lane, preSessionLine(failure));
+  // A recorded source stopped mid-recording (Chrome's "Stop sharing", an unplugged microphone).
+  // Its lane now sends silence, so the recording goes on and Stop completes normally (K3).
+  const sourceStopped = (lane: CaptureLane) => {
+    metersRef.current = { ...metersRef.current, [lane]: 0 };
+    setMeters(metersRef.current);
+    setConnected(current => ({ ...current, [lane]: false }));
+    if (lane === "microphone") setMicMuted(false);
+    setSourceNote(sourceStoppedLine(lane));
   };
 
   const transportFailed = (source: "capture" | "transcript") => {
@@ -153,80 +182,29 @@ export function ControlPanel() {
     setMicMuted(false);
     transition("terminal");
     setMessage(normalClose ? "" : CONNECTION_LOST_LINE);
+    setSourceNote("");
     requestMeetingHistoryRefresh();
   };
 
-  const configureMicrophone = async () => {
-    if (clientRef.current) return;
-    transition("configuring");
-    setMessage("");
-    setMicMuted(false);
-    const client = new CaptureClient({
-      helperVersion: HELPER_VERSION,
-      workletUrl: workletUrl(),
-      onMeter: (lane, rms) => {
-        if (clientRef.current === client && phaseRef.current !== "error") updateMeter(lane, rms);
-      },
-      onPreflightStatus: line => {
-        if (clientRef.current !== client) return;
-        preflightLine.current = line;
-        setMessage(line);
-      },
-      onPreSessionFailure: failure => {
-        if (clientRef.current === client) reportPreSessionFailure(failure);
-      },
-      onTransportError: () => {
-        if (clientRef.current === client) transportFailed("capture");
-      },
-      onTransportRecovered: () => {
-        if (clientRef.current === client) transportRecovered("capture");
-      }
-    });
-    clientRef.current = client;
-    try {
-      const devices = await refreshMicrophones();
-      await client.prepare();
-      if (clientRef.current !== client) { await client.close(); return; }
-      // Unnamed only while Chrome hides the devices; the client then names the device itself.
-      microphoneOpened(await client.startMicrophone(audioRoute === "speakers",
-        chooseMicrophone(devices, microphoneId) ?? undefined));
-      void refreshMicrophones();
-      if (clientRef.current !== client) { await client.close(); return; }
-      setConnected(current => ({ ...current, microphone: true }));
-    } catch (error) {
-      if (clientRef.current === client) reportSetupError("microphone", laneFailedLine("microphone", error), true);
-    }
-  };
-
-  const shareAudio = async () => {
+  // "Share again" swaps a recorded system lane for another share (same lane, next device epoch).
+  const shareAgain = async () => {
     const client = clientRef.current;
-    if (!client || phase === "stopping") return;
+    if (!client || phaseRef.current !== "active" || !connected.system) return;
     try {
-      const displayRequest = client.requestDisplayMedia();
-      const stream = await displayRequest;
+      const stream = await client.requestDisplayMedia();
       if (clientRef.current !== client) {
         stream.getTracks().forEach(track => track.stop());
         return;
       }
-      if (connected.system) {
-        metersRef.current = { ...metersRef.current, system: 0 };
-        setMeters(metersRef.current);
-        await client.replaceLane("system", stream, stream.getTracks());
-      } else {
-        await client.attachDisplayMedia(stream);
-      }
-      if (clientRef.current !== client) { await client.close(); return; }
-      setConnected(current => ({ ...current, system: true }));
-      // Both sources attached is all Start needs: neither has to carry sound yet, since the
-      // person may start recording first and play the audio afterwards.
-      if (!connected.system && phaseRef.current === "configuring") transition("ready");
-      if (phaseRef.current === "active") setMessage("");
+      metersRef.current = { ...metersRef.current, system: 0 };
+      setMeters(metersRef.current);
+      await client.replaceLane("system", stream, stream.getTracks());
+      if (clientRef.current === client) setMessage("");
     } catch (error) {
-      if (clientRef.current !== client) return;
-      // Mid-recording a stopped share is sealed at the server; only a new recording restores it.
-      if (phaseRef.current === "active") {
-        if (!chooserDismissed(error)) setMessage("Could not share again — stop and start a new recording.");
-      } else reportSetupError("system", laneFailedLine("system", error), true);
+      // The recorded share is untouched when its replacement cannot be attached.
+      if (clientRef.current === client && !chooserDismissed(error)) {
+        setMessage("Could not share again — stop and start a new recording.");
+      }
     }
   };
 
@@ -239,47 +217,28 @@ export function ControlPanel() {
     } catch { return []; }
   };
 
-  // A dropdown pick, or the system default moving during setup, replaces the running microphone
-  // in place (same lane, next device epoch).
-  const switchMicrophone = async (deviceId: string, picked: boolean) => {
+  // A dropdown pick during a recording replaces the recorded microphone in place (same lane,
+  // next device epoch). Before Start the pick only names the device Start will open.
+  const switchMicrophone = async (deviceId: string) => {
     const client = clientRef.current;
-    if (!client || phase === "stopping") return;
+    if (!client || phaseRef.current !== "active") return;
     const previousId = microphoneId;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(
-        microphoneConstraints(audioRoute === "speakers", deviceId));
+      const stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints(deviceId));
       metersRef.current = { ...metersRef.current, microphone: 0 };
       setMeters(metersRef.current);
       await client.replaceLane("microphone", stream, stream.getTracks());
-      setConnected(current => ({ ...current, microphone: true }));
-      microphoneOpened(deviceId);
+      setOpenMicrophoneId(deviceId);
       void refreshMicrophones();
-      if (phaseRef.current === "active") setMessage("");
+      if (clientRef.current === client) setMessage("");
     } catch (error) {
-      // An automatic switch that fails leaves the running microphone as it was.
-      if (!picked) return;
-      if (phaseRef.current === "active") {
-        // The running microphone is untouched, so the dropdown goes back to it.
-        setMicrophoneId(previousId);
-        if (!chooserDismissed(error)) setMessage("Could not switch the microphone — stop and start a new recording.");
-        return;
+      // The running microphone is untouched, so the dropdown goes back to it.
+      setMicrophoneId(previousId);
+      if (clientRef.current === client && !chooserDismissed(error)) {
+        setMessage("Could not switch the microphone — stop and start a new recording.");
       }
-      setMessage(laneFailedLine("microphone", error));
-      transition("error");
     }
   };
-
-  // Plugging headphones in or out moves the system default. Setup follows it; a recording keeps
-  // its microphone until the person picks another, so nothing changes under them mid-meeting.
-  const followMicrophones = async () => {
-    const devices = await refreshMicrophones();
-    const settingUp = (phaseRef.current === "configuring" && !starting) || phaseRef.current === "ready";
-    if (!clientRef.current || !connected.microphone || !settingUp) return;
-    const next = chooseMicrophone(devices, microphoneId, openMicrophone.current);
-    if (next && next !== openMicrophone.current) await switchMicrophone(next, false);
-  };
-  const deviceChange = useRef(followMicrophones);
-  deviceChange.current = followMicrophones;
 
   // Muting keeps the lane running and sends silence; the server keeps accounting the time.
   const toggleMicMute = () => {
@@ -296,18 +255,111 @@ export function ControlPanel() {
     }
   };
 
+  /**
+   * One click (round 5): the share picker if System sound is ticked, then the microphone if it is
+   * ticked, then the meeting. A source that is not recorded gets a silent lane, because the server
+   * needs both lanes. Q16: (a) no microphone or permission denied -> system sound only; (b) picker
+   * closed -> nothing starts, nothing said; (c) a surface without audio -> microphone only, or
+   * nothing when there is no microphone either.
+   */
   const startCapture = async () => {
-    const client = clientRef.current;
-    if (!client || phase !== "ready") return;
+    const want = sources;
+    if (!startable(phaseRef.current) || (!want.system && !want.microphone)) return;
+    // A Stop that failed leaves its closed client and its poller behind; Start replaces them.
+    void clientRef.current?.close().catch(() => undefined);
+    pollerRef.current?.stop();
+    pollerRef.current = null;
+    const client = new CaptureClient({
+      helperVersion: HELPER_VERSION,
+      workletUrl: workletUrl(),
+      onMeter: (lane, rms) => {
+        if (clientRef.current === client) updateMeter(lane, rms);
+      },
+      onPreflightStatus: line => {
+        if (clientRef.current !== client) return;
+        preflightLine.current = line;
+        setMessage(line);
+      },
+      // A source that stops between its attachment and the meeting (K3): nothing starts.
+      onPreSessionFailure: failure => void abandonStart(client, sourceStoppedLine(failure.lane)),
+      onSourceStopped: lane => {
+        if (clientRef.current === client) sourceStopped(lane);
+      },
+      onTransportError: () => {
+        if (clientRef.current === client) transportFailed("capture");
+      },
+      onTransportRecovered: () => {
+        if (clientRef.current === client) transportRecovered("capture");
+      }
+    });
+    clientRef.current = client;
     transition("configuring");
     setStarting(true);
     recovering.current.clear();
     setMessage("");
-    resetSessionState();
-    sessionTitle.value = "";
+    setSourceNote("");
+    setMicMuted(false);
     sessionStarting.value = true;
+    let display: MediaStream | null = null;
+    // Reset, or a source that stopped, retired this Start: release whatever it still holds.
+    const retired = async () => {
+      if (clientRef.current === client) return false;
+      display?.getTracks().forEach(track => track.stop());
+      await client.close().catch(() => undefined);
+      return true;
+    };
+    const laneStep = async <T,>(lane: CaptureLane, step: Promise<T>): Promise<T> => {
+      try { return await step; } catch (error) { throw new Error(laneFailedLine(lane, error)); }
+    };
     try {
+      if (want.system) {
+        try {
+          // First, with nothing awaited before it: Chrome's picker needs this click's activation.
+          display = await client.requestDisplayMedia();
+        } catch (error) {
+          // (b) Closing the picker is a choice: nothing starts and nothing is said.
+          await abandonStart(client, chooserDismissed(error) ? "" : laneFailedLine("system", error));
+          return;
+        }
+        if (await retired()) return;
+      }
+      await client.prepare();
+      if (await retired()) return;
+      const system = display !== null && await laneStep("system", client.attachDisplayMedia(display));
+      if (await retired()) return;
+      let microphone: string | null = null;
+      if (want.microphone) {
+        // Unnamed only while Chrome hides the devices; the client then names the device itself.
+        const devices = await refreshMicrophones();
+        microphone = await laneStep("microphone",
+          client.startMicrophone(chooseMicrophone(devices, microphoneId) ?? undefined));
+        void refreshMicrophones();
+        if (await retired()) return;
+      }
+      const microphoneFailed = want.microphone && microphone === null;
+      // A microphone found unavailable unticks itself, so the next Start does not ask for it again.
+      if (microphoneFailed && (system || !display)) chooseSources({ ...want, microphone: false });
+      if (!system && microphone === null) {
+        await abandonStart(client, display ? NO_AUDIO_SHARED_LINE : MICROPHONE_UNAVAILABLE_LINE);
+        return;
+      }
+      if (!system) await client.attachSilentLane("system");
+      if (microphone === null) await client.attachSilentLane("microphone");
+      if (await retired()) return;
+      setConnected({ microphone: microphone !== null, system });
+      if (microphone !== null) setOpenMicrophoneId(microphone);
+      setSourceNote(microphoneFailed ? MICROPHONE_UNAVAILABLE_LINE : want.system && !system ? SYSTEM_NOT_SHARED_LINE : "");
+
       const session = await client.createSession(engineSettingsFrom(loadAppSettings()));
+      if (clientRef.current !== client) {
+        // Reset while the meeting was being created: end it at the server too.
+        await client.stop(0).catch(() => undefined);
+        return;
+      }
+      // Only now does the page leave the meeting it was showing: a Start that records nothing
+      // (a closed picker, a refused meeting) changes nothing.
+      resetSessionState();
+      sessionTitle.value = "";
       watchMeetingSummary(session.id);
       saveSessionReattach(sessionReattachStorage(), {
         sessionId: session.id
@@ -327,16 +379,16 @@ export function ControlPanel() {
       });
       pollerRef.current = poller;
       captureMeetingId.value = session.id;
+      setStarting(false);
+      sessionStarting.value = false;
       transition("active");
       poller.start();
       requestMeetingHistoryRefresh();
     } catch (error) {
-      transition("error");
+      display?.getTracks().forEach(track => track.stop());
       // Create refusals are human copy (K7, validation detail); a dropped request is not.
-      setMessage(error instanceof TypeError ? "Start failed: no connection to the server." : errorMessage(error));
-    } finally {
-      setStarting(false);
-      sessionStarting.value = false;
+      await abandonStart(client,
+        error instanceof TypeError ? "Start failed: no connection to the server." : errorMessage(error));
     }
   };
 
@@ -348,38 +400,27 @@ export function ControlPanel() {
     sessionStopRequested.value = captureMeetingId.value;
     captureMeetingId.value = null;
     setMessage("");
+    setSourceNote("");
     try {
       // Five seconds bounds local frame delivery and this request's wait only.
       // A 202 leaves the existing poller running while the server finishes draining.
       await client.stop(5);
     } catch (error) {
+      // A Stop that fails after its meeting ended (and perhaps the next began) changes nothing.
+      if (clientRef.current !== client) return;
       transition("error");
       setMessage(`Stop failed: ${errorMessage(error)}`);
     }
   };
 
-  const resetCapture = async () => {
+  // Leave a meeting this page was only watching.
+  const detach = () => {
     clearSessionReattach(sessionReattachStorage());
     pollerRef.current?.stop();
     pollerRef.current = null;
-    const client = clientRef.current;
-    clientRef.current = null;
-    if (client) {
-      try {
-        await client.stop(0);
-      } catch {
-        // A terminal server may reject the redundant stop; local state still resets.
-      }
-    }
-    metersRef.current = EMPTY_METERS;
-    setMeters(EMPTY_METERS);
-    setConnected({ microphone: false, system: false });
-    setMicMuted(false);
     resetSessionState();
     sessionTitle.value = "";
     transition("idle");
-    setSetupErrors({});
-    preflightLine.current = null;
     setMessage("");
   };
 
@@ -452,9 +493,9 @@ export function ControlPanel() {
   }, [mode]);
 
   useEffect(() => {
-    // Device changes arrive in bursts; each follow runs after the previous one settles.
-    let follows = Promise.resolve();
-    const onDeviceChange = () => { follows = follows.then(() => deviceChange.current()).catch(() => undefined); };
+    // Plugging headphones in or out moves the system default: before Start the dropdown follows
+    // it; a recording keeps its microphone until the person picks another.
+    const onDeviceChange = () => void refreshMicrophones();
     const devices = navigator.mediaDevices;
     void refreshMicrophones();
     devices?.addEventListener?.("devicechange", onDeviceChange);
@@ -497,19 +538,18 @@ export function ControlPanel() {
       { sessionId: id, exportedAt: new Date() }, summary));
   }
 
-  const configured = clientRef.current !== null;
-  const reattached = phase === "viewing";
+  const recording = phase === "active" || phase === "stopping";
+  const ready = startable(phase);
+  // The boxes choose the sources of the next Start; a recording shows the ones it really takes.
+  const ticked = recording ? connected : sources;
+  const noSource = !sources.system && !sources.microphone;
   const microphoneLevel = micMuted ? 0 : meters.microphone;
-  const canStart = phase === "ready";
-  const canReplace = phase === "ready" || phase === "active";
 
-  // The dropdown names the device that is open, or the one Enable microphone will open.
+  // The dropdown names the device that is open, or the one Start will open.
   const microphoneChoices = microphoneOptions(microphones);
-  const shownMicrophoneId = connected.microphone ? openMicrophoneId : chooseMicrophone(microphones, microphoneId) ?? "";
+  const shownMicrophoneId = recording ? openMicrophoneId : chooseMicrophone(microphones, microphoneId) ?? "";
 
-  const setupLines = [setupErrors.microphone, setupErrors.system].filter(Boolean);
-  const statusLine = setupLines.length > 0 ? setupLines.join(" ")
-    : message || (phase === "active" ? sessionStatusLine.value ?? "" : "");
+  const statusLine = message || (phase === "active" ? sessionStatusLine.value || sourceNote : "");
   // #8: a keep-list line asks the operator to act, so a collapsed Controls rail opens to show it.
   // The remembered preference is unchanged; the next reload collapses the rail again.
   useEffect(() => { if (statusLine) controlPanelCollapsed.value = false; }, [statusLine]);
@@ -538,63 +578,56 @@ export function ControlPanel() {
             className="control-section capture-supervisor"
             data-mode="live"
             data-capture-phase={phase}
-            data-observer-mode={reattached ? "read-only" : "none"}
+            data-observer-mode={phase === "viewing" ? "read-only" : "none"}
           >
             {phase === "active" ? <button type="button" className="record-btn" data-action="stop" onClick={() => void stopCapture()}><StopIcon />Stop recording</button>
               : phase === "stopping" ? <button type="button" className="record-btn" data-action="stop" disabled><StopIcon />Stopping…</button>
-              : phase === "viewing" || phase === "terminal" || phase === "error" ? null
-              : !connected.microphone ? <button type="button" className="record-btn" disabled={phase === "configuring"} onClick={() => void configureMicrophone()}>{phase === "configuring" ? "Connecting…" : "Enable microphone"}</button>
-              : !connected.system ? <button type="button" className="record-btn" onClick={() => void shareAudio()}>Share audio</button>
-              : <button type="button" className="record-btn" data-action="start" disabled={!canStart || starting}
+              : phase === "viewing" ? null
+              : <button type="button" className="record-btn" data-action="start" disabled={starting || noSource}
+                  title={noSource ? NO_SOURCE_TOOLTIP : undefined}
                   onClick={() => void startCapture()}><PlayIcon />{starting ? "Starting…" : "Start recording"}</button>}
 
             {statusLine ? <p className="capture-status" role="status">{statusLine}</p> : null}
 
-            {phase === "configuring" || phase === "terminal" || phase === "error" ? <button type="button" className="btn" onClick={() => void resetCapture()}>Reset</button> : null}
-            {phase === "viewing" ? <button type="button" className="btn" onClick={() => void resetCapture()}>Detach</button> : null}
-            {configured && connected.microphone && (phase === "configuring" || canReplace) ? (
+            {/* Reset exists only while a Start is pending (an open picker, an unanswered prompt): it cancels it. */}
+            {phase === "configuring" ? <button type="button" className="btn" onClick={() => void abandonStart(clientRef.current, "")}>Reset</button> : null}
+            {phase === "viewing" ? <button type="button" className="btn" onClick={detach}>Detach</button> : null}
+            {phase === "active" && (connected.microphone || connected.system) ? (
               <div className="btn-row">
-                <button type="button" className={`btn ghost${micMuted ? " is-active" : ""}`} aria-pressed={micMuted}
-                  onClick={toggleMicMute}><MicIcon muted={micMuted} />{micMuted ? "Unmute mic" : "Mute mic"}</button>
-                {connected.system ? <button type="button" className="btn" onClick={() => void shareAudio()}>Share again</button> : null}
+                {connected.microphone ? <button type="button" className={`btn ghost${micMuted ? " is-active" : ""}`} aria-pressed={micMuted}
+                  onClick={toggleMicMute}><MicIcon muted={micMuted} />{micMuted ? "Unmute mic" : "Mute mic"}</button> : null}
+                {connected.system ? <button type="button" className="btn" onClick={() => void shareAgain()}>Share again</button> : null}
               </div>
             ) : null}
           </section>
 
-          <section className="control-section">
+          <section className="control-section capture-sources">
+            <div className="label">Sources</div>
+            {(["system", "microphone"] as const).map(lane => {
+              const label = lane === "system" ? "System sound" : "Microphone";
+              return <div key={lane} className="source-row">
+                <label className="check-row">
+                  <input type="checkbox" checked={ticked[lane]} disabled={!ready}
+                    onChange={event => { chooseSources({ ...sources, [lane]: event.currentTarget.checked }); setMessage(""); }} />
+                  <span>{label}</span>
+                </label>
+                {recording && connected[lane]
+                  ? <LaneMeter label={label} value={lane === "microphone" ? microphoneLevel : meters.system} /> : null}
+              </div>;
+            })}
             {/* Chrome names no microphone before permission, so there is nothing to pick until then. */}
-            {microphoneChoices.length > 0 ? <>
-              <label className="label" htmlFor="microphone-select">Microphone</label>
+            {ticked.microphone && microphoneChoices.length > 0 ? (
               <div className="field">
-                <select id="microphone-select" aria-label="Microphone" value={shownMicrophoneId}
-                  disabled={reattached || phase === "stopping"}
+                <select id="microphone-select" aria-label="Microphone device" value={shownMicrophoneId}
+                  disabled={!ready && phase !== "active"}
                   onFocus={() => void refreshMicrophones()}
                   onChange={event => { const id = event.currentTarget.value; setMicrophoneId(id);
-                    if (clientRef.current && connected.microphone) void switchMicrophone(id, true); }}>
+                    if (phase === "active") void switchMicrophone(id); }}>
                   {microphoneChoices.map(device => <option key={device.deviceId} value={device.deviceId}>
                     {device.label}</option>)}
                 </select>
               </div>
-            </> : null}
-
-            <label className="label" htmlFor="audio-route">Listening with</label>
-            <div className="field">
-              <select
-                id="audio-route"
-                aria-label="Listening with"
-                value={audioRoute}
-                disabled={reattached || phase === "stopping" || phase === "terminal"}
-                onChange={(event) => setAudioRoute(event.currentTarget.value as AudioRoute)}
-              >
-                <option value="speakers">Speakers</option>
-                <option value="headphones">Headphones</option>
-              </select>
-            </div>
-
-            <div className="capture-meters" aria-label="Capture lane meters">
-              <LaneMeter label="Microphone" value={microphoneLevel} />
-              <LaneMeter label="Shared audio" value={meters.system} />
-            </div>
+            ) : null}
           </section>
         </> :
         <form key={mode} data-file-upload="form" className="controls-mode-form" onSubmit={event => { if (mode === "url" && !url.startsWith("https://")) event.preventDefault(); }}>
@@ -638,18 +671,13 @@ export function ControlPanel() {
   );
 }
 
-/** Pre-session capture codes as keep-list lines (K3 for a stopped source; K8 otherwise). */
-function preSessionLine(failure: PreSessionCaptureFailure): string {
-  switch (failure.code) {
-    case "browser_microphone_permission_denied": return "Microphone blocked — allow it in Chrome site settings.";
-    case "browser_capture_request_rejected": return "Sharing did not start.";
-    case "browser_surface_audio_missing": return "No audio in that share — choose a tab and turn on Share tab audio.";
-    case "browser_track_ended": return failure.lane === "microphone" ? "Microphone stopped." : "Shared audio stopped.";
-  }
+/** A recorded source that stopped, before the meeting existed or during it, as its keep-list line (K3). */
+function sourceStoppedLine(lane: CaptureLane): string {
+  return lane === "microphone" ? "Microphone stopped." : "System sound stopped.";
 }
 
 function laneFailedLine(lane: CaptureLane, error: unknown): string {
-  return `${lane === "microphone" ? "Microphone" : "Shared audio"} failed: ${errorMessage(error)}`;
+  return `${lane === "microphone" ? "Microphone" : "System sound"} failed: ${errorMessage(error)}`;
 }
 
 /** Closing Chrome's chooser is a choice, not a failure. */
@@ -672,15 +700,13 @@ export function laneMeterPercent(value: number): number {
   return Math.min(100, Math.max(0, Math.round(((db + 60) / 60) * 100)));
 }
 
+/** The level of a recorded source, beside its checkbox. */
 function LaneMeter({ label, value }: { label: string; value: number }) {
   const level = laneMeterPercent(value);
   return (
-    <div className="capture-meter">
-      <span>{label}</span>
-      <span className="capture-meter-track" aria-label={`${label} level ${level}%`}>
-        <span style={{ width: `${level}%` }} />
-      </span>
-    </div>
+    <span className="capture-meter-track" aria-label={`${label} level ${level}%`}>
+      <span style={{ width: `${level}%` }} />
+    </span>
   );
 }
 

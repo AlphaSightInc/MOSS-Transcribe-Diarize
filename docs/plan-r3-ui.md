@@ -25,16 +25,25 @@ Base: `gemini/r2-integration` @ `1dee41cb`. Integration branch `gemini/r3-ui`. L
 ### Keep list (Q6) — the only status/hint text allowed
 
 - K1 No microphone sound — check the input in Chrome site settings.
-- K2 Microphone / shared audio too loud — lower it.
-- K3 Shared audio stopped [Share again] / Microphone stopped [Reconnect].
+- K2 Microphone / System sound too loud — lower it.
+- K3 System sound stopped / Microphone stopped. *(Round 5: the user-facing name is "System sound", not "Shared audio".
+  A recorded source that stops mid-recording goes silent and the recording continues to a normal Stop, so the line is
+  the plain fact with no action.)*
 - K4 Reconnecting — keep this tab open.
-- K5 Recording stopped: connection lost [Reset].
+- K5 Recording stopped: connection lost. *(Round 5: no Reset; Start recording is offered directly.)*
 - K6 Start disabled → tooltip names the source with no sound yet. *(Retired in round 4: Start needs only both sources attached, never sound, so there is no tooltip.)*
+  *(Round 5: Start is disabled only while both source boxes are unticked; tooltip "Tick System sound or Microphone.")*
 - K7 Two meetings are already recording — stop one first.
 - K8 Action failures with the reason: naming, correction, export, upload/URL, summary failed [Retry].
 - K9 Enter your Gemini API key in Settings.
 - K10 (round 4, #13) File/URL row stage, so a long job does not look dead: Uploading… (browser sending the file) /
   Downloading audio… / Transcribing… (server `file_stage` on the active meeting) / Done.
+- K11 (round 5, Q16) What one Start click could not record: "Microphone unavailable" (recording system sound only; the
+  Microphone box unticks) / "System sound not shared" (recording the microphone only) / "No audio was shared — turn on
+  “Also share audio” in Chrome’s picker" (nothing started). A closed share picker says nothing. These replace the
+  three-step setup lines "Microphone blocked — allow it in Chrome site settings.", "Sharing did not start." and "No audio
+  in that share — choose a tab and turn on Share tab audio.", which are retired with the "Enable microphone" and
+  "Share audio" buttons and the "Listening with" control (`docs/plan-r5-start-flow.md`).
 - Plus: top pill (Recording mm:ss / Stopping), Export Save "Improving…" (disabled), one line "Voiceprint not saved — not enough clear speech" when enrollment is refused.
 
 Removed (non-exhaustive): "Needs review…", "Identity settling…", "Transcript improved", "Improvement unavailable…" and its

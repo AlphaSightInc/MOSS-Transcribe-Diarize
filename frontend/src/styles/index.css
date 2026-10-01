@@ -1009,22 +1009,17 @@ textarea:focus {
   border-color: var(--danger);
 }
 
-.capture-meters {
+/* Sources (round 5): one checkbox per source, its level beside it while it is being recorded. */
+.source-row {
   display: grid;
-  gap: 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--surface);
-  padding: 10px;
-}
-
-.capture-meter {
-  display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
+  grid-template-columns: 116px minmax(0, 1fr);
   align-items: center;
   gap: 8px;
+  min-height: 20px;
+}
+
+.check-row:has(input:disabled) {
   color: var(--muted);
-  font-size: 10.5px;
 }
 
 .capture-meter-track {
