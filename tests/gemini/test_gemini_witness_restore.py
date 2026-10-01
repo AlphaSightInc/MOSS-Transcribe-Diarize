@@ -70,12 +70,14 @@ def test_chunked_terminal_restores_after_stitching():
         ('before', 'stitched-a'), ('Media', 'stitched-a'), ('Lab', 'stitched-a'), ('after', 'stitched-b')]
 
 
-def test_transcribe_interval_ignores_witness_words():
+@pytest.mark.parametrize('start', [0, 3])
+def test_transcribe_interval_ignores_witness_words(start):
     terminal = TerminalTranscriber(Diarizer())
-    terminal.set_witness_words((w('Media', 4.2, 4.4), w('Lab', 4.4, 4.6)))
-    rows = terminal.transcribe_interval(Tape(), 3*S, 9*S)
+    terminal.set_witness_words((w('Media', start+1.2, start+1.4), w('Lab', start+1.4, start+1.6)))
+    rows = terminal.transcribe_interval(Tape(), start*S, (start+6)*S)
     assert 'Media' not in ' '.join(r.text for r in rows)
-    assert [(x.start_sample, x.end_sample) for x in terminal.last_words] == [(4*S, round(4.2*S)), (5*S, round(5.2*S))]
+    assert [(x.start_sample, x.end_sample) for x in terminal.last_words] == [
+        ((start+1)*S, round((start+1.2)*S)), ((start+2)*S, round((start+2.2)*S))]
 
 
 def test_engine_hands_committed_words_to_terminal():

@@ -433,7 +433,7 @@ class TerminalTranscriber:
                                      if start <= (w.start_sample+w.end_sample)/2 < core_end)
                     previous_chunk_words = mapped_words
         offset = getattr(tape, "sample_offset", 0)
-        restore = bool(self._witness_words) and not offset
+        restore = bool(self._witness_words) and not hasattr(tape, "sample_offset")
         if not any(chunk.words for chunk in chunks) and not (restore and self.witness_filter):
             self.last_words = ()
             return ()
