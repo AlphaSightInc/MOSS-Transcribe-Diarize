@@ -24,6 +24,7 @@ import {
 import { summaryApi } from "../lib/finalSummary";
 import { loadAppSettings } from "../lib/settings";
 import { finalizeMeetingSummary, summaryPredatesRefinement } from "../lib/summaryRequests";
+import { joinTexts } from "../lib/text";
 import {
   resetSessionState,
   sessionId,
@@ -456,7 +457,7 @@ function sessionLifecycle(status: MeetingStatus): SessionLifecycle {
 }
 
 function meetingPreview(meeting: Meeting): string {
-  const text = meeting.transcript?.segments.map((segment) => segment.text).join(" ").trim();
+  const text = joinTexts(meeting.transcript?.segments.map((segment) => segment.text) ?? []);
   return text || (meeting.status === "active" ? "Waiting for transcript…" : "No transcript");
 }
 

@@ -3,7 +3,7 @@ import type { SourceLane } from "./transcriptOrder";
 import type { TranscriptItem, TranscriptUpdateMetadata } from "../api/types";
 import { isBackendUnknownSpeakerId } from "./speakerMap";
 import { buildTranscriptTargetKey } from "./transcriptKeys";
-import { normalizeInlineWhitespace, trimString } from "./text";
+import { joinText, normalizeInlineWhitespace, trimString } from "./text";
 
 const MIN_TURN_TEXT_OVERLAP_TOKENS = 4;
 const MAX_TURN_TEXT_OVERLAP_TOKENS = 32;
@@ -333,15 +333,7 @@ function decorateTranscript(items: readonly TranscriptItem[]): MergedTranscriptI
 }
 
 function joinTurnText(previousText: string, currentText: string): string {
-  const previous = normalizeInlineWhitespace(previousText);
-  const current = normalizeInlineWhitespace(currentText);
-  if (current.length === 0) {
-    return previous;
-  }
-  if (previous.length === 0) {
-    return current;
-  }
-  return `${previous} ${current}`;
+  return joinText(normalizeInlineWhitespace(previousText), normalizeInlineWhitespace(currentText));
 }
 
 function joinPreservedTurnText(previousText: string, currentText: string): string {
@@ -387,10 +379,10 @@ function mergeTurnText(previousText: string, currentText: string): string {
     if (suffixTokens.length === 0) {
       return previous;
     }
-    return `${previous} ${suffixTokens.join(" ")}`;
+    return joinText(previous, suffixTokens.join(" "));
   }
 
-  return `${previous} ${current}`;
+  return joinText(previous, current);
 }
 
 function tokenMatchKey(token: string): string {

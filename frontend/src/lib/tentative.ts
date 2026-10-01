@@ -1,6 +1,7 @@
 import type { TranscriptTurn } from "./mergeTranscript";
 import { UNATTRIBUTED_SPEAKER_LABEL, UNRESOLVED_SPEAKER_ID } from "./speakerMap";
 import type { SourceLane } from "./transcriptOrder";
+import { joinText } from "./text";
 
 /** Display-only projection of canonical voice guesses over provisional words. */
 export interface TentativeSpan {
@@ -56,7 +57,7 @@ export function projectTentativeBlocks(
     const prior = blocks.at(-1);
     if (prior && prior.lane === lane && prior.speakerId === speakerId) {
       prior.end = Math.max(prior.end, word.end);
-      prior.text = `${prior.text} ${word.text.trim()}`.trim();
+      prior.text = joinText(prior.text, word.text);
     } else {
       blocks.push({ speakerId, label, tentative: speakerId !== null, lane,
         start: word.start, end: word.end, text: word.text.trim() });
@@ -86,7 +87,7 @@ export function projectTentativeSegments(
     const text = segment.text.trim();
     if (prior && prior.lane === lane && prior.speakerId === speakerId) {
       prior.end = Math.max(prior.end, segment.end_sample / SAMPLE_RATE);
-      prior.text = `${prior.text} ${text}`.trim();
+      prior.text = joinText(prior.text, text);
     } else {
       blocks.push({ speakerId, label: guessLabel(speakerId, speakerLabels),
         tentative: speakerId !== null, lane,

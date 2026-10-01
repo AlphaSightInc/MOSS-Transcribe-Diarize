@@ -1067,6 +1067,45 @@ def test_rolling_public_snapshot_contains_speaker_turns(tmp_path):
     rt._sessions["one"].engine.close()
 
 
+def test_rolling_commit_and_saved_transcript_have_no_space_between_cjk_characters(tmp_path):
+    # F1: live committed text, and the transcript saved from it, read "大 家 好， 今 天".
+    from moss_transcribe_diarize.app.phase2_live import _transcript_document
+    words = ["大", "家", "好，", "今", "天", "用", "API", "测", "试。"]
+    class Diarizer:
+        def diarize(self, _pcm, *, deadline, kind, diarize=True):
+            del deadline, kind, diarize
+            return GeminiWords(tuple(GeminiWord(text, "spk:0", index * 4800, index * 4800 + 4000)
+                                     for index, text in enumerate(words)))
+    class EmptyWords:
+        def words(self, _pcm, *, deadline):
+            del deadline
+            return ()
+    class Terminal:
+        def transcribe(self, _tape):
+            return ()
+    base = descriptor()
+    full = replace(base, bounds=replace(base.bounds, max_retained_samples=60*16000,
+                                        max_tape_bytes=20*32000))
+    rt = GeminiLiveRuntime(
+        descriptor=full, tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage: GeminiHybridEngine(
+            publish, word_source=EmptyWords(), window_scheduler=FixedWindowScheduler(),
+            registry=OverlapRegistry(), diarizer=Diarizer(), terminal=Terminal()),
+    )
+    rt.create(session_id="one")
+    for sequence in range(20):
+        rt.accept_frame("one", frame(sequence))
+    until = time.monotonic() + 2
+    while rt.snapshot("one").session.canonical_through_sample < 10*16000 and time.monotonic() < until:
+        time.sleep(0.01)
+    snapshot = rt.snapshot("one")
+    rows = snapshot.to_dict()["session"]["effective_transcript"]
+    assert [(row["text"], row["start_sample"], row["end_sample"]) for row in rows] == [
+        ("大家好，今天用API测试。", 0, 8 * 4800 + 4000)]
+    assert [row["text"] for row in _transcript_document(snapshot)["segments"]] == ["大家好，今天用API测试。"]
+    rt._sessions["one"].engine.close()
+
+
 def test_system_first_voiced_word_reaches_public_preview_after_silent_ingress(tmp_path):
     import wave
     from pathlib import Path

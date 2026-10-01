@@ -59,3 +59,38 @@ def test_file_meeting_completes_and_enrolls_after_name(tmp_path):
             assert time.monotonic() < deadline, "voiceprint was not enrolled"
             time.sleep(.02)
         assert [(v["label"], v["sample_count"]) for v in voiceprints] == [("Alex", 1)]
+
+
+def test_file_meeting_saves_chinese_without_spaces_between_characters(tmp_path):
+    # F1: File/URL shares the word join with Live; one Gemini word per Chinese character.
+    sessions = asyncio.run(provision(tmp_path / "meeting.sqlite"))
+    sample = Path(__file__).parents[1] / "fixtures/idea_020_provider_smoke.wav"
+    words = ["大", "家", "好，", "今", "天", "讨", "论", "API", "的", "进", "展。"]
+
+    class Diarizer:
+        def diarize(self, pcm16, *, deadline, kind, diarize=True):
+            return GeminiWords(tuple(GeminiWord(text, "spk:1", index * 3200, index * 3200 + 3000)
+                                     for index, text in enumerate(words)))
+
+    class Encoder:
+        spec = SimpleNamespace(provider="wespeaker", revision="pinned", state_sha256="ab" * 32)
+
+    class Gate:
+        def filter(self, pcm16, words):
+            return words
+
+    class Evidence:
+        def enrollment_observation(self, audio_path, segments):
+            return None
+
+    runner = GeminiFileRunner(lambda _transcription: Diarizer(), Encoder(), identity_resolver=Evidence(),
+                              word_gate=Gate(), voiced_audio=lambda _pcm: True)
+    app = create_phase2_app(database_path=tmp_path / "meeting.sqlite", file_runner=runner,
+                            file_work_root=tmp_path / "file-work")
+    with TestClient(app, base_url="https://moss.test") as client:
+        session(client, sessions["sub-a"])
+        uploaded = client.post("/api/meetings/file", files={"file": (sample.name, sample.read_bytes(), "audio/wav")},
+                               data={"transcription": '{"vendor": "gemini", "api_key": "user-key"}'})
+        assert uploaded.status_code == 201, uploaded.text
+        meeting = await_terminal(client, uploaded.json()["id"], "completed")
+        assert [row["text"] for row in meeting["transcript"]["segments"]] == ["大家好，今天讨论API的进展。"]

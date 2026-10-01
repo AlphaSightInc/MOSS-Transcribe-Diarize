@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { TranscriptTurn } from "./mergeTranscript";
+import { groupSegmentsIntoTurns, type TranscriptTurn } from "./mergeTranscript";
 import { buildTranscriptExportText, serializeTranscriptExport } from "./transcriptExport";
 
 describe("transcriptExport", () => {
@@ -38,6 +38,23 @@ describe("transcriptExport", () => {
       filename: "transcript-session-42-2026-08-18T20:00:16.182Z.txt",
       mediaType: "text/plain;charset=utf-8"
     });
+  });
+
+  it("exports a saved Chinese transcript without spaces between characters (F1)", () => {
+    // Saved rows as the server now writes them: one speaker turn split across two segments.
+    const saved = [
+      { id: "seg_0001", start: 18.4, end: 152.8, text: "大家好，今天我们主要讨论一下第三季" },
+      { id: "seg_0002", start: 155.3, end: 167.9, text: "度的产品规划。预算还剩下大概30万左右。" }
+    ];
+    const turns = groupSegmentsIntoTurns(saved.map(row => ({ start: row.start, end: row.end, text: row.text,
+      speaker: "Speaker 1", speaker_entity_id: "speaker-0001", display_name: "Speaker 1", confidence: 1,
+      state: "final" as const, segment_id: row.id, source_lane: "system" as const })));
+    const identity = { sessionId: "m", exportedAt: new Date("2026-10-01T03:43:42.380Z") };
+    const text = "大家好，今天我们主要讨论一下第三季度的产品规划。预算还剩下大概30万左右。";
+    expect(serializeTranscriptExport("txt", turns, turn => turn.display_name, identity).content)
+      .toBe(`[00:00:18] Speaker 1:\n${text}`);
+    expect(serializeTranscriptExport("md", turns, turn => turn.display_name, identity).content)
+      .toBe(`## [00:00:18] Speaker 1\n\n${text}`);
   });
 
   it("includes a saved summary in Markdown export", () => {

@@ -6,12 +6,13 @@ import random
 import threading
 from collections import deque
 from concurrent.futures import Future
+from functools import reduce
 from typing import Callable
 
 from google.genai import types
 
 from .live_span_bounds import LIVE_SAMPLE_RATE
-from .gemini_provider import _error_code
+from .gemini_provider import _error_code, join_text
 
 
 _MODEL = "gemini-3.5-transcribe-live"
@@ -99,7 +100,8 @@ class _LiveCore:
                                 getattr(transcript, "finished", False)))
                     model_turn = getattr(content, "model_turn", None)
                     if model_turn:
-                        text = " ".join(part.text for part in model_turn.parts or [] if part.text)
+                        text = reduce(join_text, (part.text for part in model_turn.parts or []
+                                                  if part.text), "")
                         if text:
                             self._publish(text, bool(getattr(content, "turn_complete", False)))
                 if self._reconnect_requested:

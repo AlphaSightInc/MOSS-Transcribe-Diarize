@@ -329,6 +329,25 @@ describe("mergeTranscript", () => {
     expect(turns[0]?.segment_ids).toEqual(["seg-a", "seg-b"]);
   });
 
+  it("joins same-speaker Chinese segments without a space and English ones with one (F1)", () => {
+    const chinese = groupSegmentsIntoTurns([
+      makeItem({ start: 0, end: 1, text: "今天我们主要讨论一下第三季", segment_id: "seg-a" }),
+      makeItem({ start: 1, end: 2, text: "度的产品规划。", segment_id: "seg-b" }),
+      makeItem({ start: 2, end: 3, text: "API 文档下周给", segment_id: "seg-c" })
+    ]);
+    expect(chinese.map(turn => turn.text)).toEqual(["今天我们主要讨论一下第三季度的产品规划。API 文档下周给"]);
+    const english = groupSegmentsIntoTurns([
+      makeItem({ start: 0, end: 1, text: "Yeah.", segment_id: "seg-a" }),
+      makeItem({ start: 1, end: 2, text: "researching it now", segment_id: "seg-b" })
+    ]);
+    expect(english.map(turn => turn.text)).toEqual(["Yeah. researching it now"]);
+    const skipped = groupSegmentsIntoTurns([
+      makeItem({ start: 0, end: 1, text: "大家好，", segment_id: "seg-a" }),
+      makeItem({ start: 1, end: 2, text: "今天开会。", segment_id: "seg-b" })
+    ], { skipOverlapTrimming: true });
+    expect(skipped.map(turn => turn.text)).toEqual(["大家好，今天开会。"]);
+  });
+
   it("preserves formatted paragraph and list breaks when joining same-speaker segments", () => {
     const turns = groupSegmentsIntoTurns(
       [

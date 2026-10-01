@@ -77,6 +77,19 @@ describe("MeetingHistory", () => {
     expect(root.textContent).not.toContain(reason);
   });
 
+  it("previews a Chinese transcript without spaces between its rows (F1)", async () => {
+    const saved = meeting({ transcript: { segments: [
+      { id: "seg_0001", start: 0, end: 1, speaker: "S01", text: "大家好，今天我们主要讨论第三季" },
+      { id: "seg_0002", start: 1, end: 2, speaker: "S01", text: "度的产品规划。" },
+      { id: "seg_0003", start: 2, end: 3, speaker: "S02", text: "Sounds good." },
+      { id: "seg_0004", start: 3, end: 4, speaker: "S02", text: "Next item." }
+    ] } });
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [saved] } : saved)));
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector(".history-card-subtitle")?.textContent)
+      .toBe("大家好，今天我们主要讨论第三季度的产品规划。Sounds good. Next item."));
+  });
+
   it("shows partial audio after tape exhaustion without the retained-words notice", async () => {
     const notice = "Final transcript refinement was unavailable for some audio. Previously committed words were kept.";
     const selected = meeting({ notice, audio: {
