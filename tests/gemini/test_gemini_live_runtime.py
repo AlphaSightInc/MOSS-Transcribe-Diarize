@@ -935,6 +935,48 @@ def test_meeting_longer_than_the_refinement_bound_keeps_its_live_transcript(tmp_
     stages.discard("owner", "one")
 
 
+@pytest.mark.parametrize("ending", ["refined", "live_only", "over_refinement_bound", "aborted"])
+def test_finished_meeting_lets_go_of_its_engine(tmp_path, monkeypatch, ending):
+    """R4 #1 follow-up: `_sessions` keeps every finished meeting, and it kept the engine too --
+    its rolling caches, its provider client (so the meeting's key) and, on the refinement-less
+    endings, open lane tapes and Live sockets that nothing ever closed."""
+    import gc
+    import weakref
+    from moss_transcribe_diarize.app import gemini_live_runtime
+    if ending == "over_refinement_bound":
+        monkeypatch.setattr(gemini_live_runtime, "GEMINI_MAX_REFINEMENT_SECONDS", 0)
+    closed = []
+
+    class Engine(ScriptedGeminiEngine):
+        def close(self):
+            closed.append(True)
+
+    rt = GeminiLiveRuntime(
+        descriptor=descriptor(), tape_storage_root=tmp_path,
+        engine_factory=lambda _id, publish, _usage, _settings: Engine(
+            publish, batches=[], terminal=(GeminiSegment(0, 16000, "improved", "t-a"),)))
+    rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=ending != "live_only"))
+    engine = weakref.ref(rt._sessions["one"].engine)
+    rt.accept_frame("one", frame(0))
+    rt.publish_update("one", GeminiBase(16000, ()))
+    rt.publish_update("one", GeminiRolling(0, 16000, (GeminiSegment(0, 16000, "live", "speaker-0001"),)))
+
+    async def finish():
+        if ending == "aborted":
+            await rt.abort("one", "helper_lease_expired")
+        else:
+            await rt.stop("one", 1.0)
+            await rt.wait_terminal("one")
+    asyncio.run(finish())
+    gc.collect()
+    assert engine() is None
+    assert closed == [True]
+    snapshot = rt.snapshot("one")  # A finished meeting still answers from its record.
+    assert snapshot.session.status in {"closed", "failed", "aborted"}
+    assert rt.engine_diagnostics("one")["engine_settings"]["transcription"]["api_key"] == "[redacted]"
+    assert rt.events("one")
+
+
 def test_account_stage_is_terminal_source_and_survives_view_release(tmp_path):
     from moss_transcribe_diarize.app.phase2_audio import LiveMeetingAudioStages, MeetingAudioArchive
     stages = LiveMeetingAudioStages(MeetingAudioArchive(tmp_path / "archive"), max_bytes=115_200_000)

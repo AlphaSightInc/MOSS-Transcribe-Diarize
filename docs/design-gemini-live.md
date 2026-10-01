@@ -222,6 +222,13 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   heartbeat; the Gemini launch scripts' helper lease is 120 s (was 30 s); a lease expiry's journal line names the last
   heartbeat (`last=<state> last.<lane>=<code>`, or `last=none`).
 - **Growth, not a limit.** Snapshot GET grows linearly (766 KB, 29 ms at 200 min / 1,200 rows); frame POST cost is flat.
+- **Finished meetings in memory.** `_sessions` is never pruned; each finished meeting also kept its engine (~8.5 MB at
+  1 h: rolling caches, provider client and key) and, on endings without the final pass, open lane tapes and Live
+  sockets. The engine is now closed and dropped on every ending (`_release_tape`). Process RSS is the final pass's
+  high-water, not per-meeting growth: 448 MB → 1,960 MB after one 1 h meeting, then +25/+1/+4 MB for three more
+  (retained state per finished meeting 8.5 → 0.9 MB, engines alive 4 → 0).
+- **Preview backlog sheds chunks** instead of closing the socket: a 60 s catch-up during a reconnect overflowed the 64-chunk
+  backlog and preview stayed off while people kept talking (0/60 chunks sent in the next 30 s; 60/60 after the fix).
 
 ## Measured envelope and custody
 

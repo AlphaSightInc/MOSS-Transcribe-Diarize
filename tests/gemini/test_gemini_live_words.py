@@ -250,6 +250,46 @@ def test_slow_live_socket_bounds_preview_backlog_without_blocking_capture():
     assert not source._thread.is_alive()
 
 
+def test_preview_backlog_sheds_chunks_and_resumes_once_the_socket_drains():
+    """R4 #1: a capture replaying 60-110 s of queued audio while the socket reconnects
+    overflowed the 64-chunk backlog; closing the source then kept preview off for the rest
+    of a meeting in which people kept talking."""
+    gate = threading.Event()
+
+    class GatedSession(FakeSession):
+        async def send_realtime_input(self, *, audio=None, audio_stream_end=False):
+            while audio is not None and not gate.is_set():
+                await asyncio.sleep(0.01)
+            await super().send_realtime_input(audio=audio, audio_stream_end=audio_stream_end)
+
+    class GatedLive(FakeLive):
+        def connect(self, *, model, config):
+            session = GatedSession()
+            self.sessions.append(session)
+            return FakeContext(session)
+
+    usage = []
+    live = GatedLive()
+    source = GeminiLiveWordSource(SimpleNamespace(aio=SimpleNamespace(live=live)),
+                                  lambda **row: usage.append(row))
+    source.bind(lambda *_args: None)
+    for sequence in range(70):
+        source.push_audio(sequence * 160, bytes(320))
+    assert sum(row.get("error_code") == "preview_backpressure" for row in usage) == 6
+    gate.set()
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline and (not live.sessions or len(live.sessions[0].audio_bytes) < 64):
+        time.sleep(0.01)
+    source.push_audio(70 * 160, bytes(320))
+    while time.monotonic() < deadline and (not live.sessions or len(live.sessions[0].audio_bytes) < 65):
+        time.sleep(0.01)
+    assert len(live.sessions[0].audio_bytes) == 65  # The live chunk after the backlog is sent.
+    assert len(live.sessions) == 1
+    source.close()
+    source._thread.join(2)
+    assert not source._thread.is_alive()
+
+
 def test_failed_live_preview_connection_does_not_block_terminal_path():
     class FailingLive:
         def __init__(self): self.attempts = 0
