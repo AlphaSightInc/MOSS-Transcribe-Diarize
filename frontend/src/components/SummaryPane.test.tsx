@@ -4,7 +4,7 @@ import { act } from "preact/test-utils";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SummaryPane } from "./SummaryPane";
 import { defaultAppSettings, saveAppSettings, type AppSettings } from "../lib/settings";
-import { sessionId, sessionStatus } from "../state/session";
+import { sessionId, sessionStatus, sessionStopRequested } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
 const root = document.createElement("div"); document.body.append(root);
@@ -31,7 +31,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   for (const text of REMOVED) expect(root.textContent).not.toContain(text);
-  render(null, root); sessionId.value = null; sessionStatus.value = "idle"; selectedSummaryMeeting.value = null;
+  render(null, root); sessionId.value = null; sessionStatus.value = "idle"; sessionStopRequested.value = null; selectedSummaryMeeting.value = null;
   vi.unstubAllGlobals(); vi.useRealTimers();
 });
 
@@ -111,6 +111,20 @@ it("waits after each request finishes, shows 'Summary failed' + Retry, and keeps
   expect(root.textContent).toContain("The recovered update.");
   expect(root.querySelector('[role="alert"]')).toBeNull();
   expect(refresh().textContent).toBe("Refresh");
+});
+
+it("sends no rolling request once Stop is requested, while the meeting still drains as active (r4 S8)", async () => {
+  vi.useFakeTimers();
+  const fetcher = vi.fn().mockResolvedValue(live("Before Stop."));
+  vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "active";
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await act(async () => { await vi.advanceTimersByTimeAsync(20_000); });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  sessionStopRequested.value = "m";
+  await act(async () => { await vi.advanceTimersByTimeAsync(80_000); });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(root.textContent).toContain("Before Stop.");
 });
 
 it("keeps too-little-speech refusals silent and retries them no sooner than the transcript refresh", async () => {

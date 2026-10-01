@@ -84,13 +84,26 @@ export function summaryPredatesRefinement(meeting: Meeting, artifact: SummaryArt
   return artifact.source_version < refined;
 }
 
+const FINAL_SUMMARY_ATTEMPTS = 4;
+const FINAL_SUMMARY_RETRY_MS = 5000;
+
 /** Settings are read when called, so a key or vendor entered after Start applies. */
 export async function finalizeMeetingSummary(meeting: Meeting, settings = loadAppSettings()): Promise<void> {
   if (meeting.status !== "completed" || settings.summary.vendor === "off") return;
   if (settings.summary.vendor === "openai_compatible") {
     await finalSummaryWorker.enqueue(meeting, externalSettings(settings));
   } else {
-    const artifact = await requestFinalSummary(meeting.id, meeting.transcript_version, settings);
+    let artifact: SummaryArtifact;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        artifact = await requestFinalSummary(meeting.id, meeting.transcript_version, settings);
+        break;
+      } catch (cause) {
+        // A rolling summary still running at Stop answers 429; it finishes within seconds.
+        if (!(cause instanceof SummaryRequestError && cause.status === 429) || attempt >= FINAL_SUMMARY_ATTEMPTS) throw cause;
+        await new Promise(resolve => setTimeout(resolve, FINAL_SUMMARY_RETRY_MS));
+      }
+    }
     document.dispatchEvent(new CustomEvent(SUMMARY_CHANGED, { detail: { meeting_id: meeting.id, artifact } }));
   }
   requestMeetingHistoryRefresh();

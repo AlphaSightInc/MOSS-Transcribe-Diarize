@@ -4,7 +4,7 @@ import { summaryApi, SUMMARY_CHANGED, type SummaryArtifact, type SummaryDocument
 import { createRollingLoop, finalizeMeetingSummary, requestLiveSummary, SummaryRequestError,
   summaryFailureReason, summaryPredatesRefinement, type LiveSummaryResponse } from "../lib/summaryRequests";
 import { loadAppSettings, SETTINGS_CHANGED, type AppSettings } from "../lib/settings";
-import { sessionId, sessionStatus } from "../state/session";
+import { sessionId, sessionStatus, sessionStopRequested } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
 type Outcome = "ok" | "not_ready" | "failed";
@@ -41,6 +41,7 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
     let manual = false;
     const loop = createRollingLoop<Outcome>(async () => {
       const requested = manual; manual = false;
+      if (!requested && sessionStopRequested.value === id) return "failed"; // see the scheduler below
       const now = loadAppSettings();
       if (!liveSummaries(now)) return "failed";
       setBusy(true);
@@ -58,6 +59,9 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
       }
     }, last => {
       const now = loadAppSettings();
+      // After Stop the meeting reads "active" while it drains; a rolling call then would collide
+      // with the final summary (429 summary_in_flight) and leave the meeting without one (r4 smoke S8).
+      if (sessionStopRequested.value === id) return null;
       if (!now.summary.rolling || !liveSummaries(now)) return null;
       // The live transcript changes once per refresh window; retrying "not ready" sooner cannot succeed.
       const wait = last === "not_ready" ? Math.max(now.summary.waitSeconds, now.transcription.refreshSeconds)

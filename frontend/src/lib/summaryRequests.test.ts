@@ -71,6 +71,27 @@ describe("watchMeetingSummary", () => {
     expect(artifacts).toHaveBeenCalledOnce();
   });
 
+  it("retries the final summary while a rolling summary is still in flight (429), then saves it", async () => {
+    vi.useFakeTimers();
+    let posts = 0;
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.endsWith("/summary/server")) {
+        return ++posts === 1 ? new Response(JSON.stringify({ detail: { code: "summary_in_flight" } }), { status: 429 })
+          : json({ state: "current" });
+      }
+      return json({ id: "m", mode: "live", title: "M", title_source: "automatic", status: "completed",
+        created_at_ms: 1, transcript_version: 3, transcript: { segments: [] }, audio: null });
+    }));
+    const artifacts = vi.fn();
+    document.addEventListener(SUMMARY_CHANGED, artifacts);
+    const stop = watchMeetingSummary("m");
+    await vi.advanceTimersByTimeAsync(12_000);
+    stop();
+    document.removeEventListener(SUMMARY_CHANGED, artifacts);
+    expect(posts).toBe(2);
+    expect(artifacts).toHaveBeenCalledOnce();
+  });
+
   it("requests a Gemini summary with a blank key for the server fallback", async () => {
     const fetcher = vi.fn(async (_url: string, _init?: RequestInit) => json({ id: "m", mode: "live", title: "M", title_source: "automatic", status: "completed",
       created_at_ms: 1, transcript_version: 1, transcript: { segments: [] }, audio: null }));
