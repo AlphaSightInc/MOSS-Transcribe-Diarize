@@ -222,6 +222,13 @@ class AcousticEchoGuard:
 
 
 class MicrophoneWordGate:
+    """One meeting's microphone word admission for live windows and the saved pass.
+
+    Local speech context is a continuous attributed span of at least 2 s among the gated
+    words (the evidence a voiceprint needs). Without it, measured mic words are room noise or
+    echo residue that Gemini filled with short, often foreign-language words.
+    """
+
     def __init__(self, webrtc_gate, system_words: SystemWordLedger,
                  acoustic_gate=None, report_drops=None,
                  voice_guard: CrossLaneVoiceEchoGuard | None = None,
@@ -232,9 +239,11 @@ class MicrophoneWordGate:
         self.report_drops = report_drops
         self.voice_guard = voice_guard
         self.embedding_source = embedding_source
+        self.local_speech_seen = False
+        self.lane_withheld_words = 0
 
     def _record(self, before: int, acoustic: int, after_voice: int,
-                after_text: int, unanchored: int = 0) -> None:
+                after_text: int, unanchored: int = 0, lane_withheld: int = 0) -> None:
         if self.report_drops is not None:
             counts = {"acoustic_gate_dropped_words": before-acoustic,
                       "text_guard_dropped_words": after_voice-after_text}
@@ -242,6 +251,8 @@ class MicrophoneWordGate:
                 counts["mic_echo_dropped_by_voice"] = acoustic-after_voice
             if unanchored:
                 counts["unanchored_window_dropped_words"] = unanchored
+            if lane_withheld:
+                counts["unanchored_lane_withheld_words"] = lane_withheld
             self.report_drops(counts)
 
     def filter(self, pcm16: bytes, words: Sequence[GeminiWord], *,
@@ -271,6 +282,8 @@ class MicrophoneWordGate:
         unanchored = 0
         if kept and not attributed_embedding_intervals(kept):
             unanchored, kept = len(kept), ()
+        elif kept:
+            self.local_speech_seen = True
         self._record(len(voiced), len(acoustic), after_voice, after_text, unanchored)
         return kept
 
@@ -291,7 +304,18 @@ class MicrophoneWordGate:
         else:
             after_voice = len(kept)
             kept = TextEchoGuard().filter(kept, system_words)
-        self._record(len(words), len(acoustic), after_voice, len(kept))
+        after_text = len(kept)
+        # Saved text: only a meeting whose microphone never showed local speech context (in
+        # any live window or in these words) loses its mic words; one real local turn keeps
+        # every saved mic word as before, short replies included.
+        withheld = 0
+        if kept and not self.local_speech_seen:
+            if attributed_embedding_intervals(kept):
+                self.local_speech_seen = True
+            else:
+                withheld, kept = len(kept), ()
+                self.lane_withheld_words += withheld
+        self._record(len(words), len(acoustic), after_voice, after_text, lane_withheld=withheld)
         return kept
 
 

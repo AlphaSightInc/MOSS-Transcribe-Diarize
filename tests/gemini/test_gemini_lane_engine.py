@@ -357,11 +357,44 @@ def test_short_joined_words_under_two_seconds_are_not_local_speech_context():
     assert counts[-1]["unanchored_window_dropped_words"] == 3
 
 
-def test_terminal_microphone_filter_keeps_isolated_words_for_the_saved_transcript():
-    # The whole-recording pass has the lane's full speech context; a lone backchannel stays.
-    gate = _passing_microphone_gate([])
+def test_saved_mic_words_keep_todays_behaviour_once_the_meeting_had_local_speech():
+    # A live window with a 2.4 s local run proves local speech; a later lone backchannel
+    # in the saved pass (or a Stop tail) stays, as before this rule.
+    counts = []
+    gate = _passing_microphone_gate(counts)
+    sentence = tuple(GeminiWord(ch, "spk:0", 16000 + i*3200, 16000 + (i+1)*3200)
+                     for i, ch in enumerate("我觉得这个方案可以先上线"))
+    assert gate.filter(bytes(30*32000), sentence) == sentence
     word = (GeminiWord("Yeah.", "spk:0", 16000, 24000),)
     assert gate.filter_terminal(bytes(32000), word, ()) == word
+    assert gate.lane_withheld_words == 0
+    assert "unanchored_lane_withheld_words" not in counts[-1]
+
+
+def test_saved_mic_words_are_withheld_when_the_meeting_never_had_local_speech():
+    # Measured listen-only speaker lanes: whole-lane saved words of echo residue and room
+    # noise whose longest attributed run is under 2 s.
+    counts = []
+    gate = _passing_microphone_gate(counts)
+    noise = (GeminiWord("¿Ya?", "spk:0", 48000, 49600),
+             GeminiWord("stop", "spk:0", 160000, 163200),
+             GeminiWord("two", "spk:0", 172800, 176000),
+             GeminiWord("say", "spk:0", 185600, 188800),
+             GeminiWord("这。", "spk:1", 320000, 321600))
+    assert gate.filter_terminal(bytes(30*32000), noise, ()) == ()
+    assert gate.lane_withheld_words == 5
+    assert counts[-1]["unanchored_lane_withheld_words"] == 5
+
+
+def test_saved_pass_keeps_every_mic_word_when_its_own_words_show_local_speech():
+    # No live window was anchored (e.g. cleanup ran over a meeting whose live view lagged):
+    # one 2 s run anywhere in the saved lane keeps all of its words, short ones included.
+    gate = _passing_microphone_gate([])
+    turn = tuple(GeminiWord(text, "spk:0", 16000 + i*8000, 16000 + (i+1)*8000)
+                 for i, text in enumerate(("we", "should", "ship", "it", "today")))
+    later = (GeminiWord("OK.", "spk:0", 400000, 404800),)
+    assert gate.filter_terminal(bytes(30*32000), turn + later, ()) == turn + later
+    assert gate.local_speech_seen and gate.lane_withheld_words == 0
 
 
 def test_terminal_microphone_voice_check_uses_diarized_words():
@@ -376,7 +409,7 @@ def test_terminal_microphone_voice_check_uses_diarized_words():
         voice_guard=CrossLaneVoiceEchoGuard(threshold=.60), embedding_source=embed)
     system = (GeminiWord("remote", "A", 0, 16000),)
     mic = (GeminiWord("different", "echo", 0, 8000),
-           GeminiWord("local", "C", 0, 8000))
+           GeminiWord("local", "C", 0, 32000))
     assert gate.filter_terminal(bytes(32000), mic, system,
                                 system_pcm16=bytes(32000)) == (mic[1],)
     assert counts[0]["mic_echo_dropped_by_voice"] == 1

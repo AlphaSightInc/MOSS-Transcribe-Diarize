@@ -545,10 +545,15 @@ class GeminiHybridEngine:
         if start >= accepted:
             return True
         pcm = tape.read(start_sample=start, end_sample=accepted)
+        withheld_before = getattr(self.word_gate, "lane_withheld_words", 0)
         rows = await asyncio.wait_for(asyncio.to_thread(
             self.terminal.transcribe_interval, tape, start, accepted), timeout=deadline)
+        # Words the microphone gate withheld for lack of local speech were decoded: an
+        # empty result is then the gate's decision, not a failed tail decode.
+        withheld = getattr(self.word_gate, "lane_withheld_words", 0) > withheld_before
         if (getattr(self.terminal, "coverage_gaps", ()) or
-                not rows and self.voiced_audio is not None and self.voiced_audio(pcm)):
+                not rows and not withheld
+                and self.voiced_audio is not None and self.voiced_audio(pcm)):
             return False
         words = tuple(GeminiWord(row.text, row.speaker or "spk:?",
                                  row.start_sample - start, row.end_sample - start)
