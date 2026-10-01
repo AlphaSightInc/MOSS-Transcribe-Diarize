@@ -542,7 +542,8 @@ export class CaptureClient {
   async attachDisplayMedia(stream: MediaStream): Promise<boolean> {
     if (this.lanes.has("system")) throw new Error("system lane is already active");
     const audioTrack = stream.getAudioTracks()[0];
-    if (!audioTrack) {
+    // An ended track (sharing stopped before the lane existed) would frame silence as a recorded source.
+    if (!audioTrack || audioTrack.readyState === "ended") {
       stream.getTracks().forEach((track) => track.stop());
       return false;
     }

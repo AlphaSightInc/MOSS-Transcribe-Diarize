@@ -789,6 +789,11 @@ describe("browser capture frame contract", () => {
     await expect(client.attachDisplayMedia(noAudioSurface)).resolves.toBe(false);
     expect(videoTrack.stop).toHaveBeenCalledOnce();
     expect(client.lanes.size).toBe(0);
+    // Sharing stopped before the lane existed: the ended track is not a recorded source either.
+    const endedAudio = { readyState: "ended", stop: vi.fn() } as unknown as MediaStreamTrack;
+    const endedSurface = { getAudioTracks: () => [endedAudio], getTracks: () => [endedAudio] } as unknown as MediaStream;
+    await expect(client.attachDisplayMedia(endedSurface)).resolves.toBe(false);
+    expect(client.lanes.size).toBe(0);
 
     expect(context.close).not.toHaveBeenCalled();
     expect(onPreSessionFailure).not.toHaveBeenCalled();

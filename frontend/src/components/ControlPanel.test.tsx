@@ -370,7 +370,7 @@ describe("ControlPanel reattach", () => {
       expect(mocks.startMicrophone).not.toHaveBeenCalled();
       expect(mocks.attachSilentLane).not.toHaveBeenCalled();
       expect(mocks.createSession).not.toHaveBeenCalled();
-      expect(mocks.captureClose).toHaveBeenCalledOnce();
+      expect(mocks.captureStop).toHaveBeenCalledExactlyOnceWith(0); // ends a created meeting, else just closes
       expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
       // The meeting that was on screen is still there: nothing was reset.
       expect(sessionId.value).toBe("meeting-on-screen");
@@ -407,7 +407,7 @@ describe("ControlPanel reattach", () => {
       expect(status()).toBe("No audio was shared — turn on “Also share audio” in Chrome’s picker");
       expect(mocks.createSession).not.toHaveBeenCalled();
       expect(mocks.attachSilentLane).not.toHaveBeenCalled();
-      expect(mocks.captureClose).toHaveBeenCalledOnce();
+      expect(mocks.captureStop).toHaveBeenCalledExactlyOnceWith(0); // ends a created meeting, else just closes
       expect(button("Start recording")!.disabled).toBe(false);
       expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, microphone === "unavailable"]);
     });
@@ -420,7 +420,7 @@ describe("ControlPanel reattach", () => {
       expect(phase()).toBe("idle");
       expect(status()).toBe("Microphone unavailable");
       expect(mocks.createSession).not.toHaveBeenCalled();
-      expect(mocks.captureClose).toHaveBeenCalledOnce();
+      expect(mocks.captureStop).toHaveBeenCalledExactlyOnceWith(0); // ends a created meeting, else just closes
       expect([box("System sound").checked, box("Microphone").checked]).toEqual([false, false]);
       expect(button("Start recording")!.disabled).toBe(true);
     });
@@ -463,7 +463,7 @@ describe("ControlPanel reattach", () => {
       expect(phase()).toBe("idle");
       expect(sessionId.value).toBe("meeting-on-screen");
       expect(status()).toBe("Two meetings are already recording — stop one first.");
-      expect(mocks.captureClose).toHaveBeenCalledOnce();
+      expect(mocks.captureStop).toHaveBeenCalledExactlyOnceWith(0); // ends a created meeting, else just closes
       expect(button("Start recording")!.disabled).toBe(false);
       expect(meters()).toEqual([]);
       // The next Start clears the line.
@@ -536,6 +536,20 @@ describe("ControlPanel reattach", () => {
       await startRecording();
       expect(status()).toBeNull();
       expect(mocks.createSession).toHaveBeenCalledTimes(2);
+    });
+
+    it("ignores a Stop that fails after its meeting ended and the next recording began", async () => {
+      let failStop!: (error: Error) => void;
+      mocks.captureStop.mockImplementationOnce(() => new Promise((_, reject) => { failStop = reject; }));
+      await act(async () => render(<ControlPanel />, root));
+      await startRecording();
+      await act(async () => button("Stop recording")!.click());
+      await finish("closed");
+      await startRecording();
+      await act(async () => failStop(new Error("timeout")));
+      expect(phase()).toBe("active");
+      expect(button("Stop recording")).toBeDefined();
+      expect(status()).toBeNull();
     });
 
     it("offers Start after a Stop that failed, and that Start retires the old poller", async () => {

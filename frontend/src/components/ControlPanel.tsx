@@ -136,7 +136,8 @@ export function ControlPanel() {
     transition("idle");
     setMessage(line);
     setSourceNote("");
-    await client.close().catch(() => undefined);
+    // A meeting this Start had already created is ended at the server too, not left to its lease.
+    await client.stop(0).catch(() => client.close()).catch(() => undefined);
   };
 
   // A recorded source stopped mid-recording (Chrome's "Stop sharing", an unplugged microphone).
@@ -405,6 +406,8 @@ export function ControlPanel() {
       // A 202 leaves the existing poller running while the server finishes draining.
       await client.stop(5);
     } catch (error) {
+      // A Stop that fails after its meeting ended (and perhaps the next began) changes nothing.
+      if (clientRef.current !== client) return;
       transition("error");
       setMessage(`Stop failed: ${errorMessage(error)}`);
     }
