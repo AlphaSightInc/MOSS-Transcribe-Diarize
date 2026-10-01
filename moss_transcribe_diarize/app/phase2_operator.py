@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import math
 import re
 import shutil
 import sys
@@ -251,7 +252,7 @@ class Phase2OperatorStatus:
             for event in events:
                 allowed = serialize_operator_payload("event", event)
                 self._recent_events.append(allowed)
-                self._logger.info(json.dumps(allowed, sort_keys=True, separators=(",", ":")))
+                emit_operator_event(allowed, logger=self._logger)
             return sanitized
 
     def _project(
@@ -571,6 +572,12 @@ class Phase2OperatorStatus:
         return events
 
 
+def emit_operator_event(payload: Mapping[str, object], *, logger=None) -> None:
+    """Journal one event through the same content-free serializer as status edges."""
+    allowed = serialize_operator_payload("event", payload)
+    (logger or LOGGER).info(json.dumps(allowed, sort_keys=True, separators=(",", ":")))
+
+
 def serialize_operator_payload(kind: str, payload: Mapping[str, object]) -> dict[str, object]:
     """The sole allowlist crossing JSON, human rendering, and service journal output."""
 
@@ -600,7 +607,11 @@ def serialize_operator_payload(kind: str, payload: Mapping[str, object]) -> dict
         elif value is not None and not isinstance(value, (str, int, float, bool)):
             raise OperatorProjectionError("Operator payload value is not JSON-safe.")
 
-    validate(copied)
+    if kind == "event" and copied.get("code") == "meeting_engine_diagnostics":
+        # This event carries numeric runtime totals, whose nested counter keys vary by lane.
+        validate({key: value for key, value in copied.items() if key != "context"})
+    else:
+        validate(copied)
     if kind == "status":
         _validate_status_scopes(copied)
     else:
@@ -1050,6 +1061,19 @@ def _validate_event_scope(event: Mapping[str, object]) -> None:
     _non_negative(event["sequence"])
     _non_negative(event["occurrence_count"])
     context = _mapping(event["context"])
+    if event["code"] == "meeting_engine_diagnostics":
+        if kind != "meeting_lifecycle" or set(context) != {"meeting_id", "engine_diagnostics"}:
+            raise OperatorProjectionError("Meeting diagnostics event context is invalid.")
+        _string(context, "meeting_id")
+
+        def numeric(value):
+            if isinstance(value, dict):
+                return all(numeric(item) for item in value.values())
+            return type(value) in (int, float) and math.isfinite(value)
+
+        if not isinstance(context["engine_diagnostics"], dict) or not numeric(context["engine_diagnostics"]):
+            raise OperatorProjectionError("Meeting diagnostics must contain numeric totals only.")
+        return
     expected = {
         "readiness": {"state"},
         "account_authority": {"enabled_accounts", "sign_in_sessions"},

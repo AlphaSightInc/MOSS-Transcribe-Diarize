@@ -326,6 +326,12 @@ class _GeminiState:
     clamped_words: int = 0
     dropped_words: int = 0
     repaired_words: int = 0
+    mic_words_from_provider: int = 0
+    mic_words_kept_by_local_voice_level: int = 0
+    mic_words_kept_unanchored_by_local_voice: int = 0
+    mic_echo_return_db: float | None = None
+    mic_local_voice_seconds: float = 0.0
+    diagnostics_emitted: bool = False
     mic_words_dropped_by_acoustic_gate: int = 0
     mic_words_dropped_by_text_guard: int = 0
     mic_echo_dropped_by_voice: int = 0
@@ -648,6 +654,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         clamped_words: int = 0,
         dropped_words: int = 0,
         repaired_words: int = 0,
+        mic_words_from_provider: int = 0,
+        mic_words_kept_by_local_voice_level: int = 0,
+        mic_words_kept_unanchored_by_local_voice: int = 0,
+        mic_echo_return_db: float | None = None,
+        mic_local_voice_seconds: float | None = None,
         acoustic_gate_dropped_words: int = 0,
         text_guard_dropped_words: int = 0,
         mic_echo_dropped_by_voice: int = 0,
@@ -676,6 +687,8 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks,
                              preview_stall_restarts, coverage_retry, coverage_preview_fallbacks,
                              terminal_coverage_fallbacks,
+                             mic_words_from_provider, mic_words_kept_by_local_voice_level,
+                             mic_words_kept_unanchored_by_local_voice,
                              acoustic_gate_dropped_words, text_guard_dropped_words,
                              mic_echo_dropped_by_voice, unanchored_window_dropped_words,
                              unanchored_lane_withheld_words, veto_fired)):
@@ -683,6 +696,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         if any(not math.isfinite(value) or value < 0 for value in
                (audio_seconds_sent, cost_usd, metered_output_usd, output_cost_estimate_usd)):
             raise ValueError("engine audio seconds and cost must be finite and nonnegative.")
+        if mic_echo_return_db is not None and not math.isfinite(mic_echo_return_db):
+            raise ValueError("microphone echo return must be finite.")
+        if mic_local_voice_seconds is not None and (not math.isfinite(mic_local_voice_seconds)
+                                                   or mic_local_voice_seconds < 0):
+            raise ValueError("microphone local voice seconds must be finite and nonnegative.")
         if (not isinstance(count_call, bool) or not isinstance(chunked, bool)
                 or cost_basis not in {"provider_usage", "list_price_estimate"}):
             raise ValueError("engine call count and cost basis must be operational metadata.")
@@ -697,6 +715,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.clamped_words += clamped_words
             state.dropped_words += dropped_words
             state.repaired_words += repaired_words
+            state.mic_words_from_provider += mic_words_from_provider
+            state.mic_words_kept_by_local_voice_level += mic_words_kept_by_local_voice_level
+            state.mic_words_kept_unanchored_by_local_voice += mic_words_kept_unanchored_by_local_voice
+            if mic_echo_return_db is not None:
+                state.mic_echo_return_db = mic_echo_return_db
+            if mic_local_voice_seconds is not None:
+                state.mic_local_voice_seconds = mic_local_voice_seconds
             state.mic_words_dropped_by_acoustic_gate += acoustic_gate_dropped_words
             state.mic_words_dropped_by_text_guard += text_guard_dropped_words
             state.mic_echo_dropped_by_voice += mic_echo_dropped_by_voice
@@ -728,6 +753,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "metered_output_usd": 0.0,
                     "output_cost_estimate_usd": 0.0,
                     "skipped_window_ticks": 0})
+                totals.setdefault("mic_words_from_provider", 0)
+                totals.setdefault("mic_words_kept_by_local_voice_level", 0)
+                totals.setdefault("mic_words_kept_unanchored_by_local_voice", 0)
+                totals.setdefault("mic_echo_return_db", None)
+                totals.setdefault("mic_local_voice_seconds", 0.0)
                 totals.setdefault("mic_words_dropped_unanchored", 0)
                 totals.setdefault("mic_words_withheld_unanchored_lane", 0)
                 totals.setdefault("preview_stall_restarts", 0)
@@ -745,6 +775,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["timing_anomalies"]["clamped"] += clamped_words
                 totals["timing_anomalies"]["dropped"] += dropped_words
                 totals["repaired_words"] += repaired_words
+                totals["mic_words_from_provider"] += mic_words_from_provider
+                totals["mic_words_kept_by_local_voice_level"] += mic_words_kept_by_local_voice_level
+                totals["mic_words_kept_unanchored_by_local_voice"] += mic_words_kept_unanchored_by_local_voice
+                if mic_echo_return_db is not None:
+                    totals["mic_echo_return_db"] = mic_echo_return_db
+                if mic_local_voice_seconds is not None:
+                    totals["mic_local_voice_seconds"] = mic_local_voice_seconds
                 totals["mic_words_dropped_by_acoustic_gate"] += acoustic_gate_dropped_words
                 totals["mic_words_dropped_by_text_guard"] += text_guard_dropped_words
                 totals["mic_echo_dropped_by_voice"] += mic_echo_dropped_by_voice
@@ -779,6 +816,11 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "retries_by_code": dict(state.retries_by_code),
                 "timing_anomalies": {"clamped": state.clamped_words, "dropped": state.dropped_words},
                 "repaired_words": state.repaired_words,
+                "mic_words_from_provider": state.mic_words_from_provider,
+                "mic_words_kept_by_local_voice_level": state.mic_words_kept_by_local_voice_level,
+                "mic_words_kept_unanchored_by_local_voice": state.mic_words_kept_unanchored_by_local_voice,
+                "mic_echo_return_db": state.mic_echo_return_db,
+                "mic_local_voice_seconds": state.mic_local_voice_seconds,
                 "mic_words_dropped_by_acoustic_gate": state.mic_words_dropped_by_acoustic_gate,
                 "mic_words_dropped_by_text_guard": state.mic_words_dropped_by_text_guard,
                 "mic_echo_dropped_by_voice": state.mic_echo_dropped_by_voice,
@@ -1252,6 +1294,29 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         (rolling caches, provider client and so the meeting's key, lane tapes, Live sockets)
         is closed and dropped here on every ending, not only the ones that ran the final pass.
         """
+        if not state.diagnostics_emitted:
+            from datetime import datetime, timezone
+            from .phase2_operator import emit_operator_event, OPERATOR_EVENT_SCHEMA
+
+            def numbers(value):
+                if isinstance(value, dict):
+                    return {key: filtered for key, item in value.items()
+                            if (filtered := numbers(item)) is not None}
+                return value if type(value) in (int, float) else None
+
+            diagnostics = self.engine_diagnostics(state.session_id)
+            diagnostics.pop("engine_settings", None)
+            event = {
+                "schema": OPERATOR_EVENT_SCHEMA, "sequence": state.next_event_seq,
+                "occurred_at_utc": datetime.now(timezone.utc).isoformat(),
+                "kind": "meeting_lifecycle", "code": "meeting_engine_diagnostics",
+                "severity": "info", "terminal": True, "retryable": False,
+                "occurrence_count": 1,
+                "context": {"meeting_id": state.session_id,
+                            "engine_diagnostics": numbers(diagnostics)},
+            }
+            emit_operator_event(event)
+            state.diagnostics_emitted = True
         engine, state.engine = state.engine, None
         close = getattr(engine, "close", None)
         if callable(close):
