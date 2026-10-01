@@ -88,20 +88,55 @@ when successive same-speaker gaps are ≤1.5 s. Production WebRTC mode 1, 10 ms 
 a rolling or final word only when no voiced frame lies in its ±0.2 s padded span.
 Final labels map back to live meeting IDs by sample overlap (ADR-0005 D8).
 
-The microphone gate also requires either no system WebRTC voice over a word or
-microphone RMS at least −15 dB relative to the best system RMS at a 0–100 ms lag.
-The existing normalized-token echo guard must also pass. Both filters run on rolling
-and final mic words. A live (rolling) mic window publishes words only when its gated
-words hold a continuous attributed span of at least 2 s (0.6 s joins, the same evidence a
-voiceprint needs); otherwise its words are counted as `mic_words_dropped_unanchored` and the
-terminal pass decides the saved text (round 4, issue #3: noise and echo-residue windows
-produced 165 → 3 invented, often foreign-language, words with unchanged non-backchannel
-retention; `prototypes/gemini-live/mic-hallucination/NOTES.md`). The saved (terminal and
-Stop-tail) mic words are withheld only when the meeting's microphone never showed such a span,
-in any live window or in the saved words themselves; they are counted as
-`mic_words_withheld_unanchored_lane`, and a Stop tail withheld this way counts as covered, not
-as a failed recovery (listen-only speaker lanes 104/73 → 0/0 saved invented words; saved
-retention unchanged on six lanes with local speech; margin 1.9 s vs 2 s). W3's provisional text lacks reliable word timing, so the lane
+The microphone gate retains the existing level and two-second anchor rules and adds
+measured local-voice evidence (round 5b, `hybrid-w3-mic-short-v9`). `LocalVoiceEvidence`
+reads the two lane tapes in 10 ms frames with fresh WebRTC mode-3 detectors per context.
+The tab reference is its loudest frame in the preceding 0–100 ms. Echo return is the
+median microphone/tab level on tab-voiced frames; with less than one second of tab
+speech, the existing fixed −15 dB level test stands in. An unexplained frame is voiced
+microphone audio while the tab is silent, or more than 6 dB above its measured echo
+return. A sustained stretch lasts at least 0.4 s, bridging holes of at most 50 ms.
+
+A provider-label run joins words across gaps of at most 0.6 s, before the level gate.
+It is local if it touches a sustained stretch, at least 80% of its words touch unexplained
+audio (word midpoint ±0.2 s), and those words weigh at least 15: three words or five
+CJK-like characters. A: local words survive the fixed level gate. C: local words are
+removed by the text guard only as part of a two-word echo phrase; the voice guard stays
+unchanged. B: without a two-second attributed span, only surviving local runs still
+weighing 15 are admitted. `local_speech_seen` retains its two-second meaning, so a short
+reply admits only itself. `MicrophoneWordGate(local_voice=None)` preserves prior behavior.
+The saved and Stop-tail passes compute the same frame facts in 30 s contexts every
+15 s, only computing contexts overlapping the candidate words. Withholding still counts
+a Stop tail as covered, rather than failed recovery.
+
+For clean-up witness restoration (WP-C), call
+`LocalVoiceEvidence.is_local_run(mic_pcm16, words, offset_sample=0, whole_lane=True)`
+with **one restore candidate run alone**, after clean-up words were gated. Its word
+samples/text are judged against the lane audio by the same sustained/80%/weight-15 rule,
+independently of `local_speech_seen` and neighbouring clean-up words. Only then assign
+its speaker. An anchored lane never waives this evidence requirement.
+
+The recorded prototype admitted 15/15 short English and 15/15 Mandarin saved units at
+−40 dB echo; quiet double-talk 20 dB below the tab retained 27/31 long-turn units.
+Across 18 engine cells, live/Stop/saved recall rose from 90/101/157 to 206/291/310 of
+343. Five listener/noise engine cells and 28 rebuilt round-4 negative provider answers
+(908 voice-gated words) kept zero invented/echoed words; echo-only admission remained
+zero at −40/−25/−15 dB. Source: `prototypes/gemini-live/mic-speaker-echo/f2/NOTES.md`.
+One/two-word replies without an anchored turn remain withheld; words absent from the
+provider answer cannot be admitted; another room voice can qualify from 0.4 s.
+Physical echo cancellation and double-talk attenuation remain **unmeasured**, requiring
+the plan's attended device check. Grey microphone echo fragments are unchanged.
+
+Per-meeting and per-lane diagnostics add `mic_words_from_provider` (after voice activity),
+`mic_words_kept_by_local_voice_level`, `mic_words_kept_unanchored_by_local_voice`,
+`mic_echo_return_db` (last measured; null until measured), and `mic_local_voice_seconds`
+(union of sustained spans observed so far, avoiding double-counting overlapping windows).
+At final release, after clean-up or at live-only close, the shared operator journal
+emits one `moss-operator-event.v1` event, code `meeting_engine_diagnostics`, containing
+meeting id and numeric diagnostics only. Engine settings, strings, nulls and booleans
+are omitted. No transcript, audio, credentials, new storage, or provider requests.
+
+W3's provisional text lacks reliable word timing, so the lane
 composer removes from a mic preview row every run of at least three words (five CJK
 characters) that occurs anywhere in the system words it could echo: committed system rows
 and the system preview ending within n/1.5 + 5 s of the row (n = its units). Each run is
@@ -368,7 +403,7 @@ are supporting populations.
 | Long60 2586 s, `6c5776e3` | 5/5 IDs; settled/final raw DER .043404/.034375; Lex retained one dominant ID; cost $2.461/audio-hour | Label p50 26.517 s first 5 min, 29.519 s last 5 min before L1 |
 | Public long60 first 600 s, `0b9deed5` candidate | Label p50/p90 18.262/25.015 s, 583/600 labeled buckets, 0 skipped ticks, two IDs at Stop; before 26.761/37.508 s, 597/600 buckets, one skip | Standalone after run ends at 600 s; full-meeting lag and the 14-bucket coverage difference remain open |
 | Real cross-meeting public voiceprints, `c58595da` | Lex named from Bill60, auto-named on Keyu60; Lex and Keyu both auto-named on Keyu5m; Bill remained unnamed on Bill5m (0/524 Bill-dominant observations named) | Earlier code path, same naming seam; natural-room recordings unmeasured |
-| E1 microphone acoustic gate, `e7078edc` | 0/20 stray final mic words outside operator intervals; phrase recall 7/7, 6/7, 4/5 | Echo ≥−15 dB and quiet operator gain 0.1 defeat this rule in bench tests |
+| E1 microphone acoustic gate, `e7078edc` | 0/20 stray final mic words outside operator intervals; phrase recall 7/7, 6/7, 4/5 | Fixed rule alone loses quiet local words; v9 adds measured local-voice evidence (F2 fixtures). Physical echo cancellation remains unmeasured |
 | Stress on `56513e30` | 600 s digital silence finalized 2.621 s after Stop with no batch calls; 604 s many-speaker fixture finalized in 68.397 s; injected 503 physical attempts matched error/retry counters | Silence still opened system W3 on that SHA; `130f3d39` adds voiced-only system W3; final-SHA real stress rerun pending pane 6.4 |
 
 The E1 cost model for a 302 s meeting with its observed lane activity is
