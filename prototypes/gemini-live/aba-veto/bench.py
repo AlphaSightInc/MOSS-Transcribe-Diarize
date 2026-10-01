@@ -1,4 +1,5 @@
-"""PROTOTYPE — A–B–A veto bench: rule A (shipped) vs B (>= 2 alternations) vs C (split disagreeing turns, then A).
+"""PROTOTYPE — A–B–A veto bench: rule A (shipped) vs B (>= 2 alternations) vs C (split disagreeing turns, then A)
+vs V (exploratory, added after the first run: an alternation counts only if its >= 2 s turns match their labels).
 
 Zero provider calls. Replays the PRODUCTION LongFinalStitcher / FinalWordPolicy on every saved terminal/File
 turn set under the evidence root (label = chunk x saved name). Contract and gates: NOTES.md beside this file.
@@ -101,47 +102,103 @@ class Fixtures:
         self.library = []
         for c in self.clips.values():
             ref = c.reference_segments()
-            text = " ".join(r.get("text", "") for r in ref)
-            if text.strip():
+            if any(r.get("text", "").strip() for r in ref):
                 with wave.open(str(c.audio), "rb") as w:
-                    self.library.append((c, w.getnframes() / S, grams(text)))
+                    self.library.append((c, w.getnframes() / S, ref))
         self.long60_ref = [json.loads(l) for l in (P69 / "fixture/reference.jsonl").read_text().splitlines() if l.strip()]
-        self.long60_ref = [{**r, "speaker": r["speaker"]} for r in self.long60_ref if r["part"] == "long60"]
+        self.long60_ref = [r for r in self.long60_ref if r["part"] == "long60"]
+        e1 = json.loads((EVID / "P68/r4-smoke/runs/recheck-e1/run/snapshot.json").read_text())["session"]
+        self.e1_grams = grams(" ".join(r["text"] for r in e1["effective_transcript"] if r.get("source_lane") != "microphone"))
+        (OUT / "fixtures").mkdir(parents=True, exist_ok=True)
 
-    def of_clip(self, c):
+    def of_clip(self, c, until=None):
         ref = c.reference_segments()
-        truth = c.true_speakers or (len({r["speaker"] for r in ref}) if ref else None)
         with wave.open(str(c.audio), "rb") as w:
-            return {"fixture": c.clip_id, "audio": c.audio, "audio_s": w.getnframes() / S,
-                    "reference": ref or None, "truth": truth, "score_until": None}
+            audio_s = w.getnframes() / S
+        if until is not None and until < audio_s - 3:
+            ref = [{**r, "end": min(r["end"], until)} for r in ref if r["start"] < until]
+            audio_s = until
+        truth = c.true_speakers if until is None and c.true_speakers else (len({r["speaker"] for r in ref}) if ref else None)
+        covered = sum(r["end"] - r["start"] for r in ref) / audio_s if ref else 0
+        return {"fixture": c.clip_id + ("" if until is None or until >= audio_s else f"[0-{round(until)}s]"),
+                "audio": c.audio, "audio_s": audio_s, "reference": ref or None, "truth": truth, "score_until": None,
+                "reference_complete": covered >= .8}
 
-    def resolve(self, path: Path, duration, rows):
+    def overlap_mix(self, ids, db):
+        """stress/scenarios.py 'overlap': a + (a_rms / b_rms) * gain * b, clipped."""
+        import numpy as np
+        import soundfile as sf
+        target = OUT / "fixtures" / f"overlap_{'0db' if db == 0 else 'minus10db'}.wav"
+        if not target.is_file():
+            a, _ = sf.read(self.clips[ids[0]].audio, dtype="int16")
+            b, _ = sf.read(self.clips[ids[1]].audio, dtype="int16")
+            n = min(len(a), len(b))
+            a_rms = math.sqrt(float(np.mean(a[:n].astype(np.float64) ** 2)))
+            b_rms = math.sqrt(float(np.mean(b[:n].astype(np.float64) ** 2)))
+            mix = np.clip(a[:n].astype(np.float64) + a_rms / b_rms * 10 ** (db / 20) * b[:n], -32768, 32767).astype(np.int16)
+            sf.write(target, mix, S, subtype="PCM_16")
+        return target
+
+    def qmic(self, variant):
+        """Rebuild the public 300 s mic fixture (micfixture/build.py, deterministic) outside the worktree."""
+        import importlib.util
+        home = OUT / "fixtures" / "micfixture"
+        if not (home / "out" / "reference.json").is_file():
+            spec = importlib.util.spec_from_file_location("micfixture_build", ROOT / "prototypes/gemini-live/micfixture/build.py")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            home.mkdir(parents=True, exist_ok=True)
+            module.HERE = home
+            module.main()
+        reference = json.loads((home / "out" / "reference.json").read_text())
+        return home / "out" / reference["variants"][variant]["microphone"]
+
+    def resolve(self, path: Path, duration, rows, lane="system"):
         end = max(r["end"] for r in rows)
         dur = duration or end
+        none = {"audio": None, "audio_s": dur, "reference": None, "truth": None, "score_until": None,
+                "reference_complete": False}
+        if lane != "system":
+            if "/qmic/" in str(path):
+                wav = self.qmic(path.parent.name)
+                turns = json.loads((wav.parent / "reference.json").read_text())["local_turns"]
+                return {**none, "fixture": f"qmic-mic:{path.parent.name}", "audio": wav, "audio_s": 300.0,
+                        "reference": turns, "truth": 2, "reference_complete": True}
+            return {**none, "fixture": "mic-lane"}
         summary = path.parent / "session-summary.json"
         if summary.is_file():
-            ids = json.loads(summary.read_text()).get("source_ids") or []
+            meta = json.loads(summary.read_text())
+            ids = meta.get("source_ids") or []
             if len(ids) == 1 and ids[0] in self.clips:
-                return self.of_clip(self.clips[ids[0]])
+                return self.of_clip(self.clips[ids[0]], dur)
+            if len(ids) == 2 and all(i in self.clips for i in ids):
+                db = meta.get("input_ratio_db")
+                voices = {r["speaker"] for i in ids for r in self.clips[i].reference_segments()}
+                return {**none, "fixture": f"overlap({db} dB):" + "+".join(i.split(":")[1] for i in ids),
+                        "audio": self.overlap_mix(ids, db), "audio_s": 300.0, "truth": len(voices)}
             if ids != ["long60"]:
-                return {"fixture": "+".join(ids) or "unknown", "audio": None, "audio_s": dur, "reference": None,
-                        "truth": None, "score_until": None}
+                return {**none, "fixture": "+".join(ids) or "unknown"}
         if abs(dur - 3930.9) < 3:
             return {"fixture": "p69-65min", "audio": P69 / "fixture/system.wav", "audio_s": 3930.9,
-                    "reference": self.long60_ref, "truth": 8, "score_until": 2586.0}
+                    "reference": self.long60_ref, "truth": 8, "score_until": 2586.0, "reference_complete": True}
         if abs(dur - 2586) < 3:
             return {"fixture": "long60", "audio": P69 / "fixture/long60.wav", "audio_s": 2586.0,
-                    "reference": self.long60_ref, "truth": 5, "score_until": None}
-        if abs(dur - 302) < 1 and E1_WAV.is_file():
-            return {"fixture": "e1-system", "audio": E1_WAV, "audio_s": 302.0, "reference": None, "truth": 3,
-                    "score_until": None}
+                    "reference": self.long60_ref, "truth": 5, "score_until": None, "reference_complete": True}
         hyp = grams(" ".join(r["text"] for r in rows))
-        best = max(((len(hyp & g) / max(1, len(hyp)), c) for c, d, g in self.library if abs(d - dur) <= 3),
-                   default=(0, None), key=lambda x: x[0])
+        if 295 <= dur <= 310 and E1_WAV.is_file() and len(hyp & self.e1_grams) / max(1, len(hyp)) >= .3:
+            return {**none, "fixture": "e1-system", "audio": E1_WAV, "audio_s": 302.0, "truth": 3}
+        best = (0, None, None)
+        for c, d, ref in self.library:
+            if d < dur - 8:
+                continue
+            until = None if d <= dur + 3 else dur
+            text = " ".join(r.get("text", "") for r in ref if until is None or r["start"] < until)
+            share = len(hyp & grams(text)) / max(1, len(hyp))
+            if share > best[0]:
+                best = (share, c, until)
         if best[1] is not None and best[0] >= .3:
-            return self.of_clip(best[1])
-        return {"fixture": "unknown", "audio": None, "audio_s": dur, "reference": None, "truth": None,
-                "score_until": None}
+            return self.of_clip(best[1], best[2])
+        return {**none, "fixture": "unknown"}
 
 
 # ------------------------------------------------------------------ rules
@@ -157,6 +214,7 @@ def schedule(total_s: float):
 
 
 def pseudo_chunks(rows, total_s: float, relabel=None):
+    """One pseudo-word per saved turn, clipped to each 900 s / 30 s chunk; label = saved name."""
     chunks = []
     for k, (lo, stop, core_end) in enumerate(schedule(total_s)):
         words = []
@@ -165,43 +223,65 @@ def pseudo_chunks(rows, total_s: float, relabel=None):
             if b - a <= 0:
                 continue
             label = relabel.get((k, i), r["speaker"]) if relabel else r["speaker"]
-            words.append(GeminiWord(r.get("text", ""), label, round(a * S), round(b * S)))
+            words.append(GeminiWord(str(i), label, round(a * S), round(b * S)))
         chunks.append(TerminalChunk(k, round(lo * S), round(stop * S), round(core_end * S), tuple(words)))
     return chunks
 
 
-def triple_counts(words) -> dict:
-    """A–B–A alternations per label pair: speaker_turns (1.5 s) then gaps <= 2 s — the shipped veto's evidence."""
+def alternations(words):
+    """A–B–A triples, exactly the shipped evidence (turns joined at <= 1.5 s, both gaps <= 2 s)."""
     turns = speaker_turns(tuple(GeminiSegment(w.start_sample, w.end_sample, w.text, w.speaker) for w in words))
     ordered = sorted(turns, key=lambda row: (row.start_sample, row.end_sample))
+    return [(a, b, c) for a, b, c in zip(ordered, ordered[1:], ordered[2:])
+            if a.speaker == c.speaker and a.speaker != b.speaker and b.start_sample - a.end_sample <= 2 * S
+            and c.start_sample - b.end_sample <= 2 * S]
+
+
+def own_cosine(turn, centroids, encoder):
+    seconds = (turn.end_sample - turn.start_sample) / S
+    if seconds < 2 or turn.speaker not in centroids:
+        return None
+    a = turn.start_sample / S
+    vector = FinalWordPolicy._unit(encoder.embed_intervals("", [(a, min(turn.end_sample / S, a + 10))]))
+    return _cosine(vector, centroids[turn.speaker])
+
+
+def vetoes(words, rule: str, centroids, encoder) -> set:
+    triples = alternations(words)
     counts: dict[tuple[str, str], int] = defaultdict(int)
-    for a, b, c in zip(ordered, ordered[1:], ordered[2:]):
-        if (a.speaker == c.speaker and a.speaker != b.speaker and b.start_sample - a.end_sample <= 2 * S
-                and c.start_sample - b.end_sample <= 2 * S):
-            counts[tuple(sorted((a.speaker, b.speaker)))] += 1
-    return counts
+    for a, b, c in triples:
+        if rule == "V":  # an alternation counts unless one of its >= 2 s turns disagrees with its own label
+            scores = [own_cosine(t, centroids, encoder) for t in (a, b, c)]
+            if any(x is not None and x < SPLIT_FLOOR for x in scores):
+                continue
+        counts[tuple(sorted((a.speaker, b.speaker)))] += 1
+    return {pair for pair, n in counts.items() if n >= (2 if rule == "B" else 1)}
 
 
-def stitch_rule(stitcher, chunks, min_triples: int):
-    """Copy of LongFinalStitcher.stitch; ONLY change: a pair is vetoed at >= min_triples alternations in a chunk."""
-    words_by_chunk, nodes, core = [], set(), []
-    excluded: set[tuple[str, str]] = set()
+def node_centroids(encoder, tagged) -> dict:
+    out = {}
+    for node in sorted({w.speaker for w in tagged}):
+        intervals = FinalWordPolicy._intervals(tagged, node)
+        if intervals:
+            vectors = encoder.embed_intervals("", intervals)
+            if vectors:
+                out[node] = FinalWordPolicy._unit(vectors)
+    return out
+
+
+def stitch_rule(stitcher, chunks, rule: str):
+    """Copy of LongFinalStitcher.stitch (397f7357); ONLY the veto set differs by rule (A = shipped)."""
+    words_by_chunk, nodes, core, centroids = [], set(), [], {}
     for chunk in chunks:
         tagged = tuple(GeminiWord(w.text, f"c{chunk.index}:{w.speaker}", w.start_sample, w.end_sample)
                        for w in chunk.words)
         words_by_chunk.append(tagged)
         nodes.update(w.speaker for w in tagged)
         core.extend(w for w in tagged if chunk.start_sample <= (w.start_sample + w.end_sample) / 2 < chunk.core_end_sample)
-        excluded.update(pair for pair, n in triple_counts(tagged).items() if n >= min_triples)
-    centroids = {}
-    with tempfile.NamedTemporaryFile(suffix=".wav") as file:
-        for tagged in words_by_chunk:
-            for node in sorted({w.speaker for w in tagged}):
-                intervals = FinalWordPolicy._intervals(tagged, node)
-                if intervals:
-                    vectors = stitcher.encoder.embed_intervals(file.name, intervals)
-                    if vectors:
-                        centroids[node] = FinalWordPolicy._unit(vectors)
+        centroids.update(node_centroids(stitcher.encoder, tagged))
+    excluded = set()
+    for tagged in words_by_chunk:
+        excluded |= vetoes(tagged, rule, centroids, stitcher.encoder)
     groups = {node: {node} for node in nodes}
     member = {node: node for node in nodes}
 
@@ -250,32 +330,13 @@ def stitch_rule(stitcher, chunks, min_triples: int):
     return tuple(result)
 
 
-def remap_rule(policy, words, min_triples: int):
-    """Copy of FinalWordPolicy.remap; ONLY change: a pair is vetoed at >= min_triples alternations."""
+def remap_rule(policy, words, rule: str):
+    """Copy of FinalWordPolicy.remap (397f7357); ONLY the veto set differs by rule (A = shipped)."""
     labels = sorted({w.speaker for w in words})
     if len(labels) < 2:
         return tuple(words)
-    centroids = {}
-    with tempfile.NamedTemporaryFile(suffix=".wav") as file:
-        for label in labels:
-            intervals = policy._intervals(words, label)
-            if intervals:
-                vectors = policy.encoder.embed_intervals(file.name, intervals)
-                if vectors:
-                    centroids[label] = policy._unit(vectors)
-    ordered = sorted(words, key=lambda w: (w.start_sample, w.end_sample))
-    turns: list[tuple[str, int, int]] = []
-    for word in ordered:
-        if turns and turns[-1][0] == word.speaker and word.start_sample - turns[-1][2] <= int(1.5 * S):
-            label, start, end = turns[-1]
-            turns[-1] = label, start, max(end, word.end_sample)
-        else:
-            turns.append((word.speaker, word.start_sample, word.end_sample))
-    counts: dict[tuple[str, str], int] = defaultdict(int)
-    for a, b, c in zip(turns, turns[1:], turns[2:]):
-        if a[0] == c[0] and a[0] != b[0] and b[1] - a[2] <= 2 * S and c[1] - b[2] <= 2 * S:
-            counts[tuple(sorted((a[0], b[0])))] += 1
-    excluded = {pair for pair, n in counts.items() if n >= min_triples}
+    centroids = node_centroids(policy.encoder, words)
+    excluded = vetoes(words, rule, centroids, policy.encoder)
     groups = {label: {label} for label in labels}
     member = {label: label for label in labels}
     eligible = sorted(centroids)
@@ -299,17 +360,22 @@ class FixtureEncoder:
     def __init__(self, real, wav: Path):
         self.real, self.wav, self.cache, self.calls = real, str(wav), {}, 0
 
+    def prefetch(self, intervals):
+        missing = [iv for iv in dict.fromkeys((round(a, 4), round(b, 4)) for a, b in intervals if b > a)
+                   if iv not in self.cache]
+        for at in range(0, len(missing), 64):
+            batch = missing[at:at + 64]
+            vectors = self.real.embed_intervals(self.wav, batch)
+            if len(vectors) != len(batch):
+                vectors = [self.real.embed_intervals(self.wav, [iv])[0] for iv in batch]
+            self.calls += len(batch)
+            self.cache.update(zip(batch, vectors))
+
     def embed_intervals(self, _path, intervals):
         valid = [(round(a, 4), round(b, 4)) for a, b in intervals if b > a]
-        missing = [iv for iv in dict.fromkeys(valid) if iv not in self.cache]
-        if missing:
-            vectors = self.real.embed_intervals(self.wav, missing)
-            self.calls += len(missing)
-            if len(vectors) != len(missing):
-                vectors = [self.real.embed_intervals(self.wav, [iv])[0] for iv in missing]
-            self.cache.update(zip(missing, vectors))
         if not valid:
             raise ValueError("Tier B embedding intervals are empty.")
+        self.prefetch(valid)
         return [self.cache[iv] for iv in valid]
 
 
@@ -317,43 +383,43 @@ def run_rule(rule: str, rows, total_s: float, encoder, relabel=None):
     chunks = pseudo_chunks(rows, total_s, relabel)
     if len(chunks) == 1:
         policy, words = FinalWordPolicy(encoder), chunks[0].words
-        if rule == "production":
-            return policy.remap(words, b"")
-        return remap_rule(policy, words, 2 if rule == "B" else 1)
+        return policy.remap(words, b"") if rule == "production" else remap_rule(policy, words, rule)
     stitcher = LongFinalStitcher(encoder)
-    if rule == "production":
-        return stitcher.stitch(chunks, b"")
-    return stitch_rule(stitcher, chunks, 2 if rule == "B" else 1)
+    return stitcher.stitch(chunks, b"") if rule == "production" else stitch_rule(stitcher, chunks, rule)
 
 
-def split_relabel(rows, total_s: float, encoder):
-    """Rule C: (chunk, row) -> new label for turns >= 2 s whose voice scores < SPLIT_FLOOR against their label."""
-    relabel, audit = {}, []
-    for k, chunk in enumerate(pseudo_chunks(rows, total_s)):
-        index = {}
-        j = 0
-        for i, r in enumerate(rows):
-            lo, stop, _ = schedule(total_s)[k]
-            if min(r["end"], stop) - max(r["start"], lo) > 0:
-                index[j] = i
-                j += 1
-        centroids = {}
-        for label in sorted({w.speaker for w in chunk.words}):
-            intervals = FinalWordPolicy._intervals(chunk.words, label)
-            if intervals:
-                centroids[label] = FinalWordPolicy._unit(encoder.embed_intervals("", intervals))
-        for j, w in enumerate(chunk.words):
-            seconds = (w.end_sample - w.start_sample) / S
-            if seconds < 2 or w.speaker not in centroids:
+def turn_audit(rows, total_s: float, encoder, fx):
+    """Every saved turn >= 2 s against its own label's centroid, per chunk; truth-tagged when a reference exists."""
+    audit = []
+    ref = fx["reference"] if fx.get("reference_complete") else None
+
+    def truth_of(spans):
+        seconds = collections.Counter()
+        for a, b in spans:
+            for r in ref:
+                seconds[r["speaker"]] += overlap(a, b, r["start"], r["end"])
+        return seconds.most_common(1)[0][0] if seconds and max(seconds.values()) > 0 else None
+
+    for chunk in pseudo_chunks(rows, total_s):
+        centroids = node_centroids(encoder, chunk.words)
+        encoder.prefetch([(w.start_sample / S, min(w.end_sample / S, w.start_sample / S + 10)) for w in chunk.words
+                          if w.end_sample - w.start_sample >= 2 * S])
+        label_truth = {}
+        if ref:
+            for label in centroids:
+                label_truth[label] = truth_of([(w.start_sample / S, w.end_sample / S) for w in chunk.words if w.speaker == label])
+        for w in chunk.words:
+            cosine = own_cosine(w, centroids, encoder)
+            if cosine is None:
                 continue
-            a = w.start_sample / S
-            vector = FinalWordPolicy._unit(encoder.embed_intervals("", [(a, min(w.end_sample / S, a + 10))]))
-            cosine = _cosine(vector, centroids[w.speaker])
-            audit.append({"chunk": k, "row": index[j], "start": round(a, 1), "seconds": round(seconds, 1),
-                          "label": w.speaker, "own_cosine": round(cosine, 3)})
-            if cosine < SPLIT_FLOOR:
-                relabel[(k, index[j])] = f"{w.speaker}~{index[j]}"
-    return relabel, audit
+            item = {"chunk": chunk.index, "row": int(w.text), "start": round(w.start_sample / S, 1),
+                    "seconds": round((w.end_sample - w.start_sample) / S, 1), "label": w.speaker,
+                    "own_cosine": round(cosine, 3)}
+            if ref and (not fx["score_until"] or w.end_sample / S <= fx["score_until"]):
+                mine = truth_of([(w.start_sample / S, w.end_sample / S)])
+                item["mislabelled"] = None if mine is None or label_truth.get(w.speaker) is None else mine != label_truth[w.speaker]
+            audit.append(item)
+    return audit
 
 
 # ------------------------------------------------------------------ measurement
@@ -361,17 +427,17 @@ def overlap(a0, a1, b0, b1):
     return max(0.0, min(a1, b1) - max(a0, b0))
 
 
-def measure(words, fx, rows) -> dict:
+def measure(words, fx) -> dict:
     out_rows = [{"start": w.start_sample / S, "end": w.end_sample / S, "speaker": w.speaker, "text": ""} for w in words]
     result = {"groups": len({r["speaker"] for r in out_rows})}
     if fx["reference"]:
         until = fx["score_until"]
         hyp = [{**r, "end": min(r["end"], until)} for r in out_rows if r["start"] < until] if until else out_rows
         m = score(fx["reference"], hyp, with_text=False)
-        result.update({"der": m["der"], "confusion": m["speaker_confusion"], "groups_scored_part": m["hyp_speakers"],
-                       "ref_speakers_scored_part": m["ref_speakers"]})
+        result.update({"der": m["der"], "confusion": m["speaker_confusion"], "groups_scored_part": m["hyp_speakers"]})
     if fx["fixture"] == "p69-65min":
         host = [(r["start"], r["end"]) for r in fx["reference"] if r["speaker"] == "long60:Lex Fridman"]
+
         def tally(spans):
             seconds = collections.Counter()
             for r in out_rows:
@@ -388,18 +454,103 @@ def measure(words, fx, rows) -> dict:
     return result
 
 
-def fidelity(rows, words, total_s) -> dict:
-    """Does the rule-A replay keep the saved grouping? saved label -> replay groups, replay group -> saved labels."""
+def fidelity(rows, words) -> dict:
+    """Does the rule-A replay keep the saved grouping? (pseudo-word text = saved row index)"""
     saved_to, group_to = defaultdict(set), defaultdict(set)
-    spans = [(r["start"], r["end"], r["speaker"]) for r in rows]
     for w in words:
-        mid = (w.start_sample + w.end_sample) / 2 / S
-        label = next((s for a, b, s in spans if a <= mid <= b), None)
-        if label is not None:
-            saved_to[label].add(w.speaker)
-            group_to[w.speaker].add(label)
-    return {"extra_merges": sum(1 for v in group_to.values() if len(v) > 1),
-            "replay_splits": sum(1 for v in saved_to.values() if len(v) > 1)}
+        label = rows[int(w.text)]["speaker"]
+        saved_to[label].add(w.speaker)
+        group_to[w.speaker].add(label)
+    return {"extra_merges": sorted(sorted(v) for v in group_to.values() if len(v) > 1),
+            "replay_splits": sorted(k for k, v in saved_to.items() if len(v) > 1)}
+
+
+def p53_raw_labels() -> list[dict]:
+    """Exact A vs B on the RAW provider labels P53 recorded (centroids + alternation counts + truth), 27 clips."""
+    base = EVID / "P53"
+    vectors = json.loads((base / "final-policy-vectors.json").read_text())
+    tune = json.loads((base / "final-policy-tune.json").read_text())
+    test = json.loads((base / "final-policy-test.json").read_text())
+    audit = json.loads((base / "final-policy-pair-audit.json").read_text())
+    policies = {(p["tau"], p["gap_s"], p["constraint"], p["order"]): p for p in tune["policies"]}
+    selected = {c["clip_id"]: c for c in policies[(0.65, 2.0, True, "single")]["cases"]}
+    no_veto = {c["clip_id"]: c for c in policies[(0.65, 0.0, False, "single")]["cases"]}
+    selected.update({c["clip_id"]: c for c in test["arms"]["selected"]["cases"]})
+    relation = {(clip, tuple(sorted(p["labels"]))): p["truth_relation"]
+                for part in ("tune", "test") for clip, pairs in audit[part].items() for p in pairs}
+
+    def partition(clip, counts, need):
+        cent = {l: v["centroid"] for l, v in vectors[clip].items()}
+        labels = sorted(cent)
+        excluded = {tuple(sorted(k.split("|"))) for k, n in counts.items() if n >= need}
+        groups = {l: {l} for l in labels}
+        member = {l: l for l in labels}
+        pairs = [(sum(x * y for x, y in zip(cent[a], cent[b])), a, b) for i, a in enumerate(labels) for b in labels[i + 1:]]
+        merged = []
+        for cosine, a, b in sorted(pairs, key=lambda x: (-x[0], x[1], x[2])):
+            if cosine < .65:
+                break
+            ga, gb = member[a], member[b]
+            if ga == gb or any(tuple(sorted((x, y))) in excluded for x in groups[ga] for y in groups[gb]):
+                continue
+            groups[ga].update(groups.pop(gb))
+            merged.append((a, b, round(cosine, 3)))
+            for l in groups[ga]:
+                member[l] = ga
+        return sorted(sorted(g) for g in groups.values()), member, merged
+
+    out = []
+    for clip, case in selected.items():
+        counts = case["motif_counts"]
+        part_a, member_a, _ = partition(clip, counts, 1)
+        part_b, _member_b, merged_b = partition(clip, counts, 2)
+        part_n, _m, _x = partition(clip, counts, 10 ** 9)
+        recorded = defaultdict(set)
+        for label, root in case["mapping"].items():
+            if label in member_a:
+                recorded[root].add(label)
+        new = [{"labels": [a, b], "cosine": cosine, "truth_relation": relation.get((clip, tuple(sorted((a, b)))), "unrecorded")}
+               for a, b, cosine in merged_b if member_a[a] != member_a[b]]
+        labels_out = lambda part: case["input_labels"] - sum(len(g) for g in part) + len(part)
+        der_b = case["der"] if part_b == part_a else (no_veto[clip]["der"] if clip in no_veto and part_b == part_n else None)
+        out.append({"clip": clip, "truth": case["truth_speakers"], "raw_labels": case["input_labels"],
+                    "A_matches_recorded": part_a == sorted(sorted(g) for g in recorded.values()),
+                    "pairs_with_exactly_one": sum(1 for n in counts.values() if n == 1),
+                    "A": {"labels_out": labels_out(part_a), "der": case["der"]},
+                    "B": {"labels_out": labels_out(part_b), "der": der_b,
+                          "der_basis": "= A" if part_b == part_a else ("recorded no-veto arm (same grouping)" if der_b is not None else "UNMEASURED (no words on disk)")},
+                    "B_new_merges": new})
+    return out
+
+
+def gates(cases, raw) -> dict:
+    out = {}
+    for rule in ("B", "C", "V"):
+        scored = [c for c in cases if rule in c and "der" in c["A"] and "der" in c[rule]]
+        worse = [{"fixture": c["fixture"], "first_path": c["first_path"], "A": c["A"]["der"], rule: c[rule]["der"]}
+                 for c in scored if c[rule]["der"] - c["A"]["der"] > DER_MARGIN]
+        counted = [c for c in cases if rule in c and c["truth"]]
+        away = [{"fixture": c["fixture"], "first_path": c["first_path"], "truth": c["truth"], "A": c["A"]["groups"],
+                 rule: c[rule]["groups"]} for c in counted
+                if abs(c[rule]["groups"] - c["truth"]) > abs(c["A"]["groups"] - c["truth"])]
+        long = [c for c in cases if c["fixture"] == "p69-65min" and rule in c]
+        g3 = bool(long) and all(c[rule].get("host_one_group") and c[rule]["der"] <= .060 for c in long)
+        entry = {"G1_no_harm": {"pass": not worse, "cases_scored": len(scored), "worse": worse},
+                 "G2_count": {"pass": not away, "cases_with_truth": len(counted), "moved_away": away},
+                 "G3_repair_65min": {"pass": g3, "values": [{"der": c[rule]["der"], "host_one_group": c[rule].get("host_one_group")} for c in long]}}
+        if rule == "B":
+            false_merges = [{"clip": r["clip"], **m} for r in raw for m in r["B_new_merges"] if m["truth_relation"] == "different"]
+            raw_worse = [{"clip": r["clip"], "A": r["A"]["der"], "B": r["B"]["der"]} for r in raw
+                         if r["B"]["der"] is not None and r["B"]["der"] - r["A"]["der"] > DER_MARGIN]
+            entry["G1_no_harm"]["raw_label_worse"] = raw_worse
+            entry["G2_count"]["raw_label_false_merges"] = false_merges
+            entry["G1_no_harm"]["pass"] = entry["G1_no_harm"]["pass"] and not raw_worse
+            entry["G2_count"]["pass"] = entry["G2_count"]["pass"] and not false_merges
+        else:
+            entry["raw_label_evidence"] = "UNMEASURED: P53 keeps centroids and counts, not turns; rule needs the raw words"
+        entry["all_pass"] = all(entry[k]["pass"] for k in ("G1_no_harm", "G2_count", "G3_repair_65min"))
+        out[rule] = entry
+    return out
 
 
 def main() -> None:
@@ -408,7 +559,6 @@ def main() -> None:
     real = _identity_encoder(LiveProviderBundleConfig.from_manifest(MANIFEST), interval_workers=3)
     encoders: dict[str, FixtureEncoder] = {}
     cases: dict[tuple, dict] = {}
-    skipped = collections.Counter()
     for path in sorted(EVID.rglob("*.json")):
         text = str(path)
         if "/bench-aba/" in text or "/state" in text or "/file-work" in text:
@@ -418,9 +568,7 @@ def main() -> None:
             continue
         kind, duration, lanes = loaded
         for lane, rows in lanes.items():
-            fx = (fixtures.resolve(path, duration, rows) if lane == "system"
-                  else {"fixture": "mic-lane", "audio": None, "audio_s": duration or max(r["end"] for r in rows),
-                        "reference": None, "truth": None, "score_until": None})
+            fx = fixtures.resolve(path, duration, rows, lane)
             key = (fx["fixture"], lane, signature(rows))
             case = cases.setdefault(key, {"fixture": fx["fixture"], "lane": lane, "kind": kind, "rows": rows, "fx": fx,
                                           "paths": []})
@@ -430,12 +578,16 @@ def main() -> None:
         rows, fx = case["rows"], case["fx"]
         total_s = fx["audio_s"]
         chunks = pseudo_chunks(rows, total_s)
-        counts = {f"c{c.index}": {" / ".join(p): n for p, n in sorted(triple_counts(c.words).items())} for c in chunks}
-        exactly_one = [f"c{c.index}: {' / '.join(p)}" for c in chunks for p, n in sorted(triple_counts(c.words).items()) if n == 1]
+        counts = {}
+        for c in chunks:
+            per = collections.Counter(tuple(sorted((a.speaker, b.speaker))) for a, b, _c in alternations(c.words))
+            counts[f"c{c.index}"] = {" / ".join(p): n for p, n in sorted(per.items())}
+        exactly_one = [f"{k}: {p}" for k, per in counts.items() for p, n in per.items() if n == 1]
         row = {"fixture": case["fixture"], "lane": case["lane"], "kind": case["kind"], "audio_s": round(total_s, 1),
                "chunks": len(chunks), "site": "stitcher" if len(chunks) > 1 else "short-policy",
                "saved_labels": len({r["speaker"] for r in rows}), "truth": fx["truth"], "turns": len(rows),
                "runs": len(case["paths"]), "first_path": case["paths"][0], "paths": case["paths"],
+               "reference": ("complete" if fx.get("reference_complete") else "incomplete") if fx["reference"] else None,
                "alternations": counts, "pairs_with_exactly_one": exactly_one}
         if fx["audio"] is None:
             row["A_vs_B"] = "identical (no pair with exactly one alternation)" if not exactly_one else "UNDETERMINED (no audio)"
@@ -445,27 +597,31 @@ def main() -> None:
         production = run_rule("production", rows, total_s, encoder)
         a = run_rule("A", rows, total_s, encoder)
         assert [(w.speaker, w.start_sample) for w in production] == [(w.speaker, w.start_sample) for w in a], key
-        row["A"] = {**measure(a, fx, rows), **fidelity(rows, a, total_s)}
+        row["A"] = {**measure(a, fx), **fidelity(rows, a)}
         if exactly_one:
-            row["B"] = measure(run_rule("B", rows, total_s, encoder), fx, rows)
+            row["B"] = measure(run_rule("B", rows, total_s, encoder), fx)
             row["A_vs_B"] = "replayed"
         else:
             row["B"] = {k: v for k, v in row["A"].items() if k not in ("extra_merges", "replay_splits")}
             row["A_vs_B"] = "identical (no pair with exactly one alternation)"
-        relabel, audit = split_relabel(rows, total_s, encoder)
-        row["C"] = {**measure(run_rule("A", rows, total_s, encoder, relabel), fx, rows), "turns_split": len(relabel),
-                    "turns_tested": len(audit),
-                    "own_cosine_min": min((x["own_cosine"] for x in audit), default=None),
-                    "split_turns": [x for x in audit if x["own_cosine"] < SPLIT_FLOOR][:12]}
-        row["own_cosines"] = sorted(x["own_cosine"] for x in audit)
+        audit = turn_audit(rows, total_s, encoder, fx)
+        relabel = {(x["chunk"], x["row"]): f"{x['label']}~{x['row']}" for x in audit if x["own_cosine"] < SPLIT_FLOOR}
+        row["C"] = {**measure(run_rule("A", rows, total_s, encoder, relabel), fx), "turns_split": len(relabel),
+                    "turns_tested": len(audit)}
+        row["V"] = measure(run_rule("V", rows, total_s, encoder), fx)
+        row["turn_audit"] = audit
         results.append(row)
         print(json.dumps({k: row[k] for k in ("fixture", "lane", "site", "runs", "truth", "saved_labels",
-                                              "pairs_with_exactly_one", "A", "B", "A_vs_B")} | {
-            "C": {k: v for k, v in row["C"].items() if k != "split_turns"}}), flush=True)
-    (OUT / "results.json").write_text(json.dumps({"schema": "aba-veto-bench.v1", "der_margin": DER_MARGIN,
-                                                  "split_floor": SPLIT_FLOOR, "cases": results}, indent=1) + "\n")
+                                              "pairs_with_exactly_one", "A", "B", "C", "V", "A_vs_B")}), flush=True)
+    raw = p53_raw_labels()
+    summary = gates(results, raw)
+    (OUT / "results.json").write_text(json.dumps({"schema": "aba-veto-bench.v2", "der_margin": DER_MARGIN,
+                                                  "split_floor": SPLIT_FLOOR, "gates": summary,
+                                                  "p53_raw_labels": raw, "cases": results}, indent=1) + "\n")
     print(json.dumps({"cases": len(results), "with_audio": sum(1 for r in results if "A" in r),
-                      "encoder_intervals": sum(e.calls for e in encoders.values())}))
+                      "undetermined": sum(1 for r in results if r["A_vs_B"].startswith("UNDETERMINED")),
+                      "encoder_intervals": sum(e.calls for e in encoders.values()),
+                      "gates": {k: {g: v[g]["pass"] for g in ("G1_no_harm", "G2_count", "G3_repair_65min")} for k, v in summary.items()}}))
 
 
 if __name__ == "__main__":
