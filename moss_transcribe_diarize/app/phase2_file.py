@@ -1426,8 +1426,8 @@ def file_transcript_document(text: str) -> dict[str, object]:
     """A decoded File transcript as saved.
 
     The decoder's `Sxx` token stays each row's speaker identity (`speaker_entity_id`, the
-    address naming uses); the saved name is the default a live transcript gets ("Speaker n"
-    by first speech), so summaries and exports never read a raw token.
+    address naming uses); the saved name is the default a live transcript gets (`S02` is
+    "Speaker 2"), so summaries and exports never read a raw token.
     """
     segments = [segment.to_dict()
                 for segment in subtitle_segments_from_transcript(text, postprocess=False)]

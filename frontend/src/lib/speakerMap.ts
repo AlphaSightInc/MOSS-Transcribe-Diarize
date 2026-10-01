@@ -9,6 +9,9 @@ const UNKNOWN_DISPLAY_LABEL = "Preview";
 export const UNATTRIBUTED_SPEAKER_LABEL = "Speaker TBD";
 const UNCERTAIN_DISPLAY_LABEL = UNATTRIBUTED_SPEAKER_LABEL;
 const LOCAL_SPEAKER_ID = /^local-(\d+)$/;
+const SHARED_SPEAKER_ID = /^(?:speaker-|S)(\d+)$/;
+/** The palette is --sp-1 … --sp-8 (styles/index.css). */
+const SPEAKER_COLOR_COUNT = 8;
 const UNATTRIBUTED_COLOR_TOKEN = "var(--muted-2)";
 const RESERVED_UNCERTAINTY_LABELS = new Set([
   "",
@@ -99,37 +102,28 @@ export function microphoneSpeakerLabel(speakerId: string): string | null {
   return index <= 1 ? "You" : `User ${index - 1}`;
 }
 
-/**
- * Colours follow first appearance of the canonical speaker, then any guessed-only speakers.
- * Unattributed speech takes no palette slot: a colour would claim an identity it does not have.
- */
-export function buildSpeakerColorMap(
-  segments: readonly (Pick<TranscriptItem, "speaker"> & Partial<Pick<TranscriptItem, "speaker_entity_id">>)[],
-  extraSpeakerIds: readonly string[] = []
-): Map<string, string> {
-  const colorMap = new Map<string, string>();
-  const ids = [...segments.map(segment => segment.speaker_entity_id || segment.speaker), ...extraSpeakerIds];
-
-  for (const id of ids) {
-    const normalizedSpeakerId = normalizeDisplayNameForStorage(id) || UNKNOWN_SPEAKER_ID;
-    if (colorMap.has(normalizedSpeakerId) || isBackendUnknownSpeakerId(normalizedSpeakerId)) {
-      continue;
-    }
-
-    const colorIndex = (colorMap.size % 8) + 1;
-    colorMap.set(normalizedSpeakerId, `var(--sp-${colorIndex})`);
-  }
-
-  return colorMap;
+/** The number in a shared-audio voice's id ("speaker-0004", a File decoder's "S04"); null for other ids. */
+export function sharedSpeakerNumber(speakerId: string): number | null {
+  const number = Number(SHARED_SPEAKER_ID.exec(speakerId)?.[1] ?? 0);
+  return number > 0 ? number : null;
 }
 
-export function resolveSpeakerColorToken(
-  speakerId: string,
-  colorMap: ReadonlyMap<string, string>
-): string {
-  const normalizedSpeakerId = normalizeDisplayNameForStorage(speakerId) || UNKNOWN_SPEAKER_ID;
-  if (isBackendUnknownSpeakerId(normalizedSpeakerId)) return UNATTRIBUTED_COLOR_TOKEN;
-  return colorMap.get(normalizedSpeakerId) ?? "var(--sp-1)";
+/**
+ * A speaker's colour is read off its id, like its default name, so it is the same during the
+ * meeting, after clean-up, after a rename and when the meeting is reopened. Shared voices take
+ * palette slots from the front by their number, microphone voices from the back, and any other
+ * id (a person added by a correction) a slot fixed by its text.
+ * Unattributed speech takes no palette slot: a colour would claim an identity it does not have.
+ */
+export function speakerColorToken(speakerId: string): string {
+  const id = normalizeDisplayNameForStorage(speakerId) || UNKNOWN_SPEAKER_ID;
+  if (isBackendUnknownSpeakerId(id)) return UNATTRIBUTED_COLOR_TOKEN;
+  const shared = sharedSpeakerNumber(id);
+  const local = Number(LOCAL_SPEAKER_ID.exec(id)?.[1] ?? 0);
+  const slot = shared !== null ? (shared - 1) % SPEAKER_COLOR_COUNT
+    : local > 0 ? SPEAKER_COLOR_COUNT - 1 - ((local - 1) % SPEAKER_COLOR_COUNT)
+    : [...id].reduce((sum, char) => sum + char.charCodeAt(0), 0) % SPEAKER_COLOR_COUNT;
+  return `var(--sp-${slot + 1})`;
 }
 
 export function buildSpeakerLegendKey(speakerId: string, visibleLabel: string): string {

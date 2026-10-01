@@ -91,9 +91,15 @@ server restart an in-flight clean-up or File job cannot resume → existing "liv
 
 ### I-4 Speaker display names (Q5)
 
-One rule, implemented once per side: backend `published_speaker_label` (saved transcript/export) and frontend label
-mapping (live view, guesses). `local-1`→"You", `local-(n+1)`→"User n"; shared lane canonical `speaker-000n` / `S0n` →
-"Speaker n" in order of first settled speech (existing numbering); named/voiceprint names always win; guesses = plain label + dotted rule (issue #7).
+One rule, implemented once per side: backend `live_surface.default_speaker_name` (saved transcript/export) and frontend
+`defaultSpeakerLabel` / `speakerColorToken` (live view, guesses, History). A default name and colour are read off the
+speaker's id alone: `local-1`→"You", `local-(n+1)`→"User n"; shared lane `speaker-000n` / File `S0n` → "Speaker n";
+named/voiceprint names always win; guesses = plain label + dotted rule (issue #7).
+Round 4 (F4) replaced "numbered in order of first speech": that order belongs to one version of the transcript, so
+clean-up renamed speakers (5 of 25 surviving speakers in 5 recorded long60 live→refined pairs; the live "Speaker 1" became
+"Speaker 3" in r4-ui-e2e run a) and naming one speaker renumbered the rest. Ids are kept by clean-up and were handed
+out contiguously in speaking order in all 35 round-2–4 snapshots, so id-derived names change for 0 of 25; a speaker that
+disappears leaves a gap, a new one takes the next unused number.
 
 ### I-5 OpenAI-compatible adapter (WP-F → wired by WP-B)
 

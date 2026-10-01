@@ -1,5 +1,7 @@
 import type { TranscriptTurn } from "./mergeTranscript";
-import { isBackendUnknownSpeakerId, microphoneSpeakerLabel, UNATTRIBUTED_SPEAKER_LABEL } from "./speakerMap";
+import {
+  isBackendUnknownSpeakerId, microphoneSpeakerLabel, sharedSpeakerNumber, UNATTRIBUTED_SPEAKER_LABEL
+} from "./speakerMap";
 
 export interface TranscriptCard {
   key: string;
@@ -101,51 +103,25 @@ export function isSettledTurn(turn: SpeakerRow, finalized: boolean): boolean {
 }
 
 /**
- * Shared-lane "Speaker n" numbers, dense and recomputed every render so a merged identity
- * leaves no gap: settled speech first, then committed, then preview rows, then speakers that
- * so far exist only as a guess. Microphone voices, unattributed speech and named people take
- * no number.
+ * The label a speaker id shows when nobody has named it (I-4); never a raw tag. It is read off
+ * the id alone ("speaker-0004" is "Speaker 4"), as the backend saves it, so a speaker keeps its
+ * name through clean-up and reopening and naming one speaker never renumbers another.
  */
-export function settledSpeakerNumbers(
-  turns: readonly TranscriptTurn[], finalized: boolean, guessedSpeakerIds: readonly string[] = []
-): Map<string, number> {
-  const numbers = new Map<string, number>();
-  const assign = (id: string) => {
-    if (!numbers.has(id) && !isBackendUnknownSpeakerId(id) && microphoneSpeakerLabel(id) === null) {
-      numbers.set(id, numbers.size + 1);
-    }
-  };
-  const named = new Set(turns.filter(hasCustomName).map(speakerId));
-  const passes: Array<(turn: TranscriptTurn) => boolean> = [
-    turn => isSettledTurn(turn, finalized),
-    turn => turn.state !== "provisional",
-    () => true
-  ];
-  for (const pass of passes) {
-    for (const turn of turns) if (pass(turn) && !named.has(speakerId(turn))) assign(speakerId(turn));
-  }
-  for (const id of guessedSpeakerIds) if (!named.has(id)) assign(id);
-  return numbers;
-}
-
-/** The label a speaker id shows when nobody has named it (I-4); never a raw tag. */
-export function defaultSpeakerLabel(id: string, numbers: ReadonlyMap<string, number>): string {
+export function defaultSpeakerLabel(id: string): string {
   if (isBackendUnknownSpeakerId(id)) return UNATTRIBUTED_SPEAKER_LABEL;
-  const microphone = microphoneSpeakerLabel(id);
-  if (microphone !== null) return microphone;
-  const number = numbers.get(id);
-  return number === undefined ? UNATTRIBUTED_SPEAKER_LABEL : `Speaker ${number}`;
+  const number = sharedSpeakerNumber(id);
+  return microphoneSpeakerLabel(id) ?? (number === null ? UNATTRIBUTED_SPEAKER_LABEL : `Speaker ${number}`);
 }
 
 /** Names chosen by a person or a voiceprint win; everything else follows the I-4 rule. */
-export function transcriptCardSpeakerLabel(turn: SpeakerRow, numbers: ReadonlyMap<string, number>): string {
+export function transcriptCardSpeakerLabel(turn: SpeakerRow): string {
   const id = speakerId(turn);
   if (isBackendUnknownSpeakerId(id)) return UNATTRIBUTED_SPEAKER_LABEL;
   // A microphone-lane speaker carrying a server default ("Speaker n", "User n", "You") follows its id.
   const display = turn.display_name.trim();
   if (microphoneSpeakerLabel(id) !== null && /^(?:Speaker \d+|User \d+|You)$/.test(display)) {
-    return defaultSpeakerLabel(id, numbers);
+    return defaultSpeakerLabel(id);
   }
   // A name chosen by the operator is literal, including a generic-looking name.
-  return hasCustomName(turn) ? display : defaultSpeakerLabel(id, numbers);
+  return hasCustomName(turn) ? display : defaultSpeakerLabel(id);
 }

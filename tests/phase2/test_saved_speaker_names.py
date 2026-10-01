@@ -1,9 +1,12 @@
 """Saved transcripts name speakers by one rule (I-4), in every saved version.
 
 B2 (round-3 stress, long60): refinement copied the first version's *default* names onto
-the refined version, so a speaker first numbered "Speaker 4" kept it while a speaker new in
-the refined version was also numbered "Speaker 4" (collision), and absorbed speakers left
-gaps. Only names a person or a voiceprint gave may carry over.
+the refined version: two speakers saved as "Speaker 4". Only names a person or a voiceprint
+gave may carry over.
+F4 (round-4 UI e2e, run a): defaults were then renumbered by first speech in the refined
+version, so the voice shown as "Speaker 1" all meeting was saved as "Speaker 3". A default
+name is read off the speaker's id, which clean-up keeps: same name in every version, a new
+speaker takes the next unused number, a speaker that disappears leaves a gap.
 B3: File/URL transcripts saved the decoder's raw `S01`/`S02`.
 """
 from __future__ import annotations
@@ -34,20 +37,21 @@ def _snapshot(speakers):
         effective_transcript=rows))
 
 
-def test_refined_version_keeps_given_names_and_renumbers_every_default(tmp_path: Path):
+def test_refined_version_keeps_every_live_name_and_numbers_only_new_speakers(tmp_path: Path):
     live_names = {"speaker-0001": "Blair"}  # a voiceprint named Blair while recording
     first = _transcript_document(_snapshot(
-        ["speaker-0001", "speaker-0003", "speaker-0004", "speaker-0002", "local-0001"]),
+        ["speaker-0001", "speaker-0002", "speaker-0003", "speaker-0004", "local-0001"]),
         live_names)
     assert [s["speaker"] for s in first["segments"]] == [
-        "Blair", "Speaker 1", "Speaker 2", "Speaker 3", "You"]
+        "Blair", "Speaker 2", "Speaker 3", "Speaker 4", "You"]
     for segment in first["segments"]:  # a person names speaker-0002 after Stop
         if segment.get("speaker_entity_id") == "speaker-0002":
             segment["speaker"] = "Alex"
-    # Refinement: speaker-0003 is gone, speaker-0005 is new, speaker-0004 now speaks first,
-    # and a second microphone voice appears.
+    # Clean-up: speaker-0003 is gone, speaker-0005 is new, speaker-0004 now speaks first
+    # (r4-ui-e2e run a: the live "Speaker 1" was re-saved as "Speaker 3"), and a second
+    # microphone voice appears.
     refined = _transcript_document(_snapshot(
-        ["speaker-0001", "speaker-0004", "speaker-0005", "speaker-0002", "local-0001",
+        ["speaker-0004", "speaker-0001", "speaker-0005", "speaker-0002", "local-0001",
          "local-0002", None, "speaker-0004"]), live_names)
 
     app = create_phase2_app(database_path=tmp_path / "db")
@@ -79,9 +83,12 @@ def test_refined_version_keeps_given_names_and_renumbers_every_default(tmp_path:
         saved = client.portal.call(run)
     rows = [(s.get("speaker_entity_id"), s["speaker"]) for s in saved["segments"]]
     assert rows == [
-        ("speaker-0001", "Blair"), ("speaker-0004", "Speaker 1"), ("speaker-0005", "Speaker 2"),
-        ("speaker-0002", "Alex"), ("local-0001", "You"), ("local-0002", "User 1"),
-        ("S00", "Speaker TBD"), ("speaker-0004", "Speaker 1")]
+        ("speaker-0004", "Speaker 4"),   # same name as live, although it now speaks first
+        ("speaker-0001", "Blair"),       # voiceprint name kept
+        ("speaker-0005", "Speaker 5"),   # new in clean-up: the next unused number
+        ("speaker-0002", "Alex"),        # name given after Stop kept
+        ("local-0001", "You"), ("local-0002", "User 1"),
+        ("S00", "Speaker TBD"), ("speaker-0004", "Speaker 4")]  # no "Speaker 3": it is gone
     labels = {}
     for speaker, label in rows:
         if speaker != "S00":
@@ -92,7 +99,7 @@ def test_file_transcript_saves_default_names_and_keeps_the_decoder_token_as_iden
     document = file_transcript_document(
         "[0][S02]first voice[1][1][S01]second voice[2][2][S00]nobody known[3][3][S02]again[4]")
     assert [(s.get("speaker_entity_id"), s["speaker"]) for s in document["segments"]] == [
-        ("S02", "Speaker 1"), ("S01", "Speaker 2"), (None, "S00"), ("S02", "Speaker 1")]
+        ("S02", "Speaker 2"), ("S01", "Speaker 1"), (None, "S00"), ("S02", "Speaker 2")]
 
 
 def test_meeting_records_the_version_its_clean_up_produced_and_renames_keep_it(tmp_path: Path):

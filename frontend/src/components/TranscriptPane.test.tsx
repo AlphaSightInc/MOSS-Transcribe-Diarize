@@ -265,10 +265,11 @@ describe("TranscriptPane", () => {
           speaker_entity_id: "speaker-0001", display_name: "S03", state: "confirmed", segment_id: "d" }
       ]);
     });
+    // Names are read off the ids (speaker-0003, local-0001, local-0002, speaker-0001), not off speaking order.
     expect([...root.querySelectorAll(".utt-speaker-label")].map(node => node.textContent))
-      .toEqual(["Speaker 1", "You", "User 1", "Speaker 2"]);
+      .toEqual(["Speaker 3", "You", "User 1", "Speaker 1"]);
     expect([...root.querySelectorAll(".legend-chip-name")].map(node => node.textContent))
-      .toEqual(["Speaker 1", "You", "User 1", "Speaker 2"]);
+      .toEqual(["Speaker 3", "You", "User 1", "Speaker 1"]);
     expect([...root.querySelectorAll(".utt-source")].map(node => node.textContent))
       .toEqual([shared, "Mic", "Mic", shared]);
     expect([...root.querySelectorAll(".utt-time")].map(node => node.textContent))
@@ -277,6 +278,43 @@ describe("TranscriptPane", () => {
     expect(visible).not.toMatch(/\bS0\d|Local \d|Remote\b|System|Shared audio|Microphone/);
     expect(root.querySelector("[data-settling-hint]")).toBeNull();
     expect(root.textContent).not.toContain("Identity settling");
+  });
+
+  it("keeps every speaker's name and colour through clean-up, reopening and a rename (F4)", () => {
+    const row = (start: number, id: string, lane: "system" | "microphone", display = "S01",
+                 state: "confirmed" | "final" = "confirmed") =>
+      ({ source_lane: lane, start, end: start + 1, text: `words ${start}`, speaker: "S01",
+        speaker_entity_id: id, display_name: display, state, segment_id: `${id}-${start}` });
+    const shown = () => Object.fromEntries([...root.querySelectorAll<HTMLElement>("article.utt")].map(card =>
+      [card.querySelector<HTMLElement>("[data-speaker-id]")!.dataset.speakerId!,
+        [card.querySelector(".utt-speaker-label")?.textContent, card.style.getPropertyValue("--sp")]]));
+    act(() => {
+      render(<TranscriptPane />, root);
+      applySessionStateEvent({ type: "session_state", session_id: "f4", mode: "live", state: "active", status: "active" });
+      replaceTranscript([row(0, "speaker-0001", "system"), row(1, "speaker-0002", "system"),
+        row(2, "local-0001", "microphone"), row(3, "speaker-0003", "system"), row(4, "speaker-0004", "system")]);
+    });
+    const live = shown();
+    expect(live).toEqual({ "speaker-0001": ["Speaker 1", "var(--sp-1)"], "speaker-0002": ["Speaker 2", "var(--sp-2)"],
+      "local-0001": ["You", "var(--sp-8)"], "speaker-0003": ["Speaker 3", "var(--sp-3)"],
+      "speaker-0004": ["Speaker 4", "var(--sp-4)"] });
+    // Clean-up (r4-ui-e2e run a): 0004 now speaks first, 0003 is gone, 0005 is new.
+    act(() => {
+      applySessionStateEvent({ type: "session_state", session_id: "f4", mode: "live", state: "completed", status: "closed" });
+      replaceTranscript([row(0, "speaker-0004", "system", "S01", "final"), row(1, "speaker-0002", "system", "S01", "final"),
+        row(2, "local-0001", "microphone", "S01", "final"), row(3, "speaker-0001", "system", "S01", "final"),
+        row(4, "speaker-0005", "system", "S01", "final")]);
+    });
+    const refined = shown();
+    for (const id of ["speaker-0001", "speaker-0002", "speaker-0004", "local-0001"]) expect(refined[id]).toEqual(live[id]);
+    expect(refined["speaker-0005"]).toEqual(["Speaker 5", "var(--sp-5)"]);
+    // Reopened from History: the rows carry the saved names; one speaker has since been named.
+    act(() => {
+      replaceTranscript([row(0, "speaker-0004", "system", "Speaker 4", "final"), row(1, "speaker-0002", "system", "Alex", "final"),
+        row(2, "local-0001", "microphone", "You", "final"), row(3, "speaker-0001", "system", "Speaker 1", "final"),
+        row(4, "speaker-0005", "system", "Speaker 5", "final")]);
+    });
+    expect(shown()).toEqual({ ...refined, "speaker-0002": ["Alex", "var(--sp-2)"] });
   });
 
   it("shows no source label for File/URL meetings", () => {
@@ -305,7 +343,7 @@ describe("TranscriptPane", () => {
     });
     const rows = [...root.querySelectorAll<HTMLElement>("article.utt")];
     expect(rows).toHaveLength(2);
-    expect(rows.map(row => row.style.getPropertyValue("--sp"))).toEqual(["var(--sp-1)", "var(--sp-2)"]);
+    expect(rows.map(row => row.style.getPropertyValue("--sp"))).toEqual(["var(--sp-1)", "var(--sp-8)"]);
     expect(rows.map(row => row.dataset.newSpeaker)).toEqual(["true", "true"]);
     expect(rows[0]?.querySelector(".utt-meta .utt-speaker + .utt-source + .utt-time")).not.toBeNull();
     expect(rows[0]?.querySelector(".utt-text")?.textContent).toBe("One two");
@@ -323,9 +361,9 @@ describe("TranscriptPane", () => {
         state: "active", status: "active", live_label_policy: "La" });
       replaceTranscript([
         { source_lane: "system", start: 0, end: 1, text: "Settled first", speaker: "S01",
-          speaker_entity_id: "same", display_name: "S01", state: "confirmed", settled: true },
+          speaker_entity_id: "speaker-0001", display_name: "S01", state: "confirmed", settled: true },
         { source_lane: "system", start: 5, end: 6, text: "Unsettled later", speaker: "S01",
-          speaker_entity_id: "same", display_name: "S01", state: "confirmed", settled: false },
+          speaker_entity_id: "speaker-0001", display_name: "S01", state: "confirmed", settled: false },
         { source_lane: "system", start: 10, end: 11, text: "Unknown first", speaker: "S00",
           speaker_entity_id: "S00", display_name: "S00", state: "confirmed" },
         { source_lane: "system", start: 15, end: 16, text: "Unknown later", speaker: "S00",
@@ -694,7 +732,7 @@ describe("TranscriptPane", () => {
       ["", "false"], ["true", "true"], ["true", "false"]
     ]);
     expect(rows.map(row => row.querySelector(".utt-speaker-label")?.textContent))
-      .toEqual(["Speaker 1", "Speaker 1", "Speaker 2"]);
+      .toEqual(["Speaker 1", "Speaker 1", "Speaker 4"]);
     // The confirmed row keeps its solid rule; both guesses, including the continuation, are dotted.
     expect(rows.map(row => row.dataset.speakerGuess ?? "")).toEqual(["", "true", "true"]);
     expect(rows[1]?.style.getPropertyValue("--sp")).toBe(rows[0]?.style.getPropertyValue("--sp"));
@@ -714,7 +752,7 @@ describe("TranscriptPane", () => {
         ] });
     });
     expect([...root.querySelectorAll("[data-tentative-block] .utt-speaker-label")].map(node => node.textContent))
-      .toEqual(["Alex", "Speaker 1"]);
+      .toEqual(["Alex", "Speaker 2"]);
     expect(root.textContent).not.toContain("speaker-0002");
   });
 
