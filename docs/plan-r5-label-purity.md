@@ -1,6 +1,7 @@
 # Round 5 — is one provider label one voice? (prototype plan v2, 2026-10-01)
 
-Status: PLAN v2, after adversarial review (10 findings, all accepted; §10 maps each to its change). Prototype only —
+Status: PLAN v2.1 — FINAL for the prototype stage, after two adversarial review passes (F1–F12 accepted; §10 maps each
+to its change). Prototype only —
 no production change until a candidate passes every gate and the user approves.
 Decision: user D7 = O2. Executors: four Codex agents (gpt-6.1-sol, high reasoning) in tmux panes 6.1–6.4, one worktree
 each (`…-wt-r5-p1…p4`, branches `gemini/r5-p1…p4`, base `gemini/r4-ui`). Lead: Claude (MOSS:5.1).
@@ -34,7 +35,8 @@ Both use a label as if it were one voice. Measured, it sometimes is not:
 
 - **Observation** — one short window of one label's voiced audio inside one chunk, with its fingerprint. A window never
   crosses a label change. It records: chunk, label, start/end, **voiced seconds** (production VAD, not timestamp span),
-  an **overlap flag** (another label's words fall inside it), and — where a complete reference exists — the true
+  an **overlap flag** (another label's words fall inside it — this cannot see two voices overlapping under one label;
+  that case is measured only on the overlap fixtures, where truth says so, and is otherwise UNMEASURED), and — where a complete reference exists — the true
   speaker and that speaker's share of the window. Windows, not turns, because a turn can already hold two voices (the
   bench has a 95 s turn that opens with another voice). Window length is not assumed: see G0.
 - **Voice group** — a set of observations judged one voice by a stated grouping rule. Every candidate must state its
@@ -81,9 +83,10 @@ not confirm each other's errors).
 **P3 — no relabelling: the control arm (pane 6.3).** Two variants, assignment untouched:
 - **C0 — sampling control.** Label fingerprint from voiced windows spread over the whole label instead of the first
   three spans. Tests H-sample alone.
-- **C1 — group-level evidence.** Merge on clean-core fingerprints; an alternation vetoes the two *voice groups* that
-  alternate, not the two labels (so a minority voice's alternation is kept as evidence about that minority voice).
-  Known limit by construction: wrongly named speech stays wrongly named — P3 cannot pass G-name; it shows how much of
+- **C1 — core-level evidence.** A label is represented by its **core** (its largest voice group). Merge on core
+  fingerprints. Two labels are vetoed iff some alternation has windows in **both labels' cores**; an alternation that
+  involves a minority group says nothing about the cores and vetoes nothing between the labels. Known limit by
+  construction: wrongly named speech stays wrongly named — P3 cannot pass G-name; it shows how much of
   the damage is repairable with evidence alone.
 
 P1 and P2 consume E's observation tables (same fingerprints for everyone; candidates add no embeddings unless they
@@ -100,9 +103,10 @@ state and count them).
 4. **Stage 2 — HOLD.** Each candidate hands E one frozen command (commit id). E runs it on HOLD and publishes the
    scorecard. A candidate changed after seeing HOLD results is a new version; every version and every provider draw is
    reported, never the best one.
-5. **Stage 3 — only for a passing candidate, only with the user's OK:** validation on real late-joiner audio that no
-   candidate has seen (new provider calls, ≈ $0.30; §7), then production change with regression tests, full suites and
-   a long-meeting re-check on the MacStudio.
+5. **Stage 3 — for a candidate with no failed gate (exercised gates all pass; some may be UNMEASURED), only with the
+   user's OK:** validation on real late-joiner audio that no candidate has seen (new provider calls, ≈ $0.30; §7).
+   **Ship rule:** production changes only when no gate fails and G-protect and G-repair are both exercised and passed
+   (on HOLD or Stage 3); then regression tests, full suites and a long-meeting re-check on the MacStudio.
 
 ## 6. Bench, eligibility and gates
 
@@ -114,7 +118,7 @@ is `UNKNOWN` for it, never a pass):
 | Item | Kind | Supports |
 |---|---|---|
 | 8 raw provider responses, synthetic meetings K2/K3/K4/K6 × seeds 0,1 (LibriSpeech voices, complete truth) | raw words + audio | all gates; seed 0 = DEV, seed 1 = HOLD unless E's counts require another split |
-| 65.5-min fixture, **new raw pass** (paid) | raw words + audio; long60 part has complete truth; Acquired part truth is partial | G-repair and G-name **after** E annotates the newcomer interval 2588–2640 s (who speaks when) from the public source; HOLD |
+| 65.5-min fixture, **new raw pass** (paid) | raw words + audio; long60 part has complete truth; Acquired part truth is partial | G-repair; G-name **only inside complete-truth ranges**: the long60 part plus the newcomer interval 2588–2640 s once E annotates it (who speaks when) from the public source. The rest of the Acquired part is UNKNOWN for G-name. HOLD |
 | 65.5-min saved turns (the known failure) | approximate replay (saved names hide raw labels) | DEV illustration only; reported as approximate |
 | 27 P53 clips | pair-level only: centroids, alternation counts, truth relation; no turns | pair audits only; cannot run P1/P2 |
 | Overlap mixtures (0 dB, −10 dB) and mic fixture, rebuilt recipes | audio + saved turns | invariant 5 (overlap must not become extra speakers) |
@@ -127,8 +131,8 @@ that, E says so before the freeze and the lead decides.
 
 | Code | Gate | Pass rule |
 |---|---|---|
-| G0 | the observation carries identity | Before anything else, E measures same-voice vs different-voice fingerprint separation by voiced window length (2, 3, 5 s) on truth-tagged data, clean and overlap-flagged separately. If no length ≤ 5 s separates (equal-error rate > 10 %), window-level repair is infeasible: P1/P2 stop, verdict is C0/C1 or "leave it" |
-| G-name | wrongly named speech goes down | seconds of speech carrying a group whose dominant true speaker is someone else, over **all** speech including turns < 2 s and minority speakers: no case worse than A by > 0.5 % of its speech; total strictly lower. Reported per minority speaker |
+| G0 | how much identity one window carries (**diagnostic, not a stop**) | Before anything else, E measures same-voice vs different-voice fingerprint separation by voiced window length (2, 3, 5 s) on truth-tagged data, clean and overlap-flagged separately, and picks the window length. Several noisy windows can still identify a voice jointly, so P1/P2 are rejected only on their own measured grouping failures |
+| G-name | wrongly named speech goes down | seconds of speech carrying a group whose dominant true speaker is someone else, over **all** speech inside complete-truth ranges, including turns < 2 s and minority speakers: no case worse than A by > 0.5 % of its speech; total strictly lower. Reported per minority speaker |
 | G-der | no harm | no case's DER worse by > .005; mean not worse |
 | G-merge | invariant 2 | zero new different-speaker merges in final groups; lost vetoes audited pair by pair (every label/group pair, whatever its cosine) |
 | G-protect | protection is exercised | at least one case with two different voices, merge-eligible similarity (≥ .65) and a single alternation must exist in the scored set and stay apart. If none exists: **UNMEASURED → no ship** |
@@ -138,7 +142,8 @@ that, E says so before the freeze and the lead decides.
 | G-adv | finite adversary set | no gate above violated on any listed variant; report the breaking point |
 | G-cost | bounded | on the 65.5-min meeting on the MacStudio: added wall time ≤ **30 s** (clean-up measured 140 s today), added peak memory ≤ 300 MB; embeddings, reuse, grouping time reported |
 
-Prevalence (E, $0): how often mixed labels occur in the real public recordings on disk. If ≈ 0 outside spliced audio,
+Prevalence (E, $0): how often mixed labels occur in the raw provider outputs that are on disk for real public
+recordings; recordings without usable raw output are UNKNOWN (no new calls for this). If ≈ 0 outside spliced audio,
 "leave it" is the likely verdict.
 
 ## 7. Spend
@@ -161,7 +166,7 @@ rejection is a valid result and must be stated plainly.
 ## 9. Risks
 
 - R1 Too few mixed labels with truth to separate candidates — E reports the counts before the freeze.
-- R2 Short windows may not carry identity — G0 decides before any candidate work is judged.
+- R2 Short windows may carry little identity each — G0 reports it; candidates are judged on grouping results.
 - R3 Overlapped speech looks like a mixed label — invariant 5, G-amb.
 - R4 The trigger may be rare in real meetings — prevalence; "leave it" is allowed.
 - R5 The new raw pass may not reproduce the label reuse (provider is not repeatable) — then G-repair is UNMEASURED on
@@ -181,3 +186,8 @@ rejection is a valid result and must be stated plainly.
 | F8 invariants not operational | §3 |
 | F9 duration ≠ voice evidence | voiced seconds, overlap flag, two-channel adversary, invariant 5 |
 | F10 cost unbounded | §7 reservation and caps; G-cost limits |
+| F4/F9 (second pass) | G-name only inside complete-truth ranges; same-label overlap stated as UNMEASURED outside fixtures |
+| F6 (second pass) | C1's label/core projection stated |
+| F11 Stage 3 deadlock | Stage 3 open to a candidate with no failed gate; separate ship rule |
+| F12 G0 over-claims | G0 is diagnostic |
+| A2 prevalence too broad | limited to raw outputs on disk; rest UNKNOWN |
