@@ -7,7 +7,8 @@ Public or generated audio only. Three families:
             parameters (tab = R5-D's `sys-zhlatin-en.wav`, speech at -17 dBFS).
 - `r4:*`    round 4's lanes rebuilt from the committed builders (micfixture, mic-hallucination v1/v2, listen-only,
             noise pilot). Their provider answers were deleted; the audio is what the audio-only gate needs.
-- `f2:*`    new 37 s cells on R5-D's tab: varied short replies, short replies beside a long turn, room noise.
+- the same 37 s cell builder also makes the new cells on R5-D's tab: varied short replies, short replies beside
+            a long turn, long turns said entirely under the tab, room-noise events.
 """
 from __future__ import annotations
 
@@ -43,16 +44,19 @@ ZH_LONG = [(9.0, "我觉得这个方案可以，但是我们需要先把接口�
 TEXT = {(96.0, 97.1): "Can you elaborate on that?",
         (140.0, 146.0): "So there is some element that we have in the West of freedom of the individual so that a little bit of the",
         (221.0, 223.6): "Well, let's stay on the big picture"}       # reference turn text up to the cut (approximate)
-# f2 cells. Double-talk first: every phrase but the last is said while the tab is talking.
-VARIED_EN = [(3.0, "Samantha", "Yeah."), (6.5, "Daniel", "Okay, sounds good."), (10.5, "lex", (96.0, 97.1)),
-             (14.0, "Samantha", "I agree with that."), (23.5, "Daniel", "Could you say that again?"),
-             (27.5, "Samantha", "Right."), (31.0, "Daniel", "Let me check and get back to you."),
+# f2 cells on R5-D's tab (Mandarin 0.1-19.2 s, silent 19.2-21.5 s, English 21.5-35.3 s, silent after).
+# Double-talk first: every phrase except those at 20.0 s and 35.6 s is said while the tab is talking.
+VARIED_EN = [(3.0, "Samantha", "Yeah."), (6.5, "Samantha", "Okay, sounds good."), (10.5, "lex", (96.0, 97.1)),
+             (14.0, "Samantha", "I agree with that."), (20.0, "Samantha", "Right."),
+             (23.5, "Samantha", "Could you say that again?"), (28.5, "Samantha", "Let me check and get back to you."),
              (35.6, "Samantha", "Thanks everyone.")]
-VARIED_ZH = [(3.0, "好的。"), (6.5, "对，没问题。"), (10.5, "我同意这个方案。"), (14.0, "可以。"),
-             (23.5, "你能再说一遍吗？"), (27.5, "明白。"), (31.0, "我回去确认一下再回复你。"), (35.6, "谢谢大家。")]
+VARIED_ZH = [(3.0, "好的。"), (6.5, "对，没问题。"), (10.5, "我同意这个方案。"), (14.0, "可以。"), (20.0, "明白。"),
+             (23.5, "你能再说一遍吗？"), (28.5, "我回去确认一下再回复你。"), (35.6, "谢谢大家。")]
+# Short replies in a meeting that also has a long local turn (the last two fall after the last live window).
 MIXED = [(4.0, "lex", (140.0, 146.0)), (12.5, "lex", (96.0, 97.1)), (24.0, "Samantha", "Okay, sounds good."),
          (29.0, "lex", (96.0, 97.1)), (35.5, "Samantha", "Yeah.")]
-DOUBLE_LONG = [(3.0, "lex", (140.0, 146.0)), (23.0, "lex", (140.0, 146.0))]   # two 6 s turns, both under the tab
+# Long local turns said entirely while the tab is talking: 6 s under the Mandarin, 2.6 s under the English.
+DOUBLE_LONG = [(3.0, "lex", (140.0, 146.0)), (23.0, "lex", (221.0, 223.6))]
 
 
 def system() -> np.ndarray:
@@ -138,6 +142,16 @@ def d_cell(kind: str, echo_db: float | None, level_dbfs: float = -27.0, events_s
 
 # ---- round 4 lanes (audio only) -------------------------------------------------------------------------------
 
+def ensure_round4() -> None:
+    """Round 4's lanes live in git-ignored `out/` folders: rebuild them with round 4's own builders when missing."""
+    import subprocess
+    for marker, script in ((QMIC / "reference.json", GL / "micfixture" / "build.py"),
+                           (MH / "fixture" / "reference.json", GL / "mic-hallucination" / "build.py"),
+                           (MH / "fixture2" / "reference.json", GL / "mic-hallucination" / "build2.py")):
+        if not marker.is_file():
+            subprocess.run([sys.executable, str(script)], check=True, cwd=str(ROOT), stdout=subprocess.DEVNULL)
+
+
 def r4_listen_only() -> dict[str, tuple[Path, Path, list]]:
     """Round 4 `listen_only.py`, audio part: events + room tone + echo-cancellation residue, no local speech."""
     sys.path[:0] = [str(GL / "mic-hallucination")]
@@ -158,6 +172,7 @@ def r4_listen_only() -> dict[str, tuple[Path, Path, list]]:
 
 def r4_lanes() -> dict[str, tuple[Path, Path, list]]:
     """name -> (mic wav, system wav, local-speech truth rows)."""
+    ensure_round4()
     lanes = dict(r4_listen_only())
     for fixture, cases in (("fixture2", ("A", "B")), ("fixture", ("en", "zh"))):
         ref = json.loads((MH / fixture / "reference.json").read_text())

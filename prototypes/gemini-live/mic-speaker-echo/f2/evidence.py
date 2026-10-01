@@ -55,9 +55,10 @@ def echo_return_db(facts: Facts, quantile: float) -> float | None:
 
 def unexplained(facts: Facts, return_db: float | None, margin_db: float) -> np.ndarray:
     """Voiced microphone frames the tab cannot explain: the tab is silent there, or the microphone is louder
-    than the meeting's measured echo return by the margin."""
+    than the meeting's measured echo return by the margin. With no measurement (the tab talked for under 1 s in
+    the context) the level gate's fixed -15 dB stands in."""
     if return_db is None:
-        return facts.mic_voiced.copy()
+        return fixed_level(facts)
     limit = facts.sys_best * 10 ** ((return_db + margin_db) / 20)
     return facts.mic_voiced & (~facts.sys_near | (facts.mic_rms > limit))
 

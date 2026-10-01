@@ -84,19 +84,34 @@ def score(out: str) -> dict:
         return [row for row in snap["effective"] if row.get("source_lane") == "microphone"]
 
     def judge(snap):
+        """recall: units of each phrase found in the microphone rows overlapping it. outside: units of microphone
+        rows that overlap no phrase (invented or echoed rows). echo_inside: units inside an overlapping row that
+        are not the phrase's and are words the tab said within 2 s (echo committed inside a real local row)."""
         rows = mic_rows(snap)
-        spoken = matched = 0
-        phrases = []
+        tab_rows = [row for row in snap["effective"] if row.get("source_lane") == "system"]
+        spoken = matched = echo_inside = 0
+        phrases, claimed = [], set()
         for phrase in truth:
             lo, hi = (phrase["start"] + prefix - .7) * S, (phrase["end"] + prefix + .7) * S
-            heard = [u for row in rows if row["start_sample"] < hi and row["end_sample"] > lo for u in units(row["text"])]
+            mine = [row for row in rows if row["start_sample"] < hi and row["end_sample"] > lo]
+            claimed.update(id(row) for row in mine)
+            heard = [u for row in mine for u in units(row["text"])]
             want = units(phrase["text"])
             got = lcs(want, heard)
             spoken, matched = spoken + len(want), matched + got
             phrases.append(f"{got}/{len(want)}")
+            tab = {u for row in tab_rows if row["start_sample"] < hi + 2 * S and row["end_sample"] > lo - 2 * S
+                   for u in units(row["text"])}
+            left = list(heard)
+            for unit in want:
+                if unit in left:
+                    left.remove(unit)
+            echo_inside += sum(1 for unit in left if unit in tab)
+        outside = sum(len(units(row["text"])) for row in rows if id(row) not in claimed)
         total = sum(len(units(row["text"])) for row in rows)
-        return {"rows": len(rows), "recall": f"{matched}/{spoken}", "phrases": phrases,
-                "extra_units": max(0, total - matched), "text": [row["text"] for row in rows]}
+        return {"rows": len(rows), "recall": f"{matched}/{spoken}", "phrases": phrases, "outside_units": outside,
+                "echo_inside_units": echo_inside, "extra_units": max(0, total - matched),
+                "text": [row["text"] for row in rows]}
     diag = by_note["settled"]["diag"]
     summaries = [g for g in gates if g["stage"] == "window_summary"]
     return {
@@ -120,8 +135,8 @@ def score(out: str) -> dict:
 
 
 def line(s: dict) -> str:
-    return (f"{s['run']:34s} live {s['live_solid']['recall']:>6s} +{s['live_solid']['extra_units']:<3d} "
-            f"saved {s['saved']['recall']:>6s} +{s['saved']['extra_units']:<3d} phrases live {s['live_solid']['phrases']} "
+    return (f"{s['run']:34s} live {s['live_solid']['recall']:>6s} out {s['live_solid']['outside_units']} echo {s['live_solid']['echo_inside_units']} "
+            f"saved {s['saved']['recall']:>6s} out {s['saved']['outside_units']} echo {s['saved']['echo_inside_units']} phrases live {s['live_solid']['phrases']} "
             f"saved {s['saved']['phrases']}  {s['counters']}")
 
 

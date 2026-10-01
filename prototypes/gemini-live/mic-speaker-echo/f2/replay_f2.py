@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import hashlib
 import json
 import os
 import sys
@@ -31,6 +30,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[3]
 sys.path[:0] = [str(ROOT), str(HERE)]
 import ledger  # noqa: E402
+import provider  # noqa: E402
 import moss_transcribe_diarize.app.gemini_lane_engine as lane_engine  # noqa: E402
 import moss_transcribe_diarize.app.gemini_live_words as live_words  # noqa: E402
 import moss_transcribe_diarize.app.phase2_web_cli as cli  # noqa: E402
@@ -41,7 +41,8 @@ RUN, SYSTEM_WAV, MIC_WAV = sys.argv[1], Path(sys.argv[2]), Path(sys.argv[3])
 
 
 def option(name: str, default=None):
-    return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
+    at = sys.argv.index(name) + 1 if name in sys.argv else None
+    return sys.argv[at] if at is not None and at < len(sys.argv) else default
 
 
 RECORD = "--record" in sys.argv
@@ -50,77 +51,13 @@ DONOR = option("--donor")
 W3_MODE = option("--w3", "record" if RECORD else ("donor" if DONOR else "replay"))
 PREFIX = 3.0
 OUT = ledger.EV / "runs" / RUN
-RAWS = [ledger.EV / "provider-responses", ledger.D_EV / "provider-responses"]     # mine (written), R5-D's (read)
+RAWS = provider.RAWS
+w3_file = provider.w3_file
 MANIFEST = Path.home() / ".local/share/moss-transcribe-diarize/live/live-provider-manifest.json"
 REAL_CLIENT = cli._gemini_client
 RealLiveWords = live_words.GeminiLiveWordSource
 w3_events: dict[str, list] = {"system": [], "microphone": []}
 gates: list[dict] = []
-
-
-def recorded(pattern: str) -> list[Path]:
-    return [path for raw in RAWS for path in sorted(raw.glob(pattern))]
-
-
-def system_digests() -> set[str]:
-    """Requests of R5-D's shared tab lane: the digests two R5-D runs with different microphones have in common."""
-    def digests(run):
-        receipt = ledger.D_EV / "runs" / run / "receipt.json"
-        return {call["digest"] for call in json.loads(receipt.read_text())["batch_calls"]}
-    return digests("rp-listen-aec40") & digests("rp-short-noecho")
-
-
-class Client:
-    """The production client; each raw response is written once and replayed for identical request bytes."""
-
-    def __init__(self):
-        self.interactions = self
-        self._real = None
-        self.calls: list[dict] = []
-        self._tab = system_digests() if DONOR else set()
-
-    def _client(self):
-        if self._real is None:
-            self._real = REAL_CLIENT(os.environ.get("GEMINI_API_KEY"))
-        return self._real
-
-    def create(self, *, model, input, generation_config):  # noqa: A002
-        digest = hashlib.sha256((input[0]["data"] + json.dumps(generation_config, sort_keys=True) + model)
-                                .encode()).hexdigest()[:16]
-        repeat = sum(1 for call in self.calls if call["digest"] == digest)
-        seconds = (len(input[0]["data"]) * 3 // 4 - 44) / (2 * S)
-        found = recorded(f"*-{digest}-{repeat}.json") or recorded(f"*-{digest}-*.json")
-        call = {"digest": digest, "seconds": seconds, "replayed": bool(found) and found[0].name}
-        self.calls.append(call)
-        if not found and DONOR is not None:
-            for path in recorded(f"{DONOR}-*-*.json"):
-                answer = json.loads(path.read_text())
-                if path.name.split("-")[-2] not in self._tab and abs(answer["audio_seconds"] - seconds) < 0.01:
-                    call["replayed"] = f"donor:{path.name}"
-                    found = [path]
-                    break
-        if not found:
-            if not RECORD:
-                raise RuntimeError(f"replay: no recorded response for request {digest} ({seconds:.0f} s)")
-            ledger.check(seconds * ledger.BATCH_PER_S, f"{ANSWERS} batch {seconds:.0f}s")
-            response = self._client().interactions.create(model=model, input=input,
-                                                          generation_config=generation_config)
-            path = RAWS[0] / f"{ANSWERS}-{digest}-{repeat}.json"
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps({"model": model, "generation_config": generation_config,
-                                        "audio_seconds": seconds,
-                                        "response": response.model_dump(exclude_none=True, mode="json")},
-                                       ensure_ascii=False, indent=1))
-            ledger.add(f"replay {ANSWERS} batch {digest}", seconds * ledger.BATCH_PER_S, seconds=seconds,
-                       basis="with_output_estimate")
-            call["paid"] = True
-            found = [path]
-        data = json.loads(found[0].read_text())["response"]
-        return type("Response", (), {"model_dump": lambda self, **_k: data})()
-
-
-def w3_file(name: str) -> Path | None:
-    return next((raw / f"{name}-w3.json" for raw in RAWS if (raw / f"{name}-w3.json").is_file()), None)
 
 
 class LiveWords:
@@ -166,7 +103,7 @@ class LiveWords:
     async def finish(self):
         if self.real is not None:
             await self.real.finish()
-            ledger.add(f"replay {ANSWERS} w3 {self.lane}", self.sent / S * ledger.LIVE_PER_S, seconds=self.sent / S,
+            ledger.add(f"w3 {ANSWERS} {self.lane}", self.sent / S * ledger.LIVE_PER_S, seconds=self.sent / S,
                        basis="list_price_plus_output_estimate")
         elif W3_MODE == "record":
             w3_events[self.lane] = self.replayed
@@ -234,7 +171,10 @@ async def main():
     system = np.concatenate([np.zeros(lead, dtype=np.int16), system])
     mic = np.concatenate([floor, mic])
     total = min(len(system), len(mic))
-    client = Client()
+    client = provider.Client(ANSWERS, record=RECORD, donor=DONOR, real_client=REAL_CLIENT)
+    if W3_MODE == "record":
+        lanes = 1 if option("--w3-system-from") else 2
+        ledger.check(lanes * total / S * ledger.LIVE_PER_S, f"{ANSWERS} instant words {lanes} lane(s) {total / S:.0f}s")
     cli._gemini_client = lambda _key: client
     live_words.GeminiLiveWordSource = LiveWords
     candidate = None
