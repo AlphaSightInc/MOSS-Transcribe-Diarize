@@ -12,7 +12,8 @@ from typing import Callable
 from google.genai import types
 
 from .live_span_bounds import LIVE_SAMPLE_RATE
-from .gemini_provider import _error_code, join_text
+from .gemini_provider import _error_code
+from .transcript_text import join_text
 
 
 _MODEL = "gemini-3.5-transcribe-live"

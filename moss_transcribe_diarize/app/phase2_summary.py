@@ -10,7 +10,7 @@ from typing import Any
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from .phase2 import AccountRevoked, MeetingHandle, _now_ms, _refined_version
+from .phase2 import AccountRevoked, MeetingHandle, _now_ms, _refined_version, readable_transcript
 from .gemini_api_key import gemini_api_key
 
 ACTIVE = {"queued", "generating", "retry_wait"}
@@ -150,7 +150,7 @@ class MeetingSummaries:
                      "source_version": source_version, "artifact_version": 1 if previous is None else previous["artifact_version"] + 1,
                      "error_code": None}
             await self._write(value)
-            return value, document
+            return value, readable_transcript(document)
 
     async def update(self, attempt_id: str, state: str, *, document=None, error_code=None):
         source_changed = False

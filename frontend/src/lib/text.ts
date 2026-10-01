@@ -12,7 +12,7 @@ export function normalizeCasefoldedWhitespace(value: string): string {
 
 // Characters of scripts written without spaces between words, and their punctuation: CJK symbols
 // and punctuation, kana, bopomofo, Han and full-width forms. Hangul is left out: Korean puts
-// spaces between words. Same set as `_UNSPACED` in moss_transcribe_diarize/app/gemini_provider.py.
+// spaces between words. Same set as `_UNSPACED_SET` in moss_transcribe_diarize/app/transcript_text.py.
 const UNSPACED = "[\\u3000-\\u312f\\u31f0-\\u31ff\\u3400-\\u4dbf\\u4e00-\\u9fff\\uf900-\\ufaff" +
   "\\uff00-\\uff9f\\uffe0-\\uffef\\u{20000}-\\u{3134f}]";
 const ENDS_UNSPACED = new RegExp(`${UNSPACED}$`, "u");

@@ -19,6 +19,7 @@ from starlette.requests import Request
 from moss_transcribe_diarize.live_surface import name_saved_speakers
 
 from .phase2_audio import MeetingAudioArtifactSurvives, MeetingAudioCleanupError
+from .transcript_text import without_join_spaces
 
 
 SCHEMA_VERSION = 2
@@ -157,7 +158,7 @@ class Meeting:
             "title_source": self.title_source,
             "status": self.status,
             "created_at_ms": self.created_at_ms,
-            "transcript": self.transcript,
+            "transcript": readable_transcript(self.transcript),
             "transcript_version": self.transcript_version,
             "audio": None if self.audio is None else self.audio.to_dict(),
             **({"failure_code": self.failure_code, "failure_reason": self.failure_reason} if self.failure_code else {}),
@@ -2739,6 +2740,26 @@ def _settled_transcript(document: dict[str, object]) -> dict[str, object]:
             segment["speaker_entity_id"] = "S00"
             segment["speaker"] = "Speaker TBD"
     return document
+
+
+def readable_transcript(document: dict[str, object] | None) -> dict[str, object] | None:
+    """A saved transcript as it is read: served to the browser or handed to a summary.
+
+    Meetings saved before `join_text` hold "大 家 好" (r4 F1). Those join spaces are dropped
+    on the way out; the stored row, which renames and passage corrections rewrite by segment
+    id and speaker id, keeps its text byte for byte.
+    """
+    segments = None if document is None else document.get("segments")
+    if not isinstance(segments, list):
+        return document
+
+    def read(segment: object) -> object:
+        text = segment.get("text") if isinstance(segment, dict) else None
+        if not isinstance(text, str) or (clean := without_join_spaces(text)) == text:
+            return segment
+        return {**segment, "text": clean}
+
+    return {**document, "segments": [read(segment) for segment in segments]}
 
 
 def _meeting_needs_review(
