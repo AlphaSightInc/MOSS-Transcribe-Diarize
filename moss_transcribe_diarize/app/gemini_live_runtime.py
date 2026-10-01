@@ -501,12 +501,13 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             try:
                 for lane, pcm in (frame.lane_pcm or (("system", frame.pcm),)):
                     self._tentative_call(state, "accept_audio", lane, ack.start_sample, pcm)
-                assert state.engine is not None
-                push_lanes = getattr(state.engine, "push_lanes", None)
+                engine = state.engine
+                assert engine is not None
+                push_lanes = getattr(engine, "push_lanes", None)
                 if frame.lane_pcm and callable(push_lanes):
                     push_lanes(ack.start_sample, frame.lane_pcm)
                 else:
-                    state.engine.push_audio(ack.start_sample, frame.pcm)
+                    engine.push_audio(ack.start_sample, frame.pcm)
             except Exception as exc:
                 with self._lock:
                     self._fail(state, "gemini_live_failed", exc)
@@ -943,9 +944,6 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 state.session.note_finalization("unavailable")
                 self._record_event(state, "terminal_finalization_unavailable", {
                     "outcome": "unavailable", "reason": "tail_uncovered"})
-                closer = getattr(state.engine, "close", None)
-                if callable(closer):
-                    closer()
                 self._release_tape(state)
             elif state.session.snapshot().accepted_samples > 0:
                 if not state.engine_settings["cleanup_after_stop"]:
@@ -966,9 +964,6 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         "finalization_status": "final",
                     })
                     self._record_event(state, "terminal_finalization_completed", {"outcome": "final"})
-                    closer = getattr(state.engine, "close", None)
-                    if callable(closer):
-                        closer()
                     self._release_tape(state)
                 elif state.tape is None or not state.tape.taping or not state.tape.accounting(
                     through_sample=state.session.snapshot().accepted_samples
@@ -1212,9 +1207,6 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         state.terminal_failure = LiveServiceFailureRecord(kind=kind, code=code,
             message=str(exc) or type(exc).__name__)
         self._record_event(state, event_kind, {"failure": state.terminal_failure.to_dict()})
-        close = getattr(state.engine, "close", None)
-        if callable(close):
-            close()
         self._release_tape(state)
 
     def _tentative_call(self, state: _GeminiState, method: str, *args, default=(), **kwargs):
@@ -1239,6 +1231,16 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             raise RuntimeError(state.terminal_failure.message)
 
     def _release_tape(self, state: _GeminiState) -> None:
+        """End of a meeting's terminal work: release everything the recording held.
+
+        `_sessions` keeps a finished meeting's record for its snapshot and events; the engine
+        (rolling caches, provider client and so the meeting's key, lane tapes, Live sockets)
+        is closed and dropped here on every ending, not only the ones that ran the final pass.
+        """
+        engine, state.engine = state.engine, None
+        close = getattr(engine, "close", None)
+        if callable(close):
+            close()
         if state.tentative is not None and not state.tentative_closed:
             state.tentative.close()
             state.tentative_closed = True

@@ -250,9 +250,11 @@ class GeminiLiveWordSource:
         if self._closed:
             return
         if not self._pending_slots.acquire(blocking=False):
+            # Shed the chunk, not the socket: a capture replaying its backlog after an outage
+            # (during a reconnect) overflowed here, and closing kept preview off for the rest
+            # of a talking meeting. Rolling and terminal passes still own the skipped audio.
             self.report_usage(kind="live_preview", count_call=False,
                               error_code="preview_backpressure")
-            self.close()  # Rolling and terminal remain the text authority.
             return
         async def send():
             assert self._core is not None
