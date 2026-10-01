@@ -336,7 +336,7 @@ labels inside `LongFinalStitcher` / `FinalWordPolicy`; rule H runs after both an
 ### Side findings (not part of the fix)
 
 - The parser drops a word when the provider garbles a time: `"问" 4s-414.200s, "题" 414.200s-4.200s` — 题 is
-  dropped (start beyond the audio) and 问 is clamped to 1 s. 1 word in 1 of 53 new answers (the zh-CN hint draw).
+  dropped (start beyond the audio) and 问 is clamped to 1 s. 1 word in 1 of 62 new answers (the zh-CN hint draw).
 - The coverage retry re-sends identical bytes and gets the identical answer (3 of 3).
 - Two local prototype bugs, no provider effect: a recording client that called itself (3,892 local recursion
   errors, removed from the ledger, 0 requests sent) and a client created on two threads at once (1 request not sent).
