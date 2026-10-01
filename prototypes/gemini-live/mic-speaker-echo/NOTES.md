@@ -147,7 +147,8 @@ one the user met depends on whether they spoke (unknown).
 **S3b - H3a confirmed, H3b rejected.** The product drops nothing: parser 0, word gate 0, repaired 0 on every
 recorded answer. The provider's answers for the same audio differ in code-switched words, punctuation and script:
 - whole-recording requests: 8 of 10 lost "Media Lab" (2 of 10 Latin tokens); 1 of 10 came back in traditional
-  characters; punctuation 7-8 marks per request against 6-15 in window answers;
+  characters; punctuation in the Chinese passage was 7-8 marks in every answer (6-8 in window answers), so the
+  real meeting's punctuation loss (1 mark left) is not reproduced;
 - recorded meeting: the live transcript at Stop held "Media Lab 的" and "Computerphile"; the clean-up answer had
   neither ("Computer File"); the real-Chrome meeting went the other way (clean-up restored both and came back in
   traditional characters).
