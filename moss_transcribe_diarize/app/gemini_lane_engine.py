@@ -18,6 +18,7 @@ from .gemini_live_runtime import (GeminiBase, GeminiPreview, GeminiRelabel, Gemi
                                   GeminiRolling, GeminiSegment, GeminiUpdate,
                                   _preview_units, _unit_weight)
 from .gemini_provider import GeminiWord
+from .gemini_coverage import MIN_RUN_SAMPLES, _span, uncovered_runs
 from .live_span_bounds import LIVE_SAMPLE_RATE
 
 GEMINI_MIC_WINDOW_SECONDS = 30
@@ -624,6 +625,37 @@ class MicrophoneWordGate:
         self._record(len(words), len(acoustic), after_voice, after_text, lane_withheld=withheld)
         return kept
 
+    def restore_witnessed_words(self, mic_pcm16: bytes, cleanup: Sequence[GeminiWord],
+                               kept: Sequence[GeminiWord], witness: Sequence[GeminiWord],
+                               system_words: Sequence[GeminiWord], *, system_pcm16: bytes,
+                               skip=(), local_speaker: str = "local"):
+        """Judge each provider-hole candidate alone, then copy a kept neighbour's label."""
+        output, restored = list(kept), []
+        if self.local_voice is None:
+            return tuple(output), restored
+        for run, samples in uncovered_runs(cleanup, witness, skip=skip):
+            if samples < MIN_RUN_SAMPLES:
+                continue
+            voiced = tuple(self.webrtc_gate.filter(mic_pcm16, run))
+            if not self.local_voice.is_local_run(mic_pcm16, voiced, whole_lane=True):
+                continue
+            local = self.local_voice.local_words(mic_pcm16, voiced, whole_lane=True)
+            admitted = self._evidenced(voiced, local)
+            admitted = self.filter_terminal(mic_pcm16, admitted, system_words,
+                                            system_pcm16=system_pcm16)
+            admitted = self._evidenced(admitted, local)
+            if not admitted:
+                continue
+            a, b = admitted[0].start_sample, max(_span(w)[1] for w in admitted)
+            neighbours = [w for w in kept if w.end_sample <= a or w.start_sample >= b]
+            speaker = min(neighbours, key=lambda w: (
+                max(a-w.end_sample, w.start_sample-b, 0), w.start_sample)).speaker if neighbours else local_speaker
+            output.extend(GeminiWord(w.text, speaker, w.start_sample, _span(w)[1]) for w in admitted)
+            restored.append({"text": [w.text for w in admitted], "start_s": a/LIVE_SAMPLE_RATE,
+                             "end_s": b/LIVE_SAMPLE_RATE, "uncovered_s": samples/LIVE_SAMPLE_RATE,
+                             "speaker": speaker})
+        return tuple(sorted(output, key=lambda w: (w.start_sample, w.end_sample))), restored
+
 
 class WebRtcSpeechDetector:
     """Mode-1, 10 ms voiced-frame fact for mic socket and batch activation."""
@@ -716,6 +748,9 @@ class ConditionalMicrophoneTerminal:
 
     def set_witness(self, rows: Sequence[GeminiSegment]) -> None:
         self.terminal.set_witness(rows)
+
+    def set_witness_words(self, words: Sequence[GeminiWord]) -> None:
+        self.terminal.set_witness_words(words)
 
     @property
     def coverage_gaps(self) -> tuple[tuple[int, int], ...]:

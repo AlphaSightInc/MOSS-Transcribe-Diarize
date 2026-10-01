@@ -19,7 +19,7 @@ from typing import Callable, Sequence
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .gemini_live_runtime import GeminiSegment
-from .gemini_coverage import missing_witness_intervals
+from .gemini_coverage import missing_witness_intervals, restore_witnessed_words
 from .transcript_text import join_text
 
 MODEL = "gemini-3.5-transcribe"
@@ -293,7 +293,7 @@ class TerminalTranscriber:
 
     def __init__(self, diarizer: WindowDiarizer, *, chunk_seconds: int = 900,
                  overlap_seconds: int = 30, identity_policy=None, word_gate=None,
-                 diarize: bool = True, word_filter=None,
+                 diarize: bool = True, word_filter=None, witness_filter=None,
                  source_lane: str | None = None, fixed_speaker: str | None = None,
                  report_usage: Callable[..., None] | None = None,
                  stitcher=None, voiced_audio: Callable[[bytes], bool] | None = None):
@@ -304,6 +304,7 @@ class TerminalTranscriber:
         self.word_gate = word_gate
         self.diarize = diarize
         self.word_filter = word_filter
+        self.witness_filter = witness_filter
         self.source_lane = source_lane
         self.fixed_speaker = fixed_speaker
         self.report_usage = report_usage
@@ -312,11 +313,15 @@ class TerminalTranscriber:
         self.last_words: tuple[GeminiWord, ...] = ()
         self.coverage_gaps: tuple[tuple[int, int], ...] = ()
         self._witness: tuple[GeminiSegment, ...] = ()
+        self._witness_words: tuple[GeminiWord, ...] = ()
         self.chunk_samples = chunk_seconds * LIVE_SAMPLE_RATE
         self.overlap_samples = overlap_seconds * LIVE_SAMPLE_RATE
 
     def set_witness(self, rows: Sequence[GeminiSegment]) -> None:
         self._witness = tuple(rows)
+
+    def set_witness_words(self, words: Sequence[GeminiWord]) -> None:
+        self._witness_words = tuple(words)
 
     def transcribe_interval(self, tape: CompleteMixedTape, start_sample: int,
                             end_sample: int) -> tuple[GeminiSegment, ...]:
@@ -427,24 +432,36 @@ class TerminalTranscriber:
                     all_words.extend(w for w in mapped_words
                                      if start <= (w.start_sample+w.end_sample)/2 < core_end)
                     previous_chunk_words = mapped_words
-        if not any(chunk.words for chunk in chunks):
+        offset = getattr(tape, "sample_offset", 0)
+        restore = bool(self._witness_words) and not hasattr(tape, "sample_offset")
+        if not any(chunk.words for chunk in chunks) and not (restore and self.witness_filter):
             self.last_words = ()
             return ()
-        if self.identity_policy is not None or self.word_gate is not None or (chunked and self.stitcher):
+        restored = []
+        if self.identity_policy is not None or self.word_gate is not None or (chunked and self.stitcher) or restore:
             pcm = tape.read(start_sample=0, end_sample=end)
             if chunked and self.stitcher is not None:
                 all_words = list(self.stitcher.stitch(chunks, pcm))
             elif self.identity_policy is not None:
                 all_words = list(self.identity_policy.remap(all_words, pcm))
+            raw_cleanup = tuple(all_words)
+            if restore and self.source_lane != "microphone":
+                all_words, restored = restore_witnessed_words(
+                    all_words, self._witness_words, skip=self.coverage_gaps)
             if self.word_gate is not None:
                 all_words = list(self.word_gate.filter(pcm, all_words))
-        offset = getattr(tape, "sample_offset", 0)
         if self.word_filter is not None:
             absolute = [GeminiWord(w.text, w.speaker, w.start_sample + offset,
                                    w.end_sample + offset) for w in all_words]
             all_words = [GeminiWord(w.text, w.speaker, w.start_sample - offset,
                                     w.end_sample - offset)
                          for w in self.word_filter(absolute)]
+        if restore and self.source_lane == "microphone" and self.witness_filter is not None:
+            all_words, restored = self.witness_filter(
+                raw_cleanup, tuple(all_words), self._witness_words, self.coverage_gaps)
+        if restored and self.report_usage is not None:
+            self.report_usage(kind="terminal", count_call=False,
+                              witness_restored_words=sum(len(run["text"]) for run in restored))
         if self.fixed_speaker is not None:
             all_words = [GeminiWord(w.text, self.fixed_speaker, w.start_sample, w.end_sample)
                          for w in all_words]

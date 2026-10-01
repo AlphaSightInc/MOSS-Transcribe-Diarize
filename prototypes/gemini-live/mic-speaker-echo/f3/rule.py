@@ -1,44 +1,32 @@
-"""Find wordless stretches witnessed by a different transcript pass."""
+"""Rule H — the candidate production rule, as pure functions (the only part meant to be lifted out).
+
+A hole is a stretch of one lane's time line in which the whole-recording answer has no word. A live committed
+word that lies in a hole is the witness that the hole is an omission, not silence. Consecutive witnesses in one
+hole form a run; a run with more than one provider time step (0.1 s) of uncovered time is inserted into the
+whole-recording words, labelled with the speaker of the nearer neighbouring whole-recording word. Every
+whole-recording word is returned unchanged.
+
+Time decides. Text is compared in one place only: a live word that a whole-recording word covers by exactly one
+time step is the same word heard twice (timing jitter) when the two texts are equal, and a witness otherwise.
+"""
 from __future__ import annotations
 
-from bisect import bisect_left, bisect_right
 import unicodedata
-from typing import Sequence
+from bisect import bisect_left, bisect_right
+from typing import NamedTuple, Sequence
 
-from .live_span_bounds import LIVE_SAMPLE_RATE
+S = 16000
+STEP = S // 10                       # the provider's word times move in 0.1 s steps
+MIN_RUN_SAMPLES = STEP * 3 // 2      # more than one time step of uncovered live speech (measured: NOTES.md)
 
-
-def missing_witness_intervals(
-    witness: Sequence[tuple[int, int]], result: Sequence[tuple[int, int]], *,
-    minimum_samples: int = 10 * LIVE_SAMPLE_RATE,
-) -> tuple[tuple[int, int], ...]:
-    """Return witnessed intervals absent from result (all if result is empty)."""
-    merged: list[list[int]] = []
-    for start, end in sorted(witness):
-        if end <= start:
-            continue
-        if merged and start <= merged[-1][1]:
-            merged[-1][1] = max(merged[-1][1], end)
-        else:
-            merged.append([start, end])
-    if not result:
-        return tuple((start, end) for start, end in merged)
-    gaps = []
-    for start, end in merged:
-        cursor = start
-        for lo, hi in sorted(result):
-            if hi <= cursor or lo >= end:
-                continue
-            if lo - cursor >= minimum_samples:
-                gaps.append((cursor, lo))
-            cursor = max(cursor, hi)
-        if end - cursor >= minimum_samples:
-            gaps.append((cursor, end))
-    return tuple(gaps)
+VARIANT = {"edge": "text"}           # prototype switch for the sweep: "text" (rule as proposed) | "keep" | "drop"
 
 
-STEP = LIVE_SAMPLE_RATE // 10
-MIN_RUN_SAMPLES = STEP * 3 // 2
+class Word(NamedTuple):   # same fields and order as gemini_provider.GeminiWord
+    text: str
+    speaker: str
+    start_sample: int
+    end_sample: int
 
 
 def _span(word) -> tuple[int, int]:
@@ -122,26 +110,29 @@ def uncovered_runs(words: Sequence, witness: Sequence, *,
         else:
             runs.append([(word, (b - a) - inside)])
         previous = hole
-    # Timing jitter: the word at the edge of a run is the same word as the whole-recording word right next
-    # to it (same text, within one time step) heard one step apart. It is not a witness.
-    firsts = [c for c, _ in spans]
+    if VARIANT["edge"] == "text":
+        # Timing jitter: the word at the edge of a run is the same word as the whole-recording word right next
+        # to it (same text, within one time step) heard one step apart. It is not a witness.
+        firsts = [c for c, _ in spans]
 
-    def beside(word, after: bool) -> bool:
-        a, b = _span(word)
-        if after:      # a whole-recording word starting within one step of the live word's end
-            lo, hi = bisect_left(firsts, b - STEP), bisect_right(firsts, b + STEP)
-            return any(_same(by_start[i].text, word.text) for i in range(lo, hi))
-        lo, hi = bisect_left(firsts, a - 60 * STEP), bisect_right(firsts, a + STEP)   # ... ending within one step of its start
-        return any(abs(spans[i][1] - a) <= STEP and _same(by_start[i].text, word.text) for i in range(lo, hi))
-    for run in runs:
-        while run and beside(run[-1][0], True):
-            run.pop()
-        while run and beside(run[0][0], False):
-            run.pop(0)
+        def beside(word, after: bool) -> bool:
+            a, b = _span(word)
+            if after:      # a whole-recording word starting within one step of the live word's end
+                lo, hi = bisect_left(firsts, b - STEP), bisect_right(firsts, b + STEP)
+                return any(_same(by_start[i].text, word.text) for i in range(lo, hi))
+            lo, hi = bisect_left(firsts, a - 60 * STEP), bisect_right(firsts, a + STEP)   # ... ending within one step of its start
+            return any(abs(spans[i][1] - a) <= STEP and _same(by_start[i].text, word.text) for i in range(lo, hi))
+        for run in runs:
+            while run and beside(run[-1][0], True):
+                run.pop()
+            while run and beside(run[0][0], False):
+                run.pop(0)
+    elif VARIANT["edge"] == "drop":
+        runs = [[(w, n) for w, n in run if 2 * n > _span(w)[1] - _span(w)[0]] for run in runs]
     return [([w for w, _ in run], sum(n for _, n in run)) for run in runs if run]
 
 
-def restore_witnessed_words(words: Sequence, witness: Sequence, *, min_run_samples: int = MIN_RUN_SAMPLES,
+def fill_holes(words: Sequence, witness: Sequence, *, min_run_samples: int = MIN_RUN_SAMPLES,
                skip: Sequence[tuple[int, int]] = ()) -> tuple[tuple, list[dict]]:
     """Whole-recording words with every witnessed run of at least `min_run_samples` inserted.
 
@@ -166,14 +157,8 @@ def restore_witnessed_words(words: Sequence, witness: Sequence, *, min_run_sampl
         speaker = words[nearer].speaker
         at = left + 1 if left is not None else 0
         words[at:at] = [make(w.text, speaker, w.start_sample, _span(w)[1]) for w in run]
-        restored.append({"start_s": a / LIVE_SAMPLE_RATE, "end_s": b / LIVE_SAMPLE_RATE, "uncovered_s": samples / LIVE_SAMPLE_RATE,
+        restored.append({"start_s": a / S, "end_s": b / S, "uncovered_s": samples / S,
                          "text": [w.text for w in run], "speaker": speaker,
-                         "left_gap_s": None if left_gap is None else left_gap / LIVE_SAMPLE_RATE,
-                         "right_gap_s": None if right_gap is None else right_gap / LIVE_SAMPLE_RATE})
+                         "left_gap_s": None if left_gap is None else left_gap / S,
+                         "right_gap_s": None if right_gap is None else right_gap / S})
     return tuple(words), restored
-
-
-def drop_restated(witness: Sequence, committed: Sequence, frontier: int) -> list:
-    """Replace truncated frontier copies with the later window's committed words."""
-    words = list(witness) + list(committed)
-    return one_owner(words, [0]*len(witness) + [frontier]*len(committed))
