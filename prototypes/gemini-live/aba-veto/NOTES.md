@@ -102,3 +102,47 @@ turns sound like their labels):
 Unmeasured throughout: raw labels behind one saved name (assumption 5), real overlapped speech, mic lanes beyond
 the count scan, and whether live meetings with late joiners reproduce the label reuse.
 The prototype stays here (not deleted) because step 1 reuses `bench.py` unchanged.
+
+# Raw-label pass for rule V (lead D6, user-approved) — precommitted 2026-10-01 before any provider call
+One command each: `raw_pass.py fetch` (the only step that calls the provider), then `raw_pass.py evaluate` ($0).
+
+**Question.** Does the voice-checked veto keep the protection the veto exists for (two different speakers whose
+labels sound alike and who alternate) on the provider's raw word-level labels?
+**Input.** The 8 public synthetic meetings `synth:meet_k{2,3,4,6}_s{0,1}` (LibriSpeech voices, 602–608 s each,
+truth in `prototypes/streaming-diarization/data/*.json`): one provider call each, the production request
+(`gemini-3.5-transcribe`, verbatim, word timestamps, speaker diarization), parsed and timestamp-repaired by the
+production `parse_words` / `repair_word_timestamps`. Raw responses are kept under
+`evidence/P69/r4-long/bench-aba/raw/` (outside any worktree, so they survive worktree removal).
+**Path measured.** The production `TerminalTranscriber` single-call path with the fetched words replayed through
+a stub diarizer: `FinalWordPolicy` (rule A) or the candidate (rule V), then the production word gate and turns;
+DER and speaker count against truth. All 8 are < 15 min, so this is raw-label evidence for the short-meeting
+policy; the chunk stitcher has turn-set replays only (9 chunked sets) and shares the same veto code.
+
+**Rule V, production form (gate 4).** A label pair seen in A–B–A turns (gaps ≤ 2 s) vetoes a merge only if at
+least one of its alternations is voice-consistent: none of its turns of ≥ 2 s scores below **.46** (cosine of the
+turn's first ≤ 10 s against its own label's centroid). Turns under 2 s cannot be checked and count as consistent.
+**One parameter: .46**, reused from the runtime's "this voice is that speaker" floor, not tuned here.
+**Cost bound:** the check runs lazily, only for a vetoed pair that actually blocks a candidate merge (a pair or
+seam edge already at cosine ≥ .65), and stops at the pair's first consistent alternation: ≤ 3 embeddings per
+alternation examined, none in a meeting where no veto blocks a ≥ .65 merge. Embedding count is reported per case.
+
+## Gates (precommitted)
+| Code | Gate | Pass rule |
+|---|---|---|
+| V1 | protection | fresh K4 s0: every pair of labels with different dominant true speakers that rule A keeps apart stays apart under V; in particular a different-speaker pair at cosine ≥ .65 vetoed by a single alternation still vetoes. The same must hold on all 8 fresh meetings (zero new different-speaker merges) |
+| V2 | no harm | vs rule A, no case's DER rises by more than .005 and no speaker count moves away from truth, on: the 8 fresh meetings (raw labels, production path); the 27 recorded P53 clips; the 65 saved turn sets (run 3) |
+| V3 | repair | the 65.5-min case stays repaired (host one group, long60-part DER ≤ .060) |
+| V4 | stated | parameter and cost bound as above; embeddings per case reported |
+How the 27 recorded clips are judged: P53 kept centroids and counts but not turns, so V cannot be recomputed on
+those labels. Where the recorded grouping under rule A equals the grouping with no veto at all, V equals A by
+construction (V only removes vetoes, in the same merge order) — that is the proof used. The recorded synthetic
+clips where the veto matters are superseded by the fresh pass over the same audio.
+**If the provider does not repeat the K4 pattern.** The provider is not deterministic. If the fresh K4 s0 output
+has no different-speaker pair at cosine ≥ .65 that rule A's veto keeps apart, V1 is judged on whichever of the
+8 fresh meetings contain such pairs; if none of the 8 does, V1 is **not exercised** and V does not ship.
+**Decision.** All of V1–V4 pass → rule V goes into production at both sites (`LongFinalStitcher` and
+`FinalWordPolicy`), with a regression test from the recorded 65.5-min turn pattern and a K4-style protective
+test. Any failure → no production change; numbers reported.
+**Budget.** 4,838 s of audio = $0.403 with-output estimate ($0.242 metered input); cap $0.45. One call per
+clip; a transient error is retried at most once; before every call the script stops if spent + next > $0.45.
+Key read by the script from `…-wt-r4-int/.env.local`, never printed; count-only leak scan afterwards.
