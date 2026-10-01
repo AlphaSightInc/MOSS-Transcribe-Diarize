@@ -295,7 +295,9 @@ voices at the end of one 900 s chunk; their single A–B–A alternation vetoed 
 Relaxing the veto to two alternations repairs that meeting (.049) but lets two different speakers merge on the
 recorded synthetic K4 meeting (DER .221 → .330) and on an overlapped-speech replay (3 → 2 speakers), so the
 shipped rule stays. A voice-checked veto (an alternation counts only if its turns match their labels) passed
-every replay but is unmeasured on raw provider labels. Numbers, gates and what the next step needs:
+every replay and caused no wrong merge on a fresh raw-label pass over the 8 synthetic meetings, but its check
+drops the veto for 7 of 38 different-speaker pairs there — every time a label mixes two voices — so it is not
+shipped either. The open primitive is label purity, not the alternation rule. Numbers and gates:
 `prototypes/gemini-live/aba-veto/NOTES.md`.
 
 ## Measured envelope and custody

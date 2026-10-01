@@ -146,3 +146,39 @@ test. Any failure → no production change; numbers reported.
 **Budget.** 4,838 s of audio = $0.403 with-output estimate ($0.242 metered input); cap $0.45. One call per
 clip; a transient error is retried at most once; before every call the script stops if spent + next > $0.45.
 Key read by the script from `…-wt-r4-int/.env.local`, never printed; count-only leak scan afterwards.
+
+## Verdict of the raw-label pass (2026-10-01; receipts `bench-aba/raw-{results,audit,spend}.json`, `raw/*.json`)
+**Rule V is not shipped; production is unchanged.** The outcome gates pass, but the protection the veto exists
+for was not shown — and the audit below shows the voice check failing in exactly the condition that matters.
+
+| Gate | Result | Numbers |
+|---|---|---|
+| V1 protection | **letter met, purpose not — judged FAIL** | zero new different-speaker merges on the 8 fresh meetings, but only **one** different-speaker pair at cosine ≥ .65 existed for the veto to protect (K6 s0, .723, 2 alternations; the veto stood). The recorded K4 pattern did not recur: fresh K4 s0 has no such pair, and no meeting has a single-alternation one |
+| V2 no harm | pass | fresh 8: V = A in 7, K3 s0 improves (5 → 4 groups, DER .141 → .136, a same-speaker merge); recorded P53: 21 of 27 equal A by construction, the 6 synthetic ones are superseded by the fresh pass; 65 turn sets: pass (run 3) |
+| V3 repair | pass | 65.5-min turn pattern, production-form code: DER .166 → .049, host one group |
+| V4 parameter + cost | stated | .46; 0–4 veto-check embeddings per meeting (8 in total over the 8 fresh meetings, 1 on the 65.5-min pattern) |
+
+**Why V1 is judged a fail (audit added after `evaluate`, not precommitted, `raw_audit.py`).** Applying V's voice
+check to every alternating label pair in the 8 fresh meetings, whatever its cosine: of **38 different-speaker
+pairs, V drops the veto for 7** (3 of 12 single-alternation pairs, 4 of 26 with more). All 7 involve a label
+that mixes two true voices (purity < .85): 7 of 18 such pairs lose their veto, 0 of 20 pure-label pairs do.
+They stayed apart only because their cosine was low (.03–.17) — except one at **.639**, just under the .65
+merge threshold (K4 s1, two alternations). The recorded K4 s0 false merge is the same condition (label purities
+75 % / 84 %, cosine .741). So V's check and the veto fail together: a mixed label's turns disagree with its own
+centroid, which V reads as "the alternation is not real". In fresh K4 s0, 3 of the different-speaker vetoes are
+dropped under V, one of them a single alternation.
+
+Other facts from the pass:
+- The provider is not repeatable: K4 s0 came back with 5 raw labels (P53: 6) and DER .356 under the shipped
+  rule (P53: .221); the shipped rule itself merges a different-speaker pair there (cosine .741, no alternation).
+- Rule B on the fresh labels: no different-speaker merge, K2 s0 .306 → .142 (4 → 2 groups, truth 2), K2 s1
+  .196 → .142, K3 s0 as V; mean DER over the 8: A .238, V .238, B .211. Its two recorded false merges stand
+  (P53 K4 s0; the overlap 0 dB replay).
+- Spend: 8 calls, one attempt each, **$0.403** with-output ($0.242 metered) ≤ $0.45.
+
+**What this says about the design.** The veto and both repairs assume a label is one voice. The 65.5-min
+failure, the K4 false merge and V's dropped vetoes are all the same fact seen three ways: a provider label that
+covers two voices. A rule about alternations cannot fix that; the missing primitive is *label purity* (is this
+label one voice?), measured before any merge or veto uses the label. That is a new design question, not a
+threshold change, and needs its own prototype — the 8 raw responses saved here plus a raw pass over the
+65.5-min audio (about $0.34) would be its bench. `v_rule.py` holds rule V in production form for that work.
