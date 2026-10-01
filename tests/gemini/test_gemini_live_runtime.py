@@ -440,6 +440,29 @@ def test_terminal_maps_overlapping_labels_within_each_capture_lane(tmp_path):
     asyncio.run(run())
 
 
+def test_terminal_orders_same_start_rows_like_the_transcript_store(tmp_path):
+    # A shorter microphone row starting on the same sample as a system row must not make the
+    # store refuse the whole clean-up as segments_out_of_order (it orders by start, lane, end).
+    async def run():
+        system = GeminiSegment(0, 14000, "remote", "speaker-0001", "system")
+        microphone = GeminiSegment(0, 14000, "local", "speaker-microphone", "microphone")
+        terminal = (GeminiSegment(0, 8000, "local", "terminal-b", "microphone"),
+                    GeminiSegment(0, 14000, "remote", "terminal-a", "system"))
+        rt = runtime(tmp_path, {"one": ([(GeminiBase(16000, ()),
+                                           GeminiRolling(0, 16000, (system, microphone),
+                                               revision_lanes=("system", "microphone")))],
+                                 terminal)})
+        rt.create(session_id="one", engine_settings=settings(cleanup_after_stop=True))
+        rt.accept_frame("one", frame(0))
+        await rt.stop("one", 1.0)
+        await rt.wait_terminal("one")
+        final = rt.snapshot("one").session
+        assert final.finalization_status == "final"
+        assert [(row.source_lane, row.text) for row in final.effective_transcript] == [
+            ("system", "remote"), ("microphone", "local")]
+    asyncio.run(run())
+
+
 def test_terminal_coverage_gap_preserves_live_rows_in_final_revision(tmp_path):
     async def run():
         class GapEngine(ScriptedGeminiEngine):

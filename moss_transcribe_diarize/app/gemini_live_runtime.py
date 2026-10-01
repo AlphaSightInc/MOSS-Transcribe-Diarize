@@ -1124,7 +1124,9 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                         for row in before.effective_transcript
                         if row.source_lane == lane and row.end_sample > start
                         and row.start_sample < end)
-                rows = tuple(sorted(rows, key=lambda row: (row.start_sample, row.end_sample)))
+                # Same order the transcript store enforces (start, lane, end); system before microphone.
+                rows = tuple(sorted(rows, key=lambda row: (
+                    row.start_sample, row.source_lane == "microphone", row.end_sample)))
                 _register_speakers(state.session, rows)
                 snapshot = state.session.snapshot()
                 outcome = state.session.apply_text_revision(TextRevisionProposal(
