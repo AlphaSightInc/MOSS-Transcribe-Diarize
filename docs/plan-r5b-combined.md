@@ -1,6 +1,6 @@
 # Round 5b — combined plan: live/clean-up text defects, small fixes, rule W (2026-10-01)
 
-Status: PLAN v1 for adversarial review. Nothing here is implemented in product code yet. Launch needs the user's go.
+Status: PLAN v1 for adversarial review (`/codex:adversarial-review` is run by the user; findings are folded in before launch). Nothing here is implemented in product code yet. Launch needs the user's go.
 Base: `gemini/r4-ui` @ `193d3fc3` (code = `9a1ca171`, what the MacStudio pilot runs). Lead: Claude (MOSS:5.1).
 
 ## 1. What the user reported and what was measured
@@ -108,7 +108,7 @@ is not touched until the end.
 |---|---|---|---|
 | S0 | Stage 3 paid run and scorecard (WP-W) | Codex evaluator, pane 6.4 | user's go |
 | S1 | WP-A, WP-B (+WP-D), WP-C implemented in their own worktrees (`gemini/r5-f1/f2/f3`), each with its regression tests, targeted suites, then the full backend suite; bundle not committed | the three Opus helpers that measured the prototypes (they hold the design), in parallel | user's go |
-| S2 | Lead review of each diff (own reading + `codex exec` review), then merge into `gemini/r5b-int` in this order: WP-E → WP-A → WP-C → WP-B/D. Conflicts expected only in `gemini_lane_engine.py` / `gemini_hybrid_engine.py` between WP-B and WP-C (different functions) — resolved by the lead | lead | S1 |
+| S2 | Lead review of each diff (own reading + one independent Opus reviewer per diff; the user may run `/codex:adversarial-review` on the integration branch), then merge into `gemini/r5b-int` in this order: WP-E → WP-A → WP-C → WP-B/D. Conflicts expected only in `gemini_lane_engine.py` / `gemini_hybrid_engine.py` between WP-B and WP-C (different functions) — resolved by the lead | lead | S1 |
 | S3 | If S0 = PASS: WP-W production change on top of `gemini/r5b-int` | Codex pane 6.3 (author of W) implements, pane 6.4 verifies on HOLD + Stage-3 raw words at $0 | S0, S2 |
 | S4 | Integration gates at $0 (§6 G-int), bundle rebuilt once, both full suites | lead | S2 (+S3) |
 | S5 | Real-provider stress matrix (§7) on the integrated build, own server on ports 18960–18969 | one Opus helper (R5-T harness) | S4 |
