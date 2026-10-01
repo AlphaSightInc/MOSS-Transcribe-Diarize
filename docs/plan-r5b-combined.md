@@ -1,6 +1,7 @@
 # Round 5b — combined plan: live/clean-up text defects, small fixes, rule W (2026-10-01)
 
-Status: PLAN v1 for adversarial review (`/codex:adversarial-review` is run by the user; findings are folded in before launch). Nothing here is implemented in product code yet. Launch needs the user's go.
+Status: **PLAN v2 — LAUNCHED 2026-10-01 (user go)**. v1 was reviewed with `/codex:adversarial-review` (verdict
+needs-attention, findings R-F1…R-F3); §12 maps each finding to its change. Stress cap §7 approved with the launch.
 Base: `gemini/r4-ui` @ `193d3fc3` (code = `9a1ca171`, what the MacStudio pilot runs). Lead: Claude (MOSS:5.1).
 
 ## 1. What the user reported and what was measured
@@ -69,17 +70,40 @@ margins, regression test list). The implementer lifts the measured rule; any dev
   provider never returns cannot be admitted; another person in the room is admitted from 0.4 s.
 
 **WP-C — F3 rule H: clean-up keeps live words it offers no replacement for** (`gemini/r5-f3`, `…/f3/NOTES.md`)
-- `gemini_hybrid_engine.py` keeps the words each rolling window committed (witness list; a later window's straddling
+- Witness list: `gemini_hybrid_engine.py` keeps the words each rolling window committed (a later window's straddling
   word replaces the earlier truncated copy) and hands them to the terminal in `finish()`;
-  `gemini_lane_engine.ConditionalMicrophoneTerminal` passes them through; `gemini_coverage.py` gets the rule;
-  `gemini_provider.TerminalTranscriber.transcribe` restores **after labels are final (stitcher / identity policy —
-  therefore after rule W) and before the word gates**, whole-lane pass only. A live run with ≥ 0.15 s not covered by
-  any clean-up word (provider time step 0.1 s) is inserted with the nearer neighbour's speaker; an edge word equal to
-  the adjacent clean-up word is dropped. Intervals owned by the existing 10 s fallback are skipped. File/URL runner
-  and Stop-tail recovery unchanged. Counter `witness_restored_words`.
-- Tests: 12 rule-level, 3 terminal-level, 3 engine-level (list in NOTES).
+  `gemini_lane_engine.ConditionalMicrophoneTerminal` passes them through; `gemini_coverage.py` gets the rule. A live
+  run with ≥ 0.15 s not covered by any clean-up word (provider time step 0.1 s) is a restore candidate; an edge word
+  equal to the adjacent clean-up word is dropped. Intervals owned by the existing 10 s fallback are skipped. File/URL
+  runner and Stop-tail recovery unchanged. Counter `witness_restored_words`.
+- **System lane (as prototyped):** `gemini_provider.TerminalTranscriber.transcribe` restores after labels are final
+  (stitcher / identity policy — therefore after rule W) and before the word gates; a restored run takes the nearer
+  neighbour's speaker.
+- **Microphone lane (changed after review, R-F1/R-F2):** a committed live word is not proof of local speech (round 4
+  recorded three invented live words beside a real turn), and a restored run must not be judged as part of its
+  neighbours. So on the microphone lane: (1) the clean-up words go through the microphone gates (WP-B) first, exactly
+  as without rule H; (2) each restore candidate run is then judged **on its own** — never merged with neighbouring
+  clean-up words by label — and is restored only if it is a *local run* by WP-B's evidence (touches a sustained
+  unexplained stretch, ≥ 80 % of its words on unexplained audio, text weight ≥ 15), **also on a lane that already has
+  an anchored turn** (`local_speech_seen` does not waive it); (3) only then does it take a speaker label (the nearer
+  kept neighbour on that lane, else the lane's local speaker). Echo words kept by clean-up around it play no part.
+- This composition is prototyped and measured BEFORE it is implemented (WP-BC below).
+- Tests: 12 rule-level, 3 terminal-level, 3 engine-level (list in NOTES) + the WP-BC cases.
 - Known limits: cannot restore what live never had; a word clean-up replaced stays replaced; live fragments
-  ("Yeah,") come back; restored words keep the live script.
+  ("Yeah,") come back on the system lane; restored words keep the live script; on the microphone lane a one- or
+  two-word live reply that clean-up omits is not restored.
+
+**WP-BC — composition prototype: microphone admission × witness restore** ($0, before WP-C is implemented)
+- Throwaway, in `prototypes/gemini-live/mic-speaker-echo/bc/`, composing `f2/evidence.py` + `f2/candidate.py` with
+  `f3/rule.py` on the production engine with recorded answers. Contract in NOTES.md first.
+- Must show, with numbers: (a) **omitted short reply amid echo** — clean-up omits a 3–6 word local reply and keeps the
+  surrounding echo words; quiet local audio (10 and 20 dB under the tab); with the order above the reply is saved
+  (the reviewer's probe: merged with the echo run only 6 of 31 words touch unexplained audio → 0 eligible);
+  (b) **invented words beside a real turn** — the round-4 pattern (three invented live words next to a real local
+  turn, clean-up omits them): 0 restored, also with `local_speech_seen` true; deterministic live-only noise witnesses
+  omitted by clean-up: 0 restored; (c) every F2 and F3 prototype number on the recorded cells is unchanged or better;
+  (d) the same with rule W's label step enabled and disabled (W acts before H; microphone admission must not change).
+- A failed (a) or (b) changes the design before any production code is written.
 
 **WP-D — operator diagnostics line** (new, small; needed to verify F2 on the user's physical device)
 - At the end of a live meeting (after clean-up, or at close when clean-up is off) emit ONE content-free operator
@@ -101,30 +125,38 @@ margins, regression test list). The implementer lifts the measured rule; any dev
 
 ## 4. Who builds what, and in what order
 
-Integration branch `gemini/r5b-int` in a NEW worktree `…-wt-r5b-int` (from `gemini/r4-ui`), so the pilot's worktree
-is not touched until the end.
+Lead (Claude, MOSS:5.1) owns orchestration, review, merges and steering. Implementers are the Codex agents
+(gpt-6.1-sol, high) in tmux panes 6.1–6.4, each started with a fresh context (`/new`) and a written brief
+(`~/Documents/Codex/2026-09-28/moss-gemini/briefs/R5B-*.md`, status `status/R5B-*-STATUS.md`). Integration branch
+`gemini/r5b-int` in a NEW worktree `…-wt-r5b-int` (from `gemini/r4-ui`), so the pilot's worktree is untouched until
+cutover.
 
 | Step | Work | Who | Depends on |
 |---|---|---|---|
-| S0 | Stage 3 paid run and scorecard (WP-W) | Codex evaluator, pane 6.4 | user's go |
-| S1 | WP-A, WP-B (+WP-D), WP-C implemented in their own worktrees (`gemini/r5-f1/f2/f3`), each with its regression tests, targeted suites, then the full backend suite; bundle not committed | the three Opus helpers that measured the prototypes (they hold the design), in parallel | user's go |
-| S2 | Lead review of each diff (own reading + one independent Opus reviewer per diff; the user may run `/codex:adversarial-review` on the integration branch), then merge into `gemini/r5b-int` in this order: WP-E → WP-A → WP-C → WP-B/D. Conflicts expected only in `gemini_lane_engine.py` / `gemini_hybrid_engine.py` between WP-B and WP-C (different functions) — resolved by the lead | lead | S1 |
-| S3 | If S0 = PASS: WP-W production change on top of `gemini/r5b-int` | Codex pane 6.3 (author of W) implements, pane 6.4 verifies on HOLD + Stage-3 raw words at $0 | S0, S2 |
-| S4 | Integration gates at $0 (§6 G-int), bundle rebuilt once, both full suites | lead | S2 (+S3) |
-| S5 | Real-provider stress matrix (§7) on the integrated build, own server on ports 18960–18969 | one Opus helper (R5-T harness) | S4 |
-| S6 | `gemini/r4-ui` fast-forwarded to `gemini/r5b-int`, pushed; pilot restarted once (after checking no active meeting) | lead | S5 |
-| S7 | Attended check by the user on the MacBook (§8); lead reads the diagnostics line | user + lead | S6 |
-| S8 | After the user's OK: laptop update + trusted certificate (docs/plan-r5-start-flow.md) | lead | S7 |
+| S0 | Stage 3 paid run and scorecard (WP-W, cap $0.30) | pane 6.4 (evaluator, keeps its context) | launch |
+| S1a | WP-A implemented on `gemini/r5-f1` | pane 6.1 | launch |
+| S1b | WP-B + WP-D implemented on `gemini/r5-f2` | pane 6.2 | launch |
+| S1c | WP-BC composition prototype on `gemini/r5-f3` ($0) | pane 6.3 | launch |
+| S2 | Lead review (own reading + an independent adversarial pass by a fresh-context Codex pane) and merge into `gemini/r5b-int`: WP-E → WP-A → WP-B/D | lead | S1a, S1b |
+| S3 | WP-C implemented on a branch cut from `gemini/r5b-int` **after WP-B is merged** (it needs WP-B's evidence class; this also removes the two-file conflict), following WP-BC's measured design; lead review; merge | pane 6.3 | S1c, S2 |
+| S4 | If S0 = PASS: WP-W production change on top of `gemini/r5b-int`; verification on HOLD + Stage-3 raw words at $0 | a free pane (fresh context) implements, pane 6.4 verifies | S0, S3 |
+| S5 | Integration gates at $0 (§6 G-int), bundle rebuilt once, both full suites | lead | S3 (+S4) |
+| S6 | Adversarial review of the whole integration diff by a fresh-context Codex pane; findings fixed by the owning pane; repeated until no blocking finding remains | lead + panes | S5 |
+| S7 | Real-provider stress matrix (§7) on the integrated build, own server on ports 18960–18969 | helper with the R5-T harness | S6 |
+| S8 | **Candidate server for the user's physical check** — the integrated build served from `…-wt-r5b-int` on port **18620** with its own state, same host names as the pilot. The pilot (:18600) stays on today's code | lead | S7 |
+| S9 | Attended check by the user on the MacBook against :18620 (§8); lead reads the diagnostics line. **Blocking**: a required sentence missing, or echo/invented text saved as local speech → no cutover; diagnose from the counters, fix, re-run S5–S9. Incomplete measurement is not a pass | user + lead | S8 |
+| S10 | Cutover: `gemini/r4-ui` fast-forwarded to `gemini/r5b-int`, pushed; pilot restarted once (after checking no active meeting); candidate server stopped. Rollback = restart the pilot at `9a1ca171` | lead | S9 pass |
+| S11 | After the user's OK: laptop update + trusted certificate (docs/plan-r5-start-flow.md) | lead | S10 |
 
 ## 5. Interactions between packages (each is checked at S4)
 
 | Pair | Risk | Check |
 |---|---|---|
-| WP-B × WP-C | A short local phrase now committed live becomes a witness; if clean-up omits it, rule H restores it and it must pass the new microphone gates; a lane the saved pass withholds must not delete live-committed local runs | Replay R5-D's 9 two-lane cells + F2's cells through the integrated engine: saved microphone units ≥ F2 prototype numbers; 0 invented/echoed |
+| WP-B × WP-C | (i) A restored local reply judged together with neighbouring echo words fails admission and is deleted; (ii) an invented live word beside a real turn is restored because the lane is already anchored; (iii) a lane the saved pass withholds deletes live-committed local runs | WP-BC cases (a)–(d) as regression tests on the product code; replay R5-D's 9 two-lane cells + F2's cells: saved microphone units ≥ F2 prototype numbers; 0 invented/echoed |
 | WP-A × WP-B | More microphone rows are solid, so the microphone preview is trimmed against them | F1's microphone-lane Mandarin cell and F2's short-phrase cells: 0 repeated units, fresh units not lower |
 | WP-C × WP-W | H must run after W's labels and copy them | 65.5-min raw replay: W's result unchanged (host one group, long60 DER ≤ .060); restored words carry the neighbour's final label |
 | WP-B × WP-W | If W enters `gemini_final_policy.py` it runs on the microphone lane before the anchor reads labels | Only if W touches that file: F2 cells before/after W, identical admission |
-| WP-C × round-4 mic fix | A live-only invented word in a clean-up-silent stretch would be restored | Witnesses are committed words only; WP-B keeps I2; S5 re-records one round-4 listener lane through the whole engine |
+| WP-C × round-4 mic fix | A live-only invented word in a clean-up-silent stretch would be restored | Microphone restores need local-run evidence of their own (WP-C); the round-4 mixed speech/noise lane and a listener lane are replayed at S5 and re-recorded through the whole engine at S7 |
 
 ## 6. Gates
 
@@ -136,6 +168,9 @@ Per package (numbers from the prototypes are the bar; "not lower than the protot
   long turn ≥ 27/31; echo committed 0 at −40/−25/−15 dB.
 - **G-C** name tokens lost ≤ prototype (115 → 4 over the 100 pairs); doubled units 0; frontier duplicates still
   removed; speaker error on truth fixtures not worse by > .005; added provider cost $0.
+- **G-BC** WP-BC (a) omitted short reply amid echo saved at 10 and 20 dB under the tab; (b) 0 invented or noise
+  witnesses restored, anchored lane included; (c) recorded-cell numbers of F2 and F3 not lower; (d) identical with W's
+  label step on and off. Each must be exercised: an unexercised case is UNMEASURED and blocks S3.
 - **G-D** the diagnostics event appears once per meeting, numbers only.
 - **G-E** `gemini/r5-m` tests pass after the bundle rebuild.
 - **G-W** docs/plan-r5-label-purity.md §13 decision rule; after integration the HOLD and Stage-3 raw words give the
@@ -154,13 +189,13 @@ Real Chrome, the real page, public audio only, summaries off, spend ledger befor
 | Mandarin tab → English tab, short local replies (English and Mandarin) at −40 dB echo | the user's scenario: F1 + F2 + F3 together | $0.13 |
 | English tab, quiet local speech over the tab (20 dB under), −25 dB echo | F2 double-talk; echo never committed | $0.13 |
 | English tab, microphone only listening, −25 dB echo and room-noise events | I2 on the whole engine | $0.13 |
-| One round-4 listener lane re-recorded through the whole engine | I2 against the original fixture; F3 limit R3 | $0.34 |
+| One round-4 listener lane and the round-4 mixed speech/noise lane re-recorded through the whole engine | I2 against the original fixtures; no invented word restored beside real speech | $0.55 |
 | Both sources, 16-minute meeting (chunked clean-up, stitcher) with a late joiner | H + W (if shipped) + F2 in a long meeting | $0.95 |
 | Rename a speaker → Summary pane + Markdown export, label at 1440 / 400 px | M1/M2 on the real page (summary ON for this cell only) | $0.10 |
 
-Estimated $1.9; **cap $3.00** (retries and one repeated cell). Separate from Stage 3 ($0.30, already approved).
+Estimated $2.1; **cap $3.00** (retries and one repeated cell). Separate from Stage 3 ($0.30, already approved).
 
-## 8. Attended check by the user (S7, about 5 minutes; only a physical microphone shows real echo cancellation)
+## 8. Attended check by the user (S9, about 5 minutes, against the candidate at :18620 BEFORE cutover; only a physical microphone shows real echo cancellation)
 
 1. The 2.5-minute script in `…/f2/NOTES.md` ("Attended check"): silence → a short question over the tab → a 5–6 s
    sentence over the tab → pause the video, "Okay, sounds good." then "Yes." → noises without words → a quiet
@@ -169,6 +204,10 @@ Estimated $1.9; **cap $3.00** (retries and one repeated cell). Separate from Sta
 3. Rename a speaker; the summary shows the new name. The source box reads "System Sound Output".
 The lead then reads the meeting's diagnostics line (numbers only): which rule kept or dropped microphone words,
 the device's real echo return, and whether the provider heard the speech at all.
+
+**Pass:** the four sentences of step 1 are saved under "You" ("Yes." may be missing), no echo or invented text is
+saved as local speech, steps 2–3 as described. **Fail or incomplete:** the pilot stays on today's code; the counters
+say which rule acted; fix and repeat.
 
 ## 9. Not in this plan (measured or noted, deliberately deferred)
 
@@ -188,7 +227,16 @@ the device's real echo return, and whether the provider heard the speech at all.
 - R3 Rule H can restore a live-only invented word (none in two attack cells; round-4 lanes re-run in S5).
 - R4 Two packages edit the same two engine files; the lead merges and the §5 checks run on the merged code.
 - R5 Stage 3 may be UNMEASURED (provider does not reproduce the failure): W is then dropped; the rest proceeds.
-- R6 The integration replaces the pilot build the user is testing: one restart at S6, announced, after S5 passes.
+- R6 The integration replaces the pilot build the user is testing: one restart at S10, only after the physical
+  check passed on the candidate server; rollback is a restart at `9a1ca171`.
+
+## 12. Review findings → changes (`/codex:adversarial-review`, 2026-10-01)
+
+| Finding | Change |
+|---|---|
+| R-F1 a restored local reply inherits an echo label and fails admission | Microphone lane: clean-up words are gated first; each restore candidate is judged alone on its own audio, then labelled (WP-C); WP-BC case (a) with W on and off |
+| R-F2 invented words restored beside real speech; listener-only tests miss it | Restores need local-run evidence even on an anchored lane; WP-BC case (b); round-4 mixed lane in S5 and S7 |
+| R-F3 physical acceptance after pilot cutover | Candidate server :18620; attended check S9 is blocking and precedes cutover S10; failure disposition and rollback stated |
 
 ## 11. Spend so far in this phase
 
