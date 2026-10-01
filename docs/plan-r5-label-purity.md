@@ -310,3 +310,20 @@ provider output.
 `gemini_final_policy.py` if the same primitive applies there) with regression tests from the recorded patterns, full
 suites and a long-meeting re-check on the MacStudio pilot. Any failed gate → production unchanged, stop. Not exercised
 → UNMEASURED, production unchanged, no further spend without the user.
+
+## 14. Stage 3 verdict (2026-10-01): UNMEASURED — rule W is not shipped
+
+Six paid calls, 0 retries, $0.29 with-output estimate ($0.174 metered) of the $0.30 cap; key scan 0. Scorecard:
+`~/Documents/Codex/2026-09-28/moss-gemini/evidence/P70/purity-bench/stage3/SCORECARD.md`.
+
+- **No fixture exercised the failure** (S-ex not exercised on F1, F2, F3): the provider gave the late joiners their
+  own labels every time — including F1/F2, which reuse the base audio where the failure is known to occur with the
+  original late joiners. So S-repair is UNMEASURED.
+- Every other gate passed on all three fixtures, and W's output equals the shipped rule word for word (0 assignment
+  differences; e.g. F1 DER .0371 = .0371, 7 groups = 7; +0.09 s; 0 extra fingerprints).
+- By the decision rule fixed before the calls: **UNMEASURED → production unchanged, no further spend without the
+  user.** WP-W is dropped from `docs/plan-r5b-combined.md`.
+- What is known about W: it repairs the one recorded failure (non-independent evidence), it changed nothing on 22
+  held-out cases and 3 unseen fixtures, and it costs seconds. What is not known: whether it repairs a failure it was
+  not designed around, because the provider did not produce one. The trigger looks specific to that recording's late
+  joiners; how often real meetings hit it remains unmeasured.

@@ -114,7 +114,9 @@ margins, regression test list). The implementer lifts the measured rule; any dev
 
 **WP-E — merge `gemini/r5-m`** (M1, M2; already implemented: frontend 551 / backend 2713 pass with rebuilt bundle).
 
-**WP-W — rule W** (docs/plan-r5-label-purity.md §12–§13)
+**WP-W — rule W** (docs/plan-r5-label-purity.md §12–§14) — **DROPPED 2026-10-01: Stage 3 verdict UNMEASURED** (the
+provider did not reproduce the failure on any of three fixtures; W equalled the shipped rule word for word; $0.29
+spent). Production keeps the shipped stitch rule; step S4 is skipped. The text below is kept for the record.
 - Stage 3 first (user-approved, cap $0.30, evaluator pane 6.4 at "READY v2", gates frozen in §13). Independent of
   WP-A…E: it scores shipped rule A vs frozen W on the same raw provider words of system-lane fixtures; the raw
   responses are saved, so re-scoring after integration costs $0.
