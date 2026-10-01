@@ -85,6 +85,16 @@ CASES = {
 }
 
 
+CASES["ja (word split simulated per character; how Gemini splits Japanese is unmeasured)"] = (
+    list("本日は第三四半期の製品計画について話し合います。まず現在の進捗をご説明しますと全体としては計画通りに進んでおります"),
+    "本日は第三四半期の製品計画について話し合います。まず、現在の進捗をご説明しますと、全体としては計画通りに進んでおります。"
+    "モバイル版の新しいバージョンは審査に提出済みです。")
+CASES["ko control (spaced script)"] = (
+    "오늘은 삼분기 제품 계획에 대해 논의하겠습니다. 먼저 현재 진행 상황을 설명드리면 전체적으로 계획대로 진행되고 있습니다".split(),
+    "오늘은 삼분기 제품 계획에 대해 논의하겠습니다. 먼저 현재 진행 상황을 설명드리면, 전체적으로 계획대로 진행되고 있습니다. "
+    "모바일 새 버전은 심사에 제출했습니다.")
+
+
 def units(text: str) -> list[str]:
     return [unit for unit, _, _ in _preview_units(text)]
 
@@ -96,7 +106,8 @@ def repeated(shown: list[str], committed: list[str]) -> int:
                .get_matching_blocks() if block.size >= 5)
 
 
-def run(name: str, committed_words: list[str], preview: str, *, spaced: bool, frontier: int = 15, now: int = 20):
+def run(name: str, committed_words: list[str], preview: str, *, spaced: bool, frontier: int = 15, now: int = 20,
+        lane: str = "system"):
     committed = rolling_text(committed_words, spaced=spaced)
     with tempfile.TemporaryDirectory() as tmp:
         rt = GeminiLiveRuntime(descriptor=descriptor(), tape_storage_root=tmp,
@@ -107,15 +118,16 @@ def run(name: str, committed_words: list[str], preview: str, *, spaced: bool, fr
             rt.accept_frame("one", AudioFrame(sequence=second, pcm=b"\0" * 2 * S, sample_count=S))
         rt.publish_update("one", GeminiBase(frontier * S, ()))
         rt.publish_update("one", GeminiRolling(0, frontier * S, (
-            GeminiSegment(0, frontier * S, committed, "speaker-0001", "system"),), revision_lanes=("system",)))
+            GeminiSegment(0, frontier * S, committed, "speaker-0001" if lane == "system" else "local-0001", lane),),
+            revision_lanes=("system", "microphone")))
         # The hybrid engine clips the open W3 turn's row to the frontier; its text is the whole turn.
         rt.publish_update("one", GeminiPreview(now * S, (
-            GeminiSegment(frontier * S, now * S, preview, source_lane="system"),)))
+            GeminiSegment(frontier * S, now * S, preview, source_lane=lane),)))
         session = rt.snapshot("one").to_dict()["session"]
         shown = "".join(row["text"] for row in session["provisional"]["segments"])
     c, p, s = units(committed), units(preview), units(shown)
     fresh = len(p) - repeated(p, c)
-    return {"case": name, "committed_join": "spaced (before 694212f8)" if spaced else "join_text (9a1ca171)",
+    return {"case": name + ("" if lane == "system" else " [microphone lane]"), "committed_join": "spaced (before 694212f8)" if spaced else "join_text (9a1ca171)",
             "committed_units": len(c), "preview_units": len(p), "preview_units_already_committed": repeated(p, c),
             "grey_units_shown": len(s), "grey_units_repeating_solid": repeated(s, c),
             "fresh_units_expected": fresh, "trimmed": len(p) - len(s)}
@@ -123,7 +135,10 @@ def run(name: str, committed_words: list[str], preview: str, *, spaced: bool, fr
 
 def main():
     rows = [run(name, words, preview, spaced=False) for name, (words, preview) in CASES.items()]
-    rows += [run(name, words, preview, spaced=True) for name, (words, preview) in CASES.items() if name != "en control"]
+    rows += [run(name, words, preview, spaced=True) for name, (words, preview) in CASES.items()
+             if name in ("zh+latin names", "zh only")]
+    rows += [run(name, words, preview, spaced=False, lane="microphone") for name, (words, preview) in CASES.items()
+             if name in ("zh only", "en control")]
     cols = list(rows[0])
     print(" | ".join(cols))
     for row in rows:

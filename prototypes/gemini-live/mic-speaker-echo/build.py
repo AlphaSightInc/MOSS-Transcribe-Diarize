@@ -141,9 +141,20 @@ def main():
         "mic-long-echo25": floor + echo_of(system, -25) + local_speech(37.0, long_),
         "mic-short-noecho": floor + local_speech(37.0, short),
     }
+    # Mandarin local speech (Meijia, a different voice from the Tingting far end), at the same -27 dBFS.
+    def local_zh(turns):
+        out = np.zeros(n(37.0))
+        for at, text in turns:
+            cut = speech_level(fade(say(text, "Meijia", 185)), -27)
+            out[n(at):n(at) + len(cut)] += cut[:len(out) - n(at)]
+        return out
+    zh_short = [(5.0, "好的，没问题。"), (20.3, "好的，没问题。"), (35.0, "好的，没问题。")]
+    zh_long = [(9.0, "我觉得这个方案可以，但是我们需要先把接口的延迟测一下。"), (33.9, "那我们下周五之前再开会讨论一下。")]
+    mics["mic-zhshort-aec40"] = floor + echo_of(system, -40) + local_zh(zh_short)
+    mics["mic-zhlong-aec40"] = floor + echo_of(system, -40) + local_zh(zh_long)
     report = {"zh_seconds": len(zh) / RATE, "zh_only_seconds": len(zh_only) / RATE,
               "say_rate": {"zh": zh_rate, "zh_only": zh_only_rate},
-              "local_turns": {"short": short, "long": long_}, "text": {"zh": ZH, "zh_only": ZH_ONLY}, "files": {}}
+              "local_turns": {"short": short, "long": long_, "zh_short": zh_short, "zh_long": zh_long}, "text": {"zh": ZH, "zh_only": ZH_ONLY}, "files": {}}
     for name, x in {**lanes, **mics}.items():
         sf.write(str(OUT / f"{name}.wav"), np.clip(x, -1, 1), RATE, subtype="PCM_16")
         report["files"][f"{name}.wav"] = {
@@ -154,4 +165,5 @@ def main():
     print(json.dumps({k: v for k, v in report.items() if k != "text"}, indent=1))
 
 
-main()
+if __name__ == "__main__":
+    main()

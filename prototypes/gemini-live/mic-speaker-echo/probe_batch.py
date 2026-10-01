@@ -44,6 +44,7 @@ class RecordingClient:
     def __init__(self, label: str, *, share: bool = False):
         self.label = label
         self.share = share
+        self.may_pay = True
         self.interactions = self
         self._real = None
         self.paid_seconds = 0.0
@@ -62,10 +63,13 @@ class RecordingClient:
         path = RAW / f"{self.label}-{digest}-{repeat}.json"
         if self.share and not path.is_file():
             # The same request bytes recorded by another run (e.g. the shared system lane) are replayed, not re-paid.
-            path = next(iter(sorted(RAW.glob(f"*-{digest}-{repeat}.json"))), path)
+            # (any attempt index: a provider error leaves no file for the failed attempt)
+            path = next(iter(sorted(RAW.glob(f"*-{digest}-{repeat}.json")) or sorted(RAW.glob(f"*-{digest}-*.json"))), path)
         seconds = (len(input[0]["data"]) * 3 // 4 - 44) / (2 * S)
         self.calls.append({"digest": digest, "seconds": seconds, "replayed": path.is_file()})
         if not path.is_file():
+            if not self.may_pay:
+                raise RuntimeError(f"replay: no recorded response for request {digest} ({seconds:.0f} s)")
             ledger.check(seconds * ledger.BATCH_PER_S, f"{self.label} batch {seconds:.0f}s")
             response = self._client().interactions.create(model=model, input=input,
                                                           generation_config=generation_config)

@@ -47,11 +47,35 @@ w3_events: dict[str, list] = {"system": [], "microphone": []}
 gates: list[dict] = []
 
 
+def option(name: str) -> str | None:
+    return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else None
+
+
+DONOR = option("--provider-words-from")   # a recorded run whose answers stand in for unrecorded requests of equal length
+
+
 class Client(probe_batch.RecordingClient):
     def _client(self):
         if self._real is None:
             self._real = REAL_CLIENT(os.environ.get("GEMINI_API_KEY"))
         return self._real
+
+    def create(self, *, model, input, generation_config):  # noqa: A002
+        try:
+            return super().create(model=model, input=input, generation_config=generation_config)
+        except RuntimeError:
+            if DONOR is None:
+                raise
+            # Gate-only variant: the microphone audio was re-levelled, so its request bytes are new. The donor
+            # run's answer for the request of the same length is used: same words and times, new audio levels.
+            seconds = self.calls[-1]["seconds"]
+            for path in sorted(probe_batch.RAW.glob(f"{DONOR}-*-*.json")):
+                recorded = json.loads(path.read_text())
+                if "response" in recorded and abs(recorded["audio_seconds"] - seconds) < 0.01:
+                    self.calls[-1]["replayed"] = f"donor:{path.name}"
+                    data = recorded["response"]
+                    return type("Response", (), {"model_dump": lambda self, **_k: data})()
+            raise
 
 
 class LiveWords:
@@ -62,7 +86,8 @@ class LiveWords:
                          if cell.cell_contents in ("system", "microphone"))
         self.report = report
         self.real = RealLiveWords(client._client(), report) if RECORD else None
-        self.events = [] if RECORD else list(json.loads(W3.read_text())[self.lane])
+        source = W3 if DONOR is None else W3.with_name(f"{DONOR}-w3.json")
+        self.events = [] if RECORD else list(json.loads(source.read_text())[self.lane])
         self.sent = 0
 
     def bind(self, listener):
@@ -94,6 +119,36 @@ class LiveWords:
     def close(self):
         if self.real is not None:
             self.real.close()
+
+
+def trim_in_units(segments, committed):
+    """Feasibility probe only: the product's head trim with its tokens replaced by the lane composer's
+    comparable units (a CJK character each, other runs whole). Same window, same `_repeated_head` rule."""
+    from dataclasses import replace
+    from moss_transcribe_diarize.app.gemini_lane_engine import _preview_units
+    from moss_transcribe_diarize.app.gemini_live_runtime import _repeated_head
+    lane_units: dict = {}
+    for segment in segments:
+        lane_units[segment.source_lane] = lane_units.get(segment.source_lane, 0) + len(_preview_units(segment.text))
+    kept = []
+    for segment in segments:
+        lane = segment.source_lane
+        limit = max(60, lane_units[lane] * 5 // 4 + 8)
+        parts = [row.text for row in reversed(kept) if row.source_lane == lane]
+        count = sum(len(_preview_units(text)) for text in parts)
+        for row in reversed(committed):
+            if count >= limit:
+                break
+            if row.source_lane == lane:
+                parts.append(row.text)
+                count += len(_preview_units(row.text))
+        tail = [unit for text in reversed(parts) for unit, _, _ in _preview_units(text)][-limit:]
+        spans = _preview_units(segment.text)
+        cut = _repeated_head(tail, [unit for unit, _, _ in spans])
+        text = segment.text[spans[cut - 1][2]:].lstrip(" \t\r\n,.;:!?，。；：！？、") if cut else segment.text
+        if text:
+            kept.append(replace(segment, text=text))
+    return tuple(kept)
 
 
 def words_of(words):
@@ -160,13 +215,19 @@ async def main():
     floor = (np.random.default_rng(7).normal(0, 10 ** (-63 / 20), lead) * 32767).astype(np.int16)
     system = np.concatenate([np.zeros(lead, dtype=np.int16), system])
     mic = np.concatenate([floor, mic])
+    if "--silent-mic" in sys.argv:      # round 5: a source that is not recorded is a lane of digital zeros
+        mic = np.zeros(len(mic), dtype=np.int16)
     total = min(len(system), len(mic))
     if RECORD:
         ledger.check(2 * (15 + 30 + 45 + 15) * ledger.BATCH_PER_S + 2 * 45 * ledger.LIVE_PER_S, f"replay-record {RUN}")
     client = Client(RUN, share=True)
+    client.may_pay = RECORD   # a replay never reaches the provider
     cli._gemini_client = lambda _key: client
     live_words.GeminiLiveWordSource = LiveWords
     instrument()
+    if "--trim-in-units" in sys.argv:
+        import moss_transcribe_diarize.app.gemini_live_runtime as runtime_module
+        runtime_module._trim_committed_preview = trim_in_units
     work = tempfile.mkdtemp(prefix="r5d-replay-")
     rt = cli._build_gemini_live_runtime_factory(argparse.Namespace(
         live_provider_manifest=str(MANIFEST), file_work_root=work))()
@@ -226,7 +287,7 @@ async def main():
         W3.write_text(json.dumps(w3_events, ensure_ascii=False, indent=1))
     print(json.dumps({"run": RUN, "mode": "record" if RECORD else "replay", "snapshots": len(rows),
                       "finalization": final["finalization_status"], "wall_s": round(time.monotonic() - started, 1),
-                      "batch_calls": len(client.calls), "replayed_calls": sum(c["replayed"] for c in client.calls),
+                      "batch_calls": len(client.calls), "replayed_calls": sum(bool(c["replayed"]) for c in client.calls),
                       "w3_events": {k: len(v) for k, v in w3_events.items()} if RECORD else "replayed",
                       "calls_by_kind": final["diag"]["calls_by_kind"]}))
     _ = before_stop

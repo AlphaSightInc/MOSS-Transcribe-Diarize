@@ -74,6 +74,86 @@ keeps the names with usable times; H3b dies if no stage output differs from its 
 **Assumptions / unknown.** The real meeting saved no per-lane audio and no diagnostics, so the
 real microphone lane's content is `unmeasured`; only the mixed MP3 and the final rows exist.
 
-## Results
+## Commands
 
-(filled in below as measured)
+```sh
+PY=../MOSS-Transcribe-Diarize-wt-r5-d.venv/bin/python; W=prototypes/gemini-live/mic-speaker-echo
+F=~/Documents/Codex/2026-09-28/moss-gemini/evidence/P72/mic-speaker-echo/fixtures
+PYTHONDONTWRITEBYTECODE=1 $PY $W/build.py                      # public/synthetic fixtures ($0)
+PYTHONDONTWRITEBYTECODE=1 $PY $W/s1_trim_replay.py             # S1 at the publication seam ($0, 2 s)
+PYTHONDONTWRITEBYTECODE=1 $PY $W/replay.py rp-short-aec40 $F/sys-zhlatin-en.wav $F/mic-short-aec40.wav
+                                                               # whole production engine on recorded provider answers ($0, 15 s)
+PYTHONDONTWRITEBYTECODE=1 $PY $W/e2e_analyze.py rp-short-aec40 # the three symptoms as numbers
+PYTHONDONTWRITEBYTECODE=1 $PY $W/matrix.py                     # every recorded cell, one line each
+PYTHONDONTWRITEBYTECODE=1 $PY $W/gate_sweep.py                 # speaking level vs the microphone gates ($0)
+# paid (public audio only; ledger.py enforces the cap): add --record to replay.py through with_key.sh;
+# probe_batch.py / probe_variance.py (raw provider answers); server.sh + e2e_run.py (real Chrome, real UI)
+```
+
+`replay.py` is the feedback loop: the product's own engine composition with only the provider swapped for
+recorded answers (batch responses keyed by request bytes, instant-word events replayed at their sent positions).
+It cannot reach the provider unless `--record` is given.
+
+## Results (2026-10-01; total spend $0.26 of $1.00)
+
+**Real meeting, from saved state only** (`real-facts/real_facts.json`; no lane audio, no diagnostics, no live rows
+were saved): 4 final rows, all system lane, 0 microphone rows; the Chinese rows hold 0 Latin words (the live row in
+the picture held 11) and 2.0 s of fully voiced audio (7.8-9.8 s) has no row; tab sound about -17 dBFS in its lane;
+no speech-level energy in the 4 s where the tab was silent; whether anyone spoke under the tab sound is
+unmeasured (the voiceprint check has no power there: control 0/15); no echo path above about -35 dB.
+The grey paragraph in `during.png` is a system-lane row: it renders as a continuation of the Browser card, which
+`transcriptCards.ts` allows only within one lane.
+
+**S1 - H1a confirmed, H1b and H1c rejected.** `_trim_committed_preview` (gemini_live_runtime.py:1293-1332,
+since 3901d2db, 2026-09-28) compares whitespace/punctuation-delimited runs. In an unspaced script a clause is one
+token, and a Chinese+Latin run is one token, so the repeated head never reaches five matching tokens.
+
+| Replay at the publication seam (`s1_trim_replay.py`) | preview units already solid | trimmed |
+|---|---:|---:|
+| Chinese with Latin names | 75 of 115 | 0 |
+| Chinese only (system lane; microphone lane the same) | 60 of 93 | 0 |
+| Japanese (word split simulated) | 56 of 80 | 0 |
+| English control | 52 of 54 | 52 |
+| Korean control (spaced) | 51 of 67 | 51 |
+
+The same with committed text joined the pre-F1 way (a space between characters): 0 trimmed. So the trim never
+worked for Chinese; the F1 join rule neither caused nor cured it.
+Production engine on real provider answers (9 recorded cells + 1 real-Chrome run): the system grey row repeated
+67-71 units of its own solid text for 12.5-16.5 s of a 40 s meeting in 10 of 10. The page showed it as a dotted
+continuation under the solid card (`runs/short-aec40/shot-e27.png`, the twin of `during.png`).
+Feasibility probe only (`replay.py --trim-in-units`): the same rule over the lane composer's units (one per CJK
+character) leaves 0 repeated unit-polls (1,982 before) and keeps the fresh ones (2,151 -> 2,206) on three cells,
+one of which has the solid row in traditional and the preview in simplified characters.
+
+**S2/S3 - microphone text grey but never solid, and absent after clean-up.** Reproduced by two mechanisms; which
+one the user met depends on whether they spoke (unknown).
+- *H2b confirmed: the 2 s anchor* (gemini_lane_engine.py:427-431 live, 456-462 saved; span rule
+  gemini_hybrid_engine.py:39-64; since 7ea36f81 and 1219db04, 2026-09-30; listed as an accepted cost in
+  `mic-hallucination/NOTES.md`). "Can you elaborate on that?" said three times (5 words, 0.8-0.9 s by provider
+  times): the provider returned the 5 words in every window, the level and echo guards kept 4-5, and the anchor
+  dropped all of them (`gates.jsonl`). 5 of 5 short-phrase cells (English at no echo, -40 dB, -25 dB; Mandarin
+  at -40 dB; real Chrome): grey in every cell, 0 solid rows, 0 saved rows; unanchored 10-18, lane withheld 10-15.
+  Provider word times are shorter than the audio: a 2.6 s sentence measures 1.3-1.7 s and does not anchor alone.
+- *Echo residue in the grey microphone row* (no local speech): at -40 dB, 2-4 word fragments of the far end in 4
+  snapshots; at -25 dB, up to 30 units of mis-heard far-end text in 49 of 73. None is committed (level gate:
+  278 and 386 words dropped). `_without_echo` needs a run of 3 words / 5 CJK characters (gemini_lane_engine.py:68).
+- *H2c bounded.* Gate-only sweep (`gate_sweep.py`, provider words held fixed): a 6 s local sentence under tab
+  sound at -17 dBFS is saved 27-28 of 30 words down to 10 dB under the tab, 23 at 13 dB under, 0 at 16 dB under
+  (the level gate removes 58 words, the anchor withholds the remaining 13). The user's measured levels in other
+  meetings were 4-10 dB under.
+- H2d rejected here: voice guard 0 drops, text guard 0-2.
+- Controls: long local sentences are saved in 3 of 3 cells (English -40/-25 dB, Mandarin -40 dB).
+
+**S3b - H3a confirmed, H3b rejected.** The product drops nothing: parser 0, word gate 0, repaired 0 on every
+recorded answer. The provider's answers for the same audio differ in code-switched words, punctuation and script:
+- whole-recording requests: 8 of 10 lost "Media Lab" (2 of 10 Latin tokens); 1 of 10 came back in traditional
+  characters; punctuation 7-8 marks per request against 6-15 in window answers;
+- recorded meeting: the live transcript at Stop held "Media Lab 的" and "Computerphile"; the clean-up answer had
+  neither ("Computer File"); the real-Chrome meeting went the other way (clean-up restored both and came back in
+  traditional characters).
+Clean-up replaces the whole live surface (gemini_live_runtime.py:1138-1144); its only check against the live rows
+is a wordless stretch of at least 10 s (gemini_coverage.py:12, gemini_provider.py:363-380), so a lost name or a
+2 s hole is invisible to it. Why the real answer lost all 7 names is unmeasured (no raw response was saved).
+
+**Also seen (not reported by the user).** The live transcript duplicates one character at a window frontier
+("...会议。" then "议。..."/"議。...") in both independent provider samples; clean-up removes it.

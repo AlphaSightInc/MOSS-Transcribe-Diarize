@@ -18,12 +18,22 @@ import ledger  # noqa: E402
 from moss_transcribe_diarize.app.gemini_lane_engine import _preview_units  # noqa: E402
 
 S = 16000
+_PAIRS = dict(zip("這個問題學院計算機經網絡訓練會議頻道專訪從頭講為什麼開願術們視頻對實現時間後來說話還沒與業務數據長個發進",
+                  "这个问题学院计算机经网络训练会议频道专访从头讲为什么开愿术们视频对实现时间后来说话还没与业务数据长个发进"))
+
+
+def _fold():
+    """Traditional -> simplified for the characters these fixtures use: the provider answers in either script at
+    random, and that variance must not be counted as new or lost speech."""
+    return lambda text: "".join(_PAIRS.get(ch, ch) for ch in text)
+
+
 RUN = sys.argv[1]
 OUT = ledger.EV / "runs" / RUN
 
 
 def units(text: str) -> list[str]:
-    return [unit for unit, _, _ in _preview_units(text)]
+    return [unit for unit, _, _ in _preview_units(_fold()(text))]
 
 
 def repeated(shown: list[str], reference: list[str], run: int = 5) -> int:
@@ -105,6 +115,22 @@ def main():
                                                  for r in rows if r.get("source_lane") == "system"]}
     if before_stop:
         out["system_live_before_stop"] = text_stats(lane_text(before_stop["effective"], "system"))
+    # S3b: what the live transcript saved at Stop held that the clean-up answer does not (system lane).
+    # Compared on a script-folded copy (the provider answers in simplified or traditional Han at random).
+    fold = _fold()
+    live_units = units(fold("".join(r["text"] for r in live_rows if r.get("source_lane") == "system")))
+    final_units = units(fold("".join(r["text"] for r in final_rows if r.get("source_lane") == "system")))
+    lost, gained = [], []
+    for tag, a0, a1, b0, b1 in difflib.SequenceMatcher(None, live_units, final_units, autojunk=False).get_opcodes():
+        if tag in ("delete", "replace"):
+            lost.append(" ".join(live_units[a0:a1]))
+        if tag in ("insert", "replace"):
+            gained.append(" ".join(final_units[b0:b1]))
+    latin = lambda runs: [run for run in runs if re.search(r"[a-z]", run)]
+    out["S3b_cleanup_vs_live_system"] = {
+        "live_units": len(live_units), "cleanup_units": len(final_units),
+        "live_runs_missing_after_cleanup": lost, "cleanup_runs_not_in_live": gained,
+        "latin_runs_lost": latin(lost), "latin_runs_gained": latin(gained)}
     diag = json.loads((OUT / "engine.json").read_text())
     out["diagnostics"] = {k: diag.get(k) for k in (
         "calls_by_kind", "timing_anomalies", "repaired_words", "mic_words_dropped_by_acoustic_gate",
