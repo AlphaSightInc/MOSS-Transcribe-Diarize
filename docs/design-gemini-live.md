@@ -96,7 +96,12 @@ words hold a continuous attributed span of at least 2 s (0.6 s joins, the same e
 voiceprint needs); otherwise its words are counted as `mic_words_dropped_unanchored` and the
 terminal pass decides the saved text (round 4, issue #3: noise and echo-residue windows
 produced 165 → 3 invented, often foreign-language, words with unchanged non-backchannel
-retention; `prototypes/gemini-live/mic-hallucination/NOTES.md`). W3's provisional text lacks reliable word timing, so the lane
+retention; `prototypes/gemini-live/mic-hallucination/NOTES.md`). The saved (terminal and
+Stop-tail) mic words are withheld only when the meeting's microphone never showed such a span,
+in any live window or in the saved words themselves; they are counted as
+`mic_words_withheld_unanchored_lane`, and a Stop tail withheld this way counts as covered, not
+as a failed recovery (listen-only speaker lanes 104/73 → 0/0 saved invented words; saved
+retention unchanged on six lanes with local speech; margin 1.9 s vs 2 s). W3's provisional text lacks reliable word timing, so the lane
 composer drops a mic preview row when at least 60% of its normalized tokens occur
 in the union of system preview rows overlapping it within ±2 s. System text wins
 an echo tie; a later overlapping row in the same lane replaces the earlier one.
@@ -257,7 +262,7 @@ real stress or browser checks; deterministic regressions cover the code paths.
 `engine_diagnostics` exposes per-session, per-lane calls by kind, errors and
 retries by code, audio seconds sent, provider cost, W3 list-price estimate,
 clamped/dropped/repaired word counts, chunked status, skipped ticks, degraded
-activations, preview/window lag, microphone acoustic/text/unanchored drop decisions, preview
+activations, preview/window lag, microphone acoustic/text/unanchored drop and saved-lane withhold decisions, preview
 stall restarts, coverage retries, rolling preview fallbacks, and terminal
 coverage fallbacks.
 Counters contain no meeting content. The SDK retry proxy test verifies physical

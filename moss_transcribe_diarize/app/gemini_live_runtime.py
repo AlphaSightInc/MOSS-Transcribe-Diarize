@@ -330,6 +330,7 @@ class _GeminiState:
     mic_words_dropped_by_text_guard: int = 0
     mic_echo_dropped_by_voice: int = 0
     mic_words_dropped_unanchored: int = 0
+    mic_words_withheld_unanchored_lane: int = 0
     veto_fired: int = 0
     chunked: bool = False
     audio_seconds_sent: float = 0.0
@@ -650,6 +651,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         text_guard_dropped_words: int = 0,
         mic_echo_dropped_by_voice: int = 0,
         unanchored_window_dropped_words: int = 0,
+        unanchored_lane_withheld_words: int = 0,
         veto_fired: int = 0,
         chunked: bool = False,
         audio_seconds_sent: float = 0.0,
@@ -675,7 +677,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                              terminal_coverage_fallbacks,
                              acoustic_gate_dropped_words, text_guard_dropped_words,
                              mic_echo_dropped_by_voice, unanchored_window_dropped_words,
-                             veto_fired)):
+                             unanchored_lane_withheld_words, veto_fired)):
             raise ValueError("word-timing anomaly counts must be nonnegative integers.")
         if any(not math.isfinite(value) or value < 0 for value in
                (audio_seconds_sent, cost_usd, metered_output_usd, output_cost_estimate_usd)):
@@ -698,6 +700,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.mic_words_dropped_by_text_guard += text_guard_dropped_words
             state.mic_echo_dropped_by_voice += mic_echo_dropped_by_voice
             state.mic_words_dropped_unanchored += unanchored_window_dropped_words
+            state.mic_words_withheld_unanchored_lane += unanchored_lane_withheld_words
             state.veto_fired += veto_fired
             state.chunked = state.chunked or chunked
             state.skipped_window_ticks += skipped_window_ticks
@@ -725,6 +728,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                     "output_cost_estimate_usd": 0.0,
                     "skipped_window_ticks": 0})
                 totals.setdefault("mic_words_dropped_unanchored", 0)
+                totals.setdefault("mic_words_withheld_unanchored_lane", 0)
                 totals.setdefault("preview_stall_restarts", 0)
                 totals.setdefault("coverage_retries", 0)
                 totals.setdefault("coverage_preview_fallbacks", 0)
@@ -744,6 +748,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["mic_words_dropped_by_text_guard"] += text_guard_dropped_words
                 totals["mic_echo_dropped_by_voice"] += mic_echo_dropped_by_voice
                 totals["mic_words_dropped_unanchored"] += unanchored_window_dropped_words
+                totals["mic_words_withheld_unanchored_lane"] += unanchored_lane_withheld_words
                 totals["veto_fired"] += veto_fired
                 totals["chunked"] = totals["chunked"] or chunked
                 totals["audio_seconds_sent"] += audio_seconds_sent
@@ -777,6 +782,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "mic_words_dropped_by_text_guard": state.mic_words_dropped_by_text_guard,
                 "mic_echo_dropped_by_voice": state.mic_echo_dropped_by_voice,
                 "mic_words_dropped_unanchored": state.mic_words_dropped_unanchored,
+                "mic_words_withheld_unanchored_lane": state.mic_words_withheld_unanchored_lane,
                 "veto_fired": state.veto_fired,
                 "chunked": state.chunked,
                 "audio_seconds_sent": state.audio_seconds_sent,

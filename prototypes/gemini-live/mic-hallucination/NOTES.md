@@ -128,6 +128,47 @@ published live. The diagnostics count them as `mic_words_dropped_unanchored`.
   (52 → 20 units) and appear after Stop. If cleanup is off or fails, they are lost from the
   saved text (D3).
 
+## D2 follow-up: saved lane with no local speech at all (lead decision, narrow version)
+
+**Rule.** `MicrophoneWordGate` keeps one fact per meeting: `local_speech_seen`. It becomes
+true when any live window's gated words, or the saved pass's own gated words, hold a
+continuous attributed span of at least 2 s (the same rule and 0.6 s joins as the live gate).
+
+- `filter_terminal` withholds the saved mic words only while that fact is false, and counts
+  them as `mic_words_withheld_unanchored_lane`.
+- A meeting with one real local turn keeps today's saved behaviour, short replies included.
+- **Stop-tail recovery.** `GeminiHybridEngine.recover_tail` now treats an empty tail as
+  covered (final) when the gate's withheld count rose during that decode. Before this
+  change, an empty tail with voiced audio was reported as uncovered, which showed the
+  meeting as needs-review.
+
+`verify_saved.py` runs the production gate on cached words only, at $0 (the ledger is
+unchanged at $0.7545).
+
+| Lane | Local speech | Saved mic words before → after | Saved non-backchannel units before / after | Saved backchannel units before / after | Longest attributed run |
+|---|---|---:|---:|---:|---:|
+| en-hp | yes | — | 318 / 318 of 336 | 12 / 12 of 13 | 38.2 s |
+| en-sp | yes | — | 320 / 320 of 336 | 10 / 10 of 13 | 38.2 s |
+| A-hp | yes | — | 138 / 138 of 147 | 11 / 11 of 12 | 17.9 s |
+| A-sp | yes | — | 80 / 80 of 147 | 4 / 4 of 12 | 17.9 s |
+| B-hp | yes | — | 107 / 107 of 114 | 7 / 7 of 7 | 12.0 s |
+| B-sp | yes | — | 105 / 105 of 114 | 7 / 7 of 7 | 12.0 s |
+| A listen-only, speakers | no | **104 → 0** | — | — | 1.9 s |
+| B listen-only, speakers | no | **73 → 0** | — | — | 1.0 s |
+| Listen-only, headphones | no | 0 → 0 (the provider returned no words) | — | — | — |
+
+- **Retention.** Identical on all 6 local-speech lanes, whether or not the live-window
+  memory is used. On every one of those lanes, the saved words alone already contain a run
+  of at least 12 s.
+- **Live memory on listen-only lanes.** Of 72 live windows lying wholly inside listening
+  stretches of the v2 lanes, 0 were anchored. So live memory is not expected to rescue
+  listen-only garbage.
+- **Margin.** It is thin on the invented-word side: 1.9 s against the 2.0 s threshold on
+  the A lane. Echo residue that forms a single-label run of 2 s or more would keep all of
+  that meeting's saved mic words. That is today's behaviour, so the failure mode is safe.
+- **Known cost (accepted).** A local participant whose only saved speech is shorter than
+  2 s continuous (for example "Hi … bye") loses those words from the saved text.
+
 ## Not adopted, with evidence
 
 - **Script consistency.** It removes only 10% of the invented words (kana), because
@@ -140,10 +181,8 @@ published live. The diagnostics count them as `mic_words_dropped_unanchored`.
   - The first words of each mic turn appear 0.9 s later at p50 (p90 1.0 s).
   - Preview rows carry no word timing, so stop-start speech is at risk; that risk is
     unmeasured (D1).
-- **Lane-level rule on the terminal pass.** It removes both listen-only garbage sets
-  (their longest spans were 1.9 s and 1.0 s), but the margin is only 0.1 s, and it drops a
-  participant whose only speech is short. It also makes a short Stop-time tail recovery
-  report a failure (D2).
+- **Lane-level rule on the terminal pass, unconditional version.** The narrow version
+  (lane never had local speech) was adopted after D2; see above.
 
 ## Scoring notes
 
