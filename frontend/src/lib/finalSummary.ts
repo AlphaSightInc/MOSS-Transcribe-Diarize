@@ -16,6 +16,8 @@ export interface SummaryArtifact {
   artifact_version: number;
   error_code: string | null;
   document: SummaryDocument | null;
+  /** The name each speaker id was given to the generator under; absent on summaries saved before round 5. */
+  speaker_names?: Record<string, string>;
 }
 export interface SummarySettings {
   endpoint: string; model: string; apiKey: string; prompt: string; language: string; timeoutSeconds: number;

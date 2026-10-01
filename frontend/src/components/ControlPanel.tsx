@@ -17,7 +17,8 @@ import { engineSettingsFrom, loadAppSettings } from "../lib/settings";
 import { sessionId, sessionStarting, sessionStatus, sessionStopRequested, transcript } from "../state/session";
 import { dispatchWsEvent } from "../api/ws";
 import { controlPanelCollapsed, selectedSummaryMeeting } from "../state/ui";
-import { watchMeetingSummary } from "../lib/summaryRequests";
+import { summaryPredatesRefinement, watchMeetingSummary } from "../lib/summaryRequests";
+import { renameSummarySpeakers, transcriptSpeakerNames } from "../lib/summarySpeakers";
 import {
   clearSessionReattach,
   loadCaptureSources,
@@ -525,10 +526,13 @@ export function ControlPanel() {
     let summary = null;
     if (exportFormat === "md" && finalized) {
       try {
-        const version = selectedSummaryMeeting.value?.id === id
-          ? selectedSummaryMeeting.value.transcript_version : (await openMeeting(id)).transcript_version;
+        const meeting = selectedSummaryMeeting.value?.id === id ? selectedSummaryMeeting.value : await openMeeting(id);
         const artifact = await summaryApi(id);
-        summary = artifact?.state === "current" && artifact.source_version === version ? artifact.document : null;
+        // Only the clean-up outdates a summary; a rename raises the version too and keeps it (D1, #15),
+        // read under the names the speakers carry now.
+        summary = artifact?.state === "current" && artifact.document && !summaryPredatesRefinement(meeting, artifact)
+          ? renameSummarySpeakers(artifact.document, artifact.speaker_names, transcriptSpeakerNames(transcript.value))
+          : null;
       }
       catch { /* A transcript remains exportable when its optional summary cannot be fetched. */ }
     }

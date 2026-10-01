@@ -111,6 +111,9 @@ clean-up renamed speakers (5 of 25 surviving speakers in 5 recorded long60 live�
 "Speaker 3" in r4-ui-e2e run a) and naming one speaker renumbered the rest. Ids are kept by clean-up and were handed
 out contiguously in speaking order in all 35 round-2–4 snapshots, so id-derived names change for 0 of 25; a speaker that
 disappears leaves a gap, a new one takes the next unused number.
+Round 5: a summary reads under the same current names. It keeps the names its generator was given, by speaker id, and
+the Summary pane and the Markdown export show each mention as that speaker's name now; a rename still asks the model
+nothing (`docs/design-gemini-live.md`, "Round 5: a renamed speaker in a summary").
 
 ### I-5 OpenAI-compatible adapter (WP-F → wired by WP-B)
 

@@ -200,6 +200,39 @@ describe("ControlPanel reattach", () => {
     expect(content).not.toContain("summary is being updated");
   });
 
+  it("keeps the summary in a Markdown export after a rename, under the speaker's new name (round 5)", async () => {
+    // A rename raises the transcript version (3) past the summary's (2) without outdating it (D1, #15).
+    const meeting = { id: "export", mode: "live" as const, title: "Meeting", title_source: "automatic" as const,
+      status: "completed" as const, created_at_ms: Date.now(), transcript_version: 3,
+      refinement_state: "done" as const, refined_version: 2, transcript: { segments: [] }, audio: null };
+    const artifact = { state: "current", attempt_id: "saved", source_version: 2, artifact_version: 1, error_code: null,
+      speaker_names: { "speaker-0001": "Speaker 1", "speaker-0010": "Speaker 10" },
+      document: { summary: "Speaker 1 asked Speaker 10 for the plan.", topics: [], details: [],
+        speaker_background: ["Speaker 1: host"], data_references: [] } };
+    const fetcher = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ summary: artifact }) }));
+    vi.stubGlobal("fetch", fetcher);
+    act(() => {
+      sessionId.value = meeting.id;
+      sessionStatus.value = "closed";
+      selectedSummaryMeeting.value = meeting;
+      replaceTranscript([
+        { start: 0, end: 1, text: "The plan?", speaker: "speaker-0001", speaker_entity_id: "speaker-0001",
+          display_name: "Alice", state: "final" },
+        { start: 1, end: 2, text: "Here.", speaker: "speaker-0010", speaker_entity_id: "speaker-0010",
+          display_name: "Speaker 10", state: "final" }]);
+      render(<ControlPanel />, root);
+    });
+    await act(async () => root.querySelector<HTMLButtonElement>(".controls-export button")!.click());
+    await vi.waitFor(() => expect(mocks.exportDownload).toHaveBeenCalledOnce());
+    const content = mocks.exportDownload.mock.calls[0][0].content as string;
+    expect(content).toContain("# Summary\n\nAlice asked Speaker 10 for the plan.");
+    expect(content).toContain("- Alice: host");
+    expect(content).toContain("## [00:00:00] Alice\n\nThe plan?");
+    expect(content).not.toContain("Speaker 1 ");
+    // Reading the saved summary is the only request; nothing asks the model.
+    expect(fetcher.mock.calls.every(([url, init]) => url === "/api/meetings/export/summary" && init === undefined)).toBe(true);
+  });
+
   it("exports microphone-lane speakers with the I-4 names", async () => {
     act(() => {
       sessionId.value = "local-names";

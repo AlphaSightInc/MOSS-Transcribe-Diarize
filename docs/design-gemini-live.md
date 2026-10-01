@@ -300,6 +300,47 @@ drops the veto for 7 of 38 different-speaker pairs there — every time a label 
 shipped either. The open primitive is label purity, not the alternation rule. Numbers and gates:
 `prototypes/gemini-live/aba-veto/NOTES.md`.
 
+## Round 5: a renamed speaker in a summary (2026-10-01)
+
+- **Defect.** After a rename the summary still said "Speaker 1". A summary is prose written once by a model that was
+  given every transcript row under its speaker's name at that moment (`GeminiSummaryGenerator`: `"speaker": row["speaker"]`).
+  A rename rewrites the transcript rows and, by decision D1 (#15), asks the model nothing, so the stored prose kept
+  the old name. A second defect hid behind it: the Markdown export kept a summary only when its version equalled the
+  transcript's, and a rename raises the transcript version, so after any rename the export dropped the whole summary.
+- **Structural question.** Which words of a stored summary mean which speaker, and under what name is that speaker
+  shown now?
+- **Primitives.** (1) *Given names*: the name each speaker id carried in the transcript handed to the generator, saved
+  with the summary (`speaker_names` in the artifact's `provenance_json`; returned by `/summary/live`). (2) *Current
+  names*: the name each speaker id shows in the transcript now (`transcriptSpeakerNames`, the transcript's own label
+  rule). (3) *Reading*: every whole mention of a given name is shown as that speaker's current name
+  (`renameSummarySpeakers`, `frontend/src/lib/summarySpeakers.ts`), in the Summary pane and in the Markdown export.
+  The stored document is never rewritten, so a second rename, a swap of two names and a rename back all start from
+  the same text. Neither side can be dropped: without (1) a search has only the default label to look for.
+- **Why not search for the default label.** "Speaker 1" is what speaker-0001 is called only until someone names it. A
+  speaker named Alice before the summary (by a voiceprint, or by hand during the meeting) is "Alice" in the prose;
+  renaming her to "Alicia" afterwards leaves a default-label search nothing to find. And before round 4 (F4)
+  "Speaker n" was numbered by order of first speech in one transcript version, not read off the id
+  (`docs/plan-r3-ui.md` I-4), so in an older summary "Speaker 1" need not be speaker-0001: the search could put one
+  person's new name on another person's sentences. How often that would happen is unmeasured.
+- **Invariants.** No model call and no summary request on a rename. Only given names are looked for: a default label
+  the generator never used is ordinary text. A name must be whole: "Speaker 1" is not in "Speaker 10", nor "Al" in
+  "Also"; all given names are matched together, longest first, so "Ann" inside another speaker's "Ann Lee" belongs to
+  the longer name. Chinese writes no space between words, so a Chinese neighbour needs no gap ("Speaker 2介绍了…").
+  A name is left as written when its speaker is no longer in the transcript, when the transcript shows that speaker
+  as unattributed, or when two speakers were given one name and now differ. Timestamps and data values are not prose
+  and are not touched.
+- **Measured.** On the 84 recorded Gemini summaries under `prototypes/gemini-live/live-summary/` (37 Chinese) the
+  model wrote the given label verbatim in 252 of 252 mentions (0 paraphrases such as "the first speaker" or a
+  translated label; 49 mentions touch a Chinese character). The reading rule renamed 252/252, changed 0 characters
+  outside them, and made 0 false rewrites of the word "You" (the first microphone voice's default name).
+- **Summaries saved before this change** carry no given names; they are shown exactly as stored (no guess), in the
+  pane and in the export. Refresh regenerates one with the current names.
+- **Cannot do.** Tell a name from the same word used otherwise ("You", "Will", "May" in a quoted sentence); follow a
+  mention the model paraphrased or lower-cased; split a Chinese name from a longer word that only starts with it
+  ("张伟" inside a non-speaker's "张伟明"); follow a passage correction (its rows move to another speaker, the prose
+  does not); rename the meeting title the first summary set. How Gemini mentions the microphone voice "You" in a
+  two-lane summary is unmeasured (no recorded two-lane summary in the repo).
+
 ## Measured envelope and custody
 
 Figures below name their code/fixture population. They do not combine different

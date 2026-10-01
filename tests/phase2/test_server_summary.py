@@ -484,3 +484,129 @@ def test_gemini_generator_raises_invalid_output_with_usage_on_malformed_json(mon
         asyncio.run(GeminiSummaryGenerator()(TRANSCRIPT, model="gemini-3.5-flash-lite",
                                               language="", prompt="P", api_key="test-key"))
     assert caught.value.usage["input_tokens"] == 100
+
+
+# A summary names people as its generator was given them; the artifact keeps those names by speaker id
+# so the browser can show the names the speakers carry now (round 5: a rename never regenerates).
+NAMED_TRANSCRIPT = {"segments": [
+    {"id": "a", "start": 0, "end": 2, "speaker_entity_id": "speaker-0001", "speaker": "Speaker 1",
+     "source_lane": "system", "text": "Hello from the shared tab."},
+    {"id": "b", "start": 2, "end": 4, "speaker_entity_id": "local-1", "speaker": "You",
+     "source_lane": "microphone", "text": "Hello from the microphone."},
+    {"id": "c", "start": 4, "end": 6, "speaker": "S03", "text": "A row saved before speaker ids."},
+]}
+NAMED_RESULT = {"summary": "Speaker 1 greeted You.", "topics": [], "details": [],
+                "speaker_background": ["Speaker 1: host"], "data_references": []}
+GIVEN_NAMES = {"speaker-0001": "Speaker 1", "local-1": "You", "S03": "S03"}
+
+
+def _named_meeting(app, client):
+    client.post("/api/workspace/bootstrap")
+    credential = client.cookies.get("__Host-moss_session")
+
+    async def seed():
+        store = app.state.phase2_store
+        account = await store.account_for_session(credential)
+        handle = await store.workspace(account).create_meeting("live")
+        await handle.finish_with_transcript(NAMED_TRANSCRIPT, "completed")
+        return handle.meeting_id
+
+    return client.portal.call(seed)
+
+
+def test_final_summary_keeps_the_names_its_generator_was_given_through_renames(tmp_path: Path):
+    calls = []
+
+    async def generate(document, *, model, language, prompt, api_key):
+        calls.append([row["speaker"] for row in document["segments"]])
+        return NAMED_RESULT, USAGE
+
+    app = create_phase2_app(database_path=tmp_path / "db", summary_generator=generate)
+    with TestClient(app, base_url="https://moss.test") as client:
+        meeting_id = _named_meeting(app, client)
+        path = f"/api/meetings/{meeting_id}/summary"
+        created = client.post(f"{path}/server", json={"source_version": 1, "provider": PROVIDER})
+        assert created.status_code == 200, created.text
+        assert calls == [["Speaker 1", "You", "S03"]]
+        assert created.json()["speaker_names"] == GIVEN_NAMES
+        assert client.get(path).json()["summary"]["speaker_names"] == GIVEN_NAMES
+        # Speaker 1 -> Alice -> Bob: the stored summary and its names stay as generated, and no
+        # rename asks the model again; only the transcript carries the new name.
+        for label in ("Alice", "Bob"):
+            named = client.put(f"/api/meetings/{meeting_id}/speakers/speaker-0001/name",
+                               json={"label": label, "save_voiceprint": False})
+            assert named.status_code == 200, named.text
+            saved = client.get(path).json()["summary"]
+            assert saved["state"] == "current" and saved["document"] == NAMED_RESULT
+            assert saved["speaker_names"] == GIVEN_NAMES
+        assert len(calls) == 1
+        rows = client.get(f"/api/meetings/{meeting_id}").json()["transcript"]["segments"]
+        assert [row["speaker"] for row in rows] == ["Bob", "You", "S03"]
+        # Refresh is the user's choice; a new summary records the names it was given then.
+        version = client.get(f"/api/meetings/{meeting_id}").json()["transcript_version"]
+        again = client.post(f"{path}/server", json={"source_version": version, "provider": PROVIDER})
+        assert again.status_code == 200, again.text
+        assert again.json()["speaker_names"] == {**GIVEN_NAMES, "speaker-0001": "Bob"}
+
+
+def test_browser_generated_summary_records_names_and_an_older_artifact_reads_without_them(tmp_path: Path):
+    import json
+
+    app = create_phase2_app(database_path=tmp_path / "db")
+    with TestClient(app, base_url="https://moss.test") as client:
+        meeting_id = _named_meeting(app, client)
+        path = f"/api/meetings/{meeting_id}/summary"
+        attempt = client.post(path, json={"source_version": 1}).json()
+        assert attempt["speaker_names"] == GIVEN_NAMES
+        client.put(f"{path}/{attempt['attempt_id']}", json={"state": "generating"})
+        done = client.put(f"{path}/{attempt['attempt_id']}", json={"state": "current", "document": NAMED_RESULT})
+        assert done.status_code == 200 and done.json()["speaker_names"] == GIVEN_NAMES
+
+        async def forget_names():
+            # What every summary saved before this change looks like in the database.
+            store = app.state.phase2_store
+            async with store._mutation():
+                await store._connection.execute(
+                    "UPDATE llm_artifacts SET provenance_json=? WHERE meeting_id=?",
+                    (json.dumps({key: done.json()[key] for key in
+                                 ("attempt_id", "source_version", "artifact_version", "error_code")}), meeting_id))
+
+        client.portal.call(forget_names)
+        older = client.get(path).json()["summary"]
+        assert older["state"] == "current" and older["document"] == NAMED_RESULT
+        assert "speaker_names" not in older
+
+
+def test_live_summary_reports_the_names_its_generator_was_given(tmp_path: Path):
+    async def generate(document, *, model, language, prompt, api_key):
+        return NAMED_RESULT, USAGE
+
+    app = create_phase2_app(database_path=tmp_path / "db", summary_generator=generate)
+    with TestClient(app, base_url="https://moss.test") as client:
+        client.post("/api/workspace/bootstrap")
+        credential = client.cookies.get("__Host-moss_session")
+
+        async def seed():
+            store = app.state.phase2_store
+            account = await store.account_for_session(credential)
+            return (await store.workspace(account).create_meeting("live")).meeting_id
+
+        meeting_id = client.portal.call(seed)
+        words = " ".join(f"word{i}" for i in range(40))
+        rows = [SimpleNamespace(start_sample=0, end_sample=64000, canonical_speaker=speaker,
+                                source_lane=lane, text=words)
+                for speaker, lane in (("speaker-0001", "system"), ("speaker-0002", "system"),
+                                      ("local-1", "microphone"), (None, "system"))]
+        session = SimpleNamespace(
+            status="active", committed_samples=64000, text_revision_version=3,
+            identity_snapshot=SimpleNamespace(canonical_speakers=("speaker-0001", "speaker-0002", "local-1")),
+            effective_transcript=rows)
+        snapshot = SimpleNamespace(session=session, descriptor=SimpleNamespace(sample_rate=16000))
+        # A voiceprint or the user named the second shared voice before this summary.
+        binding = SimpleNamespace(public_snapshot=snapshot, speaker_labels={"speaker-0002": "王芳"})
+        app.state.phase2_live = SimpleNamespace(open=lambda *_args, **_kwargs: binding)
+        response = client.post(f"/api/meetings/{meeting_id}/summary/live", json={"provider": PROVIDER})
+        assert response.status_code == 200, response.text
+        # Speech nobody is attributed to went to the generator under its token.
+        assert response.json()["speaker_names"] == {
+            "speaker-0001": "Speaker 1", "speaker-0002": "王芳", "local-1": "You", "S00": "S00"}
