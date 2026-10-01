@@ -103,13 +103,22 @@ in any live window or in the saved words themselves; they are counted as
 as a failed recovery (listen-only speaker lanes 104/73 → 0/0 saved invented words; saved
 retention unchanged on six lanes with local speech; margin 1.9 s vs 2 s). W3's provisional text lacks reliable word timing, so the lane
 composer removes from a mic preview row every run of at least three words (five CJK
-characters) that repeats, in order, the system words it could echo: committed system rows
-and the system preview ending within n/1.5 + 5 s of the row (n = its units). Leftover runs
+characters) that occurs anywhere in the system words it could echo: committed system rows
+and the system preview ending within n/1.5 + 5 s of the row (n = its units). Each run is
+matched on its own, since the far end repeats itself and one in-order alignment anchored on
+the wrong copy left 102 echoed characters in a Mandarin replay. Leftover runs
 under four units are dropped, and so are leftovers of an echo row that repeat the lane's own
 committed words; a row with nothing left is not shown (round 4: under speaker echo one W3
 mic turn grew to ~400 words while the old preview-only 60% test saw only the uncommitted
-suffix; recorded streams 63–244 → 7–13 echoed words per poll, local words unchanged;
-`prototypes/gemini-live/mic-preview-echo/NOTES.md`). System text wins an echo tie; a later
+suffix; recorded streams 244/423 → 13/10 echoed units per poll, local sentences unchanged,
+short replies inside an echo row wait for their commit;
+`prototypes/gemini-live/mic-preview-echo/NOTES.md`). A short mic preview row (no script with
+four words or seven CJK characters in it) also loses its words in a script the meeting has
+not used: a script counts once that much of it was committed on either lane or stood in one
+preview row of either lane. Noise and echo residue otherwise show isolated kana, Devanagari
+or Hangul words in a Mandarin or English meeting (243 → 0 word-polls); a genuine first short
+reply in a new language waits ≈13 s for its commit, a sentence ≤0.6 s
+(`prototypes/gemini-live/preview-script/NOTES.md`). System text wins an echo tie; a later
 overlapping row in the same lane replaces the earlier one.
 At the commit frontier, the public publisher aligns each preview chunk's head to
 the last 60 tokens of committed effective speech in the same lane. A match of at

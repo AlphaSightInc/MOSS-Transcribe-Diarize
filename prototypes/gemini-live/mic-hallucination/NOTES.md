@@ -184,6 +184,19 @@ unchanged at $0.7545).
 - **Lane-level rule on the terminal pass, unconditional version.** The narrow version
   (lane never had local speech) was adopted after D2; see above.
 
+## Fixture correction (2026-10-01)
+
+`say -v "Flo/Reed/Eddy (Chinese (China mainland))"` silently speaks as Tingting, so the v1
+Mandarin lanes (`build.py`: zh-hp, zh-sp) had one voice on both lanes.
+
+- That is why the voice echo guard dropped all of their local words, and why they were left
+  out of the rule sweeps and the D2 table above.
+- The v2 lanes (`build2.py`) use Tingting and Meijia and are unaffected.
+- `build.py` now uses Tingting for the far end and Meijia for the local person.
+- The v1 preview observations quoted above (9 to 11 invented rows per 300 s on the speaker
+  lanes) were made with the one-voice lanes. The two-voice re-run is in
+  `prototypes/gemini-live/preview-script/NOTES.md`.
+
 ## Scoring notes
 
 - The A-sp terminal output is in Traditional Chinese (the Meijia voice), so the simplified

@@ -126,3 +126,38 @@ Four new paced W3 streams of 300 s each (the zh-echo mic and system, the qmic mi
 system): **$0.1007** at the list-price estimate. Live usage metadata is absent. Everything
 else replayed cached or recorded data at $0. The ledger lane `r4c-mic-halluc` now totals
 $0.8552.
+
+## Correction (2026-10-01): two-voice Mandarin fixture and run matching
+
+Two things changed after the table above was recorded.
+
+1. **The Mandarin fixture had one voice.** `say -v "Flo/Reed/Eddy (Chinese (China mainland))"`
+   silently speaks as Tingting, so the `zh-echo`, `zh-hp` and `zh-sp` lanes used the same voice
+   for the far end and the local person. The corrected lane is `zh2-echo`: Tingting far end,
+   Meijia local, built and recorded by `prototypes/gemini-live/preview-script`.
+2. **The corrected lane exposed a matching weakness.** The far end repeated sentences it had
+   said 140 s earlier, and its own preview lagged. The echoed row then held a passage found
+   only in the preview, followed by a passage found only in older committed rows. One
+   in-order alignment (difflib) can match only one of the two.
+   - Fix: `_repeated_units` now finds, for each position, the longest run that occurs
+     anywhere in the reference.
+
+`sim.py --product E1 M2 zh2-echo` (the other recordings were removed by an external
+clean-up of the worktrees, so those rows of the table above stand as recorded):
+
+| Case | Echoed units in one poll, max | Echoed unit-polls | Distinctive local unit-polls | Local items shown | Added delay (items of 4+ units) |
+|---|---:|---:|---:|---:|---:|
+| zh2-echo, before any rule | 423 | 126,023 | 32,275 | 17/18 | — |
+| zh2-echo, d88be99d (in-order alignment) | 102 | 3,361 | 30,198 | 15/18 | ≤0.4 s |
+| **zh2-echo, run matching (shipped)** | **10** | **225 (−99.8%)** | 29,981 (−7.1%) | 14/18 | ≤0.4 s |
+| E1, run matching | 13 | 1,594 | 1,099 | 3/3 | ≤0.4 s |
+| M2, run matching | 2 | 66 | 542 | 3/3 | 0 |
+
+- E1 and M2 are unchanged by the matching fix (E1 was 13 and 1,598 before).
+- **The local loss on zh2-echo is short replies.** `好的`, `是的` and `没问题`, spoken while
+  the far end is echoing, sit as leftovers of under four units inside an echo row. They are
+  dropped from the grey preview and appear with their commit. Sentences are not affected.
+  - The earlier one-voice lane reported −1.4%; it understated this.
+- On the no-echo lanes of `preview-script` (zh2-sp, en2zh, zh2en), genuine word-polls are
+  identical under both matchers: 23,506, 19,199 and 35,332.
+- Cost: about 0.5 to 0.7 ms per composed preview.

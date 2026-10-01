@@ -62,7 +62,7 @@ def test_lag_fallback_commits_current_preview_words_from_both_lanes(tmp_path):
     engine = LaneGeminiEngine(updates.append, system_factory=StalledLane,
                               microphone_factory=StalledLane, tape_root=tmp_path)
     engine._on_update("system", GeminiPreview(10*16000, (
-        GeminiSegment(2*16000, 3*16000, "remote words", source_lane="system"),)))
+        GeminiSegment(2*16000, 3*16000, "the far end keeps talking", source_lane="system"),)))
     engine._on_update("microphone", GeminiPreview(10*16000, (
         GeminiSegment(4*16000, 5*16000, "local words", source_lane="microphone"),)))
     for second in range(46):
@@ -71,7 +71,7 @@ def test_lag_fallback_commits_current_preview_words_from_both_lanes(tmp_path):
     degraded = [row for row in updates if isinstance(row, GeminiBase) and row.degraded]
     assert len(degraded) == 1
     assert [(row.text, row.source_lane, row.speaker) for row in degraded[0].segments] == [
-        ("remote words", "system", None), ("local words", "microphone", None)]
+        ("the far end keeps talking", "system", None), ("local words", "microphone", None)]
     engine.close()
 
 
@@ -144,6 +144,85 @@ def test_mic_preview_without_echo_is_unchanged_and_echo_row_drops_own_committed_
     engine._on_update("microphone", GeminiPreview(sec(64), (
         GeminiSegment(sec(60), sec(64), remote + " in exchange for some differenceMV", source_lane="microphone"),)))
     assert shown() == []
+    engine.close()
+
+
+def test_mic_preview_echo_is_found_when_the_far_end_repeats_itself(tmp_path):
+    # Two-voice Mandarin echo replay at 221 s (reduced): the far end repeats sentences it said
+    # 140 s earlier, and its own preview lags, so the echoed row holds [passage only in the
+    # preview] then [passage only in the earlier committed rows]. One in-order alignment could
+    # match just one of them (72 of 228 units); each run is now matched wherever it occurs.
+    engine, shown = _preview_composer(tmp_path)
+    sec = lambda value: round(value * 16000)
+    engine._on_update("system", GeminiRolling(0, sec(210), (
+        GeminiSegment(sec(164), sec(170), "这些问题我会整理成一个清单，会后发给相关负责人。", "speaker-0001", "system"),
+        GeminiSegment(sec(170), sec(176), "客户满意度调查的结果比上次好了一些，但是还有提升空间。", "speaker-0001", "system")), ()))
+    engine._on_update("microphone", GeminiRolling(0, sec(210), (), ()))
+    engine._on_update("system", GeminiPreview(sec(221), (
+        GeminiSegment(sec(210), sec(221), "预算方面, 我们今年还剩下大概 30万左右可以使用。 我想听听 大家的意见, 看看 优先级应该怎么排。",
+                      source_lane="system"),)))
+    engine._on_update("microphone", GeminiPreview(sec(221), (
+        GeminiSegment(sec(210), sec(221), "代码 review 的时候我 发现有几个地方没有写 单元测试。 我们今年还剩大概 30 万 左右可以使用。 "
+                      "我想听听大家的 意见，看看优先级应该 怎么排。这些 问题我会整理成一个 清单，会后发给 相关负责人。 "
+                      "客户满意度调查的结果 比上次好了一些", source_lane="microphone"),)))
+    assert shown() == ["代码 review 的时候我 发现有几个地方没有写 单元测试"]
+    engine.close()
+
+
+def test_mic_preview_hides_short_words_in_a_script_the_meeting_has_not_used(tmp_path):
+    # P69 run c: in a Mandarin meeting the grey mic preview showed "さんね。" and "क्या?".
+    engine, shown = _preview_composer(tmp_path)
+    sec = lambda value: round(value * 16000)
+    engine._on_update("system", GeminiRolling(0, sec(30), (
+        GeminiSegment(sec(10), sec(28), "大家好，今天我们主要讨论一下第三季度的产品规划。", "speaker-0001", "system"),), ()))
+    engine._on_update("microphone", GeminiRolling(0, sec(30), (), ()))
+    def mic(text):
+        engine._on_update("microphone", GeminiPreview(sec(34), (
+            GeminiSegment(sec(30), sec(34), text, source_lane="microphone"),)))
+        return shown()
+    assert mic("さんね。") == []
+    assert mic("Wait. क्या? 好的。") == ["好的。"]
+    # A short reply in the meeting's own script, and an English term inside a real sentence, stay.
+    assert mic("对，没问题。") == ["对，没问题。"]
+    sentence = "我觉得这个方案可以，但是我们需要先把 API 的 latency 测一下。"
+    assert mic(sentence) == [sentence]
+    engine.close()
+
+
+def test_new_language_shows_once_sustained_and_short_replies_follow(tmp_path):
+    # A real switch: the first short reply waits for its commit; four words (seven CJK
+    # characters) in one preview row establish the script for the rest of the meeting.
+    engine, shown = _preview_composer(tmp_path)
+    sec = lambda value: round(value * 16000)
+    engine._on_update("system", GeminiPreview(sec(8), (
+        GeminiSegment(0, sec(8), "So we want to start with story time today.", source_lane="system"),)))
+    def mic(text):
+        engine._on_update("microphone", GeminiPreview(sec(9), (
+            GeminiSegment(sec(6), sec(9), text, source_lane="microphone"),)))
+        return shown()
+    assert mic("Sounds good.") == ["Sounds good."]
+    assert mic("好的。") == []
+    assert mic("其实用户反馈最多的就是登录太慢。") == ["其实用户反馈最多的就是登录太慢。"]
+    assert mic("好的。") == ["好的。"]
+    engine.close()
+
+
+def test_committed_words_establish_a_script_only_in_bulk(tmp_path):
+    engine, shown = _preview_composer(tmp_path)
+    sec = lambda value: round(value * 16000)
+    # One stray committed token (the saved "кве" shape) does not make Cyrillic the meeting's script.
+    engine._on_update("system", GeminiRolling(0, sec(15), (
+        GeminiSegment(sec(1), sec(14), "运维团队反 кве 说，旧的集群维护成本越来越高了。", "speaker-0001", "system"),), ()))
+    engine._on_update("microphone", GeminiRolling(0, sec(15), (), ()))
+    engine._on_update("microphone", GeminiPreview(sec(18), (
+        GeminiSegment(sec(15), sec(18), "Спасибо.", source_lane="microphone"),)))
+    assert shown() == []
+    engine._on_update("microphone", GeminiRolling(sec(15), sec(30), (
+        GeminiSegment(sec(16), sec(20), "Спасибо большое за вашу помощь", "local-0001", "microphone"),), ()))
+    engine._on_update("system", GeminiRolling(sec(15), sec(30), (), ()))
+    engine._on_update("microphone", GeminiPreview(sec(33), (
+        GeminiSegment(sec(30), sec(33), "Спасибо.", source_lane="microphone"),)))
+    assert shown() == ["Спасибо."]
     engine.close()
 
 

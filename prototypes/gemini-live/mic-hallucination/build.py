@@ -52,7 +52,7 @@ def fill_turns(turns, pool, voices):
 
 def zh_system():
     voices = {"A": tts.utterances(tts.ZH_SYSTEM, "Tingting", "sys"),
-              "B": tts.utterances(tts.ZH_SYSTEM[::-1], "Eddy (Chinese (China mainland))", "sysb")}
+              "B": tts.utterances(tts.ZH_SYSTEM[::-1], "Tingting", "sysb")}
     lane = np.zeros(N)
     rows = []
     t, i = .5, 0
@@ -75,8 +75,10 @@ def main() -> None:
     en_system = sf.read(str(QMIC / "system.wav"), dtype="float64")[0]
     en_local = sf.read(str(QMIC / "headphones-mic.wav"), dtype="float64")[0]
     turns = [(r["start"], r["end"], r["speaker"]) for r in ref["local_turns"]]
-    zh_local_pool = {"C": tts.utterances(tts.ZH + tts.ZH_LOCAL_MORE, "Flo (Chinese (China mainland))", "loc"),
-                     "D": tts.utterances((tts.ZH + tts.ZH_LOCAL_MORE)[::-1], "Reed (Chinese (China mainland))", "locd")}
+    # `say -v "Flo/Reed/Eddy (Chinese (China mainland))"` silently speaks as Tingting (identical audio),
+    # so the Mandarin far end is Tingting and the local person Meijia: the two distinct voices installed.
+    zh_local_pool = {"C": tts.utterances(tts.ZH + tts.ZH_LOCAL_MORE, "Meijia", "loc"),
+                     "D": tts.utterances((tts.ZH + tts.ZH_LOCAL_MORE)[::-1], "Meijia", "locd")}
     zh_local, zh_local_rows = fill_turns(turns, zh_local_pool, None)
     zh_sys, zh_sys_rows = zh_system()
     manifest = {"duration_s": 300, "sample_rate": RATE, "variants": {}}
@@ -85,7 +87,7 @@ def main() -> None:
         local = en_local.copy() if lang == "en" else zh_local
         local_rows = ([dict(r) for r in ref["local_turns"]] if lang == "en" else zh_local_rows)
         texts = tts.EN_BACKCHANNEL if lang == "en" else tts.ZH_BACKCHANNEL
-        voice = ["Samantha", "Daniel"] if lang == "en" else ["Flo (Chinese (China mainland))", "Reed (Chinese (China mainland))"]
+        voice = ["Samantha", "Daniel"] if lang == "en" else ["Meijia", "Meijia"]
         backs = []
         for j, ((at, level), text) in enumerate(zip(BACKCHANNEL_AT, texts)):
             x = tts.load(tts.say(text, voice[j % 2], f"{voice[j % 2]}-bc-{lang}-{j:02d}"))
