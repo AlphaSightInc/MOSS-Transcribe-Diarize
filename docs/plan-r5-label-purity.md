@@ -191,3 +191,39 @@ rejection is a valid result and must be stated plainly.
 | F11 Stage 3 deadlock | Stage 3 open to a candidate with no failed gate; separate ship rule |
 | F12 G0 over-claims | G0 is diagnostic |
 | A2 prevalence too broad | limited to raw outputs on disk; rest UNKNOWN |
+
+## 11. Stage-2 verdict (2026-10-01, HOLD: 23 cases, frozen scorer `42e8da64` on `gemini/r5-p4`)
+
+**No candidate passes every gate; production is unchanged.** Receipts:
+`~/Documents/Codex/2026-09-28/moss-gemini/evidence/P70/purity-bench/scorecard/` (`SUMMARY.md`, `RECEIPT-ANALYSES.md`).
+Paid: one 65.5-min raw pass, 5 calls, 0 retries, $0.338 with-output estimate (cap $0.42). The fresh pass reproduced the
+label reuse in chunk 3, so G-repair is exercised on raw provider output (shipped rule: long60-part DER .165).
+
+| Gate | P1 split | P2 move/abstain | C0 sampling | C1 core evidence |
+|---|---|---|---|---|
+| G-repair (raw long60 DER ≤ .060) | pass .039 | **fail .165** | **fail .165** | pass .047 |
+| G-merge (new different-speaker merges) | **fail 19** | pass 0 | pass 0 | **fail 35** |
+| G-name (wrongly named seconds, shipped 1486) | pass 1012 | pass 1460 | pass 1374 | **fail** 1392, 2 cases worse |
+| G-der (mean, shipped .261) | **fail** .248, 5 cases worse | pass .261 | **fail** .260, 1 case worse | **fail** .233, 1 case worse |
+| G-protect (4 exercised pairs) | pass | pass | pass | pass |
+| G-single (single-voice labels divided) | **fail 1/95** | pass 0/95 | pass | pass |
+| G-amb / G-adv | **fail** (two-channel gains a speaker; 4 variants) | pass | **fail** 1 variant | **fail** 4 variants |
+| G-cost (added wall ≤ 30 s) | **fail** 320 s | **fail** 278 s | **fail** 277 s | **fail** 282 s |
+
+What the bench established:
+- **H-sample is rejected as the sole cause**: better fingerprint sampling alone (C0) leaves the host split. H-mixed has
+  repair evidence: both rules that act on the voices inside a label (P1, C1) repair it.
+- **The repairing rules are unsafe**: P1 divides one truly single-voice label and adds speakers on the 4-speaker
+  meeting; C1's 35 wrong merges are 28 from dropping an alternation veto and 7 from core similarity alone.
+- **The safe rule abstains on the target**: P2 passes every safety gate but is chunk-local, and the newcomers' own
+  labels exist only in the next chunk.
+- **Cost**: fingerprinting every 5 s window of a 65.5-min meeting takes 305 s; every G-cost failure is that table.
+  Candidates' own work is 0.1–43 s. Fingerprinting only where the outcome can change is untimed.
+- G0: one 5 s voiced window separates same/different voices with 3.2 % equal-error rate (3 s: 4.5 %, 2 s: 5.4 %).
+- Prevalence in real public recordings with raw output on disk: 12 of 50 raw labels (6 of 22 draws) contain clean
+  windows from more than one true speaker. Overlap inside one label, real two-microphone channels and the newcomer
+  interval's naming remain UNMEASURED.
+
+Round 2 (lead, $0): **P2X** = P2 with clean cores from adjacent chunks and lazy fingerprinting (only labels whose veto
+blocks a ≥ .65 merge). Brief `briefs/R5-P2X.md`. It was designed after HOLD results were known, so a HOLD pass is not
+independent evidence: shipping still requires Stage 3 on unseen late-joiner audio and the user's approval.
