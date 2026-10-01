@@ -227,3 +227,42 @@ What the bench established:
 Round 2 (lead, $0): **P2X** = P2 with clean cores from adjacent chunks and lazy fingerprinting (only labels whose veto
 blocks a ≥ .65 merge). Brief `briefs/R5-P2X.md`. It was designed after HOLD results were known, so a HOLD pass is not
 independent evidence: shipping still requires Stage 3 on unseen late-joiner audio and the user's approval.
+
+## 12. Rounds 2–3 (2026-10-01, $0, same frozen scorer; both designed after HOLD results were known → not independent)
+
+**P2X (P2 + adjacent-chunk cores + lazy fingerprinting): rejected.** It changed 0 of 25,018 DEV words and left the raw
+host split (.165). Cause: the "clean core" requirement (≥ 60 % of a label's windows mutually agreeing) holds for only
+5 of 46 examined labels, so the rule abstains before any adjacent-chunk comparison. Lazy fingerprinting cut added time
+from ~280 s to 31 s.
+
+**W (re-attribute a blocking alternation only on positive evidence): fails two frozen gates; no production change.**
+Rule: only for a label pair whose alternation veto blocks a ≥ .65 merge; the veto moves to (X, Y) only if every ≥ 2 s
+turn of every alternation matches another label's shipped centroid (same or adjacent chunk) at ≥ .65 with ≥ .20 margin
+over its own; those turns' words take X / Y; otherwise everything stays as shipped.
+
+| Gate (HOLD, 23 cases) | W |
+|---|---|
+| G-repair | pass — raw long60 DER .165 → .047, host one group |
+| G-protect / lost vetoes | pass — 4/4 protective pairs apart; 62/62 different-speaker vetoes retained; .639 near miss retained |
+| G-der | pass — mean .261 → .256, no case worse |
+| G-single, G-amb, G-adv | pass |
+| G-cost | pass — +5.3 s, 4 extra fingerprints on the 65.5-min meeting |
+| G-name | **fail by rule** — total wrongly named seconds unchanged (1485.9), zero cases worse; the gate demands a strict reduction and the 97 renamed words lie in 2588–2640 s, which has no truth |
+| G-merge | **fail by rule** — 10 new different-speaker atom pairs, all on the 65.5-min case |
+
+What the two failures consist of (receipts `scorecard/w.md`, `w-lost-veto-audit.md`, SUMMARY "Final round — W"):
+- W acted on exactly one pair in all of HOLD, the host's two labels in chunk 3; the four long turns scored −.01 to .16
+  against their own label and .87 to .94 against the newcomers' labels in the next chunk. The other 22 cases equal the
+  shipped rule word for word.
+- The 10 atom pairs are the host's own labels' minority words (provider had already put some Bill Ackman / Adam Frank /
+  Javier Milei / Keyu Jin words under host labels) meeting the host's other labels inside the one host group. Wrongly
+  named seconds on that case are unchanged (54.4 s → 54.4 s): no additional speech carries a wrong name. Any correct
+  merge of two labels that each contain a few misnamed words trips this metric; so does the no-veto baseline.
+- Descriptive only: speech matching the later Ben / David anchors rises from 6.6 s / 2.2 s to 14.8 s / 11.4 s.
+
+Status: by the frozen rules W is rejected. Lead judgement: both failures are properties of the gate definitions on this
+data (missing truth in the renamed interval; an atom metric that counts pre-existing misnamed words), not new harm.
+That judgement is not evidence. The decisive test is Stage 3: unseen late-joiner audio with COMPLETE truth, gates fixed
+before the call (wrongly named seconds must not rise in any case and must fall on the late-joiner interval; no two
+groups with different dominant speakers merged; no different-speaker veto lost). Needs the user's OK (≤ $0.30).
+Prototype branches are bundled at `evidence/P70/r5-prototype-branches.bundle` (local; not pushed).
