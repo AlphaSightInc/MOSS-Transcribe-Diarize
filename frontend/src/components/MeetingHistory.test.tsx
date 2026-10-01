@@ -92,6 +92,18 @@ describe("MeetingHistory", () => {
     expect(root.textContent).not.toContain(notice);
   });
 
+  // r4 F5 (Q6): an active meeting with no words yet shows no placeholder sentence.
+  it("shows no subtitle for an active meeting without words, and its words once they exist", async () => {
+    const empty = meeting({ id: "recording", status: "active", transcript: { segments: [] } });
+    const spoken = meeting({ id: "spoken", status: "active" });
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [empty, spoken] } : {})));
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector('[data-open-meeting="spoken"]')).not.toBeNull());
+    expect(root.querySelector('[data-open-meeting="recording"] .history-card-subtitle')).toBeNull();
+    expect(root.textContent).not.toContain("Waiting for transcript");
+    expect(root.querySelector('[data-open-meeting="spoken"] .history-card-subtitle')?.textContent).toBe("first words");
+  });
+
   // #14: the top pill never runs a clock for a finished meeting, and an observed one counts from its real start.
   it.each([
     { name: "a finished meeting", status: "completed" as const, liveEvents: [], pill: /^Standby$/ },

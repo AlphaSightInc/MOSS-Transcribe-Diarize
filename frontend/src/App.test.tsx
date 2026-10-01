@@ -4,8 +4,8 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  resetSessionState, sessionId, sessionMode, sessionStartedAt, sessionStatus, sessionStatusLine, sessionStopRequested,
-  sessionTitle
+  resetSessionState, sessionId, sessionMode, sessionStartedAt, sessionStarting, sessionStatus, sessionStatusLine,
+  sessionStopRequested, sessionTitle
 } from "./state/session";
 import { dispatchWsEvent } from "./api/ws";
 import { App, formatElapsed } from "./App";
@@ -77,6 +77,44 @@ describe("Account application shell", () => {
 
     act(() => { sessionId.value = "file-1"; sessionMode.value = "file"; sessionStatus.value = "active"; });
     expect(pill()?.textContent).toBe("Processing");
+  });
+
+  // r4 F3: the pill read "Standby" for 2–3 s after Start while the button already read "Stop recording".
+  it("reads Starting… from the Start click until the meeting exists, then counts from its true start", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(100_000));
+    const root = document.createElement("div");
+    document.body.append(root);
+    act(() => render(<App />, root));
+    const pill = () => root.querySelector(".top-status");
+    act(() => { sessionStarting.value = true; });
+    expect(pill()?.textContent).toBe("Starting…");
+    expect(pill()?.getAttribute("data-state")).toBe("starting");
+    act(() => { vi.advanceTimersByTime(2500); });
+    expect(pill()?.textContent).toBe("Starting…");
+
+    // Create succeeded: the page publishes the active meeting and its start in the same step.
+    act(() => {
+      sessionStartedAt.value = { sessionId: "live-1", ms: Date.now() };
+      dispatchWsEvent({ type: "session_state", session_id: "live-1", mode: "live", state: "active", status: "active" });
+      sessionStarting.value = false;
+    });
+    expect(pill()?.textContent).toBe("Recording 0:00");
+    expect(pill()?.getAttribute("data-state")).toBe("recording");
+    act(() => { vi.advanceTimersByTime(3000); });
+    expect(pill()?.textContent).toBe("Recording 0:03");
+  });
+
+  it("goes back to Standby when Start fails", () => {
+    vi.useFakeTimers();
+    const root = document.createElement("div");
+    document.body.append(root);
+    act(() => render(<App />, root));
+    act(() => { sessionStarting.value = true; });
+    expect(root.querySelector(".top-status")?.textContent).toBe("Starting…");
+    act(() => { vi.advanceTimersByTime(1500); sessionStarting.value = false; });
+    expect(root.querySelector(".top-status")?.textContent).toBe("Standby");
+    expect(root.querySelector(".top-status")?.getAttribute("data-state")).toBe("idle");
   });
 
   // #14: the server keeps a draining meeting "active" after Stop, so lifecycle alone never reached "Stopping".

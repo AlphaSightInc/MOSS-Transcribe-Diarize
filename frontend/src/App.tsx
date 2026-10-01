@@ -4,7 +4,7 @@ import { ControlPanel } from "./components/ControlPanel";
 import { TranscriptPane } from "./components/TranscriptPane";
 import { PanelCollapseButton, PanelRailTitle } from "./components/PanelCollapse";
 import { controlPanelCollapsed, setControlPanelCollapsed } from "./state/ui";
-import { sessionId, sessionMode, sessionStartedAt, sessionStatus, sessionStopRequested, sessionTitle } from "./state/session";
+import { sessionId, sessionMode, sessionStartedAt, sessionStarting, sessionStatus, sessionStopRequested, sessionTitle } from "./state/session";
 
 export const PRODUCT_NAME = "aiSight - LiveTranscribe";
 
@@ -62,8 +62,8 @@ export function App() {
   );
 }
 
-/** The pill carries lifecycle only: Standby, Recording mm:ss, Stopping, Processing (File/URL). */
-function useStatusPill(): { label: string; state: "idle" | "recording" | "processing" } {
+/** The pill carries lifecycle only: Standby, Starting…, Recording mm:ss, Stopping, Processing (File/URL). */
+function useStatusPill(): { label: string; state: "idle" | "starting" | "recording" | "processing" } {
   const status = sessionStatus.value;
   const id = sessionId.value;
   // A draining meeting still reports "active" after Stop; the Stop request ends the clock (#14).
@@ -78,6 +78,7 @@ function useStatusPill(): { label: string; state: "idle" | "recording" | "proces
     return () => clearInterval(timer);
   }, [recording]);
 
+  if (sessionStarting.value) return { label: "Starting…", state: "starting" };
   if (stopping) return { label: "Stopping", state: "processing" };
   if (status === "active" && !recording) return { label: "Processing", state: "processing" };
   if (!recording) return { label: "Standby", state: "idle" };

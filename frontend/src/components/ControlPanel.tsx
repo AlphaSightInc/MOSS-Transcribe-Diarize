@@ -15,7 +15,8 @@ import { serializeTranscriptExport, triggerTranscriptExportDownload, type Transc
 import { summaryApi } from "../lib/finalSummary";
 import { openMeeting } from "../api/meetings";
 import { engineSettingsFrom, loadAppSettings } from "../lib/settings";
-import { sessionId, sessionStatus, sessionStopRequested, transcript } from "../state/session";
+import { sessionId, sessionStarting, sessionStatus, sessionStopRequested, transcript } from "../state/session";
+import { dispatchWsEvent } from "../api/ws";
 import { controlPanelCollapsed, selectedSummaryMeeting } from "../state/ui";
 import { watchMeetingSummary } from "../lib/summaryRequests";
 import {
@@ -304,6 +305,7 @@ export function ControlPanel() {
     setMessage("");
     resetSessionState();
     sessionTitle.value = "";
+    sessionStarting.value = true;
     try {
       const session = await client.createSession(engineSettingsFrom(loadAppSettings()));
       watchMeetingSummary(session.id);
@@ -311,6 +313,8 @@ export function ControlPanel() {
         sessionId: session.id
       });
       sessionStartedAt.value = { sessionId: session.id, ms: Date.now() };
+      // A created meeting is active; the first poll can take seconds to say so (r4 F3).
+      dispatchWsEvent({ type: "session_state", session_id: session.id, mode: "live", state: "active", status: "active" });
       const poller = createMossSessionPoller({
         sessionId: session.id,
         onError: () => transportFailed("transcript"),
@@ -332,6 +336,7 @@ export function ControlPanel() {
       setMessage(error instanceof TypeError ? "Start failed: no connection to the server." : errorMessage(error));
     } finally {
       setStarting(false);
+      sessionStarting.value = false;
     }
   };
 
