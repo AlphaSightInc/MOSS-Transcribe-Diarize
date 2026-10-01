@@ -31,7 +31,8 @@ import numpy as np
 import evidence
 from moss_transcribe_diarize.app import gemini_lane_engine as lane_engine
 from moss_transcribe_diarize.app.gemini_hybrid_engine import attributed_embedding_intervals
-from moss_transcribe_diarize.app.gemini_lane_engine import TextEchoGuard, _CJK, _preview_units
+from moss_transcribe_diarize.app.gemini_lane_engine import TextEchoGuard
+from moss_transcribe_diarize.app.gemini_live_runtime import _CJK, _preview_units
 import unicodedata
 
 RATE = 16000

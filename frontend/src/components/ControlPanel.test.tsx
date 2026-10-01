@@ -233,6 +233,44 @@ describe("ControlPanel reattach", () => {
     expect(fetcher.mock.calls.every(([url, init]) => url === "/api/meetings/export/summary" && init === undefined)).toBe(true);
   });
 
+  it("keeps meeting A's speaker names when its export summary resolves after navigation to meeting B", async () => {
+    const meeting = { id: "meeting-a", mode: "live" as const, title: "Meeting A", title_source: "automatic" as const,
+      status: "completed" as const, created_at_ms: Date.now(), transcript_version: 1,
+      transcript: { segments: [] }, audio: null };
+    const artifact = { state: "current", attempt_id: "saved", source_version: 1, artifact_version: 1, error_code: null,
+      speaker_names: { "speaker-0001": "Speaker 1" }, document: { summary: "Speaker 1 asked for the plan.",
+        topics: [], details: [], speaker_background: [], data_references: [] } };
+    let finishSummary!: (response: unknown) => void;
+    const response = new Promise(resolve => { finishSummary = resolve; });
+    const fetcher = vi.fn(() => response);
+    vi.stubGlobal("fetch", fetcher);
+    act(() => {
+      sessionId.value = meeting.id;
+      sessionStatus.value = "closed";
+      selectedSummaryMeeting.value = meeting;
+      replaceTranscript([{ start: 0, end: 1, text: "The plan?", speaker: "speaker-0001", speaker_entity_id: "speaker-0001",
+        display_name: "Alice", state: "final" }]);
+      render(<ControlPanel />, root);
+    });
+    await act(async () => root.querySelector<HTMLButtonElement>(".controls-export button")!.click());
+    expect(fetcher).toHaveBeenCalledWith("/api/meetings/meeting-a/summary", undefined);
+    expect(mocks.exportDownload).not.toHaveBeenCalled();
+    act(() => {
+      sessionId.value = "meeting-b";
+      selectedSummaryMeeting.value = { ...meeting, id: "meeting-b", title: "Meeting B" };
+      replaceTranscript([{ start: 0, end: 1, text: "Another meeting", speaker: "speaker-0001", speaker_entity_id: "speaker-0001",
+        display_name: "Bob", state: "final" }]);
+    });
+    await act(async () => finishSummary({ ok: true, json: async () => ({ summary: artifact }) }));
+    await vi.waitFor(() => expect(mocks.exportDownload).toHaveBeenCalledOnce());
+    const exported = mocks.exportDownload.mock.calls[0][0];
+    expect(exported.filename).toContain("meeting-a");
+    expect(exported.content).toContain("# Summary\n\nAlice asked for the plan.");
+    expect(exported.content).toContain("## [00:00:00] Alice\n\nThe plan?");
+    expect(exported.content).not.toContain("Bob");
+    expect(exported.content).not.toContain("Another meeting");
+  });
+
   it("exports microphone-lane speakers with the I-4 names", async () => {
     act(() => {
       sessionId.value = "local-names";

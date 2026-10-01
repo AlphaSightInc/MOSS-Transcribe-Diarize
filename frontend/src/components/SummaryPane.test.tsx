@@ -303,6 +303,42 @@ it("drops a late rolling response after switching meetings", async () => {
   expect(root.textContent).not.toContain("Old meeting summary");
 });
 
+it("drops a late manual final refresh after switching meetings instead of using the new meeting's names", async () => {
+  const meeting = { id: "meeting-a", mode: "live" as const, title: "Meeting A", title_source: "automatic" as const,
+    status: "completed" as const, created_at_ms: Date.now(), transcript_version: 1,
+    transcript: { segments: [] }, audio: null };
+  const artifact = { state: "current", attempt_id: "saved", source_version: 1, artifact_version: 1, error_code: null,
+    speaker_names: { "speaker-0001": "Speaker 1" }, document: rollingDocument("Speaker 1 asked for the plan.") };
+  const next = { ...artifact, document: rollingDocument("Speaker 1 confirmed the budget.") };
+  let finishSummary!: (response: unknown) => void;
+  const response = new Promise(resolve => { finishSummary = resolve; });
+  const fetcher = vi.fn((url: string, init?: RequestInit) => init?.method === "POST" ? response
+    : Promise.resolve({ ok: true, json: async () => ({ summary: url.includes("/meeting-a/") ? artifact : next }) }));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => {
+    sessionId.value = meeting.id; sessionStatus.value = "closed"; selectedSummaryMeeting.value = meeting;
+    replaceTranscript([{ start: 0, end: 1, text: "The plan?", speaker: "speaker-0001", speaker_entity_id: "speaker-0001",
+      display_name: "Alice", state: "final" }]);
+    render(<SummaryPane hidden={false} />, root);
+  });
+  await vi.waitFor(() => expect(root.textContent).toContain("Alice asked for the plan."));
+  await act(async () => refresh().click());
+  expect(fetcher.mock.calls.some(([url, init]) => url === "/api/meetings/meeting-a/summary/server" && init?.method === "POST")).toBe(true);
+  await act(async () => {
+    sessionId.value = "meeting-b";
+    selectedSummaryMeeting.value = { ...meeting, id: "meeting-b", title: "Meeting B" };
+    replaceTranscript([{ start: 0, end: 1, text: "The budget", speaker: "speaker-0001", speaker_entity_id: "speaker-0001",
+      display_name: "Bob", state: "final" }]);
+  });
+  await vi.waitFor(() => expect(root.textContent).toContain("Bob confirmed the budget."));
+  await act(async () => finishSummary({ ok: true, json: async () => artifact }));
+  await vi.waitFor(() => expect(fetcher.mock.calls.filter(([url, init]) =>
+    url === "/api/meetings/meeting-a/summary" && !init)).toHaveLength(2));
+  await act(async () => {});
+  expect(root.textContent).toContain("Bob confirmed the budget.");
+  expect(root.textContent).not.toContain("asked for the plan");
+});
+
 it("offers Update summary for a stale OpenAI-compatible artifact without sending automatically", async () => {
   configure(settings => { settings.summary = { ...settings.summary, vendor: "openai_compatible", url: "https://example.com/v1",
     model: "m", apiKey: "" }; });

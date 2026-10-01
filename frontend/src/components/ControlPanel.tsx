@@ -521,7 +521,9 @@ export function ControlPanel() {
       } catch (error) { setExportError(`Export failed: ${errorMessage(error)}`); }
       return;
     }
-    const turns = groupSegmentsIntoTurns(transcript.value);
+    const snapshot = transcript.value;
+    const turns = groupSegmentsIntoTurns(snapshot);
+    const names = transcriptSpeakerNames(snapshot);
     const finalized = sessionStatus.value !== "active" && sessionStatus.value !== "closing";
     let summary = null;
     if (exportFormat === "md" && finalized) {
@@ -529,9 +531,9 @@ export function ControlPanel() {
         const meeting = selectedSummaryMeeting.value?.id === id ? selectedSummaryMeeting.value : await openMeeting(id);
         const artifact = await summaryApi(id);
         // Only the clean-up outdates a summary; a rename raises the version too and keeps it (D1, #15),
-        // read under the names the speakers carry now.
+        // read under the names captured with the exported transcript.
         summary = artifact?.state === "current" && artifact.document && !summaryPredatesRefinement(meeting, artifact)
-          ? renameSummarySpeakers(artifact.document, artifact.speaker_names, transcriptSpeakerNames(transcript.value))
+          ? renameSummarySpeakers(artifact.document, artifact.speaker_names, names)
           : null;
       }
       catch { /* A transcript remains exportable when its optional summary cannot be fetched. */ }
