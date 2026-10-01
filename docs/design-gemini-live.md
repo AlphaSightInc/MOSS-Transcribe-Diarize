@@ -248,7 +248,7 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
 - **Defect.** Gemini returns one "word" per Chinese character and every join wrote a space, so committed, saved and
   exported Chinese read "大 家 好， 今 天" (572 spaces in the 574-word saved transcript of r4 run (c)). The grey preview
   was clean only because it is the provider's own unspaced string.
-- **One rule, both runtimes** (`join_text` in `gemini_provider.py`, `joinText` in `frontend/src/lib/text.ts`, one shared
+- **One rule, both runtimes** (`join_text` in `transcript_text.py`, `joinText` in `frontend/src/lib/text.ts`, one shared
   test table): no space when the character on either side of the join is from a script written without spaces (Han,
   kana, bopomofo, CJK punctuation, full-width forms); otherwise exactly one, never two. Hangul keeps its spaces
   (Korean separates words). Only the joined string changes; words, times, speakers and segments are untouched.
@@ -261,8 +261,15 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   OpenAI-compatible path), `ordered_segments` (overlapping tail word), Live model-turn parts. Browser: same-speaker rows
   (`mergeTranscript.ts`, which exports and Copy read), preview rows (`tentative.ts`), the history card. Summaries read
   the stored text.
-- **Not changed.** Transcripts saved before the fix keep their spaces. The MOSS-engine seam merge
-  (`resolve_segment_overlaps`) keeps its measured single-space join.
+- **Meetings saved before the fix read clean; their rows are not rewritten** (user decision D3). Where a saved
+  transcript is served (`Meeting.to_dict`: opened meeting, History, exports) or handed to the server summary,
+  `without_join_spaces` drops a single space that stands between two unspaced-script characters, nothing else. A space
+  beside a Latin letter, digit or Hangul stays as stored, because the saved string does not say whether it was a
+  join: old meetings read "大概 30 万左右" and "用 API 做测试", new ones "大概30万". On the recorded runs: Chinese
+  572 → 6 spaces (the six beside "30" and one Cyrillic token); English 55/55 segments returned as the same string;
+  a 3-hour-sized Chinese transcript (86,760 characters) takes 4 ms. Renames and passage corrections address rows by
+  speaker id and segment id and rewrite the row with its text as saved.
+- **Not changed.** The MOSS-engine seam merge (`resolve_segment_overlaps`) keeps its measured single-space join.
 - **Preview "Yeah.researching" / "AndYou" is the provider's string, not a join of ours.** Gemini Live glues sentences
   inside one transcription update. In 13,103 recorded update strings (551k words) the shapes are `x.Y` 750,
   `x.y` 1,296 (about 500 of them real addresses such as acquired.fm) and `xY` 657 (about 300 real names: McDonald's, YouTube,
