@@ -500,6 +500,7 @@ def test_packaged_phase2_tls_entrypoint_constructs_the_account_app(monkeypatch, 
         "live_helper_lease_seconds": 30.0,
         "control_socket_path": DEFAULT_PHASE2_CONTROL_SOCKET_PATH,
         "open_workspace": True,
+        "replace_unmatched_credential": False,
     }
     assert seen["uvicorn"] == {
         "app": app,

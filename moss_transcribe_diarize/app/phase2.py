@@ -2059,6 +2059,7 @@ def create_phase2_app(
     llm_upstreams: str | None = None,
     summary_generator: Any | None = None,
     open_workspace: bool = False,
+    replace_unmatched_credential: bool = False,
     inference_scheduler: Any | None = None,
 ):
     """Create the sole Phase-2 product surface: `/`, auth, and Account-owned meetings."""
@@ -2407,8 +2408,12 @@ def create_phase2_app(
                 request.cookies.get(SESSION_COOKIE)
             )
         if account is None:
+            # Default (ADR-0006): a cookie this store cannot match is refused. A deployment may
+            # instead treat it as a first visit (see the 2026-10-01 amendment): the loader then
+            # starts a new, empty workspace; the old one is never revived.
             return HTMLResponse(
-                _bootstrap_html(unavailable=bool(request.cookies.get(SESSION_COOKIE))),
+                _bootstrap_html(unavailable=bool(request.cookies.get(SESSION_COOKIE))
+                                and not replace_unmatched_credential),
                 headers={"Cache-Control": "no-store"},
             )
         workspace = request.app.state.phase2_store.workspace(account)
@@ -2423,8 +2428,13 @@ def create_phase2_app(
 
     @app.post("/api/workspace/bootstrap")
     async def bootstrap_workspace(request: Request):
-        account, session_id = await request.app.state.phase2_store.bootstrap_browser(
-            request.cookies.get(SESSION_COOKIE),
+        store = request.app.state.phase2_store
+        presented = request.cookies.get(SESSION_COOKIE)
+        if (replace_unmatched_credential and presented and not open_workspace
+                and await store.account_for_session(presented) is None):
+            presented = None  # unmatched credential: start fresh, as on a first visit
+        account, session_id = await store.bootstrap_browser(
+            presented,
             open_workspace=open_workspace,
         )
         response = JSONResponse(
@@ -2433,18 +2443,6 @@ def create_phase2_app(
         if open_workspace:
             return response
         return set_session_cookie(response, session_id)
-
-    @app.post("/api/workspace/new")
-    async def new_workspace(request: Request):
-        """The person's explicit choice on the "Workspace unavailable" page: replace a credential
-        this store does not know. A browser that already has a workspace keeps it."""
-        store = request.app.state.phase2_store
-        if open_workspace or await store.account_for_session(
-                request.cookies.get(SESSION_COOKIE)) is not None:
-            raise HTTPException(409, "This browser already has a workspace.")
-        account, session_id = await store.bootstrap_browser(None)
-        return set_session_cookie(JSONResponse(
-            {"workspace_id": account.account_id, "display_name": account.display_name}), session_id)
 
     @app.get("/api/auth/session")
     async def auth_session(request: Request):
@@ -2868,28 +2866,11 @@ PRODUCT_NAME = "aiSight - LiveTranscribe"
 
 
 def _bootstrap_html(*, unavailable: bool) -> str:
-    # A cookie this store does not know (e.g. from an earlier server) never opens or creates a
-    # workspace by itself (ADR-0006); the person may start a new one explicitly.
     message = (
-        "Workspace unavailable on this server."
+        "Workspace unavailable — contact the operator."
         if unavailable else "Loading…"
     )
-    action = (
-        '<p><button type="button" data-new-workspace>Start a new workspace</button></p>'
-        if unavailable else ""
-    )
-    script = """
-<script>
-const status = document.querySelector('[data-workspace-status]');
-document.querySelector('[data-new-workspace]').addEventListener('click', async event => {
-  event.currentTarget.disabled = true;
-  try {
-    const created = await fetch('/api/workspace/new', {method: 'POST'});
-    if (!created.ok) throw new Error('Could not start a workspace — reload and try again.');
-    location.replace('/');
-  } catch (error) { status.textContent = error.message; event.currentTarget.disabled = false; }
-});
-</script>""" if unavailable else """
+    script = "" if unavailable else """
 <script>
 const status = document.querySelector('[data-workspace-status]');
 (async () => {
@@ -2910,7 +2891,7 @@ const status = document.querySelector('[data-workspace-status]');
 </script>"""
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{PRODUCT_NAME}</title>{_ICON_LINK}</head>
-<body><main data-auth-state="bootstrap"><h1>{PRODUCT_NAME}</h1><p data-workspace-status>{message}</p>{action}
+<body><main data-auth-state="bootstrap"><h1>{PRODUCT_NAME}</h1><p data-workspace-status>{message}</p>
 <noscript>Enable JavaScript.</noscript></main>{script}</body></html>"""
 
 

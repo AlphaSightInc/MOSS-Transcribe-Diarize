@@ -433,6 +433,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         llm_upstreams=args.llm_upstreams,
         summary_generator=GeminiSummaryGenerator(),
         open_workspace=os.environ.get("MOSS_OPEN_WORKSPACE") == "1",
+        replace_unmatched_credential=os.environ.get("MOSS_REPLACE_UNMATCHED_CREDENTIAL") == "1",
         inference_scheduler=args._inference_scheduler,
     )
     from .tls_reload import serve_with_certificate_reload

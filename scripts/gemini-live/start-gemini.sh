@@ -42,7 +42,9 @@ cd "$wt"
 # out a Wi-Fi drop + rejoin (the client retries every frame, abandons a hung request after 10 s
 # and replays the queued audio); the cost is that a closed tab's meeting ends 2 min later.
 echo "aiSight - LiveTranscribe → https://$host:$port/   state=$state   Ctrl-C to stop" >&2
-exec env MOSS_OPEN_WORKSPACE="${MOSS_GEMINI_OPEN_WORKSPACE:-0}" PYTHONDONTWRITEBYTECODE=1 "$py" -m moss_transcribe_diarize.app.phase2_web_cli \
+# A browser cookie this store cannot match (e.g. from an earlier state folder) starts a new workspace
+# instead of a refusal page.
+exec env MOSS_OPEN_WORKSPACE="${MOSS_GEMINI_OPEN_WORKSPACE:-0}" MOSS_REPLACE_UNMATCHED_CREDENTIAL=1 PYTHONDONTWRITEBYTECODE=1 "$py" -m moss_transcribe_diarize.app.phase2_web_cli \
   --database "$state/phase2.sqlite" --control-socket "$sock" \
   --tls-certfile "$state/cert.pem" --tls-keyfile "$state/key.pem" \
   --file-work-root "$state/file-work" --meeting-audio-root "$state/meeting-audio" \

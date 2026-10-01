@@ -81,18 +81,35 @@ def test_browser_http_bootstrap_is_explicit_private_and_same_origin(tmp_path: Pa
         client.cookies.clear()
         client.cookies.set(SESSION_COOKIE, "invalid")
         assert client.post("/api/workspace/bootstrap").status_code == 401
-        unavailable = client.get("/").text
-        assert "Workspace unavailable" in unavailable and "data-new-workspace" in unavailable
-        # The explicit action replaces the unknown credential with a new, empty workspace …
-        fresh = client.post("/api/workspace/new")
+        assert "Workspace unavailable" in client.get("/").text
+
+
+def test_deployment_may_start_a_new_workspace_for_an_unmatched_credential(tmp_path: Path):
+    # aiSight - LiveTranscribe launcher setting (ADR-0006 amendment 2026-10-01): a cookie from an
+    # earlier store, or a revoked one, is a first visit — no refusal page, no extra click.
+    app = create_phase2_app(database_path=tmp_path / "browser.sqlite3", replace_unmatched_credential=True)
+    with TestClient(app, base_url="https://moss.test") as client:
+        owner_id = client.post("/api/workspace/bootstrap").json()["workspace_id"]
+        credential = client.cookies[SESSION_COOKIE]
+        # A browser that has a workspace keeps it.
+        assert client.post("/api/workspace/bootstrap").json()["workspace_id"] == owner_id
+        client.cookies.clear()
+        client.cookies.set(SESSION_COOKIE, "issued-by-another-store")
+        landing = client.get("/").text
+        assert "navigator.locks.request" in landing and "<p data-workspace-status>Loading…</p>" in landing
+        assert client.get("/api/auth/session").status_code == 401  # in-flight calls are still refused
+        fresh = client.post("/api/workspace/bootstrap")
         assert fresh.status_code == 200 and fresh.json()["workspace_id"] != owner_id
         replaced = fresh.cookies[SESSION_COOKIE]
-        assert replaced not in ("invalid", credential)
+        assert replaced not in ("issued-by-another-store", credential)
         client.cookies.clear()  # a browser replaces the cookie; the test client would keep both
         client.cookies.set(SESSION_COOKIE, replaced)
         assert "This browser" in client.get("/").text
-        # … and never abandons a workspace the browser still holds.
-        assert client.post("/api/workspace/new").status_code == 409
+        # A revoked workspace is not revived: the browser gets another empty one.
+        assert asyncio.run(app.state.phase2_store.revoke_account(fresh.json()["workspace_id"]))
+        again = client.post("/api/workspace/bootstrap")
+        assert again.status_code == 200
+        assert again.json()["workspace_id"] not in (owner_id, fresh.json()["workspace_id"])
 
 
 def test_page_shell_uses_product_name_and_keeps_only_actionable_copy(tmp_path: Path):

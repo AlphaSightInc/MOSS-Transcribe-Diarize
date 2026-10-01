@@ -93,3 +93,13 @@ view token, pairing/device grant, or compatibility mode.
   same owner-carrying File task, while each item remains an independent Meeting and no batch
   identity exists. yt-dlp's manifest `--max-filesize`, parent-only kill, anonymous shielded cleanup,
   and automatic redirects were measured-rejected.
+
+## Amendment 2026-10-01 (round 4): a deployment may start a new workspace for an unmatched credential
+
+Default unchanged: a cookie the store cannot match (issued by an earlier store, or revoked) is refused — the root page
+shows "Workspace unavailable" and `POST /api/workspace/bootstrap` answers 401 (Wave-1 qualification gate).
+`create_phase2_app(replace_unmatched_credential=True)` — set by the aiSight - LiveTranscribe launcher
+(`MOSS_REPLACE_UNMATCHED_CREDENTIAL=1`; user decision: minimise clicks) — treats such a cookie as a first visit: the
+loader bootstraps a **new, empty** workspace with no refusal page. The old workspace is never revived or reassigned;
+in-flight API calls with an unmatched credential still answer 401. A revoked browser could already obtain a fresh
+workspace by clearing its cookie, so no isolation is weakened.
