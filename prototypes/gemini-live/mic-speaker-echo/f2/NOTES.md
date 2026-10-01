@@ -77,6 +77,42 @@ rule and its recall are reported.
   that also has a long local turn, varied short phrases, -15 dB echo, a room-noise lane - and (b) provider words
   on rebuilt round-4 negative lanes, spent where the scan says a provider word could matter.
 
+## Contract amendment 1 (lead corrections, written before any measurement)
+
+1. **The user confirmed they were speaking** (answers R5-D Q1): local speech reached the grey preview on the real
+   MacBook (built-in speakers playing the tab, real echo cancellation, double-talk) and was never committed or
+   saved. Its length is unknown - it is **not** assumed to be under 2 s. So both the 2 s anchor and the level gate
+   (words 16 dB or more under the tab are dropped) are suspects, and "local speech while the tab is talking" is a
+   first-class cell for short **and** long turns.
+2. **The evidence must not depend on the local voice being louder than the tab.** The first-draft C1 above reused
+   the level gate's fixed "-15 dB relative to the tab" as its test of "explained by the tab". That draft is
+   withdrawn before measurement: it would call quiet double-talk speech "explained".
+3. **Revised C1 primitive - the meeting's own echo return.** "Explained by the tab" is defined by what the tab is
+   measured to put into this microphone lane, not by a fixed fraction of the tab's digital level:
+   - per 10 ms frame where the tab is voiced, the ratio microphone level / tab level (best 0-100 ms lag, as the
+     level gate already computes it);
+   - the *echo return* = a robust quantile of that ratio over the context the engine already holds (the live
+     window, the whole lane for the saved pass). Which quantile, and the margin above it, are decided by the
+     measured ratio distributions of echo-only lanes versus double-talk (unknown until measured);
+   - a frame is *unexplained* when the microphone is voiced and either the tab is silent there or the microphone
+     level exceeds echo return x tab level by the margin;
+   - run evidence = the longest contiguous stretch of unexplained voiced frames under the run (threshold T,
+     measured). The same per-frame fact, taken over one word, is the candidate replacement for the fixed -15 dB
+     in the level gate (C1w), so one primitive answers both suspects.
+   Still attacked alongside: a least-squares echo removal on the two tapes (C1x: energy not linearly predictable
+   from the tab) - kept only if the echo-return test fails a gate that C1x passes, because real post-cancellation
+   residue is not linear and C1x cannot be validated on a file-backed microphone.
+4. **Added gate G7' (replaces G7).** Level sweep of local speech while the tab is talking, 4 to at least 20 dB
+   under the tab, short and long turns, at -40 and -25 dB echo: word recall per level with today's rule and with
+   the candidate (gate decisions on recorded words at $0; provider answers re-recorded at the quiet end, where
+   "the provider hears the same words" is not safe to assume).
+5. **Report additions.** The attended check for the physical MacBook (steps, what to say and when, 2-3 minutes),
+   which `engine_diagnostics` counters say afterwards which rule acted, and whether they must be saved with the
+   meeting.
+6. Provider cap is **$0.25**. "Rebuilt bit-for-bit" above is too strong: the round-4 audio is rebuilt from the
+   committed builders and seeds; its text-to-speech parts depend on the installed macOS voices, and the deleted
+   originals cannot be compared.
+
 ## Gates (fixed before measuring)
 
 - **G1 repair.** Short local phrases (0.8-2 s; English and Mandarin; no echo, -40 dB, -25 dB; tab silent and tab
