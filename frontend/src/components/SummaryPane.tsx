@@ -116,9 +116,10 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
     try {
       const current: Meeting = meeting ?? await openMeeting(id);
       await finalizeMeetingSummary(current);
-      setArtifact(await summaryApi(id));
-    } catch (cause) { setError(reasonOf(cause)); }
-    finally { setBusy(false); }
+      const next = await summaryApi(id);
+      if (sessionId.value === id) setArtifact(next);
+    } catch (cause) { if (sessionId.value === id) setError(reasonOf(cause)); }
+    finally { if (sessionId.value === id) setBusy(false); }
   }
 
   const elapsed = rolling ? Math.max(0, Math.floor((now - rolling.generated_at_ms) / 1000)) : 0;
