@@ -75,6 +75,78 @@ def test_lag_fallback_commits_current_preview_words_from_both_lanes(tmp_path):
     engine.close()
 
 
+def _preview_composer(tmp_path):
+    updates = []
+    class IdleLane:
+        def __init__(self, publish): self.publish = publish
+        def push_audio(self, start_sample, pcm16): pass
+        def close(self): pass
+    engine = LaneGeminiEngine(updates.append, system_factory=IdleLane,
+                              microphone_factory=IdleLane, tape_root=tmp_path)
+    def shown(lane="microphone"):
+        previews = [u for u in updates if isinstance(u, GeminiPreview)]
+        return [row.text for row in previews[-1].segments if row.source_lane == lane]
+    return engine, shown
+
+
+def test_mic_preview_drops_speaker_echo_of_committed_system_speech(tmp_path):
+    # r4 smoke S5: under speaker echo one W3 mic turn grew to ~400 words; its row is clipped
+    # to the mic frontier while the system preview only holds the uncommitted suffix, so the
+    # old preview-only test showed the far end twice. Committed system words are compared too.
+    engine, shown = _preview_composer(tmp_path)
+    sec = lambda value: round(value * 16000)
+    committed = ("After researching NVIDIA for something like 500 hours over the last two years, "
+                 "we flew down to NVIDIA headquarters to sit down with Jensen himself.")
+    engine._on_update("system", GeminiRolling(0, sec(90), (
+        GeminiSegment(sec(50), sec(80), committed, "speaker-0001", "system"),), ()))
+    engine._on_update("system", GeminiPreview(sec(100), (
+        GeminiSegment(sec(90), sec(99), "And Jensen, of course, is the founder and CEO of NVIDIA.",
+                      source_lane="system"),)))
+    mic_turn = ("After researching NVIDIA for something like 500 hours over the last two years, we "
+                "flew down to NVIDIA headquarters to sit down with Jensen himself. Deference to "
+                "authority is not blind submission. And Jensen, of course, is the founder and CEO of NVIDIA.")
+    engine._on_update("microphone", GeminiPreview(sec(100), (
+        GeminiSegment(sec(90), sec(100), mic_turn, source_lane="microphone"),)))
+    assert shown() == ["Deference to authority is not blind submission"]
+    engine.close()
+
+
+def test_mic_preview_echo_in_chinese_keeps_local_speech_and_short_shared_words(tmp_path):
+    engine, shown = _preview_composer(tmp_path)
+    sec = lambda value: round(value * 16000)
+    remote = "首先我来介绍一下目前的进展，整体上还是按照计划在走。"
+    engine._on_update("system", GeminiRolling(0, sec(30), (
+        GeminiSegment(sec(20), sec(28), remote, "speaker-0001", "system"),), ()))
+    engine._on_update("microphone", GeminiPreview(sec(32), (
+        GeminiSegment(sec(30), sec(32), remote + "我觉得这个方案可以先上线。", source_lane="microphone"),)))
+    assert shown() == ["我觉得这个方案可以先上线"]
+    # Four shared characters (目前的进) are ordinary language, not echo: the row stays whole.
+    local = "我们目前的进度有点慢，需要再加两个人。"
+    engine._on_update("microphone", GeminiPreview(sec(32), (
+        GeminiSegment(sec(30), sec(32), local, source_lane="microphone"),)))
+    assert shown() == [local]
+    engine.close()
+
+
+def test_mic_preview_without_echo_is_unchanged_and_echo_row_drops_own_committed_words(tmp_path):
+    engine, shown = _preview_composer(tmp_path)
+    sec = lambda value: round(value * 16000)
+    remote = "so we want to wind the clock all the way back to nineteen ninety seven"
+    engine._on_update("system", GeminiRolling(0, sec(60), (
+        GeminiSegment(sec(40), sec(55), remote, "speaker-0001", "system"),), ()))
+    engine._on_update("microphone", GeminiRolling(0, sec(60), (
+        GeminiSegment(sec(50), sec(53), "in exchange for some deference", "local-0001", "microphone"),), ()))
+    own = "We should ship the beta to the pilot customers next week."
+    engine._on_update("microphone", GeminiPreview(sec(64), (
+        GeminiSegment(sec(60), sec(64), own, source_lane="microphone"),)))
+    assert shown() == [own]
+    # A W3 turn that held echo and the local phrase committed above: nothing new to show.
+    engine._on_update("microphone", GeminiPreview(sec(64), (
+        GeminiSegment(sec(60), sec(64), remote + " in exchange for some differenceMV", source_lane="microphone"),)))
+    assert shown() == []
+    engine.close()
+
+
 def test_system_and_microphone_batch_calls_overlap_but_each_lane_serializes():
     from moss_transcribe_diarize.app.phase2_web_cli import _serialize_gemini_lanes
     active = 0

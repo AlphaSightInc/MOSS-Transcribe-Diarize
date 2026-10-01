@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import asyncio
+import difflib
 import math
 import re
 import tempfile
 import threading
 import time
+import unicodedata
 import wave
 from pathlib import Path
 from array import array
@@ -14,7 +16,7 @@ from typing import Callable, Sequence
 
 from .gemini_hybrid_engine import attributed_embedding_intervals
 from .gemini_live_runtime import (GeminiBase, GeminiPreview, GeminiRelabel, GeminiTurnBridge,
-                                  GeminiRolling, GeminiSegment, GeminiUpdate)
+                                  GeminiRolling, GeminiSegment, GeminiUpdate, _PREVIEW_NUMBERS)
 from .gemini_provider import GeminiWord
 from .live_span_bounds import LIVE_SAMPLE_RATE
 
@@ -23,21 +25,72 @@ def _token(text: str) -> str:
     return "".join(re.findall(r"[^\W_]+(?:'[^\W_]+)?", text.lower(), flags=re.UNICODE))
 
 
-def _preview_words(text: str) -> list[str]:
-    return re.findall(r"[^\W_\d]+|\d+", text.casefold())
+_CJK = ("CJK", "HIRAGANA", "KATAKANA", "HANGUL")
 
 
-def _echoed_preview(row: GeminiSegment, system: Sequence[GeminiSegment]) -> bool:
-    """A mic phrase repeats the union of nearby system preview phrases."""
-    words = _preview_words(row.text)
-    if not words:
-        return False
-    tolerance = 2 * LIVE_SAMPLE_RATE
-    other = {word for segment in system
-             if segment.start_sample <= row.end_sample + tolerance
-             and segment.end_sample + tolerance >= row.start_sample
-             for word in _preview_words(segment.text)}
-    return 5 * sum(word in other for word in words) >= 3 * len(words)
+def _preview_units(text: str) -> list[tuple[str, int, int]]:
+    """Comparable units with their text spans: a CJK character each, other letter/digit runs whole."""
+    units = []
+    for match in re.finditer(r"[^\W_\d]+|\d+", text):
+        token, at, i = match.group(), match.start(), 0
+        while i < len(token):
+            j = i + 1
+            if not unicodedata.name(token[i], "").startswith(_CJK):
+                while j < len(token) and not unicodedata.name(token[j], "").startswith(_CJK):
+                    j += 1
+            unit = token[i:j].casefold()
+            units.append((_PREVIEW_NUMBERS.get(unit, unit), at + i, at + j))
+            i = j
+    return units
+
+
+def _repeated_units(reference: Sequence[str], units: Sequence[str]) -> set[int]:
+    """Indexes of `units` inside runs of at least three words (five CJK characters) of `reference`."""
+    repeated: set[int] = set()
+    for block in difflib.SequenceMatcher(None, reference, units, autojunk=False).get_matching_blocks():
+        if sum(3 if len(unit) == 1 and unicodedata.name(unit, "").startswith(_CJK) else 5
+               for unit in units[block.b:block.b + block.size]) >= 15:
+            repeated.update(range(block.b, block.b + block.size))
+    return repeated
+
+
+def _without_echo(row: GeminiSegment, heard: Sequence[GeminiSegment],
+                  own: Sequence[GeminiSegment]) -> GeminiSegment | None:
+    """A mic preview row minus the runs that repeat what the system lane said around it.
+
+    A W3 mic turn under continuous speaker echo grows for minutes, while its row is clipped to
+    the mic frontier and the system preview covers only the uncommitted suffix. So the row is
+    compared, in order, with the system words it could repeat: committed system rows and the
+    system preview ending within n/1.5 + 5 s of it (speech runs faster than 1.5 units/s).
+    Leftover runs under four units are echo the two models heard differently; a row that held
+    echo also drops leftovers that repeat the lane's own committed words, already shown above.
+    Measured on recorded W3 streams: prototypes/gemini-live/mic-preview-echo/NOTES.md.
+    """
+    spans = _preview_units(row.text)
+    units = [unit for unit, _, _ in spans]
+    since = row.end_sample - round((len(units) / 1.5 + 5) * LIVE_SAMPLE_RATE)
+    until = row.end_sample + 2 * LIVE_SAMPLE_RATE
+    def nearby(rows):
+        return [unit for other in rows if other.end_sample >= since and other.start_sample < until
+                for unit, _, _ in _preview_units(other.text)]
+    echo = _repeated_units(nearby(heard), units)
+    if not echo:
+        return row
+    runs: list[list[int]] = []
+    for index in range(len(units)):
+        if index in echo:
+            continue
+        if runs and runs[-1][-1] == index - 1:
+            runs[-1].append(index)
+        else:
+            runs.append([index])
+    mine = nearby(own)
+    runs = [run for run in runs if len(run) >= 4
+            and 2 * len(_repeated_units(mine, [units[i] for i in run])) < len(run)]
+    if not runs:
+        return None
+    text = " … ".join(row.text[spans[run[0]][1]:spans[run[-1]][2]] for run in runs)
+    return GeminiSegment(row.start_sample, row.end_sample, text, row.speaker, row.source_lane)
 
 
 class TextEchoGuard:
@@ -586,9 +639,13 @@ class LaneGeminiEngine:
                             or prior.end_sample <= current.start_sample
                             or prior.start_sample >= current.end_sample]
                 segments.append(current)
-        system = [row for row in segments if row.source_lane == "system"]
-        unique = [row for row in segments
-                  if row.source_lane == "system" or not _echoed_preview(row, system)]
+        heard = self._rows["system"] + [row for row in segments if row.source_lane == "system"]
+        unique = []
+        for row in segments:
+            if row.source_lane == "microphone":
+                row = _without_echo(row, heard, self._rows["microphone"])
+            if row is not None:
+                unique.append(row)
         return tuple(sorted(unique, key=lambda row: (row.start_sample,
                          self.LANES.index(row.source_lane))))
 

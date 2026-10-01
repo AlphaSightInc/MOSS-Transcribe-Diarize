@@ -102,9 +102,15 @@ in any live window or in the saved words themselves; they are counted as
 `mic_words_withheld_unanchored_lane`, and a Stop tail withheld this way counts as covered, not
 as a failed recovery (listen-only speaker lanes 104/73 → 0/0 saved invented words; saved
 retention unchanged on six lanes with local speech; margin 1.9 s vs 2 s). W3's provisional text lacks reliable word timing, so the lane
-composer drops a mic preview row when at least 60% of its normalized tokens occur
-in the union of system preview rows overlapping it within ±2 s. System text wins
-an echo tie; a later overlapping row in the same lane replaces the earlier one.
+composer removes from a mic preview row every run of at least three words (five CJK
+characters) that repeats, in order, the system words it could echo: committed system rows
+and the system preview ending within n/1.5 + 5 s of the row (n = its units). Leftover runs
+under four units are dropped, and so are leftovers of an echo row that repeat the lane's own
+committed words; a row with nothing left is not shown (round 4: under speaker echo one W3
+mic turn grew to ~400 words while the old preview-only 60% test saw only the uncommitted
+suffix; recorded streams 63–244 → 7–13 echoed words per poll, local words unchanged;
+`prototypes/gemini-live/mic-preview-echo/NOTES.md`). System text wins an echo tie; a later
+overlapping row in the same lane replaces the earlier one.
 At the commit frontier, the public publisher aligns each preview chunk's head to
 the last 60 tokens of committed effective speech in the same lane. A match of at
 least five tokens trims the repeated prefix; number words and digits align.
