@@ -243,6 +243,34 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
 - **Preview backlog sheds chunks** instead of closing the socket: a 60 s catch-up during a reconnect overflowed the 64-chunk
   backlog and preview stayed off while people kept talking (0/60 chunks sent in the next 30 s; 60/60 after the fix).
 
+## Round 4: joining words into text (F1, 2026-10-01)
+
+- **Defect.** Gemini returns one "word" per Chinese character and every join wrote a space, so committed, saved and
+  exported Chinese read "大 家 好， 今 天" (572 spaces in the 574-word saved transcript of r4 run (c)). The grey preview
+  was clean only because it is the provider's own unspaced string.
+- **One rule, both runtimes** (`join_text` in `gemini_provider.py`, `joinText` in `frontend/src/lib/text.ts`, one shared
+  test table): no space when the character on either side of the join is from a script written without spaces (Han,
+  kana, bopomofo, CJK punctuation, full-width forms); otherwise exactly one, never two. Hangul keeps its spaces
+  (Korean separates words). Only the joined string changes; words, times, speakers and segments are untouched.
+- **Mixed text** reads "我们用API做测试" and "大概30万". Gemini's own Chinese strings in run (c) (preview, summaries)
+  write "30万" unspaced every time (13/13 phrases) and disagree on English words (5 spaced both sides, 3 unspaced,
+  3 half-spaced), so the single either-side rule was taken over "space between Chinese and Latin letters, not digits".
+- **Measured** by re-joining the saved words of the three r4 runs: English 55/55 segments byte-identical (1,787 words);
+  Chinese 572 → 0 spaces, no character lost.
+- **Join sites.** Server: `speaker_turns` (rolling commits, mic lane, tail recovery, clean-up, File/URL, the
+  OpenAI-compatible path), `ordered_segments` (overlapping tail word), Live model-turn parts. Browser: same-speaker rows
+  (`mergeTranscript.ts`, which exports and Copy read), preview rows (`tentative.ts`), the history card. Summaries read
+  the stored text.
+- **Not changed.** Transcripts saved before the fix keep their spaces. The MOSS-engine seam merge
+  (`resolve_segment_overlaps`) keeps its measured single-space join.
+- **Preview "Yeah.researching" / "AndYou" is the provider's string, not a join of ours.** Gemini Live glues sentences
+  inside one transcription update. In 13,103 recorded update strings (551k words) the shapes are `x.Y` 750,
+  `x.y` 1,296 (about 500 of them real addresses such as acquired.fm) and `xY` 657 (about 300 real names: McDonald's, YouTube,
+  PayPal); an `x.Y` glue point sits at the end of an earlier update in only 30 of 72 first sightings, so the update
+  sequence does not locate it. Only `x.Y` is safe to repair (0 in 38.7k committed words) and it would not fix the two
+  reported examples, so nothing was added; the committed text replaces the preview within seconds.
+- **Unmeasured.** How Gemini splits Japanese and Korean into words.
+
 ## Measured envelope and custody
 
 Figures below name their code/fixture population. They do not combine different

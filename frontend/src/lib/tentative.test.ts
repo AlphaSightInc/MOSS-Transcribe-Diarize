@@ -36,6 +36,18 @@ describe("Gemini preview guesses", () => {
     ]);
   });
 
+  it("joins preview text by script: no space inside Chinese, one between English sentences (F1)", () => {
+    const row = (start: number, text: string) => ({ start_sample: samples(start), end_sample: samples(start + 1),
+      text, source_lane: "system", tentative_speaker: null });
+    expect(projectTentativeSegments([row(0, "大家好，"), row(1, "今天我们讨论"), row(2, "API 的进展。")], {})
+      .map(block => block.text)).toEqual(["大家好，今天我们讨论API 的进展。"]);
+    expect(projectTentativeSegments([row(0, "Yeah."), row(1, "researching it")], {})
+      .map(block => block.text)).toEqual(["Yeah. researching it"]);
+    const word = (start: number, text: string) => ({ start, end: start + 1, text, source_lane: "system" });
+    expect(projectTentativeBlocks([word(0, "大"), word(1, "家"), word(2, "好，"), word(3, "OK")], [], {})
+      .map(block => block.text)).toEqual(["大家好，OK"]);
+  });
+
   it("never shows a raw id or a questioned neutral label", () => {
     const blocks = projectTentativeSegments([
       { start_sample: 0, end_sample: samples(1), text: "unlabelled", source_lane: "system", tentative_speaker: "speaker-0007" },

@@ -422,3 +422,52 @@ def test_fully_overlapping_tail_word_keeps_the_lane_of_the_row_it_joins():
                              GeminiSegment(4, 6, "inside", "S1", "system")),
                             start_sample=0, end_sample=10)
     assert [(row.text, row.source_lane) for row in rows] == [("whole inside", "system")]
+
+
+# The same table as frontend/src/lib/text.test.ts: one rule, two runtimes.
+@pytest.mark.parametrize("parts, expected", [
+    (["大", "家", "好，", "今", "天"], "大家好，今天"),
+    (["今日", "は", "会議", "です。", "ありがとう", "ございます。"], "今日は会議です。ありがとうございます。"),
+    (["我", "们", "用", "API", "做", "测", "试，", "Google", "Cloud", "也", "行。"],
+     "我们用API做测试，Google Cloud也行。"),
+    (["大", "概", "30", "万", "左", "右"], "大概30万左右"),
+    (["Well,", "it's", "fine.", "Right?", "(Yes.)"], "Well, it's fine. Right? (Yes.)"),
+    (["Yeah.", "researching", "it"], "Yeah. researching it"),
+    (["one ", " two", "", "  ", "three"], "one two three"),
+    (["오늘", "회의를", "시작하겠습니다."], "오늘 회의를 시작하겠습니다."),
+    (["OK", "，", "好"], "OK，好"),
+    (["\U00020bb7", "野", "家"], "\U00020bb7野家"),
+])
+def test_join_text_rule(parts, expected):
+    from functools import reduce
+    from moss_transcribe_diarize.app.gemini_provider import join_text
+    assert reduce(join_text, parts, "") == expected
+
+
+def test_terminal_joins_one_word_per_cjk_character_without_spaces(tmp_path):
+    # F1: Gemini returns one word per Chinese character; the clean-up/File/URL pass printed "大 家 好".
+    words = ["大", "家", "好，", "我", "们", "用", "API", "做", "测", "试。"]
+    fake = FakeInteractions([response(
+        *(word(text, "spk:0", index * .3, index * .3 + .25) for index, text in enumerate(words)),
+        word("Sounds", "spk:1", 5, 5.3), word("good.", "spk:1", 5.3, 5.6),
+        word("Yeah.", "spk:1", 5.7, 6), word("researching", "spk:1", 6.1, 6.5),
+    )])
+    provider = WindowDiarizer(SimpleNamespace(interactions=fake), lambda **_row: None)
+    tape = CompleteMixedTape(epoch=0, capacity_bytes=7*32000, storage_root=tmp_path)
+    tape.append(start_sample=0, pcm=bytes(7*32000))
+    terminal = TerminalTranscriber(provider)
+    rows = terminal.transcribe(tape)
+    assert [row.text for row in rows] == ["大家好，我们用API做测试。", "Sounds good. Yeah. researching"]
+    # Only the joined string changes: the words, their times and their speakers are as returned.
+    assert [w.text for w in terminal.last_words] == words + ["Sounds", "good.", "Yeah.", "researching"]
+    assert (rows[0].start_sample, rows[0].end_sample) == (0, round((9 * .3 + .25) * 16000))
+    tape.release()
+
+
+def test_fully_overlapping_tail_word_joins_by_the_same_rule():
+    from moss_transcribe_diarize.app.gemini_live_runtime import GeminiSegment
+    from moss_transcribe_diarize.app.gemini_provider import ordered_segments
+    rows = ordered_segments((GeminiSegment(0, 10, "今天开会", "S1", "system"),
+                             GeminiSegment(4, 6, "好的", "S1", "system")),
+                            start_sample=0, end_sample=10)
+    assert [row.text for row in rows] == ["今天开会好的"]

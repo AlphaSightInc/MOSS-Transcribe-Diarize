@@ -111,6 +111,31 @@ def repair_word_timestamps(words: Sequence[GeminiWord],
     return tuple(fixed), len(changed)
 
 
+# Characters of scripts written without spaces between words, and their punctuation: CJK
+# symbols and punctuation, kana, bopomofo, Han (with extensions and compatibility forms) and
+# full-width forms. Hangul is left out on purpose: Korean puts spaces between words.
+_UNSPACED = re.compile(
+    "[\u3000-\u312f\u31f0-\u31ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff"
+    "\uff00-\uff9f\uffe0-\uffef\U00020000-\U0003134f]")
+
+
+def join_text(left: str, right: str) -> str:
+    """The one rule for joining transcript text: words into turns, and turns into rows.
+
+    Gemini returns one "word" per Chinese character, so a space between every pair of words
+    printed "大 家 好". No space is written where either side of the join is an
+    unspaced-script character; otherwise exactly one. Mixed text therefore reads
+    "我们用API做测试" and "大概30万" (how the provider's own unspaced text writes numbers),
+    while words of a spaced script keep their space ("Google Cloud", "Yeah. We").
+    `joinText` in `frontend/src/lib/text.ts` is the same rule for the browser's joins.
+    """
+    left, right = left.rstrip(), right.lstrip()
+    if not left or not right:
+        return left or right
+    gap = "" if _UNSPACED.match(left[-1]) or _UNSPACED.match(right[0]) else " "
+    return left + gap + right
+
+
 def ordered_segments(rows: Sequence[GeminiSegment], *, start_sample: int,
                      end_sample: int,
                      preserve_order: bool = False) -> tuple[GeminiSegment, ...]:
@@ -128,7 +153,7 @@ def ordered_segments(rows: Sequence[GeminiSegment], *, start_sample: int,
             if result:
                 prior = result[-1]
                 result[-1] = GeminiSegment(prior.start_sample, prior.end_sample,
-                                            prior.text + " " + row.text, prior.speaker,
+                                            join_text(prior.text, row.text), prior.speaker,
                                             prior.source_lane)
             continue
         end = min(end_sample, max(start + 1, row.end_sample))
@@ -147,7 +172,7 @@ def speaker_turns(rows: Sequence[GeminiSegment]) -> tuple[GeminiSegment, ...]:
                 and row.start_sample - turns[-1].end_sample <= max_gap):
             prior = turns[-1]
             turns[-1] = GeminiSegment(prior.start_sample, max(prior.end_sample, row.end_sample),
-                                      prior.text + " " + row.text, prior.speaker, prior.source_lane)
+                                      join_text(prior.text, row.text), prior.speaker, prior.source_lane)
         else:
             turns.append(row)
     return tuple(turns)

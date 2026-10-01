@@ -24,6 +24,7 @@ import {
 import { summaryApi } from "../lib/finalSummary";
 import { loadAppSettings } from "../lib/settings";
 import { finalizeMeetingSummary, summaryPredatesRefinement } from "../lib/summaryRequests";
+import { joinTexts } from "../lib/text";
 import {
   resetSessionState,
   sessionId,
@@ -456,7 +457,7 @@ function sessionLifecycle(status: MeetingStatus): SessionLifecycle {
 }
 
 function meetingPreview(meeting: Meeting): string {
-  const text = meeting.transcript?.segments.map((segment) => segment.text).join(" ").trim();
+  const text = joinTexts(meeting.transcript?.segments.map((segment) => segment.text) ?? []);
   // Q6: a meeting still recording shows its words once they exist, and nothing before.
   return text || (meeting.status === "active" ? "" : "No transcript");
 }
