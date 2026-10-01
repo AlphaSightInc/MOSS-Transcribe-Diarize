@@ -15,32 +15,14 @@ from typing import Callable, Sequence
 
 from .gemini_hybrid_engine import attributed_embedding_intervals
 from .gemini_live_runtime import (GeminiBase, GeminiPreview, GeminiRelabel, GeminiTurnBridge,
-                                  GeminiRolling, GeminiSegment, GeminiUpdate, _PREVIEW_NUMBERS)
+                                  GeminiRolling, GeminiSegment, GeminiUpdate,
+                                  _preview_units, _unit_weight)
 from .gemini_provider import GeminiWord
 from .live_span_bounds import LIVE_SAMPLE_RATE
 
 
 def _token(text: str) -> str:
     return "".join(re.findall(r"[^\W_]+(?:'[^\W_]+)?", text.lower(), flags=re.UNICODE))
-
-
-_CJK = ("CJK", "HIRAGANA", "KATAKANA", "HANGUL")
-
-
-def _preview_units(text: str) -> list[tuple[str, int, int]]:
-    """Comparable units with their text spans: a CJK character each, other letter/digit runs whole."""
-    units = []
-    for match in re.finditer(r"[^\W_\d]+|\d+", text):
-        token, at, i = match.group(), match.start(), 0
-        while i < len(token):
-            j = i + 1
-            if not unicodedata.name(token[i], "").startswith(_CJK):
-                while j < len(token) and not unicodedata.name(token[j], "").startswith(_CJK):
-                    j += 1
-            unit = token[i:j].casefold()
-            units.append((_PREVIEW_NUMBERS.get(unit, unit), at + i, at + j))
-            i = j
-    return units
 
 
 def _repeated_units(reference: Sequence[str], units: Sequence[str]) -> set[int]:
@@ -64,8 +46,7 @@ def _repeated_units(reference: Sequence[str], units: Sequence[str]) -> set[int]:
                    and units[index + size] == reference[at + size]):
                 size += 1
             longest = max(longest, size)
-        if sum(3 if len(unit) == 1 and unicodedata.name(unit, "").startswith(_CJK) else 5
-               for unit in units[index:index + longest]) >= 15:
+        if sum(_unit_weight(unit) for unit in units[index:index + longest]) >= 15:
             repeated.update(range(index, index + longest))
             index += longest
         else:
