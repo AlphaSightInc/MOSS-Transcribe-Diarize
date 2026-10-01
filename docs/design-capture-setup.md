@@ -8,7 +8,7 @@ server needs both lanes of a meeting attached. What is the least the browser mus
 
 **Primitives.**
 
-1. *Source choice* — two booleans, "System sound" and "Microphone", ticked by the person and remembered per browser
+1. *Source choice* — two booleans, "System Sound Output" and "Microphone", ticked by the person and remembered per browser
    (`lt:capture:sources`). It says what the next Start asks for; it is locked from the click until the recording ends.
 2. *Lane* — one per source, always two per meeting. A lane is either *recorded* (fed by a device or a shared surface)
    or *silent* (fed zeros by the browser). Nothing else distinguishes them: same framer, same clock, same frames.
@@ -36,14 +36,14 @@ server needs both lanes of a meeting attached. What is the least the browser mus
 
 **Outcomes of one click** (Q16):
 
-| System sound | Microphone | Result | Line |
+| System Sound Output | Microphone | Result | Line |
 |---|---|---|---|
 | shared with audio | opened | both recorded | — |
 | shared with audio | unticked | system recorded, microphone silent | — |
 | unticked | opened | microphone recorded, system silent, no picker | — |
 | shared with audio | none / denied (a) | system recorded, microphone silent; Microphone unticks | Microphone unavailable |
 | picker closed (b) | any | nothing starts | — |
-| shared without audio (c) | opened | microphone recorded, system silent | System sound not shared |
+| shared without audio (c) | opened | microphone recorded, system silent | System sound output not shared |
 | shared without audio (c) | unticked, none or denied | nothing starts | No audio was shared — turn on “Also share audio” in Chrome’s picker |
 | unticked | none / denied | nothing starts; Microphone unticks, Start is disabled until a box is ticked | Microphone unavailable |
 
@@ -55,7 +55,7 @@ all is stopped at the server.
 **A recorded source that stops mid-recording** (Chrome's "Stop sharing", a closed shared tab, an unplugged
 microphone): `CaptureClient.sourceEnded` connects the zero source to the lane's own framer, then disconnects the
 ended source, so the framer never sees an empty input and the lane's sequence numbers, timestamps and `device_epoch`
-continue. The panel shows "System sound stopped." or "Microphone stopped." (K3), drops that source's level and the
+continue. The panel shows "System sound output stopped." or "Microphone stopped." (K3), drops that source's level and the
 controls that need it (Share again; Mute and the device dropdown), and shows its box unticked; the remembered choice
 is untouched. The recording goes on with the other source — or with silence, if both have stopped — until Stop,
 which completes normally. Stopping it automatically when the last source goes was not chosen: the person may be

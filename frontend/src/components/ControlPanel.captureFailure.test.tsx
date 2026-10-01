@@ -197,7 +197,7 @@ it("asks for the share picker inside the click, before the microphone, and recor
   expect(silentSources).toHaveLength(0);
   expect(status()).toBeUndefined();
   await settle(() => { feed("microphone", .02); feed("system", .3); });
-  expect(meters()).toEqual(["System sound level 83%", "Microphone level 43%"]);
+  expect(meters()).toEqual(["System Sound Output level 83%", "Microphone level 43%"]);
   await vi.waitFor(() => expect(postedFrames("system")).toHaveLength(1));
   expect(postedFrames("system")[0]).toMatchObject({ sequence: 0, silent: false });
   expect(postedFrames("microphone")[0]).toMatchObject({ sequence: 0, silent: false });
@@ -231,12 +231,12 @@ it("system sound only: an unticked microphone opens no device, sends a silent la
   expect(reportedSilentMicrophone()).toBe(false);
   expect(posted("heartbeat").every(beat => beat.state === "capturing" && beat.lanes.microphone.state === "capturing")).toBe(true);
   expect(status()).toBeUndefined();
-  expect(meters()).toEqual(["System sound level 83%"]);
+  expect(meters()).toEqual(["System Sound Output level 83%"]);
   expect(button("Mute mic")).toBeUndefined();
-  expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([true, true]);
+  expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([true, true]);
 });
 it("microphone only: no share picker, a silent system lane and no stopped-share line", async () => {
-  await untick("System sound");
+  await untick("System Sound Output");
   await record();
   expect(media().getDisplayMedia).not.toHaveBeenCalled();
   expect(silentSources).toHaveLength(1);
@@ -261,7 +261,7 @@ it("(a) a denied microphone starts system sound only, unticks Microphone and say
   denyMicrophone = true;
   await record();
   expect(status()).toBe("Microphone unavailable");
-  expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, false]);
+  expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, false]);
   expect(sessionCreates()).toBe(1);
   expect(silentSources).toHaveLength(1);
   // The share stays open and recorded.
@@ -281,7 +281,7 @@ it("(b) a closed picker starts nothing, says nothing, and the next click works",
   expect(media().getUserMedia).not.toHaveBeenCalled();
   expect(sessionCreates()).toBe(0);
   expectReleased();
-  expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
+  expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, true]);
   displayMode = "ok";
   await record();
 });
@@ -289,21 +289,21 @@ it("a share that fails for another reason starts nothing and names the reason", 
   displayMode = "reject";
   await click("Start recording");
   expect(phase()).toBe("idle");
-  expect(status()).toBe("System sound failed: chooser rejected");
+  expect(status()).toBe("System sound output failed: chooser rejected");
   expect(media().getUserMedia).not.toHaveBeenCalled();
   expectReleased();
 });
 it("(c) a surface shared without audio starts the microphone only and says so", async () => {
   displayMode = "missing";
   await record();
-  expect(status()).toBe("System sound not shared");
+  expect(status()).toBe("System sound output not shared");
   // The surface is released; the microphone is recorded; the system lane is silent.
   expect(streams[0].getTracks()[0].stop).toHaveBeenCalledOnce();
   expect(silentSources).toHaveLength(1);
   expect(sessionCreates()).toBe(1);
   await settle(() => { feed("microphone", .02); feed("system", 0); });
   expect(meters()).toEqual(["Microphone level 43%"]);
-  expect([box("System sound").checked, box("Microphone").checked]).toEqual([false, true]);
+  expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([false, true]);
   expect(button("Share again")).toBeUndefined();
 });
 it.each(["unticked", "denied"])("(c) a surface without audio and a microphone %s starts nothing and tells how to share audio", async microphone => {
@@ -320,7 +320,7 @@ it.each(["unticked", "denied"])("(c) a surface without audio and a microphone %s
   await record();
 });
 it("a denied microphone as the only source starts nothing, unticks it and disables Start", async () => {
-  await untick("System sound");
+  await untick("System Sound Output");
   denyMicrophone = true;
   await click("Start recording");
   expect(phase()).toBe("idle");
@@ -328,7 +328,7 @@ it("a denied microphone as the only source starts nothing, unticks it and disabl
   expect(sessionCreates()).toBe(0);
   expectReleased();
   expect(button("Start recording")?.disabled).toBe(true);
-  expect(button("Start recording")?.title).toBe("Tick System sound or Microphone.");
+  expect(button("Start recording")?.title).toBe("Tick System Sound Output or Microphone.");
 });
 
 // Attachment failures: everything a Start opened is released without Reset.
@@ -336,7 +336,7 @@ it.each(["source", "worklet"])("F4/4 releases the acquired share after %s failur
   sourceFails = failure === "source"; workletFails = failure === "worklet";
   await click("Start recording");
   expect(phase()).toBe("idle");
-  expect(status()).toBe(`System sound failed: ${failure} attachment failed`);
+  expect(status()).toBe(`System sound output failed: ${failure} attachment failed`);
   expect(media().getUserMedia).not.toHaveBeenCalled();
   expectReleased();
 });
@@ -362,7 +362,7 @@ it("F4/6 catches synchronous chooser errors in the user gesture", async () => {
     await new Promise(resolve => setTimeout(resolve, 0));
   });
   expect(phase()).toBe("idle");
-  expect(status()).toBe("System sound failed: display capture is not supported");
+  expect(status()).toBe("System sound output failed: display capture is not supported");
   expectReleased();
 });
 it.each(["source", "worklet"])("F4/9 a microphone switch that fails mid-recording after %s failure keeps the recording and releases the replacement", async failure => {
@@ -411,12 +411,12 @@ it.each(["system", "microphone"] as const)("K3: a recorded %s that stops mid-rec
   // The real event: Chrome's "Stop sharing", or an unplugged microphone.
   const track = streams[lane === "system" ? 0 : 2].getTracks()[0];
   await settle(() => track.dispatchEvent(new Event("ended")));
-  expect(status()).toBe(lane === "system" ? "System sound stopped." : "Microphone stopped.");
+  expect(status()).toBe(lane === "system" ? "System sound output stopped." : "Microphone stopped.");
   expect(phase()).toBe("active");
   expect(button(lane === "system" ? "Share again" : "Mute mic")).toBeUndefined();
   expect(button(lane === "system" ? "Mute mic" : "Share again")).toBeTruthy();
-  expect(meters()).toEqual([lane === "system" ? "Microphone level 43%" : "System sound level 83%"]);
-  expect(box(lane === "system" ? "System sound" : "Microphone").checked).toBe(false);
+  expect(meters()).toEqual([lane === "system" ? "Microphone level 43%" : "System Sound Output level 83%"]);
+  expect(box(lane === "system" ? "System Sound Output" : "Microphone").checked).toBe(false);
   expect(track.stop).toHaveBeenCalled();
   // Zeros now feed the lane's own framer, and its frames continue the same sequence and clock.
   expect(silentSources).toHaveLength(1);
@@ -431,7 +431,7 @@ it.each(["system", "microphone"] as const)("K3: a recorded %s that stops mid-rec
   expect(posted("heartbeat").every(beat => beat.state === "capturing"
     && beat.lanes.system.state === "capturing" && beat.lanes.microphone.state === "capturing"
     && beat.lanes.system.failure_code === null && beat.lanes.microphone.failure_code === null)).toBe(true);
-  expect(status()).toBe(lane === "system" ? "System sound stopped." : "Microphone stopped.");
+  expect(status()).toBe(lane === "system" ? "System sound output stopped." : "Microphone stopped.");
 
   await click("Stop recording");
   expect(phase()).toBe("stopping");
@@ -449,7 +449,7 @@ it.each(["descriptor", "microphone"] as const)("pending %s shows Starting… wit
   expect(phase()).toBe("configuring");
   expect(button("Starting…")?.disabled).toBe(true);
   expect(button("Reset")).toBeTruthy();
-  expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([true, true]);
+  expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([true, true]);
   expect(sessionCreates()).toBe(0);
   await settle(() => gate.resolve(pending === "descriptor"
     ? descriptorResponse as unknown as Response : new FakeStream() as unknown as MediaStream));
@@ -498,7 +498,7 @@ it.each(["descriptor", "microphone"] as const)("an old %s rejection after Reset 
   await settle(() => gate.reject(new Error("old microphone denied")));
   expect(phase()).toBe("active");
   expect(status()).toBeUndefined();
-  expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
+  expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, true]);
 });
 it.each(["success", "cancel"] as const)("Reset while the picker is open handles a late %s", async outcome => {
   const chooser = deferred<MediaStream>();
@@ -524,7 +524,7 @@ it.each(["microphone", "system"] as const)("a %s that stops before the meeting e
   await settle(() => track.dispatchEvent(new Event("ended")));
   expect(phase()).toBe("idle");
   // K3: the stopped source by name; the raw browser_track_ended code never reaches the page.
-  expect(status()).toBe(lane === "microphone" ? "Microphone stopped." : "System sound stopped.");
+  expect(status()).toBe(lane === "microphone" ? "Microphone stopped." : "System sound output stopped.");
   expect(meters()).toEqual([]);
   expectReleased();
   // The meeting that was created after all is ended at the server, not left to its lease.

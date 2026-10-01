@@ -56,9 +56,9 @@ export const RECONNECTING_LINE = "Reconnecting — keep this tab open."; // K4
 export const CONNECTION_LOST_LINE = "Recording stopped: connection lost."; // K5
 // Round 5 (Q16): what one Start click could not record.
 export const MICROPHONE_UNAVAILABLE_LINE = "Microphone unavailable";
-export const SYSTEM_NOT_SHARED_LINE = "System sound not shared";
+export const SYSTEM_NOT_SHARED_LINE = "System sound output not shared";
 export const NO_AUDIO_SHARED_LINE = "No audio was shared — turn on “Also share audio” in Chrome’s picker";
-export const NO_SOURCE_TOOLTIP = "Tick System sound or Microphone."; // K6
+export const NO_SOURCE_TOOLTIP = "Tick System Sound Output or Microphone."; // K6
 
 function workletUrl(): string {
   const url = document.querySelector<HTMLMetaElement>(
@@ -256,7 +256,7 @@ export function ControlPanel() {
   };
 
   /**
-   * One click (round 5): the share picker if System sound is ticked, then the microphone if it is
+   * One click (round 5): the share picker if System Sound Output is ticked, then the microphone if it is
    * ticked, then the meeting. A source that is not recorded gets a silent lane, because the server
    * needs both lanes. Q16: (a) no microphone or permission denied -> system sound only; (b) picker
    * closed -> nothing starts, nothing said; (c) a surface without audio -> microphone only, or
@@ -604,7 +604,7 @@ export function ControlPanel() {
           <section className="control-section capture-sources">
             <div className="label">Sources</div>
             {(["system", "microphone"] as const).map(lane => {
-              const label = lane === "system" ? "System sound" : "Microphone";
+              const label = lane === "system" ? "System Sound Output" : "Microphone";
               return <div key={lane} className="source-row">
                 <label className="check-row">
                   <input type="checkbox" checked={ticked[lane]} disabled={!ready}
@@ -673,11 +673,11 @@ export function ControlPanel() {
 
 /** A recorded source that stopped, before the meeting existed or during it, as its keep-list line (K3). */
 function sourceStoppedLine(lane: CaptureLane): string {
-  return lane === "microphone" ? "Microphone stopped." : "System sound stopped.";
+  return lane === "microphone" ? "Microphone stopped." : "System sound output stopped.";
 }
 
 function laneFailedLine(lane: CaptureLane, error: unknown): string {
-  return `${lane === "microphone" ? "Microphone" : "System sound"} failed: ${errorMessage(error)}`;
+  return `${lane === "microphone" ? "Microphone" : "System sound output"} failed: ${errorMessage(error)}`;
 }
 
 /** Closing Chrome's chooser is a choice, not a failure. */
