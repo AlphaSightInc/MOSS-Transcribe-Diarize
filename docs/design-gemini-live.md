@@ -75,7 +75,18 @@ retry: on the real E1 run the preview witness (which also hears speaker echo on
 the microphone lane) fired 12 times on normal audio and re-inserted echo text,
 and a missed live window only affects the live view. A final chunk uses
 committed live rows as its witness, retries once, then carries live rows across
-any remaining missing interval, so the saved transcript never loses live speech.
+remaining witnessed gaps of at least 10 s. Rule H additionally keeps the timed words
+actually committed by rolling windows; a later window's straddling word replaces the
+earlier truncated copy. Stop-tail recovery and File/URL runs do not supply these words.
+
+After final identity labels (or the chunk stitcher), H finds consecutive live words in
+provider holes: at most 0.1 s covered per word, not fully covered, and at least 0.15 s
+uncovered across the run. Zero-length words count as 0.1 s. Equal adjacent edge words
+(including the same numeral written two ways) are removed. The existing 10 s fallback
+owns its intervals; H skips them. On the system lane restored words copy the nearer
+final neighbour's label, then pass the existing word gates. Clean-up words retain
+their text, times and labels. `witness_restored_words` counts inserted words without
+adding a provider request; it appears in the numeric operator diagnostics.
 
 The provider parser clamps a word end before its start or beyond the call audio to
 `min(start+1 s, audio end)` and drops a word starting past the audio tolerance. The
@@ -115,6 +126,27 @@ with **one restore candidate run alone**, after clean-up words were gated. Its w
 samples/text are judged against the lane audio by the same sustained/80%/weight-15 rule,
 independently of `local_speech_seen` and neighbouring clean-up words. Only then assign
 its speaker. An anchored lane never waives this evidence requirement.
+Hole discovery uses the ungated provider timeline: gate removal is not an omission.
+Each candidate passes voice activity, independent local-run evidence, and the existing
+microphone guards; only surviving local runs still weighing 15 are restored. The nearer
+kept clean-up neighbour supplies the label (earlier wins a tie); without one, the lane's
+local speaker does. Other restored runs never serve as clean-up neighbours.
+
+Measured H prototype: lost name tokens 115 → 4 across 100 pairs; doubled adjacent units
+0; 236/250 names retained in 25 system engine cells. BC composition preserves F2's
+206/291/310 live/Stop/saved units of 343; omitted five-word replies restored at 10/20 dB
+below the tab; zero invented/noise restores on 28 round-4 samples, anchored included.
+Sources: `prototypes/gemini-live/mic-speaker-echo/{f3,bc}/NOTES.md`.
+Product verification (R5B-C, W off): all 127 recorded engine/level cells reproduce
+the composition prototype's text/times; the 100-pair, reply and negative results
+above are unchanged. Speaker error remains .0907/.1217 on the two truth controls;
+added duplicates, row-ownership failures and counter mismatches are zero. Receipts:
+`~/Documents/Codex/2026-09-28/moss-gemini/evidence/P72/r5b-c/verdict.json`.
+Limits: cannot recover words live never committed or clean-up replaced in time;
+microphone replies below weight 15 remain withheld, even on anchored lanes. System
+live-only inventions/stutters can return; restored script stays as live supplied it.
+Physical echo cancellation, fresh provider behavior and the >900 s chunk plan remain
+unmeasured by the recorded prototype.
 
 The recorded prototype admitted 15/15 short English and 15/15 Mandarin saved units at
 −40 dB echo; quiet double-talk 20 dB below the tab retained 27/31 long-turn units.

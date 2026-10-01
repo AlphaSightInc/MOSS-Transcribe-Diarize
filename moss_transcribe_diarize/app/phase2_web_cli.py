@@ -331,9 +331,14 @@ def _build_gemini_live_runtime_factory(args: argparse.Namespace):
                 return tuple(GeminiWord(word.text, mapping[word.speaker],
                                         word.start_sample, word.end_sample)
                              for word in filtered)
+            def mic_witness_filter(cleanup, kept, witness, skip):
+                return mic_word_gate.restore_witnessed_words(
+                    lane_engine.lane_tape("microphone").read(), cleanup, kept, witness,
+                    system_terminal.last_words, system_pcm16=lane_engine.lane_tape("system").read(),
+                    skip=skip, local_speaker="local-0001")
             mic_terminal = TerminalTranscriber(
                 mic_diarizer, diarize=True, identity_policy=FinalWordPolicy(encoder),
-                word_gate=mic_gate, word_filter=mic_terminal_filter,
+                word_gate=mic_gate, word_filter=mic_terminal_filter, witness_filter=mic_witness_filter,
                 source_lane="microphone",
                 report_usage=mic_report, voiced_audio=mic_batch_detector)
             def preview_words(report):

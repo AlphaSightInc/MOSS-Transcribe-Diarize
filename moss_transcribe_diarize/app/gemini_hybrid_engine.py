@@ -13,6 +13,7 @@ from scipy.optimize import linear_sum_assignment
 
 from .gemini_live_runtime import GeminiBase, GeminiPreview, GeminiRelabel, GeminiRolling, GeminiSegment, GeminiTurnBridge, GeminiUpdate
 from .gemini_provider import GeminiWord, WindowDiarizer, TerminalTranscriber, ordered_segments, speaker_turns
+from .gemini_coverage import drop_restated
 from .live_span_bounds import LIVE_SAMPLE_RATE
 from .live_tape import CompleteMixedTape
 from .live_provider_bundle import LiveSpeakerJournalObservation
@@ -230,6 +231,7 @@ class GeminiHybridEngine:
         self._future: Future | None = None
         self._accepted = 0
         self._committed = 0
+        self._witness_words: list[GeminiWord] = []
         self._rolling_frontier = 0
         self._last_rolling_turn: GeminiSegment | None = None
         self._speakerless_rows: list[GeminiSegment] = []
@@ -457,6 +459,9 @@ class GeminiHybridEngine:
                 return
             old = self._rolling_frontier
             if frontier > old:
+                if gate_words:
+                    committed = [w for w in absolute if old < w.end_sample <= frontier]
+                    self._witness_words = drop_restated(self._witness_words, committed, old)
                 if frontier > self._committed:
                     self.publish(GeminiBase(frontier, ()))
                     self._committed = frontier
@@ -573,6 +578,9 @@ class GeminiHybridEngine:
         self._executor.shutdown(wait=True)
         if self._streaming_words:
             await self.word_source.finish()
+        setter = getattr(self.terminal, "set_witness_words", None)
+        if callable(setter):
+            setter(self._witness_words)
         rows = await asyncio.to_thread(self.terminal.transcribe, tape)
         self.terminal_coverage_gaps = tuple(
             (self.source_lane, start, end)

@@ -350,6 +350,7 @@ class _GeminiState:
     coverage_retries: int = 0
     coverage_preview_fallbacks: int = 0
     terminal_coverage_fallbacks: int = 0
+    witness_restored_words: int = 0
     degraded_path_activations: int = 0
     window_lag_samples: list[int] = field(default_factory=list)
     preview_lag_samples: list[int] = field(default_factory=list)
@@ -678,6 +679,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         coverage_retry: int = 0,
         coverage_preview_fallbacks: int = 0,
         terminal_coverage_fallbacks: int = 0,
+        witness_restored_words: int = 0,
     ) -> None:
         """Record one provider request attempt, with operational metadata only."""
 
@@ -687,7 +689,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
         if any(not isinstance(value, int) or value < 0
                for value in (clamped_words, dropped_words, repaired_words, skipped_window_ticks,
                              preview_stall_restarts, coverage_retry, coverage_preview_fallbacks,
-                             terminal_coverage_fallbacks,
+                             terminal_coverage_fallbacks, witness_restored_words,
                              mic_words_from_provider, mic_words_kept_by_local_voice_level,
                              mic_words_kept_unanchored_by_local_voice,
                              acoustic_gate_dropped_words, text_guard_dropped_words,
@@ -735,6 +737,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
             state.coverage_retries += coverage_retry
             state.coverage_preview_fallbacks += coverage_preview_fallbacks
             state.terminal_coverage_fallbacks += terminal_coverage_fallbacks
+            state.witness_restored_words += witness_restored_words
             state.audio_seconds_sent += audio_seconds_sent
             state.cost_usd += cost_usd
             state.metered_output_usd += metered_output_usd
@@ -765,6 +768,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals.setdefault("coverage_retries", 0)
                 totals.setdefault("coverage_preview_fallbacks", 0)
                 totals.setdefault("terminal_coverage_fallbacks", 0)
+                totals.setdefault("witness_restored_words", 0)
                 if count_call:
                     calls = totals["calls_by_kind"]
                     calls[lane_kind] = calls.get(lane_kind, 0) + 1
@@ -799,6 +803,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 totals["coverage_retries"] += coverage_retry
                 totals["coverage_preview_fallbacks"] += coverage_preview_fallbacks
                 totals["terminal_coverage_fallbacks"] += terminal_coverage_fallbacks
+                totals["witness_restored_words"] += witness_restored_words
 
     def engine_diagnostics(self, session_id: str) -> dict[str, object]:
         """Copy one meeting's content-free provider totals for QA and operator harnesses."""
@@ -841,6 +846,7 @@ class GeminiLiveRuntime(LiveServiceRuntime):
                 "coverage_retries": state.coverage_retries,
                 "coverage_preview_fallbacks": state.coverage_preview_fallbacks,
                 "terminal_coverage_fallbacks": state.terminal_coverage_fallbacks,
+                "witness_restored_words": state.witness_restored_words,
                 "degraded_path_activations": state.degraded_path_activations,
                 "window_lag_seconds": _lag_summary(state.window_lag_samples),
                 "preview_lag_seconds": _lag_summary(state.preview_lag_samples),
