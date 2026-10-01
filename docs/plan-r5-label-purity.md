@@ -266,3 +266,40 @@ That judgement is not evidence. The decisive test is Stage 3: unseen late-joiner
 before the call (wrongly named seconds must not rise in any case and must fall on the late-joiner interval; no two
 groups with different dominant speakers merged; no different-speaker veto lost). Needs the user's OK (≤ $0.30).
 Prototype branches are bundled at `evidence/P70/r5-prototype-branches.bundle` (local; not pushed).
+
+## 13. Stage 3 — rule W on unseen late-joiner audio (user D11 = O1, 2026-10-01; cap $0.30; gates fixed before any call)
+
+Candidate: W exactly as frozen at `ccafb41d` (`…-wt-r5-p3/prototypes/gemini-live/label-purity/w/run.py`). No rule,
+parameter or code change. Evaluator: pane 6.4 (only pane with the key). Shipped rule A is the comparison on the same
+provider output.
+
+**Fixtures** (public audio on disk only; built and truth-checked before the first call; listed in priority order):
+- Shape: a base meeting with ≥ 4 speakers fills the first 15-minute chunk; two voices that have not spoken before
+  start alternating turns `d` seconds before the 900 s boundary and continue ≥ 200 s into the next chunk
+  (total ≈ 1130–1230 s, two chunks, production 900 s / 30 s overlap).
+- F1: real conversation audio, `d` ≈ 50 s. F2: synthetic meeting from LibriSpeech voices and seeds not used in DEV or
+  HOLD (exact truth), `d` ≈ 50 s. F3: the better-truth source again with `d` ≈ 25 s.
+- The late-joiner audio must not be an interval used by any DEV or HOLD case; any reuse of base audio or of voices
+  is stated. **Truth must be complete** (who speaks when) over every scored range including `[900 − d, 900]`;
+  a fixture whose truth is not complete is not sent.
+- Spend: sequential calls; reserve before each physical attempt; stop when spent + next > $0.30; at most one retry in
+  total and only if the cap allows; otherwise that fixture is UNMEASURED.
+
+**Gates** (per fixture, W vs A on the same raw words):
+
+| Code | Gate | Pass rule |
+|---|---|---|
+| S-ex | the failure is exercised | Under A, by truth, some person is split because an alternation veto whose long turns are spoken by OTHER people blocks a ≥ .65 merge. A fixture without this is "not exercised". If no fixture is exercised: **UNMEASURED → no ship, stop** |
+| S-repair | W repairs it | On every exercised fixture the split person is one group under W and fixture DER is lower than under A |
+| S-attr | attributions are right | Every turn W re-attributes is, by truth, spoken by the dominant true speaker of its target label. One wrong attribution fails the gate |
+| S-veto | no protection lost | Pair-by-pair audit: zero different-speaker vetoes lost; the only vetoes moved are those of S-attr |
+| S-merge | no wrong merge of people | No two A groups with different dominant true speakers share a W group. Atom pairs are reported, not gated |
+| S-name | names do not get worse | Wrongly named seconds (all speech, complete truth) do not rise by > 0.5 % of speech on any fixture, and fall on `[900 − d, 900 + 30]` on every exercised fixture |
+| S-der | no harm | No fixture's DER worse by > .005 |
+| S-inert | does nothing elsewhere | On a not-exercised fixture W equals A word for word, or every difference is listed and passes the gates above |
+| S-cost | bounded | Added cold wall ≤ 30 s per fixture on the MacStudio; fingerprints counted |
+
+**Decision rule.** All gates pass with ≥ 1 exercised fixture → W goes into production (`gemini_long_final.py`, and
+`gemini_final_policy.py` if the same primitive applies there) with regression tests from the recorded patterns, full
+suites and a long-meeting re-check on the MacStudio pilot. Any failed gate → production unchanged, stop. Not exercised
+→ UNMEASURED, production unchanged, no further spend without the user.
