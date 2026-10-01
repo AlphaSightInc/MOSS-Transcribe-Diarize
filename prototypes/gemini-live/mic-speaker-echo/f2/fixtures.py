@@ -43,7 +43,8 @@ ZH_SHORT = [(5.0, "好的，没问题。"), (20.3, "好的，没问题。"), (35
 ZH_LONG = [(9.0, "我觉得这个方案可以，但是我们需要先把接口的延迟测一下。"), (33.9, "那我们下周五之前再开会讨论一下。")]
 TEXT = {(96.0, 97.1): "Can you elaborate on that?",
         (140.0, 146.0): "So there is some element that we have in the West of freedom of the individual so that a little bit of the",
-        (221.0, 223.6): "Well, let's stay on the big picture"}       # reference turn text up to the cut (approximate)
+        (221.0, 223.6): "Well, let's stay on the big picture",
+        (5.0, 33.0): ""}                              # scored by provider words kept, not against a reference text       # reference turn text up to the cut (approximate)
 # f2 cells on R5-D's tab (Mandarin 0.1-19.2 s, silent 19.2-21.5 s, English 21.5-35.3 s, silent after).
 # Double-talk first: every phrase except those at 20.0 s and 35.6 s is said while the tab is talking.
 VARIED_EN = [(3.0, "Samantha", "Yeah."), (6.5, "Samantha", "Okay, sounds good."), (10.5, "lex", (96.0, 97.1)),
@@ -57,6 +58,8 @@ MIXED = [(4.0, "lex", (140.0, 146.0)), (12.5, "lex", (96.0, 97.1)), (24.0, "Sama
          (29.0, "lex", (96.0, 97.1)), (35.5, "Samantha", "Yeah.")]
 # Long local turns said entirely while the tab is talking: 6 s under the Mandarin, 2.6 s under the English.
 DOUBLE_LONG = [(3.0, "lex", (140.0, 146.0)), (23.0, "lex", (221.0, 223.6))]
+# One 28 s local turn (Lex Fridman's spoken introduction, public) that fills the meeting while the tab talks.
+VERY_LONG = [(3.0, "lex", (5.0, 33.0))]
 
 
 def system() -> np.ndarray:
@@ -111,7 +114,7 @@ def cell(turns, *, echo_db: float | None, level_dbfs: float = -27.0, events_seed
 
 
 KINDS = {"short": SHORT, "long": LONG, "zhshort": ZH_SHORT, "zhlong": ZH_LONG, "listen": [],
-         "varied-en": VARIED_EN, "varied-zh": VARIED_ZH, "mixed": MIXED, "dlong": DOUBLE_LONG}
+         "varied-en": VARIED_EN, "varied-zh": VARIED_ZH, "mixed": MIXED, "dlong": DOUBLE_LONG, "vlong": VERY_LONG}
 
 
 def pcm(x: np.ndarray) -> np.ndarray:

@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-STEPS = [["fixtures.py"], ["baseline.py"], ["variant.py", "final", "{}"], ["sweep.py"], ["scan.py"], ["g5_preview.py"],
+STEPS = [["fixtures.py"], ["baseline.py"], ["variant.py", "final", "{}"], ["report.py"], ["vlong.py"], ["sweep.py"], ["scan.py"], ["g5_preview.py"],
          ["c3_voice.py"]]
 for step in STEPS:
     print(f"\n===== {' '.join(step)} =====", flush=True)
