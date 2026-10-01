@@ -116,9 +116,13 @@
   --warn: #b5791e;
   --danger: #9f3f33;
 
-  --f-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
-  --f-display: "Fraunces", Georgia, serif;
-  --f-serif: "Source Serif 4", Georgia, serif;
+  /* Latin faces first; Chinese falls through to the device's own faces (no CJK web font is shipped):
+     sans for the interface, Song-style serif for headings and the transcript. */
+  --f-cjk-sans: "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Noto Sans SC", "Microsoft YaHei";
+  --f-cjk-serif: "Songti SC", "Noto Serif CJK SC", "Noto Serif SC", "Source Han Serif SC", "SimSun";
+  --f-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", var(--f-cjk-sans), sans-serif;
+  --f-display: "Fraunces", Georgia, var(--f-cjk-serif), serif;
+  --f-serif: "Source Serif 4", Georgia, var(--f-cjk-serif), serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   --r-sm: 8px;
