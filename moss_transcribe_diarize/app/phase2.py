@@ -2434,6 +2434,18 @@ def create_phase2_app(
             return response
         return set_session_cookie(response, session_id)
 
+    @app.post("/api/workspace/new")
+    async def new_workspace(request: Request):
+        """The person's explicit choice on the "Workspace unavailable" page: replace a credential
+        this store does not know. A browser that already has a workspace keeps it."""
+        store = request.app.state.phase2_store
+        if open_workspace or await store.account_for_session(
+                request.cookies.get(SESSION_COOKIE)) is not None:
+            raise HTTPException(409, "This browser already has a workspace.")
+        account, session_id = await store.bootstrap_browser(None)
+        return set_session_cookie(JSONResponse(
+            {"workspace_id": account.account_id, "display_name": account.display_name}), session_id)
+
     @app.get("/api/auth/session")
     async def auth_session(request: Request):
         account = await require_account(request)
@@ -2856,11 +2868,28 @@ PRODUCT_NAME = "aiSight - LiveTranscribe"
 
 
 def _bootstrap_html(*, unavailable: bool) -> str:
+    # A cookie this store does not know (e.g. from an earlier server) never opens or creates a
+    # workspace by itself (ADR-0006); the person may start a new one explicitly.
     message = (
-        "Workspace unavailable — contact the operator."
+        "Workspace unavailable on this server."
         if unavailable else "Loading…"
     )
-    script = "" if unavailable else """
+    action = (
+        '<p><button type="button" data-new-workspace>Start a new workspace</button></p>'
+        if unavailable else ""
+    )
+    script = """
+<script>
+const status = document.querySelector('[data-workspace-status]');
+document.querySelector('[data-new-workspace]').addEventListener('click', async event => {
+  event.currentTarget.disabled = true;
+  try {
+    const created = await fetch('/api/workspace/new', {method: 'POST'});
+    if (!created.ok) throw new Error('Could not start a workspace — reload and try again.');
+    location.replace('/');
+  } catch (error) { status.textContent = error.message; event.currentTarget.disabled = false; }
+});
+</script>""" if unavailable else """
 <script>
 const status = document.querySelector('[data-workspace-status]');
 (async () => {
@@ -2881,7 +2910,7 @@ const status = document.querySelector('[data-workspace-status]');
 </script>"""
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{PRODUCT_NAME}</title>{_ICON_LINK}</head>
-<body><main data-auth-state="bootstrap"><h1>{PRODUCT_NAME}</h1><p data-workspace-status>{message}</p>
+<body><main data-auth-state="bootstrap"><h1>{PRODUCT_NAME}</h1><p data-workspace-status>{message}</p>{action}
 <noscript>Enable JavaScript.</noscript></main>{script}</body></html>"""
 
 

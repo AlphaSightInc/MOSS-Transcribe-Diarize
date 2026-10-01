@@ -81,7 +81,18 @@ def test_browser_http_bootstrap_is_explicit_private_and_same_origin(tmp_path: Pa
         client.cookies.clear()
         client.cookies.set(SESSION_COOKIE, "invalid")
         assert client.post("/api/workspace/bootstrap").status_code == 401
-        assert "Workspace unavailable" in client.get("/").text
+        unavailable = client.get("/").text
+        assert "Workspace unavailable" in unavailable and "data-new-workspace" in unavailable
+        # The explicit action replaces the unknown credential with a new, empty workspace …
+        fresh = client.post("/api/workspace/new")
+        assert fresh.status_code == 200 and fresh.json()["workspace_id"] != owner_id
+        replaced = fresh.cookies[SESSION_COOKIE]
+        assert replaced not in ("invalid", credential)
+        client.cookies.clear()  # a browser replaces the cookie; the test client would keep both
+        client.cookies.set(SESSION_COOKIE, replaced)
+        assert "This browser" in client.get("/").text
+        # … and never abandons a workspace the browser still holds.
+        assert client.post("/api/workspace/new").status_code == 409
 
 
 def test_page_shell_uses_product_name_and_keeps_only_actionable_copy(tmp_path: Path):
