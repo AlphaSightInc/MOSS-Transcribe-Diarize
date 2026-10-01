@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultAppSettings, saveAppSettings, type AppSettings } from "./settings";
 import { SUMMARY_CHANGED } from "./finalSummary";
-import { createRollingLoop, requestFinalSummary, requestLiveSummary, SummaryRequestError, watchMeetingSummary } from "./summaryRequests";
+import { createRollingLoop, requestFinalSummary, requestLiveSummary, summaryPredatesRefinement, SummaryRequestError, watchMeetingSummary } from "./summaryRequests";
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -81,6 +81,19 @@ describe("watchMeetingSummary", () => {
     const summary = fetcher.mock.calls.find(([url]) => String(url).includes("/summary"));
     expect(summary).toBeDefined();
     expect(JSON.parse(summary![1]!.body as string).provider.api_key).toBeNull();
+  });
+});
+
+describe("summaryPredatesRefinement", () => {
+  const artifact = (source_version: number) => ({ state: "current", source_version }) as never;
+  const meeting = (extra: Record<string, unknown>) => ({ refinement_state: "done", transcript_version: 7, ...extra }) as never;
+  it("compares with the clean-up version, so later renames do not make the summary stale", () => {
+    expect(summaryPredatesRefinement(meeting({ refined_version: 5 }), artifact(5))).toBe(false);
+    expect(summaryPredatesRefinement(meeting({ refined_version: 5 }), artifact(4))).toBe(true);
+  });
+  it("keeps the earlier rule for meetings cleaned up before the clean-up version was recorded", () => {
+    expect(summaryPredatesRefinement(meeting({}), artifact(6))).toBe(true);
+    expect(summaryPredatesRefinement(meeting({}), artifact(7))).toBe(false);
   });
 });
 

@@ -77,9 +77,11 @@ export function externalSettings(settings: AppSettings): SummarySettings {
 /** D1 (issue #15): only the post-Stop clean-up outdates a saved summary. A speaker rename
  *  or passage correction bumps the version too, but Refresh is the user's choice there. */
 export function summaryPredatesRefinement(meeting: Meeting, artifact: SummaryArtifact | null): boolean {
-  return meeting.refinement_state === "done" && meeting.refined_version !== undefined &&
-    artifact != null && ["current", "failed", "cancelled"].includes(artifact.state) &&
-    artifact.source_version < meeting.refined_version;
+  if (meeting.refinement_state !== "done" || artifact == null ||
+      !["current", "failed", "cancelled"].includes(artifact.state)) return false;
+  // Meetings cleaned up before round 4 carry no clean-up version; keep the earlier rule for them.
+  const refined = meeting.refined_version ?? meeting.transcript_version;
+  return artifact.source_version < refined;
 }
 
 /** Settings are read when called, so a key or vendor entered after Start applies. */

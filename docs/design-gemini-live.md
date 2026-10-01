@@ -151,6 +151,8 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   time and outside the identity lock: it costs ~3.3–4 s per minute of the speaker's speech on an M3 Ultra (99% WeSpeaker,
   ≤ 1% ffmpeg decode), which inside the request made a rename take 40 s (13.5 min meeting) to 278 s (150 min) and stalled
   every Live publication meanwhile (issue #15, `prototypes/rename-latency/NOTES.md`).
+  Known limit (round-4 review): the pending fingerprint lives in memory only, like the Live "saved when recording
+  finishes" path — a restart or fingerprint error in that window leaves the name without a voiceprint; renaming retries.
 - **Server summaries** (ADR-0011/0013 amendments): `POST /api/meetings/{id}/summary/live` (ephemeral, owner-bound live transcript)
   and `/summary/server` (completed transcript at `source_version`, stored as `final_summary`), default `gemini-3.5-flash-lite`,
   content-free `usage` in both responses. A meeting records the version its post-Stop clean-up produced (`refined_version`);
