@@ -94,6 +94,7 @@ vi.mock("../capture/captureClient", async importOriginal => ({
 }));
 
 import { ControlPanel, LIVE_MEETING_OBSERVE_EVENT } from "./ControlPanel";
+import { App } from "../App";
 
 describe("ControlPanel reattach", () => {
   let root: HTMLDivElement;
@@ -434,6 +435,34 @@ describe("ControlPanel reattach", () => {
     expect(controlPanelCollapsed.value).toBe(false);
     controlPanelCollapsed.value = false;
     sessionStatusLine.value = "";
+  });
+
+  // r4 F3: the top pill follows the Start click, not the first poll that reports the meeting.
+  it.each([
+    { outcome: "created", pill: "Recording 0:00" },
+    { outcome: "refused", pill: "Standby" }
+  ])("reads Starting… from the Start click, then $pill when the meeting is $outcome", async ({ outcome, pill }) => {
+    let settle!: () => void;
+    mocks.createSession.mockImplementationOnce(() => new Promise((resolve, reject) => {
+      settle = () => outcome === "created" ? resolve({ id: "account-live-meeting" })
+        : reject(new Error("Two meetings are already recording — stop one first."));
+    }));
+    await act(async () => { render(<App />, root); });
+    const button = (label: string) => [...root.querySelectorAll("button")].find(b => b.textContent?.trim() === label);
+    const topPill = () => root.querySelector(".top-status")?.textContent;
+    await act(async () => button("Enable microphone")?.click());
+    await vi.waitFor(() => expect(button("Share audio")).toBeTruthy());
+    await act(async () => button("Share audio")?.click());
+    await vi.waitFor(() => expect(button("Start recording")?.disabled).toBe(false));
+    expect(topPill()).toBe("Standby");
+    await act(async () => button("Start recording")?.click());
+    expect(topPill()).toBe("Starting…");
+    await act(async () => settle());
+    expect(topPill()).toBe(pill);
+    if (outcome === "created") {
+      expect(button("Stop recording")).toBeTruthy();
+      expect(sessionStatus.value).toBe("active");
+    }
   });
 
   it("keeps polling while an accepted Stop is still draining", async () => {

@@ -99,6 +99,19 @@ def test_page_shell_uses_product_name_and_keeps_only_actionable_copy(tmp_path: P
     assert "<h1>aiSight - LiveTranscribe</h1>" in loading
 
 
+def test_page_shells_name_the_existing_logo_as_their_icon(tmp_path: Path):
+    # r4 UI stress: without a declared icon the browser requested /favicon.ico and got a 404.
+    app = create_phase2_app(database_path=tmp_path / "browser.sqlite3")
+    icon = '<link rel="icon" href="/static/logo-mark.svg" type="image/svg+xml">'
+    with TestClient(app, base_url="https://moss.test") as client:
+        loading = client.get("/").text
+        assert client.post("/api/workspace/bootstrap").status_code == 200
+        workspace = client.get("/").text
+        served = client.get("/static/logo-mark.svg")
+    assert icon in loading and icon in workspace
+    assert served.status_code == 200 and served.headers["content-type"].startswith("image/svg+xml")
+
+
 def test_open_workspace_binds_independent_clients_to_shared_history(tmp_path: Path):
     database = tmp_path / "open.sqlite3"
     first_app = create_phase2_app(database_path=database, open_workspace=True)

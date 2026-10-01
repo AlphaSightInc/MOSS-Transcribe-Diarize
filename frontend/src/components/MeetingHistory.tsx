@@ -315,7 +315,7 @@ export function MeetingHistory() {
                             {[formatMeetingTimestamp(meeting.created_at_ms), modeLabel(meeting.mode),
                               ...(meeting.status === "failed" || meeting.status === "interrupted" ? [statusLabel(meeting.status)] : [])].join(" · ")}
                           </span>
-                          <span className="history-card-subtitle">{meetingPreview(meeting)}</span>
+                          {meetingPreview(meeting) ? <span className="history-card-subtitle">{meetingPreview(meeting)}</span> : null}
                         </span>
                         {formatMeetingDuration(meeting) ? <span className="history-duration-chip">{formatMeetingDuration(meeting)}</span> : null}
                       </span>
@@ -458,7 +458,8 @@ function sessionLifecycle(status: MeetingStatus): SessionLifecycle {
 
 function meetingPreview(meeting: Meeting): string {
   const text = joinTexts(meeting.transcript?.segments.map((segment) => segment.text) ?? []);
-  return text || (meeting.status === "active" ? "Waiting for transcript…" : "No transcript");
+  // Q6: a meeting still recording shows its words once they exist, and nothing before.
+  return text || (meeting.status === "active" ? "" : "No transcript");
 }
 
 function modeLabel(mode: Meeting["mode"]): string {

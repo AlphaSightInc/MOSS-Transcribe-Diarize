@@ -31,6 +31,8 @@ export const sessionStartedAt = signal<{ sessionId: string; ms: number } | null>
 // The meeting whose Stop was requested: this tab's click, or the server's stop_requested event for
 // observers. The server keeps a draining meeting "active", so lifecycle alone cannot end the pill's clock.
 export const sessionStopRequested = signal<string | null>(null);
+// Start was clicked and its meeting does not exist yet; the top pill reads "Starting…".
+export const sessionStarting = signal(false);
 export const sessionNeedsReview = signal(false);
 export const liveLabelPolicy = signal<"current" | "La">("current");
 
@@ -77,6 +79,7 @@ export function resetSessionState(): void {
   sessionError.value = null;
   sessionStatusLine.value = null;
   sessionNeedsReview.value = false;
+  sessionStarting.value = false;
   liveLabelPolicy.value = "current";
   clearSessionDisplay();
 }

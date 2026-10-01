@@ -45,6 +45,10 @@ def _asset_content_version(path: Path) -> str:
     return version
 
 
+# The bundled logo is the tab icon; without one the browser asks for /favicon.ico (404).
+_ICON_LINK = '<link rel="icon" href="/static/logo-mark.svg" type="image/svg+xml">'
+
+
 def _frontend_asset_url(asset_path: str) -> str:
     return f"/static/{asset_path}?v={_asset_content_version(FRONTEND_ASSET_DIR / asset_path)}"
 
@@ -2855,7 +2859,7 @@ const status = document.querySelector('[data-workspace-status]');
 })().catch(error => { status.textContent = error.message; });
 </script>"""
     return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{PRODUCT_NAME}</title></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{PRODUCT_NAME}</title>{_ICON_LINK}</head>
 <body><main data-auth-state="bootstrap"><h1>{PRODUCT_NAME}</h1><p data-workspace-status>{message}</p>
 <noscript>Enable JavaScript.</noscript></main>{script}</body></html>"""
 
@@ -2895,7 +2899,7 @@ def _workspace_html(
     # The account name, h1 and section headings are screen-reader only (styles/index.css). The jump
     # links show below desktop width; Voiceprints has no link because it is a tab inside History.
     return f"""<!doctype html>
-<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{PRODUCT_NAME}</title>{live_head}</head>
+<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{PRODUCT_NAME}</title>{_ICON_LINK}{live_head}</head>
 <body class=\"phase2-workspace\"><main data-auth-state=\"signed-in\"><header><span data-workspace-name>{html.escape(account.display_name)}</span></header>
 <nav class="workspace-nav" aria-label="Workspace">
 {('<a href="#workspace-file">Files &amp; URLs</a>' if not live_enabled else '')}
