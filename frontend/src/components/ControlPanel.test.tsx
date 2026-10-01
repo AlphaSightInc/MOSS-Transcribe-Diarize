@@ -200,6 +200,39 @@ describe("ControlPanel reattach", () => {
     expect(content).not.toContain("summary is being updated");
   });
 
+  it("keeps the summary in a Markdown export after a rename, under the speaker's new name (round 5)", async () => {
+    // A rename raises the transcript version (3) past the summary's (2) without outdating it (D1, #15).
+    const meeting = { id: "export", mode: "live" as const, title: "Meeting", title_source: "automatic" as const,
+      status: "completed" as const, created_at_ms: Date.now(), transcript_version: 3,
+      refinement_state: "done" as const, refined_version: 2, transcript: { segments: [] }, audio: null };
+    const artifact = { state: "current", attempt_id: "saved", source_version: 2, artifact_version: 1, error_code: null,
+      speaker_names: { "speaker-0001": "Speaker 1", "speaker-0010": "Speaker 10" },
+      document: { summary: "Speaker 1 asked Speaker 10 for the plan.", topics: [], details: [],
+        speaker_background: ["Speaker 1: host"], data_references: [] } };
+    const fetcher = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ summary: artifact }) }));
+    vi.stubGlobal("fetch", fetcher);
+    act(() => {
+      sessionId.value = meeting.id;
+      sessionStatus.value = "closed";
+      selectedSummaryMeeting.value = meeting;
+      replaceTranscript([
+        { start: 0, end: 1, text: "The plan?", speaker: "speaker-0001", speaker_entity_id: "speaker-0001",
+          display_name: "Alice", state: "final" },
+        { start: 1, end: 2, text: "Here.", speaker: "speaker-0010", speaker_entity_id: "speaker-0010",
+          display_name: "Speaker 10", state: "final" }]);
+      render(<ControlPanel />, root);
+    });
+    await act(async () => root.querySelector<HTMLButtonElement>(".controls-export button")!.click());
+    await vi.waitFor(() => expect(mocks.exportDownload).toHaveBeenCalledOnce());
+    const content = mocks.exportDownload.mock.calls[0][0].content as string;
+    expect(content).toContain("# Summary\n\nAlice asked Speaker 10 for the plan.");
+    expect(content).toContain("- Alice: host");
+    expect(content).toContain("## [00:00:00] Alice\n\nThe plan?");
+    expect(content).not.toContain("Speaker 1 ");
+    // Reading the saved summary is the only request; nothing asks the model.
+    expect(fetcher.mock.calls.every(([url, init]) => url === "/api/meetings/export/summary" && init === undefined)).toBe(true);
+  });
+
   it("exports microphone-lane speakers with the I-4 names", async () => {
     act(() => {
       sessionId.value = "local-names";
@@ -285,7 +318,7 @@ describe("ControlPanel reattach", () => {
       expect(root.querySelector('[aria-label="Listening with"]')).toBeNull();
       expect(button("Mute mic")).toBeUndefined();
       expect(meters()).toEqual([]);
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, true]);
       expect(button("Start recording")!.disabled).toBe(false);
       expect(button("Start recording")!.hasAttribute("title")).toBe(false);
 
@@ -300,9 +333,9 @@ describe("ControlPanel reattach", () => {
       expect(status()).toBeNull();
 
       // Locked while recording; a level for each recorded source; Mute beside Share again.
-      expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([true, true]);
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
-      expect(meters()).toEqual(["System sound level 90%", "Microphone level 90%"]);
+      expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([true, true]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, true]);
+      expect(meters()).toEqual(["System Sound Output level 90%", "Microphone level 90%"]);
       expect(button("Mute mic")?.parentElement?.classList.contains("btn-row")).toBe(true);
       await act(async () => button("Share again")!.click());
       expect(mocks.replaceLane).toHaveBeenCalledWith("system", expect.anything(), expect.any(Array));
@@ -319,14 +352,14 @@ describe("ControlPanel reattach", () => {
       expect(button("Mute mic")).toBeUndefined();
       expect(button("Unmute mic")).toBeUndefined();
       expect(button("Share again")).toBeTruthy();
-      expect(meters()).toEqual(["System sound level 90%"]);
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, false]);
+      expect(meters()).toEqual(["System Sound Output level 90%"]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, false]);
       expect(status()).toBeNull();
     });
 
-    it("records the microphone only when System sound is unticked: no share picker, a silent lane", async () => {
+    it("records the microphone only when System Sound Output is unticked: no share picker, a silent lane", async () => {
       await act(async () => render(<ControlPanel />, root));
-      await act(async () => box("System sound").click());
+      await act(async () => box("System Sound Output").click());
       await startRecording();
       expect(mocks.requestDisplayMedia).not.toHaveBeenCalled();
       expect(mocks.attachDisplayMedia).not.toHaveBeenCalled();
@@ -345,12 +378,12 @@ describe("ControlPanel reattach", () => {
       expect(mocks.attachSilentLane.mock.calls).toEqual([["microphone"]]);
       expect(mocks.createSession).toHaveBeenCalledOnce();
       expect(status()).toBe("Microphone unavailable");
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, false]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, false]);
       expect(button("Mute mic")).toBeUndefined();
-      expect(meters()).toEqual(["System sound level 90%"]);
+      expect(meters()).toEqual(["System Sound Output level 90%"]);
       // A line that asks for action outranks the note, which returns once it clears.
-      act(() => { sessionStatusLine.value = "System sound too loud — lower it."; });
-      expect(status()).toBe("System sound too loud — lower it.");
+      act(() => { sessionStatusLine.value = "System sound output too loud — lower it."; });
+      expect(status()).toBe("System sound output too loud — lower it.");
       act(() => { sessionStatusLine.value = ""; });
       expect(status()).toBe("Microphone unavailable");
       // The box stays unticked for the next Start, in this browser.
@@ -371,7 +404,7 @@ describe("ControlPanel reattach", () => {
       expect(mocks.attachSilentLane).not.toHaveBeenCalled();
       expect(mocks.createSession).not.toHaveBeenCalled();
       expect(mocks.captureStop).toHaveBeenCalledExactlyOnceWith(0); // ends a created meeting, else just closes
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, true]);
       // The meeting that was on screen is still there: nothing was reset.
       expect(sessionId.value).toBe("meeting-on-screen");
     });
@@ -382,16 +415,16 @@ describe("ControlPanel reattach", () => {
       await startRecording();
       expect(mocks.startMicrophone).toHaveBeenCalledOnce();
       expect(mocks.attachSilentLane.mock.calls).toEqual([["system"]]);
-      expect(status()).toBe("System sound not shared");
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([false, true]);
+      expect(status()).toBe("System sound output not shared");
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([false, true]);
       expect(button("Share again")).toBeUndefined();
       expect(button("Mute mic")).toBeTruthy();
       expect(meters()).toEqual(["Microphone level 90%"]);
       // The choice itself is untouched: the next Start asks for system sound again.
       await act(async () => { sessionStatus.value = "closed"; sessionError.value = null;
         mocks.pollerOptions?.onTerminal?.("Audio capture stopped."); });
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
-      expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([false, false]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, true]);
+      expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([false, false]);
       expect(storage.getItem(storageKeys.captureSources)).toBeNull();
     });
 
@@ -409,32 +442,32 @@ describe("ControlPanel reattach", () => {
       expect(mocks.attachSilentLane).not.toHaveBeenCalled();
       expect(mocks.captureStop).toHaveBeenCalledExactlyOnceWith(0); // ends a created meeting, else just closes
       expect(button("Start recording")!.disabled).toBe(false);
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, microphone === "unavailable"]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, microphone === "unavailable"]);
     });
 
     it("starts nothing when the microphone is the only source and is unavailable", async () => {
       mocks.startMicrophone.mockReturnValue(null);
       await act(async () => render(<ControlPanel />, root));
-      await act(async () => box("System sound").click());
+      await act(async () => box("System Sound Output").click());
       await clickStart();
       expect(phase()).toBe("idle");
       expect(status()).toBe("Microphone unavailable");
       expect(mocks.createSession).not.toHaveBeenCalled();
       expect(mocks.captureStop).toHaveBeenCalledExactlyOnceWith(0); // ends a created meeting, else just closes
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([false, false]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([false, false]);
       expect(button("Start recording")!.disabled).toBe(true);
     });
 
     it("disables Start with a tooltip only while both boxes are unticked", async () => {
       await act(async () => render(<ControlPanel />, root));
-      await act(async () => box("System sound").click());
+      await act(async () => box("System Sound Output").click());
       expect(button("Start recording")!.disabled).toBe(false);
       await act(async () => box("Microphone").click());
       expect(button("Start recording")!.disabled).toBe(true);
-      expect(button("Start recording")!.title).toBe("Tick System sound or Microphone.");
+      expect(button("Start recording")!.title).toBe("Tick System Sound Output or Microphone.");
       await act(async () => button("Start recording")!.click());
       expect(mocks.captureOptions).toBeNull();
-      await act(async () => box("System sound").click());
+      await act(async () => box("System Sound Output").click());
       expect(button("Start recording")!.disabled).toBe(false);
       expect(button("Start recording")!.title).toBe("");
     });
@@ -445,15 +478,15 @@ describe("ControlPanel reattach", () => {
       expect(JSON.parse(storage.getItem(storageKeys.captureSources)!)).toEqual({ system: true, microphone: false });
       act(() => render(null, root));
       await act(async () => render(<ControlPanel />, root));
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, false]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, false]);
 
       act(() => render(null, root));
       const blocked = () => { throw new DOMException("blocked", "SecurityError"); };
       vi.stubGlobal("localStorage", { getItem: blocked, setItem: blocked, removeItem: blocked });
       await act(async () => render(<ControlPanel />, root));
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
-      await act(async () => box("System sound").click());
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([false, true]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, true]);
+      await act(async () => box("System Sound Output").click());
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([false, true]);
     });
 
     it("returns to ready with the refusal when the meeting cannot be created, releasing the sources", async () => {
@@ -478,7 +511,7 @@ describe("ControlPanel reattach", () => {
       await act(async () => button("Start recording")!.click());
       expect(phase()).toBe("configuring");
       expect(button("Starting…")?.disabled).toBe(true);
-      expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([true, true]);
+      expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([true, true]);
       // Reset exists only here, and only cancels the pending Start: the meeting on screen stays.
       await act(async () => button("Reset")!.click());
       expect(phase()).toBe("idle");
@@ -508,7 +541,7 @@ describe("ControlPanel reattach", () => {
       expect(phase()).toBe("terminal");
       expect(button("Reset")).toBeUndefined();
       expect(button("Start recording")?.disabled).toBe(false);
-      expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([false, false]);
+      expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([false, false]);
       expect(sessionId.value).toBe("account-live-meeting");
 
       // A second Start whose picker is closed changes nothing: the finished meeting stays on screen.
@@ -574,12 +607,12 @@ describe("ControlPanel reattach", () => {
       await act(async () => render(<ControlPanel />, root));
       await startRecording();
       act(() => mocks.captureOptions!.onSourceStopped!("system"));
-      expect(status()).toBe("System sound stopped.");
+      expect(status()).toBe("System sound output stopped.");
       expect(phase()).toBe("active");
       expect(button("Share again")).toBeUndefined();
       expect(button("Mute mic")).toBeTruthy();
       expect(meters()).toEqual(["Microphone level 90%"]);
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([false, true]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([false, true]);
       // A late level from the stopped lane is not shown.
       act(() => mocks.captureOptions!.onMeter!("system", .5));
       expect(meters()).toEqual(["Microphone level 90%"]);
@@ -593,7 +626,7 @@ describe("ControlPanel reattach", () => {
         mocks.pollerOptions?.onTerminal?.("Audio capture stopped."); });
       expect(phase()).toBe("terminal");
       expect(status()).toBeNull();
-      expect([box("System sound").checked, box("Microphone").checked]).toEqual([true, true]);
+      expect([box("System Sound Output").checked, box("Microphone").checked]).toEqual([true, true]);
     });
 
     it("microphone: says so and drops Mute and its level; with both stopped the recording goes on until Stop", async () => {
@@ -605,15 +638,15 @@ describe("ControlPanel reattach", () => {
       expect(button("Mute mic")).toBeUndefined();
       expect(button("Unmute mic")).toBeUndefined();
       expect(button("Share again")).toBeTruthy();
-      expect(meters()).toEqual(["System sound level 90%"]);
+      expect(meters()).toEqual(["System Sound Output level 90%"]);
       // A line that asks for action outranks it, then it returns.
-      act(() => { sessionStatusLine.value = "System sound too loud — lower it."; });
-      expect(status()).toBe("System sound too loud — lower it.");
+      act(() => { sessionStatusLine.value = "System sound output too loud — lower it."; });
+      expect(status()).toBe("System sound output too loud — lower it.");
       act(() => { sessionStatusLine.value = ""; });
       expect(status()).toBe("Microphone stopped.");
 
       act(() => mocks.captureOptions!.onSourceStopped!("system"));
-      expect(status()).toBe("System sound stopped.");
+      expect(status()).toBe("System sound output stopped.");
       expect(meters()).toEqual([]);
       expect(button("Share again")).toBeUndefined();
       expect(phase()).toBe("active");
@@ -689,7 +722,7 @@ describe("ControlPanel reattach", () => {
     expect(root.querySelector('[data-capture-phase="viewing"]')).not.toBeNull();
     expect(root.querySelector('[data-observer-mode="read-only"]')).not.toBeNull();
     // Read-only: the source boxes are locked and there is nothing to start.
-    expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([true, true]);
+    expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([true, true]);
     expect(root.textContent).not.toContain("read-only");
     expect(button("Start recording")).toBeUndefined();
     expect(button("Mute mic")).toBeUndefined();
@@ -828,7 +861,7 @@ describe("ControlPanel reattach", () => {
     expect(button("Stopping…")?.disabled).toBe(true);
     expect(status()).toBeNull();
     // Still locked on the sources this recording took.
-    expect([box("System sound").disabled, box("Microphone").disabled]).toEqual([true, true]);
+    expect([box("System Sound Output").disabled, box("Microphone").disabled]).toEqual([true, true]);
     // The poller publishes the clean close before calling back; a normal Stop says nothing.
     await act(async () => { sessionStatus.value = "closed"; sessionError.value = null;
       mocks.pollerOptions?.onTerminal?.("Audio capture stopped."); });

@@ -4,7 +4,8 @@ import { summaryApi, SUMMARY_CHANGED, type SummaryArtifact, type SummaryDocument
 import { createRollingLoop, finalizeMeetingSummary, requestLiveSummary, SummaryRequestError,
   summaryFailureReason, summaryPredatesRefinement, type LiveSummaryResponse } from "../lib/summaryRequests";
 import { loadAppSettings, SETTINGS_CHANGED, type AppSettings } from "../lib/settings";
-import { sessionId, sessionStatus, sessionStopRequested } from "../state/session";
+import { renameSummarySpeakers, transcriptSpeakerNames } from "../lib/summarySpeakers";
+import { sessionId, sessionStatus, sessionStopRequested, transcript } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
 type Outcome = "ok" | "not_ready" | "failed";
@@ -122,6 +123,8 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
 
   const elapsed = rolling ? Math.max(0, Math.floor((now - rolling.generated_at_ms) / 1000)) : 0;
   const finalDocument = artifact?.state === "current" ? artifact.document : null;
+  // A rename shows at once and asks the model nothing: the summary is read under today's names.
+  const names = transcriptSpeakerNames(transcript.value);
   const failed = error !== null || (!active && artifact?.state === "failed");
   const reason = error ?? summaryFailureReason(artifact?.error_code);
   const unavailable = settings.summary.vendor === "off" ? "Summary is off in Settings"
@@ -138,8 +141,9 @@ export function SummaryPane({ hidden }: { hidden: boolean }) {
       {failed && <p className="summary-notice" role="alert">Summary failed{reason ? ` — ${reason}` : ""}</p>}
       {/* The rolling pane shows the whole document, like the final one: its Theme line alone held about
           half of the points the document made (prototypes/gemini-live/live-summary/NOTES.md). */}
-      {active ? rolling && <SummaryDocumentView document={rolling.summary} />
-        : finalDocument && <SummaryDocumentView document={finalDocument} final />}
+      {active ? rolling && <SummaryDocumentView document={renameSummarySpeakers(rolling.summary, rolling.speaker_names, names)} />
+        : finalDocument && <SummaryDocumentView final
+            document={renameSummarySpeakers(finalDocument, artifact?.speaker_names, names)} />}
     </>}
   </section>;
 }
