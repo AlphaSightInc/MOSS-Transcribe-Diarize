@@ -287,6 +287,19 @@ dimension are required; Gemini never assigns cross-meeting names by itself.
   reported examples, so nothing was added; the committed text replaces the preview within seconds.
 - **Unmeasured.** How Gemini splits Japanese and Korean into words.
 
+## Round 4: the conversation veto and reused labels (P69 F3, 2026-10-01) — measured, unchanged
+
+In a 65.5-minute meeting the saved transcript named one host twice (long60-part DER .165; .052 for the same
+audio without the extra 22 minutes). The provider had reused the host's two chunk-local labels for two new
+voices at the end of one 900 s chunk; their single A–B–A alternation vetoed six correct merges (cosine .74–.81).
+Relaxing the veto to two alternations repairs that meeting (.049) but lets two different speakers merge on the
+recorded synthetic K4 meeting (DER .221 → .330) and on an overlapped-speech replay (3 → 2 speakers), so the
+shipped rule stays. A voice-checked veto (an alternation counts only if its turns match their labels) passed
+every replay and caused no wrong merge on a fresh raw-label pass over the 8 synthetic meetings, but its check
+drops the veto for 7 of 38 different-speaker pairs there — every time a label mixes two voices — so it is not
+shipped either. The open primitive is label purity, not the alternation rule. Numbers and gates:
+`prototypes/gemini-live/aba-veto/NOTES.md`.
+
 ## Measured envelope and custody
 
 Figures below name their code/fixture population. They do not combine different
