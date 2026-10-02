@@ -1,3 +1,4 @@
+import type { RecordingInterruption } from "../lib/recordingInterruption";
 import type { SourceLane } from "../lib/transcriptOrder";
 import type { ProvisionalDisplaySegment, TentativeSpan } from "../lib/tentative";
 export type SessionMode = "live" | "file";
@@ -52,6 +53,7 @@ export type WsEvent =
       status: SessionLifecycle;
       error?: string | null;
       status_line?: string | null;
+      interruptions?: RecordingInterruption[];
       needs_review?: boolean;
       live_label_policy?: "current" | "La";
     }

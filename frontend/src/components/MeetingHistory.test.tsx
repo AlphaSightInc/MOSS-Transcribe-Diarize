@@ -9,7 +9,7 @@ import {
   MEETING_HISTORY_REFRESH_EVENT
 } from "../lib/meetingEvents";
 import { replaceTranscript, resetSessionState, sessionTitle, sessionId, sessionMode, sessionNeedsReview, sessionStatus, sessionTranscriptItems, transcript } from "../state/session";
-import { sessionStartedAt, sessionStopRequested } from "../state/session";
+import { recordingInterruptions, sessionStartedAt, sessionStopRequested } from "../state/session";
 import { App } from "../App";
 import { MeetingHistory } from "./MeetingHistory";
 import { resetUiState, selectedSummaryMeeting } from "../state/ui";
@@ -60,6 +60,18 @@ describe("MeetingHistory", () => {
     resetUiState();
     vi.unstubAllGlobals();
     vi.useRealTimers();
+  });
+
+  it("shows interruption lines in History and preserves them when opening the saved transcript", async () => {
+    const saved = meeting();
+    const wire = { ...saved, transcript: { ...saved.transcript, sample_rate: 16000, capture_interruptions: [{ start_sample: 57_600_000, end_sample: 58_080_000 }] } };
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => response(url === "/api/meetings" ? { meetings: [wire] } : wire)));
+    await act(async () => render(<MeetingHistory />, root));
+    await vi.waitFor(() => expect(root.querySelector('[data-recording-interruption]')?.textContent)
+      .toBe("([01:00:00-01:00:30] Recording Interrupted)"));
+    await act(async () => { document.dispatchEvent(new CustomEvent(OPEN_MEETING_EVENT, { detail: { meetingId: saved.id } })); });
+    await vi.waitFor(() => expect(recordingInterruptions.value).toEqual([{ start: 3600, end: 3630 }]));
+    expect(transcript.value.map(row => row.text)).toEqual(["first words"]);
   });
 
   it.each([

@@ -1,3 +1,4 @@
+import { recordingInterruptionLine } from "../lib/recordingInterruption";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import {
   listMeetings,
@@ -316,6 +317,7 @@ export function MeetingHistory() {
                               ...(meeting.status === "failed" || meeting.status === "interrupted" ? [statusLabel(meeting.status)] : [])].join(" · ")}
                           </span>
                           {meetingPreview(meeting) ? <span className="history-card-subtitle">{meetingPreview(meeting)}</span> : null}
+                          {meeting.transcript?.interruptions?.filter(gap => gap.end !== null).map((gap, index) => <span key={index} className="history-card-subtitle" data-recording-interruption="true">{recordingInterruptionLine(gap)}</span>)}
                         </span>
                         {formatMeetingDuration(meeting) ? <span className="history-duration-chip">{formatMeetingDuration(meeting)}</span> : null}
                       </span>
@@ -418,6 +420,7 @@ function publishMeeting(meeting: Meeting, observeActive: boolean): void {
       : null,
     // Saved outcome notices and raw failure reasons are not shown (Q6); the pill reads lifecycle only.
     status_line: null,
+    interruptions: meeting.transcript?.interruptions ?? [],
     needs_review: meeting.needs_review
   });
   dispatchWsEvent({

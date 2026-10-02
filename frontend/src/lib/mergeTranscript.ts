@@ -157,6 +157,7 @@ function timeRangesOverlap(
 export function groupSegmentsIntoTurns<T extends TranscriptLike>(
   segments: readonly T[],
   options: {
+    interruptions?: readonly { start: number }[];
     preserveResolvedWhitespace?: boolean;
     skipOverlapTrimming?: boolean;
     resolveText?: (segment: T) => string;
@@ -190,7 +191,8 @@ export function groupSegmentsIntoTurns<T extends TranscriptLike>(
       last !== null &&
       normalizeTurnDisplayName(last.display_name) === normalizeTurnDisplayName(segment.display_name);
 
-    if (last !== null && sameEntity && sameTranscriptLane && sameDisplayName) {
+    if (last !== null && sameEntity && sameTranscriptLane && sameDisplayName &&
+        !options.interruptions?.some(gap => gap.start >= last.start && gap.start <= segment.start)) {
       last.end = Math.max(last.end, segment.end);
       last.state = segment.state;
       if (preserveResolvedWhitespace) {

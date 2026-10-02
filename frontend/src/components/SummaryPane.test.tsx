@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SummaryPane } from "./SummaryPane";
 import { TranscriptPane } from "./TranscriptPane";
 import { defaultAppSettings, saveAppSettings, type AppSettings } from "../lib/settings";
-import { replaceTranscript, sessionId, sessionStatus, sessionStopRequested } from "../state/session";
+import { captureMeetingId, replaceTranscript, sessionId, sessionStatus, sessionStopRequested } from "../state/session";
 import { selectedSummaryMeeting } from "../state/ui";
 
 const root = document.createElement("div"); document.body.append(root);
@@ -29,10 +29,11 @@ beforeEach(() => {
   vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => values.set(key, value), removeItem: (key: string) => values.delete(key) });
   configure();
+  captureMeetingId.value = "m";
 });
 afterEach(() => {
   for (const text of REMOVED) expect(root.textContent).not.toContain(text);
-  render(null, root); sessionId.value = null; sessionStatus.value = "idle"; sessionStopRequested.value = null; selectedSummaryMeeting.value = null;
+  render(null, root); captureMeetingId.value = null; sessionId.value = null; sessionStatus.value = "idle"; sessionStopRequested.value = null; selectedSummaryMeeting.value = null;
   replaceTranscript([]);
   vi.unstubAllGlobals(); vi.useRealTimers();
 });
@@ -453,4 +454,20 @@ it("shows a summary saved without its speaker names as stored, renamed speakers 
   await vi.waitFor(() => expect(summaryText()).toContain("Speaker 1 asked Speaker 10 for the plan."));
   expect(summaryText()).toContain("Speaker 1: host");
   expect(summaryText()).not.toContain("Alice");
+});
+
+
+it("only capture owns automatic summaries, resumed owner starts and replaced owner retires", async () => {
+  vi.useFakeTimers(); configure(settings => { settings.summary.waitSeconds = 1; });
+  const fetcher = vi.fn().mockResolvedValue(live("Speech only")); vi.stubGlobal("fetch", fetcher);
+  sessionId.value = "m"; sessionStatus.value = "active"; captureMeetingId.value = null;
+  await act(async () => render(<SummaryPane hidden={false} />, root));
+  await act(async () => { await vi.advanceTimersByTimeAsync(2000); });
+  expect(fetcher).not.toHaveBeenCalled();
+  await act(async () => { captureMeetingId.value = "m"; });
+  await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+  expect(fetcher).toHaveBeenCalledOnce();
+  await act(async () => { captureMeetingId.value = null; });
+  await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+  expect(fetcher).toHaveBeenCalledOnce();
 });

@@ -6,7 +6,7 @@ import {
   type CaptureLane
 } from "../capture/captureClient";
 import { chooseMicrophone, microphoneOptions } from "../capture/microphoneChoice";
-import { captureMeetingId, resetSessionState, sessionError, sessionStartedAt, sessionStatusLine, sessionTitle } from "../state/session";
+import { recordingInterruptions, captureMeetingId, resetSessionState, sessionError, sessionStartedAt, sessionStatusLine, sessionTitle } from "../state/session";
 import { bindFileUpload } from "../lib/fileUpload";
 import { groupSegmentsIntoTurns } from "../lib/mergeTranscript";
 import { transcriptCardSpeakerLabel } from "../lib/transcriptCards";
@@ -26,6 +26,8 @@ import {
   saveCaptureSources,
   saveSessionReattach,
   sessionReattachStorage,
+  type SessionReattachRecord,
+  type CaptureRecord,
   type CaptureSources
 } from "../lib/persistence";
 import {
@@ -94,6 +96,12 @@ export function ControlPanel() {
   // stopped since (K3). It yields to any line that asks for action.
   const [sourceNote, setSourceNote] = useState("");
   const [starting, setStarting] = useState(false);
+  const resumeDeadline = useRef(Date.now() + 8000);
+  const captureRecord = useRef<SessionReattachRecord | null>(null);
+  const summaryWatcher = useRef<(() => void) | null>(null);
+  const [resumeHere, setResumeHere] = useState(false);
+  const [missingSystem, setMissingSystem] = useState(false);
+  const [missingMicrophone, setMissingMicrophone] = useState(false);
   const clientRef = useRef<CaptureClient | null>(null);
   const pollerRef = useRef<MossSessionPoller | null>(null);
   const phaseRef = useRef<CapturePhase>("idle");
@@ -103,6 +111,26 @@ export function ControlPanel() {
   const transition = (next: CapturePhase) => {
     phaseRef.current = next;
     setPhase(next);
+  };
+
+  const persistCapture = (changes: Partial<CaptureRecord>) => {
+    const saved = captureRecord.current;
+    if (!saved?.capture) return;
+    const next = { ...saved, capture: { ...saved.capture, ...changes } };
+    captureRecord.current = next;
+    saveSessionReattach(sessionReattachStorage(), next);
+  };
+
+  const becomeViewer = () => {
+    clientRef.current = null;
+    captureMeetingId.value = null;
+    summaryWatcher.current?.(); summaryWatcher.current = null;
+    captureRecord.current = null;
+    clearSessionReattach(sessionReattachStorage());
+    setResumeHere(false); setMissingSystem(false); setMissingMicrophone(false);
+    transition("viewing");
+    setMessage("Recording continues in another page.");
+    setSourceNote("");
   };
 
   const chooseSources = (next: CaptureSources) => {
@@ -147,7 +175,8 @@ export function ControlPanel() {
     metersRef.current = { ...metersRef.current, [lane]: 0 };
     setMeters(metersRef.current);
     setConnected(current => ({ ...current, [lane]: false }));
-    if (lane === "microphone") setMicMuted(false);
+    const saved = captureRecord.current?.capture;
+    if (saved) persistCapture({ sources: { ...saved.sources, [lane]: false } });
     setSourceNote(sourceStoppedLine(lane));
   };
 
@@ -190,7 +219,7 @@ export function ControlPanel() {
   // "Share again" swaps a recorded system lane for another share (same lane, next device epoch).
   const shareAgain = async () => {
     const client = clientRef.current;
-    if (!client || phaseRef.current !== "active" || !connected.system) return;
+    if (!client || phaseRef.current !== "active") return;
     try {
       const stream = await client.requestDisplayMedia();
       if (clientRef.current !== client) {
@@ -199,8 +228,13 @@ export function ControlPanel() {
       }
       metersRef.current = { ...metersRef.current, system: 0 };
       setMeters(metersRef.current);
+      if (!stream.getAudioTracks().length) { stream.getTracks().forEach(track => track.stop()); setSourceNote(NO_AUDIO_SHARED_LINE); return; }
       await client.replaceLane("system", stream, stream.getTracks());
-      if (clientRef.current === client) setMessage("");
+      if (clientRef.current === client) {
+        setConnected(current => ({ ...current, system: true })); setMissingSystem(false); setMessage(""); setSourceNote("");
+        const saved = captureRecord.current?.capture;
+        if (saved) persistCapture({ sources: { ...saved.sources, system: true }, shareKind: client.captureShareKind });
+      }
     } catch (error) {
       // The recorded share is untouched when its replacement cannot be attached.
       if (clientRef.current === client && !chooserDismissed(error)) {
@@ -225,19 +259,25 @@ export function ControlPanel() {
     if (!client || phaseRef.current !== "active") return;
     const previousId = microphoneId;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints(deviceId));
+      const stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints(deviceId, captureRecord.current?.capture?.echoCancellation ?? true));
       metersRef.current = { ...metersRef.current, microphone: 0 };
       setMeters(metersRef.current);
       await client.replaceLane("microphone", stream, stream.getTracks());
       setOpenMicrophoneId(deviceId);
+      setConnected(current => ({ ...current, microphone: true }));
+      setMissingMicrophone(false);
+      const saved = captureRecord.current?.capture;
+      if (saved) persistCapture({ microphoneDeviceId: deviceId, sources: { ...saved.sources, microphone: true } });
       void refreshMicrophones();
-      if (clientRef.current === client) setMessage("");
+      if (clientRef.current === client) { setMessage(""); setSourceNote(""); }
+      return true;
     } catch (error) {
       // The running microphone is untouched, so the dropdown goes back to it.
       setMicrophoneId(previousId);
       if (clientRef.current === client && !chooserDismissed(error)) {
         setMessage("Could not switch the microphone — stop and start a new recording.");
       }
+      return false;
     }
   };
 
@@ -248,6 +288,7 @@ export function ControlPanel() {
     const next = !micMuted;
     client.setMicrophoneMuted(next);
     setMicMuted(next);
+    persistCapture({ microphoneMuted: next });
     if (next && preflightLine.current) {
       // "No microphone sound" (K1) is not the reason once the microphone is muted on purpose.
       const stale = preflightLine.current;
@@ -256,20 +297,7 @@ export function ControlPanel() {
     }
   };
 
-  /**
-   * One click (round 5): the share picker if System Sound Output is ticked, then the microphone if it is
-   * ticked, then the meeting. A source that is not recorded gets a silent lane, because the server
-   * needs both lanes. Q16: (a) no microphone or permission denied -> system sound only; (b) picker
-   * closed -> nothing starts, nothing said; (c) a surface without audio -> microphone only, or
-   * nothing when there is no microphone either.
-   */
-  const startCapture = async () => {
-    const want = sources;
-    if (!startable(phaseRef.current) || (!want.system && !want.microphone)) return;
-    // A Stop that failed leaves its closed client and its poller behind; Start replaces them.
-    void clientRef.current?.close().catch(() => undefined);
-    pollerRef.current?.stop();
-    pollerRef.current = null;
+  const makeClient = () => {
     const client = new CaptureClient({
       helperVersion: HELPER_VERSION,
       workletUrl: workletUrl(),
@@ -289,10 +317,29 @@ export function ControlPanel() {
       onTransportError: () => {
         if (clientRef.current === client) transportFailed("capture");
       },
+      onCaptureReplaced: () => { if (clientRef.current === client) becomeViewer(); },
       onTransportRecovered: () => {
         if (clientRef.current === client) transportRecovered("capture");
       }
     });
+    return client;
+  };
+
+  /**
+   * One click (round 5): the share picker if System Sound Output is ticked, then the microphone if it is
+   * ticked, then the meeting. A source that is not recorded gets a silent lane, because the server
+   * needs both lanes. Q16: (a) no microphone or permission denied -> system sound only; (b) picker
+   * closed -> nothing starts, nothing said; (c) a surface without audio -> microphone only, or
+   * nothing when there is no microphone either.
+   */
+  const startCapture = async () => {
+    const want = sources;
+    if (!startable(phaseRef.current) || (!want.system && !want.microphone)) return;
+    // A Stop that failed leaves its closed client and its poller behind; Start replaces them.
+    void clientRef.current?.close().catch(() => undefined);
+    pollerRef.current?.stop();
+    pollerRef.current = null;
+    const client = makeClient();
     clientRef.current = client;
     transition("configuring");
     setStarting(true);
@@ -361,10 +408,12 @@ export function ControlPanel() {
       // (a closed picker, a refused meeting) changes nothing.
       resetSessionState();
       sessionTitle.value = "";
-      watchMeetingSummary(session.id);
-      saveSessionReattach(sessionReattachStorage(), {
-        sessionId: session.id
-      });
+      summaryWatcher.current?.();
+      summaryWatcher.current = watchMeetingSummary(session.id);
+      captureRecord.current = { sessionId: session.id, capture: { instanceId: client.captureInstanceId,
+        sources: { system, microphone: microphone !== null }, microphoneDeviceId: microphone,
+        microphoneMuted: false, echoCancellation: true, shareKind: client.captureShareKind } };
+      saveSessionReattach(sessionReattachStorage(), captureRecord.current);
       sessionStartedAt.value = { sessionId: session.id, ms: Date.now() };
       // A created meeting is active; the first poll can take seconds to say so (r4 F3).
       dispatchWsEvent({ type: "session_state", session_id: session.id, mode: "live", state: "active", status: "active" });
@@ -393,6 +442,96 @@ export function ControlPanel() {
     }
   };
 
+  const resumeCapture = async (saved: SessionReattachRecord, automatic: boolean) => {
+    const settings = saved.capture;
+    if (!settings || clientRef.current || captureRecord.current?.sessionId !== saved.sessionId) return;
+    const client = makeClient(); clientRef.current = client;
+    setResumeHere(false);
+    let display: Promise<MediaStream> | null = null;
+    // Start the one gestureless attempt without blocking microphone capture on Chrome's picker.
+    if (settings.sources.system) {
+      try { display = client.requestDisplayMedia(); } catch { /* silent lane remains */ }
+      display?.catch(() => undefined);
+    }
+    let microphone: string | null = null;
+    const mediaReady = (async () => {
+      let permitted = true;
+      if (automatic && settings.sources.microphone && navigator.permissions?.query) {
+        permitted = (await navigator.permissions.query({ name: "microphone" as PermissionName })).state === "granted";
+      }
+      if (settings.sources.microphone && permitted)
+        microphone = await client.startMicrophone(settings.microphoneDeviceId!, settings.echoCancellation);
+      if (clientRef.current !== client) { await client.close(); return; }
+      if (!microphone) await client.attachSilentLane("microphone");
+      await client.attachSilentLane("system");
+      client.setMicrophoneMuted(settings.microphoneMuted);
+    })();
+    // Media opens in parallel with the ownership handshake; no frames leave before adoption.
+    mediaReady.catch(() => undefined);
+    try {
+      for (;;) {
+        if (clientRef.current !== client) return;
+        try {
+          await client.resumeSession(saved.sessionId, automatic ? settings.instanceId : null, automatic, mediaReady);
+          break;
+        } catch (error) {
+          const failure = error as { code?: string; retryAfterMs?: number };
+          const remaining = resumeDeadline.current - Date.now();
+          if (!automatic || failure.code !== "capture_page_alive" || remaining <= 0) throw error;
+          setMessage("Waiting for the previous recording page to disconnect…");
+          await new Promise(resolve => setTimeout(resolve, Math.min(500, failure.retryAfterMs ?? 500, remaining)));
+        }
+      }
+      if (clientRef.current !== client) { await client.close(); return; }
+      captureRecord.current = saved;
+      persistCapture({ instanceId: client.captureInstanceId });
+      captureMeetingId.value = saved.sessionId;
+      sessionStopRequested.value = null;
+      setConnected({ microphone: microphone !== null, system: false });
+      setOpenMicrophoneId(microphone ?? settings.microphoneDeviceId ?? "");
+      setMicMuted(settings.microphoneMuted);
+      setMissingMicrophone(settings.sources.microphone && !microphone);
+      setMissingSystem(settings.sources.system);
+      setMessage("");
+      setSourceNote(settings.sources.microphone && !microphone ? "Stored microphone unavailable or permission not granted." : "");
+      transition("active");
+      summaryWatcher.current?.(); summaryWatcher.current = watchMeetingSummary(saved.sessionId);
+      if (display) void display.then(async stream => {
+        if (clientRef.current !== client) { stream.getTracks().forEach(track => track.stop()); return; }
+        if (!stream.getAudioTracks().length) { stream.getTracks().forEach(track => track.stop()); return; }
+        await client.replaceLane("system", stream, stream.getTracks());
+        if (clientRef.current !== client) return;
+        setConnected(current => ({ ...current, system: true })); setMissingSystem(false);
+        persistCapture({ shareKind: client.captureShareKind });
+      }).catch(() => undefined);
+    } catch (error) {
+      await client.close().catch(() => undefined);
+      if (clientRef.current !== client) return;
+      clientRef.current = null;
+      const code = (error as { code?: string }).code;
+      if (code === "capture_page_alive" || code === "capture_writer_mismatch") {
+        transition("viewing"); setResumeHere(true); setMessage("Recording is attached to another page.");
+      } else if (code === "resume_lease_expired" || code?.includes("terminal") || code?.includes("closed")) {
+        handleTerminal(CONNECTION_LOST_LINE, true);
+      } else {
+        transition("viewing"); setResumeHere(true); setMessage(`Could not resume recording: ${errorMessage(error)}`);
+      }
+    } finally {
+      if (clientRef.current !== client && display)
+        void display.then(stream => stream.getTracks().forEach(track => track.stop())).catch(() => undefined);
+    }
+  };
+
+  const restoreMicrophone = async () => {
+    const settings = captureRecord.current?.capture;
+    if (!settings?.microphoneDeviceId) return;
+    // This one gesture can restore the tab even when the stored microphone remains unavailable.
+    const display = missingSystem ? shareAgain() : null;
+    const microphone = await switchMicrophone(settings.microphoneDeviceId);
+    if (display) await display;
+    if (!microphone && clientRef.current) { setMessage(""); setSourceNote("Stored microphone unavailable or permission not granted."); }
+  };
+
   const stopCapture = async () => {
     const client = clientRef.current;
     if (!client || phase !== "active") return;
@@ -400,6 +539,8 @@ export function ControlPanel() {
     // The pill stops counting now; the server keeps reporting "active" while it drains (#14).
     sessionStopRequested.value = captureMeetingId.value;
     captureMeetingId.value = null;
+    clearSessionReattach(sessionReattachStorage()); captureRecord.current = null;
+    setMissingSystem(false); setMissingMicrophone(false);
     setMessage("");
     setSourceNote("");
     try {
@@ -417,6 +558,9 @@ export function ControlPanel() {
   // Leave a meeting this page was only watching.
   const detach = () => {
     clearSessionReattach(sessionReattachStorage());
+    captureRecord.current = null; setResumeHere(false);
+    const pending = clientRef.current; clientRef.current = null;
+    void pending?.close().catch(() => undefined);
     pollerRef.current?.stop();
     pollerRef.current = null;
     resetSessionState();
@@ -444,6 +588,7 @@ export function ControlPanel() {
         return;
       }
 
+      captureRecord.current = null; setResumeHere(false);
       pollerRef.current?.stop();
       resetSessionState();
       const poller = createMossSessionPoller({
@@ -463,6 +608,7 @@ export function ControlPanel() {
 
     const saved = loadSessionReattach(sessionReattachStorage());
     if (saved) {
+      captureRecord.current = saved;
       // After a reload the pill counts from the meeting's real start, not from the reload.
       void openMeeting(saved.sessionId).then(meeting => {
         sessionStartedAt.value = { sessionId: meeting.id, ms: meeting.created_at_ms };
@@ -478,13 +624,24 @@ export function ControlPanel() {
       pollerRef.current = poller;
       transition("viewing");
       poller.start();
+      if (saved.capture) void fetch(`/api/live/sessions/${encodeURIComponent(saved.sessionId)}/snapshot`, {
+        cache: "no-store", credentials: "same-origin",
+      }).then(async response => {
+        const state = await response.json();
+        if (captureRecord.current?.sessionId !== saved.sessionId) return;
+        if (state?.snapshot?.session?.status === "active" && sessionStopRequested.value !== saved.sessionId)
+          await resumeCapture(saved, true);
+        else handleTerminal(CONNECTION_LOST_LINE, true);
+      }).catch(() => { setResumeHere(true); setMessage(RECONNECTING_LINE); });
     }
 
     return () => {
       captureMeetingId.value = null;
       document.removeEventListener(LIVE_MEETING_OBSERVE_EVENT, observeHistoryMeeting);
       pollerRef.current?.stop();
-      void clientRef.current?.close().catch(() => undefined);
+      const client = clientRef.current; clientRef.current = null; captureRecord.current = null;
+      summaryWatcher.current?.(); summaryWatcher.current = null;
+      void client?.close().catch(() => undefined);
     };
   }, []);
 
@@ -522,7 +679,7 @@ export function ControlPanel() {
       return;
     }
     const snapshot = transcript.value;
-    const turns = groupSegmentsIntoTurns(snapshot);
+    const turns = groupSegmentsIntoTurns(snapshot, { interruptions: recordingInterruptions.value });
     const names = transcriptSpeakerNames(snapshot);
     const finalized = sessionStatus.value !== "active" && sessionStatus.value !== "closing";
     let summary = null;
@@ -541,7 +698,7 @@ export function ControlPanel() {
     if (selectedSummaryMeeting.value?.id === id && selectedSummaryMeeting.value.refinement_state === "running") return;
     triggerTranscriptExportDownload(serializeTranscriptExport(exportFormat, turns,
       transcriptCardSpeakerLabel,
-      { sessionId: id, exportedAt: new Date() }, summary));
+      { sessionId: id, exportedAt: new Date() }, summary, recordingInterruptions.value));
   }
 
   const recording = phase === "active" || phase === "stopping";
@@ -555,13 +712,15 @@ export function ControlPanel() {
   const microphoneChoices = microphoneOptions(microphones);
   const shownMicrophoneId = recording ? openMicrophoneId : chooseMicrophone(microphones, microphoneId) ?? "";
 
-  const statusLine = message || (phase === "active" ? sessionStatusLine.value || sourceNote : "");
+  const statusLine = message || (phase === "active"
+    ? missingMicrophone && sourceNote ? sourceNote : sessionStatusLine.value || sourceNote
+    : "");
   // #8: a keep-list line asks the operator to act, so a collapsed Controls rail opens to show it.
   // The remembered preference is unchanged; the next reload collapses the rail again.
   useEffect(() => { if (statusLine) controlPanelCollapsed.value = false; }, [statusLine]);
 
   const modeLocked = phase === "active" || phase === "stopping" || phase === "viewing" || phase === "configuring" || sessionStatus.value === "active" || sessionStatus.value === "closing";
-  const exportReady = sessionId.value !== null && (exportFormat === "audio" || transcript.value.length > 0);
+  const exportReady = sessionId.value !== null && (exportFormat === "audio" || transcript.value.length > 0 || recordingInterruptions.value.some(gap => gap.end !== null));
   const refinementRunning = selectedSummaryMeeting.value?.id === sessionId.value &&
     selectedSummaryMeeting.value.refinement_state === "running";
   const urlWarning = mode === "url" && url.trim() !== "" && !url.startsWith("https://");
@@ -592,6 +751,13 @@ export function ControlPanel() {
               : <button type="button" className="record-btn" data-action="start" disabled={starting || noSource}
                   title={noSource ? NO_SOURCE_TOOLTIP : undefined}
                   onClick={() => void startCapture()}><PlayIcon />{starting ? "Starting…" : "Start recording"}</button>}
+
+            {phase === "viewing" && resumeHere ? <button type="button" className="record-btn"
+              onClick={() => { const saved = captureRecord.current; if (saved) void resumeCapture(saved, false); }}>Resume recording here</button> : null}
+            {phase === "active" && missingMicrophone ? <button type="button" className="record-btn"
+              onClick={() => void restoreMicrophone()}>Resume recording</button>
+              : phase === "active" && missingSystem ? <button type="button" className="record-btn"
+                  onClick={() => void shareAgain()}>Share tab audio again</button> : null}
 
             {statusLine ? <p className="capture-status" role="status">{statusLine}</p> : null}
 

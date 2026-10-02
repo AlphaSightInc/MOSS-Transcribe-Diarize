@@ -67,3 +67,13 @@ describe("persistence helpers", () => {
     expect(storage.getItem(storageKeys.sessionReattach)).toBeNull();
   });
 });
+
+it("keeps a complete tab capture record and makes malformed capture settings view-only", () => {
+  const storage = createMemoryStorage();
+  const capture = { instanceId: "page", sources: { system: true, microphone: true },
+    microphoneDeviceId: "exact-device", microphoneMuted: true, echoCancellation: false, shareKind: "browser" };
+  saveSessionReattach(storage, { sessionId: "session", capture });
+  expect(loadSessionReattach(storage)).toEqual({ sessionId: "session", capture });
+  storage.setItem(storageKeys.sessionReattach, JSON.stringify({ sessionId: "session", capture: { ...capture, microphoneDeviceId: null } }));
+  expect(loadSessionReattach(storage)).toEqual({ sessionId: "session" });
+});

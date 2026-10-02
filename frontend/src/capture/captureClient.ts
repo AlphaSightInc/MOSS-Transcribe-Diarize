@@ -38,8 +38,8 @@
  * - A frame 409 that is not a sequence conflict clears the session and returns the client
  *   to a state where `createSession()` can be called again WITHOUT rebuilding the audio
  *   graph. A 400 is a client bug: the client stops capture locally and does not retry.
- * - `replaceLane(lane, stream, tracks)` is the only way `device_epoch` ever advances. It
- *   is a user-chosen device switch.
+ * - `replaceLane(lane, stream, tracks)` advances `device_epoch` for a chosen device
+ *   switch; explicit session adoption takes the server-supplied resume epoch.
  * - `onSourceStopped(lane)` fires when a recorded source's track ends during a session
  *   (Chrome's "Stop sharing", an unplugged microphone). The lane is never reported
  *   `failed` -- the server would seal it and could not close the meeting cleanly. It goes
@@ -92,6 +92,7 @@ export type V2Frame = {
 
 export type CaptureSession = Readonly<{
   id: string;
+  instanceId?: string;
 }>;
 
 /** The helper states this client reports: it never reports itself or a lane as `failed`. */
@@ -141,6 +142,7 @@ export type CaptureClientOptions = Readonly<{
   onPreSessionFailure?: (failure: PreSessionCaptureFailure) => void;
   /** A recorded source stopped during a session; its lane now sends silence. */
   onSourceStopped?: (lane: CaptureLane) => void;
+  onCaptureReplaced?: () => void;
 }>;
 
 type WorkletFrame = Readonly<{
@@ -297,10 +299,10 @@ function record(value: unknown, field: string): Record<string, unknown> {
  * It always names its device exactly: left to choose, Chrome follows its own device ranking and
  * wakes a nearby iPhone (issue #2).
  */
-export function microphoneConstraints(deviceId: string): MediaStreamConstraints {
+export function microphoneConstraints(deviceId: string, echoCancellation = true): MediaStreamConstraints {
   return {
     audio: {
-      echoCancellation: true,
+      echoCancellation,
       noiseSuppression: false,
       autoGainControl: false,
       deviceId: { exact: deviceId },
@@ -427,7 +429,7 @@ export async function stopCaptureSession(
     method: "POST",
     cache: "no-store",
     credentials: "same-origin",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(session.instanceId ? { "X-Moss-Capture-Instance": session.instanceId } : {}) },
     body: JSON.stringify({ deadline: deadlineSeconds }),
   };
   if (signal) request.signal = signal;
@@ -440,7 +442,28 @@ export async function stopCaptureSession(
     // Capture closes locally; the existing session poller waits for finalization.
     return;
   }
-  if (!response.ok) throw new Error(`session stop failed: HTTP ${response.status}`);
+  if (!response.ok) throw await captureResponseError(response, "session stop");
+}
+
+export class CaptureResponseError extends Error {
+  constructor(readonly code: string | null, message: string, readonly retryAfterMs?: number) { super(message); }
+}
+
+async function captureResponseError(response: Response, route: string): Promise<CaptureResponseError> {
+  const payload = await response.json().catch(() => null);
+  const detail = payload?.detail ?? payload;
+  return new CaptureResponseError(payload?.code ?? detail?.code ?? payload?.failure?.code ?? null,
+    typeof detail === "string" ? detail : `${route} failed: HTTP ${response.status}`,
+    payload?.retry_after_ms ?? detail?.retry_after_ms);
+}
+
+export async function abortCaptureSession(session: CaptureSession, reason: string): Promise<void> {
+  const response = await captureFetch(`/api/live/sessions/${encodeURIComponent(session.id)}/abort`, {
+    method: "POST", cache: "no-store", credentials: "same-origin",
+    headers: { "Content-Type": "application/json", ...(session.instanceId ? { "X-Moss-Capture-Instance": session.instanceId } : {}) },
+    body: JSON.stringify({ reason }),
+  });
+  if (!response.ok) throw await captureResponseError(response, "session abort");
 }
 
 export class CaptureClient {
@@ -461,6 +484,10 @@ export class CaptureClient {
   private contextSuspended = false;
   private stopping = false;
   private microphoneMuted = false;
+  private captureOffsetNs = 0;
+  private replaced = false;
+  get captureInstanceId(): string { return this.instanceId; }
+  get captureShareKind(): string | null { return this.displaySurface; }
   private frameDeadlineSignal: AbortSignal | null = null;
   private readonly requestControllers = new Set<AbortController>();
   private readonly instanceId = `browser-${crypto.randomUUID()}`;
@@ -485,9 +512,8 @@ export class CaptureClient {
    * Opening Chrome's default alias once grants the permission that reveals them; the lane then
    * opens the device `chooseMicrophone` names, so an iPhone default is skipped from the start.
    */
-  async startMicrophone(deviceId?: string): Promise<string | null> {
+  async startMicrophone(deviceId?: string, echoCancellation = true): Promise<string | null> {
     if (this.lanes.has("microphone")) throw new Error("microphone lane is already active");
-    await this.runningContext();
     let stream: MediaStream;
     let opened = deviceId;
     try {
@@ -496,12 +522,12 @@ export class CaptureClient {
         permission.getTracks().forEach(track => track.stop());
         opened = chooseMicrophone(await navigator.mediaDevices.enumerateDevices()) ?? DEFAULT_MICROPHONE_ID;
       }
-      stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints(opened));
+      stream = await navigator.mediaDevices.getUserMedia(microphoneConstraints(opened, echoCancellation));
     } catch {
       return null;
     }
     await this.attachLane("microphone", stream, stream.getTracks());
-    return opened;
+    return stream.getTracks().find(track => track.kind === "audio")?.getSettings().deviceId || opened;
   }
 
   /**
@@ -512,7 +538,7 @@ export class CaptureClient {
    * never metered: its silence is intended, so it raises no `browser_microphone_silent` (K1).
    */
   async attachSilentLane(lane: CaptureLane): Promise<void> {
-    await this.runningContext();
+    await this.prepare();
     await this.attachLane(lane, null, []);
   }
 
@@ -617,6 +643,7 @@ export class CaptureClient {
    * invoke this again without rebuilding the browser's capture graph.
    */
   async createSession(engineSettings?: EngineSettingsWire): Promise<CaptureSession> {
+    if (this.replaced) throw new Error("capture replaced; view meeting");
     if (this.session) return this.session;
     // Start needs both lanes attached, not sound on either (user decision, round 4): the person
     // may start recording first and play the audio afterwards. A source that is not recorded has
@@ -675,6 +702,62 @@ export class CaptureClient {
     return this.session;
   }
 
+  /** Adopt server cursors before any frame or heartbeat is allowed to leave. */
+  async resumeSession(id: string, expectedInstanceId: string | null, automatic: boolean, mediaReady?: Promise<void>): Promise<CaptureSession> {
+    if (this.replaced) throw new Error("capture replaced; view meeting");
+    const path = `/api/live/sessions/${encodeURIComponent(id)}/resume`;
+    const request: RequestInit = {
+      method: "POST", cache: "no-store", credentials: "same-origin", headers: this.requestHeaders(true),
+      body: JSON.stringify({ expected_instance_id: expectedInstanceId, instance_id: this.instanceId, automatic }),
+    };
+    let response: Response;
+    try { response = await this.fetchRequest(path, request); }
+    catch (error) {
+      if (!(error instanceof TypeError || (error instanceof DOMException && error.name === "TimeoutError"))) throw error;
+      // The measured lost-response protocol repeats the same old->new pair, never a new writer.
+      response = await this.fetchRequest(path, request);
+    }
+    if (!response.ok) throw await captureResponseError(response, "session resume");
+    const receivedAt = performance.now();
+    const state = await response.json();
+    await mediaReady;
+    if (!this.context || !this.lanes.has("microphone") || !this.lanes.has("system"))
+      throw new Error("both capture lanes must be attached before resume");
+    const descriptor = await this.requireDescriptor();
+    if (state.descriptor.sample_rate !== descriptor.sampleRate || state.descriptor.frame_samples !== descriptor.frameSamples)
+      throw new Error("resume descriptor differs from preflight descriptor");
+    // Receipt anchors the new context; all subsequent start AND end times share this offset.
+    this.captureOffsetNs = state.capture_now_ns + Math.round((performance.now() - receivedAt) * 1e6) - Math.round(this.context.currentTime * 1e9);
+    this.heartbeatSequence = state.heartbeat_next_sequence;
+    this.heartbeatMonotonicNs = state.heartbeat_next_monotonic_ns - 1;
+    for (const [lane, value] of this.lanes) {
+      value.sequence = state.lanes[lane].next_sequence;
+      value.deviceEpoch = state.lanes[lane].resume_device_epoch;
+      value.pendingDiscontinuityEpochs.add(value.deviceEpoch);
+      value.frameQueue = [];
+    }
+    this.session = Object.freeze({ id });
+    await this.scheduleHeartbeat(this.heartbeatState());
+    return this.session!;
+  }
+
+  private async captureReplaced(): Promise<void> {
+    if (this.replaced) return;
+    this.replaced = true;
+    await this.close();
+    this.options.onCaptureReplaced?.();
+  }
+
+  async abort(reason: string): Promise<void> {
+    const session = this.session;
+    try {
+      if (session) await abortCaptureSession({ ...session, instanceId: this.instanceId }, reason);
+    } catch (error) {
+      if (error instanceof CaptureResponseError && error.code === "capture_replaced") await this.captureReplaced();
+      throw error;
+    } finally { await this.close(); }
+  }
+
   async stop(deadlineSeconds: number): Promise<void> {
     if (!Number.isFinite(deadlineSeconds) || deadlineSeconds < 0) {
       throw new Error("stop deadline must be a non-negative finite number");
@@ -713,7 +796,7 @@ export class CaptureClient {
       const stopDeadline = requestDeadline(Math.ceil(remainingDeadline * 1_000) + TERMINAL_REQUEST_TIMEOUT_MS);
       try {
         await stopCaptureSession(
-          session,
+          { ...session, instanceId: this.instanceId },
           remainingDeadline,
           stopDeadline.signal,
         );
@@ -721,6 +804,9 @@ export class CaptureClient {
         stopDeadline.cancel();
       }
       if (deliveryFailure) throw deliveryFailure;
+    } catch (error) {
+      if (error instanceof CaptureResponseError && error.code === "capture_replaced") await this.captureReplaced();
+      throw error;
     } finally {
       this.frameDeadlineSignal = null;
       drainSignal.removeEventListener("abort", abortDrainRequests);
@@ -762,6 +848,7 @@ export class CaptureClient {
       await context.audioWorklet.addModule(this.options.workletUrl);
       context.addEventListener("statechange", this.onContextStateChange);
       this.context = context;
+      this.contextSuspended = context.state === "suspended";
       return context;
     } catch (error) {
       this.preparation = null;
@@ -805,6 +892,8 @@ export class CaptureClient {
     let mute: GainNode | undefined;
     try {
       const [context, descriptor] = await Promise.all([this.prepare(), this.requireDescriptor()]);
+      // Chrome permits gestureless AudioContext playback once microphone capture is active.
+      if (stream && context.state === "suspended") await this.runningContext();
       source = stream ? context.createMediaStreamSource(stream) : zeroSource(context);
       framer = new AudioWorkletNode(context, "lane-framer", {
         numberOfInputs: 1,
@@ -933,6 +1022,8 @@ export class CaptureClient {
           descriptor,
           context.sampleRate,
         );
+        frame.capture_timestamp_ns += this.captureOffsetNs;
+        frame.capture_end_timestamp_ns += this.captureOffsetNs;
         const result = await this.postFrame(frame, state);
         if (result === "retry" || result === "recreate" || result === "stopped") return;
 
@@ -970,6 +1061,10 @@ export class CaptureClient {
       return "accepted";
     }
     const failure = await this.frameFailure(response);
+    if (response.status === 409 && failure.code === "capture_replaced") {
+      await this.captureReplaced();
+      return "stopped";
+    }
     if (response.status === 429 && failure.code === LANE_CAPACITY_FAILURE_CODE) return "retry";
     if (response.status === 429) return "dropped";
     if (response.status === 409 && failure.code === "frame_work_exceeds_queue_capacity") {
@@ -1043,7 +1138,7 @@ export class CaptureClient {
       const failure = responsePayload.failure;
       if (failure === null || typeof failure !== "object" || Array.isArray(failure)) {
         return {
-          code: null,
+          code: typeof responsePayload.code === "string" ? responsePayload.code : typeof (responseDetail as Record<string, unknown> | null)?.code === "string" ? (responseDetail as Record<string, string>).code : null,
           detail: typeof responseDetail === "string" && responseDetail.trim() ? responseDetail : null,
           expectedSequence: null,
         };
@@ -1141,7 +1236,11 @@ export class CaptureClient {
           signal,
         );
         this.heartbeatSequence += 1;
-        if (!response.ok) throw new Error(`heartbeat POST failed: HTTP ${response.status}`);
+        if (!response.ok) {
+          const error = await captureResponseError(response, "heartbeat POST");
+          if (error.code === "capture_replaced") { await this.captureReplaced(); return; }
+          throw error;
+        }
         this.transportRecovered("heartbeat");
       }
     } catch (caught) {
@@ -1181,7 +1280,7 @@ export class CaptureClient {
   }
 
   private requestHeaders(json = false): Record<string, string> {
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { "X-Moss-Capture-Instance": this.instanceId };
     if (json) headers["Content-Type"] = "application/json";
     return headers;
   }

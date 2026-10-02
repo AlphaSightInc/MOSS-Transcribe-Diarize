@@ -1,3 +1,4 @@
+import { parseRecordingInterruptions, type RecordingInterruption } from "../lib/recordingInterruption";
 import type { SourceLane } from "../lib/transcriptOrder";
 export type MeetingMode = "live" | "file";
 export type MeetingStatus = "active" | "completed" | "failed" | "interrupted";
@@ -41,7 +42,7 @@ export interface Meeting {
   title_source: MeetingTitleSource;
   status: MeetingStatus;
   created_at_ms: number;
-  transcript: { segments: MeetingSegment[] } | null;
+  transcript: { segments: MeetingSegment[]; interruptions?: RecordingInterruption[] } | null;
   transcript_version: number;
   audio: MeetingAudio | null;
 }
@@ -138,6 +139,7 @@ function parseTranscript(value: unknown): Meeting["transcript"] {
     throw new Error("Meeting transcript is invalid.");
   }
   return {
+    ...(value.capture_interruptions === undefined ? {} : { interruptions: parseRecordingInterruptions(value.capture_interruptions, value.sample_rate as number) }),
     segments: value.segments.map((segment) => {
       if (
         !isRecord(segment) ||

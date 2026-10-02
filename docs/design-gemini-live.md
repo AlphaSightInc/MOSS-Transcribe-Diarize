@@ -739,3 +739,17 @@ or new timeout is needed. The fetch audit also identifies an inactive SummaryPan
 error every 5s can exhaust a fresh page in 22h45m20s. Healthy summary replies are consumed; this slower residual is
 reported separately and is not fixed or qualified by the capture candidate. Real-duration physical capture, other browser versions, and provider throughput remain
 unmeasured by this bench.
+
+### P74-RC browser recovery candidate (2026-10-02)
+
+Browser recovery adopts the same active meeting's lane/heartbeat cursors and capture clock,
+restores tab-scoped microphone settings, and immediately supplies silent lanes for missing
+sources. Capture replacement closes media and retires automatic summary ownership; readers
+remain read-only. Separate interruption metadata renders in transcript/History/exports and
+never becomes speech or summary input. See `docs/design-capture-setup.md`, P74 candidate section,
+and `prototypes/gemini-live/long-meeting/resume-client/NOTES.md` for evidence and limits.
+The 120 s lease is unchanged. Lead R1 makes the 3 s living-page veto a bounded automatic
+wait: retry using retry_after_ms/about 500 ms, media in parallel, viewer only after 8 s of
+continued writer heartbeats. Lead R2 supplies completed capture_interruptions with sample_rate
+in the live snapshot session and saved transcript document. Browser exports own rendering
+(R3); no server export endpoint added. No provider evidence.

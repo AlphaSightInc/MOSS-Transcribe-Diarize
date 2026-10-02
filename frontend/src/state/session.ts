@@ -1,3 +1,4 @@
+import type { RecordingInterruption } from "../lib/recordingInterruption";
 import { computed, signal } from "@preact/signals";
 import type { ProvisionalDisplaySegment } from "../lib/tentative";
 import type {
@@ -9,13 +10,14 @@ import type {
 } from "../api/types";
 import { type MergedTranscriptItem, upsertTranscriptItems } from "../lib/mergeTranscript";
 
+export const recordingInterruptions = signal<RecordingInterruption[]>([]);
 export const sessionTranscriptItems = signal<MergedTranscriptItem[]>([]);
 export const provisionalSegments = signal<ProvisionalDisplaySegment[]>([]);
 export const transcriptSearchQuery = signal("");
 export const transcript = computed(() => sessionTranscriptItems.value);
 export const sessionId = signal<string | null>(null);
-// Page-local capture ownership, not an account credential. Reload/history observers
-// stay read-only even though tabs in this browser share workspace authority.
+// Page-local capture ownership, not an account credential. An eligible originating
+// tab adopts it through resume; history observers remain readers.
 export const captureMeetingId = signal<string | null>(null);
 export const sessionMode = signal<SessionMode>("live");
 export const sessionState = signal("idle");
@@ -41,6 +43,8 @@ export function applySessionStateEvent(
 ): void {
   const previousSessionId = sessionId.value;
   if (previousSessionId !== event.session_id) provisionalSegments.value = [];
+  if (previousSessionId !== event.session_id) recordingInterruptions.value = [];
+  if (event.interruptions) recordingInterruptions.value = event.interruptions;
   sessionId.value = event.session_id;
   sessionMode.value = event.mode;
   sessionState.value = event.state;
@@ -66,6 +70,7 @@ export function replaceTranscript(items: TranscriptItem[]): void {
 
 export function clearSessionDisplay(): void {
   transcriptSearchQuery.value = "";
+  recordingInterruptions.value = [];
   sessionTranscriptItems.value = [];
   provisionalSegments.value = [];
 }

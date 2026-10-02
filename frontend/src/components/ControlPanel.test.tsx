@@ -3,7 +3,7 @@ import { render } from "preact";
 import { act } from "preact/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryStorage, storageKeys, type StorageLike } from "../lib/persistence";
-import { captureMeetingId, replaceTranscript, resetSessionState, sessionError, sessionId, sessionStatus, sessionStatusLine } from "../state/session";
+import { recordingInterruptions, captureMeetingId, replaceTranscript, resetSessionState, sessionError, sessionId, sessionStatus, sessionStatusLine } from "../state/session";
 import { sessionStartedAt, sessionStopRequested } from "../state/session";
 import { controlPanelCollapsed, selectedSummaryMeeting } from "../state/ui";
 
@@ -32,6 +32,7 @@ const mocks = vi.hoisted(() => {
     attachDisplayMedia: vi.fn(),
     startMicrophone: vi.fn(),
     attachSilentLane: vi.fn(),
+    resumeSession: vi.fn().mockResolvedValue({ id: "session-42" }),
     createSession: vi.fn().mockResolvedValue({ id: "account-live-meeting" }),
     captureOptions: null as {
       workletUrl?: string;
@@ -40,6 +41,7 @@ const mocks = vi.hoisted(() => {
       onMeter?: (lane: "microphone" | "system", rms: number) => void;
       onPreflightStatus?: (statusLine: string) => void;
       onSourceStopped?: (lane: "microphone" | "system") => void;
+      onCaptureReplaced?: () => void;
     } | null,
   };
 });
@@ -89,7 +91,7 @@ vi.mock("../capture/captureClient", async importOriginal => ({
       this.options.onMeter?.("microphone", 0.5);
       return opened ?? args[0] ?? "default"; // the device the real client opened
     });
-    requestDisplayMedia = vi.fn(() => mocks.requestDisplayMedia() ?? Promise.resolve({ getTracks: () => [] }));
+    requestDisplayMedia = vi.fn(() => mocks.requestDisplayMedia() ?? Promise.resolve({ getTracks: () => [], getAudioTracks: () => [{}] }));
     attachDisplayMedia = vi.fn(async (stream: unknown) => {
       if (mocks.attachDisplayMedia(stream) === false) return false; // shared without audio
       this.options.onMeter?.("system", 0.5);
@@ -98,6 +100,9 @@ vi.mock("../capture/captureClient", async importOriginal => ({
     attachSilentLane = vi.fn(async (lane: string) => { mocks.attachSilentLane(lane); });
     replaceLane = mocks.replaceLane;
     setMicrophoneMuted = mocks.setMicrophoneMuted;
+    captureInstanceId = "new-page";
+    captureShareKind = "browser";
+    resumeSession = async (...args: unknown[]) => { const session = await mocks.resumeSession(...args); await args[3]; return session; };
     createSession = mocks.createSession;
     close = mocks.captureClose;
     stop = mocks.captureStop;
@@ -128,6 +133,7 @@ describe("ControlPanel reattach", () => {
     mocks.poller.cursors.mockReturnValue({ version: 0, sequence: -1 });
     for (const settled of [mocks.captureClose, mocks.captureStop, mocks.replaceLane]) settled.mockResolvedValue(undefined);
     mocks.createSession.mockResolvedValue({ id: "account-live-meeting" });
+    mocks.resumeSession.mockResolvedValue({ id: "session-42" });
     mocks.apiKey = "test-key";
     mocks.captureOptions = null;
     mocks.pollerOptions = null;
@@ -142,6 +148,196 @@ describe("ControlPanel reattach", () => {
     vi.unstubAllGlobals();
     root.remove();
     workletMeta.remove();
+  });
+
+  const savedCapture = { instanceId: "old-page", sources: { system: false, microphone: true },
+    microphoneDeviceId: "stored-exact-mic", microphoneMuted: true, echoCancellation: false, shareKind: null };
+  function seedResume(system = false) {
+    window.sessionStorage.setItem(storageKeys.sessionReattach, JSON.stringify({ sessionId: "session-42",
+      capture: { ...savedCapture, sources: { ...savedCapture.sources, system } } }));
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => new Response(JSON.stringify(url.includes("/snapshot")
+      ? { snapshot: { session: { status: "active" } } }
+      : { id: "session-42", mode: "live", title: "Meeting", title_source: "automatic", status: "active",
+        created_at_ms: 1, transcript: { segments: [] }, transcript_version: 0, audio: null }))));
+  }
+
+  it("automatically resumes stored microphone and mute on mount without a click", async () => {
+    seedResume();
+    await act(async () => render(<ControlPanel />, root));
+    await vi.waitFor(() => expect(mocks.resumeSession).toHaveBeenCalledWith("session-42", "old-page", true, expect.any(Promise)));
+    expect(mocks.startMicrophone).toHaveBeenCalledWith("stored-exact-mic", false);
+    expect(mocks.setMicrophoneMuted).toHaveBeenCalledWith(true);
+    expect(captureMeetingId.value).toBe("session-42");
+    expect(mocks.createSession).not.toHaveBeenCalled();
+    expect(JSON.parse(window.sessionStorage.getItem(storageKeys.sessionReattach)!).capture.instanceId).toBe("new-page");
+  });
+
+  it("gestureless share refusal keeps microphone recording and offers one share button", async () => {
+    seedResume(true);
+    mocks.requestDisplayMedia.mockRejectedValue(new DOMException("gesture needed", "NotAllowedError"));
+    await act(async () => render(<ControlPanel />, root));
+    await vi.waitFor(() => expect(captureMeetingId.value).toBe("session-42"));
+    expect(mocks.attachSilentLane).toHaveBeenCalledWith("system");
+    expect(mocks.requestDisplayMedia).toHaveBeenCalledOnce();
+    expect([...root.querySelectorAll("button")].filter(b => b.textContent === "Share tab audio again")).toHaveLength(1);
+  });
+
+  it("missing stored microphone stays silent and offers Resume recording without substitution", async () => {
+    seedResume(); mocks.startMicrophone.mockReturnValue(null);
+    await act(async () => render(<ControlPanel />, root));
+    await vi.waitFor(() => expect(captureMeetingId.value).toBe("session-42"));
+    expect(mocks.startMicrophone).toHaveBeenCalledWith("stored-exact-mic", false);
+    expect(mocks.attachSilentLane).toHaveBeenCalledWith("microphone");
+    act(() => { sessionStatusLine.value = "Audio capture paused."; });
+    expect(root.textContent).toContain("Stored microphone unavailable");
+    expect(root.textContent).toContain("Resume recording");
+  });
+
+  it("waits and retries automatically while media acquisition runs in parallel", async () => {
+    vi.useFakeTimers();
+    try {
+      seedResume();
+      let opened!: (id: string) => void;
+      mocks.startMicrophone.mockReturnValue(new Promise<string>(resolve => { opened = resolve; }));
+      mocks.resumeSession.mockRejectedValueOnce(Object.assign(new Error("alive"), { code: "capture_page_alive", retryAfterMs: 1200 }))
+        .mockResolvedValue({ id: "session-42" });
+      await act(async () => render(<ControlPanel />, root));
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(mocks.resumeSession).toHaveBeenCalledOnce();
+      expect(root.textContent).not.toContain("Resume recording here");
+      opened("stored-exact-mic");
+      await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+      expect(mocks.resumeSession).toHaveBeenCalledTimes(2);
+      expect(captureMeetingId.value).toBe("session-42");
+      expect(mocks.createSession).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("living capture page waits eight seconds then remains viewer with explicit takeover and Detach", async () => {
+    vi.useFakeTimers();
+    try {
+      seedResume();
+      mocks.resumeSession.mockRejectedValue(Object.assign(new Error("alive"), { code: "capture_page_alive", retryAfterMs: 3000 }));
+      await act(async () => render(<ControlPanel />, root));
+      await act(async () => { await vi.advanceTimersByTimeAsync(7999); });
+      expect(root.textContent).not.toContain("Resume recording here");
+      await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+      expect(root.textContent).toContain("Resume recording here");
+      expect(mocks.resumeSession).toHaveBeenCalledTimes(17);
+      expect(captureMeetingId.value).toBeNull();
+      expect(root.textContent).toContain("Detach");
+      expect(mocks.captureClose).toHaveBeenCalled();
+      mocks.resumeSession.mockResolvedValue({ id: "session-42" });
+      await act(async () => [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "Resume recording here")!.click());
+      expect(mocks.resumeSession.mock.calls.at(-1)?.slice(0, 3)).toEqual(["session-42", null, false]);
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(captureMeetingId.value).toBe("session-42");
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("Detach cancels a pending automatic retry", async () => {
+    vi.useFakeTimers();
+    try {
+      seedResume(true);
+      const stop = vi.fn();
+      mocks.requestDisplayMedia.mockResolvedValue({ getTracks: () => [{ stop }], getAudioTracks: () => [{}] });
+      mocks.resumeSession.mockRejectedValue(Object.assign(new Error("alive"), { code: "capture_page_alive", retryAfterMs: 3000 }));
+      await act(async () => render(<ControlPanel />, root));
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(root.textContent).toContain("Waiting for the previous recording page");
+      await act(async () => [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "Detach")!.click());
+      await act(async () => { await vi.advanceTimersByTimeAsync(8000); });
+      expect(mocks.resumeSession).toHaveBeenCalledOnce();
+      expect(stop).toHaveBeenCalled();
+      expect(root.textContent).not.toContain("Resume recording here");
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("expired resume takes today's stopped path", async () => {
+    seedResume();
+    mocks.resumeSession.mockRejectedValue(Object.assign(new Error("expired"), { code: "resume_lease_expired" }));
+    await act(async () => render(<ControlPanel />, root));
+    await vi.waitFor(() => expect(root.textContent).toContain("Recording stopped: connection lost."));
+    expect(captureMeetingId.value).toBeNull();
+    expect(window.sessionStorage.getItem(storageKeys.sessionReattach)).toBeNull();
+  });
+
+  it("replaced capture becomes a viewer and never starts another meeting", async () => {
+    seedResume();
+    await act(async () => render(<ControlPanel />, root));
+    await vi.waitFor(() => expect(captureMeetingId.value).toBe("session-42"));
+    act(() => mocks.captureOptions?.onCaptureReplaced?.());
+    expect(captureMeetingId.value).toBeNull();
+    expect(root.querySelector('[data-observer-mode="read-only"]')).not.toBeNull();
+    expect(root.textContent).toContain("Detach");
+    expect(mocks.createSession).not.toHaveBeenCalled();
+  });
+
+  it("permission not granted restores silence without opening the stored microphone", async () => {
+    seedResume();
+    const original = navigator.permissions;
+    Object.defineProperty(navigator, "permissions", { configurable: true, value: { query: async () => ({ state: "prompt" }) } });
+    try {
+      await act(async () => render(<ControlPanel />, root));
+      await vi.waitFor(() => expect(captureMeetingId.value).toBe("session-42"));
+      expect(mocks.startMicrophone).not.toHaveBeenCalled();
+      expect(mocks.attachSilentLane).toHaveBeenCalledWith("microphone");
+      expect(root.textContent).toContain("Resume recording");
+    } finally { Object.defineProperty(navigator, "permissions", { configurable: true, value: original }); }
+  });
+
+  it("writes changed mute and source state into the same tab capture record", async () => {
+    seedResume();
+    await act(async () => render(<ControlPanel />, root));
+    await vi.waitFor(() => expect(captureMeetingId.value).toBe("session-42"));
+    const unmute = [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "Unmute mic")!;
+    await act(async () => unmute.click());
+    let saved = JSON.parse(window.sessionStorage.getItem(storageKeys.sessionReattach)!);
+    expect(saved.capture.microphoneMuted).toBe(false);
+    act(() => mocks.captureOptions?.onSourceStopped?.("microphone"));
+    saved = JSON.parse(window.sessionStorage.getItem(storageKeys.sessionReattach)!);
+    expect(saved.capture.sources.microphone).toBe(false);
+    expect(saved.capture.microphoneDeviceId).toBe("stored-exact-mic");
+    expect(saved.capture.echoCancellation).toBe(false);
+  });
+
+  it("Detach during snapshot loading prevents a late automatic resume", async () => {
+    seedResume();
+    let release!: (response: Response) => void;
+    const snapshot = new Promise<Response>(resolve => { release = resolve; });
+    const fetcher = fetch;
+    vi.stubGlobal("fetch", vi.fn((url: string) => url.includes("/snapshot") ? snapshot : fetcher(url)));
+    await act(async () => render(<ControlPanel />, root));
+    await act(async () => [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "Detach")!.click());
+    await act(async () => { release(new Response(JSON.stringify({ snapshot: { session: { status: "active" } } }))); });
+    expect(mocks.resumeSession).not.toHaveBeenCalled();
+    expect(captureMeetingId.value).toBeNull();
+  });
+
+  it("one Resume recording click can restore tab audio while the stored microphone is missing", async () => {
+    seedResume(true); mocks.startMicrophone.mockReturnValue(null);
+    mocks.requestDisplayMedia.mockRejectedValueOnce(new DOMException("gesture", "NotAllowedError"));
+    await act(async () => render(<ControlPanel />, root));
+    await vi.waitFor(() => expect(captureMeetingId.value).toBe("session-42"));
+    const original = navigator.mediaDevices;
+    Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: {
+      getUserMedia: vi.fn().mockRejectedValue(new DOMException("missing", "NotFoundError")), enumerateDevices: async () => [] } });
+    mocks.requestDisplayMedia.mockResolvedValue({ getTracks: () => [], getAudioTracks: () => [{}] });
+    try {
+      await act(async () => [...root.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === "Resume recording")!.click());
+      expect(mocks.replaceLane).toHaveBeenCalledWith("system", expect.anything(), []);
+      await vi.waitFor(() => expect(root.textContent).toContain("Stored microphone unavailable"));
+      expect(captureMeetingId.value).toBe("session-42");
+    } finally { Object.defineProperty(navigator, "mediaDevices", { configurable: true, value: original }); }
+  });
+
+  it("exports an interruption-only transcript", async () => {
+    act(() => { sessionId.value = "m"; sessionStatus.value = "active";
+      recordingInterruptions.value = [{ start: 3600, end: 3630 }]; render(<ControlPanel />, root); });
+    const save = root.querySelector<HTMLButtonElement>(".controls-export button")!;
+    expect(save.disabled).toBe(false);
+    await act(async () => save.click());
+    expect(mocks.exportDownload.mock.calls[0][0].content).toBe("([01:00:00-01:00:30] Recording Interrupted)");
   });
 
   it("offers only Markdown, Text and Audio exports (#11)", () => {
@@ -292,7 +488,7 @@ describe("ControlPanel reattach", () => {
     expect(content).not.toContain("Local 0");
   });
 
-  it("reattaches read-only with only the Account Meeting ID", async () => {
+  it("keeps legacy meeting-id-only reload read-only when capture settings are absent", async () => {
     window.sessionStorage.setItem(
       storageKeys.sessionReattach,
       JSON.stringify({ sessionId: "session-42" })

@@ -1,3 +1,4 @@
+import { parseRecordingInterruptions, type RecordingInterruption } from "../lib/recordingInterruption";
 import type {
   SessionLifecycle,
   SessionMode,
@@ -44,6 +45,7 @@ interface MossProvisionalSuffix {
 }
 
 interface MossSnapshot {
+  interruptions: RecordingInterruption[];
   sessionId: string;
   status: SessionLifecycle;
   version: number;
@@ -250,6 +252,7 @@ export function createMossSessionPoller(options: MossPollerOptions): MossSession
             snapshot.terminalFailureReason ??
             snapshot.persistenceFailure,
           status_line: snapshot.statusLine,
+          interruptions: snapshot.interruptions,
           needs_review: snapshot.needsReview,
           live_label_policy: snapshot.liveLabelPolicy
         });
@@ -673,6 +676,7 @@ function parseSnapshot(payload: unknown): MossSnapshot | null {
     status: lifecycle(session.status),
     version: requiredNonNegativeNumber(session.version, "snapshot version"),
     sampleRate: requiredPositiveNumber(descriptor.sample_rate, "snapshot sample_rate"),
+    interruptions: parseRecordingInterruptions(session.capture_interruptions, session.capture_interruptions === undefined ? 16000 : requiredPositiveNumber(session.sample_rate, "capture sample_rate")),
     committedSamples: requiredNonNegativeNumber(session.committed_samples, "committed samples"),
     failureReason: optionalString(session.failure_reason),
     terminalFailureReason: parseTerminalFailureReason(snapshot.terminal_failure),
