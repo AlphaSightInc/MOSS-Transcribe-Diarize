@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, Callable, Literal
 
 
@@ -220,6 +220,19 @@ class HelperPresenceRegistry:
     def snapshot(self, session_id: str) -> HelperPresenceSnapshot | None:
         current = self._sessions.get(session_id)
         return None if current is None else current.snapshot
+
+    def replace_instance(self, session_id: str, instance_id: str) -> None:
+        """Explicit handoff preserves heartbeat ordering and last real receipt time."""
+        current = self._sessions.get(session_id)
+        if current is not None:
+            self._sessions[session_id] = _ObservedPresence(
+                heartbeat=replace(current.heartbeat, instance_id=instance_id),
+                snapshot=replace(current.snapshot, instance_id=instance_id),
+            )
+
+    def heartbeat_age_ns(self, session_id: str) -> int | None:
+        current = self.snapshot(session_id)
+        return None if current is None else self._monotonic_ns() - current.last_seen_monotonic_ns
 
     def release(self, session_id: str) -> None:
         self._sessions.pop(session_id, None)

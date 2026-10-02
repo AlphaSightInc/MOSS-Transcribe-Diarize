@@ -706,6 +706,42 @@ clean-up split locally; a completely omitted voice with a wrong live ID remains 
 See `prototypes/gemini-live/mic-speaker-echo/c2/NOTES.md` and R5B-C2 evidence for complete
 prototype/product gates, ambiguity controls, row-level stress audit and stated limits.
 
+## P74-R: browser resume — measured proposal, not shipped (2026-10-02)
+
+An originating browser page can resume an active meeting within the existing 120 s
+lease using an explicit origin-sign-in-authorized handshake. Keep the meeting,
+engine, speaker ledger and audio stage; replace only the capture page. The handshake
+must return authoritative lane sequence/epoch/end and mixed/capture clock state,
+and fence frames, heartbeat, Stop and Abort from the previous page. Heartbeat-only
+takeover is rejected: an awakened original still admits audio (200) and causes
+new-page overlap refusals. Expired, closing, accepted-Stop and server-restarted
+meetings remain non-resumable.
+
+Throwaway code composes real Phase2 routes, the scripted Gemini engine, production
+mixer and MP3 archive. With 4 s prefix + gap +4 s continuation, gaps of 5/30/90/119 s
+accept 16/16 frames and save one 13/38/98/127 s MP3 with elapsed-time silence and
+correct resumed transcript timestamps. Manual speaker name survives. A 125 s gap
+refuses with 409 and retains the original 4 s partial archive. The 90 s falsifier
+passes. At 119 s gap +45 s continuation, peak lane retention is 29.5/60 s; existing
+mixer pacing delays the first resumed live transcript row by 30 s. Real Chrome
+reload with fake media, actual CaptureClient/worklet and a throwaway adoption seam
+completes one meeting; microphone mute/echo choices, sequences and new epochs survive.
+Chrome share track labels change on reacquisition and cannot identify the old tab.
+
+Proposal: one **Resume recording** button, same origin Sign-in session and stored
+meeting-specific capture settings; ask the user to select the previous shared tab;
+preserve missing time as silence plus a separate interruption notice. Keep 120 s;
+view reads do not extend the lease, explicit valid takeover renews normally. Another
+Sign-in session stays read-only; same-cookie concurrent tabs give one winner.
+Original automatic-summary ownership must follow adoption without duplicate workers.
+
+Physical Bluetooth/device continuity, real browser crash, human picker, exact live
+network-clock accuracy, provider recognition/latency and product acceptance remain
+unmeasured. No production change or accepted ADR amendment is made here. Full
+contract, negative S1 evidence, options O1–O4, required ADR/test amendments, size
+estimate and one-command bench: `prototypes/gemini-live/long-meeting/resume/NOTES.md`.
+Receipts: `~/Documents/Codex/2026-09-28/moss-gemini/evidence/P74/resume/SUMMARY.json`.
+
 ## P74: capture response lifetime (2026-10-02, candidate, not deployed)
 
 A completed POST must release its response stream, even when its acknowledgement is unused. Chrome retains an
@@ -753,3 +789,55 @@ wait: retry using retry_after_ms/about 500 ms, media in parallel, viewer only af
 continued writer heartbeats. Lead R2 supplies completed capture_interruptions with sample_rate
 in the live snapshot session and saved transcript document. Browser exports own rendering
 (R3); no server export endpoint added. No provider evidence.
+
+## P74-RS: same-meeting server resume candidate (2026-10-02)
+
+**U1** browser reload/reopen resumes the same Meeting by an explicit handshake;
+automatic requests cannot steal a page whose accepted heartbeat is less than 3 s
+old; 409 `capture_page_alive` includes `retry_after_ms`. The browser retries
+automatic resume for up to 8 s after load, then becomes a viewer only if the old
+writer still heartbeats. User requests may take over immediately. A per-Meeting
+guard serializes the
+handshake and all capture mutations; compare-and-swap yields one winner. The
+response supplies authoritative clocks/cursors. Idempotent retry returns the same
+state without renewing twice. **U2** every handoff records mixed-clock interruption
+metadata separately from speech; mixer zero-fill preserves elapsed missing time.
+Closed `capture_interruptions` plus `sample_rate` persist through
+Stop/refinement/reload/History in the snapshot `session` and saved document top
+level. Open gaps are not listed. Browser transcript/exports render the exact
+`([HH:MM:SS-HH:MM:SS] Recording Interrupted)` line; server metadata only, no
+export endpoint or new renderer. Existing Python subtitle exports stay unchanged.
+Recognition, speaker statistics and summary input exclude it. **U3** retain the
+120 s lease and lifecycle owner; expiry/closing/accepted Stop/server restart never
+reopen. **U4** only the origin Sign-in session replaces its page, and the old
+writer receives `capture_replaced` on frames/heartbeat/Stop/Abort. Headerless
+non-resuming clients retain their existing meeting flow. Browser restoration and
+summary-watcher transfer belong to the client package.
+
+Offline product matrix: 4 s prefix + 5/30/90/119 s gap + 4 s continuation produces
+one exact 13/38/98/127 s MP3, with zero-amplitude interior gaps and completed status.
+125 s refuses with interrupted status. At 119 s +45 s continuation, retained
+PCM peaks at 29.5/60 s per lane; the first resumed live row is delayed 30 s by
+existing mixer pacing. No larger buffer or new mixer algorithm.
+`measure.py --product` under `prototypes/gemini-live/long-meeting/resume/` prints
+full state using real routes/mixer/archive with an offline engine. Provider and
+physical-device recovery, clock accuracy under real network latency, and browser
+product acceptance remain unmeasured. Candidate server build only; no deployment.
+
+P74-RS verification: all six offline product cells pass after R1–R3 and L1.
+Original regressions: 26 red on `c7884d46`, one headerless control green.
+R1–R3: 11 red / 17 green on `ed89d899`, all 28 green on `f40524f7`.
+L1: eleven new cases red on `f40524f7`, all 39 P74 cases green on the final
+candidate. Full backend: 2957 passed, 9 skipped, 2 xfailed,
+37 subtests passed (423.90 s).
+Existing pre-P74 expectations unchanged; server export assertions removed per R3.
+Receipts and local commit classification: `status/P74-RS-STATUS.md` under
+`~/Documents/Codex/2026-09-28/moss-gemini/`.
+
+Lead L1 concurrency correction: a capture lock protects the writer fence and
+accepted mutation, never request upload or JSON/PCM parsing. Origin authorization
+stays first; frame publication happens after releasing the guard. Page-writer
+entries are removed beside v2 capture release/expiry, including Stop, Abort and
+lease expiry. Offline ASGI tests hold one body mid-upload while the other lane
+and heartbeat finish, and reject late old-writer/terminal bodies without
+recreating presence. Full-suite and red/green receipts: P74-RS-STATUS.md.

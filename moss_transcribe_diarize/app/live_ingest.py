@@ -96,6 +96,7 @@ class _LaneState:
     current_device_epoch: int | None = None
     retained_frames: list[RetainedLiveV2Frame] = field(default_factory=list)
     last_capture_end_timestamp_ns: int | None = None
+    resume_capture_end_timestamp_ns: int | None = None
 
 
 class LiveLaneIngress:
@@ -175,7 +176,14 @@ class LiveLaneIngress:
             lane.next_sequence += 1
             lane.current_device_epoch = frame.device_epoch
             lane.last_capture_end_timestamp_ns = frame.capture_end_timestamp_ns
+            lane.resume_capture_end_timestamp_ns = (frame.capture_end_timestamp_ns
+                if frame.capture_end_timestamp_ns is not None else frame.capture_timestamp_ns
+                + frame.sample_count * 1_000_000_000 // frame.sample_rate)
             return ack
+
+    def last_capture_end(self, lane: LiveLane) -> int | None:
+        with self._lock:
+            return self._lanes[lane].resume_capture_end_timestamp_ns
 
     def retained_frames(self, lane: LiveLane | None = None) -> tuple[RetainedLiveV2Frame, ...]:
         with self._lock:

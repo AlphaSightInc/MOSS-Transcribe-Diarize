@@ -279,6 +279,37 @@ class LiveHelperFailureCoordinator:
             self._fail_lane(session_id, lane, code)
         return lease_snapshot
 
+    def now_ns(self) -> int:
+        return self._monotonic_ns()
+
+    def snapshot(self, session_id: str) -> LiveHelperLeaseSnapshot | None:
+        with self._lock:
+            current = self._sessions.get(session_id)
+            if current is None:
+                return None
+            return LiveHelperLeaseSnapshot(
+                session_id, current.sequence, current.generation, current.deadline_monotonic_ns,
+            )
+
+    def resume(self, session_id: str) -> LiveHelperLeaseSnapshot | None:
+        """Renew a live lease once for a handoff; overdue callbacks cannot reopen it."""
+        with self._lock:
+            current = self._sessions.get(session_id)
+            if current is None or session_id in self._terminal_sessions:
+                return None
+            now = self._monotonic_ns()
+            if now >= current.deadline_monotonic_ns:
+                self._expire_if_current(session_id, current.sequence, current.generation)
+                return None
+            current.timer.cancel()
+            generation = current.generation + 1
+            deadline = now + self._lease_ns
+            timer = self._timer.schedule(
+                deadline, lambda: self._expire_if_current(session_id, current.sequence, generation),
+            )
+            self._sessions[session_id] = _LeaseState(current.sequence, generation, deadline, timer)
+            return LiveHelperLeaseSnapshot(session_id, current.sequence, generation, deadline)
+
     def release(self, session_id: str) -> None:
         _session_id(session_id)
         with self._lock:

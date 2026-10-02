@@ -103,6 +103,19 @@ class LiveCompatibilityMixer:
         self.last_capture_guard: dict[str, object] | None = None
         self._lock = threading.RLock()
 
+    @property
+    def capture_cursor_ns(self) -> int | None:
+        with self._lock:
+            return self._cursor_ns
+
+    def mixed_sample_at(self, capture_timestamp_ns: int, mixed_samples: int, *, origin_ns: int = 0) -> int:
+        """Translate capture time through the current mixed-clock anchor."""
+        with self._lock:
+            cursor = origin_ns if self._cursor_ns is None else self._cursor_ns
+            return max(0, mixed_samples + (
+                capture_timestamp_ns - cursor
+            ) * LIVE_SAMPLE_RATE // 1_000_000_000)
+
     def admit_available(
         self,
         session_id: str,

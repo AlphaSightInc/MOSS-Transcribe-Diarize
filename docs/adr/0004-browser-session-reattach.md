@@ -58,3 +58,23 @@ Measured basis: `prototypes/stop-lease/NOTES.md` and
 fixed virtual 30-second lease ordering, genuine failure, cancelled request,
 45-second wall-clock drain and 90-second wall-clock terminal refinement.
 No change to the lease duration, wait deadlines, inference, or identity policy.
+
+## 2026-10-02 — P74 browser capture handoff (U1–U4)
+
+The Phase-2 browser contract supersedes the earlier view-only reload decision:
+**U1** reload/reopen within the lease may automatically resume the same Meeting
+with stored capture settings. A 409 `capture_page_alive` includes `retry_after_ms`;
+the browser retries automatically for up to 8 s before becoming a viewer if the
+old writer keeps heartbeating. **U2** missing time remains silence and closed
+`capture_interruptions` intervals, with `sample_rate` beside them in the snapshot
+`session` and saved document top level. Open gaps are not listed. The browser renders
+`([HH:MM:SS-HH:MM:SS] Recording Interrupted)`. **U3** the 120 s lease is unchanged;
+expiry, server restart, closing and accepted Stop cannot reopen capture. **U4**
+only the originating browser Sign-in session may resume; the replaced page is
+a viewer, fenced on frames, heartbeat, Stop and Abort. This server package
+implements the handshake and durable metadata; browser restoration and all
+transcript exports are a separate package. No server export endpoint or new
+renderer; existing Python subtitle exports stay unchanged. Tab audio still needs
+Chrome's picker
+where gesture-free capture is refused; microphone capture need not wait for it.
+No queued audio is recovered. Accepted Stop retains its server-owned outcome.
