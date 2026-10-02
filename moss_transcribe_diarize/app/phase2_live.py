@@ -899,7 +899,8 @@ class Phase2LiveMeetings:
             binding.durable_version = await binding.handle.settle_refinement(document)
             meeting = await binding.handle.snapshot()
         except Exception:
-            # The running marker is durable and projects a failure after restart.
+            # The running marker stays stored; the next startup turns it into a failed clean-up.
+            _LOG.warning("refinement settle failed", exc_info=True)
             binding.refinement_running = False
             try:
                 await asyncio.to_thread(self.audio_stages.discard,

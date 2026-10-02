@@ -858,6 +858,24 @@ class Phase2Store:
         if active_count != 0:
             raise RuntimeError("Active Meeting recovery did not reach durable terminal truth.")
 
+    async def fail_leftover_refinements(self, live_audio_stages: Any | None = None) -> None:
+        """No clean-up outlives its process: a marker found at startup is a failed clean-up."""
+
+        async with self._mutation():
+            cursor = await self._connection.execute(
+                "SELECT account_id, meeting_id FROM meeting_outcomes WHERE notice = ?",
+                (REFINEMENT_RUNNING_MARKER,),
+            )
+            leftover = [(row["account_id"], row["meeting_id"]) for row in await cursor.fetchall()]
+            await cursor.close()
+            await self._connection.execute(
+                "UPDATE meeting_outcomes SET notice = ? WHERE notice = ?",
+                (REFINEMENT_FAILED_NOTICE, REFINEMENT_RUNNING_MARKER),
+            )
+        if live_audio_stages is not None:
+            for account_id, meeting_id in leftover:
+                await asyncio.to_thread(live_audio_stages.discard, account_id, meeting_id)
+
     async def _mark_interrupted_meeting_audio_unavailable(
         self,
         account_id: str,
@@ -1555,7 +1573,7 @@ class Phase2Store:
                 """SELECT t.document_json, t.version FROM meetings m
                    JOIN accounts a ON a.account_id = m.account_id
                      AND a.enabled = 1 AND a.authority_generation = ?
-                   JOIN meeting_transcripts t ON t.account_id = m.account_id
+                   LEFT JOIN meeting_transcripts t ON t.account_id = m.account_id
                      AND t.meeting_id = m.meeting_id
                    JOIN meeting_outcomes o ON o.account_id = m.account_id
                      AND o.meeting_id = m.meeting_id
@@ -1567,7 +1585,8 @@ class Phase2Store:
             await cursor.close()
             if current is None:
                 raise AccountRevoked("Meeting refinement authority is unavailable.")
-            version = int(current["version"])
+            # A meeting that kept no word has no transcript row yet (version 0).
+            version = int(current["version"] or 0)
             if document is not None:
                 updated = json.loads(json.dumps(document, ensure_ascii=False))
                 # Only names a person or a voiceprint gave carry over (they are all in
@@ -1583,11 +1602,15 @@ class Phase2Store:
                 await cursor.close()
                 name_saved_speakers(updated.get("segments", []), names)
                 await self._connection.execute(
-                    """UPDATE meeting_transcripts SET document_json = ?,
-                       version = version + 1, updated_at_ms = ?
-                       WHERE account_id = ? AND meeting_id = ?""",
-                    (json.dumps(updated, ensure_ascii=False, separators=(",", ":")),
-                     now, account_id, meeting_id),
+                    """INSERT INTO meeting_transcripts(
+                           account_id, meeting_id, document_json, version, updated_at_ms
+                       ) VALUES (?, ?, ?, 1, ?)
+                       ON CONFLICT(account_id, meeting_id) DO UPDATE SET
+                           document_json = excluded.document_json,
+                           version = meeting_transcripts.version + 1,
+                           updated_at_ms = excluded.updated_at_ms""",
+                    (account_id, meeting_id,
+                     json.dumps(updated, ensure_ascii=False, separators=(",", ":")), now),
                 )
                 version += 1
             await self._connection.execute(
@@ -2304,6 +2327,7 @@ def create_phase2_app(
                 live_audio_stages=live_audio_stages,
                 claimed_file_meetings=claimed_file_meetings,
             )
+            await store.fail_leftover_refinements(live_audio_stages)
             if file_tasks is not None:
                 terminal_after_fallback = await store.terminal_file_meeting_owners(
                     retained_owners=file_tasks.retained_work_owners()
