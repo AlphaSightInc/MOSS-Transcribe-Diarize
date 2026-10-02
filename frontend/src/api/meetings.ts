@@ -61,6 +61,21 @@ export async function openMeeting(
   return parseMeeting(await requestJson(fetcher, `/api/meetings/${encodeURIComponent(meetingId)}`));
 }
 
+export async function deleteMeeting(meetingId: string): Promise<void> {
+  await requestJson(fetch, `/api/meetings/${encodeURIComponent(meetingId)}`, { method: "DELETE" });
+}
+
+export async function deleteAllMeetings(): Promise<{
+  deleted: number; kept: { meeting_id: string; reason: string }[];
+}> {
+  const payload = await requestJson(fetch, "/api/meetings", { method: "DELETE" });
+  if (!isRecord(payload) || typeof payload.deleted !== "number" || !Array.isArray(payload.kept) ||
+      !payload.kept.every(item => isRecord(item) && typeof item.meeting_id === "string" && typeof item.reason === "string")) {
+    throw new Error("Session deletion response is invalid.");
+  }
+  return payload as { deleted: number; kept: { meeting_id: string; reason: string }[] };
+}
+
 export async function renameMeeting(
   meetingId: string,
   title: string,
