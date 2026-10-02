@@ -263,16 +263,52 @@ without a previously witnessed cut can still repeat. Local-tail and time-proport
 cuts remain unqualified for preserving fresh speech. See
 `prototypes/gemini-live/mic-speaker-echo/a2/NOTES.md` for gates and replay limits.
 
-The T4 frontier-snapshot proposal is measured-rejected: a preview published before
-the solid-time frontier proves which audio the preview heard, not that the rolling
-transcript includes every word. On injected recorded-text omissions, hiding its
-unchanged prefix removes 22 words, 11 words or 169 Mandarin characters from grey
-while they are absent from solid; a boundary-word injection hides one additional
-word. Both lanes reproduce the loss through the production publication path.
-Original-stream replay adds no fresh loss by the later-solid metric, but that does
-not override the known-omission falsifier. No snapshot trim ships; A2 remains the
-partial repair. `prototypes/gemini-live/mic-speaker-echo/a3/NOTES.md` records the
-audit, rewrites, limits and raw-publication capture contract for a future real run.
+The user chose the T4 time-ownership trade (D15, 2026-10-01): grey should show
+only what arrived after that lane's confirmed point. Older grey words may disappear
+when that stretch is confirmed even if the solid model omitted them; the saved
+transcript is unchanged. A3 measured 22-word, 11-word and 169-character omissions
+that this decision now accepts (`prototypes/gemini-live/mic-speaker-echo/a3/NOTES.md`).
+
+The T4 time cut carries original source turns beside the rendered rows, before their
+starts are clipped. Each lane keeps its own publication clock; an update from the other
+lane cannot re-date cached text. For each active original turn, the latest publication
+at or before that lane's confirmed point supplies a snapshot. Confirmation follows the
+end of currently visible solid rows in that lane, including degraded fallback rows; it
+cannot advance on an empty base/window clock alone. If replacement makes that extent
+retreat, snapshot history is discarded. The unchanged comparable-unit prefix of the
+snapshot is removed only when it extends beyond the existing text cut. A unit is hidden
+only if the time rule proves it was published at or before the confirmed point, or the
+existing text rules cut it exactly as today. The existing genuine-repeat limit above
+remains; the lead explicitly amended A4's freshness gate to judge time additions only.
+
+Different original starts never borrow snapshots. Duplicate source keys, joined rows,
+ambiguous origins and text changed by lane filtering abstain. Prefix rewrites shorten
+the cut; a unit count alone cannot justify removing rewritten words. Pending history
+holds at most 64 publications per active turn plus one snapshot. If a stalled frontier
+needs history discarded at that bound, the time rule abstains until retained history is
+eligible. Source/socket restart clears that lane's snapshots and keeps its clock
+watermark against stale cached rows. Finals clear their turn, even when already covered
+and therefore forwarded only as metadata; Stop and meeting release clear all snapshot
+text. The text rules' separate remembered cuts and their invalidation stay unchanged.
+
+Recorded product replay matches the prototype on 366 Mandarin, 575 English and 64 R5-D
+publications. Mandarin changes 23 calls, removing 46 additional old unit-publications;
+English and R5-D output are unchanged. All six divergence injections remove the repeat
+and keep their fresh suffix; time additions outside the exact snapshot prefix are zero.
+The 61-word degraded-replacement control remains visible. Added source-to-publication
+mean work is 0.34/0.70/0.19 ms, respectively; pending peaks are 35/28 for the long streams.
+Numeric-only `engine_diagnostics.preview` exposes per-lane raw/shown/solid units, text
+and additional time removal, maximum grey units, source clock, confirmed point and
+publication totals; history maxima/overflows are separate numeric fields.
+
+Combined later-solid-proxy residue reaches 4 Mandarin / 5 English units on non-rewrite
+publications, present for 45/41 cumulative publication seconds; rewrite publications
+reach 4/3 units. Those are recorded text/clock proxy metrics, not a fresh-provider or
+browser qualification. Original rewrite counts are 16/41; raw stress streams, physical
+device behavior and live long-run qualification remain unmeasured here. The bench and
+exact real-run diagnostics contract are in
+`prototypes/gemini-live/mic-speaker-echo/a4/NOTES.md`; A3's raw-publication capture
+contract still applies to the lead's future real run.
 
 The pinned WeSpeaker observations for Gemini-attributed meeting IDs flow through
 `_identity_observations` and `_identity_match_observations` to Account's existing
