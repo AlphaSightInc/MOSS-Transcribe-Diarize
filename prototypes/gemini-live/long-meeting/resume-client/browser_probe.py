@@ -26,7 +26,7 @@ PORT = 18986
 URL = f'https://127.0.0.1:{PORT}'
 TITLE = 'P74 RC synthetic tab'
 INIT = r"""(() => {
-  window.measurement = {loadedAt: Date.now(), frames: [], resumes: [], errors: [], clicks: [], media: []};
+  window.measurement = {loadedAt: Date.now(), frames: [], resumes: [], errors: [], clicks: [], media: [], snapshots: [], meetings: []};
   const log = measurement;
   document.addEventListener('click', e => log.clicks.push(e.target.closest('button')?.textContent || e.target.tagName), true);
   const f = window.fetch.bind(window);
@@ -36,6 +36,8 @@ INIT = r"""(() => {
       const b = JSON.parse(init.body); delete b.pcm_base64;
       log.frames.push({...b, status: r.status, at: Date.now(), header: init.headers['X-Moss-Capture-Instance']});
     }
+    if (String(url).includes('/snapshot')) { const body = await r.clone().json(); if (body.snapshot) log.snapshots.push(body.snapshot.session); }
+    if (/\/api\/meetings\/[^/]+$/.test(String(url))) log.meetings.push(await r.clone().json());
     if (String(url).endsWith('/resume')) log.resumes.push({request: JSON.parse(init.body), status: r.status, response: await r.clone().json()});
     return r;
   };
@@ -126,21 +128,23 @@ def main():
                 (directory/f'{name}.json').write_text(json.dumps(value,indent=2))
                 page.screenshot(path=str(directory/f'{name}.png'))
                 return value
-            # A/B: immediate reload. The contract itself requires a refusal while heartbeat is fresh.
+            # A/B: immediate reload waits/retries under R1; zero clicks throughout.
             for code, system in [('a_microphone',False),('b_tab_microphone',True)]:
                 page = start(system); old = page.evaluate("JSON.parse(sessionStorage.getItem('lt:session:reattach'))")
                 page.reload()
                 # No JS evaluation until automatic acquisition/adoption has completed: Playwright
                 # evaluate/wait_for_function can supply transient activation.
-                page.wait_for_timeout(4000)
+                page.wait_for_timeout(11000)
                 immediate = capture(page, code+'-immediate')
                 cell = {'stored_before':old,'immediate':immediate,'zero_click_gate': bool(any(f['status']==200 for f in immediate['frames'])),
                     'first_accepted_frame_seconds': next(((f['at']-immediate['loadedAt'])/1000 for f in immediate['frames'] if f['status']==200),None)}
-                if not cell['zero_click_gate']:
-                    # Retain the failure, then measure explicit contract fallback; do not score this as a zero-click pass.
-                    page.get_by_role('button',name='Resume recording here',exact=True).click()
-                    page.wait_for_function('measurement.frames.filter(f=>f.status===200).length >= 12', timeout=15000)
-                    cell['explicit_fallback'] = capture(page, code+'-explicit')
+                assert cell['zero_click_gate'] and not immediate['clicks'], cell
+                assert any(r['status'] == 409 and r['response']['detail']['retry_after_ms'] > 0 for r in immediate['resumes']), cell
+                assert len({r['request']['instance_id'] for r in immediate['resumes']}) == 1
+                assert immediate['snapshots'][-1]['capture_interruptions']
+                assert immediate['snapshots'][-1]['sample_rate'] == 16000
+                assert 'Recording Interrupted)' in page.inner_text('body')
+                cell['gap_line_visible'] = True
                 # A real same-tab reload after navigation spends >3 s away is within lease and automatically eligible.
                 page.goto(URL+'/rc/away'); page.wait_for_timeout(3200); page.goto(URL+'/rc/')
                 page.wait_for_timeout(4000)
@@ -166,7 +170,11 @@ def main():
                     cell['tab_audio_non_silent'] = any(f['lane']=='system' and not f['silent'] and f['status']==200 for f in cell['one_share_click']['frames'])
                 result['cases'][code] = cell
                 (directory/'partial.json').write_text(json.dumps(result,indent=2))
-                page.get_by_role('button',name='Stop recording',exact=True).click(); page.wait_for_timeout(500); page.close()
+                page.get_by_role('button',name='Stop recording',exact=True).click(); page.wait_for_timeout(500)
+                document = page.evaluate('(async id => (await fetch(`/api/meetings/${id}`)).json())', old['sessionId'])
+                cell['saved_transcript'] = document['transcript']
+                assert document['transcript']['capture_interruptions'] and document['transcript']['sample_rate'] == 16000
+                page.close()
             # C: synthetic clock advance past lease, no 125-second real-time wait.
             page = start(); offset[0] += 125_000_000_000; page.reload(); page.wait_for_timeout(4000)
             page.wait_for_function("document.body.textContent.includes('Recording stopped: connection lost.')",timeout=15000)
@@ -175,9 +183,11 @@ def main():
             # D: duplicated tab gets identical tab record, while original continues heartbeats.
             page = start(); saved = page.evaluate("sessionStorage.getItem('lt:session:reattach')")
             duplicate = ctx.new_page(); duplicate.add_init_script(f"sessionStorage.setItem('lt:session:reattach',{json.dumps(saved)})")
-            duplicate.goto(URL+'/rc/'); duplicate.wait_for_timeout(4000); duplicate.wait_for_function("document.body.textContent.includes('Resume recording here')",timeout=15000)
+            duplicate.goto(URL+'/rc/'); duplicate.wait_for_timeout(9000); duplicate.wait_for_function("document.body.textContent.includes('Resume recording here')",timeout=15000)
             result['cases']['d_duplicate'] = capture(duplicate,'d-duplicate')
             result['cases']['d_duplicate']['original_frames_after'] = page.evaluate('measurement.frames.length')
+            assert not result['cases']['d_duplicate']['frames'] and len(result['cases']['d_duplicate']['resumes']) >= 10
+            assert duplicate.get_by_role('button',name='Detach',exact=True).count() == 1
             page.get_by_role('button',name='Stop recording',exact=True).click(); page.wait_for_timeout(500)
             duplicate.close(); page.close(); src.close(); browser.close(); browser=None
     except Exception as error:

@@ -70,7 +70,7 @@ class ResumeProtocol:
             if pair[0] is not None and pair[0] != self.writers.get(sid):
                 raise HTTPException(409, {"code": "capture_writer_mismatch"})
         if body["automatic"] and self.clock() - self.receipts.get(sid, 0) < 3_000_000_000:
-            raise HTTPException(409, {"code": "capture_page_alive"})
+            raise HTTPException(409, {"code": "capture_page_alive", "retry_after_ms": max(1, (3_000_000_000 - (self.clock() - self.receipts.get(sid, 0))) // 1_000_000)})
         presence = st.live_helper_presence.snapshot(sid)
         old_sent = presence.sent_monotonic_ns
         heartbeat = {"schema": "moss-live-helper-health.v1", "instance_id": body["instance_id"],
@@ -105,8 +105,13 @@ class ResumeProtocol:
             if self.interruptions.get(sid) and response.status_code == 200:
                 raw = b"".join([chunk async for chunk in response.body_iterator])
                 value = json.loads(raw)
-                if parts[-1] == "snapshot": value["interruptions"] = self.interruptions[sid]
-                elif value.get("transcript") is not None: value["transcript"]["interruptions"] = self.interruptions[sid]
+                if parts[-1] != "snapshot" and value.get("transcript") is None:
+                    # Baseline stores no document without speech; R2 retains a gap-only document.
+                    value["transcript"] = {"segments": []}
+                target = (value.get("snapshot") or {}).get("session") if parts[-1] == "snapshot" else value.get("transcript")
+                if target is not None:
+                    target["capture_interruptions"] = [gap for gap in self.interruptions[sid] if gap["end_sample"] is not None]
+                    target["sample_rate"] = 16000
                 return JSONResponse(value)
             return response
         if len(parts) != 6 or parts[1:4] != ["api", "live", "sessions"] or request.method != "POST":
